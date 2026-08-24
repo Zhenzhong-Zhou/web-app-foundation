@@ -33,11 +33,14 @@ Security, so more of the auth surface is hand-built.
 **Context.** The developer already uses Postgres regularly. The foundation needs JSON-ish
 storage for settings and audit payloads, and a credible path to enforcing tenant isolation.
 
-**Decision.** PostgreSQL 16, single database.
+**Decision.** PostgreSQL, single database. **Version 18** — amended, see ADR-010.
+Originally recorded as 16; raised to 18 for native `uuidv7()` support. The bump was free
+because no data or migrations existed yet.
 
 **Consequence.** JSONB is available for audit-log payloads and application settings.
 Row-Level Security is available later as a second layer of tenant isolation without a
-schema change (see ADR-003).
+schema change (see ADR-003). Deployment targets must offer PostgreSQL 18 — verify this
+before choosing a managed host.
 
 ---
 
@@ -87,9 +90,18 @@ migration. Registration must create user + organization + Owner membership **in 
 transaction**. Permission checks must always resolve through the membership for the
 *current* organization, never through the user alone.
 
+This has a direct cost: authentication alone is not enough context. Every request needs
+both the identity *and* the current organization, so the session carries a current-org
+reference and org switching becomes a real concept. Corollary: permissions **cannot** be
+cached globally per user, and roles must not be baked into a long-lived token.
+
 Known limitation: string permissions handle global rules well but not resource-scoped ones
 ("Bob can edit *these* projects"). If that requirement appears, extend rather than replace —
 attach a scope to the membership or adopt CASL-style ability rules.
+
+Accepted as deliberate over-engineering if this only ever serves one organization: the
+membership table then costs one unused join. The reverse mistake — `users.role` needing to
+become multi-org later — rewrites every permission check against live data.
 
 ---
 
@@ -151,29 +163,340 @@ security incident — always have a regression test.
 
 ---
 
+## ADR-009 — Drizzle for schema, migrations, and queries
+
+**Context.** Candidates were Prisma, Drizzle, Knex, and hand-written SQL over the raw
+`pg` driver.
+
+Knex was rejected: weak TypeScript inference (query results arrive effectively untyped)
+and every migration hand-written, which gives up the main reason for choosing TypeScript.
+
+Raw `pg` was rejected as the primary query layer for a reason specific to ADR-003. SQL
+strings scattered across services provide no central place to enforce the
+`organization_id` filter. Every query becomes an independent opportunity to forget it,
+and one omission is a cross-tenant data leak.
+
+Prisma has the stronger schema-first migration experience, but two things counted against
+it here. Its schema language cannot express partial indexes, check constraints, or RLS
+policies, so complex DDL drops to hand-written SQL inside Prisma migrations anyway — and
+ADR-003 explicitly anticipates adding RLS. Its generated client is also harder to wrap in
+a tenant-scoped layer that cannot be accidentally bypassed.
+
+**Decision.** Drizzle. Specifically:
+
+| Package | Role |
+|---|---|
+| `drizzle-orm` | Table definitions **and** queries |
+| `drizzle-kit` | CLI that diffs the schema and generates migration SQL |
+| `pg` (node-postgres) | Driver — configured once at startup, not used directly |
+
+Each table is defined once; the same definition feeds migrations and query types.
+
+**Consequence.** `drizzle-kit generate` emits plain `.sql` files that are readable,
+hand-editable, and committed as source code — the correct place to add RLS policies
+(ADR-003), partial indexes, and triggers. Queries stay close to SQL, which suits existing
+Postgres experience.
+
+Binding rule from ADR-003: **services must not import `db` directly.** They go through a
+tenant-scoped query helper that always applies the `organization_id` filter. Direct `db`
+access in a service is a review-blocking defect.
+
+Escape hatch for queries the builder cannot express (window functions, recursive CTEs):
+the `` sql`` `` template, which still parameterises values safely.
+
+Cost: smaller ecosystem and fewer tutorials than Prisma, and no equivalent of Prisma
+Studio. Accepted.
+
+---
+
+## ADR-010 — UUIDv7 primary keys
+
+**Context.** Four options: auto-increment `bigint`, UUIDv4, ULID, and UUIDv7.
+
+Auto-increment leaks business volume (a new customer sees they are user #47) and makes
+records enumerable in URLs, so any endpoint with a weak permission check becomes
+brute-forceable. UUIDv4 fixes that but is fully random, so inserts scatter across B-tree
+index pages, causing page splits, index bloat, and degraded cache locality.
+
+ULID and UUIDv7 solve both: each embeds a 48-bit millisecond timestamp in the most
+significant bits, so values are time-sortable and inserts land at the right edge of the
+index like a sequential key, while remaining unguessable.
+
+The tiebreaker is standardisation. ULID is a community specification whose only real
+advantage is a shorter Base32 text form. UUIDv7 is defined by RFC 9562, and PostgreSQL 18
+ships a native `uuidv7()` function in core — no extension, no PL/pgSQL workaround.
+
+UUIDv8 was considered and rejected: it is RFC 9562's free-form vendor-defined slot, an
+escape hatch for custom layouts rather than a general-purpose key format.
+
+**Decision.** UUIDv7 for every primary key, generated by the database:
+
+```sql
+id uuid PRIMARY KEY DEFAULT uuidv7()
+```
+
+```ts
+id: uuid('id').primaryKey().default(sql`uuidv7()`)
+```
+
+Stored in the native `uuid` type (16 bytes binary). **Never `text`** — that would cost
+36 bytes per value plus proportional index bloat.
+
+**Consequence.** IDs are safe to expose in URLs and API responses without leaking row
+counts or enabling enumeration. Time-ordered inserts keep the primary-key index compact;
+published benchmarks report roughly 25% smaller indexes and materially faster ordered
+scans versus UUIDv4. Foreign keys are `uuid` throughout.
+
+Requires PostgreSQL 18 — this is what drove the version bump in ADR-002.
+
+Trade-off accepted: a UUIDv7 leaks the row's approximate creation time to anyone holding
+the ID. Harmless for users, organizations, and audit rows. If a future table holds rows
+whose creation timing is itself confidential, use `gen_random_uuid()` (v4) for that table
+specifically and record it as a new ADR.
+
+---
+
+## ADR-011 — Opaque session cookies, not JWT
+
+**Context.** The choice was between a stateless JWT and a server-side session referenced
+by a cookie.
+
+JWT's single advantage is avoiding a database read per request. ADR-004 removes that
+advantage entirely: permissions are scoped per organization, so every request must resolve
+`(user, current_org) -> role -> permissions` against the database regardless. The read
+happens either way.
+
+What remains of JWT is its cost. Tokens cannot be revoked before expiry, so an admin
+demoting or disabling a user has no immediate effect. The standard remedy is a
+server-side blocklist — which is a session table with extra steps and worse ergonomics.
+
+Two further requirements point the same way. Org switching (ADR-003) needs mutable
+per-session state, which a signed token cannot hold. And a "your active sessions" screen
+requires one enumerable, individually revocable record per login.
+
+**Decision.** Opaque session tokens, stored server-side, delivered in an httpOnly cookie.
+
+Generate 32 cryptographically random bytes per login. Send the base64url value to the
+client; store only its SHA-256 hash. Hashing, not encryption — the value is only ever
+verified, never read back. A database leak then yields no usable credentials, for the same
+reason password hashes do not.
+
+```sql
+sessions (
+  id              uuid primary key default uuidv7(),
+  token_hash      text not null unique,
+  user_id         uuid not null references users(id) on delete cascade,
+  current_org_id  uuid references organizations(id) on delete cascade,
+  issued_at       timestamptz not null default now(),
+  expires_at      timestamptz not null,   -- absolute cap
+  last_seen_at    timestamptz not null default now(),
+  ip              inet,
+  user_agent      text
+)
+```
+
+Cookie flags: `httpOnly: true`, `secure: true` (relaxed only on localhost http),
+`sameSite: 'lax'`, `path: '/'`.
+
+**Consequence — binding rules.** Each of these is a security control, not a preference:
+
+| Rule | Failure it prevents |
+|---|---|
+| Issue a new session row on login, delete any prior one | Session fixation |
+| Logout **deletes the row**, then clears the cookie | Captured token stays valid forever |
+| Password change/reset deletes all *other* sessions for that user | Account recovery leaves the attacker signed in |
+| Two expiries: absolute `expires_at` cap **and** idle timeout on `last_seen_at` | Sliding-only expiry lets a stolen token live indefinitely |
+| Never store resolved permissions on the session row | A demoted admin keeps access until expiry |
+
+Revocation is deletion — there is no separate mechanism. "Sign out this device", password
+change, and admin-disables-user are all the same `DELETE FROM sessions` with a different
+`WHERE`. If logout/login history is needed, it belongs in `audit_log`, not in retained
+session rows.
+
+Expired rows are swept lazily (delete that user's expired rows during login) rather than
+by a scheduled job, per ADR-005.
+
+**Consequence — operational traps.**
+
+Express must be told it sits behind a proxy, or it reports the proxy's address as `req.ip`
+*and* silently refuses to set `secure` cookies over a TLS-terminated connection — a
+production-only failure that works fine on localhost:
+
+```ts
+app.getHttpAdapter().getInstance().set('trust proxy', 1);
+```
+
+Development must be same-origin. Vite proxies `/api` to Nest rather than the SPA calling
+`http://localhost:3000` directly:
+
+```ts
+server: { proxy: { '/api': { target: 'http://localhost:3000', changeOrigin: true } } }
+```
+
+This mirrors the production topology (reverse proxy serving the SPA, forwarding `/api`).
+Calling the API cross-origin in development means debugging CORS and `sameSite: 'none'`
+problems that will never exist in production.
+
+**Consequence — deferred, and how.** Mobile or third-party clients need a non-cookie
+transport. This is additive: keep the auth guard's job as "resolve a request to
+`(user, current_org)`" and read the credential at the edge, so a bearer transport is a new
+strategy rather than a rewrite. Often the same opaque token can simply be returned in a
+JSON body and sent as `Authorization: Bearer` — same table, same revocation, no JWT. If a
+signed token is genuinely required, it carries `user_id` and `org_id` only; roles and
+permissions are resolved per request (ADR-004).
+
+**Related, landing in step 3.** `sameSite: 'lax'` blocks most but not all CSRF —
+state-changing endpoints additionally require a custom header or double-submit token.
+Login rate limiting keys on **email + IP together**: IP alone both fails against rotating
+attackers and locks out everyone behind a corporate NAT. Note that `@nestjs/throttler`
+counts in memory, so limits break silently across multiple instances — the first real
+trigger for introducing Redis, alongside BullMQ (ADR-005).
+
+---
+
+## ADR-012 — Account deletion, audit retention, and cascade defaults
+
+**Context.** The right to erasure conflicts with an audit log whose value depends on being
+complete and tamper-evident. Statutory retention periods can also override an erasure
+request outright. Deleting audit rows defeats their purpose; refusing to delete anything
+is not an option either.
+
+A second, larger question sits underneath: when a user leaves, who owns the work they
+created?
+
+**Decision — ownership.** The organization owns business data; the user only authored it.
+Two columns with strictly separate jobs:
+
+- `organization_id` — **ownership**. Governs lifecycle.
+- `created_by` / `actor_id` — **attribution**. Never governs lifecycle.
+
+A departing employee's projects remain with the organization, still attributed to their
+tombstoned user record. The alternative — a company losing its data because an employee
+closed an account — is indefensible.
+
+**Decision — the deletion flow.**
+
+1. Request sets `deletion_scheduled_at`; a **30-day grace window** follows. Reversible
+   until it elapses.
+2. If the user is the sole Owner of an org that has **other members**, deletion is
+   **blocked** with an explicit error until ownership is transferred. Never cascade
+   silently.
+3. If the user is the org's **only** member, that org is personal — delete it with them.
+4. Data export is offered during the grace window (see below).
+5. On elapse, anonymize.
+
+| Table | Action | Rationale |
+|---|---|---|
+| `sessions` | Hard delete | Live credentials |
+| `users` | Soft delete: `deleted_at` set, email -> `deleted-<uuid>@invalid`, name -> `Deleted User`, password cleared | Preserves FK targets for attribution |
+| `memberships` | Delete | No longer in the organization |
+| `audit_log` | **Rows retained**; `actor_id` continues to reference the tombstone | The event survives; the row it points to no longer identifies a person |
+
+The email is **released** — anonymizing frees the unique constraint, so the same address
+may register again as a new user.
+
+Deletion and deactivation are distinct and must not be conflated in the API or UI:
+suspension (Account Status) is reversible and preserves everything; deletion is not.
+
+**Decision — retention.** Audit rows are retained for **24 months**, after which `ip` and
+`user_agent` are nulled while the event itself is kept. Those fields are personal data in
+their own right and must not outlive the window simply because they sit on a row that does.
+
+**Decision — cascade defaults.** Applied to every table added from here on:
+
+| Foreign key | Rule | Reason |
+|---|---|---|
+| `organization_id` | `ON DELETE CASCADE` | Org owns the data |
+| `user_id` on sessions, memberships, tokens | `ON DELETE CASCADE` | Exists only to serve that user |
+| `created_by`, `updated_by`, `actor_id` | `ON DELETE RESTRICT` | Attribution must outlive the actor |
+| any FK on `audit_log` | `RESTRICT` — **never cascade**, including from `organizations` | Cascading org deletion would destroy records required for the 24-month window |
+
+Because users are soft-deleted, the `RESTRICT` constraints should never fire in normal
+operation. That is the point: they are a **tripwire**. A future hard `DELETE FROM users`
+is refused by the database rather than silently shredding the audit trail.
+
+Organization deletion is handled by its own anonymization pass over `audit_log`, never by
+cascade.
+
+**Decision — export.** JSON export offered during the grace window, scoped to the user's
+personal data plus rows they authored. Portability is a separate right from erasure, so it
+cannot be satisfied by deletion alone. Organization-wide export is deferred — `created_by`
+is what keeps it buildable later.
+
+**Consequence.** Users must never be hard-deleted; every code path deletes softly.
+`audit_log` writes must capture `actor_id`, `organization_id`, `ip`, and `user_agent` at
+event time, since the user row will later stop identifying anyone. A scheduled PII-stripping
+pass is required at the 24-month boundary — with no job queue in V1 (ADR-005), this runs as
+a cron'd SQL statement until BullMQ arrives.
+
+**Caveat.** Retention periods, lawful basis, and what constitutes adequate anonymization
+vary by jurisdiction, and this log is not legal advice. The decisions above make the schema
+*capable* of compliance, which is the expensive part to retrofit; the specific policy
+warrants professional review before handling real EU user data.
+
+---
+
+## ADR-013 — API versioning by URL prefix
+
+**Context.** Four options: a URL path prefix (`/v1/users`), a custom header
+(`X-API-Version: 1`), Accept-header content negotiation
+(`application/vnd.app.v1+json`), or a query parameter (`?version=1`).
+
+Header-based versioning is the more theoretically correct design — a URL identifies a
+resource, and the version is a property of its representation. In practice it is invisible
+everywhere it matters: server logs, browser address bars, `curl` commands, bug reports,
+and screenshots. It cannot be exercised by hand without a tool that sets headers, and
+caching proxies need `Vary` configured correctly or they will serve one version's response
+for another's request. Query parameters are worse still — trivially lost in redirects and
+copy-pasted links.
+
+The deciding factor is that this is a foundation intended to be handed to future
+applications and, potentially, other developers. Legibility beats purity.
+
+**Decision.** URI versioning, applied globally from the first endpoint:
+
+```ts
+app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+```
+
+Every API route is therefore `/v1/...`. Behind the Vite proxy (ADR-011) the browser-facing
+path is `/api/v1/users`.
+
+**Consequence.** Version is visible in every log line and reproducible with a bare `curl`.
+NestJS supports this natively, so no custom middleware is needed.
+
+Operational endpoints are **excluded** from versioning: `/health`, and later `/metrics`,
+are infrastructure rather than API surface. Load balancers and orchestrators should not
+have to track an API version to run a liveness probe.
+
+One global version, not per-module. Independently versioned modules produce combinations
+no one has tested and questions no one can answer ("does `/v2/users` work with
+`/v1/organizations`?").
+
+A version bump is reserved for **breaking** changes — removing or renaming a field,
+changing a type, altering semantics. Additive changes (new endpoints, new optional fields)
+ship within the current version.
+
+Realistically this foundation may never reach `v2`. That is the point: the prefix costs
+nothing now, whereas adding it later forces a choice between breaking every existing client
+and maintaining unversioned legacy routes indefinitely.
+
+---
+
 # Open decisions
 
-Decide these before or during step 1; each is cheap now and annoying later.
+None currently open. New questions land here before they are promoted to an ADR.
 
-### ORM: Prisma vs. Drizzle
-Drizzle is closer to raw SQL and will feel natural given existing Postgres experience.
-Prisma has stronger migration tooling and a larger ecosystem. Leaning Prisma for the
-migration story. **Must decide before step 2.**
+---
 
-### Primary key strategy: ULID/UUID vs. auto-increment integers
-ULIDs are sortable, don't leak row counts, and are safe to expose in URLs. Sequential
-integers leak business volume and are awkward across tenants. Leaning ULID.
-**Effectively irreversible after step 2 — decide first.**
+# Resolved
 
-### Session strategy: httpOnly cookie sessions vs. JWT
-For a first-party browser SPA, httpOnly cookies are simpler and safer (no token storage
-in JS, straightforward revocation). JWT is more convenient if a mobile or third-party
-client arrives. Leaning cookie sessions, since the SPA is the only planned client.
-
-### Account deletion vs. audit retention
-"Delete my account" and "audit log records who did what" are in direct tension under GDPR.
-Decide the policy — likely anonymize the user record while retaining audit rows with a
-tombstoned actor reference — **before real user data exists.**
-
-### API versioning
-Prefix routes with `/v1/` from the first endpoint. Nearly free now, disruptive later.
+| Decision | Outcome | ADR |
+|---|---|---|
+| ORM: Prisma vs. Drizzle vs. Knex | Drizzle | ADR-009 |
+| Primary key strategy | UUIDv7 on `uuid` column | ADR-010 |
+| PostgreSQL version | 18 (for native `uuidv7()`) | ADR-002, ADR-010 |
+| Session strategy | Opaque token in httpOnly cookie, no JWT | ADR-011 |
+| Account deletion vs. audit retention | Anonymize user, retain audit rows | ADR-012 |
+| Data ownership on user departure | Org owns data, user attributed | ADR-012 |
+| API versioning | URL prefix `/v1/`, global, from first endpoint | ADR-013 |

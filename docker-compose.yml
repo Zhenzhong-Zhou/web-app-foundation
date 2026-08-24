@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: foundation-postgres
     restart: unless-stopped
     environment:
@@ -10,11 +10,13 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # PG18+: PGDATA is /var/lib/postgresql/18/docker and VOLUME is the parent.
+      # Mounting /var/lib/postgresql/data here would silently lose data.
+      - postgres-data:/var/lib/postgresql
       # Creates the separate test database on first boot
       - ./docker/init-test-db.sh:/docker-entrypoint-initdb.d/init-test-db.sh:ro
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-foundation}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-foundation}"]
       interval: 5s
       timeout: 5s
       retries: 5
