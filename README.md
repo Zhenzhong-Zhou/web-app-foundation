@@ -1,0 +1,120 @@
+# Web Application Foundation
+
+A reusable, production-oriented foundation for building secure web applications:
+authentication, users, organizations, roles and permissions, auditing, and shared
+application infrastructure.
+
+Application-specific features (CRM, inventory, e-commerce, etc.) are **not** part of
+this repo. They are built on top of it.
+
+> **Status: pre-alpha.** Scaffolding only. See [Roadmap](#roadmap) for what actually exists.
+
+---
+
+## Architecture
+
+```
+Core  →  Shared Services  →  Application Features
+```
+
+- **Core** — auth, users, organizations, authorization, infrastructure, security, audit
+- **Shared Services** — email (background jobs deferred, see ADR-005)
+- **Application Features** — not in this repo
+
+Two decisions shape everything else:
+
+1. **Multi-tenant by default.** Every tenant-scoped table carries `organization_id`,
+   even while only one organization exists. See ADR-003.
+2. **Roles are scoped through membership**, not attached to users globally.
+   A user is not "an Admin" — they are an Admin *of an organization*. See ADR-004.
+
+---
+
+## Stack
+
+| Layer | Choice |
+|---|---|
+| Server | NestJS (TypeScript) |
+| Database | PostgreSQL 16 |
+| ORM / migrations | *undecided — see Open Decisions* |
+| Frontend | React + TypeScript (Vite), separate repo/folder |
+| Mail (dev) | Mailpit |
+| Tests | Jest + Supertest |
+
+---
+
+## Setup
+
+**Prerequisites:** Node.js 20+, Docker, npm
+
+```bash
+git clone <repo-url>
+cd web-app-foundation
+
+cp .env.example .env      # then edit secrets
+
+docker compose up -d      # Postgres + Mailpit
+
+npm install
+npm run migrate           # (not implemented yet)
+npm run seed              # (not implemented yet)
+npm run start:dev         # (not implemented yet)
+```
+
+| Service | URL |
+|---|---|
+| API | http://localhost:3000 |
+| Health check | http://localhost:3000/health |
+| Mailpit inbox | http://localhost:8025 |
+| Postgres | localhost:5432 |
+
+No real SMTP provider is needed in development. All outbound mail is captured by
+Mailpit — open the inbox above to click verification and password-reset links.
+
+---
+
+## Commands
+
+| Command | Does |
+|---|---|
+| `npm run start:dev` | Run API with hot reload |
+| `npm run migrate` | Apply pending migrations |
+| `npm run migrate:new` | Create a new migration |
+| `npm run seed` | Seed roles, permissions, default org |
+| `npm test` | Unit tests |
+| `npm run test:e2e` | Integration tests (needs test DB) |
+| `npm run lint` | Lint + format |
+
+---
+
+## Roadmap
+
+V1 is **done** when this single path works end to end:
+
+> A user registers → verifies their email → lands in their own organization as Owner →
+> creates a second user → assigns them a Viewer role → that user is blocked (403) from a
+> permission-gated endpoint → both actions appear in the audit log.
+
+Build order:
+
+- [ ] **1. Skeleton** — Nest boots, config, DB connection, `/health`, global validation
+  pipe, exception filter, logger, helmet, rate limiting, test harness
+- [ ] **2. Core schema** — organizations, users, memberships, roles, permissions,
+  role_permissions, audit_log
+- [ ] **3. Registration + login + sessions** — registration creates user + org +
+  Owner membership in one transaction
+- [ ] **4. Permission guard** — seed roles, gate one endpoint, prove a Viewer gets 403
+- [ ] **5. Email verification + password reset** — token table + Mailpit
+- [ ] **6. Audit log** — interceptor over existing actions
+- [ ] **7. Profile / account settings / account status**
+
+**Deliberately deferred** (all additive, none block V1):
+background jobs & queues, invitations, file storage, notifications, search,
+admin UI, billing, API docs.
+
+---
+
+## Documentation
+
+- [`docs/decisions.md`](docs/decisions.md) — why the architecture is the way it is.
+  **Read this before changing anything structural.**
