@@ -21,6 +21,20 @@ Core  →  Shared Services  →  Application Features
 - **Shared Services** — email (background jobs deferred, see ADR-005)
 - **Application Features** — not in this repo
 
+```
+web-app-foundation/
+├── server/              NestJS API — all backend code
+├── client/              React SPA (arrives at step 3)
+├── docker/              container init scripts
+├── docs/decisions.md    architecture decision log
+├── docker-compose.yml   Postgres 18 + Mailpit
+└── .env                 shared by Compose and the server
+```
+
+One `.env` at the root, read by both Docker Compose and Nest
+(`envFilePath: '../.env'`). Duplicating it per folder invites drift between
+`POSTGRES_PASSWORD` and `DATABASE_URL`.
+
 Four decisions shape everything else:
 
 1. **Multi-tenant by default.** Every tenant-scoped table carries `organization_id`,
@@ -41,7 +55,7 @@ Four decisions shape everything else:
 | Server | NestJS (TypeScript) |
 | Database | PostgreSQL 18 |
 | ORM / migrations | Drizzle ORM + drizzle-kit |
-| Frontend | React + TypeScript (Vite), separate repo/folder |
+| Frontend | React + TypeScript (Vite), in `client/` |
 | Mail (dev) | Mailpit |
 | Tests | Jest + Supertest |
 
@@ -62,6 +76,7 @@ cp .env.example .env      # then edit secrets
 
 docker compose up -d      # Postgres + Mailpit
 
+cd server
 npm install
 npm run migrate           # (not implemented yet)
 npm run seed              # (not implemented yet)
@@ -81,6 +96,8 @@ Mailpit — open the inbox above to click verification and password-reset links.
 ---
 
 ## Commands
+
+Run from `server/`.
 
 | Command | Does |
 |---|---|
