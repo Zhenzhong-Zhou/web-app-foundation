@@ -11,8 +11,8 @@ export const envSchema = z.object({
         .enum(['development', 'test', 'production'])
         .default('development'),
     PORT: z.coerce.number().int().positive().default(3000),
-    APP_URL: z.string().url(),
-    CLIENT_URL: z.string().url(),
+    APP_URL: z.url(),
+    CLIENT_URL: z.url(),
     
     DATABASE_URL: z.string().min(1),
     DATABASE_URL_TEST: z.string().min(1),
