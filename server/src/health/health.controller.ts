@@ -1,8 +1,8 @@
 import { Controller, Get, Inject, VERSION_NEUTRAL } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
-import { sql } from 'drizzle-orm';
+import { Pool } from 'pg';
 
-import { type Database, DRIZZLE } from '../database/database.module';
+import { PG_POOL } from '../database/database.module';
 
 /**
  * ADR-013: operational endpoints are excluded from API versioning.
@@ -13,7 +13,9 @@ import { type Database, DRIZZLE } from '../database/database.module';
 @SkipThrottle()
 @Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {
-  constructor(@Inject(DRIZZLE) private readonly db: Database) {}
+  // The pool, not TenantDb: a readiness probe has no tenant, and checking the
+  // pool directly is what actually answers "can this instance serve traffic?"
+  constructor(@Inject(PG_POOL) private readonly pool: Pool) {}
 
   /** Liveness: is the process up? Deliberately checks no dependencies. */
   @Get()
@@ -32,7 +34,7 @@ export class HealthController {
    */
   @Get('ready')
   async ready() {
-    await this.db.execute(sql`select 1`);
+    await this.pool.query('select 1');
     return { status: 'ready', database: 'up' };
   }
 }

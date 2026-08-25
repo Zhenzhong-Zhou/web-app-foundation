@@ -44,6 +44,29 @@ export default tseslint.config(
     },
   },
   {
+    files: ['src/core/**/*.ts', 'src/shared/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/database/database.module', '**/database/database.tokens'],
+              importNames: ['UNSAFE_GLOBAL_DB', 'PG_POOL'],
+              message:
+                  'Services must use TenantDb — it applies organization_id (ADR-003/ADR-009). If this query is legitimately global, it belongs in core/auth.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Login must find a user by email before any organization is known.
+    files: ['src/core/auth/**/*.ts'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+  {
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',

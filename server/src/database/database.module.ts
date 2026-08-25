@@ -10,12 +10,13 @@ import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
 import type { Env } from '../config/env';
+import { PG_POOL, UNSAFE_GLOBAL_DB } from './database.tokens';
 import * as schema from './schema';
+import { TenantDb } from './tenant-db.service';
 
-export const PG_POOL = Symbol('PG_POOL');
-export const DRIZZLE = Symbol('DRIZZLE');
+// Re-exported so `from './database.module'` keeps working for both tokens.
+export * from './database.tokens';
 
-/** Inject this type, never the raw Pool. */
 export type Database = NodePgDatabase<typeof schema>;
 
 /**
@@ -23,9 +24,10 @@ export type Database = NodePgDatabase<typeof schema>;
  * created once at boot and shared — creating one per module would exhaust
  * Postgres connections.
  *
- * ADR-009: services must NOT inject DRIZZLE directly once the tenant-scoped
- * query helper lands in step 2. Direct access bypasses the organization_id
- * filter, which is the one bug that leaks data between tenants.
+ * Note what this module exports: `TenantDb` is what services inject.
+ * `UNSAFE_GLOBAL_DB` and `PG_POOL` are exported for the narrow cases that are
+ * legitimately tenant-less (auth, health probes, the ADR-012 retention pass)
+ * and are restricted by lint rule everywhere else.
  */
 @Global()
 @Module({
@@ -48,12 +50,13 @@ export type Database = NodePgDatabase<typeof schema>;
       },
     },
     {
-      provide: DRIZZLE,
+      provide: UNSAFE_GLOBAL_DB,
       inject: [PG_POOL],
       useFactory: (pool: Pool): Database => drizzle(pool, { schema }),
     },
+    TenantDb,
   ],
-  exports: [DRIZZLE, PG_POOL],
+  exports: [TenantDb, UNSAFE_GLOBAL_DB, PG_POOL],
 })
 export class DatabaseModule implements OnApplicationShutdown {
   private readonly logger = new Logger(DatabaseModule.name);
