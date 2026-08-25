@@ -1,4 +1,5 @@
 import { Controller, Get, Inject, VERSION_NEUTRAL } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { sql } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '../database/database.module';
 
@@ -6,6 +7,9 @@ import { DRIZZLE, type Database } from '../database/database.module';
  * ADR-013: operational endpoints are excluded from API versioning.
  * A load balancer should not need to know the API version to run a probe.
  */
+// Orchestrator probes fire constantly; rate limiting them would make
+// a healthy instance look dead.
+@SkipThrottle()
 @Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {
     constructor(@Inject(DRIZZLE) private readonly db: Database) {}

@@ -139,7 +139,7 @@ V1 is **done** when this single path works end to end:
 
 Build order:
 
-- [ ] **1. Skeleton** — Nest boots, config, DB connection, `/health`, global validation
+- [x] **1. Skeleton** — Nest boots, config, DB connection, `/health`, global validation
   pipe, exception filter, logger, helmet, rate limiting, test harness
 - [ ] **2. Core schema** — organizations, users, memberships, roles, permissions,
   role_permissions, sessions, audit_log
