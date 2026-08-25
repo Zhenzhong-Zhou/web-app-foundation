@@ -33,7 +33,25 @@ web-app-foundation/
 
 One `.env` at the root, read by both Docker Compose and Nest
 (`envFilePath: '../.env'`). Duplicating it per folder invites drift between
-`POSTGRES_PASSWORD` and `DATABASE_URL`.
+`POSTGRES_PASSWORD` and `DATABASE_URL`. Note that `start:dev` does **not** watch
+`.env` — restart the server after editing it.
+
+Inside the server, the same Core → Shared → Features layering applies one level down:
+
+```
+server/src/
+├── config/       env schema + validation (zod)
+├── database/     drizzle client, schema, migrations, tenant-scoped query layer
+├── common/       filters, guards, interceptors, decorators — no business logic
+├── core/         auth, users, organizations, authorization, audit
+├── shared/       email
+└── health/       operational endpoints, unversioned (ADR-013)
+```
+
+`core/` holds one folder per module, each with its own `*.module.ts`, controller,
+service, and DTOs. Nothing in `common/` may import from `core/` — that dependency
+runs one way only, and reversing it is how a "shared" folder turns into a second
+copy of the application.
 
 Four decisions shape everything else:
 
@@ -142,3 +160,5 @@ admin UI, billing, API docs.
 
 - [`docs/decisions.md`](docs/decisions.md) — why the architecture is the way it is.
   **Read this before changing anything structural.**
+- [`docs/conventions.md`](docs/conventions.md) — naming and code organisation rules
+  that the linter can't enforce.
