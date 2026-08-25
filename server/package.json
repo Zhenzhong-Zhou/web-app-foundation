@@ -14,6 +14,7 @@
     "start:prod": "node dist/main",
     "lint": "eslint . --fix",
     "migrate": "drizzle-kit migrate",
+    "migrate:test": "MIGRATE_TARGET=test drizzle-kit migrate",
     "migrate:new": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "test": "jest",
