@@ -14,8 +14,8 @@ export const envSchema = z.object({
     APP_URL: z.url(),
     CLIENT_URL: z.url(),
     
-    DATABASE_URL: z.string().min(1),
-    DATABASE_URL_TEST: z.string().min(1),
+    DATABASE_URL: z.url(),
+    DATABASE_URL_TEST: z.url(),
     
     // 32 bytes base64 ≈ 44 chars. Reject anything short enough to brute force.
     SESSION_SECRET: z
