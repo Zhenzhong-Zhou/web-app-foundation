@@ -80,6 +80,37 @@ an arrow class property doesn't live on the prototype.
 
 ---
 
+## Comments
+
+Comment the **why**, never the what. Code already says what it does; it cannot say
+what you rejected, or what breaks if someone changes it back.
+
+```ts
+// useless — restates the line below it
+// set the updated_at column
+updatedAt: timestamp('updated_at')
+
+// useful — records a decision, and the failure it prevents
+// RESTRICT, not CASCADE: deleting a role must not silently strip access
+// from everyone holding it.
+roleId: uuid('role_id').references(() => roles.id, { onDelete: 'restrict' })
+```
+
+- **File header** — only when the file's purpose isn't predictable from its name.
+  `users.ts` exporting a `users` table needs none; the fact that it deliberately has
+  no `organization_id` does.
+- **Function docstring** — only for non-obvious contracts, side effects, or "why does
+  this exist at all". `findByEmail(email)` needs nothing.
+- **Reference the ADR** when a line exists because of a decision: `(ADR-011)` is
+  shorter than re-arguing it and points at the full reasoning.
+- **No section separator banners.** A file that needs `// ===== HELPERS =====` is a
+  file that needs splitting.
+
+A comment that repeats the code is worse than no comment: it doubles the edit cost
+and silently goes stale.
+
+---
+
 ## Tests
 
 - Unit tests sit beside their source: `users.service.spec.ts`.

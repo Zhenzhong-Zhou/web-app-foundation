@@ -1,13 +1,15 @@
+import { randomUUID } from 'node:crypto';
+
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
-import { randomUUID } from 'node:crypto';
-import { validateEnv, type Env } from './config/env';
+
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { type Env, validateEnv } from './config/env';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 @Module({
   imports: [
@@ -20,22 +22,22 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
       validate: validateEnv,
       cache: true,
     }),
-    
+
     LoggerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService<Env, true>) => {
         const nodeEnv = config.get('NODE_ENV', { infer: true });
         const isProd = nodeEnv === 'production';
-        
+
         return {
           pinoHttp: {
             level: nodeEnv === 'test' ? 'silent' : isProd ? 'info' : 'debug',
             // Structured JSON in production so log aggregators can parse it;
             // human-readable locally.
             transport: isProd
-                ? undefined
-                : { target: 'pino-pretty', options: { singleLine: true } },
-            
+              ? undefined
+              : { target: 'pino-pretty', options: { singleLine: true } },
+
             // ADR-011: session tokens live in cookies. Logging them would
             // undo the reason we only store their hash.
             redact: {
@@ -47,21 +49,22 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
               ],
               remove: true,
             },
-            
+
             // Correlates every log line for one request, and hands the client
             // an id to quote in a bug report.
             genReqId: (req, res) => {
-              const id = (req.headers['x-request-id'] as string) ?? randomUUID();
+              const id =
+                (req.headers['x-request-id'] as string) ?? randomUUID();
               res.setHeader('x-request-id', id);
               return id;
             },
-            
+
             // Liveness probes fire every few seconds; logging them buries
             // everything else.
             autoLogging: {
               ignore: (req) => req.url?.startsWith('/health') ?? false,
             },
-            
+
             customLogLevel: (_req, res, err) => {
               if (err || res.statusCode >= 500) return 'error';
               if (res.statusCode >= 400) return 'warn';
@@ -71,7 +74,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
         };
       },
     }),
-    
+
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService<Env, true>) => ({
@@ -84,7 +87,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
         ],
       }),
     }),
-    
+
     DatabaseModule,
     HealthModule,
   ],

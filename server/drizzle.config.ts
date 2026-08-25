@@ -6,14 +6,14 @@ import { defineConfig } from 'drizzle-kit';
 config({ path: '../.env' });
 
 export default defineConfig({
-    schema: './src/database/schema/*.ts',
-    out: './src/database/migrations',
-    dialect: 'postgresql',
-    dbCredentials: {
-        url: process.env.DATABASE_URL!,
-    },
-    // Emit readable SQL that is committed as source code and hand-edited for
-    // RLS policies and partial indexes (ADR-009).
-    verbose: true,
-    strict: true,
+  schema: './src/database/schema/*.ts',
+  out: './src/database/migrations',
+  dialect: 'postgresql',
+  dbCredentials: {
+    url: process.env.DATABASE_URL!,
+  },
+  // Emit readable SQL that is committed as source code and hand-edited for
+  // RLS policies and partial indexes (ADR-009).
+  verbose: true,
+  strict: true,
 });
