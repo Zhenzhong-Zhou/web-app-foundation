@@ -9,6 +9,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { type Env, validateEnv } from './config/env';
 import { AuthModule } from './core/auth/auth.module';
+import { SessionGuard } from './core/auth/session.guard';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 
@@ -98,6 +99,9 @@ import { HealthModule } from './health/health.module';
     // (login, password reset — ADR-011) override with @Throttle().
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    // Order matters: rate limiting runs first, so an unauthenticated flood is
+    // rejected before it costs a session lookup.
+    { provide: APP_GUARD, useClass: SessionGuard },
   ],
 })
 export class AppModule {}

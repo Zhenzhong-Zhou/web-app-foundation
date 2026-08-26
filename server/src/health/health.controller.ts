@@ -2,6 +2,7 @@ import { Controller, Get, Inject, VERSION_NEUTRAL } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Pool } from 'pg';
 
+import { Public } from '../core/auth/public.decorator';
 import { PG_POOL } from '../database/database.module';
 
 /**
@@ -10,6 +11,7 @@ import { PG_POOL } from '../database/database.module';
  */
 // Orchestrator probes fire constantly; rate limiting them would make
 // a healthy instance look dead.
+@Public()
 @SkipThrottle()
 @Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {

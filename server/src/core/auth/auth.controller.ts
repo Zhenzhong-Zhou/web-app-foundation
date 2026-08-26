@@ -21,6 +21,7 @@ import {
   LOGIN_ATTEMPT_WINDOW_MS,
   loginTracker,
 } from './login-throttle';
+import { Public } from './public.decorator';
 import {
   readSessionCookie,
   SESSION_COOKIE_NAME,
@@ -40,6 +41,7 @@ export class AuthController {
    * default. ADR-011's email+IP keying applies to *login*; registration has no
    * account to target, so IP alone is the right key here.
    */
+  @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
@@ -81,6 +83,7 @@ export class AuthController {
    * 200, not 201 — login creates a session row but the response represents an
    * existing user, and clients treat 201 as "a resource was created here".
    */
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @Throttle({
