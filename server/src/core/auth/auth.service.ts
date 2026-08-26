@@ -229,6 +229,16 @@ export class AuthService implements OnModuleInit {
       session,
     };
   }
+
+  /**
+   * Revocation is deletion; there is no separate mechanism (ADR-011). Idempotent
+   * by construction — deleting an already-deleted row affects zero rows and is
+   * not an error, so a double-click logs out once and returns 204 twice.
+   */
+  async logout(sessionId: string): Promise<void> {
+    await this.sessions.revoke(sessionId);
+    this.logger.log(`Logout ${sessionId}`);
+  }
 }
 
 /**

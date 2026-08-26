@@ -13,7 +13,9 @@ import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
 import type { Env } from '../../config/env';
+import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { AuthService, isUniqueViolation } from './auth.service';
+import { CurrentUser } from './current-user.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import {
@@ -22,7 +24,9 @@ import {
   loginTracker,
 } from './login-throttle';
 import { Public } from './public.decorator';
+import type { RequestContext } from './request-context';
 import {
+  clearSessionCookieOptions,
   readSessionCookie,
   SESSION_COOKIE_NAME,
   sessionCookieOptions,
@@ -118,5 +122,37 @@ export class AuthController {
     );
 
     return { user };
+  }
+
+  /**
+   * Not @Public(): logout must know *which* session to delete, and an
+   * unauthenticated caller has none. A public logout that trusts the cookie
+   * value would let anyone revoke a session they merely observed.
+   *
+   * @AllowNoOrganization because signing out is account-scoped — a user with no
+   * membership must still be able to leave.
+   *
+   * 204: nothing to return, and an empty body cannot leak session state.
+   */
+  @Post('logout')
+  @AllowNoOrganization()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logout(
+    @CurrentUser() user: RequestContext,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    // Order matters. Delete the row first: if clearing the cookie succeeded
+    // and the delete then failed, the user would believe they were signed out
+    // while a live token sat in the table (ADR-011). This way a failure leaves
+    // them visibly signed in, which is the safe direction to fail.
+    await this.auth.logout(user.sessionId);
+
+    const isProduction =
+      this.config.get('NODE_ENV', { infer: true }) === 'production';
+
+    res.clearCookie(
+      SESSION_COOKIE_NAME,
+      clearSessionCookieOptions(isProduction),
+    );
   }
 }

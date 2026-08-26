@@ -38,3 +38,26 @@ export function readSessionCookie(req: Request): string | undefined {
   const value = (cookies as Record<string, unknown>)[SESSION_COOKIE_NAME];
   return typeof value === 'string' ? value : undefined;
 }
+
+/**
+ * Options for clearing the cookie.
+ *
+ * Browsers match a Set-Cookie against an existing cookie by name, domain, and
+ * **path** — a mismatch on path writes a *second* cookie instead of removing
+ * the first, and the original stays in the jar. So this must mirror
+ * sessionCookieOptions() exactly, minus expiry.
+ *
+ * Kept as its own function rather than reusing that one with a past date, so
+ * that the two cannot drift: a future change to sameSite or path has to be
+ * made here too, and the mismatch is visible in one file.
+ */
+export function clearSessionCookieOptions(
+  isProduction: boolean,
+): CookieOptions {
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax',
+    path: '/',
+  };
+}

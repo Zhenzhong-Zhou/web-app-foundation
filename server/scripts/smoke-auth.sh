@@ -4,17 +4,30 @@
 set -euo pipefail
 
 BASE="${BASE:-http://localhost:3000/v1}"
-JAR="$(mktemp)"
+
+# One jar per identity the script needs to be. Sharing a single jar lets a
+# failed-login flood or a cleared cookie leak into a later check and make it
+# pass or fail for the wrong reason.
+JAR="$(mktemp)"        # the authenticated session under test
+NAKED="$(mktemp)"      # never authenticated
+FLOODJAR="$(mktemp)"   # rate-limit attempts only
 BODY="$(mktemp)"
-trap 'rm -f "$JAR" "$BODY"' EXIT
+HEADERS="$(mktemp)"
+trap 'rm -f "$JAR" "$NAKED" "$FLOODJAR" "$BODY" "$HEADERS"' EXIT
 
 EMAIL="smoke-$(date +%s)@example.com"
 PASSWORD="correct-horse-battery"
 
 # Body arrives on stdin, so no JSON is ever escaped inside a shell string.
-post() { # post <path>   < body
+post() { # post <path> [jar]   < body
+  local jar="${2:-$JAR}"
   curl -sS -o "$BODY" -w '%{http_code}' -X POST "$BASE$1" \
-    -b "$JAR" -c "$JAR" -H 'Content-Type: application/json' --data-binary @-
+    -b "$jar" -c "$jar" -H 'Content-Type: application/json' --data-binary @-
+}
+
+post_empty() { # post_empty <path> [jar]
+  local jar="${2:-$JAR}"
+  curl -sS -o "$BODY" -w '%{http_code}' -X POST "$BASE$1" -b "$jar" -c "$jar"
 }
 
 check() { # check <expected> <actual> <label>
@@ -35,28 +48,62 @@ credentials() {
   printf '{"email":"%s","password":"%s"}' "$1" "$2"
 }
 
+if ! curl -sS -o /dev/null --max-time 2 "http://localhost:3000/health"; then
+  echo "  server not reachable — is npm run start:dev running?" >&2
+  exit 1
+fi
+
 echo "using $EMAIL"
 
 check 201 "$(registration "$EMAIL" | post /auth/register)" "register"
 check 409 "$(registration "$EMAIL" | post /auth/register)" "register again"
 check 200 "$(credentials "$EMAIL" "$PASSWORD" | post /auth/login)" "login"
 check 200 "$(credentials "$(echo "$EMAIL" | tr 'a-z' 'A-Z')" "$PASSWORD" | post /auth/login)" "login, mixed case"
-check 401 "$(credentials "$EMAIL" "wrong" | post /auth/login)" "login, wrong password"
+check 401 "$(credentials "$EMAIL" "wrong" | post /auth/login "$NAKED")" "login, wrong password"
 
 check 400 "$(printf '{"email":"%s","password":"%s","extra":1}' "$EMAIL" "$PASSWORD" \
-  | post /auth/login)" "login, unknown field"
+  | post /auth/login "$NAKED")" "login, unknown field"
 
-# The two failures must be indistinguishable. Compared by eye because the error
-# body carries a request id that differs per call.
-credentials "$EMAIL" "wrong" | post /auth/login >/dev/null
+# Must be indistinguishable. Printed rather than asserted: the error body
+# carries a request id that differs per call.
+credentials "$EMAIL" "wrong" | post /auth/login "$NAKED" >/dev/null
 WRONG="$(cat "$BODY")"
-credentials "nobody-$(date +%s)@example.com" "wrong" | post /auth/login >/dev/null
+credentials "nobody-$(date +%s)@example.com" "wrong" | post /auth/login "$NAKED" >/dev/null
 MISSING="$(cat "$BODY")"
 printf '\n  wrong password : %s\n  unknown email  : %s\n\n' "$WRONG" "$MISSING"
 
-# Its own email bucket, so the block does not strand the account used above.
+# Its own email bucket and its own jar, so the block cannot strand the account
+# used above or leak cookie state into the logout checks.
 FLOOD="flood-$(date +%s)@example.com"
-for _ in $(seq 1 10); do credentials "$FLOOD" "wrong" | post /auth/login >/dev/null; done
-check 429 "$(credentials "$FLOOD" "wrong" | post /auth/login)" "rate limit"
+for _ in $(seq 1 10); do
+  credentials "$FLOOD" "wrong" | post /auth/login "$FLOODJAR" >/dev/null
+done
+check 429 "$(credentials "$FLOOD" "wrong" | post /auth/login "$FLOODJAR")" "rate limit"
+
+# The first check that a protected route actually rejects — everything above
+# this point is @Public().
+check 401 "$(post_empty /auth/logout "$NAKED")" "logout, no cookie"
+
+check 200 "$(credentials "$EMAIL" "$PASSWORD" | post /auth/login)" "login before logout"
+check 204 "$(post_empty /auth/logout)" "logout"
+
+# Passes whether curl dropped the cleared cookie or kept a dead value: both end
+# in 401, because the row is gone either way.
+check 401 "$(post_empty /auth/logout)" "logout, cookie already revoked"
+
+# The clearing cookie must mirror the one that was set. A mismatched Path
+# writes a *second* cookie instead of removing the first, and the original
+# stays in the browser.
+credentials "$EMAIL" "$PASSWORD" | post /auth/login >/dev/null
+curl -sS -o /dev/null -D "$HEADERS" -X POST "$BASE/auth/logout" -b "$JAR" -c "$JAR"
+CLEARED="$(grep -i '^set-cookie:' "$HEADERS" || true)"
+
+if printf '%s' "$CLEARED" | grep -qi 'path=/' &&
+   printf '%s' "$CLEARED" | grep -qi 'samesite=lax'; then
+  printf '  ok    %-32s Path=/ SameSite=Lax\n' "logout cookie flags"
+else
+  printf '  FAIL  %-32s %s\n' "logout cookie flags" "$CLEARED"
+  exit 1
+fi
 
 echo "  done"
