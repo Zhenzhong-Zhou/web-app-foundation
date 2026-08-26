@@ -22,12 +22,16 @@ PASSWORD="correct-horse-battery"
 post() { # post <path> [jar]   < body
   local jar="${2:-$JAR}"
   curl -sS -o "$BODY" -w '%{http_code}' -X POST "$BASE$1" \
-    -b "$jar" -c "$jar" -H 'Content-Type: application/json' --data-binary @-
+    -b "$jar" -c "$jar" \
+    -H 'Content-Type: application/json' \
+    -H 'X-Requested-With: XMLHttpRequest' \
+    --data-binary @-
 }
 
 post_empty() { # post_empty <path> [jar]
   local jar="${2:-$JAR}"
-  curl -sS -o "$BODY" -w '%{http_code}' -X POST "$BASE$1" -b "$jar" -c "$jar"
+  curl -sS -o "$BODY" -w '%{http_code}' -X POST "$BASE$1" \
+    -b "$jar" -c "$jar" -H 'X-Requested-With: XMLHttpRequest'
 }
 
 check() { # check <expected> <actual> <label>
@@ -94,16 +98,30 @@ check 401 "$(post_empty /auth/logout)" "logout, cookie already revoked"
 # The clearing cookie must mirror the one that was set. A mismatched Path
 # writes a *second* cookie instead of removing the first, and the original
 # stays in the browser.
-credentials "$EMAIL" "$PASSWORD" | post /auth/login >/dev/null
-curl -sS -o /dev/null -D "$HEADERS" -X POST "$BASE/auth/logout" -b "$JAR" -c "$JAR"
+#
+# Its own account: $EMAIL has been through five logins by now and the limit is
+# ten per fifteen minutes on email + IP.
+FLAGS_EMAIL="flags-$(date +%s)@example.com"
+check 201 "$(registration "$FLAGS_EMAIL" | post /auth/register)" "register for flags check"
+check 200 "$(credentials "$FLAGS_EMAIL" "$PASSWORD" | post /auth/login)" "login for flags check"
+
+curl -sS -o /dev/null -D "$HEADERS" -X POST "$BASE/auth/logout" \
+  -b "$JAR" -c "$JAR" -H 'X-Requested-With: XMLHttpRequest'
+
 CLEARED="$(grep -i '^set-cookie:' "$HEADERS" || true)"
 
 if printf '%s' "$CLEARED" | grep -qi 'path=/' &&
    printf '%s' "$CLEARED" | grep -qi 'samesite=lax'; then
   printf '  ok    %-32s Path=/ SameSite=Lax\n' "logout cookie flags"
 else
-  printf '  FAIL  %-32s %s\n' "logout cookie flags" "$CLEARED"
+  printf '  FAIL  %-32s %s\n' "logout cookie flags" "${CLEARED:-<no set-cookie>}"
   exit 1
 fi
+
+# A POST without the header is what a cross-site form looks like. Needs a live
+# session, or SessionGuard rejects it as 401 before CsrfGuard ever runs.
+check 200 "$(credentials "$FLAGS_EMAIL" "$PASSWORD" | post /auth/login)" "login for csrf check"
+check 403 "$(curl -sS -o "$BODY" -w '%{http_code}' -X POST "$BASE/auth/logout" \
+  -b "$JAR" -c "$JAR")" "logout, no csrf header"
 
 echo "  done"

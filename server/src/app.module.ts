@@ -7,6 +7,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { CsrfGuard } from './common/guards/csrf.guard';
 import { type Env, validateEnv } from './config/env';
 import { AuthModule } from './core/auth/auth.module';
 import { SessionGuard } from './core/auth/session.guard';
@@ -102,6 +103,9 @@ import { HealthModule } from './health/health.module';
     // Order matters: rate limiting runs first, so an unauthenticated flood is
     // rejected before it costs a session lookup.
     { provide: APP_GUARD, useClass: SessionGuard },
+    // After SessionGuard: an unauthenticated request should read as 401, not
+    // as a CSRF failure. Guards run in registration order.
+    { provide: APP_GUARD, useClass: CsrfGuard },
   ],
 })
 export class AppModule {}
