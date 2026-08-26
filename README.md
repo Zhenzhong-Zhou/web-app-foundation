@@ -122,7 +122,7 @@ Run from `server/`.
 | `npm run start:dev` | Run API with hot reload |
 | `npm run migrate` | Apply pending migrations |
 | `npm run migrate:new` | Create a new migration |
-| `npm run seed` | Seed roles, permissions, default org |
+| `npm run seed` | Seed the default org, roles, and permissions. Safe to re-run. |
 | `npm test` | Unit tests |
 | `npm run test:e2e` | Integration tests (needs test DB) |
 | `npm run lint` | Lint + format |
@@ -141,7 +141,7 @@ Build order:
 
 - [x] **1. Skeleton** — Nest boots, config, DB connection, `/health`, global validation
   pipe, exception filter, logger, helmet, rate limiting, test harness
-- [ ] **2. Core schema** — organizations, users, memberships, roles, permissions,
+- [x] **2. Core schema** — organizations, users, memberships, roles, permissions,
   role_permissions, sessions, audit_log
 - [ ] **3. Registration + login + sessions** — registration creates user + org +
   Owner membership in one transaction

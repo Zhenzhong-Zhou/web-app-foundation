@@ -19,6 +19,8 @@ export * from './database.tokens';
 
 export type Database = NodePgDatabase<typeof schema>;
 
+export type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+
 /**
  * Global so feature modules don't each import DatabaseModule. The pool is
  * created once at boot and shared — creating one per module would exhaust
