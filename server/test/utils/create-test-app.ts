@@ -5,6 +5,12 @@ import { Test, type TestingModuleBuilder } from '@nestjs/testing';
 
 import { AppModule } from '../../src/app.module';
 import { configureApp } from '../../src/bootstrap';
+import { PERMISSIONS } from '../../src/core/authorization/permissions';
+import {
+  type Database,
+  UNSAFE_GLOBAL_DB,
+} from '../../src/database/database.module';
+import { permissions } from '../../src/database/schema';
 
 /**
  * Boots the real application for an integration test.
@@ -38,4 +44,23 @@ export async function createTestApp(
 /** getHttpServer() is typed `any`; cast in one place, not in every test. */
 export function httpServer(app: INestApplication): Server {
   return app.getHttpServer() as Server;
+}
+
+/**
+ * Inserts the permission catalogue if it is absent.
+ *
+ * Permissions ship with the code rather than being tenant data, and
+ * provisionOrganization() throws when a key is missing — so a fresh
+ * foundation_test cannot register anyone until these exist. resetDatabase()
+ * excludes the table for the same reason.
+ *
+ * Idempotent, so it is safe to call from every suite's beforeAll.
+ */
+export async function seedPermissions(app: INestApplication): Promise<void> {
+  const db = app.get<Database>(UNSAFE_GLOBAL_DB);
+
+  await db
+    .insert(permissions)
+    .values(Object.values(PERMISSIONS).map((key) => ({ key })))
+    .onConflictDoNothing();
 }

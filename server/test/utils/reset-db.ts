@@ -22,10 +22,15 @@ export async function resetDatabase(app: INestApplication): Promise<void> {
 
   const pool = app.get<Pool>(PG_POOL);
 
+  // permissions is excluded deliberately. It is a fixed catalogue that ships
+  // with the code, not tenant data — provisionOrganization() throws if a
+  // permission key is missing, so truncating it breaks every registration.
+  // Same category as the drizzle migrations table.
   const { rows } = await pool.query<{ tablename: string }>(
     `SELECT tablename FROM pg_tables
       WHERE schemaname = 'public'
-        AND tablename NOT LIKE '\\_\\_drizzle%'`,
+        AND tablename NOT LIKE '\\_\\_drizzle%'
+        AND tablename <> 'permissions'`,
   );
 
   if (rows.length === 0) return;

@@ -148,7 +148,7 @@ Build order:
   pipe, exception filter, logger, helmet, rate limiting, test harness
 - [x] **2. Core schema** — organizations, users, memberships, roles, permissions,
   role_permissions, sessions, audit_log
-- [ ] **3. Registration + login + sessions** — registration creates user + org +
+- [x] **3. Registration + login + sessions** — registration creates user + org +
   Owner membership in one transaction
 - [ ] **4. Permission guard** — seed roles, gate one endpoint, prove a Viewer gets 403
 - [ ] **5. Email verification + password reset** — token table + Mailpit

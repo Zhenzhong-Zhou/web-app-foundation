@@ -47,7 +47,11 @@ export class CsrfGuard implements CanActivate {
       return true;
     }
 
-    if (req.headers[CSRF_HEADER] === undefined) {
+    // An empty value is not a header. A client sending `X-Requested-With:`
+    // with nothing after it has proved nothing about its origin.
+    const header = req.headers[CSRF_HEADER];
+
+    if (header === undefined || header === '') {
       throw new ForbiddenException(
         `Missing ${CSRF_HEADER} header on a state-changing request`,
       );

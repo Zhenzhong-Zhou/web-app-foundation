@@ -258,6 +258,9 @@ specifically and record it as a new ADR.
 
 ## ADR-011 — Opaque session cookies, not JWT
 
+> **Amended by [ADR-015](#adr-015--multiple-concurrent-sessions-per-user-amends-adr-011).**
+> One binding rule — delete any prior session on login — is superseded. Everything else stands.
+
 **Context.** The choice was between a stateless JWT and a server-side session referenced
 by a cookie.
 
@@ -302,7 +305,7 @@ Cookie flags: `httpOnly: true`, `secure: true` (relaxed only on localhost http),
 
 | Rule | Failure it prevents |
 |---|---|
-| Issue a new session row on login, delete any prior one | Session fixation |
+| ~~Issue a new session row on login, delete any prior one~~ — **superseded by ADR-015**. Login revokes only the session presented in the request; other devices are untouched. | Session fixation — misattributed, see ADR-015 |
 | Logout **deletes the row**, then clears the cookie | Captured token stays valid forever |
 | Password change/reset deletes all *other* sessions for that user | Account recovery leaves the attacker signed in |
 | Two expiries: absolute `expires_at` cap **and** idle timeout on `last_seen_at` | Sliding-only expiry lets a stolen token live indefinitely |
@@ -483,6 +486,106 @@ and maintaining unversioned legacy routes indefinitely.
 
 ---
 
+## ADR-014 — CSRF: a custom header, not a token
+
+**Context.** `sameSite: 'lax'` (ADR-011) already blocks the common case: a cross-site
+`<form method="post">`, an `<img>`, a `fetch` from another origin — none of these send the
+session cookie. What it does not cover is narrower but real. A compromised subdomain is
+*same*-site, so `blog.example.com` can forge requests to `app.example.com`. Browsers
+predating 2020, and some Safari versions, ignore the attribute entirely. And the deferred
+bearer transport in ADR-011 would mean relaxing to `sameSite: 'none'`, removing the
+protection outright.
+
+Three mechanisms were considered. A **synchroniser token** — server-generated, stored per
+session, embedded in every form — is the textbook answer and the heaviest: a token to
+generate, store, rotate, and hand to a SPA that renders no server-side forms. A
+**double-submit cookie** avoids server storage by comparing a cookie against a request
+body field, but a subdomain attacker who can set cookies can set both sides of the
+comparison, which is precisely the gap this is meant to close. A **custom header** relies
+on a browser rule rather than on secrecy: a cross-site form cannot set headers at all, and
+a cross-origin `fetch` that tries triggers a CORS preflight this server never answers.
+
+**Decision.** Require `X-Requested-With` on every request whose method is not GET, HEAD,
+or OPTIONS. The header's **presence** is the proof; its value is never read.
+
+An empty value is rejected along with a missing one — a client sending the header with
+nothing after it has demonstrated nothing.
+
+`@SkipCsrf()` exempts routes reached by something that is not our browser client:
+webhooks, and later a bearer-token transport. Never a cookie-authenticated route.
+
+The guard is registered after `SessionGuard`, so an unauthenticated request answers 401
+rather than 403. A CSRF failure on a request that had no session would be a misleading
+diagnosis.
+
+**Consequence.** Nothing to generate, store, rotate, or expire — no token table, no
+per-session state, no failure mode where a valid user is rejected because their token
+went stale. The SPA sets one axios default and never thinks about it again. Tests need the
+header on every non-GET, which is why `authedAgent()` sets it once rather than each suite
+repeating it.
+
+**The assumption this rests on, and how it breaks.** The protection is a *consequence of
+CORS*, not of the header itself. Enabling permissive CORS —
+`cors({ origin: true, credentials: true })` — allows the preflight, at which point any
+origin may send the header and this defence is gone silently, with every test still
+passing. If cross-origin access is ever genuinely required, the allowed origins must be an
+explicit list, and this ADR must be revisited rather than worked around. ADR-011's
+insistence that development go through the Vite proxy rather than calling
+`http://localhost:3000` directly exists partly to keep this assumption true.
+
+Safe methods are exempt on the understanding that they do not mutate. A GET endpoint with
+side effects breaks that assumption and is a defect for several reasons, of which this is
+only one.
+
+---
+
+## ADR-015 — Multiple concurrent sessions per user (amends ADR-011)
+
+**Context.** ADR-011 states two rules that cannot both hold. Its binding-rules table
+requires issuing a new session row on login and **deleting any prior one**, citing session
+fixation. Its own context section requires a "your active sessions" screen with
+per-device revocation — which is only meaningful if a user can hold more than one session
+at a time.
+
+Implementing login forced the contradiction into the open.
+
+The fixation citation is also misattributed. Session fixation is an attack in which the
+attacker plants a known token value that survives authentication. It is prevented by
+**never adopting a client-supplied token**: `SessionService.create()` generates 32 fresh
+CSPRNG bytes on every login and has no code path that accepts an incoming value. Deleting
+other sessions does not contribute to that defence. It is a separate and stricter policy —
+single-session — that was recorded as though it were the fixation fix.
+
+**Decision.** Multiple concurrent sessions per user are normal and supported.
+
+Login revokes exactly one row: the session presented in the request, if any. That row's
+cookie is about to be overwritten by the response, so without the delete it would remain
+live in the table with nothing able to reach it — reachable only by whoever captured the
+token. Sessions belonging to other devices are untouched.
+
+ADR-011's rule "issue a new session row on login, delete any prior one" is **superseded**
+by this entry.
+
+**Consequence.** Signing in on a phone does not sign out a laptop, which is what users
+expect and what the active-sessions screen requires. `sessions.user_id` is deliberately
+non-unique.
+
+Every "sign out everywhere" operation must now be explicit, because it is no longer a side
+effect of logging in. `revokeAllForUser(userId, exceptSessionId)` is that operation, and
+password change, password reset, and admin-disables-user must all call it — ADR-011's rule
+that password change deletes all *other* sessions is unaffected by this amendment and
+becomes more important under it.
+
+The remaining cost is unbounded session growth: a user who logs in from many devices and
+never signs out accumulates rows until they expire. Lazy sweeping on login (ADR-005)
+bounds it in practice. If it ever needs a hard cap, the fix is to evict the oldest session
+past a limit — additive, and it needs no schema change.
+
+Single-session remains available as a per-deployment policy if a future application
+requires it. It would be a change to login, not to the schema.
+
+---
+
 # Open decisions
 
 None currently open. New questions land here before they are promoted to an ADR.
@@ -500,3 +603,5 @@ None currently open. New questions land here before they are promoted to an ADR.
 | Account deletion vs. audit retention | Anonymize user, retain audit rows | ADR-012 |
 | Data ownership on user departure | Org owns data, user attributed | ADR-012 |
 | API versioning | URL prefix `/v1/`, global, from first endpoint | ADR-013 |
+| CSRF defence | Custom header, no token | ADR-014 |
+| Concurrent sessions per user | Multiple; login revokes only the presented session | ADR-015 |
