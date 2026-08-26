@@ -24,7 +24,10 @@ export const envSchema = z.object({
       32,
       'must be at least 32 characters — generate with `openssl rand -base64 32`',
     ),
-  SESSION_MAX_AGE_MS: z.coerce.number().int().positive().default(604_800_000),
+  // Absolute cap: a stolen token cannot be kept alive indefinitely by use.
+  SESSION_MAX_AGE_MS: z.coerce.number().int().positive().default(2_592_000_000), // 30d
+  // Idle timeout: an abandoned session dies even within the absolute window.
+  SESSION_IDLE_MS: z.coerce.number().int().positive().default(604_800_000), // 7d
 
   MAIL_HOST: z.string().default('localhost'),
   MAIL_PORT: z.coerce.number().int().positive().default(1025),
