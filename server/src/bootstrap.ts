@@ -3,6 +3,7 @@ import {
   ValidationPipe,
   VersioningType,
 } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
 import type { Express } from 'express';
 import helmet from 'helmet';
 
@@ -19,6 +20,8 @@ export function configureApp(app: INestApplication): INestApplication {
   (app.getHttpAdapter().getInstance() as Express).set('trust proxy', 1);
 
   app.use(helmet());
+
+  app.use(cookieParser());
 
   // ADR-013: every API route is /v1/... . /health opts out via VERSION_NEUTRAL.
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });

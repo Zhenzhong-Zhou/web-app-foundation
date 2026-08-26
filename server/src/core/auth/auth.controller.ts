@@ -14,8 +14,18 @@ import type { Request, Response } from 'express';
 
 import type { Env } from '../../config/env';
 import { AuthService, isUniqueViolation } from './auth.service';
+import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { SESSION_COOKIE_NAME, sessionCookieOptions } from './session-cookie';
+import {
+  LOGIN_ATTEMPT_LIMIT,
+  LOGIN_ATTEMPT_WINDOW_MS,
+  loginTracker,
+} from './login-throttle';
+import {
+  readSessionCookie,
+  SESSION_COOKIE_NAME,
+  sessionCookieOptions,
+} from './session-cookie';
 
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
@@ -58,12 +68,52 @@ export class AuthController {
       // The session token is returned in the cookie only, never in the body:
       // a token in a JSON response ends up in logs, browser history, and
       // client-side storage, which is what httpOnly exists to prevent.
-      return user;
+      return { user };
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException('That email address is already registered');
       }
       throw error;
     }
+  }
+
+  /**
+   * 200, not 201 — login creates a session row but the response represents an
+   * existing user, and clients treat 201 as "a resource was created here".
+   */
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({
+    default: {
+      limit: LOGIN_ATTEMPT_LIMIT,
+      ttl: LOGIN_ATTEMPT_WINDOW_MS,
+      blockDuration: LOGIN_ATTEMPT_WINDOW_MS,
+      // Replaces the global IP-only limit on this route rather than stacking
+      // with it — @Throttle overrides the named 'default' throttler here, so
+      // there is no second IP-keyed counter to lock out a NAT (ADR-011).
+      getTracker: loginTracker,
+    },
+  })
+  async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user, session } = await this.auth.login(
+      dto,
+      { ip: req.ip, userAgent: req.headers['user-agent'] },
+      readSessionCookie(req),
+    );
+
+    const isProduction =
+      this.config.get('NODE_ENV', { infer: true }) === 'production';
+
+    res.cookie(
+      SESSION_COOKIE_NAME,
+      session.token,
+      sessionCookieOptions(session.expiresAt, isProduction),
+    );
+
+    return { user };
   }
 }

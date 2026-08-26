@@ -1,4 +1,5 @@
 import type { CookieOptions } from 'express';
+import type { Request } from 'express';
 
 export const SESSION_COOKIE_NAME = 'sid';
 
@@ -24,4 +25,16 @@ export function sessionCookieOptions(
     path: '/',
     expires: expiresAt,
   };
+}
+
+/**
+ * Narrowed rather than read straight off `req.cookies`, which cookie-parser
+ * types as `any`. The session guard reads it the same way next step.
+ */
+export function readSessionCookie(req: Request): string | undefined {
+  const cookies: unknown = req.cookies;
+  if (typeof cookies !== 'object' || cookies === null) return undefined;
+
+  const value = (cookies as Record<string, unknown>)[SESSION_COOKIE_NAME];
+  return typeof value === 'string' ? value : undefined;
 }

@@ -1,25 +1,43 @@
-import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { randomBytes } from 'node:crypto';
+
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  type OnModuleInit,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { asc, eq, sql } from 'drizzle-orm';
 
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { memberships, users } from '../../database/schema';
 import { provisionOrganization } from '../organizations/provision-organization';
 import { uniqueSlug } from '../organizations/slug';
+import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
 import { PasswordService } from './password.service';
 import { type NewSession, SessionService } from './session.service';
 
-export interface RegisteredUser {
+export interface AuthenticatedUser {
   id: string;
   email: string;
   name: string;
   emailVerified: boolean;
-  organizationId: string;
+  /** Null when a user belongs to no organization — see login(). */
+  organizationId: string | null;
 }
 
 /** Postgres unique_violation. */
 const PG_UNIQUE_VIOLATION = '23505';
+
+/**
+ * One message for every failure. "No such user" and "wrong password" must be
+ * indistinguishable, or the endpoint answers "is this address registered?"
+ * for anyone who asks.
+ */
+const INVALID_CREDENTIALS = 'Invalid email or password';
 
 /**
  * Registration is the only onboarding path in V1 (ADR-006).
@@ -29,8 +47,9 @@ const PG_UNIQUE_VIOLATION = '23505';
  * exemption exists for.
  */
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name);
+  private timingDecoyHash!: string;
 
   constructor(
     @Inject(UNSAFE_GLOBAL_DB) private readonly db: Database,
@@ -38,10 +57,17 @@ export class AuthService {
     private readonly sessions: SessionService,
   ) {}
 
+  // Hashed once at boot against a value nobody holds. See login().
+  async onModuleInit(): Promise<void> {
+    this.timingDecoyHash = await this.passwords.hash(
+      randomBytes(32).toString('base64url'),
+    );
+  }
+
   async register(
     input: RegisterDto,
     meta: { ip?: string; userAgent?: string } = {},
-  ): Promise<{ user: RegisteredUser; session: NewSession }> {
+  ): Promise<{ user: AuthenticatedUser; session: NewSession }> {
     // Hashed before the transaction opens. argon2 takes ~100ms by design, and
     // holding a transaction open across it would keep locks for the duration
     // under concurrency for no reason.
@@ -105,6 +131,101 @@ export class AuthService {
 
     return {
       user: { ...user, emailVerified: false },
+      session,
+    };
+  }
+
+  async login(
+    input: LoginDto,
+    meta: { ip?: string; userAgent?: string } = {},
+    previousToken?: string,
+  ): Promise<{ user: AuthenticatedUser; session: NewSession }> {
+    const [row] = await this.db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        passwordHash: users.passwordHash,
+        emailVerifiedAt: users.emailVerifiedAt,
+        deletedAt: users.deletedAt,
+      })
+      .from(users)
+      .where(eq(sql`lower(${users.email})`, input.email));
+
+    // Verified against a throwaway hash when there is no account, so a miss
+    // costs the same ~100ms as a wrong password. Returning early on a miss
+    // answers in ~1ms and makes this a timing oracle for which addresses are
+    // registered — an identical error message alone does not close that.
+    //
+    // password_hash is nullable (anonymised rows today, SSO-only users later),
+    // so the fallback covers that case too.
+    const passwordMatches = await this.passwords.verify(
+      row?.passwordHash ?? this.timingDecoyHash,
+      input.password,
+    );
+
+    if (!row || !passwordMatches || row.deletedAt !== null) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    }
+
+    // Login is the only moment the plaintext exists, so it is the only chance
+    // to re-hash under stronger parameters. Swallowed on failure: an upgrade
+    // that cannot be written must not fail an otherwise valid login.
+    if (row.passwordHash && this.passwords.needsRehash(row.passwordHash)) {
+      try {
+        const upgraded = await this.passwords.hash(input.password);
+        await this.db
+          .update(users)
+          .set({ passwordHash: upgraded })
+          .where(eq(users.id, row.id));
+        this.logger.log(`Upgraded password hash for ${row.id}`);
+      } catch (error) {
+        this.logger.warn(
+          `Password rehash failed for ${row.id}: ${String(error)}`,
+        );
+      }
+    }
+
+    // ADR-004: identity alone is not enough context. Oldest membership wins,
+    // ordered by id because UUIDv7 sorts by creation time (ADR-010) — that is
+    // the organization the user registered with.
+    const [membership] = await this.db
+      .select({ organizationId: memberships.organizationId })
+      .from(memberships)
+      .where(eq(memberships.userId, row.id))
+      .orderBy(asc(memberships.id))
+      .limit(1);
+
+    // Reachable: a user removed from their last organization can still sign in
+    // and be told they belong to none. The guard must treat a null current_org
+    // as "no org-scoped access", not as an error.
+    const currentOrgId = membership?.organizationId ?? null;
+
+    // After the password check, never before — otherwise anyone holding the
+    // cookie signs its owner out by posting a wrong password.
+    //
+    // res.cookie() is about to overwrite the browser's value, so without this
+    // the old row stays live in the table with no way for its owner to reach
+    // it. Other devices are untouched: multi-session is deliberate (ADR-011's
+    // "active sessions" screen). Fixation is prevented by never adopting a
+    // client-supplied token, not by deleting other sessions.
+    if (previousToken) {
+      const previous = await this.sessions.validate(previousToken);
+      if (previous) await this.sessions.revoke(previous.sessionId);
+    }
+
+    const session = await this.sessions.create(row.id, currentOrgId, meta);
+
+    this.logger.log(`Login ${row.id} org=${currentOrgId ?? 'none'}`);
+
+    return {
+      user: {
+        id: row.id,
+        email: row.email,
+        name: row.name,
+        emailVerified: row.emailVerifiedAt !== null,
+        organizationId: currentOrgId,
+      },
       session,
     };
   }
