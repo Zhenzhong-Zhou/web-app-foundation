@@ -74,9 +74,36 @@ an arrow class property doesn't live on the prototype.
 - One folder per module under `core/`, each with its own `*.module.ts`.
 - **`common/` must never import from `core/`.** The dependency runs one way. Reversing
   it is how a "shared" folder becomes a second copy of the application.
-- **Services must never import `db` directly** (ADR-009). All queries go through the
-  tenant-scoped helper that applies `organization_id`. Direct `db` access in a service
-  is a review-blocking defect, not a shortcut.
+- **Services must never import `db` directly** (ADR-009). All queries go through
+  `TenantDb`, which applies `organization_id`. `UNSAFE_GLOBAL_DB` is restricted to
+  `core/auth/` by lint rule — direct use elsewhere is a review-blocking defect.
+
+### What a complete module looks like
+
+```
+core/auth/
+├── dto/
+│   ├── login.dto.ts          request shapes, validated by class-validator
+│   └── register.dto.ts
+├── auth.controller.ts        HTTP only — parse, delegate, respond
+├── auth.module.ts            wiring; `exports` declares what leaves the module
+├── auth.service.ts           the actual work
+├── session.service.ts        a second service is fine when the concern differs
+├── session-cookie.ts         plain constants/functions take no dot suffix
+└── password.service.spec.ts  unit test, beside its source
+```
+
+DTOs live in `dto/` **inside** the module that uses them, never in a global folder.
+A DTO is part of one module's contract; a shared `dto/` directory becomes a place
+where unrelated modules quietly start depending on each other's shapes.
+
+**Controllers parse and respond; services decide.** A controller containing an `if`
+about business rules is a service method that hasn't been written yet — and it is
+untestable without booting HTTP.
+
+Files that export plain functions or constants (`slug.ts`, `permissions.ts`,
+`session-cookie.ts`) take no dot suffix. The suffix marks a Nest type, so a file
+named `*.service.ts` should be an `@Injectable()` class and nothing else.
 
 ---
 

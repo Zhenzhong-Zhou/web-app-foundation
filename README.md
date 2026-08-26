@@ -41,12 +41,17 @@ Inside the server, the same Core → Shared → Features layering applies one le
 ```
 server/src/
 ├── config/       env schema + validation (zod)
-├── database/     drizzle client, schema, migrations, tenant-scoped query layer
+├── database/     drizzle client, schema, migrations, TenantDb, seed
 ├── common/       filters, guards, interceptors, decorators — no business logic
-├── core/         auth, users, organizations, authorization, audit
-├── shared/       email
+├── core/         auth, authorization, organizations (users and audit to come)
+├── shared/       email (step 5)
 └── health/       operational endpoints, unversioned (ADR-013)
 ```
+
+Every query in `core/` goes through `TenantDb`, which applies `organization_id`
+automatically (ADR-003). The unscoped handle is exported as `UNSAFE_GLOBAL_DB`
+and restricted by lint rule to `core/auth/`, where a user must be found by email
+before any organization is known.
 
 `core/` holds one folder per module, each with its own `*.module.ts`, controller,
 service, and DTOs. Nothing in `common/` may import from `core/` — that dependency

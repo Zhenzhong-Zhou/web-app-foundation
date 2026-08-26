@@ -8,6 +8,7 @@ import { LoggerModule } from 'nestjs-pino';
 
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { type Env, validateEnv } from './config/env';
+import { AuthModule } from './core/auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 
@@ -89,6 +90,7 @@ import { HealthModule } from './health/health.module';
     }),
 
     DatabaseModule,
+    AuthModule,
     HealthModule,
   ],
   providers: [
