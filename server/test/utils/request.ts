@@ -2,6 +2,8 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type TestAgent from 'supertest/lib/agent';
 
+import { httpServer } from './create-test-app';
+
 /**
  * A supertest agent that carries the CSRF header on every request.
  *
@@ -13,7 +15,7 @@ import type TestAgent from 'supertest/lib/agent';
  * "log in, then call a protected route" work the way a browser does.
  */
 export function authedAgent(app: INestApplication): TestAgent {
-  const agent = request.agent(app.getHttpServer());
+  const agent = request.agent(httpServer(app));
   agent.set('X-Requested-With', 'XMLHttpRequest');
   return agent;
 }

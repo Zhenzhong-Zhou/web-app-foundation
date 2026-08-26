@@ -11,6 +11,7 @@ import { CsrfGuard } from './common/guards/csrf.guard';
 import { type Env, validateEnv } from './config/env';
 import { AuthModule } from './core/auth/auth.module';
 import { SessionGuard } from './core/auth/session.guard';
+import { PermissionGuard } from './core/authorization/permission.guard';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 
@@ -106,6 +107,10 @@ import { HealthModule } from './health/health.module';
     // After SessionGuard: an unauthenticated request should read as 401, not
     // as a CSRF failure. Guards run in registration order.
     { provide: APP_GUARD, useClass: CsrfGuard },
+    // Order is deliberate: throttle before authenticating, authenticate before
+    // authorizing, so a flood is cheap to reject and an anonymous request
+    // reads as 401 rather than 403.
+    { provide: APP_GUARD, useClass: PermissionGuard },
   ],
 })
 export class AppModule {}

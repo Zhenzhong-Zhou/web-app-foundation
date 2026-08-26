@@ -62,8 +62,11 @@ export default tseslint.config(
     },
   },
   {
-    // Login must find a user by email before any organization is known.
-    files: ['src/core/auth/**/*.ts'],
+    // UNSAFE_GLOBAL_DB is allowed in exactly two places, both of which run
+    // before or outside tenant scope. core/auth resolves a user by email before
+    // any organization is known. core/authorization joins the permission
+    // catalogue, which has no organization_id by design.
+    files: ['src/core/auth/**/*.ts', 'src/core/authorization/**/*.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
   {
