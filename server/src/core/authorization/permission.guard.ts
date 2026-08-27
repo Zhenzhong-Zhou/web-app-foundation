@@ -2,18 +2,14 @@ import {
   type CanActivate,
   type ExecutionContext,
   ForbiddenException,
-  Inject,
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { and, eq, inArray } from 'drizzle-orm';
 import type { Request } from 'express';
 
-import type { Database } from '../../database/database.module';
-import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
-import { permissions, rolePermissions } from '../../database/schema';
 import { getRequestContext } from '../auth/request-context';
 import type { Permission } from './permissions';
+import { PermissionsService } from './permissions.service';
 import { REQUIRED_PERMISSIONS } from './require-permissions.decorator';
 
 /**
@@ -43,7 +39,7 @@ import { REQUIRED_PERMISSIONS } from './require-permissions.decorator';
 export class PermissionGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    @Inject(UNSAFE_GLOBAL_DB) private readonly db: Database,
+    private readonly permissions: PermissionsService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -67,25 +63,15 @@ export class PermissionGuard implements CanActivate {
       throw new ForbiddenException('No role in the current organization');
     }
 
-    const granted = await this.db
-      .select({ key: permissions.key })
-      .from(rolePermissions)
-      .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-      .where(
-        and(
-          eq(rolePermissions.roleId, requestContext.roleId),
-          inArray(permissions.key, required),
-        ),
-      );
+    const held = new Set(
+      await this.permissions.listForRole(requestContext.roleId),
+    );
+    const missing = required.filter((key) => !held.has(key));
 
-    if (granted.length !== required.length) {
-      // Names the missing permission. This is an authorization failure for a
-      // user who is already authenticated, so telling them which grant they
-      // lack is useful rather than a disclosure — they can ask an admin for it
-      // by name instead of filing "it says 403".
-      const held = new Set(granted.map((row) => row.key));
-      const missing = required.filter((key) => !held.has(key));
-
+    if (missing.length > 0) {
+      // Names the missing permission. The caller is already authenticated, so
+      // telling them which grant they lack is useful rather than a disclosure —
+      // they can ask an admin for it by name instead of filing "it says 403".
       throw new ForbiddenException(`Missing permission: ${missing.join(', ')}`);
     }
 

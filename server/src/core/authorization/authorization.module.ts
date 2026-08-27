@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { PermissionGuard } from './permission.guard';
+import { PermissionsService } from './permissions.service';
 
 /**
  * The guard is registered globally in AppModule rather than exported here, but
@@ -9,7 +10,7 @@ import { PermissionGuard } from './permission.guard';
  * answers "may they".
  */
 @Module({
-  providers: [PermissionGuard],
-  exports: [PermissionGuard],
+  providers: [PermissionGuard, PermissionsService],
+  exports: [PermissionGuard, PermissionsService],
 })
 export class AuthorizationModule {}

@@ -630,7 +630,20 @@ service performing the assignment.
 
 # Open decisions
 
-None currently open. New questions land here before they are promoted to an ADR.
+Questions land here before they are promoted to an ADR. None of these block V1;
+they exist so the reasoning is not rediscovered from scratch.
+
+- **Row-scoped permissions.** ADR-004 handles global rules but not "this member
+  sees only rows related to them" (a manufacturer viewing only their own
+  inventory). Extend rather than replace: likely a scope on the membership,
+  applied in one place the way `organization_id` is. Not needed until an
+  application requires it.
+- **External parties: members or separate organizations?** Suppliers and
+  carriers as low-privilege members of the operating organization is simpler;
+  separate organizations with explicit sharing fails safer. Depends on the
+  application.
+- **Customers: `users` or their own table?** Order placement needs identity but
+  not necessarily an account. Downstream of V1.
 
 ---
 

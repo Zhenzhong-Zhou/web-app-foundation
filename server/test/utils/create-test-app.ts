@@ -2,6 +2,7 @@ import type { Server } from 'node:http';
 
 import type { INestApplication } from '@nestjs/common';
 import { Test, type TestingModuleBuilder } from '@nestjs/testing';
+import type { ThrottlerStorage } from '@nestjs/throttler';
 
 import { AppModule } from '../../src/app.module';
 import { configureApp } from '../../src/bootstrap';
@@ -64,3 +65,20 @@ export async function seedPermissions(app: INestApplication): Promise<void> {
     .values(Object.values(PERMISSIONS).map((key) => ({ key })))
     .onConflictDoNothing();
 }
+
+/**
+ * A ThrottlerStorage that never blocks.
+ *
+ * Suites that register or log in repeatedly hit the real limits and fail in a
+ * way that looks like a bug in the thing under test. Rate limiting keeps its
+ * own coverage in security.e2e-spec.ts, which uses the real storage.
+ */
+export const unlimitedThrottler: ThrottlerStorage = {
+  increment: () =>
+    Promise.resolve({
+      totalHits: 1,
+      timeToExpire: 60,
+      isBlocked: false,
+      timeToBlockExpire: 0,
+    }),
+};

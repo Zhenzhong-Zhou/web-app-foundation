@@ -13,7 +13,11 @@ import {
   sessions,
   users,
 } from '../src/database/schema';
-import { createTestApp, seedPermissions } from './utils/create-test-app';
+import {
+  createTestApp,
+  seedPermissions,
+  unlimitedThrottler,
+} from './utils/create-test-app';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -36,19 +40,10 @@ describe('Auth (e2e)', () => {
   };
 
   beforeAll(async () => {
-    // The register limit is 5/minute and this suite registers far more often
-    // than that. Rate limiting has its own coverage in security.e2e-spec.ts;
-    // here it only makes unrelated tests fail in a way that looks like a bug.
+    // Registration is limited to 5/minute and both suites register on every
+    // test. The limit keeps its own coverage in security.e2e-spec.ts.
     app = await createTestApp((builder) =>
-      builder.overrideProvider(ThrottlerStorage).useValue({
-        increment: () =>
-          Promise.resolve({
-            totalHits: 1,
-            timeToExpire: 60,
-            isBlocked: false,
-            timeToBlockExpire: 0,
-          }),
-      }),
+      builder.overrideProvider(ThrottlerStorage).useValue(unlimitedThrottler),
     );
 
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
