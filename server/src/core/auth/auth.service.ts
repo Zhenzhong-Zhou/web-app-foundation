@@ -12,12 +12,16 @@ import { asc, eq, sql } from 'drizzle-orm';
 
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
+import { organizations } from '../../database/schema';
 import { memberships, users } from '../../database/schema';
+import type { Permission } from '../authorization/permissions';
+import { PermissionsService } from '../authorization/permissions.service';
 import { provisionOrganization } from '../organizations/provision-organization';
 import { uniqueSlug } from '../organizations/slug';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
 import { PasswordService } from './password.service';
+import type { RequestContext } from './request-context';
 import { type NewSession, SessionService } from './session.service';
 
 export interface AuthenticatedUser {
@@ -27,6 +31,28 @@ export interface AuthenticatedUser {
   emailVerified: boolean;
   /** Null when a user belongs to no organization — see login(). */
   organizationId: string | null;
+}
+
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  name: string;
+  emailVerified: boolean;
+  /** Null when a user belongs to no organization — see login(). */
+  organizationId: string | null;
+}
+
+export interface CurrentSession {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    emailVerified: boolean;
+  };
+  /** Null when the caller belongs to no organization — see SessionGuard. */
+  organization: { id: string; name: string; roleId: string } | null;
+  /** Empty when there is no organization: permissions come from a role. */
+  permissions: Permission[];
 }
 
 /** Postgres unique_violation. */
@@ -55,6 +81,7 @@ export class AuthService implements OnModuleInit {
     @Inject(UNSAFE_GLOBAL_DB) private readonly db: Database,
     private readonly passwords: PasswordService,
     private readonly sessions: SessionService,
+    private readonly permissions: PermissionsService,
   ) {}
 
   // Hashed once at boot against a value nobody holds. See login().
@@ -238,6 +265,57 @@ export class AuthService implements OnModuleInit {
   async logout(sessionId: string): Promise<void> {
     await this.sessions.revoke(sessionId);
     this.logger.log(`Logout ${sessionId}`);
+  }
+
+  /**
+   * Everything the SPA needs on boot.
+   *
+   * The session cookie is httpOnly, so after a page reload the client cannot
+   * read who it is signed in as. This is how it finds out: 200 renders the
+   * app, 401 redirects to login.
+   *
+   * Reads through rather than trusting the request context alone, because the
+   * name and verification state can change between requests and the middleware
+   * only carries identity. Permissions are resolved here for the same reason
+   * the guard resolves them per request (ADR-016) — a demotion shows up on the
+   * next page load rather than at session expiry.
+   */
+  async me(context: RequestContext): Promise<CurrentSession> {
+    const [user] = await this.db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        emailVerifiedAt: users.emailVerifiedAt,
+      })
+      .from(users)
+      .where(eq(users.id, context.userId));
+
+    const base = {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.emailVerifiedAt !== null,
+      },
+    };
+
+    // Both are null together: roleId comes from the membership that produced
+    // organizationId, so there is no state where one exists without the other.
+    if (!context.organizationId || !context.roleId) {
+      return { ...base, organization: null, permissions: [] };
+    }
+
+    const [organization] = await this.db
+      .select({ id: organizations.id, name: organizations.name })
+      .from(organizations)
+      .where(eq(organizations.id, context.organizationId));
+
+    return {
+      ...base,
+      organization: { ...organization, roleId: context.roleId },
+      permissions: await this.permissions.listForRole(context.roleId),
+    };
   }
 }
 

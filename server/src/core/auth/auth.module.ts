@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 
+import { AuthorizationModule } from '../authorization/authorization.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
@@ -7,6 +8,7 @@ import { SessionService } from './session.service';
 import { SessionContextMiddleware } from './session-context.middleware';
 
 @Module({
+  imports: [AuthorizationModule],
   controllers: [AuthController],
   providers: [AuthService, PasswordService, SessionService],
   // Exported for the guard in the next step, and for password-change flows

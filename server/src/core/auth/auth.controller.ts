@@ -2,6 +2,7 @@ import {
   Body,
   ConflictException,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -38,6 +39,19 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly config: ConfigService<Env, true>,
   ) {}
+
+  /**
+   * @AllowNoOrganization because this is how a user with no membership learns
+   * they have none. Returning 403 would leave the SPA unable to render an
+   * empty state — it would only know something went wrong.
+   *
+   * No @RequirePermissions: this describes the caller, it does not act on
+   * anyone.
+   */
+  @Get('me')
+  me(@CurrentUser() user: RequestContext) {
+    return this.auth.me(user);
+  }
 
   /**
    * Registration is expensive (an argon2 hash plus a multi-statement
