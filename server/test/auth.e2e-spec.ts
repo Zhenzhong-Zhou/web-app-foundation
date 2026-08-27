@@ -13,11 +13,13 @@ import {
   sessions,
   users,
 } from '../src/database/schema';
+import { MailService } from '../src/shared/mail/mail.service';
 import {
   createTestApp,
   seedPermissions,
   unlimitedThrottler,
 } from './utils/create-test-app';
+import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -28,6 +30,7 @@ import { resetDatabase } from './utils/reset-db';
 describe('Auth (e2e)', () => {
   let app: INestApplication;
   let db: Database;
+  let mail: RecordingMailService;
 
   const EMAIL = 'e2e@example.com';
   const PASSWORD = 'correct-horse-battery';
@@ -40,10 +43,16 @@ describe('Auth (e2e)', () => {
   };
 
   beforeAll(async () => {
+    mail = new RecordingMailService();
+
     // Registration is limited to 5/minute and both suites register on every
     // test. The limit keeps its own coverage in security.e2e-spec.ts.
     app = await createTestApp((builder) =>
-      builder.overrideProvider(ThrottlerStorage).useValue(unlimitedThrottler),
+      builder
+        .overrideProvider(ThrottlerStorage)
+        .useValue(unlimitedThrottler)
+        .overrideProvider(MailService)
+        .useValue(mail),
     );
 
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
@@ -56,6 +65,7 @@ describe('Auth (e2e)', () => {
 
   beforeEach(async () => {
     await resetDatabase(app);
+    mail.reset();
   });
 
   describe('registration', () => {
