@@ -80,6 +80,9 @@ echo "using $EMAIL"
 
 check 201 "$(registration "$EMAIL" | post /auth/register)" "register"
 
+check 400 "$(printf '{"token":"%s"}' "$(head -c 43 /dev/zero | tr '\0' 'a')" \
+  | post /auth/verify-email)" "verify-email, unknown token"
+
 # The only request here that proves TenantDb resolved its context from the
 # session middleware. If that chain breaks, this is where it shows — as a 500,
 # not a 401.
