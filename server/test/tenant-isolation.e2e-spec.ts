@@ -7,7 +7,12 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { organizations, roles, users } from '../src/database/schema';
+import {
+  memberships,
+  organizations,
+  roles,
+  users,
+} from '../src/database/schema';
 import { runInTenantContext } from '../src/database/tenant-context';
 import { TenantDb } from '../src/database/tenant-db.service';
 import { createTestApp } from './utils/create-test-app';
@@ -67,6 +72,27 @@ describe('Tenant isolation (e2e)', () => {
     return { orgA, orgB, roleA, roleB };
   }
 
+  /** Two organizations, each with one user holding a membership. */
+  async function seedTwoMembers() {
+    const { orgA, orgB, roleA, roleB } = await seedTwoOrgs();
+
+    const [userA] = await db
+      .insert(users)
+      .values({ email: 'a@example.com', name: 'A' })
+      .returning();
+    const [userB] = await db
+      .insert(users)
+      .values({ email: 'b@example.com', name: 'B' })
+      .returning();
+
+    await db.insert(memberships).values([
+      { userId: userA.id, organizationId: orgA.id, roleId: roleA.id },
+      { userId: userB.id, organizationId: orgB.id, roleId: roleB.id },
+    ]);
+
+    return { orgA, orgB, userA, userB };
+  }
+
   it('select() returns only the current organization rows', async () => {
     const { orgA, roleA } = await seedTwoOrgs();
 
@@ -100,6 +126,28 @@ describe('Tenant isolation (e2e)', () => {
       .where(eq(roles.name, 'Viewer'));
 
     expect(inserted.organizationId).toBe(orgA.id);
+  });
+
+  it('selectJoined() does not reach members of another organization', async () => {
+    const { orgA, userA } = await seedTwoMembers();
+
+    // users has no organization_id, so the joined side is reachable only
+    // through the scoped memberships row. This is the query shape that would
+    // otherwise be written as two — scoped ids, then a global `where id in
+    // (...)` — with the tenant filter living in the caller.
+    const rows = await runInTenantContext(
+      { userId: actor, organizationId: orgA.id },
+      () =>
+        tenantDb.selectJoined(
+          memberships,
+          users,
+          eq(users.id, memberships.userId),
+          { id: users.id, email: users.email },
+        ),
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].id).toBe(userA.id);
   });
 
   it('update() cannot modify another organization row, even by id', async () => {
