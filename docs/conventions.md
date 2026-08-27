@@ -145,3 +145,7 @@ and silently goes stale.
 - Every integration test calls `await app.close()` in `afterAll`, or the `pg` pool stays
   open and Jest hangs without explaining why.
 - One integration test per feature as it's built (ADR-008).
+- `scripts/smoke-auth.sh` checks a **running dev server** over HTTP. No database
+  access, no setup — if it needs `psql`, it is an e2e test wearing a shell script.
+- e2e tests own the database: they reset between tests and assert on rows,
+  including the negative cases smoke cannot reach.

@@ -586,6 +586,48 @@ requires it. It would be a change to login, not to the schema.
 
 ---
 
+## ADR-016 — Permissions resolved per request
+
+**Context.** ADR-004 scopes roles through membership, so a request's permissions are a
+property of `(user, current_org)` rather than of the user. The question left open was
+where that resolution happens: cached somewhere, or queried on each request.
+
+**Decision.** Query on each request. `PermissionGuard` reads `role_id` off the request
+context and joins `role_permissions` to `permissions`. Nothing is cached on the session
+row, the request context, or in memory.
+
+**Consequence.** A demoted or removed user loses access on their next request rather than
+at session expiry — the failure ADR-011's binding rules name explicitly. The cost is one
+indexed join over two small tables (nine permissions, three roles per organization) that
+Postgres keeps in shared buffers.
+
+If that ever shows in a latency profile, the cache belongs on `role_id -> Set<key>` with a
+short TTL. Roles are configuration and change rarely; *which* role a user holds is what
+changes on demotion, and that lookup stays per request regardless. Caching by user or by
+session is the unsafe version. In-memory would break across instances the way the
+throttler does, so it lands with Redis (ADR-005) or not at all.
+
+Per-request resolution is also what keeps ADR-004's "extend rather than replace" viable
+for resource-scoped rules: those cannot be precomputed into a set, because they need the
+resource in hand.
+
+**Consequence — the `UNSAFE_GLOBAL_DB` exemption list is closed.** Only `core/auth` and
+`core/authorization` may import it, both for structural reasons: auth resolves a user by
+email before any organization is known, and authorization reads a catalogue that has no
+`organization_id` by design. Feature modules needing a transaction across a global and a
+scoped table use `TenantDb.transaction()`, which supplies the organization from tenant
+context.
+
+Scoping inside that callback is manual by necessity — a transaction exists precisely
+because its statements differ, so no wrapper can make it mechanical — and is covered by
+the tenant-isolation suite rather than by types.
+
+**Known gap, carried from ADR-004.** Nothing prevents an Admin assigning the Owner role.
+Permission strings cannot express "not above your own level"; that rule belongs in the
+service performing the assignment.
+
+---
+
 # Open decisions
 
 None currently open. New questions land here before they are promoted to an ADR.
@@ -605,3 +647,4 @@ None currently open. New questions land here before they are promoted to an ADR.
 | API versioning | URL prefix `/v1/`, global, from first endpoint | ADR-013 |
 | CSRF defence | Custom header, no token | ADR-014 |
 | Concurrent sessions per user | Multiple; login revokes only the presented session | ADR-015 |
+| Permission resolution | Per request, never cached | ADR-016 |

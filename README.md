@@ -150,7 +150,7 @@ Build order:
   role_permissions, sessions, audit_log
 - [x] **3. Registration + login + sessions** — registration creates user + org +
   Owner membership in one transaction
-- [ ] **4. Permission guard** — seed roles, gate one endpoint, prove a Viewer gets 403
+- [x] **4. Permission guard** — seed roles, gate one endpoint, prove a Viewer gets 403
 - [ ] **5. Email verification + password reset** — token table + Mailpit
 - [ ] **6. Audit log** — interceptor over existing actions
 - [ ] **7. Profile / account settings / account status**

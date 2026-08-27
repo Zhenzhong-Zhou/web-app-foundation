@@ -11,9 +11,10 @@ BASE="${BASE:-http://localhost:3000/v1}"
 JAR="$(mktemp)"        # the authenticated session under test
 NAKED="$(mktemp)"      # never authenticated
 FLOODJAR="$(mktemp)"   # rate-limit attempts only
+PROBE="$(mktemp)"      # the throwaway registration that tests the limit
 BODY="$(mktemp)"
 HEADERS="$(mktemp)"
-trap 'rm -f "$JAR" "$NAKED" "$FLOODJAR" "$BODY" "$HEADERS"' EXIT
+trap 'rm -f "$JAR" "$NAKED" "$FLOODJAR" "$PROBE" "$BODY" "$HEADERS"' EXIT
 
 EMAIL="smoke-$(date +%s)@example.com"
 PASSWORD="correct-horse-battery"
@@ -32,6 +33,11 @@ post_empty() { # post_empty <path> [jar]
   local jar="${2:-$JAR}"
   curl -sS -o "$BODY" -w '%{http_code}' -X POST "$BASE$1" \
     -b "$jar" -c "$jar" -H 'X-Requested-With: XMLHttpRequest'
+}
+
+get() { # get <path> [jar]
+  local jar="${2:-$JAR}"
+  curl -sS -o "$BODY" -w '%{http_code}' "$BASE$1" -b "$jar" -c "$jar"
 }
 
 check() { # check <expected> <actual> <label>
@@ -57,9 +63,28 @@ if ! curl -sS -o /dev/null --max-time 2 "http://localhost:3000/health"; then
   exit 1
 fi
 
+if ! curl -sS -o /dev/null --max-time 2 "http://localhost:3000/health"; then
+  echo "  server not reachable — is npm run start:dev running?" >&2
+  exit 1
+fi
+
+# Register is capped at 5/minute per IP and this script uses two of those per
+# run, so back-to-back runs exhaust it. Fail with an explanation rather than a
+# 429 that reads like a broken endpoint.
+if [ "$(registration "probe-$(date +%s)@example.com" | post /auth/register "$PROBE")" = 429 ]; then
+  echo "  register is rate limited — wait a minute and re-run" >&2
+  exit 1
+fi
+
 echo "using $EMAIL"
 
 check 201 "$(registration "$EMAIL" | post /auth/register)" "register"
+
+# The only request here that proves TenantDb resolved its context from the
+# session middleware. If that chain breaks, this is where it shows — as a 500,
+# not a 401.
+check 200 "$(get /users)" "list members"
+
 check 409 "$(registration "$EMAIL" | post /auth/register)" "register again"
 check 200 "$(credentials "$EMAIL" "$PASSWORD" | post /auth/login)" "login"
 check 200 "$(credentials "$(echo "$EMAIL" | tr 'a-z' 'A-Z')" "$PASSWORD" | post /auth/login)" "login, mixed case"
