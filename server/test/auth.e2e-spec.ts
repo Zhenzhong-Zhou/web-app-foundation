@@ -223,26 +223,26 @@ describe('Auth (e2e)', () => {
         .expect(403);
     });
   });
-  
+
   describe('GET /v1/auth/me', () => {
     it('returns the caller, their organization, and their permissions', async () => {
       const agent = authedAgent(app);
       await agent.post('/v1/auth/register').send(registration).expect(201);
-      
+
       const res = await agent.get('/v1/auth/me').expect(200);
       const me = res.body as {
         user: { email: string; emailVerified: boolean };
         organization: { name: string } | null;
         permissions: string[];
       };
-      
+
       expect(me.user.email).toBe(EMAIL);
       expect(me.user.emailVerified).toBe(false);
       expect(me.organization?.name).toBe('E2E Co');
       // Registration makes you Owner, and Owner is ALL_PERMISSIONS.
       expect(me.permissions).toHaveLength(9);
     });
-    
+
     it('requires a session', async () => {
       await authedAgent(app).get('/v1/auth/me').expect(401);
     });
