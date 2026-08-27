@@ -6,6 +6,7 @@
  * no migration is generated and no query type-checks against it.
  */
 export * from './audit-log';
+export * from './auth-tokens';
 export * from './memberships';
 export * from './organizations';
 export * from './permissions';

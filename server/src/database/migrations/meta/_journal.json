@@ -8,6 +8,13 @@
       "when": 1787698327800,
       "tag": "0000_core_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787867455621,
+      "tag": "0001_auth_tokens",
+      "breakpoints": true
     }
   ]
 }
