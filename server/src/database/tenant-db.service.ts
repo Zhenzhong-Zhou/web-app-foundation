@@ -157,12 +157,23 @@ export class TenantDb {
   }
 
   /**
-   * Multi-statement work inside one transaction. The callback receives a raw
-   * handle, so tenant scoping is the caller's responsibility here — use it only
-   * where a single scoped call genuinely cannot express the work, such as the
-   * registration transaction in ADR-004.
+   * Multi-statement work in one transaction, with the tenant available.
+   *
+   * The callback receives the raw handle *and* the current organization id, so
+   * a write to a global table (users) and a write to a scoped one (memberships)
+   * can be atomic without the caller reaching for UNSAFE_GLOBAL_DB. The
+   * organization comes from tenant context rather than from the caller, which
+   * is what keeps the lint exemption closed at core/auth and core/authorization.
+   *
+   * Scoping inside the callback is the caller's responsibility — that is the
+   * cost of a raw handle, and why this is not the default way to query.
    */
-  transaction<T>(fn: (tx: Transaction) => Promise<T>) {
-    return this.db.transaction(fn);
+  transaction<T>(
+    fn: (tx: Transaction, organizationId: string) => Promise<T>,
+  ): Promise<T> {
+    // Read before opening the transaction: the getter throws when there is no
+    // context, and failing before BEGIN is cleaner than failing inside it.
+    const organizationId = this.organizationId;
+    return this.db.transaction((tx) => fn(tx, organizationId));
   }
 }

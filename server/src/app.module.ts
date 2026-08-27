@@ -11,7 +11,9 @@ import { CsrfGuard } from './common/guards/csrf.guard';
 import { type Env, validateEnv } from './config/env';
 import { AuthModule } from './core/auth/auth.module';
 import { SessionGuard } from './core/auth/session.guard';
+import { AuthorizationModule } from './core/authorization/authorization.module';
 import { PermissionGuard } from './core/authorization/permission.guard';
+import { UsersModule } from './core/users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 
@@ -94,6 +96,8 @@ import { HealthModule } from './health/health.module';
 
     DatabaseModule,
     AuthModule,
+    AuthorizationModule,
+    UsersModule,
     HealthModule,
   ],
   providers: [
