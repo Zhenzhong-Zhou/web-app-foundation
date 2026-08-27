@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ConflictException,
   Controller,
@@ -19,6 +20,7 @@ import { AuthService, isUniqueViolation } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import {
   LOGIN_ATTEMPT_LIMIT,
   LOGIN_ATTEMPT_WINDOW_MS,
@@ -168,5 +170,47 @@ export class AuthController {
       SESSION_COOKIE_NAME,
       clearSessionCookieOptions(isProduction),
     );
+  }
+
+  /**
+   * POST, not GET, and the link in the email points at the SPA rather than
+   * here. Corporate mail scanners (Safe Links, Proofpoint) fetch every URL in
+   * an incoming message — a GET that spends a token is consumed before the
+   * human ever clicks, and they report that verification is broken.
+   *
+   * Public: the caller may be on a different device from the one they signed
+   * up on, and the token is the credential.
+   */
+  @Public()
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    const verified = await this.auth.verifyEmail(dto.token);
+
+    if (!verified) {
+      throw new BadRequestException(
+        'That link is invalid or has expired. Request a new one.',
+      );
+    }
+
+    return { verified: true };
+  }
+
+  /**
+   * Authenticated, so there is no address to guess at and no enumeration
+   * surface. @AllowNoOrganization because verifying is an account action.
+   *
+   * 202 and always the same: whether a message was actually sent depends on
+   * whether the caller is already verified, and that is not the client's
+   * business.
+   */
+  @Post('verify-email/resend')
+  @AllowNoOrganization()
+  @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle({ default: { limit: 3, ttl: 300_000 } })
+  async resendVerification(@CurrentUser() user: RequestContext) {
+    await this.auth.resendVerification(user);
+    return { sent: true };
   }
 }

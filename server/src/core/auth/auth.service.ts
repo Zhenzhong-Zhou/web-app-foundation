@@ -8,16 +8,20 @@ import {
   type OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { asc, eq, sql } from 'drizzle-orm';
 
+import type { Env } from '../../config/env';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { organizations } from '../../database/schema';
 import { memberships, users } from '../../database/schema';
+import { MailService } from '../../shared/mail/mail.service';
 import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { provisionOrganization } from '../organizations/provision-organization';
 import { uniqueSlug } from '../organizations/slug';
+import { AuthTokenService } from './auth-token.service';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
 import { PasswordService } from './password.service';
@@ -82,6 +86,9 @@ export class AuthService implements OnModuleInit {
     private readonly passwords: PasswordService,
     private readonly sessions: SessionService,
     private readonly permissions: PermissionsService,
+    private readonly tokens: AuthTokenService,
+    private readonly mail: MailService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   // Hashed once at boot against a value nobody holds. See login().
@@ -155,6 +162,8 @@ export class AuthService implements OnModuleInit {
       user.organizationId,
       meta,
     );
+
+    await this.sendVerificationEmail(user.id, user.email, user.name);
 
     return {
       user: { ...user, emailVerified: false },
@@ -316,6 +325,74 @@ export class AuthService implements OnModuleInit {
       organization: { ...organization, roleId: context.roleId },
       permissions: await this.permissions.listForRole(context.roleId),
     };
+  }
+
+  /**
+   * Issues a verification token and emails the link.
+   *
+   * Failure is logged, never thrown. The account exists and the user is signed
+   * in; losing their registration to a dead SMTP connection would be absurd,
+   * and the resend endpoint is the remedy. Password reset takes the opposite
+   * position — see requestPasswordReset().
+   */
+  async sendVerificationEmail(userId: string, email: string, name: string) {
+    try {
+      const { token } = await this.tokens.issue(userId, 'email_verification');
+      const clientUrl = this.config.get('CLIENT_URL', { infer: true });
+      const link = `${clientUrl}/verify-email?token=${token}`;
+
+      await this.mail.send({
+        to: email,
+        subject: 'Confirm your email address',
+        text: `Hi ${name},\n\nConfirm your email address:\n${link}\n\nThe link expires in 24 hours. If you did not sign up, ignore this message.`,
+        html: `<p>Hi ${name},</p><p><a href="${link}">Confirm your email address</a></p><p>The link expires in 24 hours. If you did not sign up, ignore this message.</p>`,
+      });
+    } catch (error) {
+      // Broad by design: registration must survive a dead SMTP connection.
+      // But that also swallows token-issue failures, so the message must not
+      // claim the problem was email — it might be the database.
+      this.logger.error(
+        `Could not send verification for ${userId}: ${String(error)}`,
+      );
+    }
+  }
+
+  /**
+   * Returns false for anything invalid — unknown, expired, spent, or the wrong
+   * purpose. AuthTokenService does not distinguish them and neither does this.
+   *
+   * Verifying twice is not an error worth surfacing: the token is spent, so
+   * the second attempt returns false, and the controller answers the same way
+   * either way. What matters is that the address ends up verified.
+   */
+  async verifyEmail(token: string): Promise<boolean> {
+    const userId = await this.tokens.consume(token, 'email_verification');
+    if (!userId) return false;
+
+    await this.db
+      .update(users)
+      .set({ emailVerifiedAt: new Date() })
+      .where(eq(users.id, userId));
+
+    this.logger.log(`Verified email for ${userId}`);
+    return true;
+  }
+
+  /** Re-sends verification for an already-authenticated caller. */
+  async resendVerification(context: RequestContext): Promise<void> {
+    const [user] = await this.db
+      .select({
+        email: users.email,
+        name: users.name,
+        emailVerifiedAt: users.emailVerifiedAt,
+      })
+      .from(users)
+      .where(eq(users.id, context.userId));
+
+    // Already verified: nothing to send, and no reason to tell them otherwise.
+    if (!user || user.emailVerifiedAt !== null) return;
+
+    await this.sendVerificationEmail(context.userId, user.email, user.name);
   }
 }
 

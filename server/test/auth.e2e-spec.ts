@@ -257,4 +257,70 @@ describe('Auth (e2e)', () => {
       await authedAgent(app).get('/v1/auth/me').expect(401);
     });
   });
+
+  describe('email verification', () => {
+    /** Pulls the token out of the link in the message that was just sent. */
+    function tokenFrom(html: string): string {
+      const match = /token=([\w-]+)/.exec(html);
+      if (!match) throw new Error(`No token in: ${html}`);
+      return match[1];
+    }
+
+    it('sends a verification email on registration', async () => {
+      await authedAgent(app)
+        .post('/v1/auth/register')
+        .send(registration)
+        .expect(201);
+
+      // sendVerificationEmail catches everything so a dead SMTP connection
+      // cannot cost someone their account — which means a missing table or an
+      // unwired provider is invisible without this assertion.
+      const sent = mail.lastTo(EMAIL);
+      expect(sent).toBeDefined();
+      expect(sent?.html).toContain('/verify-email?token=');
+    });
+
+    it('verifies the address and spends the token', async () => {
+      const agent = authedAgent(app);
+      await agent.post('/v1/auth/register').send(registration).expect(201);
+
+      const token = tokenFrom(mail.lastTo(EMAIL)!.html);
+
+      await agent.post('/v1/auth/verify-email').send({ token }).expect(200);
+
+      const [user] = await db.select().from(users);
+      expect(user.emailVerifiedAt).not.toBeNull();
+
+      // Single use: the same link clicked twice is spent the second time.
+      await agent.post('/v1/auth/verify-email').send({ token }).expect(400);
+    });
+
+    it('rejects an unknown token', async () => {
+      await authedAgent(app)
+        .post('/v1/auth/verify-email')
+        .send({ token: 'a'.repeat(43) })
+        .expect(400);
+    });
+
+    it('resend issues a new token and invalidates the old one', async () => {
+      const agent = authedAgent(app);
+      await agent.post('/v1/auth/register').send(registration).expect(201);
+      const first = tokenFrom(mail.lastTo(EMAIL)!.html);
+
+      await agent.post('/v1/auth/verify-email/resend').expect(202);
+      const second = tokenFrom(mail.lastTo(EMAIL)!.html);
+
+      expect(second).not.toBe(first);
+      // Two live links are two chances for an attacker, so issuing one spends
+      // the outstanding ones.
+      await agent
+        .post('/v1/auth/verify-email')
+        .send({ token: first })
+        .expect(400);
+      await agent
+        .post('/v1/auth/verify-email')
+        .send({ token: second })
+        .expect(200);
+    });
+  });
 });
