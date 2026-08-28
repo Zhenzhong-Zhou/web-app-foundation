@@ -323,4 +323,84 @@ describe('Auth (e2e)', () => {
         .expect(200);
     });
   });
+
+  describe('password reset', () => {
+    function tokenFrom(html: string): string {
+      const match = /token=([\w-]+)/.exec(html);
+      if (!match) throw new Error(`No token in: ${html}`);
+      return match[1];
+    }
+
+    const NEW_PASSWORD = 'a-completely-different-one';
+
+    it('sends a link for a known address', async () => {
+      await authedAgent(app).post('/v1/auth/register').send(registration);
+      mail.reset();
+
+      await authedAgent(app)
+        .post('/v1/auth/forgot-password')
+        .send({ email: EMAIL })
+        .expect(202);
+
+      expect(mail.lastTo(EMAIL)?.html).toContain('/reset-password?token=');
+    });
+
+    it('answers identically for an unknown address, and sends nothing', async () => {
+      await authedAgent(app)
+        .post('/v1/auth/forgot-password')
+        .send({ email: 'nobody@example.com' })
+        .expect(202);
+
+      // The status must match the known-address case exactly, or this is the
+      // enumeration oracle login carefully is not.
+      expect(mail.sent).toHaveLength(0);
+    });
+
+    it('sets the new password and revokes every session', async () => {
+      const agent = authedAgent(app);
+      await agent.post('/v1/auth/register').send(registration).expect(201);
+      mail.reset();
+
+      await agent.post('/v1/auth/forgot-password').send({ email: EMAIL });
+      const token = tokenFrom(mail.lastTo(EMAIL)!.html);
+
+      await agent
+        .post('/v1/auth/reset-password')
+        .send({ token, password: NEW_PASSWORD })
+        .expect(204);
+
+      // The likely reason someone is here is that an attacker holds their
+      // password. A reset leaving that session live is not a recovery.
+      expect(await db.select().from(sessions)).toHaveLength(0);
+
+      await authedAgent(app)
+        .post('/v1/auth/login')
+        .send({ email: EMAIL, password: PASSWORD })
+        .expect(401);
+
+      await authedAgent(app)
+        .post('/v1/auth/login')
+        .send({ email: EMAIL, password: NEW_PASSWORD })
+        .expect(200);
+    });
+
+    it('spends the token', async () => {
+      const agent = authedAgent(app);
+      await agent.post('/v1/auth/register').send(registration).expect(201);
+      mail.reset();
+
+      await agent.post('/v1/auth/forgot-password').send({ email: EMAIL });
+      const token = tokenFrom(mail.lastTo(EMAIL)!.html);
+
+      await agent
+        .post('/v1/auth/reset-password')
+        .send({ token, password: NEW_PASSWORD })
+        .expect(204);
+
+      await authedAgent(app)
+        .post('/v1/auth/reset-password')
+        .send({ token, password: 'yet-another-password' })
+        .expect(400);
+    });
+  });
 });

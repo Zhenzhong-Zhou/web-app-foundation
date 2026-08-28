@@ -83,6 +83,13 @@ check 201 "$(registration "$EMAIL" | post /auth/register)" "register"
 check 400 "$(printf '{"token":"%s"}' "$(head -c 43 /dev/zero | tr '\0' 'a')" \
   | post /auth/verify-email)" "verify-email, unknown token"
 
+# Identical status either way. The second is the check that matters: an
+# endpoint answering differently for an unknown address is the enumeration
+# oracle login carefully is not.
+check 202 "$(printf '{"email":"%s"}' "$EMAIL" | post /auth/forgot-password "$NAKED")" "forgot password"
+check 202 "$(printf '{"email":"nobody-%s@example.com"}' "$(date +%s)" \
+  | post /auth/forgot-password "$NAKED")" "forgot password, unknown address"
+
 # The only request here that proves TenantDb resolved its context from the
 # session middleware. If that chain breaks, this is where it shows — as a 500,
 # not a 401.

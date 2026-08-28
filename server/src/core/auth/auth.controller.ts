@@ -18,8 +18,10 @@ import type { Env } from '../../config/env';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { AuthService, isUniqueViolation } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import {
   LOGIN_ATTEMPT_LIMIT,
@@ -212,5 +214,52 @@ export class AuthController {
   async resendVerification(@CurrentUser() user: RequestContext) {
     await this.auth.resendVerification(user);
     return { sent: true };
+  }
+
+  /**
+   * 202 whether or not the address exists. The response, the status, and the
+   * timing must all be identical, or this becomes the enumeration oracle that
+   * login carefully is not.
+   *
+   * Rate limited on email + IP like login, and for the same reasons: IP alone
+   * fails against a rotating attacker and locks out a corporate NAT. Sending
+   * mail is also the most expensive thing an unauthenticated caller can make
+   * this server do.
+   */
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle({
+    default: {
+      limit: 5,
+      ttl: LOGIN_ATTEMPT_WINDOW_MS,
+      blockDuration: LOGIN_ATTEMPT_WINDOW_MS,
+      getTracker: loginTracker,
+    },
+  })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.auth.requestPasswordReset(dto.email);
+    return { sent: true };
+  }
+
+  /**
+   * 204 and no session. The user signs in with the password they just set —
+   * see resetPassword() for why that is deliberate rather than an omission.
+   *
+   * Public: the token is the credential, and whoever is resetting has by
+   * definition lost access to the account.
+   */
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
+    const reset = await this.auth.resetPassword(dto.token, dto.password);
+
+    if (!reset) {
+      throw new BadRequestException(
+        'That link is invalid or has expired. Request a new one.',
+      );
+    }
   }
 }

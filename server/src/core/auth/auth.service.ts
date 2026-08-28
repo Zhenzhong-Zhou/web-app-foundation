@@ -394,6 +394,86 @@ export class AuthService implements OnModuleInit {
 
     await this.sendVerificationEmail(context.userId, user.email, user.name);
   }
+
+  /**
+   * Sends a reset link, or does nothing, and the caller cannot tell which.
+   *
+   * Login goes to real trouble not to be an enumeration oracle — the decoy
+   * hash, the identical error. An endpoint answering "no such address" hands
+   * back exactly what login refused, so this returns the same way either way
+   * and the UI must never say "we couldn't find that email".
+   *
+   * Unlike verification, a send failure **propagates**. Reporting success
+   * while the mail never left leaves someone waiting for a link that is not
+   * coming, and their only recourse is to try again — which produces the same
+   * silence.
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    const [user] = await this.db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        deletedAt: users.deletedAt,
+      })
+      .from(users)
+      .where(eq(sql`lower(${users.email})`, email));
+
+    // No account, or a tombstone (ADR-012). Nothing to send, nothing to say.
+    if (!user || user.deletedAt !== null) {
+      this.logger.log(`Password reset requested for unknown address`);
+      return;
+    }
+
+    const { token } = await this.tokens.issue(user.id, 'password_reset');
+    const clientUrl = this.config.get('CLIENT_URL', { infer: true });
+    const link = `${clientUrl}/reset-password?token=${token}`;
+
+    await this.mail.send({
+      to: user.email,
+      subject: 'Reset your password',
+      text: `Hi ${user.name},\n\nReset your password:\n${link}\n\nThe link expires in one hour and can be used once. If you did not request this, ignore this message — your password has not changed.`,
+      html: `<p>Hi ${user.name},</p><p><a href="${link}">Reset your password</a></p><p>The link expires in one hour and can be used once. If you did not request this, ignore this message — your password has not changed.</p>`,
+    });
+
+    this.logger.log(`Password reset link sent for ${user.id}`);
+  }
+
+  /**
+   * Consumes the token, sets the new password, and signs the user out
+   * everywhere.
+   *
+   * Revoking every session is the point, not a side effect (ADR-011): the
+   * likely reason someone is here is that an attacker holds their password. A
+   * reset that leaves the attacker's session live is not a recovery.
+   *
+   * No session is issued in exchange. The user signs in with the password they
+   * just chose, which is the moment a password manager reliably captures it —
+   * and a reset link from an inbox is a weaker credential than a password, so
+   * asking for the password once, immediately, is proportionate.
+   *
+   * Outstanding reset tokens are invalidated too: a second live link is a
+   * second way in for whoever requested it.
+   */
+  async resetPassword(token: string, password: string): Promise<boolean> {
+    const userId = await this.tokens.consume(token, 'password_reset');
+    if (!userId) return false;
+
+    const passwordHash = await this.passwords.hash(password);
+
+    await this.db
+      .update(users)
+      .set({ passwordHash })
+      .where(eq(users.id, userId));
+
+    await this.tokens.invalidateOutstanding(userId, 'password_reset');
+    const revoked = await this.sessions.revokeAllForUser(userId);
+
+    this.logger.log(
+      `Password reset for ${userId}; ${revoked} sessions revoked`,
+    );
+    return true;
+  }
 }
 
 /**
