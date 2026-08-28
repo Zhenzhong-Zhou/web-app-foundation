@@ -107,6 +107,30 @@ named `*.service.ts` should be an `@Injectable()` class and nothing else.
 
 ---
 
+## Duplication
+
+Two near-identical shapes are fine; three is a signal. Extracting at two usually
+costs more than it saves — the abstraction has to guess which parts are shared,
+and one of the two then needs an escape hatch.
+
+Pairs currently being watched rather than extracted:
+
+- `AuthenticatedUser` and `CurrentSession.user` share four fields and differ in
+  the fifth. Extract the shared fields at the third response shape.
+- `register.dto.ts` and `create-user.dto.ts` repeat the same email, name, and
+  password rules, and have already drifted once. Extract to validation constants
+  — not a shared DTO, which the rule above forbids — at the fourth DTO, or the
+  first time a rule changes in one and not the other.
+
+Test helpers follow the same rule with one addition: extract *knowledge* (a
+library's interface shape, a stub that must match a real service) and leave
+*structure* alone. `unlimitedThrottler` and `RecordingMailService` are in
+`test/utils/` because they mirror interfaces that drift; the `beforeAll` /
+`afterAll` / `beforeEach` block is repeated in every suite deliberately, because
+hiding it makes the `app.close()` rule above unenforceable by reading.
+
+---
+
 ## Comments
 
 Comment the **why**, never the what. Code already says what it does; it cannot say
