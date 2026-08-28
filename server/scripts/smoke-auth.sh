@@ -22,7 +22,7 @@ PASSWORD="correct-horse-battery"
 # Body arrives on stdin, so no JSON is ever escaped inside a shell string.
 post() { # post <path> [jar]   < body
   local jar="${2:-$JAR}"
-  curl -sS -o "$BODY" -w '%{http_code}' -X POST "$BASE$1" \
+  curl -sS --max-time 30 -o "$BODY" -w '%{http_code}' -X POST "$BASE$1" \
     -b "$jar" -c "$jar" \
     -H 'Content-Type: application/json' \
     -H 'X-Requested-With: XMLHttpRequest' \
@@ -31,13 +31,13 @@ post() { # post <path> [jar]   < body
 
 post_empty() { # post_empty <path> [jar]
   local jar="${2:-$JAR}"
-  curl -sS -o "$BODY" -w '%{http_code}' -X POST "$BASE$1" \
+  curl -sS --max-time 30 -o "$BODY" -w '%{http_code}' -X POST "$BASE$1" \
     -b "$jar" -c "$jar" -H 'X-Requested-With: XMLHttpRequest'
 }
 
 get() { # get <path> [jar]
   local jar="${2:-$JAR}"
-  curl -sS -o "$BODY" -w '%{http_code}' "$BASE$1" -b "$jar" -c "$jar"
+  curl -sS --max-time 30 -o "$BODY" -w '%{http_code}' "$BASE$1" -b "$jar" -c "$jar"
 }
 
 check() { # check <expected> <actual> <label>
@@ -58,8 +58,10 @@ credentials() {
   printf '{"email":"%s","password":"%s"}' "$1" "$2"
 }
 
-if ! curl -sS -o /dev/null --max-time 2 "http://localhost:3000/health"; then
-  echo "  server not reachable — is npm run start:dev running?" >&2
+# Follows BASE rather than assuming localhost. 60s because a free instance
+# spins down after fifteen minutes and takes about a minute to wake.
+if ! curl -sS -o /dev/null --max-time 60 "${BASE%/v1}/health"; then
+  echo "  server not reachable at $BASE" >&2
   exit 1
 fi
 

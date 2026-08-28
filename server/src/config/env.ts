@@ -46,10 +46,9 @@ export const envSchema = z.object({
     .default('false')
     .transform((v) => v === 'true'),
   MAIL_FROM: z.string().min(1),
-  // Mailpit needs none; every real provider does. Optional, so development
-  // stays zero-config.
-  MAIL_USER: z.string().optional(),
-  MAIL_PASSWORD: z.string().optional(),
+  // Present in production, absent locally. Its presence selects the HTTP
+  // transport — see MailService.
+  RESEND_API_KEY: z.string().optional(),
 
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),

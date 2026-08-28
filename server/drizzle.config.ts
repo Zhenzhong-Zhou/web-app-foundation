@@ -17,9 +17,9 @@ const url =
 
 if (!url) {
   const name =
-      process.env.MIGRATE_TARGET === 'test'
-          ? 'DATABASE_URL_TEST'
-          : 'DATABASE_URL';
+    process.env.MIGRATE_TARGET === 'test'
+      ? 'DATABASE_URL_TEST'
+      : 'DATABASE_URL';
   throw new Error(`Missing ${name} — set it in ../.env or in the environment`);
 }
 
