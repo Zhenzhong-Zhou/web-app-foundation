@@ -15,7 +15,9 @@ export const envSchema = z.object({
   CLIENT_URL: z.url(),
 
   DATABASE_URL: z.url(),
-  DATABASE_URL_TEST: z.url(),
+  // Optional: absent in every environment except a test run. The pool factory
+  // is what actually requires it, and only when NODE_ENV=test.
+  DATABASE_URL_TEST: z.url().optional(),
 
   // Absolute cap: a stolen token cannot be kept alive indefinitely by use.
   SESSION_MAX_AGE_MS: z.coerce.number().int().positive().default(2_592_000_000), // 30d
@@ -44,6 +46,10 @@ export const envSchema = z.object({
     .default('false')
     .transform((v) => v === 'true'),
   MAIL_FROM: z.string().min(1),
+  // Mailpit needs none; every real provider does. Optional, so development
+  // stays zero-config.
+  MAIL_USER: z.string().optional(),
+  MAIL_PASSWORD: z.string().optional(),
 
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),

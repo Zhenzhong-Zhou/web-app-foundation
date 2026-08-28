@@ -34,12 +34,16 @@ export class MailService implements OnModuleDestroy {
   constructor(config: ConfigService<Env, true>) {
     this.from = config.get('MAIL_FROM', { infer: true });
 
+    const user = config.get('MAIL_USER', { infer: true });
+    const password = config.get('MAIL_PASSWORD', { infer: true });
+
     this.transporter = createTransport({
       host: config.get('MAIL_HOST', { infer: true }),
       port: config.get('MAIL_PORT', { infer: true }),
       secure: config.get('MAIL_SECURE', { infer: true }),
-      // Mailpit needs no credentials. A real provider does, and adding auth
-      // here is two more env vars — deliberately not guessed at now.
+      // Omitted entirely for Mailpit — passing an empty auth object makes
+      // nodemailer attempt AUTH against a server that does not offer it.
+      ...(user && password ? { auth: { user, pass: password } } : {}),
     });
   }
 

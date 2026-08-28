@@ -5,6 +5,7 @@
   "author": "Zhenzhong Zhou",
   "private": true,
   "license": "Apache-2.0",
+  "engines": { "node": ">=20" },
   "scripts": {
     "prebuild": "rimraf dist tsconfig.build.tsbuildinfo",
     "build": "nest build",

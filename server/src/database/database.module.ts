@@ -40,10 +40,19 @@ export type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
       useFactory: (config: ConfigService<Env, true>) => {
         const isTest = config.get('NODE_ENV', { infer: true }) === 'test';
 
+        // DATABASE_URL_TEST is optional in the env schema, because it does not
+        // exist in production. This is the one place that needs it, and only
+        // during a test run — so the check belongs here rather than at boot.
+        const url = isTest
+          ? config.get('DATABASE_URL_TEST', { infer: true })
+          : config.get('DATABASE_URL', { infer: true });
+
+        if (!url) {
+          throw new Error('DATABASE_URL_TEST is required when NODE_ENV=test');
+        }
+
         return new Pool({
-          connectionString: isTest
-            ? config.get('DATABASE_URL_TEST', { infer: true })
-            : config.get('DATABASE_URL', { infer: true }),
+          connectionString: url,
           max: 10,
           idleTimeoutMillis: 30_000,
           // Fail fast rather than hanging forever on an unreachable database.
