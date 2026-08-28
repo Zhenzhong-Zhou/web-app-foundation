@@ -24,7 +24,7 @@ Core  →  Shared Services  →  Application Features
 ```
 web-app-foundation/
 ├── server/              NestJS API — all backend code
-├── client/              React SPA (arrives at step 7)
+├── client/              React SPA (arrives at step 8)
 ├── docker/              container init scripts
 ├── docs/decisions.md    architecture decision log
 ├── docker-compose.yml   Postgres 18 + Mailpit
@@ -146,7 +146,7 @@ V1 is **done** when this single path works end to end:
 > creates a second user → assigns them a Viewer role → that user is blocked (403) from a
 > permission-gated endpoint → both actions appear in the audit log.
 
-Everything above holds today except the last clause — the audit log is step 6.
+**This holds today.** Steps 1–6 are complete.
 
 Build order:
 
@@ -158,8 +158,11 @@ Build order:
   Owner membership in one transaction
 - [x] **4. Permission guard** — seed roles, gate one endpoint, prove a Viewer gets 403
 - [x] **5. Email verification + password reset** — token table + Mailpit
-- [ ] **6. Audit log** — interceptor over existing actions
-- [ ] **7. Profile / account settings / account status**
+- [x] **6. Audit log** — interceptor over existing actions
+- [ ] **7. Profile / account settings / account status** — self-service account
+  actions, and the first audited events outside user creation
+- [ ] **8. Client** — React + TypeScript on Vite in `client/`, consuming the API
+  through the Vite proxy (ADR-011)
 
 **Deliberately deferred** (all additive, none block V1):
 background jobs & queues, invitations, file storage, notifications, search,
