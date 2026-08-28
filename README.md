@@ -7,8 +7,8 @@ application infrastructure.
 Application-specific features (CRM, inventory, e-commerce, etc.) are **not** part of
 this repo. They are built on top of it.
 
-> **Status: pre-alpha.** Scaffolding only. See [Roadmap](#roadmap) for what actually exists.
-
+> **Status: pre-alpha.** The auth, tenancy, and permission layers work end to end.
+> See [Roadmap](#roadmap) for what remains.
 ---
 
 ## Architecture
@@ -24,7 +24,7 @@ Core  →  Shared Services  →  Application Features
 ```
 web-app-foundation/
 ├── server/              NestJS API — all backend code
-├── client/              React SPA (arrives at step 3)
+├── client/              React SPA (arrives at step 7)
 ├── docker/              container init scripts
 ├── docs/decisions.md    architecture decision log
 ├── docker-compose.yml   Postgres 18 + Mailpit
@@ -43,15 +43,19 @@ server/src/
 ├── config/       env schema + validation (zod)
 ├── database/     drizzle client, schema, migrations, TenantDb, seed
 ├── common/       filters, guards, interceptors, decorators — no business logic
-├── core/         auth, authorization, organizations (users and audit to come)
-├── shared/       email (step 5)
+├── core/         auth, authorization, organizations, users (audit to come)
+├── shared/       email
 └── health/       operational endpoints, unversioned (ADR-013)
 ```
 
 Every query in `core/` goes through `TenantDb`, which applies `organization_id`
 automatically (ADR-003). The unscoped handle is exported as `UNSAFE_GLOBAL_DB`
-and restricted by lint rule to `core/auth/`, where a user must be found by email
-before any organization is known.
+and restricted by lint rule to `core/auth/` and `core/authorization/` — the two
+places that run outside tenant scope by nature: auth resolves a user by email
+before any organization is known, and authorization reads a permission catalogue
+that has no `organization_id`. The list is closed (ADR-016); anything else
+needing a transaction across a global and a scoped table uses
+`TenantDb.transaction()`.
 
 `core/` holds one folder per module, each with its own `*.module.ts`, controller,
 service, and DTOs. Nothing in `common/` may import from `core/` — that dependency
@@ -101,9 +105,9 @@ docker compose up -d      # Postgres + Mailpit
 
 cd server
 npm install
-npm run migrate           # (not implemented yet)
-npm run seed              # (not implemented yet)
-npm run start:dev         # (not implemented yet)
+npm run migrate
+npm run seed
+npm run start:dev
 ```
 
 | Service | URL |
@@ -142,6 +146,8 @@ V1 is **done** when this single path works end to end:
 > creates a second user → assigns them a Viewer role → that user is blocked (403) from a
 > permission-gated endpoint → both actions appear in the audit log.
 
+Everything above holds today except the last clause — the audit log is step 6.
+
 Build order:
 
 - [x] **1. Skeleton** — Nest boots, config, DB connection, `/health`, global validation
@@ -151,7 +157,7 @@ Build order:
 - [x] **3. Registration + login + sessions** — registration creates user + org +
   Owner membership in one transaction
 - [x] **4. Permission guard** — seed roles, gate one endpoint, prove a Viewer gets 403
-- [ ] **5. Email verification + password reset** — token table + Mailpit
+- [x] **5. Email verification + password reset** — token table + Mailpit
 - [ ] **6. Audit log** — interceptor over existing actions
 - [ ] **7. Profile / account settings / account status**
 

@@ -63,11 +63,6 @@ if ! curl -sS -o /dev/null --max-time 2 "http://localhost:3000/health"; then
   exit 1
 fi
 
-if ! curl -sS -o /dev/null --max-time 2 "http://localhost:3000/health"; then
-  echo "  server not reachable — is npm run start:dev running?" >&2
-  exit 1
-fi
-
 # Register is capped at 5/minute per IP and this script uses two of those per
 # run, so back-to-back runs exhaust it. Fail with an explanation rather than a
 # 429 that reads like a broken endpoint.
