@@ -7,6 +7,8 @@ import {
   Post,
 } from '@nestjs/common';
 
+import { AUDIT_ACTIONS } from '../audit/audit-actions';
+import { Audited } from '../audit/audited.decorator';
 import { PERMISSIONS } from '../authorization/permissions';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -27,6 +29,11 @@ export class UsersController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions(PERMISSIONS.USERS_CREATE)
+  @Audited({
+    action: AUDIT_ACTIONS.USER_CREATED,
+    resourceType: 'user',
+    resourceId: (response: { user: { id: string } }) => response.user.id,
+  })
   async create(@Body() dto: CreateUserDto) {
     return { user: await this.users.create(dto) };
   }

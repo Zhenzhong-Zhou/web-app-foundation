@@ -6,7 +6,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { memberships, roles } from '../src/database/schema';
+import { auditLog, memberships, roles } from '../src/database/schema';
 import { MailService } from '../src/shared/mail/mail.service';
 import {
   createTestApp,
@@ -257,6 +257,49 @@ describe('Users (e2e)', () => {
           roleId: owner.viewerRoleId,
         })
         .expect(409);
+    });
+
+    it('records an audit row', async () => {
+      const owner = await registerOrg('alpha');
+
+      const res = await owner.agent
+        .post('/v1/users')
+        .send({
+          email: 'viewer@alpha.example.com',
+          name: 'Viewer',
+          password: PASSWORD,
+          roleId: owner.viewerRoleId,
+        })
+        .expect(201);
+
+      const [row] = await db.select().from(auditLog);
+
+      // ADR-012: ip and user_agent are captured at event time, because the
+      // user row is anonymised on deletion and stops identifying anyone.
+      expect(row.action).toBe('user.created');
+      expect(row.resourceId).toBe(body<{ user: MemberResponse }>(res).user.id);
+      expect(row.organizationId).toBe(owner.organizationId);
+      expect(row.ip).not.toBeNull();
+    });
+
+    it('records nothing when the action was refused', async () => {
+      const owner = await registerOrg('alpha');
+      const viewer = await addViewer(owner, 'viewer@alpha.example.com');
+
+      await viewer
+        .post('/v1/users')
+        .send({
+          email: 'sneaky@alpha.example.com',
+          name: 'Sneaky',
+          password: PASSWORD,
+          roleId: owner.viewerRoleId,
+        })
+        .expect(403);
+      
+      // A failed action is not an action — the interceptor's concatMap never
+      // runs on an error path. One row, not zero: addViewer created a member
+      // above, and that did audit.
+      expect(await db.select().from(auditLog)).toHaveLength(1);
     });
   });
 });

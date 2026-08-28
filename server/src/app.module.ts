@@ -2,13 +2,15 @@ import { randomUUID } from 'node:crypto';
 
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { type Env, validateEnv } from './config/env';
+import { AuditInterceptor } from './core/audit/audit.interceptor';
+import { AuditModule } from './core/audit/audit.module';
 import { AuthModule } from './core/auth/auth.module';
 import { SessionGuard } from './core/auth/session.guard';
 import { AuthorizationModule } from './core/authorization/authorization.module';
@@ -97,24 +99,24 @@ import { HealthModule } from './health/health.module';
     DatabaseModule,
     AuthModule,
     AuthorizationModule,
+    AuditModule,
     UsersModule,
     HealthModule,
   ],
   providers: [
-    // Applied to every route by default. Endpoints needing a stricter limit
-    // (login, password reset — ADR-011) override with @Throttle().
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
-    // Order matters: rate limiting runs first, so an unauthenticated flood is
-    // rejected before it costs a session lookup.
+
+    // Guards run in registration order, and the order is deliberate: throttle
+    // before authenticating, authenticate before authorizing. A flood is cheap
+    // to reject, and an anonymous request reads as 401 rather than 403 or as a
+    // CSRF failure.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: SessionGuard },
-    // After SessionGuard: an unauthenticated request should read as 401, not
-    // as a CSRF failure. Guards run in registration order.
     { provide: APP_GUARD, useClass: CsrfGuard },
-    // Order is deliberate: throttle before authenticating, authenticate before
-    // authorizing, so a flood is cheap to reject and an anonymous request
-    // reads as 401 rather than 403.
     { provide: APP_GUARD, useClass: PermissionGuard },
+
+    // Writes an audit row after a handler marked @Audited() succeeds.
+    { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],
 })
 export class AppModule {}
