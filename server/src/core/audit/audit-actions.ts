@@ -14,3 +14,4 @@ export const AUDIT_ACTIONS = {
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
+export const ALL_AUDIT_ACTIONS = Object.values(AUDIT_ACTIONS);

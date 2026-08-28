@@ -91,6 +91,7 @@ check 202 "$(printf '{"email":"nobody-%s@example.com"}' "$(date +%s)" \
 check 200 "$(get /users)" "list members"
 
 check 200 "$(get /auth/me)" "me"
+check 200 "$(get /audit)" "audit log"
 check 409 "$(registration "$EMAIL" | post /auth/register)" "register again"
 check 200 "$(credentials "$EMAIL" "$PASSWORD" | post /auth/login)" "login"
 check 200 "$(credentials "$(echo "$EMAIL" | tr 'a-z' 'A-Z')" "$PASSWORD" | post /auth/login)" "login, mixed case"

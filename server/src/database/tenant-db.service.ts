@@ -36,6 +36,25 @@ type JoinedRow<C extends JoinedColumns> = {
 };
 
 /**
+ * Like JoinedRow, but every column from the joined side may be null: a left
+ * join produces a row even when nothing matched, and the column's own
+ * nullability says nothing about that.
+ *
+ * Distinguishing which side a column came from is not expressible through a
+ * flat projection, so all of them are widened. Honest, if blunt — the
+ * alternative is a type that lies about the driving table's columns being
+ * present, which they always are.
+ */
+type LeftJoinedRow<C extends JoinedColumns> = {
+  [K in keyof C]: C[K]['_']['data'] | null;
+};
+
+export interface SelectOptions {
+  orderBy?: SQL | SQL[];
+  limit?: number;
+}
+
+/**
  * The one place the organization_id filter lives (ADR-003).
  *
  * Callers never write the filter, so they cannot forget it. There is no method
@@ -67,14 +86,29 @@ export class TenantDb {
   select<T extends TenantTable>(
     table: T,
     where?: SQL,
+    options?: SelectOptions,
   ): Promise<T['$inferSelect'][]> {
-    // Drizzle's from() resolves a conditional type that TypeScript cannot
-    // evaluate while T is still generic. The cast is confined to this file;
-    // the return type restores what callers actually get.
-    return this.db
+    const query = this.db
       .select()
       .from(table as never)
       .where(this.scope(table, where));
+
+    // Applied in order, and narrowed back at the end: Drizzle drops methods
+    // from the chain as they are consumed, and TypeScript cannot follow that
+    // through a generic table. Same cast the rest of this file makes.
+    const ordered = options?.orderBy
+      ? (query as never as { orderBy: (...by: SQL[]) => unknown }).orderBy(
+          ...(Array.isArray(options.orderBy)
+            ? options.orderBy
+            : [options.orderBy]),
+        )
+      : query;
+
+    const limited = options?.limit
+      ? (ordered as { limit: (n: number) => unknown }).limit(options.limit)
+      : ordered;
+
+    return limited as Promise<T['$inferSelect'][]>;
   }
 
   /**
@@ -129,6 +163,61 @@ export class TenantDb {
       .from(table)
       .innerJoin(join, on)
       .where(this.scope(table, where));
+  }
+
+  /**
+   * A left join driven by a tenant-scoped table.
+   *
+   * Separate from selectJoined because the nullability differs and must not be
+   * hidden: with innerJoin a missing partner drops the row, which for
+   * audit_log would mean the log silently under-reporting — the one thing it
+   * must never do. `actor_id` points at a user who may be a tombstone
+   * (ADR-012), and the event has to survive the person.
+   *
+   * Same scoping guarantee as selectJoined: organization_id is applied to the
+   * driving table and cannot be omitted by the caller.
+   */
+  selectJoinedLeft<T extends TenantTable, C extends JoinedColumns>(
+    table: T,
+    join: PgTable,
+    on: SQL,
+    columns: C,
+    where?: SQL,
+    options?: SelectOptions,
+  ): Promise<LeftJoinedRow<C>[]> {
+    const db = this.db as unknown as {
+      select: (columns: C) => {
+        from: (table: PgTable) => {
+          leftJoin: (
+            table: PgTable,
+            on: SQL,
+          ) => {
+            where: (where: SQL) => {
+              orderBy: (...by: SQL[]) => { limit: (n: number) => unknown };
+              limit: (n: number) => unknown;
+            };
+          };
+        };
+      };
+    };
+
+    const query = db
+      .select(columns)
+      .from(table)
+      .leftJoin(join, on)
+      .where(this.scope(table, where));
+
+    const ordered = options?.orderBy
+      ? query.orderBy(
+          ...(Array.isArray(options.orderBy)
+            ? options.orderBy
+            : [options.orderBy]),
+        )
+      : query;
+
+    const limited = options?.limit ? ordered.limit(options.limit) : ordered;
+
+    return limited as Promise<LeftJoinedRow<C>[]>;
   }
 
   insert<T extends TenantTable>(

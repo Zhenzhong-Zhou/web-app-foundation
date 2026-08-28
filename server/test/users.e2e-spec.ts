@@ -295,11 +295,97 @@ describe('Users (e2e)', () => {
           roleId: owner.viewerRoleId,
         })
         .expect(403);
-      
+
       // A failed action is not an action — the interceptor's concatMap never
       // runs on an error path. One row, not zero: addViewer created a member
       // above, and that did audit.
       expect(await db.select().from(auditLog)).toHaveLength(1);
+    });
+  });
+
+  describe('GET /v1/audit', () => {
+    interface AuditRecordResponse {
+      id: string;
+      action: string;
+      resourceId: string | null;
+      actorId: string | null;
+      actorEmail: string | null;
+      ip: string | null;
+    }
+
+    interface AuditPageResponse {
+      entries: AuditRecordResponse[];
+      nextCursor: string | null;
+    }
+
+    it('returns the row the caller just caused, with the actor resolved', async () => {
+      const owner = await registerOrg('alpha');
+      await addViewer(owner, 'viewer@alpha.example.com');
+
+      const res = await owner.agent.get('/v1/audit').expect(200);
+      const page = body<AuditPageResponse>(res);
+
+      expect(page.entries).toHaveLength(1);
+      // Joined server-side: a tombstoned actor (ADR-012) is not in
+      // GET /v1/users, so a client could not resolve this id itself.
+      expect(page.entries[0].actorEmail).toBe('owner@alpha.example.com');
+      expect(page.entries[0].action).toBe('user.created');
+      expect(page.nextCursor).toBeNull();
+    });
+
+    it('refuses a Viewer, which lacks audit.view', async () => {
+      const owner = await registerOrg('alpha');
+      const viewer = await addViewer(owner, 'viewer@alpha.example.com');
+
+      // Owner and Admin hold audit.view; Viewer does not. Who did what is
+      // not read-only information.
+      await viewer.get('/v1/audit').expect(403);
+    });
+
+    it('does not show another organization entries', async () => {
+      const alpha = await registerOrg('alpha');
+      const beta = await registerOrg('beta');
+      await addViewer(beta, 'viewer@beta.example.com');
+
+      const res = await alpha.agent.get('/v1/audit').expect(200);
+
+      // Beta created a member and alpha did not, so alpha's log is empty —
+      // and an empty result is its own code path through the left join.
+      expect(body<AuditPageResponse>(res).entries).toHaveLength(0);
+      expect(await db.select().from(auditLog)).toHaveLength(1);
+    });
+
+    it('pages with a keyset cursor', async () => {
+      const owner = await registerOrg('alpha');
+      await addViewer(owner, 'one@alpha.example.com');
+      await addViewer(owner, 'two@alpha.example.com');
+
+      const first = body<AuditPageResponse>(
+        await owner.agent.get('/v1/audit?limit=1').expect(200),
+      );
+
+      expect(first.entries).toHaveLength(1);
+      expect(first.nextCursor).not.toBeNull();
+
+      const second = body<AuditPageResponse>(
+        await owner.agent
+          .get(`/v1/audit?limit=1&before=${first.nextCursor}`)
+          .expect(200),
+      );
+
+      // Newest first, so page two is the older row — and the two pages must
+      // not overlap. Offset paging would repeat a row here the moment a third
+      // arrived between the calls.
+      expect(second.entries).toHaveLength(1);
+      expect(second.entries[0].id).not.toBe(first.entries[0].id);
+      expect(second.nextCursor).toBeNull();
+    });
+
+    it('rejects a limit above the ceiling', async () => {
+      const owner = await registerOrg('alpha');
+
+      // Without the cap, ?limit=999999 pulls the table in one query.
+      await owner.agent.get('/v1/audit?limit=500').expect(400);
     });
   });
 });
