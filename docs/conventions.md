@@ -173,3 +173,24 @@ and silently goes stale.
   access, no setup — if it needs `psql`, it is an e2e test wearing a shell script.
 - e2e tests own the database: they reset between tests and assert on rows,
   including the negative cases smoke cannot reach.
+
+---
+
+## Loading states
+
+Block only on what cannot be rendered around.
+
+- **Whole-app** — the boot check alone. Until `/v1/auth/me` answers, the app
+  does not know whether to draw itself or the login page (ADR-020).
+- **Inline** — form submits. The page is already correct; only the button
+  changes. Never replace a form with a spinner: the user loses sight of what
+  they typed, and a failure leaves them re-orienting.
+- **Progressive** — data inside a rendered page. Shell, nav, and headings draw
+  immediately; the table area holds its space and fills in. A full-page spinner
+  here discards structure already known to be correct, and flashes on every
+  navigation.
+
+Indicators are delayed ~250ms (`useDelayedFlag`). A response in 80ms should
+never flash one — the flash reads as jank, no indicator reads as instant. The
+delay is not optional in the other direction either: a spun-down free instance
+takes about a minute to wake, and a blank page for that long reads as broken.
