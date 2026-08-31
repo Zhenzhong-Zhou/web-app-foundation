@@ -770,6 +770,51 @@ tenant to attribute the event to.
 
 ---
 
+## ADR-019 — Peer dependency conflicts are never overridden
+
+**Context.** `npm outdated` is never empty, and npm offers two flags —
+`--force` and `--legacy-peer-deps` — that make a blocked install succeed. Both
+resolve the conflict by ignoring it: the package is installed against a version
+its maintainer has declared untested. `npm audit fix --force` does the same
+thing without being asked.
+
+The upgrade to Nest 12 is blocked by `@nestjs/throttler`, whose peer range ends
+at `^11.0.0`. The temptation is obvious — everything compiles, and the test
+suite passes either way.
+
+**Decision.** Peer ranges are respected. A blocked upgrade waits, and what
+blocks it is recorded in the commit body rather than in someone's memory.
+
+**Consequence.** The failure this prevents is silent. `@nestjs/throttler` backs
+login rate limiting (ADR-011), which keys on email + IP and is the only thing
+standing between an attacker and unlimited password attempts. A behavioural
+change under an unsupported major does not throw — it degrades, and a rate
+limiter that has stopped counting **fails open**. Every e2e test would still be
+green, because the suite replaces `ThrottlerStorage` with `unlimitedThrottler`
+to keep registration from being limited between cases. Only `smoke-auth.sh`
+exercises the real limiter, and it asserts one 429 rather than the keying rule.
+
+This is the same shape as ADR-014's warning about permissive CORS: a defence
+that disappears without any test noticing, because the tests assert on
+behaviour the change leaves intact.
+
+**Currently blocked, and by what.**
+
+| Upgrade | Blocked by | Unblocks when |
+|---|---|---|
+| `@nestjs/*` 11 → 12 | `@nestjs/throttler@6.5.0` peers at `^11.0.0` | throttler publishes a range including `^12.0.0` |
+| `typescript` 6 → 7 | `typescript-eslint@8.69` peers at `typescript <6.1.0`; the Go port's support for `emitDecoratorMetadata`, which Nest requires | both are satisfied — verify the decorator support explicitly, not by assumption |
+
+Being on a supported release line is the goal; being on the newest major is
+not. `11.2.3` is current for the 11 line, and a non-empty `npm outdated` is not
+a defect.
+
+Corollary: check peer ranges *before* installing — `npm view <pkg>
+peerDependencies` — rather than letting npm discover the conflict. Throttler is
+what blocks Nest 12 today; the next major may be blocked by something else.
+
+---
+
 # Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -833,3 +878,4 @@ they exist so the reasoning is not rediscovered from scratch.
 | Permission resolution | Per request, never cached | ADR-016 |
 | Audit write path | Interceptor, opt in per route, writes only | ADR-018 |
 | Audit pagination | Keyset on UUIDv7 cursor | ADR-018 |
+| Dependency upgrades vs. peer conflicts | Never override; a blocked upgrade waits | ADR-019 |
