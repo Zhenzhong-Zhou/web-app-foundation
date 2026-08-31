@@ -5,7 +5,9 @@
   "author": "Zhenzhong Zhou",
   "private": true,
   "license": "Apache-2.0",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "prebuild": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true});require('node:fs').rmSync('tsconfig.build.tsbuildinfo',{force:true})\"",
     "build": "nest build",
@@ -39,9 +41,10 @@
     "cookie-parser": "^1.4.7",
     "drizzle-orm": "^0.45.2",
     "helmet": "^8.3.0",
-    "nestjs-pino": "^4.6.1",
+    "nestjs-pino": "^5.0.0",
     "nodemailer": "^9.0.6",
     "pg": "^8.23.0",
+    "pino": "^10.3.1",
     "pino-http": "^11.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
@@ -49,20 +52,20 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.18.0",
+    "@eslint/js": "^10.0.1",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.4.0",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.0.0",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
-    "eslint": "^9.18.0",
+    "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-check-file": "^3.3.2",
     "eslint-plugin-prettier": "^5.2.2",
@@ -78,7 +81,7 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
@@ -102,6 +105,7 @@
     "esbuild@0.28.2": true,
     "unrs-resolver@1.12.2": true,
     "fsevents@2.3.3": true,
-    "argon2@0.45.1": true
+    "argon2@0.45.1": true,
+    "@parcel/watcher@2.6.0": true
   }
 }
