@@ -300,6 +300,12 @@ export class AuthService implements OnModuleInit {
       .from(users)
       .where(eq(users.id, context.userId));
 
+    // A valid session pointing at no user should be impossible — sessions
+    // cascade on delete, and ADR-012 tombstones rather than removing rows. If
+    // it happens anyway, the answer is 401: the credential resolves to nobody,
+    // and a 500 on boot would leave the SPA with no way to recover.
+    if (!user) throw new UnauthorizedException();
+
     const base = {
       user: {
         id: user.id,
@@ -315,15 +321,20 @@ export class AuthService implements OnModuleInit {
       return { ...base, organization: null, permissions: [] };
     }
 
-    const [organization] = await this.db
-      .select({ id: organizations.id, name: organizations.name })
-      .from(organizations)
-      .where(eq(organizations.id, context.organizationId));
+    // Independent reads, and this runs on every page load. Sequential await
+    // here costs a round trip for nothing.
+    const [[organization], permissions] = await Promise.all([
+      this.db
+        .select({ id: organizations.id, name: organizations.name })
+        .from(organizations)
+        .where(eq(organizations.id, context.organizationId)),
+      this.permissions.listForRole(context.roleId),
+    ]);
 
     return {
       ...base,
       organization: { ...organization, roleId: context.roleId },
-      permissions: await this.permissions.listForRole(context.roleId),
+      permissions,
     };
   }
 

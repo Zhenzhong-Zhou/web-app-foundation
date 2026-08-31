@@ -256,6 +256,27 @@ describe('Auth (e2e)', () => {
     it('requires a session', async () => {
       await authedAgent(app).get('/v1/auth/me').expect(401);
     });
+
+    it('returns a null organization for a user with no membership', async () => {
+      const agent = authedAgent(app);
+      await agent.post('/v1/auth/register').send(registration).expect(201);
+
+      // Reachable through the API once member removal exists (step 7); until
+      // then the row is deleted directly. The state itself is not exotic —
+      // login() resolves currentOrgId to null for exactly this case.
+      await db.delete(memberships);
+
+      const res = await agent.get('/v1/auth/me').expect(200);
+      const me = res.body as {
+        organization: null;
+        permissions: string[];
+      };
+
+      // 200 with an empty state, not 403. A 403 tells the SPA that something
+      // went wrong, when what happened is that there is nothing to show.
+      expect(me.organization).toBeNull();
+      expect(me.permissions).toHaveLength(0);
+    });
   });
 
   describe('email verification', () => {

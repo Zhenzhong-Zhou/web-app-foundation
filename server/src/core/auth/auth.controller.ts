@@ -53,8 +53,9 @@ export class AuthController {
    * anyone.
    */
   @Get('me')
-  me(@CurrentUser() user: RequestContext) {
-    return this.auth.me(user);
+  @AllowNoOrganization()
+  me(@CurrentUser() context: RequestContext) {
+    return this.auth.me(context);
   }
 
   /**
