@@ -1,13 +1,35 @@
 const BASE = '/api/v1';
 
+export class ApiError extends Error {
+  readonly status: number;
+  /** From the exception filter. The only thing tying a user's report to a log line. */
+  readonly requestId?: string;
+
+  constructor(message: string, status: number, requestId?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.requestId = requestId;
+  }
+}
+
+/** Narrower than RequestInit: a Headers instance spreads to nothing below. */
+type ApiInit = Omit<RequestInit, 'headers'> & {
+  headers?: Record<string, string>;
+};
+
 /**
  * Every request carries the session cookie and the CSRF header.
  *
- * `credentials: 'include'` is required even same-origin for fetch to send
- * cookies on some browsers. X-Requested-With satisfies ADR-014 — a cross-site
- * form cannot set a header, which is the whole defence.
+ * `credentials: 'include'` is redundant same-origin — fetch has defaulted to
+ * 'same-origin' for years. It is set so that pointing BASE at another origin
+ * fails loudly on CORS rather than quietly sending requests with no session.
+ *
+ * X-Requested-With satisfies ADR-014: presence is the proof, the value is
+ * never read. Sent on every method, because a conditional default is a
+ * conditional someone eventually gets wrong.
  */
-export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
   const response = await fetch(`${BASE}${path}`, {
     ...init,
     credentials: 'include',
@@ -17,31 +39,23 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
       ...init.headers,
     },
   });
-
+  
   if (!response.ok) {
-    // The server's error shape carries a message and a requestId; surfacing
-    // the message is what makes a 403 legible to the user.
+    // ValidationPipe returns message as an array; everything else as a string.
     const body = (await response.json().catch(() => null)) as {
       message?: string | string[];
+      requestId?: string;
     } | null;
-
+    
     const message = Array.isArray(body?.message)
-      ? body.message.join(', ')
-      : (body?.message ?? `Request failed (${response.status})`);
-
-    throw new ApiError(message, response.status);
+        ? body.message.join(', ')
+        : (body?.message ?? `Request failed (${response.status})`);
+    
+    throw new ApiError(message, response.status, body?.requestId);
   }
-
+  
+  // 204 from logout and reset-password: no body to parse (ADR-011, ADR-017).
   return response.status === 204
-    ? (undefined as T)
-    : ((await response.json()) as T);
-}
-
-export class ApiError extends Error {
-  readonly status: number;
-
-  constructor(message: string, status: number) {
-    super(message);
-    this.status = status;
-  }
+      ? (undefined as T)
+      : ((await response.json()) as T);
 }
