@@ -47,23 +47,23 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
       ...init.headers,
     },
   });
-  
+
   if (!response.ok) {
     // ValidationPipe returns message as an array; everything else as a string.
     const body = (await response.json().catch(() => null)) as {
       message?: string | string[];
       requestId?: string;
     } | null;
-    
+
     const message = Array.isArray(body?.message)
-        ? body.message.join(', ')
-        : (body?.message ?? `Request failed (${response.status})`);
-    
+      ? body.message.join(', ')
+      : (body?.message ?? `Request failed (${response.status})`);
+
     throw new ApiError(message, response.status, body?.requestId);
   }
-  
+
   // 204 from logout and reset-password: no body to parse (ADR-011, ADR-017).
   return response.status === 204
-      ? (undefined as T)
-      : ((await response.json()) as T);
+    ? (undefined as T)
+    : ((await response.json()) as T);
 }

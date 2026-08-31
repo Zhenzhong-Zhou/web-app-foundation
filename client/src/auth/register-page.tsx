@@ -47,7 +47,7 @@ export function RegisterPage() {
     return (event: { target: { value: string } }) =>
       setForm((current) => ({ ...current, [field]: event.target.value }));
   }
-  
+
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
