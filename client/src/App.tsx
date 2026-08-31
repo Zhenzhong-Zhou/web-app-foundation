@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { LoginPage } from './auth/login-page';
 import { useAuth } from './auth/use-auth';
@@ -73,7 +73,21 @@ export default function App() {
         }
       />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Outside both guards deliberately. Inside Protected, a signed-out
+          user following a bad link would sign in only to land on a 404 —
+          two steps to learn the link was wrong. Nothing leaks: every route
+          is readable in the bundle, and access is enforced server-side. */}
+      <Route
+        path="*"
+        element={
+          <div>
+            <h1>Not found</h1>
+            <p>
+              <Link to="/">Go home</Link>
+            </p>
+          </div>
+        }
+      />
     </Routes>
   );
 }
