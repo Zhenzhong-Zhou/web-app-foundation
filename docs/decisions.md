@@ -118,6 +118,24 @@ no API keys, no signup. Defer BullMQ until sending actually becomes slow.
 will block request threads; that is acceptable at V1 volume and is the signal to add the
 queue. The change is purely additive — no schema or API impact.
 
+**Amended after first deployment.** Two things the local Mailpit setup could not
+surface.
+
+Managed hosts commonly block outbound port 587 to prevent spam — Render's free
+tier does — so SMTP from a container fails with a connection timeout that reads
+like bad credentials and is not. Mail therefore goes over the provider's HTTP
+API in production, selected by the presence of `RESEND_API_KEY`; Mailpit keeps
+the SMTP path in development, so local stays zero-config. This is not
+provider-specific: every mail provider offers an HTTP API precisely because SMTP
+is unavailable on so much hosting.
+
+And the synchronous-send cost is larger than "slow SMTP blocks a request
+thread". A *blocked* port blocks it until the OS gives up — fifteen seconds
+against Render, long enough for the platform's proxy to return 502 before the
+handler finished. Connection and greeting timeouts now bound it at five seconds.
+That is the signal this ADR anticipated, though it arrived as a network
+constraint rather than as volume.
+
 ---
 
 ## ADR-006 — Self-serve registration is the only onboarding path in V1
