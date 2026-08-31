@@ -1,19 +1,79 @@
+import type { ReactNode } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+
+import { LoginPage } from './auth/login-page';
 import { useAuth } from './auth/use-auth';
+import { useDelayedFlag } from './lib/use-delayed-flag';
+
+/** Needs a session. Remembers where the caller was headed. */
+function Protected({ children }: { children: ReactNode }) {
+  const { session } = useAuth();
+  const location = useLocation();
+
+  if (!session) {
+    // replace, or the back button bounces between guard and login.
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: location.pathname + location.search }}
+        replace
+      />
+    );
+  }
+
+  return children;
+}
+
+/**
+ * Redirects away when a session already exists. Without this a signed-in user
+ * can submit the login form again, rotating a session for no reason (ADR-015).
+ */
+function AuthOnly({ children }: { children: ReactNode }) {
+  const { session } = useAuth();
+  return session ? <Navigate to="/" replace /> : children;
+}
 
 export default function App() {
   const { session, loading, error } = useAuth();
+  const showSpinner = useDelayedFlag(loading);
 
-  if (loading) return <p>Loading…</p>;
-  if (error) return <p>Could not reach the server: {error.message}</p>;
-  if (!session) return <p>Not signed in.</p>;
+  // The one place in the app that blocks on a request: until /auth/me answers
+  // there is no correct thing to draw. Everything else renders its layout and
+  // fills in.
+  if (loading) return showSpinner ? <p>Loading…</p> : null;
+  if (error) return <p role="alert">Could not reach the server.</p>;
 
   return (
-    <div>
-      <p>
-        Signed in as {session.user.name} ({session.user.email})
-      </p>
-      <p>Organization: {session.organization?.name ?? 'none'}</p>
-      <p>Permissions: {session.permissions.length}</p>
-    </div>
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          <AuthOnly>
+            <LoginPage />
+          </AuthOnly>
+        }
+      />
+
+      {/* Public by necessity, not by oversight: these are entered from a link
+          in an inbox (ADR-017). Verify is normally reached *while* signed in,
+          since registration signs you in and then mails you; reset is reached
+          while signed out by definition. Neither may sit behind Protected. */}
+      <Route path="/verify-email" element={<p>Verify — step 5.</p>} />
+      <Route path="/reset-password" element={<p>Reset — step 5.</p>} />
+
+      <Route
+        path="/"
+        element={
+          <Protected>
+            <p>
+              Signed in as {session?.user.name} —{' '}
+              {session?.organization?.name ?? 'no organization'}
+            </p>
+          </Protected>
+        }
+      />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

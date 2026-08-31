@@ -4,12 +4,20 @@ export class ApiError extends Error {
   readonly status: number;
   /** From the exception filter. The only thing tying a user's report to a log line. */
   readonly requestId?: string;
+  /** Seconds, from the throttler's Retry-After header on a 429. */
+  readonly retryAfterSeconds?: number;
 
-  constructor(message: string, status: number, requestId?: string) {
+  constructor(
+    message: string,
+    status: number,
+    requestId?: string,
+    retryAfterSeconds?: number,
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.requestId = requestId;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
