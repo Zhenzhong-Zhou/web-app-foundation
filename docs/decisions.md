@@ -787,6 +787,15 @@ they exist so the reasoning is not rediscovered from scratch.
   different indexes and answers a question nobody has yet. CSV export is a real
   compliance need eventually, and is a streaming endpoint rather than a bigger
   page — deferred until someone asks.
+- **Departments.** Deferred, and not a permissions mechanism: a role says what
+  someone can do, a department says where they sit, and the two vary
+  independently — a Warehouse Manager and a Sales Manager hold the same role in
+  different departments, while one department contains several roles. Building
+  permissions on departments rebuilds roles under a different name. As a label
+  (shown in a member list, filtered on, reported on) it is a column or a small
+  table whenever an application asks. If it ever *imposes* visibility rather
+  than filtering it, that is the row-scoped permissions entry above, not a
+  department feature.
 
 ---
 
