@@ -4,6 +4,7 @@ import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LoginPage } from './auth/login-page';
 import { useAuth } from './auth/use-auth';
 import { useDelayedFlag } from './lib/use-delayed-flag';
+import { RegisterPage } from './auth/register-page.tsx';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -50,6 +51,15 @@ export default function App() {
         element={
           <AuthOnly>
             <LoginPage />
+          </AuthOnly>
+        }
+      />
+
+      <Route
+        path="/register"
+        element={
+          <AuthOnly>
+            <RegisterPage />
           </AuthOnly>
         }
       />
