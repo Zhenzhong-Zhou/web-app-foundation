@@ -5,6 +5,10 @@ import { LoginPage } from './auth/login-page';
 import { useAuth } from './auth/use-auth';
 import { useDelayedFlag } from './lib/use-delayed-flag';
 import { RegisterPage } from './auth/register-page.tsx';
+import { VerifyEmailPage } from './auth/verify-email-page.tsx';
+import { ResetPasswordPage } from './auth/reset-password-page.tsx';
+import { ForgotPasswordPage } from './auth/forgot-password-page.tsx';
+import { api } from './lib/api.ts';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -34,8 +38,36 @@ function AuthOnly({ children }: { children: ReactNode }) {
   return session ? <Navigate to="/" replace /> : children;
 }
 
+/**
+ * Placeholder for the signed-in app. Step 9 replaces this with a real
+ * dashboard, and sign-out moves into a nav.
+ */
+function Home() {
+  const { session, refresh } = useAuth();
+
+  return (
+    <div>
+      <p>
+        Signed in as {session?.user.name} —{' '}
+        {session?.organization?.name ?? 'no organization'}
+      </p>
+
+      {/* The row is deleted server-side before the cookie is cleared, so a
+          failure leaves the user visibly signed in — the safe direction to
+          fail (ADR-011). refresh() then 401s and Protected redirects. */}
+      <button
+        onClick={() => {
+          void api('/auth/logout', { method: 'POST' }).then(refresh);
+        }}
+      >
+        Sign out
+      </button>
+    </div>
+  );
+}
+
 export default function App() {
-  const { session, loading, error } = useAuth();
+  const { loading, error } = useAuth();
   const showSpinner = useDelayedFlag(loading);
 
   // The one place in the app that blocks on a request: until /auth/me answers
@@ -68,17 +100,23 @@ export default function App() {
           in an inbox (ADR-017). Verify is normally reached *while* signed in,
           since registration signs you in and then mails you; reset is reached
           while signed out by definition. Neither may sit behind Protected. */}
-      <Route path="/verify-email" element={<p>Verify — step 5.</p>} />
-      <Route path="/reset-password" element={<p>Reset — step 5.</p>} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      <Route
+        path="/forgot-password"
+        element={
+          <AuthOnly>
+            <ForgotPasswordPage />
+          </AuthOnly>
+        }
+      />
 
       <Route
         path="/"
         element={
           <Protected>
-            <p>
-              Signed in as {session?.user.name} —{' '}
-              {session?.organization?.name ?? 'no organization'}
-            </p>
+            <Home />
           </Protected>
         }
       />
