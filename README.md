@@ -161,7 +161,7 @@ Build order:
 - [x] **6. Audit log** — interceptor over existing actions
 - [ ] **7. Profile / account settings / account status** — self-service account
   actions, and the first audited events outside user creation
-- [ ] **8. Client** — React + TypeScript on Vite in `client/`, consuming the API
+- [x] **8. Client** — React + TypeScript on Vite in `client/`, consuming the API
   through the Vite proxy (ADR-011)
 
 **Deliberately deferred** (all additive, none block V1):
