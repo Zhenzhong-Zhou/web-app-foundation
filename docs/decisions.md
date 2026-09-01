@@ -902,6 +902,20 @@ they exist so the reasoning is not rediscovered from scratch.
   table whenever an application asks. If it ever *imposes* visibility rather
   than filtering it, that is the row-scoped permissions entry above, not a
   department feature.
+- **Separate packages, not npm workspaces.** Server and client keep their own
+  `package.json` and `node_modules`. The workspace would give one TypeScript
+  version and a `shared/` package for the four validation constants currently
+  mirrored in `server/src/core/auth/dto/` and `client/src/lib/validation.ts`.
+  Rejected for now: it changes how Render builds, which is a production change
+  to solve a local annoyance. Revisit when `shared/` would hold response types
+  rather than four numbers — that is a real drift surface, four constants is
+  not. Until then the copies carry comments pointing at each other.
+- **Admin CRUD: Refine, provisionally.** Headless (so no theme to fight), and
+  it bundles TanStack Query, which is the server-state layer step 9 needs
+  anyway. Not yet adopted, and not an ADR until two things are checked against
+  its data-provider interface: keyset pagination on a UUIDv7 cursor with no
+  `count(*)` (ADR-018), and 403s that carry meaning. If the provider assumes
+  offset pagination and a total, the adapter fights the framework.
 
 ---
 
