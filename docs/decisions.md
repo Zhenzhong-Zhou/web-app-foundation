@@ -959,6 +959,15 @@ they exist so the reasoning is not rediscovered from scratch.
   its data-provider interface: keyset pagination on a UUIDv7 cursor with no
   `count(*)` (ADR-018), and 403s that carry meaning. If the provider assumes
   offset pagination and a total, the adapter fights the framework.
+- **Auditing account actions.** `audit_log.organization_id` is `NOT NULL`
+  (ADR-012 makes the organization the owner of every row), but password
+  changes, profile edits, and session revocations are account actions and run
+  under `@AllowNoOrganization`. So `@Audited()` on them would fail for exactly
+  the users those routes exist to serve — the same shape ADR-018 already names
+  for `@Public()` routes. Either the column becomes nullable, which weakens
+  "the organization owns the data" for a class of rows, or account events go
+  to a separate table, or they stay unaudited. A password change is worth
+  recording, so this needs resolving before V1 is called done.
 
 ---
 
