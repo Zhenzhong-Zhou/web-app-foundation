@@ -39,7 +39,7 @@ export class AccountController {
     @CurrentUser() context: RequestContext,
     @Body() dto: UpdateProfileDto,
   ): Promise<void> {
-    await this.account.updateProfile(context.userId, dto.name);
+    await this.account.updateProfile(context, dto.name);
   }
 
   /**

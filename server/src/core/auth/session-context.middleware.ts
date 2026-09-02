@@ -34,7 +34,7 @@ export class SessionContextMiddleware implements NestMiddleware {
     const token = readSessionCookie(req);
     if (!token) return next();
 
-    const context = await this.resolve(token);
+    const context = await this.resolve(token, req);
     if (!context) return next();
 
     setRequestContext(req, context);
@@ -49,7 +49,10 @@ export class SessionContextMiddleware implements NestMiddleware {
     );
   }
 
-  private async resolve(token: string): Promise<RequestContext | null> {
+  private async resolve(
+    token: string,
+    req: Request,
+  ): Promise<RequestContext | null> {
     const session = await this.sessions.validate(token);
     if (!session) return null;
 
@@ -81,6 +84,11 @@ export class SessionContextMiddleware implements NestMiddleware {
       name: user.name,
       organizationId: membership?.organizationId ?? null,
       roleId: membership?.roleId ?? null,
+      // Captured per request rather than read off the session row: ADR-012
+      // wants these at event time, and the session's values are from
+      // whenever it was created.
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
     };
   }
 

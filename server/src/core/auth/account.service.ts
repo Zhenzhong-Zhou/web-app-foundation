@@ -11,6 +11,7 @@ import { UAParser } from 'ua-parser-js';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { users } from '../../database/schema';
+import { AccountEventService } from './account-event.service';
 import { AuthTokenService } from './auth-token.service';
 import type { ChangePasswordDto } from './dto/change-password.dto';
 import { PasswordService } from './password.service';
@@ -49,11 +50,21 @@ export class AccountService {
     private readonly passwords: PasswordService,
     private readonly sessions: SessionService,
     private readonly tokens: AuthTokenService,
+    private readonly events: AccountEventService,
   ) {}
 
-  async updateProfile(userId: string, name: string): Promise<void> {
-    await this.db.update(users).set({ name }).where(eq(users.id, userId));
-    this.logger.log(`Profile updated for ${userId}`);
+  async updateProfile(context: RequestContext, name: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ name })
+      .where(eq(users.id, context.userId));
+
+    await this.events.record(context.userId, 'account.profile_updated', {
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
+
+    this.logger.log(`Profile updated for ${context.userId}`);
   }
 
   /**
@@ -111,6 +122,11 @@ export class AccountService {
       context.userId,
       context.sessionId,
     );
+
+    await this.events.record(context.userId, 'account.password_changed', {
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
 
     this.logger.log(
       `Password changed for ${context.userId}; ${revoked} sessions revoked`,
@@ -172,7 +188,16 @@ export class AccountService {
     }
 
     const revoked = await this.sessions.revokeOwned(sessionId, context.userId);
-    if (revoked) this.logger.log(`Session ${sessionId} revoked by its owner`);
+
+    if (revoked) {
+      await this.events.record(context.userId, 'session.revoked', {
+        ip: context.ip,
+        userAgent: context.userAgent,
+      });
+
+      this.logger.log(`Session ${sessionId} revoked by its owner`);
+    }
+
     return revoked;
   }
 }

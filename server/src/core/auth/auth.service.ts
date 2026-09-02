@@ -21,6 +21,7 @@ import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { provisionOrganization } from '../organizations/provision-organization';
 import { uniqueSlug } from '../organizations/slug';
+import { AccountEventService } from './account-event.service';
 import { AuthTokenService } from './auth-token.service';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
@@ -87,6 +88,7 @@ export class AuthService implements OnModuleInit {
     private readonly sessions: SessionService,
     private readonly permissions: PermissionsService,
     private readonly tokens: AuthTokenService,
+    private readonly events: AccountEventService,
     private readonly mail: MailService,
     private readonly config: ConfigService<Env, true>,
   ) {}
@@ -252,6 +254,8 @@ export class AuthService implements OnModuleInit {
 
     const session = await this.sessions.create(row.id, currentOrgId, meta);
 
+    await this.events.record(row.id, 'session.created', meta);
+
     this.logger.log(`Login ${row.id} org=${currentOrgId ?? 'none'}`);
 
     return {
@@ -267,13 +271,20 @@ export class AuthService implements OnModuleInit {
   }
 
   /**
-   * Revocation is deletion; there is no separate mechanism (ADR-011). Idempotent
-   * by construction — deleting an already-deleted row affects zero rows and is
-   * not an error, so a double-click logs out once and returns 204 twice.
+   * Revocation is deletion; there is no separate mechanism (ADR-011).
+   * Idempotent by construction — deleting an already-deleted row affects zero
+   * rows and is not an error, so a double-click logs out once and returns 204
+   * twice.
    */
-  async logout(sessionId: string): Promise<void> {
-    await this.sessions.revoke(sessionId);
-    this.logger.log(`Logout ${sessionId}`);
+  async logout(context: RequestContext): Promise<void> {
+    await this.sessions.revoke(context.sessionId);
+
+    await this.events.record(context.userId, 'session.ended', {
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
+
+    this.logger.log(`Logout ${context.sessionId}`);
   }
 
   /**
@@ -376,7 +387,10 @@ export class AuthService implements OnModuleInit {
    * the second attempt returns false, and the controller answers the same way
    * either way. What matters is that the address ends up verified.
    */
-  async verifyEmail(token: string): Promise<boolean> {
+  async verifyEmail(
+    token: string,
+    meta: { ip?: string; userAgent?: string } = {},
+  ): Promise<boolean> {
     const userId = await this.tokens.consume(token, 'email_verification');
     if (!userId) return false;
 
@@ -384,6 +398,8 @@ export class AuthService implements OnModuleInit {
       .update(users)
       .set({ emailVerifiedAt: new Date() })
       .where(eq(users.id, userId));
+
+    await this.events.record(userId, 'account.email_verified', meta);
 
     this.logger.log(`Verified email for ${userId}`);
     return true;
@@ -466,7 +482,11 @@ export class AuthService implements OnModuleInit {
    * Outstanding reset tokens are invalidated too: a second live link is a
    * second way in for whoever requested it.
    */
-  async resetPassword(token: string, password: string): Promise<boolean> {
+  async resetPassword(
+    token: string,
+    password: string,
+    meta: { ip?: string; userAgent?: string } = {},
+  ): Promise<boolean> {
     const userId = await this.tokens.consume(token, 'password_reset');
     if (!userId) return false;
 
@@ -479,6 +499,11 @@ export class AuthService implements OnModuleInit {
 
     await this.tokens.invalidateOutstanding(userId, 'password_reset');
     const revoked = await this.sessions.revokeAllForUser(userId);
+
+    // Distinct from password_changed: a reset the user did not request is the
+    // strongest available signal of an attempted takeover, and folding the
+    // two together hides it.
+    await this.events.record(userId, 'account.password_reset', meta);
 
     this.logger.log(
       `Password reset for ${userId}; ${revoked} sessions revoked`,

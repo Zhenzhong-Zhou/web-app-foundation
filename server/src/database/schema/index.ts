@@ -5,6 +5,7 @@
  * globs this folder — a table missing from this file silently does not exist:
  * no migration is generated and no query type-checks against it.
  */
+export * from './account-events';
 export * from './audit-log';
 export * from './auth-tokens';
 export * from './memberships';

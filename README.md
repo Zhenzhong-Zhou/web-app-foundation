@@ -159,7 +159,7 @@ Build order:
 - [x] **4. Permission guard** — seed roles, gate one endpoint, prove a Viewer gets 403
 - [x] **5. Email verification + password reset** — token table + Mailpit
 - [x] **6. Audit log** — interceptor over existing actions
-- [ ] **7. Profile / account settings / account status** — self-service account
+- [x] **7. Profile / account settings / account status** — self-service account
   actions, and the first audited events outside user creation
 - [x] **8. Client** — React + TypeScript on Vite in `client/`, consuming the API
   through the Vite proxy (ADR-011)

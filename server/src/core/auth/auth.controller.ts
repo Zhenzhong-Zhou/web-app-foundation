@@ -164,7 +164,7 @@ export class AuthController {
     // and the delete then failed, the user would believe they were signed out
     // while a live token sat in the table (ADR-011). This way a failure leaves
     // them visibly signed in, which is the safe direction to fail.
-    await this.auth.logout(user.sessionId);
+    await this.auth.logout(user);
 
     const isProduction =
       this.config.get('NODE_ENV', { infer: true }) === 'production';
@@ -188,8 +188,11 @@ export class AuthController {
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async verifyEmail(@Body() dto: VerifyEmailDto) {
-    const verified = await this.auth.verifyEmail(dto.token);
+  async verifyEmail(@Body() dto: VerifyEmailDto, @Req() req: Request) {
+    const verified = await this.auth.verifyEmail(dto.token, {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
 
     if (!verified) {
       throw new BadRequestException(
@@ -254,8 +257,14 @@ export class AuthController {
   @Post('reset-password')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
-    const reset = await this.auth.resetPassword(dto.token, dto.password);
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+    @Req() req: Request,
+  ): Promise<void> {
+    const reset = await this.auth.resetPassword(dto.token, dto.password, {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
 
     if (!reset) {
       throw new BadRequestException(

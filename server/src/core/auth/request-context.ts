@@ -16,6 +16,10 @@ export interface RequestContext {
   organizationId: string | null;
   /** Null whenever organizationId is. Step 4's permission guard reads this. */
   roleId: string | null;
+  /** Captured per request, not read off the session row: ADR-012 requires
+   *  these at event time, and the session's values are from its creation. */
+  ip?: string;
+  userAgent?: string;
 }
 
 // A symbol rather than a declaration-merged property on Express's Request:

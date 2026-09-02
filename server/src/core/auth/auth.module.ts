@@ -4,6 +4,7 @@ import { MailModule } from '../../shared/mail/mail.module';
 import { AuthorizationModule } from '../authorization/authorization.module';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
+import { AccountEventService } from './account-event.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthTokenService } from './auth-token.service';
@@ -21,6 +22,7 @@ import { SessionContextMiddleware } from './session-context.middleware';
     SessionService,
     SessionContextMiddleware,
     AccountService,
+    AccountEventService,
   ],
   // Exported for the guard, and for password-change flows that must revoke
   // other sessions (ADR-011). AuthTokenService is exported so admin-created
