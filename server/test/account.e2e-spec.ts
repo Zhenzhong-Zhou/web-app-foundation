@@ -26,7 +26,8 @@ interface SessionSummary {
   id: string;
   current: boolean;
   ip: string | null;
-  userAgent: string | null;
+  browser: string | null;
+  os: string | null;
 }
 
 function body<T>(res: { body: unknown }): T {
@@ -275,6 +276,9 @@ describe('Account (e2e)', () => {
 
       expect(body<SessionSummary[]>(res)[0]).not.toHaveProperty('tokenHash');
       expect(body<SessionSummary[]>(res)[0]).not.toHaveProperty('token_hash');
+      // Fingerprinting data with no client-side use. Parsed server-side into
+      // browser and os; the raw string never leaves.
+      expect(body<SessionSummary[]>(res)[0]).not.toHaveProperty('userAgent');
     });
 
     it('does not list another user sessions', async () => {

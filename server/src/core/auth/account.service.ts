@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
+import { UAParser } from 'ua-parser-js';
 
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
@@ -22,7 +23,10 @@ export interface SessionSummary {
   lastSeenAt: Date;
   expiresAt: Date;
   ip: string | null;
-  userAgent: string | null;
+  /** "Chrome", "Safari" — null when the agent was absent or unrecognised. */
+  browser: string | null;
+  /** "macOS", "Windows", "iOS". */
+  os: string | null;
   /** The session making this request. The UI disables revoking it. */
   current: boolean;
 }
@@ -115,15 +119,41 @@ export class AccountService {
     return revoked;
   }
 
+  /**
+   * The raw user agent is never returned.
+   *
+   * Parsed here rather than in the client for two reasons: the string is
+   * fingerprinting data with no legitimate client-side use, and the same
+   * parsing will be wanted server-side the day a "new sign-in" email exists.
+   *
+   * No geolocation on `ip`, deliberately. It costs either a third-party call
+   * per render or a MaxMind database to ship and keep current, and it is
+   * wrong often enough — VPNs, mobile carriers — to raise false alarms on the
+   * one screen whose job is spotting something unfamiliar. The address itself
+   * is honest; the user can look it up if they care.
+   */
   async listSessions(context: RequestContext): Promise<SessionSummary[]> {
     const rows = await this.sessions.listForUser(context.userId);
 
-    // Marked rather than filtered: the user needs to see the device they are
-    // on, and needs to be stopped from cutting themselves off with it.
-    return rows.map((row) => ({
-      ...row,
-      current: row.id === context.sessionId,
-    }));
+    return (
+      rows
+        .map(({ userAgent, ...row }) => {
+          const parsed = new UAParser(userAgent ?? '').getResult();
+
+          return {
+            ...row,
+            browser: parsed.browser.name ?? null,
+            os: parsed.os.name ?? null,
+            // Marked rather than filtered: the user needs to see the device
+            // they are on, and needs to be stopped from cutting themselves off
+            // with it.
+            current: row.id === context.sessionId,
+          };
+        })
+        // Newest activity first: someone scanning for a session they do not
+        // recognise reads top-down.
+        .sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime())
+    );
   }
 
   /**
