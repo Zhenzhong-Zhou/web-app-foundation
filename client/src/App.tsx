@@ -13,6 +13,7 @@ import { Button, Stack, Typography } from '@mui/material';
 import { ColorModeSelect } from './components/color-mode-select.tsx';
 import { AppLayout } from './layout/app-layout.tsx';
 import { AccountPage } from './account/account-page.tsx';
+import { SessionsPage } from './account/sessions-page.tsx';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -137,6 +138,7 @@ export default function App() {
       >
         <Route path="/" element={<Home />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/account/sessions" element={<SessionsPage />} />
       </Route>
 
       {/* Outside both guards deliberately. Inside Protected, a signed-out

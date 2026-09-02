@@ -3,6 +3,11 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react()],
+  // Raised from Vite's 500KB default. MUI is most of the bundle, and ADR-021
+  // accepts that: this surface sits behind a login wall, where first paint is
+  // not a conversion metric. Revisit when step 9 adds Refine — that is when
+  // route-level lazy() starts to pay.
+  build: { chunkSizeWarningLimit: 700 },
   server: {
     port: 5173,
     // Fail rather than drift to 5174: CLIENT_URL is baked into every
