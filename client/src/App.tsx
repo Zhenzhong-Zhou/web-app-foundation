@@ -11,6 +11,7 @@ import { ForgotPasswordPage } from './auth/forgot-password-page.tsx';
 import { api } from './lib/api.ts';
 import { Button, Stack, Typography } from '@mui/material';
 import { ColorModeSelect } from './components/color-mode-select.tsx';
+import { AppLayout } from './layout/app-layout.tsx';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -48,14 +49,21 @@ function Home() {
   const { session, refresh } = useAuth();
 
   return (
-    <Stack spacing={2} sx={{ p: 3 }}>
-      <Typography>
-        Signed in as {session?.user.name} —{' '}
-        {session?.organization?.name ?? 'no organization'}
+    <Stack
+      direction="row"
+      spacing={2}
+      sx={{ flexGrow: 1, display: { xs: 'none', sm: 'flex' } }}
+    >
+      <Typography
+        variant="h6"
+        component="div"
+        noWrap
+        sx={{ mr: 2, maxWidth: { xs: 140, sm: 'none' } }}
+      >
+        {session?.organization?.name ?? 'No organization'}
       </Typography>
-
+      `
       <ColorModeSelect />
-
       {/* The row is deleted server-side before the cookie is cleared, so a
           failure leaves the user visibly signed in — the safe direction to
           fail (ADR-011). refresh() then 401s and Protected redirects. */}
@@ -117,14 +125,17 @@ export default function App() {
         }
       />
 
+      {/* Protected wraps the layout, not each child: one guard, and the
+          header does not re-mount on navigation. */}
       <Route
-        path="/"
         element={
           <Protected>
-            <Home />
+            <AppLayout />
           </Protected>
         }
-      />
+      >
+        <Route path="/" element={<Home />} />
+      </Route>
 
       {/* Outside both guards deliberately. Inside Protected, a signed-out
           user following a bad link would sign in only to land on a 404 —

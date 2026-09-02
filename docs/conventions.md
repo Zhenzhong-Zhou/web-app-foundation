@@ -194,3 +194,16 @@ Indicators are delayed ~250ms (`useDelayedFlag`). A response in 80ms should
 never flash one — the flash reads as jank, no indicator reads as instant. The
 delay is not optional in the other direction either: a spun-down free instance
 takes about a minute to wake, and a blank page for that long reads as broken.
+
+---
+
+## Responsive layout
+
+MUI's breakpoint props (`sx={{ py: { xs: 3, sm: 8 } }}`), applied where a
+layout actually breaks — not pre-emptively. A rule added for a width nobody
+checked is a rule nobody can safely remove later.
+
+Nav is a top bar while it holds a handful of items, wrapping to two rows on
+narrow screens rather than hiding anything. A drawer costs open/closed state
+and a toggle, and earns that at roughly six items with real hierarchy — which
+is step 9, not before.
