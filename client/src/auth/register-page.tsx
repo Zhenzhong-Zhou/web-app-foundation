@@ -1,11 +1,16 @@
+import { Alert, Button, Link, TextField, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import { ApiError, api } from '../lib/api';
+import {
+  EMAIL_MAX_LENGTH,
+  NAME_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from '../lib/validation';
+import { AuthLayout } from './auth-layout';
 import { useAuth } from './use-auth';
-
-/** Matches the server's rule: length only, 12 minimum, no composition rules. */
-const PASSWORD_MIN_LENGTH = 12;
 
 function messageFor(caught: unknown): string {
   if (!(caught instanceof ApiError)) return 'Could not reach the server.';
@@ -21,14 +26,14 @@ function messageFor(caught: unknown): string {
 
 /**
  * Registration creates user, organization, and Owner membership in one
- * transaction (ADR-004), and is the only onboarding path in V1 (ADR-006).
+ * transaction (ADR-004), and is the only onboarding path in V1 (ADR-006) —
+ * which is why the organization name is required rather than optional.
  *
- * A duplicate address answers 409 and its message is shown as-is. That tells
- * an unauthenticated caller the address exists, which is the enumeration hole
- * login and forgot-password both avoid — it is a known open decision, and
- * closing it means changing the server's response shape. Nothing here should
- * widen it: no availability check on blur, which would turn one request into
- * a fast oracle.
+ * A duplicate address answers 409 and its message shows as-is. That reveals
+ * the address exists, which is the open enumeration decision rather than
+ * something to patch here. Nothing in this form should widen it — in
+ * particular no availability check on blur, which turns one request into a
+ * fast oracle.
  */
 export function RegisterPage() {
   const { refresh } = useAuth();
@@ -48,7 +53,7 @@ export function RegisterPage() {
       setForm((current) => ({ ...current, [field]: event.target.value }));
   }
 
-  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
@@ -60,8 +65,7 @@ export function RegisterPage() {
       });
 
       // Registration signs the user in, so the cookie is already set. Read
-      // through rather than parsing the 201 body: it carries { user } only,
-      // and /auth/me is the one shape the app knows how to hold.
+      // through rather than parsing the 201 body: it carries { user } only.
       await refresh();
       navigate('/', { replace: true });
     } catch (caught) {
@@ -71,62 +75,75 @@ export function RegisterPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h1>Create an account</h1>
+    <AuthLayout title="Create an account" onSubmit={handleSubmit}>
+      {error && <Alert severity="error">{error}</Alert>}
 
-      {error && <p role="alert">{error}</p>}
-
-      <label htmlFor="name">Your name</label>
-      <input
+      <TextField
         id="name"
+        label="Your name"
         autoComplete="name"
         required
+        fullWidth
         value={form.name}
         onChange={update('name')}
+        slotProps={{ htmlInput: { maxLength: NAME_MAX_LENGTH } }}
       />
 
-      <label htmlFor="organizationName">Organization name</label>
-      <input
+      <TextField
         id="organizationName"
+        label="Company name"
         autoComplete="organization"
         required
+        fullWidth
         value={form.organizationName}
         onChange={update('organizationName')}
+        slotProps={{ htmlInput: { maxLength: NAME_MAX_LENGTH } }}
       />
 
-      <label htmlFor="email">Email</label>
-      <input
+      <TextField
         id="email"
+        label="Email"
         type="email"
         autoComplete="username"
         required
+        fullWidth
         value={form.email}
         onChange={update('email')}
+        slotProps={{ htmlInput: { maxLength: EMAIL_MAX_LENGTH } }}
       />
 
-      <label htmlFor="password">Password</label>
-      <input
+      <TextField
         id="password"
+        label="Password"
         type="password"
         // new-password, not current-password: this is what prompts a manager
         // to offer a generated one (ADR-017).
         autoComplete="new-password"
         required
-        minLength={PASSWORD_MIN_LENGTH}
+        fullWidth
         value={form.password}
         onChange={update('password')}
+        // Stated, never the authority — anything the browser checks is
+        // bypassed by curl, and the 400 is the real control.
+        helperText={`At least ${PASSWORD_MIN_LENGTH} characters.`}
+        slotProps={{
+          htmlInput: {
+            minLength: PASSWORD_MIN_LENGTH,
+            maxLength: PASSWORD_MAX_LENGTH,
+          },
+        }}
       />
-      {/* Stated, not enforced by a meter. The server is the only authority —
-          anything the browser checks is bypassed by curl. */}
-      <p>At least {PASSWORD_MIN_LENGTH} characters.</p>
 
-      <button type="submit" disabled={submitting}>
+      <Button type="submit" variant="contained" disabled={submitting}>
         {submitting ? 'Creating account…' : 'Create account'}
-      </button>
+      </Button>
 
-      <p>
-        Already have an account? <Link to="/login">Sign in</Link>
-      </p>
-    </form>
+      <Typography variant="body2">
+        Already have an account?{' '}
+        <Link component={RouterLink} to="/login">
+          Sign in
+        </Link>
+      </Typography>
+    </AuthLayout>
   );
 }

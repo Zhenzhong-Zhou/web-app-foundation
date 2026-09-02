@@ -1,8 +1,10 @@
+import { Alert, Button, Link, TextField, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { ApiError, api } from '../lib/api';
 import { EMAIL_MAX_LENGTH } from '../lib/validation';
+import { AuthLayout } from './auth-layout';
 
 /**
  * Answers identically whether or not the address exists (ADR-017), so the UI
@@ -40,40 +42,40 @@ export function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div>
-        <h1>Check your email</h1>
-        <p>If that address has an account, a reset link is on its way.</p>
-        <p>
-          <Link to="/login">Back to sign in</Link>
-        </p>
-      </div>
+      <AuthLayout title="Check your email">
+        <Typography>
+          If that address has an account, a reset link is on its way.
+        </Typography>
+        <Link component={RouterLink} to="/login" variant="body2">
+          Back to sign in
+        </Link>
+      </AuthLayout>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h1>Reset your password</h1>
+    <AuthLayout title="Reset your password" onSubmit={handleSubmit}>
+      {error && <Alert severity="error">{error}</Alert>}
 
-      {error && <p role="alert">{error}</p>}
-
-      <label htmlFor="email">Email</label>
-      <input
+      <TextField
         id="email"
+        label="Email"
         type="email"
         autoComplete="username"
         required
-        maxLength={EMAIL_MAX_LENGTH}
+        fullWidth
         value={email}
         onChange={(event) => setEmail(event.target.value)}
+        slotProps={{ htmlInput: { maxLength: EMAIL_MAX_LENGTH } }}
       />
 
-      <button type="submit" disabled={submitting}>
+      <Button type="submit" variant="contained" disabled={submitting}>
         {submitting ? 'Sending…' : 'Send reset link'}
-      </button>
+      </Button>
 
-      <p>
-        <Link to="/login">Back to sign in</Link>
-      </p>
-    </form>
+      <Link component={RouterLink} to="/login" variant="body2">
+        Back to sign in
+      </Link>
+    </AuthLayout>
   );
 }

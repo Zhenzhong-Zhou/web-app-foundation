@@ -1,28 +1,21 @@
+import { Alert, CircularProgress, Link, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { ApiError, api } from '../lib/api';
 import { looksLikeToken } from '../lib/validation';
+import { AuthLayout } from './auth-layout';
 import { useAuth } from './use-auth';
 
 type Status = 'checking' | 'verified' | 'failed';
 
-/**
- * Public by necessity, not by oversight (ADR-020): the link arrives in an
- * inbox, and this is normally opened *while signed in* — registration signs
- * the user in and then mails them.
- *
- * The token is spent by this POST, not by loading the page, which is what
- * keeps corporate mail scanners from consuming it before the human clicks
- * (ADR-017).
- */
 export function VerifyEmailPage() {
   const [params, setParams] = useSearchParams();
   const { session, refresh } = useAuth();
 
   // Read once. The effect strips the token from the URL when it finishes, so
   // reading params during render would flip this component into its
-  // malformed-link state the moment the request succeeds.
+  // malformed-link state the moment the request succeeded.
   const [token] = useState(() => params.get('token'));
 
   const [status, setStatus] = useState<Status>('checking');
@@ -30,9 +23,9 @@ export function VerifyEmailPage() {
   const attempted = useRef(false);
 
   useEffect(() => {
-    // token is frozen at mount, so this effect runs once regardless of what
-    // the URL does afterwards. The render guard below cannot cover this: it
-    // has already returned by the time effects run.
+    // token is frozen at mount, so this runs once regardless of what the URL
+    // does afterwards. The render guard below cannot cover this: it has
+    // already returned by the time effects run.
     if (!looksLikeToken(token) || attempted.current) return;
     attempted.current = true;
 
@@ -43,6 +36,8 @@ export function VerifyEmailPage() {
           body: JSON.stringify({ token }),
         });
 
+        // emailVerified on the session is now stale. Cheap, and it clears the
+        // "confirm your address" banner without a reload.
         if (session) await refresh();
         setStatus('verified');
       } catch (caught) {
@@ -53,55 +48,65 @@ export function VerifyEmailPage() {
             : 'Could not reach the server.',
         );
       } finally {
+        // Strip the token either way: it ends up in browser history and in
+        // the Referer header of any outbound request this page makes.
         setParams({}, { replace: true });
       }
     })();
   }, [token, setParams, session, refresh]);
 
-  // Known at first render, so no effect and no state: a truncated link is a
-  // property of the URL, not something discovered asynchronously.
   if (!looksLikeToken(token)) {
     return (
-      <div>
-        <h1>That link did not work</h1>
-        <p role="alert">The link is incomplete. Request a new one.</p>
-        <p>
-          <Link to={session ? '/' : '/login'}>
-            {session ? 'Go home' : 'Sign in'}
-          </Link>
-        </p>
-      </div>
+      <AuthLayout title="That link did not work">
+        <Alert severity="error">
+          The link is incomplete. Request a new one.
+        </Alert>
+        <Link
+          component={RouterLink}
+          to={session ? '/' : '/login'}
+          variant="body2"
+        >
+          {session ? 'Go home' : 'Sign in'}
+        </Link>
+      </AuthLayout>
     );
   }
 
-  if (status === 'checking') return <p>Confirming your address…</p>;
+  if (status === 'checking') {
+    return (
+      <AuthLayout title="Confirming your address">
+        <CircularProgress size={24} />
+      </AuthLayout>
+    );
+  }
 
   if (status === 'failed') {
     return (
-      <div>
-        <h1>That link did not work</h1>
-        <p role="alert">{message}</p>
-        {/* No retry button: the token is single-use, so retrying the same one
-            fails identically. A new link is the only remedy. */}
-        <p>
-          {session ? (
-            <Link to="/">Go home and request a new link</Link>
-          ) : (
-            <Link to="/login">Sign in</Link>
-          )}
-        </p>
-      </div>
+      <AuthLayout title="That link did not work">
+        <Alert severity="error">{message}</Alert>
+        {/* No retry: the token is single-use, so the same one fails
+            identically. A new link is the only remedy. */}
+        <Link
+          component={RouterLink}
+          to={session ? '/' : '/login'}
+          variant="body2"
+        >
+          {session ? 'Go home and request a new link' : 'Sign in'}
+        </Link>
+      </AuthLayout>
     );
   }
 
   return (
-    <div>
-      <h1>Address confirmed</h1>
-      <p>
-        <Link to={session ? '/' : '/login'}>
-          {session ? 'Continue' : 'Sign in'}
-        </Link>
-      </p>
-    </div>
+    <AuthLayout title="Address confirmed">
+      <Typography>Your email address has been verified.</Typography>
+      <Link
+        component={RouterLink}
+        to={session ? '/' : '/login'}
+        variant="body2"
+      >
+        {session ? 'Continue' : 'Sign in'}
+      </Link>
+    </AuthLayout>
   );
 }

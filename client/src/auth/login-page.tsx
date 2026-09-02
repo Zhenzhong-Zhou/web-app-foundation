@@ -1,7 +1,10 @@
+import { Alert, Button, Link, TextField } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { ApiError, api } from '../lib/api';
+import { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH } from '../lib/validation';
+import { AuthLayout } from './auth-layout';
 import { useAuth } from './use-auth';
 
 /**
@@ -13,8 +16,8 @@ function messageFor(caught: unknown): string {
   if (!(caught instanceof ApiError)) return 'Could not reach the server.';
 
   if (caught.status === 429) {
-    // Rate limited on email + IP with a fifteen-minute window, so "shortly" is
-    // misleading. The header is the honest answer.
+    // Rate limited on email + IP with a fifteen-minute window, so "shortly"
+    // would be misleading. The header is the honest answer.
     return caught.retryAfterSeconds
       ? `Too many attempts. Try again in ${caught.retryAfterSeconds} seconds.`
       : 'Too many attempts. Try again later.';
@@ -33,7 +36,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
@@ -59,42 +62,53 @@ export function LoginPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h1>Sign in</h1>
+    <AuthLayout title="Sign in" onSubmit={handleSubmit}>
+      {/* Alert renders role="alert", so a screen reader announces the failure
+          without the user tabbing back to find it. */}
+      {error && <Alert severity="error">{error}</Alert>}
 
-      {error && <p role="alert">{error}</p>}
-
-      <label htmlFor="email">Email</label>
-      <input
+      <TextField
         id="email"
+        label="Email"
         type="email"
-        // ADR-017 rests on a password manager capturing credentials at sign-in.
-        // Managers key off these attributes and the form element; without them
-        // that reasoning does not hold.
+        // ADR-017 rests on a password manager capturing credentials at
+        // sign-in, and managers key off these attributes.
         autoComplete="username"
         required
+        fullWidth
         // Not lowercased or trimmed: the server already handles casing, and
         // normalising in two places means fixing it in two places.
         value={email}
         onChange={(event) => setEmail(event.target.value)}
+        slotProps={{ htmlInput: { maxLength: EMAIL_MAX_LENGTH } }}
       />
 
-      <label htmlFor="password">Password</label>
-      <input
+      <TextField
         id="password"
+        label="Password"
         type="password"
         autoComplete="current-password"
         required
+        fullWidth
         value={password}
         onChange={(event) => setPassword(event.target.value)}
+        slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
       />
 
       {/* Disabled in flight: a double submit revokes the session the first
           request just issued and creates another (ADR-015), leaving churn in
           the active-sessions screen that nobody caused. */}
-      <button type="submit" disabled={submitting}>
+      <Button type="submit" variant="contained" disabled={submitting}>
         {submitting ? 'Signing in…' : 'Sign in'}
-      </button>
-    </form>
+      </Button>
+
+      <Link component={RouterLink} to="/forgot-password" variant="body2">
+        Forgot your password?
+      </Link>
+
+      <Link component={RouterLink} to="/register" variant="body2">
+        Create an account
+      </Link>
+    </AuthLayout>
   );
 }

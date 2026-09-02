@@ -9,6 +9,8 @@ import { VerifyEmailPage } from './auth/verify-email-page.tsx';
 import { ResetPasswordPage } from './auth/reset-password-page.tsx';
 import { ForgotPasswordPage } from './auth/forgot-password-page.tsx';
 import { api } from './lib/api.ts';
+import { Button, Stack, Typography } from '@mui/material';
+import { ColorModeSelect } from './components/color-mode-select.tsx';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -46,23 +48,26 @@ function Home() {
   const { session, refresh } = useAuth();
 
   return (
-    <div>
-      <p>
+    <Stack spacing={2} sx={{ p: 3 }}>
+      <Typography>
         Signed in as {session?.user.name} —{' '}
         {session?.organization?.name ?? 'no organization'}
-      </p>
+      </Typography>
+
+      <ColorModeSelect />
 
       {/* The row is deleted server-side before the cookie is cleared, so a
           failure leaves the user visibly signed in — the safe direction to
           fail (ADR-011). refresh() then 401s and Protected redirects. */}
-      <button
+      <Button
+        variant="outlined"
         onClick={() => {
           void api('/auth/logout', { method: 'POST' }).then(refresh);
         }}
       >
         Sign out
-      </button>
-    </div>
+      </Button>
+    </Stack>
   );
 }
 
