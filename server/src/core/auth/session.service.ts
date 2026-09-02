@@ -172,6 +172,27 @@ export class SessionService {
     return rows.length;
   }
 
+  /**
+   * Deletes a session only if it belongs to `userId`.
+   *
+   * revoke() deletes by id alone, which is right for logout: that id came
+   * from the caller's own resolved session. Here it arrives in a URL, so
+   * ownership is part of the WHERE rather than a separate SELECT — checking
+   * first and deleting second is a race and a round trip.
+   *
+   * Returns false when nothing matched, so the caller answers the same way
+   * for "no such session" and "not yours". Which it was is information the
+   * caller has not earned.
+   */
+  async revokeOwned(sessionId: string, userId: string): Promise<boolean> {
+    const rows = await this.db
+      .delete(sessions)
+      .where(and(eq(sessions.id, sessionId), eq(sessions.userId, userId)))
+      .returning({ id: sessions.id });
+
+    return rows.length > 0;
+  }
+
   /** Org switching (ADR-011): mutable per-session state a token cannot hold. */
   async setCurrentOrg(
     sessionId: string,
