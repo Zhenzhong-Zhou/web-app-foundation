@@ -1,12 +1,11 @@
-import { Transform } from 'class-transformer';
 import { IsEmail, IsString, MaxLength } from 'class-validator';
+
+import { normalizeEmail } from '../../../common/dto/normalize-email';
 
 export class LoginDto {
   // Same normalisation as register.dto.ts. The unique index is on
   // lower(email), so the lookup must match it.
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @normalizeEmail()
   @IsEmail()
   email!: string;
 

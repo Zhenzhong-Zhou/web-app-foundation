@@ -1,12 +1,12 @@
-import { Transform } from 'class-transformer';
 import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+
+import { normalizeEmail } from '../../../common/dto/normalize-email';
+import { trim } from '../../../common/dto/trim';
 
 export class RegisterDto {
   // Normalised here so it matches the lower(email) unique index, and so the
   // address a user typed with capitals still finds their account at login.
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @normalizeEmail()
   @IsEmail()
   @MaxLength(254) // RFC 5321 maximum
   email!: string;
@@ -27,17 +27,13 @@ export class RegisterDto {
   @MaxLength(128)
   password!: string;
 
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @trim()
   @IsString()
   @MinLength(1)
   @MaxLength(100)
   name!: string;
 
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @trim()
   @IsString()
   @MinLength(1)
   @MaxLength(100)
