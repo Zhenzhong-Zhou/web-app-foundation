@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -66,5 +67,24 @@ export class UsersController {
     @Body() dto: UpdateUserDto,
   ): Promise<void> {
     await this.users.updateRole(context, id, dto.roleId);
+  }
+
+  /**
+   * Removes the member from this organization. Their account survives — that
+   * is the distinction, and it is why this is not called delete.
+   */
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.USERS_DELETE)
+  @Audited({
+    action: AUDIT_ACTIONS.MEMBER_REMOVED,
+    resourceType: 'user',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async remove(
+    @CurrentUser() context: RequestContext,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    await this.users.removeMember(context, id);
   }
 }

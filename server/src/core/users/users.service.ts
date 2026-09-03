@@ -198,4 +198,70 @@ export class UsersService {
 
     this.logger.log(`Role of ${userId} changed to ${role.name}`);
   }
+
+  /**
+   * Removes a membership. The user's account, sessions, and audit trail all
+   * survive — this revokes access to one organization, nothing more.
+   *
+   * Their live session is not revoked, deliberately. SessionContextMiddleware
+   * resolves membership per request (ADR-016), so organizationId becomes null
+   * on their next call and every org-scoped route 403s. Account routes keep
+   * working, which is correct: they still have an account, they just have no
+   * organization.
+   */
+  async removeMember(context: RequestContext, userId: string): Promise<void> {
+    // Leaving an organization is the user's own action, with its own
+    // consequences — it is not an admin removing someone, and it should not
+    // be reachable by accident from a member list.
+    if (userId === context.userId) {
+      throw new BadRequestException(
+        'You cannot remove yourself from the organization',
+      );
+    }
+
+    const [membership] = await this.tenantDb.select(
+      memberships,
+      eq(memberships.userId, userId),
+    );
+
+    if (!membership) throw new NotFoundException('No such member');
+
+    const [callerRole] = await this.tenantDb.select(
+      roles,
+      eq(roles.id, context.roleId!),
+    );
+
+    const [targetRole] = await this.tenantDb.select(
+      roles,
+      eq(roles.id, membership.roleId),
+    );
+
+    // Same rule as updateRole: removing an Owner is a privilege change, and
+    // an Admin does not hold the authority they would be taking away.
+    if (
+      targetRole?.name === SYSTEM_ROLES.OWNER &&
+      callerRole?.name !== SYSTEM_ROLES.OWNER
+    ) {
+      throw new ForbiddenException('Only an Owner can remove an Owner');
+    }
+
+    // ADR-012's sole-Owner block, in its original form: an organization with
+    // no Owner has nobody who can appoint one.
+    if (targetRole?.name === SYSTEM_ROLES.OWNER) {
+      const owners = await this.tenantDb.select(
+        memberships,
+        eq(memberships.roleId, membership.roleId),
+      );
+
+      if (owners.length <= 1) {
+        throw new ConflictException(
+          'Transfer ownership before removing this member',
+        );
+      }
+    }
+
+    await this.tenantDb.delete(memberships, eq(memberships.id, membership.id));
+
+    this.logger.log(`Membership of ${userId} removed`);
+  }
 }

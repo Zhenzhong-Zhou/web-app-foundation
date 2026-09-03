@@ -6,7 +6,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { auditLog, memberships, roles } from '../src/database/schema';
+import { auditLog, memberships, roles, users } from '../src/database/schema';
 import { MailService } from '../src/shared/mail/mail.service';
 import {
   createTestApp,
@@ -599,6 +599,85 @@ describe('Users (e2e)', () => {
       // the reason @Audited's extractor now receives the request.
       expect(changed.resourceId).toBe(member.id);
       expect(changed.organizationId).toBe(alpha.organizationId);
+    });
+  });
+
+  describe('DELETE /v1/users/:id', () => {
+    it('removes the membership and leaves the account', async () => {
+      const alpha = await registerOrg('alpha');
+      const member = await addMember(
+        alpha,
+        'member@alpha.example.com',
+        'Viewer',
+      );
+
+      await alpha.agent.delete(`/v1/users/${member.id}`).expect(204);
+
+      expect(await db.select().from(memberships)).toHaveLength(1);
+      // The account survives. Revoking access is not deletion (ADR-012).
+      expect(await db.select().from(users)).toHaveLength(2);
+    });
+
+    it('leaves the removed member able to reach their own account', async () => {
+      const alpha = await registerOrg('alpha');
+      const member = await addMember(
+        alpha,
+        'member@alpha.example.com',
+        'Viewer',
+      );
+
+      await alpha.agent.delete(`/v1/users/${member.id}`).expect(204);
+
+      // Their session is not revoked. The middleware resolves membership per
+      // request (ADR-016), so they lose the organization and keep the account.
+      await member.agent.get('/v1/users').expect(403);
+      await member.agent.get('/v1/auth/me').expect(200);
+    });
+
+    it('refuses to remove yourself', async () => {
+      const alpha = await registerOrg('alpha');
+
+      await alpha.agent.delete(`/v1/users/${alpha.ownerId}`).expect(400);
+    });
+
+    it('refuses an Admin removing an Owner', async () => {
+      const alpha = await registerOrg('alpha');
+      const admin = await addMember(alpha, 'admin@alpha.example.com', 'Admin');
+      await addMember(alpha, 'second@alpha.example.com', 'Owner');
+
+      await admin.agent.delete(`/v1/users/${alpha.ownerId}`).expect(403);
+    });
+
+    it('refuses to remove the only Owner', async () => {
+      const alpha = await registerOrg('alpha');
+      const second = await addMember(
+        alpha,
+        'second@alpha.example.com',
+        'Owner',
+      );
+
+      // Removing the second Owner is fine; removing the last is not.
+      await alpha.agent.delete(`/v1/users/${second.id}`).expect(204);
+      await alpha.agent.delete(`/v1/users/${alpha.ownerId}`).expect(400);
+    });
+
+    it('refuses a Viewer, which lacks users.delete', async () => {
+      const alpha = await registerOrg('alpha');
+      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const member = await addMember(
+        alpha,
+        'member@alpha.example.com',
+        'Viewer',
+      );
+
+      await viewer.delete(`/v1/users/${member.id}`).expect(403);
+    });
+
+    it('refuses a member of another organization', async () => {
+      const alpha = await registerOrg('alpha');
+      const beta = await registerOrg('beta');
+
+      await alpha.agent.delete(`/v1/users/${beta.ownerId}`).expect(404);
     });
   });
 });
