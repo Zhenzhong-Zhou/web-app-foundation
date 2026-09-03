@@ -18,6 +18,7 @@ import { api } from '../lib/api';
 import { ErrorBoundary } from '../components/error-boundary.tsx';
 
 const NAV = [
+  { label: 'Products', to: '/products', permission: 'products.view' },
   { label: 'Members', to: '/members' },
   { label: 'Audit log', to: '/audit', permission: 'audit.view' },
   { label: 'Account', to: '/account' },
