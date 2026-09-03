@@ -18,6 +18,7 @@ import { api } from '../lib/api';
 
 const NAV = [
   { label: 'Members', to: '/members' },
+  { label: 'Audit log', to: '/audit', permission: 'audit.view' },
   { label: 'Account', to: '/account' },
 ];
 
@@ -49,7 +50,11 @@ export function AppLayout() {
           </Typography>
 
           <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }}>
-            {NAV.map((item) => (
+            {NAV.filter(
+              (item) =>
+                !item.permission ||
+                session?.permissions.includes(item.permission),
+            ).map((item) => (
               <Link
                 key={item.to}
                 component={RouterLink}

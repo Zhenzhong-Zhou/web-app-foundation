@@ -15,6 +15,7 @@ import { AppLayout } from './layout/app-layout.tsx';
 import { AccountPage } from './account/account-page.tsx';
 import { SessionsPage } from './account/sessions-page.tsx';
 import { MembersPage } from './members/members-page.tsx';
+import { AuditPage } from './audit/audit-page.tsx';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -141,6 +142,7 @@ export default function App() {
         <Route path="/account" element={<AccountPage />} />
         <Route path="/account/sessions" element={<SessionsPage />} />
         <Route path="/members" element={<MembersPage />} />
+        <Route path="/audit" element={<AuditPage />} />
       </Route>
 
       {/* Outside both guards deliberately. Inside Protected, a signed-out
