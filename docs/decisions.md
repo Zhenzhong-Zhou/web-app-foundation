@@ -644,6 +644,12 @@ the tenant-isolation suite rather than by types.
 Permission strings cannot express "not above your own level"; that rule belongs in the
 service performing the assignment.
 
+Closed at step 9 in `UsersService.updateRole()`, alongside a second rule of the same
+shape: the last Owner cannot be demoted, since an organization with no Owner has nobody
+who can appoint one. Both have e2e coverage. The general form — a role hierarchy that
+would let *any* role be compared against another — is still open, and arrives with role
+editing rather than with assignment.
+
 ---
 
 ## ADR-017 — Email verification and password reset
