@@ -202,10 +202,10 @@ a tenant-scoped layer that cannot be accidentally bypassed.
 
 **Decision.** Drizzle. Specifically:
 
-| Package | Role |
-|---|---|
-| `drizzle-orm` | Table definitions **and** queries |
-| `drizzle-kit` | CLI that diffs the schema and generates migration SQL |
+| Package              | Role                                                   |
+|----------------------|--------------------------------------------------------|
+| `drizzle-orm`        | Table definitions **and** queries                      |
+| `drizzle-kit`        | CLI that diffs the schema and generates migration SQL  |
 | `pg` (node-postgres) | Driver — configured once at startup, not used directly |
 
 Each table is defined once; the same definition feeds migrations and query types.
@@ -321,13 +321,13 @@ Cookie flags: `httpOnly: true`, `secure: true` (relaxed only on localhost http),
 
 **Consequence — binding rules.** Each of these is a security control, not a preference:
 
-| Rule | Failure it prevents |
-|---|---|
-| ~~Issue a new session row on login, delete any prior one~~ — **superseded by ADR-015**. Login revokes only the session presented in the request; other devices are untouched. | Session fixation — misattributed, see ADR-015 |
-| Logout **deletes the row**, then clears the cookie | Captured token stays valid forever |
-| Password change/reset deletes all *other* sessions for that user | Account recovery leaves the attacker signed in |
-| Two expiries: absolute `expires_at` cap **and** idle timeout on `last_seen_at` | Sliding-only expiry lets a stolen token live indefinitely |
-| Never store resolved permissions on the session row | A demoted admin keeps access until expiry |
+| Rule                                                                                                                                                                          | Failure it prevents                                       |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------|
+| ~~Issue a new session row on login, delete any prior one~~ — **superseded by ADR-015**. Login revokes only the session presented in the request; other devices are untouched. | Session fixation — misattributed, see ADR-015             |
+| Logout **deletes the row**, then clears the cookie                                                                                                                            | Captured token stays valid forever                        |
+| Password change/reset deletes all *other* sessions for that user                                                                                                              | Account recovery leaves the attacker signed in            |
+| Two expiries: absolute `expires_at` cap **and** idle timeout on `last_seen_at`                                                                                                | Sliding-only expiry lets a stolen token live indefinitely |
+| Never store resolved permissions on the session row                                                                                                                           | A demoted admin keeps access until expiry                 |
 
 Revocation is deletion — there is no separate mechanism. "Sign out this device", password
 change, and admin-disables-user are all the same `DELETE FROM sessions` with a different
@@ -406,12 +406,12 @@ closed an account — is indefensible.
 4. Data export is offered during the grace window (see below).
 5. On elapse, anonymize.
 
-| Table | Action | Rationale |
-|---|---|---|
-| `sessions` | Hard delete | Live credentials |
-| `users` | Soft delete: `deleted_at` set, email -> `deleted-<uuid>@invalid`, name -> `Deleted User`, password cleared | Preserves FK targets for attribution |
-| `memberships` | Delete | No longer in the organization |
-| `audit_log` | **Rows retained**; `actor_id` continues to reference the tombstone | The event survives; the row it points to no longer identifies a person |
+| Table         | Action                                                                                                     | Rationale                                                              |
+|---------------|------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| `sessions`    | Hard delete                                                                                                | Live credentials                                                       |
+| `users`       | Soft delete: `deleted_at` set, email -> `deleted-<uuid>@invalid`, name -> `Deleted User`, password cleared | Preserves FK targets for attribution                                   |
+| `memberships` | Delete                                                                                                     | No longer in the organization                                          |
+| `audit_log`   | **Rows retained**; `actor_id` continues to reference the tombstone                                         | The event survives; the row it points to no longer identifies a person |
 
 The email is **released** — anonymizing frees the unique constraint, so the same address
 may register again as a new user.
@@ -425,12 +425,12 @@ their own right and must not outlive the window simply because they sit on a row
 
 **Decision — cascade defaults.** Applied to every table added from here on:
 
-| Foreign key | Rule | Reason |
-|---|---|---|
-| `organization_id` | `ON DELETE CASCADE` | Org owns the data |
-| `user_id` on sessions, memberships, tokens | `ON DELETE CASCADE` | Exists only to serve that user |
-| `created_by`, `updated_by`, `actor_id` | `ON DELETE RESTRICT` | Attribution must outlive the actor |
-| any FK on `audit_log` | `RESTRICT` — **never cascade**, including from `organizations` | Cascading org deletion would destroy records required for the 24-month window |
+| Foreign key                                | Rule                                                           | Reason                                                                        |
+|--------------------------------------------|----------------------------------------------------------------|-------------------------------------------------------------------------------|
+| `organization_id`                          | `ON DELETE CASCADE`                                            | Org owns the data                                                             |
+| `user_id` on sessions, memberships, tokens | `ON DELETE CASCADE`                                            | Exists only to serve that user                                                |
+| `created_by`, `updated_by`, `actor_id`     | `ON DELETE RESTRICT`                                           | Attribution must outlive the actor                                            |
+| any FK on `audit_log`                      | `RESTRICT` — **never cascade**, including from `organizations` | Cascading org deletion would destroy records required for the 24-month window |
 
 Because users are soft-deleted, the `RESTRICT` constraints should never fire in normal
 operation. That is the point: they are a **tripwire**. A future hard `DELETE FROM users`
@@ -810,10 +810,10 @@ behaviour the change leaves intact.
 
 **Currently blocked, and by what.**
 
-| Upgrade | Blocked by | Unblocks when |
-|---|---|---|
-| `@nestjs/*` 11 → 12 | `@nestjs/throttler@6.5.0` peers at `^11.0.0` | throttler publishes a range including `^12.0.0` |
-| `typescript` 6 → 7 | `typescript-eslint@8.69` peers at `typescript <6.1.0`; the Go port's support for `emitDecoratorMetadata`, which Nest requires | both are satisfied — verify the decorator support explicitly, not by assumption |
+| Upgrade             | Blocked by                                                                                                                    | Unblocks when                                                                   |
+|---------------------|-------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `@nestjs/*` 11 → 12 | `@nestjs/throttler@6.5.0` peers at `^11.0.0`                                                                                  | throttler publishes a range including `^12.0.0`                                 |
+| `typescript` 6 → 7  | `typescript-eslint@8.69` peers at `typescript <6.1.0`; the Go port's support for `emitDecoratorMetadata`, which Nest requires | both are satisfied — verify the decorator support explicitly, not by assumption |
 
 Being on a supported release line is the goal; being on the newest major is
 not. `11.2.3` is current for the 11 line, and a non-empty `npm outdated` is not
@@ -840,11 +840,11 @@ a token directly.
 
 **Decision.** Three categories.
 
-| Category | Rule | Routes |
-|---|---|---|
-| Protected | No session → `/login`, remembering the attempted URL | everything else |
-| Auth-only | Session → `/` | `/login`, `/register` |
-| Public | Renders regardless of session | `/verify-email`, `/reset-password` |
+| Category  | Rule                                                 | Routes                             |
+|-----------|------------------------------------------------------|------------------------------------|
+| Protected | No session → `/login`, remembering the attempted URL | everything else                    |
+| Auth-only | Session → `/`                                        | `/login`, `/register`              |
+| Public    | Renders regardless of session                        | `/verify-email`, `/reset-password` |
 
 Auth-only exists because a signed-in user submitting the login form rotates
 their session for nothing — login revokes the presented session and issues a
@@ -978,15 +978,25 @@ they exist so the reasoning is not rediscovered from scratch.
   "the organization owns the data" for a class of rows, or account events go
   to a separate table, or they stay unaudited. A password change is worth
   recording, so this needs resolving before V1 is called done.
-- **What unverified access should be limited to.** Verification works end to
-  end and sets `email_verified_at`, but nothing reads it — ADR-017 chose not
-  to block login, on the grounds that losing a registration to a dead SMTP
-  connection is worse than letting an unverified user in. The consequence is a
-  flag with no consequence. Verification exists to prove the address belongs
-  to the person, and password reset sends a link to that address, so somewhere
-  it has to gate something. Candidates: inviting other members, changing an
-  email address, holding a role above Viewer. Needs deciding before real
-  customers, not before V1.
+- **Forcing a password change after admin-created sign-in.** ADR-006 defers
+  invitations, so an admin sets another person's initial password and has to
+  communicate it out of band. Until it is changed, two people can authenticate
+  as that account. The fix is a `must_change_password` column, a flag on the
+  login response, and a client route that blocks everything else — plus a
+  decision about what such a user may do meanwhile. Largely moot once
+  invitations exist, since an invited user sets their own password and the
+  account never has one a second party knows. Sequence the two together.
+- **What unverified access should be limited to.** Verification works and sets
+  `email_verified_at`, but nothing reads it — ADR-017 chose not to block login,
+  on the grounds that losing a registration to a dead SMTP connection is worse
+  than letting an unverified user in. The consequence is a flag with no
+  consequence, and password reset sends a link to an address nobody confirmed.
+  Candidates are actions the unverified user takes themselves: inviting a
+  member, changing their own email address. Capping their *role* is not a
+  candidate — an admin creating an Admin cannot control whether that person
+  verifies, and either rejecting the action or silently downgrading it makes
+  `memberships.role_id` disagree with the behaviour. Expiring the token is
+  fine; expiring the account is not.
 
 ---
 
@@ -1035,15 +1045,15 @@ organizational claim on them.
 
 **Decision — events recorded.**
 
-| Action | Why it earns a row |
-|---|---|
-| `session.created` | An unfamiliar sign-in is what this screen exists to surface |
-| `session.ended` | Bounds a sign-in; an absent logout is itself informative |
-| `session.revoked` | The user signed out another device — or someone did it for them |
-| `account.password_changed` | The change a compromised user needs a timestamp for |
-| `account.password_reset` | **Distinct from the above.** A reset the user did not request is the strongest signal of an attempted takeover, and folding it into "changed" hides that |
-| `account.profile_updated` | An attacker changing the display name |
-| `account.email_verified` | Completes the registration story |
+| Action                     | Why it earns a row                                                                                                                                       |
+|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `session.created`          | An unfamiliar sign-in is what this screen exists to surface                                                                                              |
+| `session.ended`            | Bounds a sign-in; an absent logout is itself informative                                                                                                 |
+| `session.revoked`          | The user signed out another device — or someone did it for them                                                                                          |
+| `account.password_changed` | The change a compromised user needs a timestamp for                                                                                                      |
+| `account.password_reset`   | **Distinct from the above.** A reset the user did not request is the strongest signal of an attempted takeover, and folding it into "changed" hides that |
+| `account.profile_updated`  | An attacker changing the display name                                                                                                                    |
+| `account.email_verified`   | Completes the registration story                                                                                                                         |
 
 No payload column. ADR-018's reasoning applies harder here: these rows exist to
 say *that* something happened, and the details are either already visible in
@@ -1091,21 +1101,21 @@ they describe is frequently gone by the time anyone reads the event.
 
 # Resolved
 
-| Decision | Outcome | ADR |
-|---|---|---|
-| ORM: Prisma vs. Drizzle vs. Knex | Drizzle | ADR-009 |
-| Primary key strategy | UUIDv7 on `uuid` column | ADR-010 |
-| PostgreSQL version | 18 (for native `uuidv7()`) | ADR-002, ADR-010 |
-| Session strategy | Opaque token in httpOnly cookie, no JWT | ADR-011 |
-| Account deletion vs. audit retention | Anonymize user, retain audit rows | ADR-012 |
-| Data ownership on user departure | Org owns data, user attributed | ADR-012 |
-| API versioning | URL prefix `/v1/`, global, from first endpoint | ADR-013 |
-| CSRF defence | Custom header, no token | ADR-014 |
-| Concurrent sessions per user | Multiple; login revokes only the presented session | ADR-015 |
-| Permission resolution | Per request, never cached | ADR-016 |
-| Audit write path | Interceptor, opt in per route, writes only | ADR-018 |
-| Audit pagination | Keyset on UUIDv7 cursor | ADR-018 |
-| Dependency upgrades vs. peer conflicts | Never override; a blocked upgrade waits | ADR-019 |
-| Client route protection | Three categories: protected, auth-only, public | ADR-020 |
-| Component library | Material UI, CSS variables, three color modes | ADR-021 |
-| Auditing account actions | Separate account_events table, 90-day retention | ADR-022 |
+| Decision                               | Outcome                                            | ADR              |
+|----------------------------------------|----------------------------------------------------|------------------|
+| ORM: Prisma vs. Drizzle vs. Knex       | Drizzle                                            | ADR-009          |
+| Primary key strategy                   | UUIDv7 on `uuid` column                            | ADR-010          |
+| PostgreSQL version                     | 18 (for native `uuidv7()`)                         | ADR-002, ADR-010 |
+| Session strategy                       | Opaque token in httpOnly cookie, no JWT            | ADR-011          |
+| Account deletion vs. audit retention   | Anonymize user, retain audit rows                  | ADR-012          |
+| Data ownership on user departure       | Org owns data, user attributed                     | ADR-012          |
+| API versioning                         | URL prefix `/v1/`, global, from first endpoint     | ADR-013          |
+| CSRF defence                           | Custom header, no token                            | ADR-014          |
+| Concurrent sessions per user           | Multiple; login revokes only the presented session | ADR-015          |
+| Permission resolution                  | Per request, never cached                          | ADR-016          |
+| Audit write path                       | Interceptor, opt in per route, writes only         | ADR-018          |
+| Audit pagination                       | Keyset on UUIDv7 cursor                            | ADR-018          |
+| Dependency upgrades vs. peer conflicts | Never override; a blocked upgrade waits            | ADR-019          |
+| Client route protection                | Three categories: protected, auth-only, public     | ADR-020          |
+| Component library                      | Material UI, CSS variables, three color modes      | ADR-021          |
+| Auditing account actions               | Separate account_events table, 90-day retention    | ADR-022          |
