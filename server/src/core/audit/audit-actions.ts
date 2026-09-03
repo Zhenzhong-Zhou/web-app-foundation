@@ -15,6 +15,9 @@ export const AUDIT_ACTIONS = {
   USER_ROLE_CHANGED: 'user.role_changed',
   /** Membership removed. The account still exists — see ADR-012 for deletion. */
   MEMBER_REMOVED: 'member.removed',
+
+  PRODUCT_CREATED: 'product.created',
+  PRODUCT_UPDATED: 'product.updated',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

@@ -18,6 +18,7 @@ import { PermissionGuard } from './core/authorization/permission.guard';
 import { UsersModule } from './core/users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
+import { ProductsModule } from './modules/products/products.module';
 
 @Module({
   imports: [
@@ -97,10 +98,18 @@ import { HealthModule } from './health/health.module';
     }),
 
     DatabaseModule,
+
+    // Core: identity, authorization, and the audit trail everything else
+    // depends on.
     AuthModule,
     AuthorizationModule,
     AuditModule,
     UsersModule,
+
+    // Feature modules. These consume the above and add nothing to it.
+    ProductsModule,
+
+    // Infrastructure, not domain: a liveness probe, unversioned and public.
     HealthModule,
   ],
   providers: [

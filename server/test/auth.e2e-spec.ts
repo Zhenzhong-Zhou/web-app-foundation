@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { ThrottlerStorage } from '@nestjs/throttler';
 import { eq, isNull } from 'drizzle-orm';
 
+import { ALL_PERMISSIONS } from '../src/core/authorization/permissions';
 import * as provisioning from '../src/core/organizations/provision-organization';
 import {
   type Database,
@@ -250,7 +251,7 @@ describe('Auth (e2e)', () => {
       expect(me.user.emailVerified).toBe(false);
       expect(me.organization?.name).toBe('E2E Co');
       // Registration makes you Owner, and Owner is ALL_PERMISSIONS.
-      expect(me.permissions).toHaveLength(9);
+      expect(me.permissions).toHaveLength(ALL_PERMISSIONS.length);
     });
 
     it('requires a session', async () => {

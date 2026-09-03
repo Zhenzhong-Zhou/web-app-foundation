@@ -29,6 +29,10 @@ export const PERMISSIONS = {
   ORGANIZATIONS_UPDATE: 'organizations.update',
 
   AUDIT_VIEW: 'audit.view',
+
+  PRODUCTS_VIEW: 'products.view',
+  PRODUCTS_CREATE: 'products.create',
+  PRODUCTS_UPDATE: 'products.update',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -46,6 +50,9 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'organizations.view': 'See organization settings',
   'organizations.update': 'Change organization settings',
   'audit.view': 'Read the audit log',
+  'products.view': 'See the product catalogue',
+  'products.create': 'Add a product to the catalogue',
+  'products.update': 'Edit or discontinue a product',
 };
 
 export const SYSTEM_ROLES = {
@@ -83,12 +90,17 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.ROLES_ASSIGN,
     PERMISSIONS.ORGANIZATIONS_VIEW,
     PERMISSIONS.AUDIT_VIEW,
+    PERMISSIONS.PRODUCTS_VIEW,
+    PERMISSIONS.PRODUCTS_CREATE,
+    PERMISSIONS.PRODUCTS_UPDATE,
   ],
 
   [SYSTEM_ROLES.VIEWER]: [
     PERMISSIONS.USERS_VIEW,
     PERMISSIONS.ROLES_VIEW,
     PERMISSIONS.ORGANIZATIONS_VIEW,
+    // Read-only means read: a Viewer sees the catalogue and changes nothing.
+    PERMISSIONS.PRODUCTS_VIEW,
   ],
 };
 
