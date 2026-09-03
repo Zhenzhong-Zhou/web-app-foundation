@@ -11,6 +11,8 @@ export * from './auth-tokens';
 export * from './memberships';
 export * from './organizations';
 export * from './permissions';
+export * from './product-variants';
+export * from './products';
 export * from './role-permissions';
 export * from './roles';
 export * from './sessions';
