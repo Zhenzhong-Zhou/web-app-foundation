@@ -16,7 +16,10 @@ import { useAuth } from '../auth/use-auth';
 import { ColorModeSelect } from '../components/color-mode-select';
 import { api } from '../lib/api';
 
-const NAV = [{ label: 'Account', to: '/account' }];
+const NAV = [
+  { label: 'Members', to: '/members' },
+  { label: 'Account', to: '/account' },
+];
 
 /**
  * The frame every signed-in screen shares. A layout route, so the header
