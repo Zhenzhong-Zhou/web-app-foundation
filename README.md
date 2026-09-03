@@ -77,14 +77,14 @@ Four decisions shape everything else:
 
 ## Stack
 
-| Layer | Choice |
-|---|---|
-| Server | NestJS (TypeScript) |
-| Database | PostgreSQL 18 |
-| ORM / migrations | Drizzle ORM + drizzle-kit |
-| Frontend | React + TypeScript (Vite), in `client/` |
-| Mail (dev) | Mailpit |
-| Tests | Jest + Supertest |
+| Layer            | Choice                                  |
+|------------------|-----------------------------------------|
+| Server           | NestJS (TypeScript)                     |
+| Database         | PostgreSQL 18                           |
+| ORM / migrations | Drizzle ORM + drizzle-kit               |
+| Frontend         | React + TypeScript (Vite), in `client/` |
+| Mail (dev)       | Mailpit                                 |
+| Tests            | Jest + Supertest                        |
 
 ---
 
@@ -108,14 +108,19 @@ npm install
 npm run migrate
 npm run seed
 npm run start:dev
+# in a second terminal
+cd client
+npm install
+npm run dev
 ```
 
-| Service | URL |
-|---|---|
-| API (versioned, ADR-013) | http://localhost:3000/v1 |
+| Service                    | URL                          |
+|----------------------------|------------------------------|
+| Client (Vite dev server)   | http://localhost:5173        |
+| API (versioned, ADR-013)   | http://localhost:3000/v1     |
 | Health check (unversioned) | http://localhost:3000/health |
-| Mailpit inbox | http://localhost:8025 |
-| Postgres | localhost:5432 |
+| Mailpit inbox              | http://localhost:8025        |
+| Postgres                   | localhost:5432               |
 
 No real SMTP provider is needed in development. All outbound mail is captured by
 Mailpit — open the inbox above to click verification and password-reset links.
@@ -126,15 +131,44 @@ Mailpit — open the inbox above to click verification and password-reset links.
 
 Run from `server/`.
 
-| Command | Does |
-|---|---|
-| `npm run start:dev` | Run API with hot reload |
-| `npm run migrate` | Apply pending migrations |
-| `npm run migrate:new` | Create a new migration |
-| `npm run seed` | Seed the default org, roles, and permissions. Safe to re-run. |
-| `npm test` | Unit tests |
-| `npm run test:e2e` | Integration tests (needs test DB) |
-| `npm run lint` | Lint + format |
+| Command               | Does                                                          |
+|-----------------------|---------------------------------------------------------------|
+| `npm run start:dev`   | Run API with hot reload                                       |
+| `npm run migrate`     | Apply pending migrations                                      |
+| `npm run migrate:new` | Create a new migration                                        |
+| `npm run seed`        | Seed the default org, roles, and permissions. Safe to re-run. |
+| `npm test`            | Unit tests                                                    |
+| `npm run test:e2e`    | Integration tests (needs test DB)                             |
+| `npm run lint`        | Lint + format                                                 |
+
+From `client/`: `npm run dev`, `npm run build`, `npm run lint`.
+
+---
+
+## Deployment
+
+Two Render services: a web service running the API, and a static site serving
+the client.
+
+| Source   | Destination                            | Action  |
+|----------|----------------------------------------|---------|
+| `/api/*` | `https://<api-service>.onrender.com/*` | Rewrite |
+| `/*`     | `/index.html`                          | Rewrite |
+
+The first rule is not a convenience. It keeps the browser on one origin, which
+is what `sameSite: 'lax'` on the session cookie and ADR-014's CSRF defence both
+rest on — a cross-origin API would need CORS and `sameSite: 'none'`, and that
+combination removes the defence rather than relaxing it. There is no CORS
+configuration anywhere in this codebase, and that is deliberate.
+
+The second is what makes `/members` survive a refresh; without it a static host
+404s any path that is not a file.
+
+`CLIENT_URL` on the API service must point at the static site, or verification
+and reset links are generated against the wrong host.
+
+The static site builds from root directory `client`, with `npm ci && npm run
+build` and a publish directory of `dist`.
 
 ---
 
@@ -146,7 +180,7 @@ V1 is **done** when this single path works end to end:
 > creates a second user → assigns them a Viewer role → that user is blocked (403) from a
 > permission-gated endpoint → both actions appear in the audit log.
 
-**This holds today, end to end in the browser.** Steps 1–8 are complete.
+**This holds today, end to end in the browser and in production.** Steps 1–9 are complete.
 
 Build order:
 
