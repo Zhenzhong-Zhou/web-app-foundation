@@ -644,11 +644,15 @@ the tenant-isolation suite rather than by types.
 Permission strings cannot express "not above your own level"; that rule belongs in the
 service performing the assignment.
 
-Closed at step 9 in `UsersService.updateRole()`, alongside a second rule of the same
-shape: the last Owner cannot be demoted, since an organization with no Owner has nobody
-who can appoint one. Both have e2e coverage. The general form — a role hierarchy that
-would let *any* role be compared against another — is still open, and arrives with role
-editing rather than with assignment.
+Closed at step 9 in `UsersService.updateRole()`, as three rules rather than one: an Admin
+cannot assign the Owner role, an Admin cannot change an Owner's role at all, and the last
+Owner cannot be demoted regardless of who is asking. The second was found by hand after
+the first two had e2e coverage — guarding the *grant* while leaving the *removal* open
+meant an Admin could strip an Owner whenever a second Owner existed, and the sole-Owner
+conflict hid it in every organization that had only one. All three now have coverage.
+
+The general form — a role hierarchy that would let *any* role be compared against another
+— is still open, and arrives with role editing rather than with assignment.
 
 ---
 
@@ -974,6 +978,15 @@ they exist so the reasoning is not rediscovered from scratch.
   "the organization owns the data" for a class of rows, or account events go
   to a separate table, or they stay unaudited. A password change is worth
   recording, so this needs resolving before V1 is called done.
+- **What unverified access should be limited to.** Verification works end to
+  end and sets `email_verified_at`, but nothing reads it — ADR-017 chose not
+  to block login, on the grounds that losing a registration to a dead SMTP
+  connection is worse than letting an unverified user in. The consequence is a
+  flag with no consequence. Verification exists to prove the address belongs
+  to the person, and password reset sends a link to that address, so somewhere
+  it has to gate something. Candidates: inviting other members, changing an
+  email address, holding a role above Viewer. Needs deciding before real
+  customers, not before V1.
 
 ---
 
