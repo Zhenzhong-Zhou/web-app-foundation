@@ -1239,6 +1239,16 @@ they exist so the reasoning is not rediscovered from scratch.
   sole-Owner block). They need separate endpoints, or someone destroys an
   account meaning to revoke access. Until then the permission promises
   something the API cannot do.
+- **Catalogue attributes deferred with their modules.** `products` and
+  `product_variants` carry only intrinsic facts today. Category and brand are
+  product-level foreign keys and arrive with the catalogue module. Tax class
+  and supplier are *variant*-level — tax bands can differ by size, and a
+  supplier quotes a specific pack — and arrive with selling and purchasing
+  respectively, supplier as a many-to-many with lead time and pack size.
+  Barcodes are their own table: one variant carries a UPC, an EAN, and a
+  supplier code. Images are their own table referencing both product and
+  variant, the latter nullable so a variant without its own image falls back to
+  the product's; they wait on file storage, which is deferred.
 
 ---
 
