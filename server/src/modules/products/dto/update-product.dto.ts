@@ -1,4 +1,3 @@
-import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsOptional,
@@ -7,6 +6,8 @@ import {
   MinLength,
 } from 'class-validator';
 
+import { trim } from '../../../common/dto/trim';
+
 /**
  * Product-level fields only. Type is absent deliberately: changing a good into
  * equipment after it has moved would silently reinterpret every historical
@@ -14,9 +15,7 @@ import {
  */
 export class UpdateProductDto {
   @IsOptional()
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @trim()
   @IsString()
   @MinLength(1)
   @MaxLength(200)

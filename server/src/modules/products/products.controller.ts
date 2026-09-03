@@ -15,7 +15,9 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
+import { CreateVariantDto } from './dto/create-variant.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { UpdateVariantDto } from './dto/update-variant.dto';
 import { ProductsService } from './products.service';
 
 @Controller({ path: 'products', version: '1' })
@@ -64,5 +66,40 @@ export class ProductsController {
     @Body() dto: UpdateProductDto,
   ): Promise<void> {
     await this.products.update(id, dto);
+  }
+
+  @Post(':id/variants')
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(PERMISSIONS.PRODUCTS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.PRODUCT_VARIANT_ADDED,
+    resourceType: 'product_variant',
+    resourceId: (response: { variant: { id: string } }) => response.variant.id,
+  })
+  async addVariant(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateVariantDto,
+  ) {
+    return { variant: await this.products.addVariant(id, dto) };
+  }
+
+  /**
+   * products.update rather than a permission of its own: editing a variant is
+   * editing the product, and a role that may rename one may rename the other.
+   */
+  @Patch(':id/variants/:variantId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.PRODUCTS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.PRODUCT_VARIANT_UPDATED,
+    resourceType: 'product_variant',
+    resourceId: (_response, request) => request.params.variantId,
+  })
+  async updateVariant(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('variantId', ParseUUIDPipe) variantId: string,
+    @Body() dto: UpdateVariantDto,
+  ): Promise<void> {
+    await this.products.updateVariant(id, variantId, dto);
   }
 }

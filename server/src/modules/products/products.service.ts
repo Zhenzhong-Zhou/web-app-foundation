@@ -10,7 +10,9 @@ import { isUniqueViolation } from '../../database/errors';
 import { products, productVariants } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { CreateProductDto } from './dto/create-product.dto';
+import { CreateVariantDto } from './dto/create-variant.dto';
 import type { UpdateProductDto } from './dto/update-product.dto';
+import { UpdateVariantDto } from './dto/update-variant.dto';
 
 export interface ProductSummary {
   id: string;
@@ -134,5 +136,75 @@ export class ProductsService {
     await this.tenantDb.update(products, input, eq(products.id, productId));
 
     this.logger.log(`Product ${productId} updated`);
+  }
+
+  /**
+   * Adds a variant to an existing product. The ordinary case ADR-023 exists
+   * for: a supplement sold in 60ct gains a 120ct, and both are the same
+   * product with different physical facts.
+   */
+  async addVariant(productId: string, input: CreateVariantDto) {
+    // Scoped, so a product in another organization is simply not found.
+    const [product] = await this.tenantDb.select(
+      products,
+      eq(products.id, productId),
+    );
+
+    if (!product) throw new NotFoundException('No such product');
+
+    try {
+      // organizationId comes from tenant context inside insert() — its
+      // parameter type omits the column for exactly that reason.
+      const [variant] = await this.tenantDb
+        .insert(productVariants, { productId, ...input })
+        .returning();
+
+      this.logger.log(`Variant ${variant.sku} added to product ${productId}`);
+      return variant;
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new ConflictException(`SKU ${input.sku} is already in use`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Renaming a SKU is allowed and audited. The audit row names who and when,
+   * not what from — ADR-018 keeps payloads out — which is acceptable while
+   * renames are rare and is recorded as a limitation in ADR-023.
+   */
+  async updateVariant(
+    productId: string,
+    variantId: string,
+    input: UpdateVariantDto,
+  ) {
+    // Both ids checked, and the variant must belong to this product: without
+    // the second condition a caller could edit any variant in their
+    // organization through any product's URL.
+    const [variant] = await this.tenantDb.select(
+      productVariants,
+      and(
+        eq(productVariants.id, variantId),
+        eq(productVariants.productId, productId),
+      ),
+    );
+
+    if (!variant) throw new NotFoundException('No such variant');
+
+    try {
+      await this.tenantDb.update(
+        productVariants,
+        input,
+        eq(productVariants.id, variantId),
+      );
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new ConflictException(`SKU ${input.sku} is already in use`);
+      }
+      throw error;
+    }
+
+    this.logger.log(`Variant ${variantId} updated`);
   }
 }

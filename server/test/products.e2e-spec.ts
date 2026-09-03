@@ -327,5 +327,108 @@ describe('Products (e2e)', () => {
         .send({ isActive: false })
         .expect(403);
     });
+
+    describe('variants', () => {
+      async function createProduct(
+        agent: Awaited<ReturnType<typeof registerOrg>>['agent'],
+      ) {
+        const res = await agent.post('/v1/products').send(product).expect(201);
+        return body<{ product: ProductResponse }>(res).product;
+      }
+
+      it('adds a second variant to an existing product', async () => {
+        const alpha = await registerOrg('alpha');
+        const created = await createProduct(alpha.agent);
+
+        await alpha.agent
+          .post(`/v1/products/${created.id}/variants`)
+          .send({ sku: 'VD3-120', name: '120ct' })
+          .expect(201);
+
+        // The ordinary case ADR-023 exists for: same product, different
+        // physical facts.
+        const res = await alpha.agent
+          .get(`/v1/products/${created.id}`)
+          .expect(200);
+
+        expect(body<ProductResponse>(res).variants).toHaveLength(2);
+      });
+
+      it('refuses a SKU already used elsewhere in the organization', async () => {
+        const alpha = await registerOrg('alpha');
+        const created = await createProduct(alpha.agent);
+
+        // Uniqueness is per organization, not per product — the constraint is
+        // on (organization_id, sku).
+        await alpha.agent
+          .post(`/v1/products/${created.id}/variants`)
+          .send({ sku: 'VD3-60' })
+          .expect(409);
+      });
+
+      it('renames a SKU and frees the old one', async () => {
+        const alpha = await registerOrg('alpha');
+        const created = await createProduct(alpha.agent);
+
+        await alpha.agent
+          .patch(
+            `/v1/products/${created.id}/variants/${created.variants[0].id}`,
+          )
+          .send({ sku: 'VD3-060' })
+          .expect(204);
+
+        const [variant] = await db.select().from(productVariants);
+        expect(variant.sku).toBe('VD3-060');
+
+        // Editable rather than locked (ADR-023): a typo found after the first
+        // receipt should be fixable, and the old value is now available again.
+        await alpha.agent
+          .post(`/v1/products/${created.id}/variants`)
+          .send({ sku: 'VD3-60' })
+          .expect(201);
+      });
+
+      it('rejects tracksBatches in an update', async () => {
+        const alpha = await registerOrg('alpha');
+        const created = await createProduct(alpha.agent);
+
+        // Absent from UpdateVariantDto deliberately. Flipping it on a variant
+        // that already has stock leaves every existing row violating the
+        // invariant — in one direction with a null batch_id, in the other with
+        // one. That is a data migration, not a PATCH.
+        await alpha.agent
+          .patch(
+            `/v1/products/${created.id}/variants/${created.variants[0].id}`,
+          )
+          .send({ tracksBatches: false })
+          .expect(400);
+
+        const [variant] = await db.select().from(productVariants);
+        expect(variant.tracksBatches).toBe(true);
+      });
+
+      it('refuses a variant belonging to another product', async () => {
+        const alpha = await registerOrg('alpha');
+        const first = await createProduct(alpha.agent);
+
+        const second = body<{ product: ProductResponse }>(
+          await alpha.agent
+            .post('/v1/products')
+            .send({
+              type: 'good',
+              name: 'Vitamin C',
+              variant: { sku: 'VC-60' },
+            })
+            .expect(201),
+        ).product;
+
+        // Both ids are checked together. Without that, any variant in the
+        // organization could be edited through any product's URL.
+        await alpha.agent
+          .patch(`/v1/products/${second.id}/variants/${first.variants[0].id}`)
+          .send({ name: 'Hijacked' })
+          .expect(404);
+      });
+    });
   });
 });
