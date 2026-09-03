@@ -60,9 +60,6 @@ export interface CurrentSession {
   permissions: Permission[];
 }
 
-/** Postgres unique_violation. */
-const PG_UNIQUE_VIOLATION = '23505';
-
 /**
  * One message for every failure. "No such user" and "wrong password" must be
  * indistinguishable, or the endpoint answers "is this address registered?"
@@ -510,20 +507,4 @@ export class AuthService implements OnModuleInit {
     );
     return true;
   }
-}
-
-/**
- * Converts a unique-violation from the database into a 409.
- *
- * Needed because the advisory check above cannot be atomic: two simultaneous
- * registrations for the same address both pass it, and one then hits the
- * index. Without this the loser gets a 500.
- */
-export function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: string }).code === PG_UNIQUE_VIOLATION
-  );
 }

@@ -15,8 +15,9 @@ import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
 import type { Env } from '../../config/env';
+import { isUniqueViolation } from '../../database/errors';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
-import { AuthService, isUniqueViolation } from './auth.service';
+import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';

@@ -8,9 +8,9 @@ import {
 } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 
+import { isUniqueViolation } from '../../database/errors';
 import { memberships, roles, users } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
-import { isUniqueViolation } from '../auth/auth.service';
 import { PasswordService } from '../auth/password.service';
 import { RequestContext } from '../auth/request-context';
 import { SYSTEM_ROLES } from '../authorization/permissions';
