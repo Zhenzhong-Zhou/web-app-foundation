@@ -997,6 +997,11 @@ they exist so the reasoning is not rediscovered from scratch.
   verifies, and either rejecting the action or silently downgrading it makes
   `memberships.role_id` disagree with the behaviour. Expiring the token is
   fine; expiring the account is not.
+- **Audit filtering in the UI.** `ListAuditDto` accepts action, actorId, from,
+  and to; the client sends none of them. Two years of retention (ADR-012)
+  makes "load more" a poor way to reach an old entry, but a filter UI designed
+  against four rows is guesswork. Build it when there is enough log to know
+  which filters people actually reach for.
 
 ---
 
