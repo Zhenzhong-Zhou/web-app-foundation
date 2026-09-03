@@ -118,6 +118,14 @@ export function MembersPage() {
           Members
         </Typography>
 
+        <Button
+          variant="text"
+          disabled={loading || saving !== null}
+          onClick={() => void load()}
+        >
+          Refresh
+        </Button>
+
         {/* Hidden without users.create — display only, since the 403 is the
             actual control (ADR-016). */}
         {session?.permissions.includes('users.create') && (
