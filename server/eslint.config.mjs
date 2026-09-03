@@ -40,7 +40,10 @@ export default tseslint.config(
         { '**/*.ts': 'KEBAB_CASE' },
         { ignoreMiddleExtensions: true },
       ],
-      'check-file/folder-naming-convention': ['error', { 'src/**/': 'KEBAB_CASE' }],
+      'check-file/folder-naming-convention': [
+        'error',
+        { 'src/**/': 'KEBAB_CASE' },
+      ],
     },
   },
   {
@@ -51,10 +54,13 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['**/database/database.module', '**/database/database.tokens'],
+              group: [
+                '**/database/database.module',
+                '**/database/database.tokens',
+              ],
               importNames: ['UNSAFE_GLOBAL_DB', 'PG_POOL'],
               message:
-                  'Services must use TenantDb — it applies organization_id (ADR-003/ADR-009). If this query is legitimately global, it belongs in core/auth.',
+                'Services must use TenantDb — it applies organization_id (ADR-003/ADR-009). If this query is legitimately global, it belongs in core/auth.',
             },
           ],
         },
@@ -74,6 +80,16 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
+      
+      // The underscore prefix is already used for deliberately-unused
+      // parameters (@Audited's extractors take a response they ignore).
+      // Without varsIgnorePattern the same convention fails for destructured
+      // variables, which is inconsistent enough to be surprising.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
