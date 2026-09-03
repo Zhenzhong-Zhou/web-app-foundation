@@ -1,5 +1,6 @@
 import {
   Alert,
+  Button,
   MenuItem,
   Paper,
   Select,
@@ -17,6 +18,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../auth/use-auth';
 import { ApiError, api } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { CreateMemberDialog } from './create-member-dialog.tsx';
 
 interface Member {
   id: string;
@@ -43,6 +45,7 @@ export function MembersPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const loading = members === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
@@ -110,9 +113,24 @@ export function MembersPage() {
   return (
     // Heading draws immediately; only the table holds space and fills in.
     <Stack spacing={3}>
-      <Typography variant="h5" component="h1">
-        Members
-      </Typography>
+      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
+          Members
+        </Typography>
+
+        {/* Hidden without users.create — display only, since the 403 is the
+            actual control (ADR-016). */}
+        {session?.permissions.includes('users.create') && (
+          <Button onClick={() => setCreating(true)}>Add member</Button>
+        )}
+      </Stack>
+
+      <CreateMemberDialog
+        open={creating}
+        roles={roles}
+        onClose={() => setCreating(false)}
+        onCreated={load}
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
