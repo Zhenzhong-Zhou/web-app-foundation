@@ -911,100 +911,6 @@ this choice is reversible enough to make now.
 
 ---
 
-# Open decisions
-
-Questions land here before they are promoted to an ADR. None of these block V1;
-they exist so the reasoning is not rediscovered from scratch.
-
-- **Row-scoped permissions.** ADR-004 handles global rules but not "this member
-  sees only rows related to them" (a manufacturer viewing only their own
-  inventory). Extend rather than replace: likely a scope on the membership,
-  applied in one place the way `organization_id` is. Not needed until an
-  application requires it.
-- **External parties: members or separate organizations?** Suppliers and
-  carriers as low-privilege members of the operating organization is simpler;
-  separate organizations with explicit sharing fails safer. Depends on the
-  application.
-- **Customers: `users` or their own table?** Order placement needs identity but
-  not necessarily an account. Downstream of V1.
-- **Registration reveals whether an address is registered.** A duplicate email
-    returns 409, which is the enumeration hole login and `forgot-password` both
-    avoid. Closing it means registration always answering "check your email", and
-    sending the existing account a "someone tried to register with your address"
-    message instead — a third template and a different response shape. A UX
-    decision, not a patch.
-- **Breached-password rejection.** Length is the only rule today (12 minimum, no
-  composition rules, per NIST). `Password123!` passes. The high-value addition is
-  Have I Been Pwned's range API — k-anonymity, no key, the plaintext never
-  leaves the server — rejecting server-side, failing open when the API is
-  unreachable. Client-side strength meters are advisory only; anything the
-  browser enforces is bypassed by `curl`.
-- **SMTP authentication.** Mailpit needs none, every real provider does. Two env
-  vars, deliberately not guessed at before a provider is chosen.
-- **Audit log export and payload search.** Filtering covers who, what, and when,
-  which is what people ask. Free-text search over the JSONB payload needs
-  different indexes and answers a question nobody has yet. CSV export is a real
-  compliance need eventually, and is a streaming endpoint rather than a bigger
-  page — deferred until someone asks.
-- **Departments.** Deferred, and not a permissions mechanism: a role says what
-  someone can do, a department says where they sit, and the two vary
-  independently — a Warehouse Manager and a Sales Manager hold the same role in
-  different departments, while one department contains several roles. Building
-  permissions on departments rebuilds roles under a different name. As a label
-  (shown in a member list, filtered on, reported on) it is a column or a small
-  table whenever an application asks. If it ever *imposes* visibility rather
-  than filtering it, that is the row-scoped permissions entry above, not a
-  department feature.
-- **Separate packages, not npm workspaces.** Server and client keep their own
-  `package.json` and `node_modules`. The workspace would give one TypeScript
-  version and a `shared/` package for the four validation constants currently
-  mirrored in `server/src/core/auth/dto/` and `client/src/lib/validation.ts`.
-  Rejected for now: it changes how Render builds, which is a production change
-  to solve a local annoyance. Revisit when `shared/` would hold response types
-  rather than four numbers — that is a real drift surface, four constants is
-  not. Until then the copies carry comments pointing at each other.
-- **Admin CRUD: Refine, provisionally.** Headless (so no theme to fight), and
-  it bundles TanStack Query, which is the server-state layer step 9 needs
-  anyway. Not yet adopted, and not an ADR until two things are checked against
-  its data-provider interface: keyset pagination on a UUIDv7 cursor with no
-  `count(*)` (ADR-018), and 403s that carry meaning. If the provider assumes
-  offset pagination and a total, the adapter fights the framework.
-- **Auditing account actions.** `audit_log.organization_id` is `NOT NULL`
-  (ADR-012 makes the organization the owner of every row), but password
-  changes, profile edits, and session revocations are account actions and run
-  under `@AllowNoOrganization`. So `@Audited()` on them would fail for exactly
-  the users those routes exist to serve — the same shape ADR-018 already names
-  for `@Public()` routes. Either the column becomes nullable, which weakens
-  "the organization owns the data" for a class of rows, or account events go
-  to a separate table, or they stay unaudited. A password change is worth
-  recording, so this needs resolving before V1 is called done.
-- **Forcing a password change after admin-created sign-in.** ADR-006 defers
-  invitations, so an admin sets another person's initial password and has to
-  communicate it out of band. Until it is changed, two people can authenticate
-  as that account. The fix is a `must_change_password` column, a flag on the
-  login response, and a client route that blocks everything else — plus a
-  decision about what such a user may do meanwhile. Largely moot once
-  invitations exist, since an invited user sets their own password and the
-  account never has one a second party knows. Sequence the two together.
-- **What unverified access should be limited to.** Verification works and sets
-  `email_verified_at`, but nothing reads it — ADR-017 chose not to block login,
-  on the grounds that losing a registration to a dead SMTP connection is worse
-  than letting an unverified user in. The consequence is a flag with no
-  consequence, and password reset sends a link to an address nobody confirmed.
-  Candidates are actions the unverified user takes themselves: inviting a
-  member, changing their own email address. Capping their *role* is not a
-  candidate — an admin creating an Admin cannot control whether that person
-  verifies, and either rejecting the action or silently downgrading it makes
-  `memberships.role_id` disagree with the behaviour. Expiring the token is
-  fine; expiring the account is not.
-- **Audit filtering in the UI.** `ListAuditDto` accepts action, actorId, from,
-  and to; the client sends none of them. Two years of retention (ADR-012)
-  makes "load more" a poor way to reach an old entry, but a filter UI designed
-  against four rows is guesswork. Build it when there is enough log to know
-  which filters people actually reach for.
-
----
-
 ## ADR-022 — Account events are a separate table from the audit log
 
 **Context.** ADR-018 writes audit rows from an interceptor, opt in per route.
@@ -1101,6 +1007,107 @@ column without filtering `audit_log` by actor and null organization.
 
 `ip` and `user_agent` are captured at event time, per ADR-012 — the session row
 they describe is frequently gone by the time anyone reads the event.
+
+---
+
+# Open decisions
+
+Questions land here before they are promoted to an ADR. None of these block V1;
+they exist so the reasoning is not rediscovered from scratch.
+
+- **Row-scoped permissions.** ADR-004 handles global rules but not "this member
+  sees only rows related to them" (a manufacturer viewing only their own
+  inventory). Extend rather than replace: likely a scope on the membership,
+  applied in one place the way `organization_id` is. Not needed until an
+  application requires it.
+- **External parties: members or separate organizations?** Suppliers and
+  carriers as low-privilege members of the operating organization is simpler;
+  separate organizations with explicit sharing fails safer. Depends on the
+  application.
+- **Customers: `users` or their own table?** Order placement needs identity but
+  not necessarily an account. Downstream of V1.
+- **Registration reveals whether an address is registered.** A duplicate email
+  returns 409, which is the enumeration hole login and `forgot-password` both
+  avoid. Closing it means registration always answering "check your email", and
+  sending the existing account a "someone tried to register with your address"
+  message instead — a third template and a different response shape. A UX
+  decision, not a patch.
+- **Breached-password rejection.** Length is the only rule today (12 minimum, no
+  composition rules, per NIST). `Password123!` passes. The high-value addition is
+  Have I Been Pwned's range API — k-anonymity, no key, the plaintext never
+  leaves the server — rejecting server-side, failing open when the API is
+  unreachable. Client-side strength meters are advisory only; anything the
+  browser enforces is bypassed by `curl`.
+- **SMTP authentication.** Mailpit needs none, every real provider does. Two env
+  vars, deliberately not guessed at before a provider is chosen.
+- **Audit log export and payload search.** Filtering covers who, what, and when,
+  which is what people ask. Free-text search over the JSONB payload needs
+  different indexes and answers a question nobody has yet. CSV export is a real
+  compliance need eventually, and is a streaming endpoint rather than a bigger
+  page — deferred until someone asks.
+- **Departments.** Deferred, and not a permissions mechanism: a role says what
+  someone can do, a department says where they sit, and the two vary
+  independently — a Warehouse Manager and a Sales Manager hold the same role in
+  different departments, while one department contains several roles. Building
+  permissions on departments rebuilds roles under a different name. As a label
+  (shown in a member list, filtered on, reported on) it is a column or a small
+  table whenever an application asks. If it ever *imposes* visibility rather
+  than filtering it, that is the row-scoped permissions entry above, not a
+  department feature.
+- **Separate packages, not npm workspaces.** Server and client keep their own
+  `package.json` and `node_modules`. The workspace would give one TypeScript
+  version and a `shared/` package for the four validation constants currently
+  mirrored in `server/src/core/auth/dto/` and `client/src/lib/validation.ts`.
+  Rejected for now: it changes how Render builds, which is a production change
+  to solve a local annoyance. Revisit when `shared/` would hold response types
+  rather than four numbers — that is a real drift surface, four constants is
+  not. Until then the copies carry comments pointing at each other.
+- **Admin CRUD: Refine, provisionally.** Headless (so no theme to fight), and
+  it bundles TanStack Query, which is the server-state layer step 9 needs
+  anyway. Not yet adopted, and not an ADR until two things are checked against
+  its data-provider interface: keyset pagination on a UUIDv7 cursor with no
+  `count(*)` (ADR-018), and 403s that carry meaning. If the provider assumes
+  offset pagination and a total, the adapter fights the framework.
+- **Auditing account actions.** `audit_log.organization_id` is `NOT NULL`
+  (ADR-012 makes the organization the owner of every row), but password
+  changes, profile edits, and session revocations are account actions and run
+  under `@AllowNoOrganization`. So `@Audited()` on them would fail for exactly
+  the users those routes exist to serve — the same shape ADR-018 already names
+  for `@Public()` routes. Either the column becomes nullable, which weakens
+  "the organization owns the data" for a class of rows, or account events go
+  to a separate table, or they stay unaudited. A password change is worth
+  recording, so this needs resolving before V1 is called done.
+- **Forcing a password change after admin-created sign-in.** ADR-006 defers
+  invitations, so an admin sets another person's initial password and has to
+  communicate it out of band. Until it is changed, two people can authenticate
+  as that account. The fix is a `must_change_password` column, a flag on the
+  login response, and a client route that blocks everything else — plus a
+  decision about what such a user may do meanwhile. Largely moot once
+  invitations exist, since an invited user sets their own password and the
+  account never has one a second party knows. Sequence the two together.
+- **What unverified access should be limited to.** Verification works and sets
+  `email_verified_at`, but nothing reads it — ADR-017 chose not to block login,
+  on the grounds that losing a registration to a dead SMTP connection is worse
+  than letting an unverified user in. The consequence is a flag with no
+  consequence, and password reset sends a link to an address nobody confirmed.
+  Candidates are actions the unverified user takes themselves: inviting a
+  member, changing their own email address. Capping their *role* is not a
+  candidate — an admin creating an Admin cannot control whether that person
+  verifies, and either rejecting the action or silently downgrading it makes
+  `memberships.role_id` disagree with the behaviour. Expiring the token is
+  fine; expiring the account is not.
+- **Audit filtering in the UI.** `ListAuditDto` accepts action, actorId, from,
+  and to; the client sends none of them. Two years of retention (ADR-012)
+  makes "load more" a poor way to reach an old entry, but a filter UI designed
+  against four rows is guesswork. Build it when there is enough log to know
+  which filters people actually reach for.
+- **Member removal versus account deletion.** `users.delete` is seeded and
+  granted, but no route implements it. Two operations hide behind one word:
+  removing a membership (the common case — access revoked, account intact) and
+  deleting the account (ADR-012's tombstone and anonymisation, plus its
+  sole-Owner block). They need separate endpoints, or someone destroys an
+  account meaning to revoke access. Until then the permission promises
+  something the API cannot do.
 
 ---
 

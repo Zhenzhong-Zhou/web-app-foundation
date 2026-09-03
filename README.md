@@ -146,7 +146,7 @@ V1 is **done** when this single path works end to end:
 > creates a second user → assigns them a Viewer role → that user is blocked (403) from a
 > permission-gated endpoint → both actions appear in the audit log.
 
-**This holds today.** Steps 1–6 are complete.
+**This holds today, end to end in the browser.** Steps 1–8 are complete.
 
 Build order:
 
@@ -163,6 +163,8 @@ Build order:
   actions, and the first audited events outside user creation
 - [x] **8. Client** — React + TypeScript on Vite in `client/`, consuming the API
   through the Vite proxy (ADR-011)
+- [x] **9. Members and audit UI** — roles endpoint, role assignment with escalation
+  rules, members list, add-member dialog, audit log screen
 
 **Deliberately deferred** (all additive, none block V1):
 background jobs & queues, invitations, file storage, notifications, search,
