@@ -1274,6 +1274,12 @@ they exist so the reasoning is not rediscovered from scratch.
   changes and profile edits. If it is needed, it is a payload column on
   `audit_log` with a rule about what may go in it, not a JSON history column on
   each table that needs it.
+- **Product list pagination.** `GET /v1/products` returns everything, unsorted
+  beyond name. Fine at ten products, wrong at two thousand. Keyset pagination
+  is the pattern (ADR-018), but products sort by name rather than by a unique
+  time-ordered id, so the cursor has to be `(name, id)` compared as a row —
+  `name >= last and id > lastId` silently skips rows sharing a name. Build it
+  with the filters, once the client shows which filters matter.
 
 ---
 
