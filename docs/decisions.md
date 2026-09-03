@@ -1057,6 +1057,24 @@ A collision within one organization is a 409 naming the existing variant, not a
 silent second row. Two variants sharing a SKU makes every count, order line,
 and movement ambiguous forever.
 
+SKUs stay editable. Locking one after first use sounds safer and is worse: a
+typo found after the first receipt becomes permanent, and the workaround people
+reach for is a duplicate product with the old one discontinued, which splits
+stock across two records and loses exactly the history the lock was protecting.
+
+What protects the link to physical reality is snapshotting, not locking. Order
+lines and stock movements store the SKU as text alongside `variant_id`, so a
+rename affects the catalogue and nothing historical — a purchase order printed
+last March still shows what was on the label, and the foreign key still
+resolves to the current variant. Same pattern as `audit_log` capturing `ip` at
+event time rather than joining to a session row (ADR-012).
+
+A rename is audited, but the audit row carries no payload (ADR-018), so the
+previous SKU is not recorded. Acceptable while renames are rare and the log
+names who did it. Snapshotting fixes it for SKUs specifically, once
+movements store the value as text; for role changes and profile edits there is
+no equivalent, which is why the general question stays open.
+
 **Decision — `type` distinguishes what a thing is for, and does not fork the
 schema.** Sellable goods, raw material, packaging, samples, and office supplies
 share SKU, stock, location, and movement. They differ in what they *connect*
@@ -1249,6 +1267,13 @@ they exist so the reasoning is not rediscovered from scratch.
   supplier code. Images are their own table referencing both product and
   variant, the latter nullable so a variant without its own image falls back to
   the product's; they wait on file storage, which is deferred.
+- **Field-level change history.** Audit rows record that something happened,
+  not what it changed from (ADR-018 kept payloads out deliberately). A SKU
+  rename is the first case where the previous value has obvious operational
+  worth — "which SKU was this last March" — but the same applies to role
+  changes and profile edits. If it is needed, it is a payload column on
+  `audit_log` with a rule about what may go in it, not a JSON history column on
+  each table that needs it.
 
 ---
 
