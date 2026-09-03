@@ -80,12 +80,24 @@ describe('Users (e2e)', () => {
   });
 
   /**
+   * Provisioning creates Owner/Admin/Viewer per organization (ADR-003), so a
+   * role name is only meaningful relative to one org and the id has to be
+   * read rather than guessed.
+   */
+  async function roleIdNamed(organizationId: string, name: string) {
+    const [role] = await db
+      .select({ id: roles.id })
+      .from(roles)
+      .where(
+        and(eq(roles.organizationId, organizationId), eq(roles.name, name)),
+      );
+
+    return role.id;
+  }
+
+  /**
    * Registers an organization and returns an agent already holding its Owner
    * session, plus the ids the tests need.
-   *
-   * The role id is read from the database rather than guessed: provisioning
-   * creates Owner/Admin/Viewer per organization (ADR-003), so "the Viewer
-   * role" is only meaningful relative to one org.
    */
   async function registerOrg(slugish: string) {
     const agent = authedAgent(app);
@@ -100,40 +112,47 @@ describe('Users (e2e)', () => {
       })
       .expect(201);
 
-    const organizationId = body<RegisterResponse>(res).user.organizationId;
+    const { id: ownerId, organizationId } = body<RegisterResponse>(res).user;
 
-    const [viewerRole] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(eq(roles.organizationId, organizationId), eq(roles.name, 'Viewer')),
-      );
-
-    return { agent, organizationId, viewerRoleId: viewerRole.id };
+    return {
+      agent,
+      ownerId,
+      organizationId,
+      viewerRoleId: await roleIdNamed(organizationId, 'Viewer'),
+    };
   }
 
-  /** Creates a Viewer in `agent`'s organization and signs in as them. */
-  async function addViewer(
+  /** Creates a member with the given role and signs in as them. */
+  async function addMember(
     owner: Awaited<ReturnType<typeof registerOrg>>,
     email: string,
+    roleName: string,
   ) {
-    await owner.agent
+    const res = await owner.agent
       .post('/v1/users')
       .send({
         email,
-        name: 'Viewer',
+        name: roleName,
         password: PASSWORD,
-        roleId: owner.viewerRoleId,
+        roleId: await roleIdNamed(owner.organizationId, roleName),
       })
       .expect(201);
 
-    const viewer = authedAgent(app);
-    await viewer
+    const agent = authedAgent(app);
+    await agent
       .post('/v1/auth/login')
       .send({ email, password: PASSWORD })
       .expect(200);
 
-    return viewer;
+    return { agent, id: body<{ user: MemberResponse }>(res).user.id };
+  }
+
+  /** Creates a Viewer in `owner`'s organization and signs in as them. */
+  async function addViewer(
+    owner: Awaited<ReturnType<typeof registerOrg>>,
+    email: string,
+  ) {
+    return (await addMember(owner, email, 'Viewer')).agent;
   }
 
   describe('GET /v1/users', () => {
@@ -386,6 +405,187 @@ describe('Users (e2e)', () => {
 
       // Without the cap, ?limit=999999 pulls the table in one query.
       await owner.agent.get('/v1/audit?limit=500').expect(400);
+    });
+  });
+
+  describe('GET /v1/roles', () => {
+    it('lists the three seeded roles', async () => {
+      const alpha = await registerOrg('alpha');
+
+      const res = await alpha.agent.get('/v1/roles').expect(200);
+      const roleList = body<{ id: string; name: string }[]>(res);
+
+      expect(roleList.map((role) => role.name)).toEqual([
+        'Owner',
+        'Admin',
+        'Viewer',
+      ]);
+    });
+
+    it('does not show another organization roles', async () => {
+      const alpha = await registerOrg('alpha');
+      await registerOrg('beta');
+
+      const res = await alpha.agent.get('/v1/roles').expect(200);
+
+      // Six rows exist; alpha sees three. Roles are per-organization
+      // (ADR-003), so a name is only meaningful relative to one.
+      expect(body<{ id: string }[]>(res)).toHaveLength(3);
+    });
+  });
+
+  describe('PATCH /v1/users/:id', () => {
+    it('changes a member role', async () => {
+      const alpha = await registerOrg('alpha');
+      const member = await addMember(
+        alpha,
+        'member@alpha.example.com',
+        'Viewer',
+      );
+      const adminRoleId = await roleIdNamed(alpha.organizationId, 'Admin');
+
+      await alpha.agent
+        .patch(`/v1/users/${member.id}`)
+        .send({ roleId: adminRoleId })
+        .expect(204);
+
+      const [row] = await db
+        .select()
+        .from(memberships)
+        .where(eq(memberships.userId, member.id));
+
+      expect(row.roleId).toBe(adminRoleId);
+    });
+
+    it('refuses an Admin assigning the Owner role', async () => {
+      const alpha = await registerOrg('alpha');
+      const admin = await addMember(alpha, 'admin@alpha.example.com', 'Admin');
+      const member = await addMember(
+        alpha,
+        'member@alpha.example.com',
+        'Viewer',
+      );
+      const ownerRoleId = await roleIdNamed(alpha.organizationId, 'Owner');
+
+      // ADR-016's gap, closed in the service. An Admin holds users.update, so
+      // the guard passes — no permission string can express "not above your
+      // own level", which is why this check cannot live there.
+      await admin.agent
+        .patch(`/v1/users/${member.id}`)
+        .send({ roleId: ownerRoleId })
+        .expect(403);
+
+      const [row] = await db
+        .select()
+        .from(memberships)
+        .where(eq(memberships.userId, member.id));
+
+      expect(row.roleId).toBe(alpha.viewerRoleId);
+    });
+
+    it('refuses a Viewer, which lacks users.update', async () => {
+      const alpha = await registerOrg('alpha');
+      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const member = await addMember(
+        alpha,
+        'member@alpha.example.com',
+        'Viewer',
+      );
+      const adminRoleId = await roleIdNamed(alpha.organizationId, 'Admin');
+
+      await viewer
+        .patch(`/v1/users/${member.id}`)
+        .send({ roleId: adminRoleId })
+        .expect(403);
+    });
+
+    it('refuses to demote the only Owner', async () => {
+      const alpha = await registerOrg('alpha');
+
+      // Same shape as ADR-012's sole-Owner deletion block, and it binds an
+      // Owner acting on themselves: an organization with no Owner has nobody
+      // who can appoint one.
+      await alpha.agent
+        .patch(`/v1/users/${alpha.ownerId}`)
+        .send({ roleId: alpha.viewerRoleId })
+        .expect(409);
+
+      const [row] = await db
+        .select()
+        .from(memberships)
+        .where(eq(memberships.userId, alpha.ownerId));
+
+      expect(row.roleId).not.toBe(alpha.viewerRoleId);
+    });
+
+    it('allows demoting an Owner when another remains', async () => {
+      const alpha = await registerOrg('alpha');
+      await addMember(alpha, 'second@alpha.example.com', 'Owner');
+
+      await alpha.agent
+        .patch(`/v1/users/${alpha.ownerId}`)
+        .send({ roleId: alpha.viewerRoleId })
+        .expect(204);
+
+      const [row] = await db
+        .select()
+        .from(memberships)
+        .where(eq(memberships.userId, alpha.ownerId));
+
+      expect(row.roleId).toBe(alpha.viewerRoleId);
+    });
+
+    it('refuses a role from another organization', async () => {
+      const alpha = await registerOrg('alpha');
+      const beta = await registerOrg('beta');
+      const member = await addMember(
+        alpha,
+        'member@alpha.example.com',
+        'Viewer',
+      );
+
+      // A well-formed uuid for a role that exists — just not here. TenantDb
+      // scopes the lookup, so the row is not visible rather than off-limits.
+      await alpha.agent
+        .patch(`/v1/users/${member.id}`)
+        .send({ roleId: beta.viewerRoleId })
+        .expect(404);
+    });
+
+    it('refuses a member of another organization', async () => {
+      const alpha = await registerOrg('alpha');
+      const beta = await registerOrg('beta');
+      const adminRoleId = await roleIdNamed(alpha.organizationId, 'Admin');
+
+      await alpha.agent
+        .patch(`/v1/users/${beta.ownerId}`)
+        .send({ roleId: adminRoleId })
+        .expect(404);
+    });
+
+    it('records an audit row', async () => {
+      const alpha = await registerOrg('alpha');
+      const member = await addMember(
+        alpha,
+        'member@alpha.example.com',
+        'Viewer',
+      );
+      const adminRoleId = await roleIdNamed(alpha.organizationId, 'Admin');
+
+      await alpha.agent
+        .patch(`/v1/users/${member.id}`)
+        .send({ roleId: adminRoleId })
+        .expect(204);
+
+      const rows = await db.select().from(auditLog);
+      const [changed] = rows.filter(
+        (row) => row.action === 'user.role_changed',
+      );
+
+      // 204, so resourceId comes off the path rather than a response body —
+      // the reason @Audited's extractor now receives the request.
+      expect(changed.resourceId).toBe(member.id);
+      expect(changed.organizationId).toBe(alpha.organizationId);
     });
   });
 });

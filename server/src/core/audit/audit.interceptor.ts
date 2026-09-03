@@ -79,9 +79,14 @@ export class AuditInterceptor implements NestInterceptor {
         actorId: context.userId,
         action: options.action,
         resourceType: options.resourceType,
-        // The extractor was typed at the call site; the interceptor only ever
-        // sees `unknown`. One cast, confined here.
-        resourceId: options.resourceId?.(response),
+        // Narrowed for the extractor: Express types params as
+        // `string | string[]` to allow wildcard routes, which this codebase
+        // has none of. One cast here rather than a String() wrapper at every
+        // path-based call site.
+        resourceId: options.resourceId?.(
+          response,
+          req as Request<Record<string, string>>,
+        ),
         // No request body, ever. POST /v1/users carries a password, and the
         // reason pino redacts it applies twice as hard to a row kept for two
         // years. Payload is opt-in and explicit or it is absent.

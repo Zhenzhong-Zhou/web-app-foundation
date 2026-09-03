@@ -1,4 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
+import type { Request } from 'express';
 
 import type { AuditAction } from './audit-actions';
 
@@ -8,13 +9,26 @@ export interface AuditOptions<T = unknown> {
   action: AuditAction;
   resourceType?: string;
   /**
-   * Pulls the affected row's id out of the handler's return value.
+   * Pulls the affected row's id out of the handler's return value, or off the
+   * request when there is no body to read.
    *
    * An extractor rather than the interceptor guessing at `id` or `user.id`:
    * guessing works until a handler returns a shape it did not anticipate, and
    * then it silently records a row with no resource.
+   *
+   * The request is passed because a 204 handler has no response to extract
+   * from — a role change or a delete identifies its resource in the path, and
+   * without this the route would return a body it does not otherwise need
+   * just to satisfy the log.
+   *
+   * params is narrowed to string values. Express types them as
+   * `string | string[]` to allow wildcard routes; this codebase has none, and
+   * the alternative is a String() wrapper at every path-based call site.
    */
-  resourceId?: (response: T) => string | undefined;
+  resourceId?: (
+    response: T,
+    request: Request<Record<string, string>>,
+  ) => string | undefined;
 }
 
 /**

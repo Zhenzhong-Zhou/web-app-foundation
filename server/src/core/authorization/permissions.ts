@@ -99,7 +99,8 @@ export const SYSTEM_ROLE_DESCRIPTIONS: Record<SystemRole, string> = {
 };
 
 /**
- * Known gap (ADR-004): nothing here prevents an Admin assigning the Owner
- * role. Permission strings cannot express "not above your own level" — that
- * rule belongs in the service performing the assignment, not in the guard.
+ * Known gap (ADR-004), closed elsewhere: nothing here prevents an Admin
+ * assigning the Owner role. Permission strings cannot express "not above your
+ * own level", so that rule lives in UsersService.updateRole() rather than in
+ * the guard.
  */

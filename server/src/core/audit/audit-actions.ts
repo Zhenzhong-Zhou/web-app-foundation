@@ -11,6 +11,8 @@
  */
 export const AUDIT_ACTIONS = {
   USER_CREATED: 'user.created',
+  /** A privilege change. "Who granted this" is the question the log answers. */
+  USER_ROLE_CHANGED: 'user.role_changed',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
