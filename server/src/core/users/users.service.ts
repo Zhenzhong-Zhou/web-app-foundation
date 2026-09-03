@@ -128,7 +128,7 @@ export class UsersService {
     context: RequestContext,
     userId: string,
     roleId: string,
-  ): Promise<{ id: string; roleId: string }> {
+  ): Promise<void> {
     // Scoped, so a role belonging to another organization simply is not found
     // — the same property create() relies on.
     const [role] = await this.tenantDb.select(roles, eq(roles.id, roleId));
@@ -160,9 +160,20 @@ export class UsersService {
       eq(roles.id, membership.roleId),
     );
 
-    // A separate rule from the one above, and it binds an Owner too: same
-    // shape as ADR-012's sole-Owner deletion block, since an organization
-    // with no Owner has nobody who can appoint one.
+    // Removing Owner is as much a privilege change as granting it. Without
+    // this an Admin can strip an Owner whenever a second Owner exists — the
+    // 409 below only fires for the last one, so the gap is invisible in a
+    // single-Owner organization.
+    if (
+      currentRole?.name === SYSTEM_ROLES.OWNER &&
+      callerRole?.name !== SYSTEM_ROLES.OWNER
+    ) {
+      throw new ForbiddenException("Only an Owner can change an Owner's role");
+    }
+
+    // A separate rule, and it binds an Owner too: same shape as ADR-012's
+    // sole-Owner deletion block, since an organization with no Owner has
+    // nobody who can appoint one.
     if (
       currentRole?.name === SYSTEM_ROLES.OWNER &&
       role.name !== SYSTEM_ROLES.OWNER
@@ -186,8 +197,5 @@ export class UsersService {
     );
 
     this.logger.log(`Role of ${userId} changed to ${role.name}`);
-
-    // Returned for the audit interceptor, and it saves the client a refetch.
-    return { id: userId, roleId };
   }
 }

@@ -483,6 +483,19 @@ describe('Users (e2e)', () => {
       expect(row.roleId).toBe(alpha.viewerRoleId);
     });
 
+    it('refuses an Admin demoting an Owner', async () => {
+      const alpha = await registerOrg('alpha');
+      const admin = await addMember(alpha, 'admin@alpha.example.com', 'Admin');
+      await addMember(alpha, 'second@alpha.example.com', 'Owner');
+
+      // Two Owners exist, so the sole-Owner rule does not fire — which is
+      // exactly what made this gap invisible until an Admin tried it.
+      await admin.agent
+        .patch(`/v1/users/${alpha.ownerId}`)
+        .send({ roleId: alpha.viewerRoleId })
+        .expect(403);
+    });
+
     it('refuses a Viewer, which lacks users.update', async () => {
       const alpha = await registerOrg('alpha');
       const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
