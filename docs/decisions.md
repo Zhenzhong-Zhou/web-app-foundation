@@ -1280,6 +1280,23 @@ they exist so the reasoning is not rediscovered from scratch.
   time-ordered id, so the cursor has to be `(name, id)` compared as a row —
   `name >= last and id > lastId` silently skips rows sharing a name. Build it
   with the filters, once the client shows which filters matter.
+- **Bills of materials.** Production consumes components to produce something
+  else: one bottle of Vitamin D3 60ct is 60 capsules, one bottle, one cap, one
+  label. That is a join table, `(parent_variant_id, component_variant_id,
+  quantity)`, and it needs no change to products or variants — which is the
+  test ADR-023's granularity decision passes. Two questions hide inside it and
+  are both expensive to retrofit: whether a BOM is **versioned**, since a
+  recipe changes and a production order from last year consumed the old one;
+  and whether it **nests**, since a sub-assembly is itself made of components.
+  Assuming flat and unversioned is the cheap start and the costly mistake.
+  Arrives with production orders.
+- **Unit display preference.** Storage is grams and millimetres, always
+  (ADR-023). Showing pounds and inches is formatting, not conversion, and
+  arrives as a function next to `relativeTime` plus a setting — but where the
+  setting lives is the real question: per user reads naturally until a
+  Canadian org quotes a US carrier and the two disagree about whose preference
+  the printed document should use. Distinct from unit-of-measure conversion
+  (cases to eaches), which is arithmetic on quantities rather than display.
 
 ---
 

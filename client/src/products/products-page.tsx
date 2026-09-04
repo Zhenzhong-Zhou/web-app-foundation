@@ -25,8 +25,14 @@ export interface Variant {
   id: string;
   sku: string;
   name: string | null;
+  unitOfMeasure: string;
   isActive: boolean;
   tracksBatches: boolean;
+  weightGrams: number | null;
+  lengthMm: number | null;
+  widthMm: number | null;
+  heightMm: number | null;
+  caseQuantity: number | null;
 }
 
 export interface Product {

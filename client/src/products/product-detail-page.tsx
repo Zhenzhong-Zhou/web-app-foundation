@@ -6,13 +6,11 @@ import {
   Paper,
   Skeleton,
   Stack,
-  Switch,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
@@ -23,6 +21,8 @@ import { ApiError, api } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { AddVariantDialog } from './add-variant-dialog';
 import type { Product, Variant } from './products-page';
+import { EditVariantDialog } from './edit-variant-dialog';
+import { VariantRow } from './variant-row';
 
 interface ProductDetail extends Product {
   variants: Variant[];
@@ -49,6 +49,7 @@ export function ProductDetailPage() {
   const [editing, setEditing] = useState<{ id: string; sku: string } | null>(
     null,
   );
+  const [editingVariant, setEditingVariant] = useState<Variant | null>(null);
 
   const loading = product === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
@@ -194,72 +195,41 @@ export function ProductDetailPage() {
         <Table size="small">
           <TableHead>
             <TableRow>
+              <TableCell padding="checkbox" />
               <TableCell>SKU</TableCell>
-              <TableCell>Size</TableCell>
+              <TableCell>Variation</TableCell>
+              <TableCell>Unit</TableCell>
+              <TableCell align="right">Per case</TableCell>
               <TableCell>Lots</TableCell>
-              <TableCell>Active</TableCell>
+              <TableCell align="center">Active</TableCell>
+              <TableCell />
             </TableRow>
           </TableHead>
 
           <TableBody>
             {product?.variants.map((variant) => (
-              <TableRow key={variant.id}>
-                <TableCell>
-                  {editing?.id === variant.id ? (
-                    <TextField
-                      size="small"
-                      value={editing.sku}
-                      autoFocus
-                      onChange={(event) =>
-                        setEditing({ id: variant.id, sku: event.target.value })
-                      }
-                      onBlur={() => {
-                        if (editing.sku !== variant.sku) {
-                          void patchVariant(variant.id, { sku: editing.sku });
-                        } else {
-                          setEditing(null);
-                        }
-                      }}
-                    />
-                  ) : (
-                    // Editable: a typo found after the first receipt should be
-                    // fixable, and locking it just pushes people into creating
-                    // a duplicate product (ADR-023). The rename is audited.
-                    <Link
-                      component="button"
-                      type="button"
-                      disabled={!canEdit || saving !== null}
-                      onClick={() =>
-                        setEditing({ id: variant.id, sku: variant.sku })
-                      }
-                    >
-                      {variant.sku}
-                    </Link>
-                  )}
-                </TableCell>
-
-                <TableCell>{variant.name ?? '—'}</TableCell>
-
-                <TableCell>
-                  {/* Read-only, deliberately. Set once at creation, because
-                      flipping it on a variant with stock leaves every row
-                      violating the invariant in one direction or the other. */}
-                  {variant.tracksBatches ? 'Tracked' : '—'}
-                </TableCell>
-
-                <TableCell>
-                  <Switch
-                    size="small"
-                    checked={variant.isActive}
-                    disabled={!canEdit || saving !== null}
-                    onChange={() =>
-                      void patchVariant(variant.id, {
-                        isActive: !variant.isActive,
-                      })
-                    }
-                  />
-                </TableCell>
-              </TableRow>
+              <VariantRow
+                key={variant.id}
+                variant={variant}
+                canEdit={canEdit}
+                saving={saving}
+                editing={editing}
+                onStartEdit={() =>
+                  setEditing({ id: variant.id, sku: variant.sku })
+                }
+                onEditChange={(sku) => setEditing({ id: variant.id, sku })}
+                onCommitSku={() => {
+                  if (editing && editing.sku !== variant.sku) {
+                    void patchVariant(variant.id, { sku: editing.sku });
+                  } else {
+                    setEditing(null);
+                  }
+                }}
+                onToggleActive={() =>
+                  void patchVariant(variant.id, { isActive: !variant.isActive })
+                }
+                onOpenEdit={() => setEditingVariant(variant)}
+              />
             ))}
           </TableBody>
         </Table>
@@ -270,6 +240,14 @@ export function ProductDetailPage() {
         productId={id!}
         onClose={() => setAdding(false)}
         onCreated={load}
+      />
+
+      <EditVariantDialog
+        open={editingVariant !== null}
+        productId={id!}
+        variant={editingVariant}
+        onClose={() => setEditingVariant(null)}
+        onSaved={load}
       />
     </Stack>
   );
