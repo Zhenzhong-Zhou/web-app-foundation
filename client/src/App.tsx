@@ -17,6 +17,7 @@ import { SessionsPage } from './account/sessions-page.tsx';
 import { MembersPage } from './members/members-page.tsx';
 import { AuditPage } from './audit/audit-page.tsx';
 import { ProductsPage } from './products/products-page.tsx';
+import { ProductDetailPage } from './products/product-detail-page.tsx';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -145,6 +146,7 @@ export default function App() {
         <Route path="/members" element={<MembersPage />} />
         <Route path="/audit" element={<AuditPage />} />
         <Route path="/products" element={<ProductsPage />} />
+        <Route path="/products/:id" element={<ProductDetailPage />} />
       </Route>
 
       {/* Outside both guards deliberately. Inside Protected, a signed-out

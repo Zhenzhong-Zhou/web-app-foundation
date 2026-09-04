@@ -65,6 +65,7 @@ export function CreateMemberDialog({
     setForm(EMPTY);
     setRoleId(defaultRoleId);
     setError(null);
+    setSubmitting(false);
     onClose();
   }
 
@@ -78,9 +79,6 @@ export function CreateMemberDialog({
         method: 'POST',
         body: JSON.stringify({ ...form, roleId }),
       });
-
-      await onCreated();
-      close();
     } catch (caught) {
       // 409 for an address that already has an account, 400 for a role that
       // is not this organization's. Both come back as the server wrote them.
@@ -89,8 +87,13 @@ export function CreateMemberDialog({
           ? caught.message
           : 'Could not reach the server.',
       );
+      return;
+    } finally {
       setSubmitting(false);
     }
+
+    close();
+    await onCreated();
   }
 
   return (

@@ -64,6 +64,7 @@ export function CreateProductDialog({
     setForm(EMPTY);
     setTracksBatches(false);
     setError(null);
+    setSubmitting(false);
     onClose();
   }
 
@@ -86,19 +87,26 @@ export function CreateProductDialog({
           },
         }),
       });
-
-      await onCreated();
-      close();
     } catch (caught) {
-      // 409 names the SKU, so the person knows whether they meant the existing
-      // item or have a collision in their own numbering.
+      // Only the create. A refetch failure below is the parent's problem —
+      // the product exists either way, and reporting it in a dialog about
+      // creating one would be misleading. 409 names the SKU, so the person
+      // knows whether they meant the existing item or have a collision.
       setError(
         caught instanceof ApiError
           ? caught.message
           : 'Could not reach the server.',
       );
+      return;
+    } finally {
+      // In finally, not the catch: the success path calls close(), and
+      // close() forgetting this is what left the button reading "Adding…"
+      // until a reload.
       setSubmitting(false);
     }
+
+    close();
+    await onCreated();
   }
 
   return (
