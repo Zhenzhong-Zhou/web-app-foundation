@@ -18,6 +18,7 @@ import { PermissionGuard } from './core/authorization/permission.guard';
 import { UsersModule } from './core/users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
+import { LocationsModule } from './modules/locations/locations.module';
 import { ProductsModule } from './modules/products/products.module';
 
 @Module({
@@ -108,6 +109,7 @@ import { ProductsModule } from './modules/products/products.module';
 
     // Feature modules. These consume the above and add nothing to it.
     ProductsModule,
+    LocationsModule,
 
     // Infrastructure, not domain: a liveness probe, unversioned and public.
     HealthModule,

@@ -21,6 +21,9 @@ export const AUDIT_ACTIONS = {
 
   PRODUCT_VARIANT_ADDED: 'product.variant_added',
   PRODUCT_VARIANT_UPDATED: 'product.variant_updated',
+
+  LOCATION_CREATED: 'location.created',
+  LOCATION_UPDATED: 'location.updated',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

@@ -8,6 +8,7 @@
 export * from './account-events';
 export * from './audit-log';
 export * from './auth-tokens';
+export * from './locations';
 export * from './memberships';
 export * from './organizations';
 export * from './permissions';

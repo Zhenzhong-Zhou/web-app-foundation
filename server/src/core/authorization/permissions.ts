@@ -33,6 +33,10 @@ export const PERMISSIONS = {
   PRODUCTS_VIEW: 'products.view',
   PRODUCTS_CREATE: 'products.create',
   PRODUCTS_UPDATE: 'products.update',
+
+  LOCATIONS_VIEW: 'locations.view',
+  LOCATIONS_CREATE: 'locations.create',
+  LOCATIONS_UPDATE: 'locations.update',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -53,6 +57,9 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'products.view': 'See the product catalogue',
   'products.create': 'Add a product to the catalogue',
   'products.update': 'Edit or discontinue a product',
+  'locations.view': 'See warehouses, zones, and bins',
+  'locations.create': 'Add a location',
+  'locations.update': 'Edit, move, or retire a location',
 };
 
 export const SYSTEM_ROLES = {
@@ -93,6 +100,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.PRODUCTS_VIEW,
     PERMISSIONS.PRODUCTS_CREATE,
     PERMISSIONS.PRODUCTS_UPDATE,
+    PERMISSIONS.LOCATIONS_VIEW,
+    PERMISSIONS.LOCATIONS_CREATE,
+    PERMISSIONS.LOCATIONS_UPDATE,
   ],
 
   [SYSTEM_ROLES.VIEWER]: [
@@ -101,6 +111,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.ORGANIZATIONS_VIEW,
     // Read-only means read: a Viewer sees the catalogue and changes nothing.
     PERMISSIONS.PRODUCTS_VIEW,
+    PERMISSIONS.LOCATIONS_VIEW,
   ],
 };
 
