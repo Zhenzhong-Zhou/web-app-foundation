@@ -13,8 +13,8 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
-
-import { ApiError, api } from '../lib/api';
+import { useSubmit } from '../lib/use-submit';
+import { api } from '../lib/api';
 
 const UNITS = ['each', 'kg', 'g', 'litre', 'ml', 'case', 'box', 'pallet'];
 
@@ -42,24 +42,26 @@ export function AddVariantDialog({
 }) {
   const [form, setForm] = useState(EMPTY);
   const [tracksBatches, setTracksBatches] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+
+  const { submitting, error, reset, submit } = useSubmit(async () => {
+    close();
+    await onCreated();
+  });
 
   function close() {
     setForm(EMPTY);
     setTracksBatches(false);
-    setError(null);
-    setSubmitting(false);
+    reset();
     onClose();
   }
 
-  async function handleSubmit(event: SubmitEvent) {
+  function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
-    setSubmitting(true);
-    setError(null);
 
-    try {
-      await api(`/products/${productId}/variants`, {
+    // 409 when the new SKU is taken — the client cannot know what every other
+    // variant in the organization is called, so it asks and reports.
+    void submit(() =>
+      api(`/products/${productId}/variants`, {
         method: 'POST',
         body: JSON.stringify({
           sku: form.sku,
@@ -67,26 +69,8 @@ export function AddVariantDialog({
           unitOfMeasure: form.unitOfMeasure,
           tracksBatches,
         }),
-      });
-    } catch (caught) {
-      // Only the create is handled here. A refetch failure below is the
-      // parent's problem — the variant exists either way, and reporting it in
-      // a dialog about creating one would be misleading.
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
-      return;
-    } finally {
-      // In finally, not in the catch: the success path calls close(), and
-      // close() forgetting this is what left the button reading "Adding…"
-      // until a reload.
-      setSubmitting(false);
-    }
-
-    close();
-    await onCreated();
+      }),
+    );
   }
 
   return (

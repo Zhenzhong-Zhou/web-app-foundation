@@ -11,13 +11,14 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
-import { ApiError, api } from '../lib/api';
+import { api } from '../lib/api';
 import {
   EMAIL_MAX_LENGTH,
   NAME_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
 } from '../lib/validation';
+import { useSubmit } from '../lib/use-submit';
 
 interface Role {
   id: string;
@@ -53,47 +54,35 @@ export function CreateMemberDialog({
 
   const [form, setForm] = useState(EMPTY);
   const [roleId, setRoleId] = useState(defaultRoleId);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+
+  const { submitting, error, reset, submit } = useSubmit(async () => {
+    close();
+    await onCreated();
+  });
+
+  function close() {
+    setForm(EMPTY);
+    setRoleId(defaultRoleId);
+    reset();
+    onClose();
+  }
 
   function update(field: keyof typeof form) {
     return (event: { target: { value: string } }) =>
       setForm((current) => ({ ...current, [field]: event.target.value }));
   }
 
-  function close() {
-    setForm(EMPTY);
-    setRoleId(defaultRoleId);
-    setError(null);
-    setSubmitting(false);
-    onClose();
-  }
-
-  async function handleSubmit(event: SubmitEvent) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitting(true);
-    setError(null);
 
-    try {
-      await api('/users', {
+    // 409 for an address that already has an account, 400 for a role that is
+    // not this organization's. Both come back as the server wrote them.
+    void submit(() =>
+      api('/users', {
         method: 'POST',
         body: JSON.stringify({ ...form, roleId }),
-      });
-    } catch (caught) {
-      // 409 for an address that already has an account, 400 for a role that
-      // is not this organization's. Both come back as the server wrote them.
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
-      return;
-    } finally {
-      setSubmitting(false);
-    }
-
-    close();
-    await onCreated();
+      }),
+    );
   }
 
   return (

@@ -13,7 +13,8 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
-import { ApiError, api } from '../lib/api';
+import { api } from '../lib/api';
+import { useSubmit } from '../lib/use-submit';
 
 const TYPES = [
   { value: 'good', label: 'Sellable good' },
@@ -52,29 +53,31 @@ export function CreateProductDialog({
 }) {
   const [form, setForm] = useState(EMPTY);
   const [tracksBatches, setTracksBatches] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+
+  const { submitting, error, reset, submit } = useSubmit(async () => {
+    close();
+    await onCreated();
+  });
+
+  function close() {
+    setForm(EMPTY);
+    setTracksBatches(false);
+    reset();
+    onClose();
+  }
 
   function update(field: keyof typeof form) {
     return (event: { target: { value: string } }) =>
       setForm((current) => ({ ...current, [field]: event.target.value }));
   }
 
-  function close() {
-    setForm(EMPTY);
-    setTracksBatches(false);
-    setError(null);
-    setSubmitting(false);
-    onClose();
-  }
-
-  async function handleSubmit(event: SubmitEvent) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitting(true);
-    setError(null);
 
-    try {
-      await api('/products', {
+    // 409 names the SKU, so the person knows whether they meant the existing
+    // item or have a collision in their own numbering.
+    void submit(() =>
+      api('/products', {
         method: 'POST',
         body: JSON.stringify({
           type: form.type,
@@ -86,27 +89,8 @@ export function CreateProductDialog({
             tracksBatches,
           },
         }),
-      });
-    } catch (caught) {
-      // Only the create. A refetch failure below is the parent's problem —
-      // the product exists either way, and reporting it in a dialog about
-      // creating one would be misleading. 409 names the SKU, so the person
-      // knows whether they meant the existing item or have a collision.
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
-      return;
-    } finally {
-      // In finally, not the catch: the success path calls close(), and
-      // close() forgetting this is what left the button reading "Adding…"
-      // until a reload.
-      setSubmitting(false);
-    }
-
-    close();
-    await onCreated();
+      }),
+    );
   }
 
   return (

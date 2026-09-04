@@ -12,10 +12,21 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
-import { ApiError, api } from '../lib/api';
+import { api } from '../lib/api';
+import { useSubmit } from '../lib/use-submit';
 import type { Variant } from './products-page';
 
 const UNITS = ['each', 'kg', 'g', 'litre', 'ml', 'case', 'box', 'pallet'];
+
+const EMPTY = {
+  name: '',
+  unitOfMeasure: 'each',
+  weightGrams: '',
+  lengthMm: '',
+  widthMm: '',
+  heightMm: '',
+  caseQuantity: '',
+};
 
 /**
  * Physical facts about the variant. Two sets of dimensions because they answer
@@ -43,18 +54,20 @@ export function EditVariantDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
-  const [form, setForm] = useState({
-    name: '',
-    unitOfMeasure: 'each',
-    weightGrams: '',
-    lengthMm: '',
-    widthMm: '',
-    heightMm: '',
-    caseQuantity: '',
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState(EMPTY);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
+
+  const { submitting, error, reset, submit } = useSubmit(async () => {
+    close();
+    await onSaved();
+  });
+
+  function close() {
+    setForm(EMPTY);
+    setLoadedFor(null);
+    reset();
+    onClose();
+  }
 
   // Populated from the variant when the dialog opens for a new one, not in an
   // effect: an effect would fight the user's own edits on every re-render.
@@ -62,7 +75,7 @@ export function EditVariantDialog({
     setLoadedFor(variant.id);
     setForm({
       name: variant.name ?? '',
-      unitOfMeasure: variant.unitOfMeasure ?? 'each',
+      unitOfMeasure: variant.unitOfMeasure,
       weightGrams: variant.weightGrams?.toString() ?? '',
       lengthMm: variant.lengthMm?.toString() ?? '',
       widthMm: variant.widthMm?.toString() ?? '',
@@ -76,28 +89,18 @@ export function EditVariantDialog({
       setForm((current) => ({ ...current, [field]: event.target.value }));
   }
 
-  function close() {
-    setError(null);
-    setSubmitting(false);
-    setLoadedFor(null);
-    onClose();
-  }
-
   /** Empty means "no value", not zero — the columns are nullable. */
   function numberOrNull(value: string): number | undefined {
     const trimmed = value.trim();
     return trimmed === '' ? undefined : Number(trimmed);
   }
 
-  async function handleSubmit(event: SubmitEvent) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!variant) return;
 
-    setSubmitting(true);
-    setError(null);
-
-    try {
-      await api(`/products/${productId}/variants/${variant.id}`, {
+    void submit(() =>
+      api(`/products/${productId}/variants/${variant.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
           name: form.name || undefined,
@@ -108,20 +111,8 @@ export function EditVariantDialog({
           heightMm: numberOrNull(form.heightMm),
           caseQuantity: numberOrNull(form.caseQuantity),
         }),
-      });
-    } catch (caught) {
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
-      return;
-    } finally {
-      setSubmitting(false);
-    }
-
-    close();
-    await onSaved();
+      }),
+    );
   }
 
   return (
