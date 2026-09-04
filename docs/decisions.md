@@ -1168,6 +1168,72 @@ inventing history.
 
 ---
 
+## ADR-024 — Locations are one tree, and stock sits only at leaves
+
+**Context.** Stock has to be somewhere: a warehouse, a bin on a shelf, a
+quarantine area, a supply cupboard. Layouts differ — one operation has a single
+room, another has aisles and bins across two sites — and defective or
+in-process units need a home that is still countable.
+
+**Decision — one `locations` table, self-referencing.**
+
+    locations  id, organization_id, name, code, type, parent_id,
+               is_available, is_active
+
+Warehouses, zones, aisles, shelves, and bins all need a name, a parent, and a
+status, so they are one table with a `type`. Separate tables would force
+`stock.location_id` to reference one of several, which is the problem ADR-023
+avoided by putting stock only on variants.
+
+`type` is a label, not a rule. It does not enforce depth, and it does not
+determine leaf-ness. `parent_id` null means top level, and that single nullable
+column is the entire hierarchy.
+
+`ON DELETE RESTRICT` on the parent: removing a warehouse must not silently take
+every bin under it, along with whatever those bins held.
+
+**Decision — stock references only a location with no children.**
+
+40 units "in Warehouse A" and 10 "in Bin 1" is a system that cannot say whether
+the warehouse holds 40 or 50, and every report will answer differently. One
+place a quantity lives; a parent's total is the sum of its descendants.
+
+Leaf is computed, not declared, and that is what makes it workable at any
+scale: an operation with one room has one location, which is itself a leaf and
+holds stock directly. When bins are added later it gains children and stops
+being a leaf — at which point its stock must move down, and a location holding
+stock may not gain a child until it does.
+
+Enforced in the service with e2e coverage, not by a trigger. A check constraint
+cannot see other rows, and a trigger would be stronger but would hide the rule
+in SQL where nobody reviewing a service will look for it. ADR-023's batch
+invariant is enforced the same way, and two cross-table rules enforced two
+different ways is worse than either.
+
+**Decision — quarantine, returns, and work in progress are locations, not a
+status on the stock row.**
+
+A status does not say where the units physically are, and changing one leaves
+no trace. Moving stock to Quarantine is a movement: an actor, a time, a reason,
+and a place an auditor can go and look. Warehouse totals include them, because
+they are on the shelf; availability filters on `is_available`.
+
+Named `is_available` rather than `is_sellable`, because raw materials are
+consumed rather than sold.
+
+**Consequence.** Rollups are a recursive CTE over a table of tens or hundreds
+of rows — irrelevant at any scale this will see. If it ever is not, the answer
+is a materialized path column making "everything under Warehouse A" a prefix
+match on an index, which is an optimisation to measure rather than assume.
+
+**Deferred, and recorded as open decisions.** Pallets and license plating,
+because whether a pallet is a label or a container that moves as a unit depends
+on how a given warehouse works and both are real. Capacity, because enforcing
+it needs a unit and a rule about whether a pallet counts as one or as its
+contents. Addresses, which arrive with customers and suppliers.
+
+---
+
 # Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -1297,6 +1363,46 @@ they exist so the reasoning is not rediscovered from scratch.
   Canadian org quotes a US carrier and the two disagree about whose preference
   the printed document should use. Distinct from unit-of-measure conversion
   (cases to eaches), which is arithmetic on quantities rather than display.
+- **Pallets and license plating.** "Pallet 3 in Bin 5" is two different things
+  depending on the operation. A pallet that sits in a bin and never moves as a
+  unit is a label; one that gets driven to another warehouse with everything on
+  it is a container, and a license plate — an identifier attached to a set of
+  stock rows — is what makes that one operation rather than forty. Both are
+  real, and which you need depends on how a given warehouse works. Additive
+  when it arrives: a `containers` table and a nullable `container_id` on
+  `stock`, which does not invalidate existing rows. Deliberately absent from
+  `LOCATION_TYPES` — a pallet moves, and a movable thing in a fixed tree is how
+  the tree stops meaning anything.
+- **Location capacity.** A nullable `capacity` column on `locations` costs
+  nothing; enforcing it is the hard part. Capacity in units of what — eaches,
+  cases, pallet positions, cubic millimetres? Does a pallet holding 500 units
+  count as 1 or 500? And quarantined stock occupies space physically, so it
+  counts, which means the check cannot simply filter on `is_available`. Not
+  worth a column until there is an answer to what to do with it.
+- **Addresses.** A warehouse needs one for shipping documents and freight
+  quotes, and customers and suppliers need several each — a shipping address
+  and a billing address are not the same row. That is a one-to-many, so it is
+  its own table keyed by owner rather than columns on each. Two shapes to
+  choose between: polymorphic (`owner_type`, `owner_id`), which cannot have a
+  foreign key, or one table per owner with real keys and duplicated columns.
+  Arrives with the first thing that generates a document. Separately: an order
+  stores the address it shipped to **as text**, copied at the time — a customer
+  moving house must not rewrite where last year's order went, the same
+  snapshotting rule as SKUs in movements (ADR-023).
+- **Barcodes.** One variant carries several — a UPC on the bottle, an EAN for
+  Europe, a supplier's own code, an inner-case GTIN — so a column forces one
+  and the workaround is a comma-separated string. Its own table,
+  `(variant_id, code, type)`, unique on `(organization_id, code)` because
+  scanning must resolve to exactly one variant. Build it when something scans,
+  which is receiving or picking, so it arrives with stock movements.
+- **Category and brand.** Tables, not text columns: "Supplements" typed twelve
+  ways is twelve categories and nothing filters. Categories nest — Supplements
+  → Vitamins → Vitamin D — which is the same self-referencing shape as
+  `locations`. Both nullable foreign keys on `products`. Build it when a list
+  is long enough that scrolling is annoying, which is also when the categories
+  will be known rather than guessed. "Series" is deliberately not on this list:
+  it means a product line, a collection, or a numbering scheme depending on who
+  says it, and a field that vague gets used for all three.
 
 ---
 
