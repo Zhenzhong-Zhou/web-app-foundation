@@ -5,10 +5,10 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, gt } from 'drizzle-orm';
 
 import { isUniqueViolation } from '../../database/errors';
-import { locations } from '../../database/schema';
+import { locations, stockLevels } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { CreateLocationDto } from './dto/create-location.dto';
 import type { UpdateLocationDto } from './dto/update-location.dto';
@@ -44,6 +44,8 @@ export class LocationsService {
       );
 
       if (!parent) throw new BadRequestException('Unknown parent location');
+
+      await this.assertHoldsNoStock(input.parentId);
 
       // Checked on create as well as on reparent: a chain built downward can
       // exceed the limit without any single step looking wrong.
@@ -91,6 +93,8 @@ export class LocationsService {
 
         if (!parent) throw new BadRequestException('Unknown parent location');
 
+        await this.assertHoldsNoStock(input.parentId);
+
         // The database's check constraint catches a location parented to
         // itself. A → B → A needs walking the chain, which no constraint can
         // see (ADR-024).
@@ -118,6 +122,32 @@ export class LocationsService {
   }
 
   /**
+   * Stock lives only at leaves (ADR-024), and leaf-ness is computed rather than
+   * declared — so a shelf holding 40 units stops being a leaf the moment
+   * someone adds a bin beneath it, and the invariant breaks with nothing having
+   * errored. This is the operation that has to refuse, not the receipt.
+   *
+   * Zero-quantity rows do not block: a shelf that once held something and now
+   * holds nothing is a leaf that can gain children. The stock has to move down
+   * first, which is a movement with an actor and a reason.
+   */
+  private async assertHoldsNoStock(locationId: string): Promise<void> {
+    const [held] = await this.tenantDb.select(
+      stockLevels,
+      and(
+        eq(stockLevels.locationId, locationId),
+        gt(stockLevels.quantity, '0'),
+      ),
+    );
+
+    if (held) {
+      throw new ConflictException(
+        'This location holds stock. Move it to a child location first.',
+      );
+    }
+  }
+
+  /**
    * Refuses to move a location under one of its own descendants, which would
    * detach the whole subtree from the tree — every row still present, none of
    * them reachable from a root.
@@ -129,12 +159,6 @@ export class LocationsService {
     let current: string | null = candidateParentId;
 
     for (let depth = 0; depth < MAX_DEPTH && current !== null; depth += 1) {
-      if (current === locationId) {
-        throw new BadRequestException(
-          'A location cannot be moved inside itself',
-        );
-      }
-
       if (current === locationId) {
         throw new BadRequestException(
           'A location cannot be moved inside itself',
@@ -158,6 +182,7 @@ export class LocationsService {
       throw new BadRequestException('Location nesting is too deep');
     }
   }
+
   /** Null when the location does not exist or is at the top level. */
   private async parentOf(locationId: string): Promise<string | null> {
     const [row] = await this.tenantDb.select(

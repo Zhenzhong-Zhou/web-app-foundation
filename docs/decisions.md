@@ -1166,6 +1166,17 @@ the thing every first inventory system regrets. Retrofitting variants means
 touching every table that references a product, and retrofitting a ledger means
 inventing history.
 
+**Amendment (ADR-025).** `batches` is now `lots`, `stock` is `stock_levels`,
+and `tracks_batches` on the variant is `tracks_lots`. The interface already
+said "lot number" while the schema said batch, and `batch` is also what a bulk
+import endpoint will be called — one word carrying two meanings in the same
+codebase. `stock` was renamed at the same time because a row there is a balance
+for one variant at one location in one lot, which the plural says and the mass
+noun does not. Renamed before the stock service read any of them.
+
+Everything above describing `batches`, `batch_id`, or `stock` refers to these
+names; the reasoning is unchanged.
+
 ---
 
 ## ADR-024 — Locations are one tree, and stock sits only at leaves
@@ -1226,6 +1237,20 @@ of rows — irrelevant at any scale this will see. If it ever is not, the answer
 is a materialized path column making "everything under Warehouse A" a prefix
 match on an index, which is an optimisation to measure rather than assume.
 
+**Known gap: the leaf check is not atomic.** `LocationsService` reads whether a
+parent holds stock, then inserts the child, with nothing holding a lock in
+between. Two concurrent requests can each see a stock-free shelf and both add a
+bin, or a receipt can land on the shelf between the check and the insert —
+leaving stock at a branch, which is precisely what this ADR forbids.
+
+This is the same race ADR-025 closes for movements by locking the
+`stock_levels` row, and the fix here is the same shape: take that row, or an
+advisory lock keyed on the parent, inside the create transaction. Left open
+because adding a child location is rare, done by one person at a time, and the
+recovery is a movement rather than data loss. The trigger to fix it is
+concurrent location editing by more than one member, or the first time it
+happens.
+
 **Deferred, and recorded as open decisions.** Pallets and license plating,
 because whether a pallet is a label or a container that moves as a unit depends
 on how a given warehouse works and both are real. Capacity, because enforcing
@@ -1236,10 +1261,10 @@ contents. Addresses, which arrive with customers and suppliers.
 
 ## ADR-025 — Quantity is decimal, and the stock cache is the lock
 
-**Context.** ADR-023 settled that quantity is a ledger and `stock` is a derived
-cache, but not what type a quantity is, and not how two concurrent movements
-against the same shelf are serialised. Both have to be answered before the
-first movement is written, because the ledger is append-only: a column type
+**Context.** ADR-023 settled that quantity is a ledger and `stock_levels` is a
+derived cache, but not what type a quantity is, and not how two concurrent
+movements against the same shelf are serialised. Both have to be answered before
+the first movement is written, because the ledger is append-only: a column type
 changed later is a data migration across rows we have promised not to rewrite.
 
 **Decision — `numeric(18, 4)`, never a float, never an integer.**
@@ -1264,16 +1289,16 @@ storable. Enforcing that needs a per-variant rule tied to `unit_of_measure`,
 which is the same information unit-of-measure conversion will need, so it waits
 for that rather than being guessed at now. Recorded in open decisions.
 
-**Decision — the `stock` row is the concurrency lock, and `CHECK (quantity >= 0)`
-is the backstop.**
+**Decision — the `stock_levels` row is the concurrency lock, and
+`CHECK (quantity >= 0)` is the backstop.**
 
 Two shipments of 8 against a balance of 10, arriving together: both read 10,
 both pass a service-level check, both write. The ledger records both truthfully
 and the shelf is at −6. Append-only does not prevent this; it only documents it
 afterwards.
 
-So the movement transaction takes the `stock` row first —
-`INSERT … ON CONFLICT (variant_id, location_id, batch_id) DO UPDATE` — which
+So the movement transaction takes the `stock_levels` row first —
+`INSERT … ON CONFLICT (variant_id, location_id, lot_id) DO UPDATE` — which
 acquires a row lock even on the first movement for a shelf that has none yet.
 The second transaction blocks until the first commits, then reads the true
 balance.
@@ -1287,22 +1312,22 @@ as the closed-set constraints on `products.type` and `auth_tokens.purpose`.
 e2e, not by trigger.**
 
 Two rules cannot be expressed as a check constraint, because a constraint cannot
-see another table: `batch_id` is non-null exactly when the variant has
-`tracks_batches` (ADR-023), and a movement's locations must be leaves
-(ADR-024). ADR-023 already chose service-level enforcement for the first. The
-second gets the same treatment for consistency — one mechanism for this class of
-rule, so there is one place to look when one is violated.
+see another table: `lot_id` is non-null exactly when the variant has
+`tracks_lots` (ADR-023), and a movement's locations must be leaves (ADR-024).
+ADR-023 already chose service-level enforcement for the first. The second gets
+the same treatment for consistency — one mechanism for this class of rule, so
+there is one place to look when one is violated.
 
 A trigger would be airtight and is rejected for the usual reason: business logic
 in two languages, invisible to the test suite that reads TypeScript, and
 discovered by whoever is debugging at the time.
 
-**Consequence.** Every stock change is one transaction containing a `stock`
-upsert and a `stock_movements` insert, in that order. Reads of current stock hit
-the cache and never aggregate the ledger. The reconciliation assertion from
-ADR-023 — sum of movements equals the stock row — is what proves the two have
-not drifted, and it belongs in e2e rather than in a periodic job while the data
-is small enough to check on every run.
+**Consequence.** Every stock change is one transaction containing a
+`stock_levels` upsert and a `stock_movements` insert, in that order. Reads of
+current stock hit the cache and never aggregate the ledger. The reconciliation
+assertion from ADR-023 — sum of movements equals the stock row — is what proves
+the two have not drifted, and it belongs in e2e rather than in a periodic job
+while the data is small enough to check on every run.
 
 ---
 
@@ -1485,6 +1510,17 @@ they exist so the reasoning is not rediscovered from scratch.
   error report someone can act on — so the semantics will be obvious by the
   time there is something to build them against. Seeding in tests loops over
   the single-row endpoint and is not the same problem.
+- **Whole-unit enforcement.** `numeric(18, 4)` lets 0.5 of a paperclip be
+  stored (ADR-025). Refusing that needs a per-variant rule keyed on
+  `unit_of_measure` — "each" is discrete, "kg" is not — which is the same
+  mapping unit-of-measure conversion will need in order to buy cases and stock
+  eaches. Building half of it now means guessing at the half that matters, so
+  both wait for the module that forces them.
+- **A dashboard at `/`.** The placeholder Home screen was removed and `/` now
+  redirects to `/products`, because a page whose only content was "you are
+  signed in" was not earning a route. What belongs there — low stock, recent
+  movements, pending receipts — is all downstream of the stock layer, so the
+  redirect stands until there is something worth showing.
 
 ---
 
