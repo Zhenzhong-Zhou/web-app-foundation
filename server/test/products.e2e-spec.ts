@@ -21,7 +21,7 @@ interface VariantResponse {
   id: string;
   sku: string;
   name: string | null;
-  tracksBatches: boolean;
+  tracksLots: boolean;
   isActive: boolean;
 }
 
@@ -55,7 +55,7 @@ describe('Products (e2e)', () => {
   const product = {
     type: 'good',
     name: 'Vitamin D3',
-    variant: { sku: 'VD3-60', name: '60ct', tracksBatches: true },
+    variant: { sku: 'VD3-60', name: '60ct', tracksLots: true },
   };
 
   beforeAll(async () => {
@@ -143,7 +143,7 @@ describe('Products (e2e)', () => {
 
       expect(created.variants).toHaveLength(1);
       expect(created.variants[0].sku).toBe('VD3-60');
-      expect(created.variants[0].tracksBatches).toBe(true);
+      expect(created.variants[0].tracksLots).toBe(true);
 
       // ADR-023's invariant, asserted against rows rather than a response: a
       // product with no variant is one nothing can ever be counted against.
@@ -169,7 +169,7 @@ describe('Products (e2e)', () => {
       // field; the schema does not, which is what keeps stock queries free of
       // a branch.
       expect(variant.name).toBeNull();
-      expect(variant.tracksBatches).toBe(false);
+      expect(variant.tracksLots).toBe(false);
     });
 
     it('rejects a duplicate SKU and leaves no orphaned product', async () => {
@@ -388,7 +388,7 @@ describe('Products (e2e)', () => {
           .expect(201);
       });
 
-      it('rejects tracksBatches in an update', async () => {
+      it('rejects tracksLots in an update', async () => {
         const alpha = await registerOrg('alpha');
         const created = await createProduct(alpha.agent);
 
@@ -400,11 +400,11 @@ describe('Products (e2e)', () => {
           .patch(
             `/v1/products/${created.id}/variants/${created.variants[0].id}`,
           )
-          .send({ tracksBatches: false })
+          .send({ tracksLots: false })
           .expect(400);
 
         const [variant] = await db.select().from(productVariants);
-        expect(variant.tracksBatches).toBe(true);
+        expect(variant.tracksLots).toBe(true);
       });
 
       it('refuses a variant belonging to another product', async () => {

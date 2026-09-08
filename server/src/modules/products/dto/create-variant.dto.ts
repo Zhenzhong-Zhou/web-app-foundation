@@ -36,7 +36,7 @@ export class CreateVariantDto {
 
   @IsOptional()
   @IsBoolean()
-  tracksBatches?: boolean;
+  tracksLots?: boolean;
 
   // Base units only. A client sending pounds converts before posting, or the
   // server would need the unit alongside every value — see the open decision.

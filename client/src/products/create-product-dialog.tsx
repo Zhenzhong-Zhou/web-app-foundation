@@ -52,7 +52,7 @@ export function CreateProductDialog({
   onCreated: () => Promise<void>;
 }) {
   const [form, setForm] = useState(EMPTY);
-  const [tracksBatches, setTracksBatches] = useState(false);
+  const [tracksLots, setTracksBatches] = useState(false);
 
   const { submitting, error, reset, submit } = useSubmit(async () => {
     close();
@@ -86,7 +86,7 @@ export function CreateProductDialog({
           variant: {
             sku: form.sku,
             name: form.variantName || undefined,
-            tracksBatches,
+            tracksLots,
           },
         }),
       }),
@@ -163,7 +163,7 @@ export function CreateProductDialog({
             <FormControlLabel
               control={
                 <Switch
-                  checked={tracksBatches}
+                  checked={tracksLots}
                   onChange={(event) => setTracksBatches(event.target.checked)}
                 />
               }

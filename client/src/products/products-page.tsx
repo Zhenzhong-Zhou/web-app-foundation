@@ -27,7 +27,7 @@ export interface Variant {
   name: string | null;
   unitOfMeasure: string;
   isActive: boolean;
-  tracksBatches: boolean;
+  tracksLots: boolean;
   weightGrams: number | null;
   lengthMm: number | null;
   widthMm: number | null;

@@ -111,7 +111,7 @@ export function VariantRow({
           {/* Read-only. Set once at creation, because flipping it on a variant
               with stock leaves every row violating the invariant in one
               direction or the other. */}
-          {variant.tracksBatches ? 'Tracked' : '—'}
+          {variant.tracksLots ? 'Tracked' : '—'}
         </TableCell>
 
         <TableCell align="center">

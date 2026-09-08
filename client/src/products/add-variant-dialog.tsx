@@ -41,7 +41,7 @@ export function AddVariantDialog({
   onCreated: () => Promise<void>;
 }) {
   const [form, setForm] = useState(EMPTY);
-  const [tracksBatches, setTracksBatches] = useState(false);
+  const [tracksLots, setTracksBatches] = useState(false);
 
   const { submitting, error, reset, submit } = useSubmit(async () => {
     close();
@@ -67,7 +67,7 @@ export function AddVariantDialog({
           sku: form.sku,
           name: form.name || undefined,
           unitOfMeasure: form.unitOfMeasure,
-          tracksBatches,
+          tracksLots,
         }),
       }),
     );
@@ -131,7 +131,7 @@ export function AddVariantDialog({
             <FormControlLabel
               control={
                 <Switch
-                  checked={tracksBatches}
+                  checked={tracksLots}
                   onChange={(event) => setTracksBatches(event.target.checked)}
                 />
               }

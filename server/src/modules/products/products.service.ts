@@ -48,7 +48,7 @@ export class ProductsService {
         productName: products.name,
         type: products.type,
         unitOfMeasure: productVariants.unitOfMeasure,
-        tracksBatches: productVariants.tracksBatches,
+        tracksLots: productVariants.tracksLots,
       },
       and(eq(products.isActive, true), eq(productVariants.isActive, true)),
     );
