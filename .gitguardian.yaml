@@ -1,0 +1,14 @@
+version: 2
+
+secret:
+  # Both trees provision their own throwaway organizations against a local
+  # database and never hold a credential for anything real — the "secrets" are
+  # deliberately wrong passwords used to assert that wrong passwords are
+  # rejected. Excluded because the alert volume is high and the signal is zero.
+  #
+  # The cost: a genuine credential pasted into a test while debugging against
+  # a deployed environment would go unnoticed here. Acceptable while no test
+  # touches a live service; revisit if one ever does.
+  ignored_paths:
+    - 'server/test/**/*'
+    - 'client/e2e/**/*'

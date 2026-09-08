@@ -64,13 +64,18 @@ export const lots = pgTable(
       .defaultNow(),
 
     /**
-     * True when the receiver invented this code because the supplier shipped
-     * without one (ADR-023).
+     * True only when no code existed and the receiver had to invent one.
+     *
+     * False when the code came from an authoritative source — printed by the
+     * supplier, or issued by this organization's own numbering scheme for a
+     * production run. The flag is about provenance, not about who typed it:
+     * a manufactured lot code is ours and is authoritative, so it is false.
      *
      * Leaving the lot null would break the invariant; inventing a code
      * silently is worse. During a recall the question is which units came from
-     * the affected run, and a code nobody printed cannot answer it — so the
-     * distinction is recorded rather than hidden.
+     * the affected run, and a code nobody printed cannot be matched against a
+     * supplier's affected-lot list — so the distinction is recorded rather
+     * than hidden.
      */
     isAssigned: boolean('is_assigned').notNull().default(false),
 

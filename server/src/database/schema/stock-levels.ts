@@ -5,7 +5,6 @@ import {
   numeric,
   pgTable,
   unique,
-  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 

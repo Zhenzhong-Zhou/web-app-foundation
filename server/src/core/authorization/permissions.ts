@@ -37,6 +37,9 @@ export const PERMISSIONS = {
   LOCATIONS_VIEW: 'locations.view',
   LOCATIONS_CREATE: 'locations.create',
   LOCATIONS_UPDATE: 'locations.update',
+
+  STOCK_VIEW: 'stock.view',
+  STOCK_MOVE: 'stock.move',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -60,6 +63,12 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'locations.view': 'See warehouses, zones, and bins',
   'locations.create': 'Add a location',
   'locations.update': 'Edit, move, or retire a location',
+  'stock.view': 'See what is on hand and where',
+  // One permission for every kind of movement, matching the endpoint. Receiving
+  // and shipping are the same operation with the direction reversed, and a
+  // split would suggest one is safer than the other — an adjustment is the
+  // riskier action and would sit on whichever side someone chose.
+  'stock.move': 'Receive, ship, transfer, or adjust stock',
 };
 
 export const SYSTEM_ROLES = {
@@ -103,6 +112,8 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.LOCATIONS_VIEW,
     PERMISSIONS.LOCATIONS_CREATE,
     PERMISSIONS.LOCATIONS_UPDATE,
+    PERMISSIONS.STOCK_VIEW,
+    PERMISSIONS.STOCK_MOVE,
   ],
 
   [SYSTEM_ROLES.VIEWER]: [
@@ -112,6 +123,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     // Read-only means read: a Viewer sees the catalogue and changes nothing.
     PERMISSIONS.PRODUCTS_VIEW,
     PERMISSIONS.LOCATIONS_VIEW,
+    PERMISSIONS.STOCK_VIEW,
   ],
 };
 

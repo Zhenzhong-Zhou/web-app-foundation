@@ -351,7 +351,11 @@ Development must be same-origin. Vite proxies `/api` to Nest rather than the SPA
 `http://localhost:3000` directly:
 
 ```ts
-server: { proxy: { '/api': { target: 'http://localhost:3000', changeOrigin: true } } }
+export default defineConfig({
+  server: {
+    proxy: { '/api': { target: 'http://localhost:3000', changeOrigin: true } },
+  },
+});
 ```
 
 This mirrors the production topology (reverse proxy serving the SPA, forwarding `/api`).
@@ -1521,6 +1525,14 @@ they exist so the reasoning is not rediscovered from scratch.
   signed in" was not earning a route. What belongs there — low stock, recent
   movements, pending receipts — is all downstream of the stock layer, so the
   redirect stands until there is something worth showing.
+- **Generated lot codes for production runs.** ADR-023 argues against generating
+  SKUs because the organization already has one for every item. A lot code is
+  different: it does not pre-exist, it comes into being at the moment of a run,
+  and most manufacturing systems issue it from a scheme — date plus line plus
+  shift, or a sequence. Typed by hand for every run is how two runs end up
+  sharing a number. Receiving from a supplier stays typed, because that code is
+  printed on the box and is not ours to invent. The forcing function is a
+  production module; until one exists there is no run to hang a sequence off.
 
 ---
 
