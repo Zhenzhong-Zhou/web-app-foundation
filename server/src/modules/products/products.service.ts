@@ -14,14 +14,6 @@ import { CreateVariantDto } from './dto/create-variant.dto';
 import type { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
 
-export interface ProductSummary {
-  id: string;
-  type: string;
-  name: string;
-  isActive: boolean;
-  variantCount: number;
-}
-
 @Injectable()
 export class ProductsService {
   private readonly logger = new Logger(ProductsService.name);
@@ -51,6 +43,7 @@ export class ProductsService {
         tracksLots: productVariants.tracksLots,
       },
       and(eq(products.isActive, true), eq(productVariants.isActive, true)),
+      { orderBy: asc(productVariants.sku) },
     );
   }
 

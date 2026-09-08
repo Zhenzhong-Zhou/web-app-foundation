@@ -22,6 +22,7 @@ const NAV = [
   { label: 'Members', to: '/members' },
   { label: 'Audit log', to: '/audit', permission: 'audit.view' },
   { label: 'Account', to: '/account' },
+  { label: 'Inventory', to: '/inventory', permission: 'stock.view' },
 ];
 
 /**

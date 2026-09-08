@@ -30,6 +30,21 @@ export class ProductsController {
     return this.products.list();
   }
 
+  /**
+   * Declared above @Get(':id') deliberately. Nest matches in declaration
+   * order, and 'variants' would otherwise hit the id route — where
+   * ParseUUIDPipe turns a working request into a 400 that reads like a
+   * client bug rather than a routing mistake.
+   *
+   * Flat, across products, because stock hangs off variants (ADR-023): a
+   * receiving screen needs SKUs with no product to drill into first.
+   */
+  @Get('variants')
+  @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
+  listVariants() {
+    return this.products.listActiveVariants();
+  }
+
   @Get(':id')
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
   find(@Param('id', ParseUUIDPipe) id: string) {

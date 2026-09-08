@@ -25,6 +25,16 @@ interface VariantResponse {
   isActive: boolean;
 }
 
+interface VariantPickerResponse {
+  id: string;
+  sku: string;
+  variantName: string | null;
+  productName: string;
+  type: string;
+  unitOfMeasure: string;
+  tracksLots: boolean;
+}
+
 interface ProductResponse {
   id: string;
   type: string;
@@ -256,6 +266,93 @@ describe('Products (e2e)', () => {
     });
   });
 
+  describe('GET /v1/products/variants', () => {
+    it('lists every variant across products, ordered by SKU', async () => {
+      const alpha = await registerOrg('alpha');
+
+      await alpha.agent.post('/v1/products').send(product).expect(201);
+      await alpha.agent
+        .post('/v1/products')
+        .send({ type: 'supply', name: 'Pens', variant: { sku: 'PEN-BLUE' } })
+        .expect(201);
+
+      const res = await alpha.agent.get('/v1/products/variants').expect(200);
+      const variants = body<VariantPickerResponse[]>(res);
+
+      expect(variants.map((v) => v.sku)).toEqual(['PEN-BLUE', 'VD3-60']);
+    });
+
+    it('does not collide with the id route', async () => {
+      const alpha = await registerOrg('alpha');
+
+      // Declared above @Get(':id'). If that order is ever reversed, this 400s
+      // with a UUID error and the failure reads like a client bug.
+      await alpha.agent.get('/v1/products/variants').expect(200);
+    });
+
+    it('does not show another organization variants', async () => {
+      const alpha = await registerOrg('alpha');
+      const beta = await registerOrg('beta');
+
+      await beta.agent.post('/v1/products').send(product).expect(201);
+
+      const res = await alpha.agent.get('/v1/products/variants').expect(200);
+      expect(body<VariantPickerResponse[]>(res)).toHaveLength(0);
+    });
+
+    it('hides a variant whose product was discontinued', async () => {
+      const alpha = await registerOrg('alpha');
+
+      const created = body<{ product: ProductResponse }>(
+        await alpha.agent.post('/v1/products').send(product).expect(201),
+      ).product;
+
+      await alpha.agent
+        .patch(`/v1/products/${created.id}`)
+        .send({ isActive: false })
+        .expect(204);
+
+      // The variant's own flag is still true — the product's is never cascaded.
+      // Only the join to products can see this, which is why the picker joins.
+      const [variant] = await db.select().from(productVariants);
+      expect(variant.isActive).toBe(true);
+
+      const res = await alpha.agent.get('/v1/products/variants').expect(200);
+      expect(body<VariantPickerResponse[]>(res)).toHaveLength(0);
+    });
+
+    it('hides a discontinued variant of an active product', async () => {
+      const alpha = await registerOrg('alpha');
+
+      const created = body<{ product: ProductResponse }>(
+        await alpha.agent.post('/v1/products').send(product).expect(201),
+      ).product;
+
+      await alpha.agent
+        .post(`/v1/products/${created.id}/variants`)
+        .send({ sku: 'VD3-120' })
+        .expect(201);
+
+      await alpha.agent
+        .patch(`/v1/products/${created.id}/variants/${created.variants[0].id}`)
+        .send({ isActive: false })
+        .expect(204);
+
+      const res = await alpha.agent.get('/v1/products/variants').expect(200);
+      const skus = body<VariantPickerResponse[]>(res).map((v) => v.sku);
+      expect(skus).toEqual(['VD3-120']);
+    });
+
+    it('is readable by a Viewer, which holds products.view', async () => {
+      const alpha = await registerOrg('alpha');
+      await alpha.agent.post('/v1/products').send(product).expect(201);
+      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+
+      const res = await viewer.get('/v1/products/variants').expect(200);
+      expect(body<VariantPickerResponse[]>(res)).toHaveLength(1);
+    });
+  });
+
   describe('PATCH /v1/products/:id', () => {
     it('discontinues without touching its variants', async () => {
       const alpha = await registerOrg('alpha');
@@ -394,7 +491,7 @@ describe('Products (e2e)', () => {
 
         // Absent from UpdateVariantDto deliberately. Flipping it on a variant
         // that already has stock leaves every existing row violating the
-        // invariant — in one direction with a null batch_id, in the other with
+        // invariant — in one direction with a null lot_id, in the other with
         // one. That is a data migration, not a PATCH.
         await alpha.agent
           .patch(

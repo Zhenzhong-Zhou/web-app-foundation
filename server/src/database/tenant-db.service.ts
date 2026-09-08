@@ -125,14 +125,16 @@ export class TenantDb {
    * where it is one refactor away from being dropped. ADR-003 puts the filter
    * in one place precisely so that cannot happen.
    *
-   * innerJoin only. leftJoin would type the joined side as non-null when it
-   * can be null, since JoinedRow reads each column's own nullability rather
-   * than the join's. Add it when something needs it, with the nullability
-   * handled honestly.
+   * innerJoin only, because JoinedRow reads each column's own nullability
+   * rather than the join's — a left join through this method would type the
+   * joined side as non-null when it can be null. selectJoinedLeft is the
+   * honest version, and widens every projected column to match.
    *
    * Guarantees the organization_id predicate, nothing more: a wrong `on`
    * compiles and returns wrong rows. That is a correctness bug, not a tenant
    * leak.
+   *
+   * Ordering is the caller's, and Postgres promises none without ORDER BY.
    */
   selectJoined<T extends TenantTable, C extends JoinedColumns>(
     table: T,
@@ -140,6 +142,7 @@ export class TenantDb {
     on: SQL,
     columns: C,
     where?: SQL,
+    options?: SelectOptions,
   ): Promise<JoinedRow<C>[]> {
     // Drizzle's builder is guarded by conditional types that TypeScript cannot
     // evaluate while T is still generic — `.from()` rejects T even though the
@@ -153,16 +156,33 @@ export class TenantDb {
           innerJoin: (
             table: PgTable,
             on: SQL,
-          ) => { where: (where: SQL) => Promise<JoinedRow<C>[]> };
+          ) => {
+            where: (where: SQL) => {
+              orderBy: (...by: SQL[]) => { limit: (n: number) => unknown };
+              limit: (n: number) => unknown;
+            };
+          };
         };
       };
     };
 
-    return db
+    const query = db
       .select(columns)
       .from(table)
       .innerJoin(join, on)
       .where(this.scope(table, where));
+
+    const ordered = options?.orderBy
+      ? query.orderBy(
+          ...(Array.isArray(options.orderBy)
+            ? options.orderBy
+            : [options.orderBy]),
+        )
+      : query;
+
+    const limited = options?.limit ? ordered.limit(options.limit) : ordered;
+
+    return limited as Promise<JoinedRow<C>[]>;
   }
 
   /**
