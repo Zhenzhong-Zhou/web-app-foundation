@@ -11,16 +11,27 @@ config({ path: '../.env', quiet: true });
 // than by overriding DATABASE_URL on the command line, because dotenv above
 // would win and silently migrate the dev database instead.
 //
-// One lookup table rather than a chain of ternaries: the variable name in the
-// error below is now the same value used to read it, so a new target cannot be
-// added in one place and forgotten in the other.
+// A lookup table rather than a chain of ternaries, and deliberately no ??
+// fallback on the lookup: a typo'd target resolving to DATABASE_URL migrates
+// the dev database and reports success. That failure is invisible — it cost an
+// afternoon once, with migrate:e2e quietly hitting the dev database while the
+// e2e one stayed empty.
 const TARGETS = {
   test: 'DATABASE_URL_TEST',
   e2e: 'DATABASE_URL_E2E',
 } as const;
 
-const key =
-  TARGETS[process.env.MIGRATE_TARGET as keyof typeof TARGETS] ?? 'DATABASE_URL';
+const target = process.env.MIGRATE_TARGET;
+
+const key = target
+  ? TARGETS[target as keyof typeof TARGETS]
+  : ('DATABASE_URL' as const);
+
+if (!key) {
+  throw new Error(
+    `Unknown MIGRATE_TARGET "${target}" — expected one of: ${Object.keys(TARGETS).join(', ')}`,
+  );
+}
 
 const url = process.env[key];
 

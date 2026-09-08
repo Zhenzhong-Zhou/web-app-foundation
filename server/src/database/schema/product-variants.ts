@@ -66,7 +66,7 @@ export const productVariants = pgTable(
      * tracked variant carries a batch_id, and none for an untracked one. A
      * check constraint cannot see across tables.
      */
-    tracksBatches: boolean('tracks_batches').notNull().default(false),
+    tracksLots: boolean('tracks_lots').notNull().default(false),
 
     /**
      * Discontinued rather than deleted. A variant with movement history cannot

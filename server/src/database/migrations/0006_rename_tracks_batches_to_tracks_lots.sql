@@ -1,0 +1,1 @@
+ALTER TABLE "product_variants" RENAME COLUMN "tracks_batches" TO "tracks_lots";

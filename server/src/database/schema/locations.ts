@@ -91,11 +91,20 @@ export const locations = pgTable(
     // A location cannot contain itself. Deeper cycles are not expressible in a
     // check constraint and are prevented in the service.
     check('locations_no_self_parent_check', sql`${t.id} <> ${t.parentId}`),
-    // Codes are unique within their parent, not globally: Bin 5 in two
-    // different aisles is two bins, and printing "5" on both labels is normal.
-    uniqueIndex('locations_parent_code_key')
-      .on(t.parentId, t.code)
-      .where(sql`${t.code} is not null`),
+
+    // Codes are unique within their parent: Bin 5 in two different aisles is
+    // two bins, and printing "5" on both labels is normal.
+    uniqueIndex('locations_org_parent_code_key')
+      .on(t.organizationId, t.parentId, t.code)
+      .where(sql`${t.code} is not null and ${t.parentId} is not null`),
+
+    // Top-level locations have no parent to scope by, so the organization is
+    // the scope. Without this pair, parent_id being null made every root row
+    // distinct and the constraint never fired for warehouses at all.
+    uniqueIndex('locations_org_root_code_key')
+      .on(t.organizationId, t.code)
+      .where(sql`${t.code} is not null and ${t.parentId} is null`),
+
     index('locations_parent_id_idx').on(t.parentId),
     index('locations_organization_id_idx').on(t.organizationId),
   ],
