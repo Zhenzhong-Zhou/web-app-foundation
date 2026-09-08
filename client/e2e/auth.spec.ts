@@ -36,9 +36,9 @@ test('signs in with valid credentials and lands in the app', async ({
    * the session is usable — not merely that a redirect fired. A URL check alone
    * would pass against a shell still waiting on that request.
    *
-   * Scoped to the banner because the org name, the theme select, and Sign out
-   * each appear twice in the accessibility tree (see below); an unscoped
-   * locator would be a strict-mode violation.
+   * Scoped to the banner so this keeps testing the header specifically: an
+   * unscoped locator would start matching page content the moment a screen
+   * happens to render the org name or an Account link of its own.
    */
   const banner = page.getByRole('banner');
   await expect(banner).toContainText(credentials.organizationName);

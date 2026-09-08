@@ -8,9 +8,6 @@ import { RegisterPage } from './auth/register-page.tsx';
 import { VerifyEmailPage } from './auth/verify-email-page.tsx';
 import { ResetPasswordPage } from './auth/reset-password-page.tsx';
 import { ForgotPasswordPage } from './auth/forgot-password-page.tsx';
-import { api } from './lib/api.ts';
-import { Button, Stack, Typography } from '@mui/material';
-import { ColorModeSelect } from './components/color-mode-select.tsx';
 import { AppLayout } from './layout/app-layout.tsx';
 import { AccountPage } from './account/account-page.tsx';
 import { SessionsPage } from './account/sessions-page.tsx';
@@ -45,44 +42,6 @@ function Protected({ children }: { children: ReactNode }) {
 function AuthOnly({ children }: { children: ReactNode }) {
   const { session } = useAuth();
   return session ? <Navigate to="/" replace /> : children;
-}
-
-/**
- * Placeholder for the signed-in app. Step 9 replaces this with a real
- * dashboard, and sign-out moves into a nav.
- */
-function Home() {
-  const { session, refresh } = useAuth();
-
-  return (
-    <Stack
-      direction="row"
-      spacing={2}
-      sx={{ flexGrow: 1, display: { xs: 'none', sm: 'flex' } }}
-    >
-      <Typography
-        variant="h6"
-        component="div"
-        noWrap
-        sx={{ mr: 2, maxWidth: { xs: 140, sm: 'none' } }}
-      >
-        {session?.organization?.name ?? 'No organization'}
-      </Typography>
-      `
-      <ColorModeSelect />
-      {/* The row is deleted server-side before the cookie is cleared, so a
-          failure leaves the user visibly signed in — the safe direction to
-          fail (ADR-011). refresh() then 401s and Protected redirects. */}
-      <Button
-        variant="outlined"
-        onClick={() => {
-          void api('/auth/logout', { method: 'POST' }).then(refresh);
-        }}
-      >
-        Sign out
-      </Button>
-    </Stack>
-  );
 }
 
 export default function App() {
@@ -140,7 +99,7 @@ export default function App() {
           </Protected>
         }
       >
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Navigate to="/products" replace />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="/account/sessions" element={<SessionsPage />} />
         <Route path="/members" element={<MembersPage />} />
