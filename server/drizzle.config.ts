@@ -7,20 +7,25 @@ import { defineConfig } from 'drizzle-kit';
 // already in the process.
 config({ path: '../.env', quiet: true });
 
-// Migrations must be applied to both databases. Selected by an env flag rather
+// Migrations must be applied to every database. Selected by an env flag rather
 // than by overriding DATABASE_URL on the command line, because dotenv above
 // would win and silently migrate the dev database instead.
-const url =
-  process.env.MIGRATE_TARGET === 'test'
-    ? process.env.DATABASE_URL_TEST
-    : process.env.DATABASE_URL;
+//
+// One lookup table rather than a chain of ternaries: the variable name in the
+// error below is now the same value used to read it, so a new target cannot be
+// added in one place and forgotten in the other.
+const TARGETS = {
+  test: 'DATABASE_URL_TEST',
+  e2e: 'DATABASE_URL_E2E',
+} as const;
+
+const key =
+  TARGETS[process.env.MIGRATE_TARGET as keyof typeof TARGETS] ?? 'DATABASE_URL';
+
+const url = process.env[key];
 
 if (!url) {
-  const name =
-    process.env.MIGRATE_TARGET === 'test'
-      ? 'DATABASE_URL_TEST'
-      : 'DATABASE_URL';
-  throw new Error(`Missing ${name} — set it in ../.env or in the environment`);
+  throw new Error(`Missing ${key} — set it in ../.env or in the environment`);
 }
 
 export default defineConfig({
