@@ -1533,6 +1533,14 @@ they exist so the reasoning is not rediscovered from scratch.
   sharing a number. Receiving from a supplier stays typed, because that code is
   printed on the box and is not ours to invent. The forcing function is a
   production module; until one exists there is no run to hang a sequence off.
+- **Performance budgets.** No bundle-size gate and no timing assertions. ADR-021
+  already accepted MUI's weight on the grounds that this sits behind a login
+  wall where first paint is not a conversion metric, and a threshold nobody
+  chose against a bundle nobody has complained about is a gate that gets
+  disabled the first time CI is slow. Chrome DevTools and the React profiler
+  are the tools when something feels slow; the likely first trigger is the
+  stock table at a few thousand rows, where the answer is pagination rather
+  than a smaller bundle.
 
 ---
 
