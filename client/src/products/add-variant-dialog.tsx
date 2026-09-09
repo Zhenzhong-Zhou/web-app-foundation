@@ -41,7 +41,7 @@ export function AddVariantDialog({
   onCreated: () => Promise<void>;
 }) {
   const [form, setForm] = useState(EMPTY);
-  const [tracksLots, setTracksBatches] = useState(false);
+  const [tracksLots, setTracksLots] = useState(false);
 
   const { submitting, error, reset, submit } = useSubmit(async () => {
     close();
@@ -50,7 +50,7 @@ export function AddVariantDialog({
 
   function close() {
     setForm(EMPTY);
-    setTracksBatches(false);
+    setTracksLots(false);
     reset();
     onClose();
   }
@@ -132,7 +132,7 @@ export function AddVariantDialog({
               control={
                 <Switch
                   checked={tracksLots}
-                  onChange={(event) => setTracksBatches(event.target.checked)}
+                  onChange={(event) => setTracksLots(event.target.checked)}
                 />
               }
               label="Track lot numbers and expiry"
