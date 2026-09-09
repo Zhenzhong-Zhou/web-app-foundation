@@ -19,7 +19,7 @@ import { organizations } from './organizations';
  * thing in a fixed tree is how the tree stops meaning anything.
  */
 export const LOCATION_TYPES = [
-  'warehouse',
+  'site', // a building or address — a warehouse, an office, a shop, a 3PL
   'zone',
   'aisle',
   'shelf',
@@ -86,7 +86,7 @@ export const locations = pgTable(
   (t) => [
     check(
       'locations_type_check',
-      sql`${t.type} in ('warehouse', 'zone', 'aisle', 'shelf', 'bin')`,
+      sql`${t.type} in ('site', 'zone', 'aisle', 'shelf', 'bin')`,
     ),
     // A location cannot contain itself. Deeper cycles are not expressible in a
     // check constraint and are prevented in the service.

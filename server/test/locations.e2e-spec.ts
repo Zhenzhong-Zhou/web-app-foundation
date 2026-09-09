@@ -127,7 +127,7 @@ describe('Locations (e2e)', () => {
       const alpha = await registerOrg('alpha');
 
       const warehouse = await create(alpha.agent, {
-        type: 'warehouse',
+        type: 'site',
         name: 'Warehouse A',
       });
 
@@ -141,7 +141,7 @@ describe('Locations (e2e)', () => {
       const alpha = await registerOrg('alpha');
 
       const warehouse = await create(alpha.agent, {
-        type: 'warehouse',
+        type: 'site',
         name: 'Warehouse A',
       });
 
@@ -177,7 +177,7 @@ describe('Locations (e2e)', () => {
       const beta = await registerOrg('beta');
 
       const theirs = await create(beta.agent, {
-        type: 'warehouse',
+        type: 'site',
         name: 'Warehouse B',
       });
 
@@ -204,7 +204,7 @@ describe('Locations (e2e)', () => {
 
       await viewer
         .post('/v1/locations')
-        .send({ type: 'warehouse', name: 'Sneaky' })
+        .send({ type: 'site', name: 'Sneaky' })
         .expect(403);
 
       expect(await db.select().from(locations)).toHaveLength(0);
@@ -268,7 +268,7 @@ describe('Locations (e2e)', () => {
       const alpha = await registerOrg('alpha');
 
       const warehouse = await create(alpha.agent, {
-        type: 'warehouse',
+        type: 'site',
         name: 'Warehouse A',
       });
 
@@ -294,9 +294,9 @@ describe('Locations (e2e)', () => {
     it('reparents a location', async () => {
       const alpha = await registerOrg('alpha');
 
-      const first = await create(alpha.agent, { type: 'warehouse', name: 'A' });
+      const first = await create(alpha.agent, { type: 'site', name: 'A' });
       const second = await create(alpha.agent, {
-        type: 'warehouse',
+        type: 'site',
         name: 'B',
       });
       const bin = await create(alpha.agent, {
@@ -322,7 +322,7 @@ describe('Locations (e2e)', () => {
       const alpha = await registerOrg('alpha');
 
       const warehouse = await create(alpha.agent, {
-        type: 'warehouse',
+        type: 'site',
         name: 'Warehouse A',
       });
 
@@ -352,7 +352,7 @@ describe('Locations (e2e)', () => {
       const alpha = await registerOrg('alpha');
 
       const warehouse = await create(alpha.agent, {
-        type: 'warehouse',
+        type: 'site',
         name: 'Warehouse A',
       });
 
@@ -388,7 +388,7 @@ describe('Locations (e2e)', () => {
       const alpha = await registerOrg('alpha');
 
       const warehouse = await create(alpha.agent, {
-        type: 'warehouse',
+        type: 'site',
         name: 'Warehouse A',
       });
 
@@ -428,7 +428,7 @@ describe('Locations (e2e)', () => {
       const beta = await registerOrg('beta');
 
       const theirs = await create(beta.agent, {
-        type: 'warehouse',
+        type: 'site',
         name: 'Warehouse B',
       });
 
@@ -444,7 +444,7 @@ describe('Locations (e2e)', () => {
       const alpha = await registerOrg('alpha');
       const beta = await registerOrg('beta');
 
-      await create(beta.agent, { type: 'warehouse', name: 'Warehouse B' });
+      await create(beta.agent, { type: 'site', name: 'Warehouse B' });
 
       const res = await alpha.agent.get('/v1/locations').expect(200);
       expect(body<LocationResponse[]>(res)).toHaveLength(0);
@@ -453,7 +453,7 @@ describe('Locations (e2e)', () => {
 
     it('is readable by a Viewer', async () => {
       const alpha = await registerOrg('alpha');
-      await create(alpha.agent, { type: 'warehouse', name: 'Warehouse A' });
+      await create(alpha.agent, { type: 'site', name: 'Warehouse A' });
       const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
 
       const res = await viewer.get('/v1/locations').expect(200);

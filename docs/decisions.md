@@ -1261,6 +1261,13 @@ on how a given warehouse works and both are real. Capacity, because enforcing
 it needs a unit and a rule about whether a pallet counts as one or as its
 contents. Addresses, which arrive with customers and suppliers.
 
+**Amendment.** `warehouse` is now `site`. The type enum answers where a location
+sits in the tree, and `warehouse` was quietly answering what kind of facility it
+is as well — which left an office with a supply cupboard, or a shop with a back
+room, with no correct value. `site` covers a building or address of any kind;
+what happens there is a separate question and stays unasked until something
+forces it.
+
 ---
 
 ## ADR-025 — Quantity is decimal, and the stock cache is the lock
@@ -1541,6 +1548,13 @@ they exist so the reasoning is not rediscovered from scratch.
   are the tools when something feels slow; the likely first trigger is the
   stock table at a few thousand rows, where the answer is pagination rather
   than a smaller bundle.
+- **What a site is for.** `type` says where a location sits in the tree, not
+  what happens there — an office, a shop, and a 3PL are all `site`. Recording
+  purpose will matter for rules like "do not ship to customers from the office"
+  and for per-site addresses, and both arrive with the modules that force them.
+  It stays a nullable label when it comes, never a branch: the moment a query
+  filters on it or a second table appears for one kind of site, a cheap column
+  becomes an expensive shape.
 
 ---
 

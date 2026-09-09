@@ -23,6 +23,7 @@ const NAV = [
   { label: 'Audit log', to: '/audit', permission: 'audit.view' },
   { label: 'Account', to: '/account' },
   { label: 'Inventory', to: '/inventory', permission: 'stock.view' },
+  { label: 'Locations', to: '/locations', permission: 'locations.view' },
 ];
 
 /**

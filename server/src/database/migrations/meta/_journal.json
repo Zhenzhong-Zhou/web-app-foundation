@@ -50,6 +50,13 @@
       "when": 1788901880998,
       "tag": "0006_rename_tracks_batches_to_tracks_lots",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788982018201,
+      "tag": "0007_rename_warehouse_type_to_site",
+      "breakpoints": true
     }
   ]
 }

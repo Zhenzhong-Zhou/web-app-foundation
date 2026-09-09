@@ -164,7 +164,7 @@ describe('Stock (e2e)', () => {
     const res = await agent
       .post('/v1/locations')
       .send({
-        type: options.parentId ? 'bin' : 'warehouse',
+        type: options.parentId ? 'bin' : 'site',
         name: options.name ?? 'Main',
         parentId: options.parentId,
       })

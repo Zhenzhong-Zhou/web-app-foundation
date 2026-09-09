@@ -151,7 +151,7 @@ export async function createLocation(
   const name = overrides.name ?? unique('Shelf').toUpperCase();
   
   const response = await api.post('/v1/locations', {
-    data: { type: overrides.type ?? 'warehouse', name },
+    data: { type: overrides.type ?? 'site', name },
   });
   
   if (!response.ok()) {
