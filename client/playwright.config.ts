@@ -1,4 +1,13 @@
+import { config as loadEnv } from 'dotenv';
 import { defineConfig, devices } from '@playwright/test';
+
+/**
+ * Loaded here rather than relying on the npm script, because `npx playwright
+ * test` is what anyone actually types and it does not go through dotenv-cli.
+ * Without this DATABASE_URL_E2E is undefined and the API starts against
+ * nothing — which Playwright reports as a timeout, not a config error.
+ */
+loadEnv({ path: '../.env', quiet: true });
 
 /**
  * End-to-end tests run against a real client, a real server, and a real
@@ -11,8 +20,17 @@ import { defineConfig, devices } from '@playwright/test';
  * provoke against a live backend.
  */
 
-const CLIENT_URL = process.env.E2E_CLIENT_URL ?? 'http://localhost:5173';
-const API_URL = process.env.E2E_API_URL ?? 'http://localhost:3000';
+const CLIENT_URL = process.env.E2E_CLIENT_URL ?? 'http://localhost:5273';
+const API_URL = process.env.E2E_API_URL ?? 'http://localhost:3100';
+
+const E2E_DATABASE_URL = process.env.DATABASE_URL_E2E;
+
+if (!E2E_DATABASE_URL) {
+  throw new Error(
+    'Missing DATABASE_URL_E2E — set it in ../.env. Without it the e2e server ' +
+      'starts against no database, or worse, falls back to the dev one.',
+  );
+}
 
 export default defineConfig({
   testDir: './e2e',
@@ -86,25 +104,29 @@ export default defineConfig({
       url: `${API_URL}/health`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
-      stdout: 'pipe',
-      stderr: 'pipe',
+      stdout: 'ignore',
+      stderr: 'ignore',
       env: {
         NODE_ENV: 'development',
-        DATABASE_URL:
-          process.env.E2E_DATABASE_URL ??
-          'postgresql://app:app@localhost:5432/foundation_e2e',
+        PORT: '3100',
+        DATABASE_URL: E2E_DATABASE_URL,
         // Registration is throttled to 5/min per IP. Every worker and every
         // `freshOrg` fixture registers, so the production limit would fail the
         // suite rather than the feature.
         RATE_LIMIT_MAX: '10000',
         RATE_LIMIT_AUTH_MAX: '10000',
+        // Registration is throttled to 5/min per IP. Every worker and every
+        // freshOrg fixture registers, so the production limit fails the suite
+        // rather than the feature.
+        THROTTLE_FACTOR: '1000',
       },
     },
     {
-      command: 'npm run dev',
+      command: 'npm run dev -- --port 5273 --strictPort',
       url: CLIENT_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
+      env: { VITE_API_TARGET: 'http://localhost:3100' },
     },
   ],
 });

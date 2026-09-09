@@ -37,6 +37,7 @@ import {
   SESSION_COOKIE_NAME,
   sessionCookieOptions,
 } from './session-cookie';
+import { limit } from './throttle-limits';
 
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
@@ -68,7 +69,7 @@ export class AuthController {
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: limit(5), ttl: 60_000 } })
   async register(
     @Body() dto: RegisterDto,
     @Req() req: Request,

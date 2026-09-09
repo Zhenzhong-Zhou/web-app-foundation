@@ -16,7 +16,9 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        // Playwright sets this so the e2e stack runs on its own ports and
+        // cannot be confused with the dev one.
+        target: process.env.VITE_API_TARGET ?? 'http://localhost:3000',
         changeOrigin: true,
         // Nest has no global prefix — it serves /v1/... (ADR-013). /api is a
         // browser-side convention only, stripped before forwarding. Without

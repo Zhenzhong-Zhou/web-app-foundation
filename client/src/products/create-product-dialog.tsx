@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   Dialog,
   DialogActions,
@@ -15,6 +14,7 @@ import { type SubmitEvent, useState } from 'react';
 
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
+import { FormError } from '../components/form-error';
 
 const TYPES = [
   { value: 'good', label: 'Sellable good' },
@@ -100,7 +100,7 @@ export function CreateProductDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <Alert severity="error">{error}</Alert>}
+            {error && <FormError message={error} />}
 
             <TextField
               id="product-type"

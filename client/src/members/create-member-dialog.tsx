@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   Dialog,
   DialogActions,
@@ -19,6 +18,7 @@ import {
   PASSWORD_MIN_LENGTH,
 } from '../lib/validation';
 import { useSubmit } from '../lib/use-submit';
+import { FormError } from '../components/form-error';
 
 interface Role {
   id: string;
@@ -92,7 +92,7 @@ export function CreateMemberDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <Alert severity="error">{error}</Alert>}
+            {error && <FormError message={error} />}
 
             <TextField
               id="member-name"

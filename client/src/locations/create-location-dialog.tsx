@@ -15,6 +15,7 @@ import { type SubmitEvent, useState } from 'react';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import type { Location } from './locations-page';
+import { FormError } from '../components/form-error';
 
 const TYPES = [
   { value: 'site', label: 'Site' },
@@ -92,7 +93,7 @@ export function CreateLocationDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <Alert severity="error">{error}</Alert>}
+            {error && <FormError message={error} />}
 
             {/* The refusal the server will give, said before it is given. A
                 location holding stock cannot gain children until that stock

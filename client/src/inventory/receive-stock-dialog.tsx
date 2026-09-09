@@ -14,6 +14,7 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import type { Location } from './inventory-page';
+import { FormError } from '../components/form-error';
 
 interface Variant {
   id: string;
@@ -54,6 +55,7 @@ export function ReceiveStockDialog({
 }) {
   const [form, setForm] = useState({ ...EMPTY, locationId: defaultLocationId });
   const [variants, setVariants] = useState<Variant[]>([]);
+  const [variantsError, setVariantsError] = useState(false);
 
   const { submitting, error, reset, submit } = useSubmit(async () => {
     close();
@@ -76,6 +78,7 @@ export function ReceiveStockDialog({
       .catch(() => {
         // The submit error surfaces this well enough; an empty picker with no
         // explanation is the only bad outcome and the required field covers it.
+        if (!ignore) setVariantsError(true);
       });
 
     return () => {
@@ -129,7 +132,19 @@ export function ReceiveStockDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <Alert severity="error">{error}</Alert>}
+            {error && <FormError message={error} />}
+
+            {variantsError && (
+              <FormError message="Could not load the catalogue." />
+            )}
+
+            {!variantsError && !variants.length && (
+              <Alert severity="info">
+                No products yet. Add one on the Products screen — stock is
+                counted against a variant, so there has to be something to
+                count.
+              </Alert>
+            )}
 
             <TextField
               id="receive-variant"

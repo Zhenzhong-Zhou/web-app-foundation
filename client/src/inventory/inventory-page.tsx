@@ -20,6 +20,8 @@ import { useAuth } from '../auth/use-auth';
 import { ApiError, api } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { ReceiveStockDialog } from './receive-stock-dialog';
+import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
+import { StockActions } from './stock-action';
 
 export interface Location {
   id: string;
@@ -85,6 +87,10 @@ export function InventoryPage() {
   const [rows, setRows] = useState<StockRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [receiving, setReceiving] = useState(false);
+  const [moving, setMoving] = useState<{
+    mode: MoveMode;
+    row: StockRow;
+  } | null>(null);
 
   const loading = rows === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
@@ -225,6 +231,17 @@ export function InventoryPage() {
                   <TableCell align="right">
                     {row.quantity} {row.unitOfMeasure}
                   </TableCell>
+
+                  <TableCell padding="checkbox">
+                    {session?.permissions.includes('stock.move') && (
+                      <StockActions
+                        row={row}
+                        onSelect={(mode, selected) =>
+                          setMoving({ mode, row: selected })
+                        }
+                      />
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -242,6 +259,14 @@ export function InventoryPage() {
         defaultLocationId={locationId}
         onClose={() => setReceiving(false)}
         onReceived={loadStock}
+      />
+
+      <MoveStockDialog
+        mode={moving?.mode ?? 'transfer'}
+        row={moving?.row ?? null}
+        locations={leaves}
+        onClose={() => setMoving(null)}
+        onMoved={loadStock}
       />
     </Stack>
   );

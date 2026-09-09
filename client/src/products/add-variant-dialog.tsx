@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   Dialog,
   DialogActions,
@@ -15,6 +14,7 @@ import {
 import { type SubmitEvent, useState } from 'react';
 import { useSubmit } from '../lib/use-submit';
 import { api } from '../lib/api';
+import { FormError } from '../components/form-error';
 
 const UNITS = ['each', 'kg', 'g', 'litre', 'ml', 'case', 'box', 'pallet'];
 
@@ -80,7 +80,7 @@ export function AddVariantDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <Alert severity="error">{error}</Alert>}
+            {error && <FormError message={error} />}
 
             <TextField
               id="variant-sku"

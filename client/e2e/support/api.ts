@@ -9,7 +9,16 @@ import { type APIRequestContext, request } from '@playwright/test';
  * UI for the thing under test; seed everything else over HTTP.
  */
 
-export const API_URL = process.env.E2E_API_URL ?? 'http://localhost:3000';
+/**
+ * Must match playwright.config.ts. These helpers call the API directly rather
+ * than through the Vite proxy, so the port lives in two files — and pointing at
+ * 3000 means talking to the dev server no matter what the config starts.
+ */
+const API_URL = process.env.E2E_API_URL ?? 'http://localhost:3100';
+
+// The helpers in e2e/support/api.ts read this too. Setting it here means the
+// port is decided once — their default only applies if this config never ran.
+process.env.E2E_API_URL ??= API_URL;
 
 /**
  * Meets the RegisterDto minimum of 12 characters. Not a secret — this only
