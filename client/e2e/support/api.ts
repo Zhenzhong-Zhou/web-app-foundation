@@ -31,6 +31,8 @@ export interface SeededOrganization {
 
 export interface SeededProduct {
   id: string;
+  /** What stock actually hangs off (ADR-023) — the product is a grouping. */
+  variantId: string;
   name: string;
   sku: string;
 }
@@ -96,26 +98,68 @@ export async function registerOrganization(
  */
 export async function createProduct(
   api: APIRequestContext,
-  overrides: Partial<{ name: string; type: string; sku: string }> = {},
+  overrides: Partial<{
+    name: string;
+    type: string;
+    sku: string;
+    tracksLots: boolean;
+  }> = {},
 ): Promise<SeededProduct> {
   const sku = overrides.sku ?? unique('SKU').toUpperCase();
   const name = overrides.name ?? `E2E Widget ${sku}`;
-
+  
   const response = await api.post('/v1/products', {
     data: {
       type: overrides.type ?? 'good',
       name,
-      variant: { sku },
+      variant: { sku, tracksLots: overrides.tracksLots ?? false },
     },
   });
-
+  
   if (!response.ok()) {
     throw new Error(
       `Product creation failed: ${response.status()} ${await response.text()}`,
     );
   }
+  
+  const body = (await response.json()) as {
+    product: { id: string; variants: { id: string }[] };
+  };
+  
+  return {
+    id: body.product.id,
+    variantId: body.product.variants[0].id,
+    name,
+    sku,
+  };
+}
 
-  const body = (await response.json()) as { product: { id: string } };
+export interface SeededLocation {
+  id: string;
+  name: string;
+}
 
-  return { id: body.product.id, name, sku };
+/**
+ * A top-level location, which is a leaf because nothing sits under it. Stock
+ * lives only at leaves (ADR-024), and an operation with one room is the
+ * simplest thing that satisfies that.
+ */
+export async function createLocation(
+  api: APIRequestContext,
+  overrides: Partial<{ name: string; type: string }> = {},
+): Promise<SeededLocation> {
+  const name = overrides.name ?? unique('Shelf').toUpperCase();
+  
+  const response = await api.post('/v1/locations', {
+    data: { type: overrides.type ?? 'warehouse', name },
+  });
+  
+  if (!response.ok()) {
+    throw new Error(
+      `Location creation failed: ${response.status()} ${await response.text()}`,
+    );
+  }
+  
+  const body = (await response.json()) as { location: { id: string } };
+  return { id: body.location.id, name };
 }
