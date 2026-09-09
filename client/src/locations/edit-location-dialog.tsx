@@ -112,7 +112,6 @@ export function EditLocationDialog({
    */
   return (
     <Dialog
-      key={location?.id}
       open={!!location}
       onClose={close}
       fullWidth

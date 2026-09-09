@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures';
+import {signInAs} from "./support/api";
 
 /**
  * One write path. The interesting behaviour here — an Admin may not assign the
@@ -21,7 +22,7 @@ test('adds a member and shows them in the table', async ({
    */
   const email = `member-${Date.now().toString(36)}@example.test`;
 
-  await page.context().addCookies((await freshOrg.api.storageState()).cookies);
+  await signInAs(page, freshOrg.api);
 
   await page.goto('/members');
   await page.getByRole('button', { name: 'Add member' }).click();

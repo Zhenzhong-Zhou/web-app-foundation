@@ -1,4 +1,4 @@
-import { type APIRequestContext, request } from '@playwright/test';
+import { type APIRequestContext, type Page, request } from '@playwright/test';
 
 /**
  * Setup goes through the API, never the UI.
@@ -152,15 +152,22 @@ export interface SeededLocation {
  * A top-level location, which is a leaf because nothing sits under it. Stock
  * lives only at leaves (ADR-024), and an operation with one room is the
  * simplest thing that satisfies that.
+ *
+ * Pass parentId to build a tree — the parent stops being a leaf as soon as it
+ * has one, which is the invariant the locations screen renders.
  */
 export async function createLocation(
   api: APIRequestContext,
-  overrides: Partial<{ name: string; type: string }> = {},
+  overrides: Partial<{ name: string; type: string; parentId: string }> = {},
 ): Promise<SeededLocation> {
   const name = overrides.name ?? unique('Shelf').toUpperCase();
   
   const response = await api.post('/v1/locations', {
-    data: { type: overrides.type ?? 'site', name },
+    data: {
+      type: overrides.type ?? 'site',
+      name,
+      parentId: overrides.parentId,
+    },
   });
   
   if (!response.ok()) {
@@ -171,4 +178,17 @@ export async function createLocation(
   
   const body = (await response.json()) as { location: { id: string } };
   return { id: body.location.id, name };
+}
+
+/**
+ * Points the browser at a session other than the shared owner's.
+ *
+ * Cleared first: the page arrives with the owner's sid from storageState, and
+ * adding a second cookie of the same name for the same host leaves it
+ * unspecified which one the browser sends — a coin flip that would show up as
+ * an unrelated test failing intermittently.
+ */
+export async function signInAs(page: Page, api: APIRequestContext) {
+  await page.context().clearCookies();
+  await page.context().addCookies((await api.storageState()).cookies);
 }

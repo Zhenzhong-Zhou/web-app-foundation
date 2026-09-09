@@ -254,6 +254,7 @@ export function LocationsPage() {
       />
 
       <EditLocationDialog
+        key={editing?.id}
         location={editing}
         locations={items ?? []}
         onClose={() => setEditing(null)}

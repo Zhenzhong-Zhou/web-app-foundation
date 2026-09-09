@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { createLocation, createProduct } from './support/api';
+import { createLocation, createProduct, signInAs } from './support/api';
 
 /**
  * The screen exists to make ADR-024's rule visible rather than something people
@@ -14,7 +14,7 @@ test('adds a site and shows it as holding stock', async ({
   page,
   freshOrg,
 }) => {
-  await page.context().addCookies((await freshOrg.api.storageState()).cookies);
+  await signInAs(page, freshOrg.api);
 
   await page.goto('/locations');
   await page.getByRole('button', { name: 'Add location' }).click();
@@ -39,7 +39,7 @@ test('moves the stock chip to the child when one is added', async ({
 }) => {
   const site = await createLocation(freshOrg.api, { name: 'E2E Parent Site' });
 
-  await page.context().addCookies((await freshOrg.api.storageState()).cookies);
+  await signInAs(page, freshOrg.api);
 
   await page.goto('/locations');
 
@@ -83,7 +83,7 @@ test('refuses a child under a location holding stock', async ({
     },
   });
 
-  await page.context().addCookies((await freshOrg.api.storageState()).cookies);
+  await signInAs(page, freshOrg.api);
 
   await page.goto('/locations');
   await page
@@ -104,4 +104,80 @@ test('refuses a child under a location holding stock', async ({
   // The server is what actually enforces it — the warning above is courtesy.
   await expect(dialog.getByRole('alert', { name: 'Error' })).toContainText(/holds stock/i,);
   await expect(page.getByText('E2E Doomed Bin')).toBeHidden();
+});
+
+test('does not offer a location its own descendants as a parent', async ({
+  page,
+  api,
+}) => {
+  const site = await createLocation(api, { name: `E2E Tree ${Date.now()}` });
+  const bin = await createLocation(api, {
+    name: `E2E Tree Bin ${Date.now()}`,
+    type: 'bin',
+    parentId: site.id,
+  });
+
+  await page.goto('/locations');
+  await page
+    .getByText(site.name)
+    .locator('..')
+    .getByRole('button', { name: 'Edit' })
+    .click();
+
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Inside').click();
+
+  /**
+   * Moving a location under its own child detaches the whole subtree — every
+   * row still present, none reachable from a root. The server refuses it by
+   * walking the chain (ADR-024); the picker does the same walk so the option
+   * never appears.
+   */
+  await expect(page.getByRole('option', { name: bin.name })).toHaveCount(0);
+  await expect(page.getByRole('option', { name: 'Top level' })).toBeVisible();
+});
+
+test('moves a location back to the top level', async ({ page, api }) => {
+  const site = await createLocation(api, { name: `E2E Root ${Date.now()}` });
+  const bin = await createLocation(api, {
+    name: `E2E Promoted ${Date.now()}`,
+    type: 'bin',
+    parentId: site.id,
+  });
+
+  await page.goto('/locations');
+  await page
+    .getByText(bin.name)
+    .locator('..')
+    .getByRole('button', { name: 'Edit' })
+    .click();
+
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Inside').click();
+  await page.getByRole('option', { name: 'Top level' }).click();
+  const response = page.waitForResponse(
+    (res) =>
+      res.url().includes('/locations/') && res.request().method() === 'PATCH',
+  );
+  await dialog.getByRole('button', { name: 'Save' }).click();
+
+  const patch = await response;
+  expect(patch.status()).toBe(204);
+  // The bug this test exists for: JSON.stringify drops undefined keys, so a
+  // parentId that is undefined rather than null leaves the parent unchanged
+  // and the request still succeeds.
+  expect(JSON.parse(patch.request().postData() ?? '{}')).toHaveProperty(
+    'parentId',
+    null,
+  );
+
+  /**
+   * parentId sends null, not undefined. JSON.stringify drops undefined keys,
+   * and UpdateLocationDto reads the two differently — undefined leaves the
+   * parent alone. Getting it backwards makes this silently do nothing, which
+   * is what this asserts against: the old parent gets its chip back.
+   */
+  await expect(
+    page.getByText(site.name).locator('..').getByText('Holds stock'),
+  ).toBeVisible();
 });
