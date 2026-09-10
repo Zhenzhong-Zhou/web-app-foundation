@@ -5,7 +5,8 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, gt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, lt, or, type SQL, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 import { isCheckViolation } from '../../database/errors';
 import type { MovementReason } from '../../database/schema';
@@ -15,8 +16,10 @@ import {
   productVariants,
   stockLevels,
   stockMovements,
+  users,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { ListMovementsDto } from './dto/list-movements.dto';
 
 /**
  * Reasons that only ever add stock, and reasons that only ever remove it.
@@ -501,46 +504,73 @@ export class StockService {
   }
 
   /**
-   * Sum of movements equals the cache, for one variant. ADR-023 promises this
-   * and e2e asserts it; exposed here so the assertion does not reimplement the
-   * direction logic and agree with itself while both are wrong.
+   * The ledger, read. Newest first, keyset cursor on the UUIDv7 id — the same
+   * shape as the audit log, for the same reason: the table is append-only, so
+   * offset paging would shift every page down as rows arrive at the head.
+   *
+   * Four left joins, so this drops to a raw handle like list() does. Two are
+   * the same table aliased, because a transfer names both a source and a
+   * destination. Left throughout: a movement with no source is inbound, a lot
+   * is null for untracked variants, and an actor may be a tombstone (ADR-012)
+   * — an inner join would drop exactly the rows the RESTRICT constraints exist
+   * to preserve.
+   *
+   * The SKU is not joined. It is snapshotted on the row (ADR-023) so a rename
+   * does not rewrite history.
    */
-  async reconcile(variantId: string) {
+  listMovements(query: ListMovementsDto) {
+    const limit = query.limit ?? 50;
+
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [ledger] = await tx
+      const from = alias(locations, 'from_location');
+      const to = alias(locations, 'to_location');
+
+      const filters = [
+        eq(stockMovements.organizationId, organizationId),
+        query.before ? lt(stockMovements.id, query.before) : undefined,
+        query.variantId
+          ? eq(stockMovements.variantId, query.variantId)
+          : undefined,
+        query.locationId
+          ? or(
+              eq(stockMovements.fromLocationId, query.locationId),
+              eq(stockMovements.toLocationId, query.locationId),
+            )
+          : undefined,
+        query.reason ? eq(stockMovements.reason, query.reason) : undefined,
+      ].filter((f): f is SQL => f !== undefined);
+
+      // One more than asked for, so the presence of a next page is known
+      // without a second count query.
+      const rows = await tx
         .select({
-          total: sql<string>`
-            coalesce(sum(
-              case
-                when ${stockMovements.toLocationId} is not null
-                 and ${stockMovements.fromLocationId} is not null then 0
-                when ${stockMovements.toLocationId} is not null
-                  then ${stockMovements.quantity}
-                else -${stockMovements.quantity}
-              end
-            ), 0)`,
+          id: stockMovements.id,
+          sku: stockMovements.sku,
+          quantity: stockMovements.quantity,
+          reason: stockMovements.reason,
+          reasonDetail: stockMovements.reasonDetail,
+          note: stockMovements.note,
+          fromLocationName: from.name,
+          toLocationName: to.name,
+          lotCode: lots.code,
+          actorEmail: users.email,
+          createdAt: stockMovements.createdAt,
         })
         .from(stockMovements)
-        .where(
-          and(
-            eq(stockMovements.variantId, variantId),
-            eq(stockMovements.organizationId, organizationId),
-          ),
-        );
+        .leftJoin(from, eq(from.id, stockMovements.fromLocationId))
+        .leftJoin(to, eq(to.id, stockMovements.toLocationId))
+        .leftJoin(lots, eq(lots.id, stockMovements.lotId))
+        .leftJoin(users, eq(users.id, stockMovements.actorId))
+        .where(and(...filters))
+        .orderBy(desc(stockMovements.id))
+        .limit(limit + 1);
 
-      const [cache] = await tx
-        .select({
-          total: sql<string>`coalesce(sum(${stockLevels.quantity}), 0)`,
-        })
-        .from(stockLevels)
-        .where(
-          and(
-            eq(stockLevels.variantId, variantId),
-            eq(stockLevels.organizationId, organizationId),
-          ),
-        );
+      const entries = rows.slice(0, limit);
 
-      return { ledger: ledger.total, cache: cache.total };
+      return {
+        entries,
+        nextCursor: rows.length > limit ? entries[entries.length - 1].id : null,
+      };
     });
   }
 }

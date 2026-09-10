@@ -569,4 +569,58 @@ describe('Stock (e2e)', () => {
         .expect(403);
     });
   });
+
+  describe('GET /v1/stock/movements', () => {
+    it('pages without repeating or skipping a row', async () => {
+      const { agent, variant, locationId } = await setup('alpha');
+
+      // Three movements, paged two at a time: the boundary where limit + 1
+      // either works or is off by one.
+      for (const quantity of ['1', '2', '3']) {
+        await agent
+          .post('/v1/stock/movements')
+          .send(receipt(variant.id, locationId, quantity))
+          .expect(201);
+      }
+
+      const first = body<{
+        entries: { id: string }[];
+        nextCursor: string | null;
+      }>(await agent.get('/v1/stock/movements?limit=2').expect(200));
+
+      expect(first.entries).toHaveLength(2);
+      expect(first.nextCursor).toBe(first.entries[1].id);
+
+      const second = body<{
+        entries: { id: string }[];
+        nextCursor: string | null;
+      }>(
+        await agent
+          .get(`/v1/stock/movements?limit=2&before=${first.nextCursor}`)
+          .expect(200),
+      );
+
+      // One row left, and the log says so rather than offering another page.
+      expect(second.entries).toHaveLength(1);
+      expect(second.nextCursor).toBeNull();
+
+      // Every movement seen exactly once. Newest first, so the quantities
+      // come back reversed.
+      const seen = [...first.entries, ...second.entries].map((e) => e.id);
+      expect(new Set(seen).size).toBe(3);
+    });
+
+    it('does not show another organization movements', async () => {
+      const alpha = await registerOrg('alpha');
+      const beta = await setup('beta');
+
+      await beta.agent
+        .post('/v1/stock/movements')
+        .send(receipt(beta.variant.id, beta.locationId, '5'))
+        .expect(201);
+
+      const res = await alpha.agent.get('/v1/stock/movements').expect(200);
+      expect(body<{ entries: unknown[] }>(res).entries).toHaveLength(0);
+    });
+  });
 });

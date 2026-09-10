@@ -14,6 +14,7 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
 import { RecordMovementDto } from './dto/record-movement.dto';
 import { StockService } from './stock.service';
@@ -61,5 +62,11 @@ export class StockController {
      * answers a different question with a different retention.
      */
     return { movement: await this.stock.record(dto, user.userId) };
+  }
+
+  @Get('movements')
+  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
+  listMovements(@Query() query: ListMovementsDto) {
+    return this.stock.listMovements(query);
   }
 }
