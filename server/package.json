@@ -20,7 +20,7 @@
     "migrate": "drizzle-kit migrate",
     "migrate:test": "MIGRATE_TARGET=test drizzle-kit migrate",
     "migrate:e2e": "MIGRATE_TARGET=e2e drizzle-kit migrate",
-    "migrate:new": "drizzle-kit generate",
+    "migrate:new": "node scripts/check-snapshots.js && drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "seed": "ts-node src/database/seed.ts",
     "smoke:auth": "bash scripts/smoke-auth.sh",
