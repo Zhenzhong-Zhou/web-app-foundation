@@ -2,7 +2,7 @@ import MoreVert from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 import { useState } from 'react';
 
-import type { StockRow } from './inventory-page';
+import type { StockRow } from '../lib/types';
 import type { MoveMode } from './move-stock-dialog';
 
 /**

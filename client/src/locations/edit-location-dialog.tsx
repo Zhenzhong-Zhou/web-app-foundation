@@ -14,7 +14,7 @@ import { type SubmitEvent, useState } from 'react';
 
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
-import type { Location } from './locations-page';
+import type { Location } from '../lib/types';
 import { FormError } from '../components/form-error';
 
 /**
@@ -111,12 +111,7 @@ export function EditLocationDialog({
    * through it would reinterpret every movement that referenced it.
    */
   return (
-    <Dialog
-      open={!!location}
-      onClose={close}
-      fullWidth
-      maxWidth="sm"
-    >
+    <Dialog open={!!location} onClose={close} fullWidth maxWidth="sm">
       <form onSubmit={handleSubmit}>
         <DialogTitle>Edit {location?.name}</DialogTitle>
 

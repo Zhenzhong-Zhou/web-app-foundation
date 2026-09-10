@@ -2,7 +2,6 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   Paper,
   Skeleton,
   Stack,
@@ -12,19 +11,12 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
 import { ApiError, api } from '../lib/api';
+import type { Location } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateLocationDialog } from './create-location-dialog';
 import { EditLocationDialog } from './edit-location-dialog';
-
-export interface Location {
-  id: string;
-  type: string;
-  name: string;
-  code: string | null;
-  parentId: string | null;
-  isAvailable: boolean;
-  isActive: boolean;
-}
+import { LocationNode } from './location-node';
+import { childrenOf } from './tree';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -33,121 +25,12 @@ function messageFor(caught: unknown): string {
 }
 
 /**
- * The server returns the tree flat, ordered by name, and the client nests it —
- * a recursive CTE is not worth it at tens of rows, and the flat list is what
- * the parent picker needs anyway (ADR-024).
+ * Where the layout is set up. Unremarkable on its own, and the thing that
+ * makes the inventory screen usable: stock has to go somewhere, and until this
+ * existed the only way to create that somewhere was curl.
  *
- * Orphans are included at the top rather than dropped. A location whose parent
- * is missing should be visible and fixable, not invisible; silently hiding
- * rows is how a tree loses data nobody can find again.
- */
-function childrenOf(all: Location[], parentId: string | null): Location[] {
-  const ids = new Set(all.map((location) => location.id));
-
-  return all.filter((location) =>
-    parentId === null
-      ? location.parentId === null || !ids.has(location.parentId)
-      : location.parentId === parentId,
-  );
-}
-
-function LocationNode({
-  location,
-  all,
-  depth,
-  canEdit,
-  onEdit,
-  onAddChild,
-}: {
-  location: Location;
-  all: Location[];
-  depth: number;
-  canEdit: boolean;
-  onEdit: (location: Location) => void;
-  onAddChild: (location: Location) => void;
-}) {
-  const children = childrenOf(all, location.id);
-
-  return (
-    <>
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{
-          alignItems: 'center',
-          py: 1,
-          pl: 2 + depth * 3,
-          pr: 2,
-          borderTop: depth === 0 ? undefined : '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Typography sx={{ flexGrow: 1 }}>
-          {location.name}
-          {location.code && (
-            <Typography component="span" color="text.secondary">
-              {' '}
-              · {location.code}
-            </Typography>
-          )}
-        </Typography>
-
-        <Chip label={location.type} size="small" variant="outlined" />
-
-        {/* Leaf-ness is computed, not declared (ADR-024). Showing it here is
-            what makes "stock goes in the places that contain nothing else"
-            visible rather than a rule people discover by being refused. */}
-        {!children.length && (
-          <Chip label="Holds stock" size="small" color="primary" />
-        )}
-
-        {/* Quarantine, Returns, and WIP are locations rather than a status on
-            the stock row, so the distinction has to be visible somewhere. */}
-        {!location.isAvailable && (
-          <Chip label="Not available" size="small" color="warning" />
-        )}
-
-        {!location.isActive && <Chip label="Retired" size="small" />}
-
-        {canEdit && (
-          <>
-            <Button
-              variant="text"
-              size="small"
-              onClick={() => onAddChild(location)}
-            >
-              Add inside
-            </Button>
-            <Button
-              variant="text"
-              size="small"
-              onClick={() => onEdit(location)}
-            >
-              Edit
-            </Button>
-          </>
-        )}
-      </Stack>
-
-      {children.map((child) => (
-        <LocationNode
-          key={child.id}
-          location={child}
-          all={all}
-          depth={depth + 1}
-          canEdit={canEdit}
-          onEdit={onEdit}
-          onAddChild={onAddChild}
-        />
-      ))}
-    </>
-  );
-}
-
-/**
- * Where the warehouse layout is set up. Unremarkable on its own, and the thing
- * that makes the inventory screen usable: stock has to go somewhere, and until
- * this existed the only way to create that somewhere was curl.
+ * Loading and dialog state only — the tree itself is LocationNode's, which is
+ * recursive and has nothing to do with either.
  */
 export function LocationsPage() {
   const { session } = useAuth();
@@ -197,6 +80,8 @@ export function LocationsPage() {
           Refresh
         </Button>
 
+        {/* Hidden without locations.create — display only, since the 403 is
+            the actual control (ADR-016). */}
         {canCreate && (
           <Button
             onClick={() => {
@@ -240,8 +125,9 @@ export function LocationsPage() {
           </Box>
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
-            No locations yet. Start with a warehouse — you can add zones,
-            aisles, and bins inside it later, or leave it as one room.
+            No locations yet. Start with a site — a building or an address. You
+            can add zones, aisles, and bins inside it later, or leave it as one
+            room.
           </Typography>
         )}
       </Paper>
@@ -253,6 +139,12 @@ export function LocationsPage() {
         onCreated={load}
       />
 
+      {/**
+       * Keyed here rather than on the Dialog inside: a key remounts the
+       * component it is written on, and the state lives in this one. On the
+       * inner Dialog it rebuilt MUI's element while useState kept its first
+       * value — seeded from a null location, so the form opened empty.
+       */}
       <EditLocationDialog
         key={editing?.id}
         location={editing}

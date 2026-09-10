@@ -22,29 +22,7 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { StockActions } from './stock-action';
-
-export interface Location {
-  id: string;
-  name: string;
-  code: string | null;
-  type: string;
-  parentId: string | null;
-  isActive: boolean;
-}
-
-export interface StockRow {
-  variantId: string;
-  sku: string;
-  variantName: string | null;
-  unitOfMeasure: string;
-  locationId: string;
-  locationName: string;
-  lotId: string | null;
-  lotCode: string | null;
-  lotExpiresAt: string | null;
-  /** A decimal string from numeric(18, 4). Never parsed — see ADR-025. */
-  quantity: string;
-}
+import type { Location, StockRow } from '../lib/types';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError

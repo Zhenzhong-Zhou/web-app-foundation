@@ -14,7 +14,7 @@ import { type SubmitEvent, useState } from 'react';
 
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
-import type { Location, StockRow } from './inventory-page';
+import type { Location, StockRow } from '../lib/types';
 
 export type MoveMode = 'ship' | 'transfer' | 'adjust';
 
