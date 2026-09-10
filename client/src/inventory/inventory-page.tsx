@@ -21,8 +21,9 @@ import { ApiError, api } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
-import { StockActions } from './stock-action';
+import { StockActions } from './stock-actions';
 import type { Location, StockRow } from '../lib/types';
+import { MovementHistoryDialog } from './movement-history-dialog';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -69,6 +70,7 @@ export function InventoryPage() {
     mode: MoveMode;
     row: StockRow;
   } | null>(null);
+  const [viewing, setViewing] = useState<StockRow | null>(null);
 
   const loading = rows === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
@@ -183,7 +185,11 @@ export function InventoryPage() {
                 <TableCell>Item</TableCell>
                 <TableCell>Location</TableCell>
                 <TableCell>Lot</TableCell>
+                <TableCell>Expires</TableCell>
                 <TableCell align="right">Quantity</TableCell>
+                {/* The actions column. Headerless because a column of menu
+                    buttons has no name worth reading out. */}
+                <TableCell padding="checkbox" />
               </TableRow>
             </TableHead>
 
@@ -203,6 +209,11 @@ export function InventoryPage() {
                       '—'
                     )}
                   </TableCell>
+                  <TableCell>
+                    {row.lotExpiresAt
+                      ? new Date(row.lotExpiresAt).toLocaleDateString()
+                      : '—'}
+                  </TableCell>
                   {/* Rendered as it arrived. Formatting it means parsing it,
                       and a numeric that passes through a JS double is the
                       precision loss ADR-025 exists to avoid. */}
@@ -217,6 +228,7 @@ export function InventoryPage() {
                         onSelect={(mode, selected) =>
                           setMoving({ mode, row: selected })
                         }
+                        onHistory={setViewing}
                       />
                     )}
                   </TableCell>
@@ -239,13 +251,19 @@ export function InventoryPage() {
         onReceived={loadStock}
       />
 
-      <MoveStockDialog
-        mode={moving?.mode ?? 'transfer'}
-        row={moving?.row ?? null}
-        locations={leaves}
-        onClose={() => setMoving(null)}
-        onMoved={loadStock}
-      />
+      {moving && (
+        <MoveStockDialog
+          mode={moving.mode}
+          row={moving?.row ?? null}
+          locations={leaves}
+          onClose={() => setMoving(null)}
+          onMoved={loadStock}
+        />
+      )}
+
+      {viewing && (
+        <MovementHistoryDialog row={viewing} onClose={() => setViewing(null)} />
+      )}
     </Stack>
   );
 }

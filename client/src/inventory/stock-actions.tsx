@@ -5,6 +5,8 @@ import { useState } from 'react';
 import type { StockRow } from '../lib/types';
 import type { MoveMode } from './move-stock-dialog';
 
+type Choice = MoveMode | 'history';
+
 /**
  * A menu rather than three buttons per row. Shipping, moving, and correcting
  * are all uncommon relative to reading the table, and three controls on every
@@ -13,35 +15,80 @@ import type { MoveMode } from './move-stock-dialog';
 export function StockActions({
   row,
   onSelect,
+  onHistory,
 }: {
   row: StockRow;
   onSelect: (mode: MoveMode, row: StockRow) => void;
+  onHistory: (row: StockRow) => void;
 }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [pending, setPending] = useState<Choice | null>(null);
 
-  function choose(mode: MoveMode) {
-    setAnchor(null);
-    onSelect(mode, row);
+  /**
+   * The dialog opens once the menu has finished closing, not on click.
+   *
+   * Both at once means MUI restores focus to this button while the dialog
+   * marks #root aria-hidden — a focused element inside a hidden subtree, which
+   * assistive technology cannot reach and the browser warns about. Deferring
+   * costs one transition and removes the overlap entirely.
+   */
+  function run() {
+    if (!pending) return;
+
+    if (pending === 'history') onHistory(row);
+    else onSelect(pending, row);
+
+    setPending(null);
   }
 
   return (
     <>
       <IconButton
         size="small"
-        // Named, because an icon button with no label is announced as "button"
-        // and nothing else.
         aria-label={`Actions for ${row.sku} at ${row.locationName}`}
         onClick={(event) => setAnchor(event.currentTarget)}
       >
         <MoreVert fontSize="small" />
       </IconButton>
 
-      <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)}>
-        <MenuItem onClick={() => choose('transfer')}>Move</MenuItem>
-        <MenuItem onClick={() => choose('ship')}>Ship out</MenuItem>
-        {/* Last and separate in meaning: the other two record something that
-            happened, this one records that the system was wrong. */}
-        <MenuItem onClick={() => choose('adjust')}>Correct the count</MenuItem>
+      <Menu
+        anchorEl={anchor}
+        open={!!anchor}
+        onClose={() => setAnchor(null)}
+        slotProps={{ transition: { onExited: run } }}
+      >
+        <MenuItem
+          onClick={() => {
+            setPending('transfer');
+            setAnchor(null);
+          }}
+        >
+          Move
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setPending('ship');
+            setAnchor(null);
+          }}
+        >
+          Ship out
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setPending('adjust');
+            setAnchor(null);
+          }}
+        >
+          Correct the count
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setPending('history');
+            setAnchor(null);
+          }}
+        >
+          History
+        </MenuItem>
       </Menu>
     </>
   );
