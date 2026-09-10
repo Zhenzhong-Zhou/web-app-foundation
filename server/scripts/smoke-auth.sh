@@ -5,6 +5,18 @@ set -euo pipefail
 
 BASE="${BASE:-http://localhost:3000/v1}"
 
+# Localhost only, because "leaves rows behind" is not a local-only property:
+# pointed at a deployment this filled production with fourteen "Smoke Co"
+# organizations and their users before anyone looked.
+case "$BASE" in
+  http://localhost:*|http://127.0.0.1:*) ;;
+  *)
+    echo "  smoke-auth registers real accounts and is localhost-only." >&2
+    echo "  Set SMOKE_ALLOW_REMOTE=1 to override." >&2
+    [ "${SMOKE_ALLOW_REMOTE:-}" = "1" ] || exit 1
+    ;;
+esac
+
 # One jar per identity the script needs to be. Sharing a single jar lets a
 # failed-login flood or a cleared cookie leak into a later check and make it
 # pass or fail for the wrong reason.
