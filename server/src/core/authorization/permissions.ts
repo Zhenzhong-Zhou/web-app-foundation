@@ -40,6 +40,10 @@ export const PERMISSIONS = {
 
   STOCK_VIEW: 'stock.view',
   STOCK_MOVE: 'stock.move',
+
+  PARTNERS_VIEW: 'partners.view',
+  PARTNERS_CREATE: 'partners.create',
+  PARTNERS_UPDATE: 'partners.update',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -69,6 +73,11 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   // split would suggest one is safer than the other — an adjustment is the
   // riskier action and would sit on whichever side someone chose.
   'stock.move': 'Receive, ship, transfer, or adjust stock',
+  'partners.view': 'See customers and suppliers',
+  'partners.create': 'Add a customer or supplier',
+  // No delete: a partner referenced by an order cannot be removed without
+  // inventing gaps in the history the order exists to record.
+  'partners.update': 'Edit or retire a customer or supplier',
 };
 
 export const SYSTEM_ROLES = {
@@ -114,6 +123,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.LOCATIONS_UPDATE,
     PERMISSIONS.STOCK_VIEW,
     PERMISSIONS.STOCK_MOVE,
+    PERMISSIONS.PARTNERS_VIEW,
+    PERMISSIONS.PARTNERS_CREATE,
+    PERMISSIONS.PARTNERS_UPDATE,
   ],
 
   [SYSTEM_ROLES.VIEWER]: [
@@ -124,6 +136,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.PRODUCTS_VIEW,
     PERMISSIONS.LOCATIONS_VIEW,
     PERMISSIONS.STOCK_VIEW,
+    PERMISSIONS.PARTNERS_VIEW,
   ],
 };
 

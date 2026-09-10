@@ -26,6 +26,9 @@ export const AUDIT_ACTIONS = {
   LOCATION_UPDATED: 'location.updated',
 
   STOCK_MOVEMENT_RECORDED: 'stock.movement_recorded',
+
+  PARTNER_CREATED: 'partner.created',
+  PARTNER_UPDATED: 'partner.updated',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
