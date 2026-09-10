@@ -1555,6 +1555,19 @@ they exist so the reasoning is not rediscovered from scratch.
   It stays a nullable label when it comes, never a branch: the moment a query
   filters on it or a second table appears for one kind of site, a cheap column
   becomes an expensive shape.
+- **Counting a shelf.** The movement endpoint takes a delta — "remove 3" — but
+  a cycle count is a total: "I counted 45." Converting one to the other in the
+  client means reading the balance and subtracting, and if anything moves in
+  between the correction lands on a number nobody counted. The fix is an
+  optional `expectedQuantity` on an adjustment, compared inside the transaction
+  after the row lock and answered with a 409 on mismatch — an ETag by another
+  name. Deferred because the response shape is a guess until a counting screen
+  exists to receive it. The trigger is the first stocktake.
+- **Splitting the inventory screen.** It holds locations, stock rows, and four
+  dialogs' open state in one file, and the table is about seventy lines of JSX
+  with no state of its own — the same shape as the LocationNode extraction. Left
+  whole because extracting now is guessing at the seam; when a fifth dialog or a
+  second filter lands, the seam will be obvious rather than inferred.
 
 ---
 

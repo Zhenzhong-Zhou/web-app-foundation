@@ -144,3 +144,36 @@ test('corrects a count and requires an explanation', async ({ page, api }) => {
     page.getByRole('row', { name: new RegExp(product.sku) }),
   ).toContainText('17.0000');
 });
+
+test('shows emptied rows when asked', async ({ page, api }) => {
+  const product = await createProduct(api, { name: 'E2E Emptied Widget' });
+  const location = await createLocation(api, { name: 'E2E Emptied Bay' });
+
+  await receive(api, product.variantId, location.id, '5');
+  await api.post('/v1/stock/movements', {
+    data: {
+      variantId: product.variantId,
+      fromLocationId: location.id,
+      quantity: '5',
+      reason: 'shipment',
+    },
+  });
+
+  await page.goto('/inventory');
+
+  // Hidden by default: "what is on this shelf" means what is there.
+  await expect(
+    page.getByRole('row', { name: new RegExp(product.sku) }),
+  ).toHaveCount(0);
+
+  /**
+   * The row is kept at zero, never deleted, and its movements are the only
+   * record of where the stock went — so it has to be reachable. Two fetches
+   * racing here would leave the toggle looking dead.
+   */
+  await page.getByLabel('Show emptied').click();
+
+  await expect(
+    page.getByRole('row', { name: new RegExp(product.sku) }),
+  ).toContainText('0.0000');
+});

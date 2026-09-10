@@ -2,10 +2,12 @@ import {
   Alert,
   Button,
   Chip,
+  FormControlLabel,
   MenuItem,
   Paper,
   Skeleton,
   Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -14,7 +16,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
 import { ApiError, api } from '../lib/api';
@@ -71,16 +73,28 @@ export function InventoryPage() {
     row: StockRow;
   } | null>(null);
   const [viewing, setViewing] = useState<StockRow | null>(null);
+  const [includeEmpty, setIncludeEmpty] = useState(false);
 
   const loading = rows === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
   const leaves = locations ? leavesOf(locations) : [];
 
+  /**
+   * Both the callback and the effect need this, and URLSearchParams rather
+   * than string concatenation now that there are two optional params — the
+   * ?/& bookkeeping is where hand-built query strings go wrong.
+   */
+  const stockQuery = useMemo(() => {
+    const params = new URLSearchParams();
+    if (locationId) params.set('locationId', locationId);
+    if (includeEmpty) params.set('includeEmpty', 'true');
+    return params.size ? `?${params.toString()}` : '';
+  }, [locationId, includeEmpty]);
+
   const loadStock = useCallback(async () => {
-    const query = locationId ? `?locationId=${locationId}` : '';
-    setRows(await api<StockRow[]>(`/stock${query}`));
+    setRows(await api<StockRow[]>(`/stock${stockQuery}`));
     setError(null);
-  }, [locationId]);
+  }, [stockQuery]);
 
   useEffect(() => {
     let ignore = false;
@@ -103,9 +117,8 @@ export function InventoryPage() {
   // become wrong the moment pagination arrives.
   useEffect(() => {
     let ignore = false;
-    const query = locationId ? `?locationId=${locationId}` : '';
 
-    void api<StockRow[]>(`/stock${query}`)
+    void api<StockRow[]>(`/stock${stockQuery}`)
       .then((found) => {
         if (!ignore) setRows(found);
       })
@@ -116,7 +129,7 @@ export function InventoryPage() {
     return () => {
       ignore = true;
     };
-  }, [locationId]);
+  }, [stockQuery]);
 
   return (
     <Stack spacing={3}>
@@ -166,6 +179,20 @@ export function InventoryPage() {
           </MenuItem>
         ))}
       </TextField>
+
+      {/* Zero rows are kept, never deleted — a shelf that emptied yesterday is
+          a fact, and its movements are the only record of where the stock
+          went. Hidden by default because "what is on this shelf" means what is
+          there, but reachable, or that history has no route. */}
+      <FormControlLabel
+        control={
+          <Switch
+            checked={includeEmpty}
+            onChange={(event) => setIncludeEmpty(event.target.checked)}
+          />
+        }
+        label="Show emptied"
+      />
 
       <Paper variant="outlined">
         {loading ? (
@@ -254,7 +281,7 @@ export function InventoryPage() {
       {moving && (
         <MoveStockDialog
           mode={moving.mode}
-          row={moving?.row ?? null}
+          row={moving.row}
           locations={leaves}
           onClose={() => setMoving(null)}
           onMoved={loadStock}

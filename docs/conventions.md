@@ -31,14 +31,14 @@ predict its export is a file nobody can find.
 
 ## Identifiers
 
-| Thing | Style | Example |
-|---|---|---|
-| Classes, DTOs, interfaces | PascalCase | `UsersService`, `CreateUserDto` |
-| Methods, variables | camelCase | `findByEmail` |
-| Module-level constants | UPPER_SNAKE | `SESSION_COOKIE_NAME` |
-| Database columns | snake_case | `organization_id` |
-| Drizzle schema fields | camelCase | `organizationId: uuid('organization_id')` |
-| Permission strings | `resource.action` | `users.create`, `reports.view` |
+| Thing                     | Style             | Example                                   |
+|---------------------------|-------------------|-------------------------------------------|
+| Classes, DTOs, interfaces | PascalCase        | `UsersService`, `CreateUserDto`           |
+| Methods, variables        | camelCase         | `findByEmail`                             |
+| Module-level constants    | UPPER_SNAKE       | `SESSION_COOKIE_NAME`                     |
+| Database columns          | snake_case        | `organization_id`                         |
+| Drizzle schema fields     | camelCase         | `organizationId: uuid('organization_id')` |
+| Permission strings        | `resource.action` | `users.create`, `reports.view`            |
 
 The snake_case/camelCase split is deliberate: SQL stays idiomatic SQL, TypeScript stays
 idiomatic TypeScript, and Drizzle's column definition is the one place they meet.
@@ -49,7 +49,7 @@ idiomatic TypeScript, and Drizzle's column definition is the one place they meet
 
 **Class methods are regular methods, never arrow properties.**
 
-```ts
+```
 // correct
 @Get()
 check() { ... }
@@ -171,8 +171,22 @@ and silently goes stale.
 - One integration test per feature as it's built (ADR-008).
 - `scripts/smoke-auth.sh` checks a **running dev server** over HTTP. No database
   access, no setup — if it needs `psql`, it is an e2e test wearing a shell script.
+  Localhost only: it registers real accounts, and pointed at a deployment it
+  fills production with them.
 - e2e tests own the database: they reset between tests and assert on rows,
   including the negative cases smoke cannot reach.
+- Component tests sit beside their source: `receive-stock-dialog.test.tsx`, run
+  by Vitest against jsdom with the network mocked by MSW.
+- **Write one when you fix a bug, not as a sweep.** They exist so a branch that
+  is expensive in the browser — a 409, an empty list, a field that appears only
+  sometimes — costs milliseconds. The value is somewhere to put a test at the
+  moment one is needed, not coverage of every dialog on principle.
+- Nothing is mocked in a Playwright spec. A mocked API there only proves the UI
+  agrees with our assumptions about the server, which is the class of bug that
+  layer exists to catch.
+- `getByRole`, never `getByLabelText`, in a component test: MUI renders a
+  `TextField` label as a div linked by `aria-labelledby` rather than a real
+  `label`, so the label query finds nothing.
 
 ---
 
