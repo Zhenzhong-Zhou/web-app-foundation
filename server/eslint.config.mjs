@@ -1,18 +1,29 @@
-// @ts-check
 import eslint from '@eslint/js';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import checkFile from 'eslint-plugin-check-file';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['eslint.config.mjs', 'dist/**', 'coverage/**'],
+    // scripts/ holds plain CommonJS build helpers and a shell script. There is
+    // no tsconfig they belong to, and projectService errors on any file it
+    // cannot place.
+    ignores: ['eslint.config.mjs', 'dist/**', 'coverage/**', 'scripts/**'],
   },
+
   eslint.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
+
+  // Scoped to .ts: type-aware rules need a tsconfig, and applying them to a
+  // .mjs config file is what produces "not found by the project service".
+  ...tseslint.configs.recommendedTypeChecked.map((config) => ({
+    ...config,
+    files: ['**/*.ts'],
+  })),
+
   eslintPluginPrettierRecommended,
+
   {
     languageOptions: {
       globals: {
@@ -26,6 +37,7 @@ export default tseslint.config(
       },
     },
   },
+
   {
     files: ['**/*.ts'],
     plugins: {
@@ -46,6 +58,7 @@ export default tseslint.config(
       ],
     },
   },
+
   {
     files: ['src/core/**/*.ts', 'src/shared/**/*.ts'],
     rules: {
@@ -67,6 +80,7 @@ export default tseslint.config(
       ],
     },
   },
+
   {
     // UNSAFE_GLOBAL_DB is allowed in exactly two places, both of which run
     // before or outside tenant scope. core/auth resolves a user by email before
@@ -75,12 +89,14 @@ export default tseslint.config(
     files: ['src/core/auth/**/*.ts', 'src/core/authorization/**/*.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
+
   {
+    files: ['**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      
+
       // The underscore prefix is already used for deliberately-unused
       // parameters (@Audited's extractors take a response they ignore).
       // Without varsIgnorePattern the same convention fails for destructured
@@ -89,7 +105,7 @@ export default tseslint.config(
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
-      
+
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
