@@ -46,6 +46,12 @@ export interface SeededProduct {
   sku: string;
 }
 
+export interface SeededPartner {
+  id: string;
+  name: string;
+  code?: string;
+}
+
 /**
  * Collision-proof without a counter shared between workers: workers run in
  * separate processes, so a module-level integer would restart at zero in each.
@@ -191,4 +197,32 @@ export async function createLocation(
 export async function signInAs(page: Page, api: APIRequestContext) {
   await page.context().clearCookies();
   await page.context().addCookies((await api.storageState()).cookies);
+}
+
+/**
+ * One table for suppliers and customers (ADR-026) — there is no role to pass,
+ * because what a partner is follows from the orders raised against them.
+ *
+ * `code` is left undefined unless asked for: it is the only unique column on
+ * the table, and a generated one in every seeded row would make the duplicate
+ * test pass for the wrong reason.
+ */
+export async function createPartner(
+  api: APIRequestContext,
+  overrides: Partial<{ name: string; code: string; taxId: string }> = {},
+): Promise<SeededPartner> {
+  const name = overrides.name ?? unique('Partner').toUpperCase();
+  
+  const response = await api.post('/v1/partners', {
+    data: { name, code: overrides.code, taxId: overrides.taxId },
+  });
+  
+  if (!response.ok()) {
+    throw new Error(
+      `Partner creation failed: ${response.status()} ${await response.text()}`,
+    );
+  }
+  
+  const body = (await response.json()) as { partner: { id: string } };
+  return { id: body.partner.id, name, code: overrides.code };
 }
