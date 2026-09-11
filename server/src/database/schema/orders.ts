@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  char,
   check,
   index,
   pgTable,
@@ -8,6 +9,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+import { addresses } from './addresses';
 import { primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
 import { partners } from './partners';
@@ -86,6 +88,43 @@ export const orders = pgTable(
     note: text('note'),
 
     /**
+     * Where this order went, copied at creation rather than joined at read.
+     *
+     * NULL on every row today. A purchase order receives into a location — the
+     * ship-to of a PO is our own warehouse, which lives in the location tree
+     * and not in `addresses`. These fill in when sales orders arrive, which is
+     * the same change that widens orders_status_check, since `received` does
+     * not describe an outbound order.
+     *
+     * Added ahead of that rather than with it because the columns are free
+     * while the table is small and the decision is already made (ADR-028).
+     * They are a placeholder, not dead weight — do not drop them for looking
+     * unused.
+     *
+     * The foreign key is provenance only: which address was chosen, so the
+     * order can be traced back to a row someone can still see. Never read
+     * through it to display where the order went. `addresses` holds what is
+     * true now; these columns hold what was true that day, and joining
+     * instead would let a partner moving warehouses silently rewrite where
+     * last year's deliveries went.
+     */
+    shipToAddressId: uuid('ship_to_address_id').references(
+      () => addresses.id,
+      // No action: an address cannot vanish under a live order anyway.
+      // Addresses retire rather than delete, and they only cascade away with
+      // their partner — which orders already restrict.
+      { onDelete: 'no action' },
+    ),
+
+    shipToLabel: text('ship_to_label'),
+    shipToLine1: text('ship_to_line1'),
+    shipToLine2: text('ship_to_line2'),
+    shipToCity: text('ship_to_city'),
+    shipToRegion: text('ship_to_region'),
+    shipToPostalCode: text('ship_to_postal_code'),
+    shipToCountry: char('ship_to_country', { length: 2 }),
+
+    /**
      * Not null, and RESTRICT for the same reason movements use it: ADR-012
      * anonymises a departed user rather than removing the row, so the reference
      * stays resolvable and the order survives its author.
@@ -104,6 +143,23 @@ export const orders = pgTable(
     check(
       'orders_status_check',
       sql`${t.status} in ('draft', 'confirmed', 'received', 'cancelled')`,
+    ),
+    
+    /**
+     * A snapshot is all of it or none of it. Half a copied address is worse
+     * than no copy: it reads as a complete destination and is missing the
+     * street. Nothing writes these yet, so the constraint costs nothing now
+     * and is the thing that catches a partial write later.
+     */
+    check(
+      'orders_ship_to_snapshot_check',
+      sql`(${t.shipToLine1} is null and ${t.shipToCountry} is null)
+          or (${t.shipToLine1} is not null and ${t.shipToCountry} is not null)`,
+    ),
+
+    check(
+      'orders_ship_to_country_format_check',
+      sql`${t.shipToCountry} is null or ${t.shipToCountry} ~ '^[A-Z]{2}$'`,
     ),
 
     // "What is open" and "what did we buy from them", the two reads the screens
