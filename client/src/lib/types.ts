@@ -41,3 +41,35 @@ export interface Partner {
   notes: string | null;
   isActive: boolean;
 }
+
+export interface Address {
+  id: string;
+  label: string | null;
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string;
+  isBilling: boolean;
+  isShipping: boolean;
+  isDefault: boolean;
+  isActive: boolean;
+}
+
+export interface Contact {
+  id: string;
+  name: string;
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  isPrimary: boolean;
+  isActive: boolean;
+}
+
+/** What GET /partners/:id returns — the partner with its children embedded. */
+export interface PartnerDetail extends Partner {
+  addresses: Address[];
+  contacts: Contact[];
+}

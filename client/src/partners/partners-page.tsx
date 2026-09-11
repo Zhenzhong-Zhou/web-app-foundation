@@ -2,6 +2,7 @@ import {
   Alert,
   Button,
   Chip,
+  Link,
   Paper,
   Skeleton,
   Stack,
@@ -20,6 +21,7 @@ import type { Partner } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreatePartnerDialog } from './create-partner-dialog';
 import { EditPartnerDialog } from './edit-partner-dialog';
+import { Link as RouterLink } from 'react-router-dom';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -120,7 +122,11 @@ export function PartnersPage() {
             <TableBody>
               {items.map((partner) => (
                 <TableRow key={partner.id} hover>
-                  <TableCell>{partner.name}</TableCell>
+                  <TableCell>
+                    <Link component={RouterLink} to={`/partners/${partner.id}`}>
+                      {partner.name}
+                    </Link>
+                  </TableCell>
 
                   {/* An em dash rather than an empty cell: blank reads as a
                       rendering fault, and every one of these is optional. */}

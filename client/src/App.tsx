@@ -18,6 +18,7 @@ import { ProductDetailPage } from './products/product-detail-page.tsx';
 import { InventoryPage } from './inventory/inventory-page';
 import { LocationsPage } from './locations/locations-page';
 import { PartnersPage } from './partners/partners-page';
+import { PartnerDetailPage } from './partners/partner-detail-page';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -112,6 +113,7 @@ export default function App() {
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/locations" element={<LocationsPage />} />
         <Route path="/partners" element={<PartnersPage />} />
+        <Route path="/partners/:id" element={<PartnerDetailPage />} />
       </Route>
 
       {/* Outside both guards deliberately. Inside Protected, a signed-out

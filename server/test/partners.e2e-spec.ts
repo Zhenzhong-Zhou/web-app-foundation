@@ -6,7 +6,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { partners, roles } from '../src/database/schema';
+import { addresses, contacts, partners, roles } from '../src/database/schema';
 import { MailService } from '../src/shared/mail/mail.service';
 import {
   createTestApp,
@@ -347,6 +347,327 @@ describe('Partners (e2e)', () => {
         .patch(`/v1/partners/${created.id}`)
         .send({ isActive: false })
         .expect(403);
+    });
+  });
+
+  /**
+   * Addresses and contacts hang off a partner through an exclusive arc
+   * (ADR-028): one nullable foreign key per owner kind and a check that
+   * exactly one is set. Almost everything worth asserting is about the two
+   * rules the application cannot see — the partial unique index behind
+   * is_default, and the fact that both children retire rather than delete.
+   */
+  describe('Partner addresses', () => {
+    const address = {
+      label: 'Head office',
+      line1: '1 Example Way',
+      city: 'Vancouver',
+      region: 'BC',
+      postalCode: 'V6B 1A1',
+      country: 'CA',
+    };
+
+    async function createPartnerIn(
+      org: Awaited<ReturnType<typeof registerOrg>>,
+    ) {
+      return body<{ partner: PartnerResponse }>(
+        await org.agent.post('/v1/partners').send(partner).expect(201),
+      ).partner;
+    }
+
+    it('stores the country uppercased', async () => {
+      const alpha = await registerOrg('alpha');
+      const created = await createPartnerIn(alpha);
+
+      await alpha.agent
+        .post(`/v1/partners/${created.id}/addresses`)
+        .send({ ...address, country: 'ca' })
+        .expect(201);
+
+      /**
+       * "ca" is unambiguous and refusing it would be pedantry, but storing
+       * both spellings would make them two countries to every filter. The
+       * transform runs before validation, so the @Matches on the uppercase
+       * form never sees the original.
+       */
+      const [row] = await db.select().from(addresses);
+      expect(row.country).toBe('CA');
+    });
+
+    it('demotes the previous default when a second one is set', async () => {
+      const alpha = await registerOrg('alpha');
+      const created = await createPartnerIn(alpha);
+
+      const first = body<{ address: { id: string } }>(
+        await alpha.agent
+          .post(`/v1/partners/${created.id}/addresses`)
+          .send({ ...address, isDefault: true })
+          .expect(201),
+      ).address;
+
+      /**
+       * A partial unique index makes the second default a 23505, not an
+       * overwrite — so the service demotes and inserts in one transaction.
+       * Two statements would leave a window with no default at all, and a
+       * failure between them would leave the partner with none.
+       */
+      await alpha.agent
+        .post(`/v1/partners/${created.id}/addresses`)
+        .send({ ...address, label: 'Warehouse', isDefault: true })
+        .expect(201);
+
+      const rows = await db.select().from(addresses);
+      expect(rows.filter((row) => row.isDefault)).toHaveLength(1);
+      expect(rows.find((row) => row.id === first.id)?.isDefault).toBe(false);
+    });
+
+    it('retires rather than deletes, and clears the default flag', async () => {
+      const alpha = await registerOrg('alpha');
+      const created = await createPartnerIn(alpha);
+
+      const first = body<{ address: { id: string } }>(
+        await alpha.agent
+          .post(`/v1/partners/${created.id}/addresses`)
+          .send({ ...address, isDefault: true })
+          .expect(201),
+      ).address;
+
+      // Another default has to exist first — see the refusal test below.
+      await alpha.agent
+        .post(`/v1/partners/${created.id}/addresses`)
+        .send({ ...address, label: 'Warehouse', isDefault: true })
+        .expect(201);
+
+      await alpha.agent
+        .delete(`/v1/partners/${created.id}/addresses/${first.id}`)
+        .expect(204);
+
+      /**
+       * The row survives: an address deleted by accident has to be
+       * recoverable, and "everywhere we have ever shipped" is a question
+       * somebody eventually asks. is_default goes with it, because the index
+       * counts a retired row and a stale flag would block the next default
+       * with a 23505 nobody could explain.
+       */
+      const rows = await db.select().from(addresses);
+      expect(rows).toHaveLength(2);
+
+      const retired = rows.find((row) => row.id === first.id);
+      expect(retired?.isActive).toBe(false);
+      expect(retired?.isDefault).toBe(false);
+    });
+
+    it('refuses to retire the default while it is the only one', async () => {
+      const alpha = await registerOrg('alpha');
+      const created = await createPartnerIn(alpha);
+
+      const only = body<{ address: { id: string } }>(
+        await alpha.agent
+          .post(`/v1/partners/${created.id}/addresses`)
+          .send({ ...address, isDefault: true })
+          .expect(201),
+      ).address;
+
+      // Refused rather than silently promoting another: which address becomes
+      // the default is a decision, and guessing it is how a partner ends up
+      // shipping to a closed warehouse.
+      await alpha.agent
+        .delete(`/v1/partners/${created.id}/addresses/${only.id}`)
+        .expect(400);
+
+      const [row] = await db.select().from(addresses);
+      expect(row.isActive).toBe(true);
+    });
+
+    it('refuses an address reached through the wrong partner', async () => {
+      const alpha = await registerOrg('alpha');
+      const owner = await createPartnerIn(alpha);
+
+      const other = body<{ partner: PartnerResponse }>(
+        await alpha.agent
+          .post('/v1/partners')
+          .send({ name: 'Unrelated Ltd', code: 'OTHER-99' })
+          .expect(201),
+      ).partner;
+
+      const created = body<{ address: { id: string } }>(
+        await alpha.agent
+          .post(`/v1/partners/${owner.id}/addresses`)
+          .send(address)
+          .expect(201),
+      ).address;
+
+      /**
+       * Same tenant, wrong owner. Scoping to the organization alone would let
+       * this through, and the audit row would name a partner that had nothing
+       * to do with the change.
+       */
+      await alpha.agent
+        .patch(`/v1/partners/${other.id}/addresses/${created.id}`)
+        .send({ city: 'Hijacked' })
+        .expect(404);
+    });
+
+    it('does not reach a partner in another organization', async () => {
+      const alpha = await registerOrg('alpha');
+      const beta = await registerOrg('beta');
+
+      const theirs = body<{ partner: PartnerResponse }>(
+        await beta.agent.post('/v1/partners').send(partner).expect(201),
+      ).partner;
+
+      await alpha.agent
+        .post(`/v1/partners/${theirs.id}/addresses`)
+        .send(address)
+        .expect(404);
+
+      expect(await db.select().from(addresses)).toHaveLength(0);
+    });
+
+    it('embeds addresses and contacts in the partner detail', async () => {
+      const alpha = await registerOrg('alpha');
+      const created = await createPartnerIn(alpha);
+
+      await alpha.agent
+        .post(`/v1/partners/${created.id}/addresses`)
+        .send(address)
+        .expect(201);
+
+      await alpha.agent
+        .post(`/v1/partners/${created.id}/contacts`)
+        .send({ name: 'Dana Reed', email: 'dana@example.com' })
+        .expect(201);
+
+      // One request, because a detail view always wants all three. Three round
+      // trips for one screen is the wrong shape at any scale.
+      const res = await alpha.agent
+        .get(`/v1/partners/${created.id}`)
+        .expect(200);
+
+      const detail = body<{
+        addresses: unknown[];
+        contacts: unknown[];
+      }>(res);
+
+      expect(detail.addresses).toHaveLength(1);
+      expect(detail.contacts).toHaveLength(1);
+    });
+
+    it('refuses a Viewer, which lacks partners.update', async () => {
+      const alpha = await registerOrg('alpha');
+      const created = await createPartnerIn(alpha);
+      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+
+      // No partners.addresses.* keys exist: an address is part of the partner
+      // record, so the partner's own permissions govern it.
+      await viewer
+        .post(`/v1/partners/${created.id}/addresses`)
+        .send(address)
+        .expect(403);
+
+      await viewer.get(`/v1/partners/${created.id}`).expect(200);
+    });
+  });
+
+  describe('Partner contacts', () => {
+    const contact = { name: 'Dana Reed', email: 'dana@example.com' };
+
+    async function createPartnerIn(
+      org: Awaited<ReturnType<typeof registerOrg>>,
+    ) {
+      return body<{ partner: PartnerResponse }>(
+        await org.agent.post('/v1/partners').send(partner).expect(201),
+      ).partner;
+    }
+
+    it('requires an email or a phone', async () => {
+      const alpha = await registerOrg('alpha');
+      const created = await createPartnerIn(alpha);
+
+      /**
+       * Enforced by a check constraint, not by the DTO — an update may supply
+       * one and rely on the other already being stored, so the rule cannot
+       * live in validation. A contact with neither is a name in a box.
+       */
+      await alpha.agent
+        .post(`/v1/partners/${created.id}/contacts`)
+        .send({ name: 'Unreachable Person' })
+        .expect(500);
+
+      expect(await db.select().from(contacts)).toHaveLength(0);
+    });
+
+    it('allows one person at two partners', async () => {
+      const alpha = await registerOrg('alpha');
+      const first = await createPartnerIn(alpha);
+
+      const second = body<{ partner: PartnerResponse }>(
+        await alpha.agent
+          .post('/v1/partners')
+          .send({ name: 'New Employer Ltd', code: 'NEW-01' })
+          .expect(201),
+      ).partner;
+
+      await alpha.agent
+        .post(`/v1/partners/${first.id}/contacts`)
+        .send(contact)
+        .expect(201);
+
+      // Deliberately not unique: a rep changes employer, and a shared inbox is
+      // one address for four people.
+      await alpha.agent
+        .post(`/v1/partners/${second.id}/contacts`)
+        .send(contact)
+        .expect(201);
+
+      expect(await db.select().from(contacts)).toHaveLength(2);
+    });
+
+    it('demotes the previous primary when a second one is set', async () => {
+      const alpha = await registerOrg('alpha');
+      const created = await createPartnerIn(alpha);
+
+      const first = body<{ contact: { id: string } }>(
+        await alpha.agent
+          .post(`/v1/partners/${created.id}/contacts`)
+          .send({ ...contact, isPrimary: true })
+          .expect(201),
+      ).contact;
+
+      await alpha.agent
+        .post(`/v1/partners/${created.id}/contacts`)
+        .send({ name: 'Sam Patel', phone: '555-0100', isPrimary: true })
+        .expect(201);
+
+      const rows = await db.select().from(contacts);
+      expect(rows.filter((row) => row.isPrimary)).toHaveLength(1);
+      expect(rows.find((row) => row.id === first.id)?.isPrimary).toBe(false);
+    });
+
+    it('retires rather than deletes', async () => {
+      const alpha = await registerOrg('alpha');
+      const created = await createPartnerIn(alpha);
+
+      const only = body<{ contact: { id: string } }>(
+        await alpha.agent
+          .post(`/v1/partners/${created.id}/contacts`)
+          .send({ ...contact, isPrimary: true })
+          .expect(201),
+      ).contact;
+
+      /**
+       * No refusal for the last primary, unlike the default address. A contact
+       * may be named on an order that already shipped, so the row has to
+       * survive — but nothing downstream picks a contact automatically, so
+       * leaving a partner with none is a gap rather than a wrong shipment.
+       */
+      await alpha.agent
+        .delete(`/v1/partners/${created.id}/contacts/${only.id}`)
+        .expect(204);
+
+      const [row] = await db.select().from(contacts);
+      expect(row.isActive).toBe(false);
+      expect(row.isPrimary).toBe(false);
     });
   });
 });

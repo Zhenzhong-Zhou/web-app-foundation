@@ -28,10 +28,18 @@ export class PartnersController {
     return this.partners.list();
   }
 
+  /**
+   * Returns the partner with its addresses and contacts embedded.
+   *
+   * The only consumer is the detail screen, and it wants all three — so this
+   * is one request rather than an ?include= protocol built for a single
+   * caller. The nested write routes stay as they are: read and write do not
+   * have to be symmetrical.
+   */
   @Get(':id')
   @RequirePermissions(PERMISSIONS.PARTNERS_VIEW)
   find(@Param('id', ParseUUIDPipe) id: string) {
-    return this.partners.findById(id);
+    return this.partners.findDetail(id);
   }
 
   @Post()

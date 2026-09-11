@@ -7,7 +7,7 @@ import {
 import { asc, eq } from 'drizzle-orm';
 
 import { isUniqueViolation } from '../../database/errors';
-import { partners } from '../../database/schema';
+import { addresses, contacts, partners } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { CreatePartnerDto } from './dto/create-partner.dto';
 import type { UpdatePartnerDto } from './dto/update-partner.dto';
@@ -100,5 +100,46 @@ export class PartnersService {
     }
 
     this.logger.log(`Partner ${partnerId} updated`);
+  }
+
+  /**
+   * A partner with its addresses and contacts, for the detail screen.
+   *
+   * Separate from findById rather than replacing it, because the two child
+   * services call findById to check the partner exists before writing — and if
+   * that call also fetched both child collections, every address insert would
+   * drag two pointless queries behind it. Worse, PartnersService cannot depend
+   * on those services to do the fetching: they already depend on it, and the
+   * cycle would only show up as a Nest resolution error at boot.
+   *
+   * So the aggregate root reads inside its own boundary. Addresses and
+   * contacts belong to the partner (ADR-028); a detail view always wants all
+   * three, and three round trips for one screen is the wrong shape at any
+   * scale.
+   *
+   * Retired rows are included. The screen shows them greyed rather than
+   * hiding them — the order form is where the filter belongs, because that is
+   * the one place a retired address would be a mistake.
+   */
+  async findDetail(partnerId: string) {
+    const partner = await this.findById(partnerId);
+
+    // Two queries, not a join: a join across both children multiplies rows
+    // (three addresses and four contacts is twelve rows to de-duplicate in
+    // JS), and these run concurrently anyway.
+    const [partnerAddresses, partnerContacts] = await Promise.all([
+      this.tenantDb.select(addresses, eq(addresses.partnerId, partnerId), {
+        orderBy: [asc(addresses.label)],
+      }),
+      this.tenantDb.select(contacts, eq(contacts.partnerId, partnerId), {
+        orderBy: [asc(contacts.name)],
+      }),
+    ]);
+
+    return {
+      ...partner,
+      addresses: partnerAddresses,
+      contacts: partnerContacts,
+    };
   }
 }
