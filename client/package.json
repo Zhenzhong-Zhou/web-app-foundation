@@ -11,8 +11,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "dotenv -e ../.env -- playwright src/test",
-    "test:e2e:ui": "dotenv -e ../.env -- playwright src/test --ui",
+    "test:e2e": "dotenv -e ../.env -- playwright test",
+    "test:e2e:ui": "dotenv -e ../.env -- playwright test --ui",
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
