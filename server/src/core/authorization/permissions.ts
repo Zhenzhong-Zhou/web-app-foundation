@@ -44,6 +44,11 @@ export const PERMISSIONS = {
   PARTNERS_VIEW: 'partners.view',
   PARTNERS_CREATE: 'partners.create',
   PARTNERS_UPDATE: 'partners.update',
+
+  ORDERS_VIEW: 'orders.view',
+  ORDERS_CREATE: 'orders.create',
+  ORDERS_UPDATE: 'orders.update',
+  ORDERS_RECEIVE: 'orders.receive',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -78,6 +83,12 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   // No delete: a partner referenced by an order cannot be removed without
   // inventing gaps in the history the order exists to record.
   'partners.update': 'Edit or retire a customer or supplier',
+  'orders.view': 'See purchase and sales orders',
+  'orders.create': 'Raise an order',
+  'orders.update': 'Edit, confirm, or cancel an order',
+  // Separate from update: receiving writes to the ledger, and the person on
+  // the dock is not usually the person who raises orders.
+  'orders.receive': 'Receive stock against an order',
 };
 
 export const SYSTEM_ROLES = {
@@ -126,6 +137,10 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.PARTNERS_VIEW,
     PERMISSIONS.PARTNERS_CREATE,
     PERMISSIONS.PARTNERS_UPDATE,
+    PERMISSIONS.ORDERS_VIEW,
+    PERMISSIONS.ORDERS_CREATE,
+    PERMISSIONS.ORDERS_UPDATE,
+    PERMISSIONS.ORDERS_RECEIVE,
   ],
 
   [SYSTEM_ROLES.VIEWER]: [
@@ -137,8 +152,21 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.LOCATIONS_VIEW,
     PERMISSIONS.STOCK_VIEW,
     PERMISSIONS.PARTNERS_VIEW,
+    PERMISSIONS.ORDERS_VIEW,
   ],
 };
+
+/**
+ * A duplicate inside one role's list is a primary-key violation in
+ * role_permissions the first time an organization is provisioned — reported by
+ * the auth controller as a duplicate email, which sends everyone to the wrong
+ * table. Cheaper to refuse at import time than to debug at runtime.
+ */
+for (const [role, keys] of Object.entries(SYSTEM_ROLE_PERMISSIONS)) {
+  if (new Set(keys).size !== keys.length) {
+    throw new Error(`${role} lists a permission twice`);
+  }
+}
 
 export const SYSTEM_ROLE_DESCRIPTIONS: Record<SystemRole, string> = {
   [SYSTEM_ROLES.OWNER]: 'Full control of the organization',

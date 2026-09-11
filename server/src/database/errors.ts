@@ -45,14 +45,24 @@ function findPgError(
  * Needed because an advisory SELECT cannot be atomic: two simultaneous inserts
  * both pass it, and one then hits the index. Without this the loser gets a 500.
  *
+ * Pass the constraint unless there is genuinely only one index in play.
+ * Registration runs a whole provisioning transaction, and every index it
+ * touches lands in the same catch — a duplicate key in role_permissions once
+ * surfaced as "that email address is already registered", which sent an hour
+ * of debugging to the wrong table.
+ *
  * Two call sites use this differently. auth and users check for duplicates
- * with an explicit SELECT first and fall back to this only on a race, which is
- * why the wrapping went unnoticed until products needed it. Products relies on
- * it as the sole check, because a SELECT-then-INSERT there would be the same
- * race with an extra query — do not "fix" that by adding one.
+ * with an explicit SELECT first and fall back to this only on a race. Products
+ * relies on it as the sole check, because a SELECT-then-INSERT there would be
+ * the same race with an extra query — do not "fix" that by adding one.
  */
-export function isUniqueViolation(error: unknown): boolean {
-  return findPgError(error, PG_UNIQUE_VIOLATION) !== null;
+export function isUniqueViolation(
+  error: unknown,
+  constraint?: string,
+): boolean {
+  const pg = findPgError(error, PG_UNIQUE_VIOLATION);
+  if (!pg) return false;
+  return constraint === undefined || pg.constraint === constraint;
 }
 
 /**

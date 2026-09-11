@@ -97,7 +97,7 @@ export class AuthController {
       // client-side storage, which is what httpOnly exists to prevent.
       return { user };
     } catch (error) {
-      if (isUniqueViolation(error)) {
+      if (isUniqueViolation(error, 'users_email_lower_key')) {
         throw new ConflictException('That email address is already registered');
       }
       throw error;
