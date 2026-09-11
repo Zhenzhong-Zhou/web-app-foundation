@@ -29,6 +29,10 @@ export const AUDIT_ACTIONS = {
 
   PARTNER_CREATED: 'partner.created',
   PARTNER_UPDATED: 'partner.updated',
+
+  ORDER_CREATED: 'order.created',
+  ORDER_UPDATED: 'order.updated',
+  ORDER_LINE_RECEIVED: 'order.line_received',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

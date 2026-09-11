@@ -42,7 +42,7 @@ const OUTBOUND: ReadonlySet<MovementReason> = new Set([
 ]);
 
 /** The transaction handle TenantDb hands its callback. */
-type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
+export type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 
 export interface RecordMovementInput {
   variantId: string;
@@ -85,9 +85,6 @@ export class StockService {
    * code — which `TenantDb.selectJoined` does not express, so this drops to a
    * raw handle. The scope is applied by hand as a result; that is the cost of
    * the escape hatch and the reason it is one query rather than the default.
-   *
-   * Extending TenantDb to take several joins is the real answer and is not
-   * worth designing around a single caller.
    */
   list(filters: ListStockFilters = {}) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -142,12 +139,33 @@ export class StockService {
   }
 
   /**
-   * The one path that changes a quantity. Every reason goes through it, because
-   * the validation and the locking are identical and only the direction
-   * differs — a second write path is the moment the ledger stops being
-   * authoritative (ADR-023).
+   * The one path that changes a quantity, for callers with no transaction of
+   * their own. Opens one and delegates.
    */
   async record(input: RecordMovementInput, actorId: string) {
+    return this.tenantDb.transaction((tx, organizationId) =>
+      this.recordWithin(tx, organizationId, input, actorId),
+    );
+  }
+
+  /**
+   * The movement itself, inside a transaction the caller owns.
+   *
+   * Split out because orders need the ledger write and their own fulfilment
+   * update to commit or fail together, and calling `record()` from inside
+   * another transaction would open a savepoint rather than joining — correct
+   * by accident, and fragile to depend on. The caller supplies the
+   * transaction; this supplies the movement.
+   *
+   * Every reason goes through here. A second write path is the moment the
+   * ledger stops being authoritative (ADR-023).
+   */
+  async recordWithin(
+    tx: Tx,
+    organizationId: string,
+    input: RecordMovementInput,
+    actorId: string,
+  ) {
     const direction = this.resolveDirection(input);
 
     /**
@@ -161,75 +179,73 @@ export class StockService {
       );
     }
 
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [variant] = await tx
-        .select()
-        .from(productVariants)
-        .where(
-          and(
-            eq(productVariants.id, input.variantId),
-            eq(productVariants.organizationId, organizationId),
-          ),
-        );
-
-      if (!variant) throw new NotFoundException('No such variant');
-
-      const lotId = await this.resolveLot(tx, organizationId, variant, input);
-
-      /**
-       * Locked in a deterministic order, sorted by location id.
-       *
-       * A transfer touches two rows. Two concurrent transfers, A→B and B→A,
-       * that each grab their source first will deadlock — rare in testing,
-       * reliable under load. Sorting means both transactions always take the
-       * same row first, so one waits instead of dying.
-       */
-      const touched = [
-        ...(direction.from
-          ? [{ locationId: direction.from, delta: `-${input.quantity}` }]
-          : []),
-        ...(direction.to
-          ? [{ locationId: direction.to, delta: input.quantity }]
-          : []),
-      ].sort((a, b) => a.locationId.localeCompare(b.locationId));
-
-      for (const { locationId, delta } of touched) {
-        await this.assertUsableLeaf(tx, organizationId, locationId);
-        await this.applyDelta(tx, organizationId, {
-          variantId: input.variantId,
-          locationId,
-          lotId,
-          delta,
-        });
-      }
-
-      const [movement] = await tx
-        .insert(stockMovements)
-        .values({
-          organizationId,
-          variantId: input.variantId,
-          // Snapshot, not a join: a SKU rename must not rewrite history
-          // (ADR-023).
-          sku: variant.sku,
-          lotId,
-          fromLocationId: direction.from,
-          toLocationId: direction.to,
-          quantity: input.quantity,
-          reason: input.reason,
-          reasonDetail: input.reasonDetail ?? null,
-          referenceType: input.referenceType ?? null,
-          referenceId: input.referenceId ?? null,
-          note: input.note ?? null,
-          actorId,
-        })
-        .returning();
-
-      this.logger.log(
-        `Movement ${movement.id}: ${input.reason} ${input.quantity} of ${variant.sku}`,
+    const [variant] = await tx
+      .select()
+      .from(productVariants)
+      .where(
+        and(
+          eq(productVariants.id, input.variantId),
+          eq(productVariants.organizationId, organizationId),
+        ),
       );
 
-      return movement;
-    });
+    if (!variant) throw new NotFoundException('No such variant');
+
+    const lotId = await this.resolveLot(tx, organizationId, variant, input);
+
+    /**
+     * Locked in a deterministic order, sorted by location id.
+     *
+     * A transfer touches two rows. Two concurrent transfers, A→B and B→A,
+     * that each grab their source first will deadlock — rare in testing,
+     * reliable under load. Sorting means both transactions always take the
+     * same row first, so one waits instead of dying.
+     */
+    const touched = [
+      ...(direction.from
+        ? [{ locationId: direction.from, delta: `-${input.quantity}` }]
+        : []),
+      ...(direction.to
+        ? [{ locationId: direction.to, delta: input.quantity }]
+        : []),
+    ].sort((a, b) => a.locationId.localeCompare(b.locationId));
+
+    for (const { locationId, delta } of touched) {
+      await this.assertUsableLeaf(tx, organizationId, locationId);
+      await this.applyDelta(tx, organizationId, {
+        variantId: input.variantId,
+        locationId,
+        lotId,
+        delta,
+      });
+    }
+
+    const [movement] = await tx
+      .insert(stockMovements)
+      .values({
+        organizationId,
+        variantId: input.variantId,
+        // Snapshot, not a join: a SKU rename must not rewrite history
+        // (ADR-023).
+        sku: variant.sku,
+        lotId,
+        fromLocationId: direction.from,
+        toLocationId: direction.to,
+        quantity: input.quantity,
+        reason: input.reason,
+        reasonDetail: input.reasonDetail ?? null,
+        referenceType: input.referenceType ?? null,
+        referenceId: input.referenceId ?? null,
+        note: input.note ?? null,
+        actorId,
+      })
+      .returning();
+
+    this.logger.log(
+      `Movement ${movement.id}: ${input.reason} ${input.quantity} of ${variant.sku}`,
+    );
+
+    return movement;
   }
 
   /**
@@ -428,15 +444,17 @@ export class StockService {
   /**
    * Applies a signed delta to one cache row, taking its lock in the process.
    *
-   * Written as raw SQL for two reasons. The arbiter is named explicitly rather
-   * than inferred from a column list, because the constraint is
-   * NULLS NOT DISTINCT and a mis-inferred arbiter surfaces as a duplicate-key
-   * error instead of an upsert. And the arithmetic happens in Postgres, so a
-   * numeric never passes through a JS double (ADR-025).
+   * Two statements, because CHECK (quantity >= 0) is evaluated on the tuple
+   * being inserted, before Postgres looks for a conflict. ON CONFLICT catches
+   * unique violations only — inserting a negative delta directly fails
+   * outright even when the shelf holds plenty.
    *
-   * The insert is what acquires the lock, even for a shelf with no row yet —
-   * which is the whole reason the cache exists rather than the balance being
-   * summed from the ledger on demand.
+   * So the insert carries zero. It exists to make the row present and to take
+   * its lock, including for a shelf that has no row yet, which is the whole
+   * reason the cache exists rather than the balance being summed from the
+   * ledger on demand (ADR-025). DO UPDATE rather than DO NOTHING because
+   * DO NOTHING returns no row on conflict and there would be nothing to update
+   * in the second statement.
    */
   private async applyDelta(
     tx: Tx,
@@ -448,19 +466,6 @@ export class StockService {
       delta: string;
     },
   ): Promise<void> {
-    /**
-     * Two statements, because CHECK (quantity >= 0) is evaluated on the tuple
-     * being inserted, before Postgres looks for a conflict. ON CONFLICT catches
-     * unique violations only — inserting a negative delta directly fails
-     * outright even when the shelf holds plenty.
-     *
-     * So the insert carries zero. It exists to make the row present and to take
-     * its lock, including for a shelf that has no row yet, which is the whole
-     * reason the cache exists rather than the balance being summed from the
-     * ledger on demand (ADR-025). DO UPDATE rather than DO NOTHING because
-     * DO NOTHING returns no row on conflict and there would be nothing to
-     * update in the second statement.
-     */
     const existing = await tx.execute(sql`
       insert into ${stockLevels}
         (organization_id, variant_id, location_id, lot_id, quantity)
