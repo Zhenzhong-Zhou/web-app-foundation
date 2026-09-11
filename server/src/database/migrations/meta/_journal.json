@@ -78,6 +78,13 @@
       "when": 1789154925615,
       "tag": "0010_updated_at_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789158560549,
+      "tag": "0011_address_is_active",
+      "breakpoints": true
     }
   ]
 }

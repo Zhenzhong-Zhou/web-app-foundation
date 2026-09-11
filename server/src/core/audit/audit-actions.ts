@@ -33,6 +33,13 @@ export const AUDIT_ACTIONS = {
   ORDER_CREATED: 'order.created',
   ORDER_UPDATED: 'order.updated',
   ORDER_LINE_RECEIVED: 'order.line_received',
+
+  PARTNER_ADDRESS_CREATED: 'partner.address.created',
+  PARTNER_ADDRESS_UPDATED: 'partner.address.updated',
+  PARTNER_ADDRESS_DELETED: 'partner.address.deleted',
+  PARTNER_CONTACT_CREATED: 'partner.contact.created',
+  PARTNER_CONTACT_UPDATED: 'partner.contact.updated',
+  PARTNER_ADDRESS_RETIRED: 'partner.address.retired',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

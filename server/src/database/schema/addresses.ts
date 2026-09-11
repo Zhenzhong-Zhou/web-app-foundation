@@ -75,6 +75,18 @@ export const addresses = pgTable(
     /** What the order form reaches for first. At most one per owner. */
     isDefault: boolean('is_default').notNull().default(false),
 
+    /**
+     * Retired rather than deleted, matching contacts and everything else here.
+     *
+     * Nothing references an address — the order snapshots where it shipped
+     * (ADR-028) — so a hard delete would be safe. It is still wrong: people
+     * delete a warehouse address by accident and want it back, and "everywhere
+     * we have ever shipped" is a question somebody eventually asks. The column
+     * costs a filter; adding it later would cost a migration and an audit of
+     * every query that reads this table.
+     */
+    isActive: boolean('is_active').notNull().default(true),
+
     ...timestamps,
   },
   (t) => [

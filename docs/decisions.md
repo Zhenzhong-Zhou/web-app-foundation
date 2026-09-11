@@ -1544,8 +1544,8 @@ staggered deliveries and not before.
 and the people to talk to — the sales rep you order from is not the accounts
 payable clerk who chases the invoice, and one customer with three delivery sites
 is ordinary rather than an edge case. Our own `site` locations need a postal
-address too, for a shipping label or a return slip. Manufacturers, carriers, and
-3PLs will each want the same two things when they arrive.
+address too, for a shipping label or a return slip. Carriers and 3PLs will want
+the same two things if they ever become entities of their own.
 
 Three shapes were available.
 
@@ -1553,10 +1553,10 @@ Three shapes were available.
 immediately. The first question anyone asks is *which* email, and the answer is
 "two rows, not one column". It also cannot express a default among several.
 
-**A table per owner** (`partner_addresses`, `location_addresses`,
-`manufacturer_addresses`) keeps every foreign key honest at the cost of copying
-the same eleven columns and the same indexes for each new owner, and of every
-query that wants "an address" knowing which table to look in.
+**A table per owner** (`partner_addresses`, `location_addresses`) keeps every
+foreign key honest at the cost of copying the same eleven columns and the same
+indexes for each new owner, and of every query that wants "an address" knowing
+which table to look in.
 
 **Polymorphic** (`owner_type` text, `owner_id` uuid) is the usual answer and the
 one we are rejecting. It buys the flexibility by giving up the foreign key.
@@ -1588,7 +1588,7 @@ in the tree makes it selectable in the move-stock dialog, and eventually someone
 transfers four hundred units into Acme's accounts payable department. The two
 concepts share the word "address" and nothing else.
 
-**Consequence.** The schema will look wrong to anyone reading it cold: three
+**Consequence.** The schema will look wrong to anyone reading it cold: two
 nullable foreign keys and a `num_nonnulls` check invite a tidy-up into
 `owner_type`/`owner_id`. That tidy-up is this decision being reversed, and this
 entry is the reason not to.
@@ -1603,6 +1603,14 @@ required to find rows whose owner is gone.
 application. Without it, a second default is writable, the picker chooses
 arbitrarily between them, and the bug is invisible until a shipment goes to the
 wrong dock.
+
+Both tables retire rather than delete. Nothing references an address — the
+order snapshots where it shipped, below — so removing one would be safe, and
+it is still wrong: an address deleted by accident has to be recoverable, and
+"everywhere we have ever shipped this partner" is a question somebody
+eventually asks. Contacts retire for a stronger reason, since a person may be
+named on an order that already shipped. The `DELETE` routes stay, because that
+is what the caller means; only the row survives.
 
 Orders snapshot the resolved address onto their own row at creation and keep
 `ship_to_address_id` for provenance. `addresses` holds what is true now; an
