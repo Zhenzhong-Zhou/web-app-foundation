@@ -6,8 +6,10 @@
  * no migration is generated and no query type-checks against it.
  */
 export * from './account-events';
+export * from './addresses';
 export * from './audit-log';
 export * from './auth-tokens';
+export * from './contacts';
 export * from './locations';
 export * from './lots';
 export * from './memberships';

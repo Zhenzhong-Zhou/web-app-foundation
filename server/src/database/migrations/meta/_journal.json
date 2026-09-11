@@ -64,6 +64,13 @@
       "when": 1789077614231,
       "tag": "0008_partners_and_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789154226568,
+      "tag": "0009_addresses_and_contacts",
+      "breakpoints": true
     }
   ]
 }
