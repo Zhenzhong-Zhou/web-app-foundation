@@ -73,3 +73,26 @@ export interface PartnerDetail extends Partner {
   addresses: Address[];
   contacts: Contact[];
 }
+
+export type OrderDirection = 'purchase' | 'sale';
+export type OrderStatus = 'draft' | 'confirmed' | 'received' | 'cancelled';
+
+export interface OrderSummary {
+  id: string;
+  partnerId: string;
+  partnerName: string;
+  direction: OrderDirection;
+  status: OrderStatus;
+  reference: string | null;
+  expectedAt: string | null;
+  createdAt: string;
+  lineCount: number;
+  /** numeric(18,4) as a string — never parsed into a JS number (ADR-025). */
+  quantityOrdered: string;
+  quantityFulfilled: string;
+}
+
+export interface OrderPage {
+  entries: OrderSummary[];
+  nextCursor: string | null;
+}

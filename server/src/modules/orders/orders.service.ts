@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 
 import { isCheckViolation, isUniqueViolation } from '../../database/errors';
 import {
@@ -17,6 +17,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { StockService, type Tx } from '../stock/stock.service';
 import type { CreateOrderDto } from './dto/create-order.dto';
+import { ListOrdersDto } from './dto/list-orders.dto';
 import type { ReceiveLineDto } from './dto/receive-line.dto';
 import type { UpdateOrderDto } from './dto/update-order.dto';
 
@@ -37,6 +38,11 @@ const ALLOWED_FROM: Record<string, readonly string[]> = {
   cancelled: ['draft', 'confirmed'],
 };
 
+const DEFAULT_LIMIT = 25;
+
+/** Draft and confirmed: the documents somebody still has to do something about. */
+const OPEN_STATUSES = ['draft', 'confirmed'] as const;
+
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
@@ -46,10 +52,86 @@ export class OrdersService {
     private readonly stock: StockService,
   ) {}
 
-  /** Newest first. Lines are on the detail read, not the list. */
-  list() {
-    return this.tenantDb.select(orders, undefined, {
-      orderBy: desc(orders.createdAt),
+  /**
+   * Newest first, paged by keyset, filtered to open orders by default.
+   *
+   * Three things this does that the partners list does not, all because
+   * orders accumulate forever where partners do not:
+   *
+   * The partner's name is joined in. A list showing partner_id is a list
+   * nobody can read, and the alternative — the client fetching every partner
+   * and joining in JS — is a second request plus a lookup that goes stale
+   * between them.
+   *
+   * Ordered and fulfilled totals come from two correlated subqueries rather
+   * than the detail read. "What is still outstanding" is the question this
+   * screen exists to answer, and opening each order to find out is the
+   * annoyance the column removes. They are cheap here only because the page
+   * is bounded: unpaginated, these would aggregate over every line ever
+   * written.
+   *
+   * The sums stay strings. numeric(18,4) through JS is how a quantity loses
+   * its last decimal place (ADR-025) — the client renders what Postgres
+   * computed and does no arithmetic on it.
+   */
+  async list(query: ListOrdersDto) {
+    const limit = query.limit ?? DEFAULT_LIMIT;
+
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const scope = [eq(orders.organizationId, organizationId)];
+
+      if (query.before) scope.push(lt(orders.id, query.before));
+      if (query.partnerId) scope.push(eq(orders.partnerId, query.partnerId));
+
+      if (!query.status || query.status === 'open') {
+        scope.push(inArray(orders.status, [...OPEN_STATUSES]));
+      } else if (query.status !== 'all') {
+        scope.push(eq(orders.status, query.status));
+      }
+
+      const rows = await tx
+        .select({
+          id: orders.id,
+          partnerId: orders.partnerId,
+          partnerName: partners.name,
+          direction: orders.direction,
+          status: orders.status,
+          reference: orders.reference,
+          expectedAt: orders.expectedAt,
+          createdAt: orders.createdAt,
+
+          lineCount: sql<number>`(
+            select count(*)::int from ${orderLines}
+            where ${orderLines.orderId} = ${orders.id}
+          )`,
+          quantityOrdered: sql<string>`(
+            select coalesce(sum(${orderLines.quantityOrdered}), 0)::text
+            from ${orderLines} where ${orderLines.orderId} = ${orders.id}
+          )`,
+          quantityFulfilled: sql<string>`(
+            select coalesce(sum(${orderLines.quantityFulfilled}), 0)::text
+            from ${orderLines} where ${orderLines.orderId} = ${orders.id}
+          )`,
+        })
+        .from(orders)
+        // Inner, not left: partner_id is not null and the foreign key
+        // restricts deletion, so an order with no partner cannot exist.
+        .innerJoin(partners, eq(partners.id, orders.partnerId))
+        .where(and(...scope))
+        // By id, not created_at. UUIDv7 sorts chronologically (ADR-010), so
+        // this is the same order with a single-column cursor and no tiebreak.
+        .orderBy(desc(orders.id))
+        // One extra row, to know whether there is another page without
+        // counting the table.
+        .limit(limit + 1);
+
+      const hasMore = rows.length > limit;
+      const entries = hasMore ? rows.slice(0, limit) : rows;
+
+      return {
+        entries,
+        nextCursor: hasMore ? entries[entries.length - 1].id : null,
+      };
     });
   }
 

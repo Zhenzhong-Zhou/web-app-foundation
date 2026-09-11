@@ -35,6 +35,11 @@ interface OrderResponse {
   }[];
 }
 
+interface OrderPage {
+  entries: OrderResponse[];
+  nextCursor: string | null;
+}
+
 interface RegisterResponse {
   user: { id: string; organizationId: string };
 }
@@ -460,7 +465,7 @@ describe('Orders (e2e)', () => {
         .expect(201);
 
       const res = await alpha.agent.get('/v1/orders').expect(200);
-      expect(body<OrderResponse[]>(res)).toHaveLength(0);
+      expect(body<OrderPage>(res).entries).toHaveLength(0);
     });
 
     it('is readable by a Viewer, which holds orders.view', async () => {
@@ -473,7 +478,94 @@ describe('Orders (e2e)', () => {
       const viewer = await addViewer(ctx, 'viewer@alpha.example.com');
       const res = await viewer.get('/v1/orders').expect(200);
 
-      expect(body<OrderResponse[]>(res)).toHaveLength(1);
+      expect(body<OrderPage>(res).entries).toHaveLength(1);
+    });
+
+    it('hides received and cancelled orders by default', async () => {
+      const ctx = await setup('alpha');
+
+      const open = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+
+      const closed = await confirmed(ctx);
+      await ctx.agent
+        .patch(`/v1/orders/${closed.id}`)
+        .send({ status: 'cancelled' })
+        .expect(204);
+
+      /**
+       * The default is the filter, not a convenience on top of one. An order
+       * list answers "what is still outstanding", and a year of closed
+       * documents buries that — so `open` is what you get by doing nothing,
+       * and the archive takes a deliberate ?status=all.
+       */
+      const res = await ctx.agent.get('/v1/orders').expect(200);
+      const entries = body<OrderPage>(res).entries;
+
+      expect(entries).toHaveLength(1);
+      expect(entries[0].id).toBe(open.id);
+    });
+
+    it('returns the archive when asked', async () => {
+      const ctx = await setup('alpha');
+
+      await ctx.agent
+        .post('/v1/orders')
+        .send(purchase(ctx.partnerId, ctx.variant.id))
+        .expect(201);
+
+      const closed = await confirmed(ctx);
+      await ctx.agent
+        .patch(`/v1/orders/${closed.id}`)
+        .send({ status: 'cancelled' })
+        .expect(204);
+
+      const res = await ctx.agent.get('/v1/orders?status=all').expect(200);
+      expect(body<OrderPage>(res).entries).toHaveLength(2);
+    });
+
+    it('pages without repeating or skipping a row', async () => {
+      const ctx = await setup('alpha');
+
+      for (let i = 0; i < 3; i += 1) {
+        await ctx.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: ctx.partnerId,
+            direction: 'purchase',
+            reference: `REF-${i}`,
+            lines: [{ variantId: ctx.variant.id, quantityOrdered: '10' }],
+          })
+          .expect(201);
+      }
+
+      const first = body<OrderPage>(
+        await ctx.agent.get('/v1/orders?limit=2').expect(200),
+      );
+
+      expect(first.entries).toHaveLength(2);
+      expect(first.nextCursor).not.toBeNull();
+
+      const second = body<OrderPage>(
+        await ctx.agent
+          .get(`/v1/orders?limit=2&before=${first.nextCursor}`)
+          .expect(200),
+      );
+
+      /**
+       * Keyset, so the second page is "older than this id" rather than "skip
+       * two" — a row inserted between the requests cannot shift the window and
+       * make the reader miss one.
+       */
+      expect(second.entries).toHaveLength(1);
+      expect(second.nextCursor).toBeNull();
+
+      const ids = [...first.entries, ...second.entries].map((row) => row.id);
+      expect(new Set(ids).size).toBe(3);
     });
   });
 });

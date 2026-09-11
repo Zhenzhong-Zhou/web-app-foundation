@@ -27,3 +27,23 @@ export function relativeTime(value: string | Date): string {
 
   return 'just now';
 }
+
+const DATE = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+
+/**
+ * "12 Sep 2026". Absolute rather than relative, unlike relativeTime above: a
+ * delivery three weeks out reads as noise as "in 21 days", and someone
+ * planning a dock wants the date.
+ *
+ * Rendered in the browser's timezone. Correct for timestamps; slightly wrong
+ * for expected_at, which is a calendar day stored as timestamptz and can show
+ * as the previous day in another timezone. A non-issue for one timezone, and
+ * a `date` column if that ever changes.
+ */
+export function formatDate(value: string | Date): string {
+  return DATE.format(new Date(value));
+}

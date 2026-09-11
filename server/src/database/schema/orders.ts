@@ -80,8 +80,14 @@ export const orders = pgTable(
 
     /**
      * When the whole order is due. Per-line dates matter for staggered
-     * deliveries and are recorded as an open decision — one date is right until
-     * something arrives in two parts on purpose.
+     * deliveries and are recorded as an open decision — one date is right
+     * until something arrives in two parts on purpose.
+     *
+     * timestamptz, though this is really a calendar day somebody typed rather
+     * than a moment. A due date entered in Vancouver renders as the previous
+     * day for a reader in Sydney. Harmless while everyone shares a timezone,
+     * wrong the moment they do not — at which point this wants to be `date`,
+     * and the migration is cheapest before real orders depend on it.
      */
     expectedAt: timestamp('expected_at', { withTimezone: true }),
 
@@ -144,7 +150,7 @@ export const orders = pgTable(
       'orders_status_check',
       sql`${t.status} in ('draft', 'confirmed', 'received', 'cancelled')`,
     ),
-    
+
     /**
      * A snapshot is all of it or none of it. Half a copied address is worse
      * than no copy: it reads as a complete destination and is missing the
@@ -167,5 +173,6 @@ export const orders = pgTable(
     index('orders_org_status_idx').on(t.organizationId, t.status),
     index('orders_org_partner_idx').on(t.organizationId, t.partnerId),
     index('orders_org_created_at_idx').on(t.organizationId, t.createdAt.desc()),
+    index('orders_org_id_idx').on(t.organizationId, t.id.desc()),
   ],
 );

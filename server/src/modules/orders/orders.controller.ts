@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
@@ -17,6 +18,7 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { ListOrdersDto } from './dto/list-orders.dto';
 import { ReceiveLineDto } from './dto/receive-line.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrdersService } from './orders.service';
@@ -25,10 +27,14 @@ import { OrdersService } from './orders.service';
 export class OrdersController {
   constructor(private readonly orders: OrdersService) {}
 
+  /**
+   * Query rather than body, so a filtered list is a URL someone can bookmark
+   * and a back button can restore.
+   */
   @Get()
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
-  list() {
-    return this.orders.list();
+  list(@Query() query: ListOrdersDto) {
+    return this.orders.list(query);
   }
 
   @Get(':id')

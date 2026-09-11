@@ -1,0 +1,1 @@
+CREATE INDEX "orders_org_id_idx" ON "orders" USING btree ("organization_id","id" DESC NULLS LAST);
