@@ -24,6 +24,7 @@ const NAV = [
   { label: 'Account', to: '/account' },
   { label: 'Inventory', to: '/inventory', permission: 'stock.view' },
   { label: 'Locations', to: '/locations', permission: 'locations.view' },
+  { label: 'Partners', to: '/partners', permission: 'partners.view' },
 ];
 
 /**

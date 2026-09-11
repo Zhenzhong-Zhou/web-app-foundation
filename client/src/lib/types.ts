@@ -32,3 +32,12 @@ export interface StockRow {
   /** A decimal string from numeric(18, 4). Never parsed — see ADR-025. */
   quantity: string;
 }
+
+export interface Partner {
+  id: string;
+  name: string;
+  code: string | null;
+  taxId: string | null;
+  notes: string | null;
+  isActive: boolean;
+}
