@@ -55,3 +55,9 @@ CREATE UNIQUE INDEX "contacts_location_primary_key" ON "contacts" USING btree ("
 CREATE INDEX "contacts_partner_id_idx" ON "contacts" USING btree ("partner_id");--> statement-breakpoint
 CREATE INDEX "contacts_location_id_idx" ON "contacts" USING btree ("location_id");--> statement-breakpoint
 CREATE INDEX "contacts_organization_id_idx" ON "contacts" USING btree ("organization_id");
+--> statement-breakpoint
+CREATE TRIGGER addresses_set_updated_at BEFORE UPDATE ON addresses
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+--> statement-breakpoint
+CREATE TRIGGER contacts_set_updated_at BEFORE UPDATE ON contacts
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();

@@ -16,7 +16,13 @@ export const primaryKey = () =>
  * eight hours with nothing to indicate it.
  *
  * updated_at is maintained by a database trigger, not by the application —
- * see the hand-written section of the first migration.
+ * `set_updated_at()` is defined in the hand-written section of 0001.
+ *
+ * **A new table using this needs its own CREATE TRIGGER in the migration that
+ * creates it.** drizzle-kit does not model triggers, so nothing generates it
+ * and nothing warns you: updated_at simply freezes at insert and every row
+ * looks fine. Eight tables missed it between 0002 and 0008 before anyone
+ * checked — see 0010 for the repair.
  */
 export const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true })

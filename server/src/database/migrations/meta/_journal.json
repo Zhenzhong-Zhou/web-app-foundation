@@ -71,6 +71,13 @@
       "when": 1789154226568,
       "tag": "0009_addresses_and_contacts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789154925615,
+      "tag": "0010_updated_at_triggers",
+      "breakpoints": true
     }
   ]
 }
