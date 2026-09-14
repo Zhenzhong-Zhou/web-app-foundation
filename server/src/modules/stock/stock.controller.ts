@@ -4,6 +4,9 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -14,9 +17,11 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { ListLotsDto } from './dto/list-lots.dto';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
 import { RecordMovementDto } from './dto/record-movement.dto';
+import { UpdateLotDto } from './dto/update-lot.dto';
 import { StockService } from './stock.service';
 
 /**
@@ -68,5 +73,26 @@ export class StockController {
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
   listMovements(@Query() query: ListMovementsDto) {
     return this.stock.listMovements(query);
+  }
+
+  @Get('lots')
+  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
+  listLots(@Query() query: ListLotsDto) {
+    return this.stock.listLots(query);
+  }
+
+  @Patch('lots/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.STOCK_MOVE)
+  @Audited({
+    action: AUDIT_ACTIONS.STOCK_LOT_UPDATED,
+    resourceType: 'lot',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async updateLot(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateLotDto,
+  ): Promise<void> {
+    await this.stock.updateLot(id, dto);
   }
 }

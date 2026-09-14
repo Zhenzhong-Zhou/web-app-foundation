@@ -26,6 +26,7 @@ import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { StockActions } from './stock-actions';
 import type { Location, StockRow } from '../lib/types';
 import { MovementHistoryDialog } from './movement-history-dialog';
+import { EditLotDialog } from './edit-lot-dialog';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -74,6 +75,7 @@ export function InventoryPage() {
   } | null>(null);
   const [viewing, setViewing] = useState<StockRow | null>(null);
   const [includeEmpty, setIncludeEmpty] = useState(false);
+  const [editingLot, setEditingLot] = useState<StockRow | null>(null);
 
   const loading = rows === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
@@ -256,6 +258,7 @@ export function InventoryPage() {
                           setMoving({ mode, row: selected })
                         }
                         onHistory={setViewing}
+                        onEditLot={setEditingLot}
                       />
                     )}
                   </TableCell>
@@ -291,6 +294,13 @@ export function InventoryPage() {
       {viewing && (
         <MovementHistoryDialog row={viewing} onClose={() => setViewing(null)} />
       )}
+
+      <EditLotDialog
+        key={editingLot?.lotId ?? 'closed'}
+        row={editingLot}
+        onClose={() => setEditingLot(null)}
+        onSaved={loadStock}
+      />
     </Stack>
   );
 }

@@ -40,6 +40,8 @@ export const AUDIT_ACTIONS = {
   PARTNER_CONTACT_CREATED: 'partner.contact.created',
   PARTNER_CONTACT_UPDATED: 'partner.contact.updated',
   PARTNER_CONTACT_RETIRED: 'partner.contact.retired',
+
+  STOCK_LOT_UPDATED: 'stock.lot_updated',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

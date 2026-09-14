@@ -1854,6 +1854,25 @@ they exist so the reasoning is not rediscovered from scratch.
   with no state of its own — the same shape as the LocationNode extraction. Left
   whole because extracting now is guessing at the seam; when a fifth dialog or a
   second filter lands, the seam will be obvious rather than inferred.
+- **Reopening a closed order.** Received and cancelled are terminal
+  (ADR-027), so a mistake means retyping. Real systems answer this with
+  "copy to new order" rather than un-cancelling — the history stays honest
+  and nobody retypes. Build it when cancelling by accident actually stings;
+  until then the workaround is raising a new order by hand.
+- **Splitting `stock.adjust` out of `stock.move`.** One permission covers
+  receive, ship, transfer, and adjust today, on the reasoning in
+  permissions.ts that a split would imply one is safer than another.
+  Adjusting is different in kind, though: receiving and shipping record what
+  happened in the world, adjusting overrides the record itself, and it is the
+  one movement with no external event behind it. The standard answer is a
+  narrower permission held by fewer people. Costs a new key and a re-seed
+  everywhere, so it waits until more than one person can reach the
+  inventory screen.
+- **Confirming before closing an unreceived order.** `received` is a person
+  saying the order is done, and that stays true of a short shipment
+  (ADR-027) — but the screen currently lets someone close an order with
+  nothing received and no warning. `fullyReceived` on the detail response is
+  what a confirmation would read; the dialog is not built.
 
 ---
 

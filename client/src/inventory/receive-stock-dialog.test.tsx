@@ -88,7 +88,7 @@ describe('ReceiveStockDialog', () => {
      * textbox, and the lot number appearing is what proves the branch rendered.
      */
     expect(
-      await screen.findByRole('textbox', { name: 'Lot number' }),
+      await screen.findByRole('combobox', { name: 'Lot number' }),
     ).toBeRequired();
   });
 

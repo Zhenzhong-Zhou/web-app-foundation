@@ -5,7 +5,7 @@ import { useState } from 'react';
 import type { StockRow } from '../lib/types';
 import type { MoveMode } from './move-stock-dialog';
 
-type Choice = MoveMode | 'history';
+type Choice = MoveMode | 'history' | 'lot';
 
 /**
  * A menu rather than three buttons per row. Shipping, moving, and correcting
@@ -16,10 +16,12 @@ export function StockActions({
   row,
   onSelect,
   onHistory,
+  onEditLot,
 }: {
   row: StockRow;
   onSelect: (mode: MoveMode, row: StockRow) => void;
   onHistory: (row: StockRow) => void;
+  onEditLot: (row: StockRow) => void;
 }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [pending, setPending] = useState<Choice | null>(null);
@@ -36,6 +38,7 @@ export function StockActions({
     if (!pending) return;
 
     if (pending === 'history') onHistory(row);
+    else if (pending === 'lot') onEditLot(row);
     else onSelect(pending, row);
 
     setPending(null);
@@ -81,6 +84,18 @@ export function StockActions({
         >
           Correct the count
         </MenuItem>
+        {/* Only for a lot-tracked row — there is nothing to edit otherwise,
+            and the label would be a dead end on most of the warehouse. */}
+        {row.lotId && (
+          <MenuItem
+            onClick={() => {
+              setPending('lot');
+              setAnchor(null);
+            }}
+          >
+            Edit lot details
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             setPending('history');

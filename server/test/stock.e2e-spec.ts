@@ -623,4 +623,239 @@ describe('Stock (e2e)', () => {
       expect(body<{ entries: unknown[] }>(res).entries).toHaveLength(0);
     });
   });
+
+  describe('GET /v1/stock/lots', () => {
+    it('returns only the lots for the variant asked for', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+
+      const other = body<{
+        product: { variants: { id: string }[] };
+      }>(
+        await ctx.agent
+          .post('/v1/products')
+          .send({
+            type: 'good',
+            name: 'Other Widget',
+            variant: { sku: 'WIDGET-2', tracksLots: true },
+          })
+          .expect(201),
+      ).product.variants[0];
+
+      await ctx.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: ctx.variant.id,
+          toLocationId: ctx.locationId,
+          quantity: '10',
+          reason: 'receipt',
+          lot: { code: 'L2024-A' },
+        })
+        .expect(201);
+
+      await ctx.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: other.id,
+          toLocationId: ctx.locationId,
+          quantity: '10',
+          reason: 'receipt',
+          lot: { code: 'L2024-B' },
+        })
+        .expect(201);
+
+      /**
+       * The contract, and why variantId is required rather than optional: a
+       * picker offering another product's codes is the mistake this endpoint
+       * exists to prevent.
+       */
+      const res = await ctx.agent
+        .get(`/v1/stock/lots?variantId=${ctx.variant.id}`)
+        .expect(200);
+
+      const rows = body<{ code: string }[]>(res);
+      expect(rows).toHaveLength(1);
+      expect(rows[0].code).toBe('L2024-A');
+    });
+
+    it('does not show another organization lots', async () => {
+      const alpha = await setup('alpha', { tracksLots: true });
+      const beta = await setup('beta', { tracksLots: true });
+
+      await beta.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: beta.variant.id,
+          toLocationId: beta.locationId,
+          quantity: '10',
+          reason: 'receipt',
+          lot: { code: 'L2024-A' },
+        })
+        .expect(201);
+
+      /**
+       * Empty rather than 404: the scoping filters rather than checks, the
+       * same as GET /stock. "No rows" and "not yours" look identical from
+       * outside, which is the point — a 404 would confirm the id exists
+       * somewhere.
+       */
+      const res = await alpha.agent
+        .get(`/v1/stock/lots?variantId=${beta.variant.id}`)
+        .expect(200);
+
+      expect(body<unknown[]>(res)).toHaveLength(0);
+    });
+  });
+
+  describe('PATCH /v1/stock/lots/:id', () => {
+    /** Receives stock and returns the lot row it created. */
+    async function receiveWithLot(
+      ctx: Awaited<ReturnType<typeof setup>>,
+      lot: { code: string; expiresAt?: string; isAssigned?: boolean },
+    ) {
+      await ctx.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: ctx.variant.id,
+          toLocationId: ctx.locationId,
+          quantity: '10',
+          reason: 'receipt',
+          lot,
+        })
+        .expect(201);
+
+      // By code, not "the first row" — a test with two lots would otherwise
+      // get the same one twice and pass for the wrong reason.
+      const [row] = await db
+        .select()
+        .from(lots)
+        .where(eq(lots.code, lot.code.toUpperCase()));
+
+      return row;
+    }
+
+    it('corrects the expiry on any lot', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, {
+        code: 'L2026-A',
+        expiresAt: '2027-01-01',
+        isAssigned: false,
+      });
+
+      /**
+       * Editable even on a supplier-printed lot, and not only for typos:
+       * stability testing extends a shelf life and suppliers reissue
+       * certificates. Nothing physical contradicts a corrected date.
+       */
+      await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ expiresAt: '2027-06-30' })
+        .expect(204);
+
+      const [updated] = await db.select().from(lots);
+      expect(updated.expiresAt?.toISOString()).toContain('2027-06-30');
+    });
+
+    it('renames a code this organization invented', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, {
+        code: '2062A',
+        isAssigned: true,
+      });
+
+      // No label exists, so there is no external truth the row is disagreeing
+      // with. A typo is a typo.
+      await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ code: '2026A' })
+        .expect(204);
+
+      const [updated] = await db.select().from(lots);
+      expect(updated.code).toBe('2026A');
+    });
+
+    it('refuses to rename a supplier-printed code', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, {
+        code: 'L2026-A',
+        isAssigned: false,
+      });
+
+      /**
+       * The code is on the boxes. Renaming the row would make the record
+       * disagree with the warehouse — the honest correction is moving stock
+       * between two lots, which leaves a trail.
+       */
+      const res = await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ code: 'L2026-B' })
+        .expect(409);
+
+      expect(JSON.stringify(res.body)).toContain('L2026-A');
+
+      const [unchanged] = await db.select().from(lots);
+      expect(unchanged.code).toBe('L2026-A');
+    });
+
+    it('refuses a rename onto a code that already exists', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      await receiveWithLot(ctx, { code: 'L2026-A', isAssigned: true });
+      const second = await receiveWithLot(ctx, {
+        code: 'L2026-B',
+        isAssigned: true,
+      });
+
+      // Merging two lots is a different operation with its own rules, not a
+      // rename that happens to collide.
+      await ctx.agent
+        .patch(`/v1/stock/lots/${second.id}`)
+        .send({ code: 'L2026-A' })
+        .expect(409);
+    });
+
+    it('uppercases a corrected code', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, {
+        code: '2062A',
+        isAssigned: true,
+      });
+
+      await ctx.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ code: '2026a' })
+        .expect(204);
+
+      // Same normalization as on creation, or the unique index sees two lots
+      // for one run.
+      const [updated] = await db.select().from(lots);
+      expect(updated.code).toBe('2026A');
+    });
+
+    it('refuses a lot in another organization', async () => {
+      const alpha = await setup('alpha', { tracksLots: true });
+      const beta = await setup('beta', { tracksLots: true });
+      const lot = await receiveWithLot(beta, {
+        code: 'L2026-A',
+        isAssigned: true,
+      });
+
+      await alpha.agent
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ code: 'HIJACKED' })
+        .expect(404);
+    });
+
+    it('refuses a Viewer, which lacks stock.move', async () => {
+      const ctx = await setup('alpha', { tracksLots: true });
+      const lot = await receiveWithLot(ctx, {
+        code: 'L2026-A',
+        isAssigned: true,
+      });
+      const viewer = await addViewer(ctx, 'viewer@alpha.example.com');
+
+      await viewer
+        .patch(`/v1/stock/lots/${lot.id}`)
+        .send({ expiresAt: '2027-06-30' })
+        .expect(403);
+    });
+  });
 });
