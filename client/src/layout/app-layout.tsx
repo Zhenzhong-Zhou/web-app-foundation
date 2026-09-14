@@ -1,10 +1,15 @@
+import AccountCircle from '@mui/icons-material/AccountCircle';
 import {
   Alert,
   AppBar,
   Box,
   Button,
   Container,
+  Divider,
+  IconButton,
   Link,
+  Menu,
+  MenuItem,
   Stack,
   Toolbar,
   Typography,
@@ -14,18 +19,31 @@ import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
 import { ColorModeSelect } from '../components/color-mode-select';
-import { ErrorBoundary } from '../components/error-boundary.tsx';
+import { ErrorBoundary } from '../components/error-boundary';
 import { api } from '../lib/api';
 
+/**
+ * The work, in the order it happens: what you have, what you have asked for,
+ * and the three things an order is raised against.
+ *
+ * Admin screens are deliberately absent — see ACCOUNT_MENU. Nine flat links
+ * is more than a bar carries, and the split is not alphabetical: these are
+ * visited daily, those are visited when something is wrong.
+ */
 const NAV = [
+  { label: 'Inventory', to: '/inventory', permission: 'stock.view' },
+  { label: 'Orders', to: '/orders', permission: 'orders.view' },
   { label: 'Products', to: '/products', permission: 'products.view' },
+  { label: 'Partners', to: '/partners', permission: 'partners.view' },
+  { label: 'Locations', to: '/locations', permission: 'locations.view' },
+];
+
+/** Reached occasionally, and not worth a slot in the bar. */
+const ACCOUNT_MENU = [
+  { label: 'Account', to: '/account' },
+  { label: 'Devices', to: '/account/sessions' },
   { label: 'Members', to: '/members' },
   { label: 'Audit log', to: '/audit', permission: 'audit.view' },
-  { label: 'Account', to: '/account' },
-  { label: 'Inventory', to: '/inventory', permission: 'stock.view' },
-  { label: 'Locations', to: '/locations', permission: 'locations.view' },
-  { label: 'Partners', to: '/partners', permission: 'partners.view' },
-  { label: 'Orders', to: '/orders', permission: 'orders.view' },
 ];
 
 /**
@@ -41,6 +59,10 @@ const NAV = [
 export function AppLayout() {
   const { session, refresh } = useAuth();
   const location = useLocation();
+  const [menu, setMenu] = useState<HTMLElement | null>(null);
+
+  const visible = (item: { permission?: string }) =>
+    !item.permission || session?.permissions.includes(item.permission);
 
   return (
     <Box>
@@ -51,16 +73,22 @@ export function AppLayout() {
         variant="outlined"
       >
         <Toolbar sx={{ gap: 2, flexWrap: 'wrap', py: { xs: 1, sm: 0 } }}>
-          <Typography variant="h6" component="div" sx={{ mr: 2 }}>
-            {session?.organization?.name ?? 'No organization'}
-          </Typography>
+          {/* The organisation name is the way home, which is what a person
+              expects of the thing in the top-left corner. */}
+          <Link
+            component={RouterLink}
+            to="/"
+            underline="none"
+            color="inherit"
+            sx={{ mr: 2 }}
+          >
+            <Typography variant="h6" component="div">
+              {session?.organization?.name ?? 'No organization'}
+            </Typography>
+          </Link>
 
           <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }}>
-            {NAV.filter(
-              (item) =>
-                !item.permission ||
-                session?.permissions.includes(item.permission),
-            ).map((item) => (
+            {NAV.filter(visible).map((item) => (
               <Link
                 key={item.to}
                 component={RouterLink}
@@ -75,23 +103,63 @@ export function AppLayout() {
             ))}
           </Stack>
 
-          <ColorModeSelect />
-
-          {/* The row is deleted server-side before the cookie is cleared, so
-              a failure leaves the user visibly signed in — the safe direction
-              to fail (ADR-011). refresh() then 401s and Protected redirects. */}
-          <Button
-            variant="text"
-            onClick={() => {
-              void api('/auth/logout', { method: 'POST' }).then(refresh);
-            }}
+          <IconButton
+            // The email rather than "Account": on a shared terminal, who you
+            // are signed in as is the thing worth being able to check.
+            aria-label={`Signed in as ${session?.user.email ?? 'unknown'}`}
+            onClick={(event) => setMenu(event.currentTarget)}
           >
-            Sign out
-          </Button>
+            <AccountCircle />
+          </IconButton>
+
+          <Menu anchorEl={menu} open={!!menu} onClose={() => setMenu(null)}>
+            <MenuItem disabled sx={{ opacity: '1 !important' }}>
+              <Typography variant="caption" color="text.secondary">
+                {session?.user.email}
+              </Typography>
+            </MenuItem>
+
+            <Divider />
+
+            {ACCOUNT_MENU.filter(visible).map((item) => (
+              <MenuItem
+                key={item.to}
+                component={RouterLink}
+                to={item.to}
+                onClick={() => setMenu(null)}
+              >
+                {item.label}
+              </MenuItem>
+            ))}
+
+            {/* A preference, not a destination — and not a reason to close the
+                menu, unlike everything above it. */}
+            <MenuItem
+              disableRipple
+              sx={{ '&:hover': { bgcolor: 'transparent' } }}
+            >
+              <ColorModeSelect />
+            </MenuItem>
+
+            <Divider />
+
+            {/* The row is deleted server-side before the cookie is cleared, so
+                a failure leaves the user visibly signed in — the safe direction
+                to fail (ADR-011). refresh() then 401s and Protected
+                redirects. */}
+            <MenuItem
+              onClick={() => {
+                setMenu(null);
+                void api('/auth/logout', { method: 'POST' }).then(refresh);
+              }}
+            >
+              Sign out
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
         <Stack spacing={3}>
           <UnverifiedBanner />
           {/* Inside the Container so the header and nav survive: a person
