@@ -1,27 +1,28 @@
+import { Alert, Button, CircularProgress, Stack } from '@mui/material';
 import type { ReactNode } from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
+import { AccountPage } from './account/account-page';
+import { SessionsPage } from './account/sessions-page';
+import { AuditPage } from './audit/audit-page';
+import { ForgotPasswordPage } from './auth/forgot-password-page';
 import { LoginPage } from './auth/login-page';
+import { RegisterPage } from './auth/register-page';
+import { ResetPasswordPage } from './auth/reset-password-page';
 import { useAuth } from './auth/use-auth';
-import { useDelayedFlag } from './lib/use-delayed-flag';
-import { RegisterPage } from './auth/register-page.tsx';
-import { VerifyEmailPage } from './auth/verify-email-page.tsx';
-import { ResetPasswordPage } from './auth/reset-password-page.tsx';
-import { ForgotPasswordPage } from './auth/forgot-password-page.tsx';
-import { AppLayout } from './layout/app-layout.tsx';
-import { AccountPage } from './account/account-page.tsx';
-import { SessionsPage } from './account/sessions-page.tsx';
-import { MembersPage } from './members/members-page.tsx';
-import { AuditPage } from './audit/audit-page.tsx';
-import { ProductsPage } from './products/products-page.tsx';
-import { ProductDetailPage } from './products/product-detail-page.tsx';
+import { VerifyEmailPage } from './auth/verify-email-page';
 import { InventoryPage } from './inventory/inventory-page';
+import { AppLayout } from './layout/app-layout';
+import { useDelayedFlag } from './lib/use-delayed-flag';
 import { LocationsPage } from './locations/locations-page';
-import { PartnersPage } from './partners/partners-page';
-import { PartnerDetailPage } from './partners/partner-detail-page';
-import { OrdersPage } from './orders/orders-page';
+import { MembersPage } from './members/members-page';
 import { CreateOrderPage } from './orders/create-order-page';
 import { OrderDetailPage } from './orders/order-detail-page';
+import { OrdersPage } from './orders/orders-page';
+import { PartnerDetailPage } from './partners/partner-detail-page';
+import { PartnersPage } from './partners/partners-page';
+import { ProductDetailPage } from './products/product-detail-page';
+import { ProductsPage } from './products/products-page';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -52,14 +53,32 @@ function AuthOnly({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-  const { loading, error } = useAuth();
+  const { loading, error, refresh } = useAuth();
   const showSpinner = useDelayedFlag(loading);
 
-  // The one place in the app that blocks on a request: until /auth/me answers
-  // there is no correct thing to draw. Everything else renders its layout and
-  // fills in.
-  if (loading) return showSpinner ? <p>Loading…</p> : null;
-  if (error) return <p role="alert">Could not reach the server.</p>;
+  if (loading) {
+    return showSpinner ? (
+      <Stack sx={{ p: 8, alignItems: 'center' }}>
+        <CircularProgress />
+      </Stack>
+    ) : null;
+  }
+
+  /**
+   * A retry rather than a dead end. Boot failure is usually transient — a cold
+   * start on the API, a dropped packet — and `refresh` re-runs exactly the
+   * request that failed. Without it the only way out of this screen is knowing
+   * to press F5, and there is nothing in the browser for a user to clear:
+   * the session is an httpOnly cookie and the client persists nothing.
+   */
+  if (error) {
+    return (
+      <Stack spacing={2} sx={{ p: 4, alignItems: 'flex-start' }}>
+        <Alert severity="error">Could not reach the server.</Alert>
+        <Button onClick={() => void refresh()}>Try again</Button>
+      </Stack>
+    );
+  }
 
   return (
     <Routes>
