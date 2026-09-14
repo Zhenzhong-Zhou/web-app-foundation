@@ -182,7 +182,35 @@ export class OrdersService {
       if (!order) throw new NotFoundException('No such order');
 
       const lines = await tx
-        .select()
+        .select({
+          id: orderLines.id,
+          variantId: orderLines.variantId,
+          sku: orderLines.sku,
+          quantityOrdered: orderLines.quantityOrdered,
+          quantityFulfilled: orderLines.quantityFulfilled,
+
+          /**
+           * What is still to come. Computed here because subtracting two
+           * numeric(18,4) values in JS means parsing both into doubles
+           * (ADR-025). greatest(…, 0) because an over-receipt is recorded as
+           * an unreferenced movement rather than on the line — a negative
+           * would be nonsense if that ever changed.
+           */
+          quantityOutstanding: sql<string>`greatest(
+            ${orderLines.quantityOrdered} - ${orderLines.quantityFulfilled}, 0
+          )::text`,
+
+          /**
+           * For hiding the Receive control, which the server refuses with a
+           * 409 once a line is full. A boolean rather than leaving the client
+           * to compare: it could only do so by parsing, and matching the
+           * outstanding string against '0.0000' would break the day the scale
+           * changes.
+           */
+          isComplete: sql<boolean>`
+            ${orderLines.quantityFulfilled} >= ${orderLines.quantityOrdered}
+          `,
+        })
         .from(orderLines)
         .where(
           and(

@@ -568,4 +568,57 @@ describe('Orders (e2e)', () => {
       expect(new Set(ids).size).toBe(3);
     });
   });
+
+  describe('GET /v1/orders/:id', () => {
+    it('reports what is outstanding and when a line is done', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      const before = body<{
+        partnerName: string;
+        fullyReceived: boolean;
+        lines: { quantityOutstanding: string; isComplete: boolean }[];
+      }>(await ctx.agent.get(`/v1/orders/${order.id}`).expect(200));
+
+      // Joined, because a detail page headed by a UUID is unreadable.
+      expect(before.partnerName).toBe('Acme Supplies');
+      expect(before.lines[0].quantityOutstanding).toBe('40.0000');
+      expect(before.lines[0].isComplete).toBe(false);
+      expect(before.fullyReceived).toBe(false);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: ctx.locationId, quantity: '40' })
+        .expect(201);
+
+      const after = body<{
+        fullyReceived: boolean;
+        status: string;
+        lines: { quantityOutstanding: string; isComplete: boolean }[];
+      }>(await ctx.agent.get(`/v1/orders/${order.id}`).expect(200));
+
+      /**
+       * All three computed in Postgres. The client could subtract the two
+       * quantities itself, but only by parsing numeric(18,4) into doubles —
+       * the precision loss ADR-025 exists to prevent.
+       */
+      expect(after.lines[0].quantityOutstanding).toBe('0.0000');
+      expect(after.lines[0].isComplete).toBe(true);
+      expect(after.fullyReceived).toBe(true);
+
+      // The status has not moved. Arithmetic does not close a document
+      // (ADR-027) — that stays a person's decision.
+      expect(after.status).toBe('confirmed');
+    });
+
+    it('refuses an order in another organization', async () => {
+      const alpha = await setup('alpha');
+      const beta = await setup('beta');
+      const theirs = await confirmed(beta);
+
+      // Scoped, so not found rather than forbidden — a 403 would confirm the
+      // id exists somewhere.
+      await alpha.agent.get(`/v1/orders/${theirs.id}`).expect(404);
+    });
+  });
 });

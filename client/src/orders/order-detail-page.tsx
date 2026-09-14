@@ -29,6 +29,7 @@ import type {
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { leavesOf } from '../locations/tree';
+import { CloseOrderDialog } from './close-order-dialog';
 import { ReceiveLineDialog } from './receive-line-dialog';
 
 function messageFor(caught: unknown): string {
@@ -77,6 +78,7 @@ export function OrderDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [receiving, setReceiving] = useState<OrderLine | null>(null);
   const [working, setWorking] = useState(false);
+  const [closing, setClosing] = useState(false);
 
   const canUpdate = !!session?.permissions.includes('orders.update');
   const canReceive = !!session?.permissions.includes('orders.receive');
@@ -200,9 +202,17 @@ export function OrderDetailPage() {
           {NEXT_STATUSES[order.status].map((next) => (
             <Button
               key={next}
-              variant={next === 'cancelled' ? 'text' : 'contained'}
+              variant={next === 'confirmed' ? 'contained' : 'text'}
               disabled={working}
-              onClick={() => void moveTo(next)}
+              onClick={() => {
+                // Only the close needs asking about. Confirming commits to an
+                // order and cancelling is already phrased as a decision.
+                if (next === 'received' && !order.fullyReceived) {
+                  setClosing(true);
+                  return;
+                }
+                void moveTo(next);
+              }}
             >
               {STATUS_LABEL[next]}
             </Button>
@@ -222,6 +232,7 @@ export function OrderDetailPage() {
                 <TableCell>SKU</TableCell>
                 <TableCell>Ordered</TableCell>
                 <TableCell>Received</TableCell>
+                <TableCell>Outstanding</TableCell>
                 {receivable && <TableCell align="right">Receive</TableCell>}
               </TableRow>
             </TableHead>
@@ -240,16 +251,19 @@ export function OrderDetailPage() {
                       that column is wanted, the server computes it. */}
                   <TableCell>{line.quantityOrdered}</TableCell>
                   <TableCell>{line.quantityFulfilled}</TableCell>
+                  <TableCell>{line.quantityOutstanding}</TableCell>
 
                   {receivable && (
                     <TableCell align="right">
-                      <Button
-                        variant="text"
-                        size="small"
-                        onClick={() => setReceiving(line)}
-                      >
-                        Receive
-                      </Button>
+                      {!line.isComplete && (
+                        <Button
+                          variant="text"
+                          size="small"
+                          onClick={() => setReceiving(line)}
+                        >
+                          Receive
+                        </Button>
+                      )}
                     </TableCell>
                   )}
                 </TableRow>
@@ -276,6 +290,15 @@ export function OrderDetailPage() {
         locations={leaves}
         onClose={() => setReceiving(null)}
         onReceived={load}
+      />
+
+      <CloseOrderDialog
+        open={closing}
+        onClose={() => setClosing(false)}
+        onConfirm={() => {
+          setClosing(false);
+          void moveTo('received');
+        }}
       />
     </Stack>
   );

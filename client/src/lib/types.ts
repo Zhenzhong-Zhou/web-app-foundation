@@ -124,6 +124,8 @@ export interface OrderLine {
   sku: string;
   quantityOrdered: string;
   quantityFulfilled: string;
+  quantityOutstanding: string;
+  isComplete: boolean;
 }
 
 /** What GET /orders/:id returns — the order with its lines. */
