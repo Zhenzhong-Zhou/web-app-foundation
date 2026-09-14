@@ -43,6 +43,24 @@ interface MovementPage {
 const PAGE_SIZE = 25;
 
 /**
+ * Scoped to the lot when the row has one, because the dialog's own title
+ * claims it is: "History for WIDGET-1 · lot L2024-A" over every movement of
+ * the variant is the answer to a different question, and the wrong one to act
+ * on during a recall.
+ */
+function queryFor(row: StockRow, before?: string): string {
+  const params = new URLSearchParams({
+    variantId: row.variantId,
+    limit: String(PAGE_SIZE),
+  });
+  
+  if (row.lotId) params.set('lotId', row.lotId);
+  if (before) params.set('before', before);
+  
+  return params.toString();
+}
+
+/**
  * Direction is which location is set, not a column (ADR-023), so it is
  * reconstructed here the same way the service validates it.
  */
@@ -86,10 +104,8 @@ export function MovementHistoryDialog({
   useEffect(() => {
     if (!row) return;
     let ignore = false;
-
-    void api<MovementPage>(
-      `/stock/movements?variantId=${row.variantId}&limit=${PAGE_SIZE}`,
-    )
+    
+    void api<MovementPage>(`/stock/movements?${queryFor(row)}`)
       .then((page) => {
         if (ignore) return;
         setEntries(page.entries);
@@ -117,7 +133,7 @@ export function MovementHistoryDialog({
 
     try {
       const page = await api<MovementPage>(
-        `/stock/movements?variantId=${row.variantId}&limit=${PAGE_SIZE}&before=${cursor}`,
+        `/stock/movements?${queryFor(row, cursor)}`,
       );
 
       // Appended, never replaced. A keyset cursor pages forward through a fixed
@@ -153,11 +169,15 @@ export function MovementHistoryDialog({
         <Stack spacing={2}>
           {error && <FormError message={error} />}
 
-          {/* Every movement for this variant, not just this shelf. Stock that
-              moved away is the part of the story a per-location view loses. */}
+          {/* Scoped to the lot when the row has one, otherwise to the variant.
+              Either way it spans locations: stock that moved away is the part
+              of the story a per-shelf view loses. */}
           <Typography variant="body2" color="text.secondary">
-            Every movement of {row?.sku}, newest first. Nothing here can be
-            edited or removed — a correction is another movement that says so.
+            {row?.lotCode
+              ? `Every movement of lot ${row.lotCode}, newest first.`
+              : `Every movement of ${row?.sku}, newest first.`}{' '}
+            Nothing here can be edited or removed — a correction is another
+            movement that says so.
           </Typography>
 
           {entries === null && !error ? (

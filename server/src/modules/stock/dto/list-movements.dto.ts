@@ -34,6 +34,16 @@ export class ListMovementsDto {
   @IsUUID()
   variantId?: string;
 
+  /**
+   * Narrows to one lot. The row that opens the history dialog knows which lot
+   * it is, and without this the header says "lot L2024-A" over every movement
+   * of the variant — the answer to a different question, and the wrong one to
+   * act on during a recall.
+   */
+  @IsOptional()
+  @IsUUID()
+  lotId?: string;
+
   @IsOptional()
   @IsUUID()
   locationId?: string;

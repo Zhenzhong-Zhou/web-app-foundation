@@ -541,6 +541,7 @@ export class StockService {
         query.variantId
           ? eq(stockMovements.variantId, query.variantId)
           : undefined,
+        query.lotId ? eq(stockMovements.lotId, query.lotId) : undefined,
         query.locationId
           ? or(
               eq(stockMovements.fromLocationId, query.locationId),
