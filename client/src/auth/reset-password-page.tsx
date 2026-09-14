@@ -6,7 +6,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import {
   looksLikeToken,
   PASSWORD_MAX_LENGTH,

@@ -11,10 +11,10 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
+import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import type { Variant } from './products-page';
-import { FormError } from '../components/form-error';
 
 const UNITS = ['each', 'kg', 'g', 'litre', 'ml', 'case', 'box', 'pallet'];
 

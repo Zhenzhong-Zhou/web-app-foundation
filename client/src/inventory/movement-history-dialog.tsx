@@ -17,7 +17,7 @@ import {
 import { useEffect, useState } from 'react';
 
 import { FormError } from '../components/form-error';
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import type { StockRow } from '../lib/types';
 

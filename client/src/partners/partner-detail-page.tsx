@@ -14,7 +14,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import type { Address, Contact, PartnerDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { AddressDialog } from './address-dialog';

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { AuthContext, type CurrentSession } from './auth-context';
 
 interface Resolved {

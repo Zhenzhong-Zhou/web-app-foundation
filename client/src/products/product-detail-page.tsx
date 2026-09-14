@@ -17,11 +17,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { AddVariantDialog } from './add-variant-dialog';
-import type { Product, Variant } from './products-page';
 import { EditVariantDialog } from './edit-variant-dialog';
+import type { Product, Variant } from './products-page';
 import { VariantRow } from './variant-row';
 
 interface ProductDetail extends Product {

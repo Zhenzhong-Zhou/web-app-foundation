@@ -19,14 +19,14 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
-import { ApiError, api } from '../lib/api';
-import { useDelayedFlag } from '../lib/use-delayed-flag';
-import { ReceiveStockDialog } from './receive-stock-dialog';
-import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
-import { StockActions } from './stock-actions';
+import { api, ApiError } from '../lib/api';
 import type { Location, StockRow } from '../lib/types';
-import { MovementHistoryDialog } from './movement-history-dialog';
+import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { EditLotDialog } from './edit-lot-dialog';
+import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
+import { MovementHistoryDialog } from './movement-history-dialog';
+import { ReceiveStockDialog } from './receive-stock-dialog';
+import { StockActions } from './stock-actions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError

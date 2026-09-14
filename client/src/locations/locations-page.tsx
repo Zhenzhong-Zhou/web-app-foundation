@@ -10,7 +10,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import type { Location } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateLocationDialog } from './create-location-dialog';

@@ -2,7 +2,7 @@ import { Alert, Button, Link, TextField } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
 import { useAuth } from './use-auth';

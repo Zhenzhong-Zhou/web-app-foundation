@@ -16,7 +16,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateMemberDialog } from './create-member-dialog.tsx';
 

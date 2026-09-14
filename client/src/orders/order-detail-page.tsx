@@ -18,9 +18,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
-import { leavesOf } from '../locations/tree';
 import type {
   Location,
   OrderDetail,
@@ -29,6 +28,7 @@ import type {
   VariantOption,
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { leavesOf } from '../locations/tree';
 import { ReceiveLineDialog } from './receive-line-dialog';
 
 function messageFor(caught: unknown): string {

@@ -15,7 +15,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 

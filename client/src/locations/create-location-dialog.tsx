@@ -12,10 +12,10 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
-import { api } from '../lib/api';
-import { useSubmit } from '../lib/use-submit';
-import type { Location } from '../lib/types';
 import { FormError } from '../components/form-error';
+import { api } from '../lib/api';
+import type { Location } from '../lib/types';
+import { useSubmit } from '../lib/use-submit';
 
 const TYPES = [
   { value: 'site', label: 'Site' },

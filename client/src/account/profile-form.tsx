@@ -2,7 +2,7 @@ import { Alert, Button, Stack, TextField, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { NAME_MAX_LENGTH } from '../lib/validation';
 
 export function ProfileForm() {

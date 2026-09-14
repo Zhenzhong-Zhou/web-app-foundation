@@ -14,8 +14,8 @@ import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
 import { ColorModeSelect } from '../components/color-mode-select';
-import { api } from '../lib/api';
 import { ErrorBoundary } from '../components/error-boundary.tsx';
+import { api } from '../lib/api';
 
 const NAV = [
   { label: 'Products', to: '/products', permission: 'products.view' },

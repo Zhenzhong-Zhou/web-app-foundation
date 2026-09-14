@@ -19,9 +19,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
-import type { OrderPage, OrderSummary, OrderStatus } from '../lib/types';
+import type { OrderPage, OrderStatus, OrderSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 
 function messageFor(caught: unknown): string {

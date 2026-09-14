@@ -14,9 +14,9 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import { formatDate } from '../lib/format';
 import type { Location, Lot, OrderLine, VariantOption } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
-import { formatDate } from '../lib/format';
 
 /**
  * Receiving against one line: a movement and a fulfilment in one transaction

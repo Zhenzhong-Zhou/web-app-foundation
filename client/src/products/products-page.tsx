@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
-import { ApiError, api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateProductDialog } from './create-product-dialog';
 

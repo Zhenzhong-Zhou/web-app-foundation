@@ -1,5 +1,5 @@
-import { config as loadEnv } from 'dotenv';
 import { defineConfig, devices } from '@playwright/test';
+import { config as loadEnv } from 'dotenv';
 
 /**
  * Loaded here rather than relying on the npm script, because `npx playwright

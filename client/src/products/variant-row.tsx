@@ -1,3 +1,5 @@
+import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUp from '@mui/icons-material/KeyboardArrowUp';
 import {
   Box,
   Button,
@@ -11,8 +13,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUp from '@mui/icons-material/KeyboardArrowUp';
 import { useState } from 'react';
 
 import type { Variant } from './products-page';
