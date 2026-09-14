@@ -53,10 +53,10 @@ function queryFor(row: StockRow, before?: string): string {
     variantId: row.variantId,
     limit: String(PAGE_SIZE),
   });
-  
+
   if (row.lotId) params.set('lotId', row.lotId);
   if (before) params.set('before', before);
-  
+
   return params.toString();
 }
 
@@ -104,7 +104,7 @@ export function MovementHistoryDialog({
   useEffect(() => {
     if (!row) return;
     let ignore = false;
-    
+
     void api<MovementPage>(`/stock/movements?${queryFor(row)}`)
       .then((page) => {
         if (ignore) return;

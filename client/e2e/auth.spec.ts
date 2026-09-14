@@ -42,7 +42,13 @@ test('signs in with valid credentials and lands in the app', async ({
    */
   const banner = page.getByRole('banner');
   await expect(banner).toContainText(credentials.organizationName);
-  await expect(banner.getByRole('link', { name: 'Account' })).toBeVisible();
+
+  /**
+   * A nav destination rather than Account, which now lives behind the account
+   * menu. The organisation name above already proves the session resolved;
+   * this proves the signed-in chrome rendered with it.
+   */
+  await expect(banner.getByRole('link', { name: 'Inventory' })).toBeVisible();
 });
 
 test('rejects a wrong password without revealing whether the account exists', async ({
