@@ -29,6 +29,7 @@ export interface StockRow {
   lotId: string | null;
   lotCode: string | null;
   lotExpiresAt: string | null;
+  lotIsAssigned: boolean | null;
   /** A decimal string from numeric(18, 4). Never parsed — see ADR-025. */
   quantity: string;
 }
@@ -95,4 +96,53 @@ export interface OrderSummary {
 export interface OrderPage {
   entries: OrderSummary[];
   nextCursor: string | null;
+}
+
+export interface Lot {
+  id: string;
+  code: string;
+  expiresAt: string | null;
+  /** True when the receiver invented the code — see MovementLotDto. */
+  isAssigned: boolean;
+}
+
+/** The flat variant list behind any picker — stock hangs off variants, not products (ADR-023). */
+export interface VariantOption {
+  id: string;
+  sku: string;
+  variantName: string | null;
+  productName: string;
+  type: string;
+  unitOfMeasure: string;
+  tracksLots: boolean;
+}
+
+export interface OrderLine {
+  id: string;
+  variantId: string;
+  /** Snapshotted when the order was raised (ADR-023). */
+  sku: string;
+  quantityOrdered: string;
+  quantityFulfilled: string;
+}
+
+/** What GET /orders/:id returns — the order with its lines. */
+export interface OrderDetail {
+  id: string;
+  partnerId: string;
+  partnerName: string;
+  direction: OrderDirection;
+  fullyReceived: boolean;
+  status: OrderStatus;
+  reference: string | null;
+  expectedAt: string | null;
+  note: string | null;
+  lines: OrderLine[];
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  code: string | null;
+  parentId: string | null;
 }

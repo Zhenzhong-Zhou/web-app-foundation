@@ -135,18 +135,65 @@ export class OrdersService {
     });
   }
 
+  /**
+   * The order, its lines, and the partner's name.
+   *
+   * The name is joined for the same reason the list joins it: a detail page
+   * headed by a UUID is a page nobody can read. `fullyReceived` is computed
+   * here rather than in the client because comparing two numeric(18,4) values
+   * means parsing them into doubles (ADR-025) — Postgres knows the answer and
+   * a boolean survives the trip intact.
+   */
   async findById(orderId: string) {
-    const [order] = await this.tenantDb.select(orders, eq(orders.id, orderId));
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const [order] = await tx
+        .select({
+          id: orders.id,
+          partnerId: orders.partnerId,
+          partnerName: partners.name,
+          direction: orders.direction,
+          status: orders.status,
+          reference: orders.reference,
+          expectedAt: orders.expectedAt,
+          note: orders.note,
+          createdAt: orders.createdAt,
 
-    if (!order) throw new NotFoundException('No such order');
+          /**
+           * True when no line is short. `bool_and` over zero lines returns
+           * null, but an order always has at least one (ADR-027), so the
+           * coalesce is belt and braces rather than a real case.
+           */
+          fullyReceived: sql<boolean>`coalesce((
+            select bool_and(
+              ${orderLines.quantityFulfilled} >= ${orderLines.quantityOrdered}
+            )
+            from ${orderLines} where ${orderLines.orderId} = ${orders.id}
+          ), false)`,
+        })
+        .from(orders)
+        .innerJoin(partners, eq(partners.id, orders.partnerId))
+        .where(
+          and(
+            eq(orders.id, orderId),
+            eq(orders.organizationId, organizationId),
+          ),
+        );
 
-    const lines = await this.tenantDb.select(
-      orderLines,
-      eq(orderLines.orderId, orderId),
-      { orderBy: desc(orderLines.createdAt) },
-    );
+      if (!order) throw new NotFoundException('No such order');
 
-    return { ...order, lines };
+      const lines = await tx
+        .select()
+        .from(orderLines)
+        .where(
+          and(
+            eq(orderLines.orderId, orderId),
+            eq(orderLines.organizationId, organizationId),
+          ),
+        )
+        .orderBy(desc(orderLines.createdAt));
+
+      return { ...order, lines };
+    });
   }
 
   /**
@@ -347,7 +394,6 @@ export class OrdersService {
           .update(orderLines)
           .set({
             quantityFulfilled: sql`${orderLines.quantityFulfilled} + ${input.quantity}::numeric`,
-            updatedAt: new Date(),
           })
           .where(eq(orderLines.id, lineId));
       } catch (error) {
