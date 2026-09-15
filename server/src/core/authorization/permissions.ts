@@ -50,6 +50,10 @@ export const PERMISSIONS = {
   ORDERS_CREATE: 'orders.create',
   ORDERS_UPDATE: 'orders.update',
   ORDERS_RECEIVE: 'orders.receive',
+
+  BOMS_VIEW: 'boms.view',
+  BOMS_CREATE: 'boms.create',
+  BOMS_UPDATE: 'boms.update',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -93,6 +97,9 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   // Separate from update: receiving writes to the ledger, and the person on
   // the dock is not usually the person who raises orders.
   'orders.receive': 'Receive stock against an order',
+  'boms.view': 'See recipes and what they consume',
+  'boms.create': 'Add a recipe or draft a new version of one',
+  'boms.update': 'Edit a draft, promote it, or archive it',
 };
 
 export const SYSTEM_ROLES = {
@@ -133,6 +140,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.PRODUCTS_VIEW,
     PERMISSIONS.PRODUCTS_CREATE,
     PERMISSIONS.PRODUCTS_UPDATE,
+    PERMISSIONS.BOMS_VIEW,
+    PERMISSIONS.BOMS_CREATE,
+    PERMISSIONS.BOMS_UPDATE,
     PERMISSIONS.LOCATIONS_VIEW,
     PERMISSIONS.LOCATIONS_CREATE,
     PERMISSIONS.LOCATIONS_UPDATE,
@@ -154,6 +164,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.ORGANIZATIONS_VIEW,
     // Read-only means read: a Viewer sees the catalogue and changes nothing.
     PERMISSIONS.PRODUCTS_VIEW,
+    PERMISSIONS.BOMS_VIEW,
     PERMISSIONS.LOCATIONS_VIEW,
     PERMISSIONS.STOCK_VIEW,
     PERMISSIONS.PARTNERS_VIEW,

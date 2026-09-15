@@ -42,6 +42,15 @@ export const AUDIT_ACTIONS = {
   PARTNER_CONTACT_RETIRED: 'partner.contact.retired',
 
   STOCK_LOT_UPDATED: 'stock.lot_updated',
+
+  BOM_CREATED: 'bom.created',
+  BOM_UPDATED: 'bom.updated',
+  BOM_LINE_ADDED: 'bom.line_added',
+  BOM_LINE_UPDATED: 'bom.line_updated',
+  BOM_LINE_REMOVED: 'bom.line_removed',
+  /** The moment a recipe becomes the one runs are made against. */
+  BOM_PROMOTED: 'bom.promoted',
+  BOM_ARCHIVED: 'bom.archived',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

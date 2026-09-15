@@ -18,6 +18,7 @@ import { PermissionGuard } from './core/authorization/permission.guard';
 import { UsersModule } from './core/users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
+import { BomsModule } from './modules/boms/boms.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PartnersModule } from './modules/partners/partners.module';
@@ -112,6 +113,7 @@ import { StockModule } from './modules/stock/stock.module';
 
     // Feature modules. These consume the above and add nothing to it.
     ProductsModule,
+    BomsModule,
     LocationsModule,
     StockModule,
     PartnersModule,

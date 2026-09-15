@@ -1,6 +1,7 @@
 /** https://www.postgresql.org/docs/current/errcodes-appendix.html */
 const PG_UNIQUE_VIOLATION = '23505';
 const PG_CHECK_VIOLATION = '23514';
+const PG_FOREIGN_KEY_VIOLATION = '23503';
 
 /**
  * Finds the pg error carrying a given SQLSTATE, anywhere in the cause chain.
@@ -81,6 +82,32 @@ export function isUniqueViolation(
  */
 export function isCheckViolation(error: unknown, constraint?: string): boolean {
   const pg = findPgError(error, PG_CHECK_VIOLATION);
+  if (!pg) return false;
+  return constraint === undefined || pg.constraint === constraint;
+}
+
+/**
+ * Converts a foreign-key violation into a 400.
+ *
+ * A DTO validates that outputVariantId is a UUID; it cannot know whether that
+ * UUID names a variant in this organization. Selecting first to find out is a
+ * round trip that is stale by the time the insert runs, and the constraint is
+ * authoritative anyway — so the insert asks the question and this turns the
+ * answer into something a client can read.
+ *
+ * 400 rather than 404: the missing thing is a value in the body, not the
+ * resource the route names. A 404 here would tell a client the BOM endpoint
+ * does not exist.
+ *
+ * Constraint-named for the same reason isCheckViolation is — a table with
+ * several foreign keys returns one SQLSTATE for all of them, and an insert
+ * touching three tables lands them all in one catch.
+ */
+export function isForeignKeyViolation(
+  error: unknown,
+  constraint?: string,
+): boolean {
+  const pg = findPgError(error, PG_FOREIGN_KEY_VIOLATION);
   if (!pg) return false;
   return constraint === undefined || pg.constraint === constraint;
 }
