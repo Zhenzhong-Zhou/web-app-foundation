@@ -1,0 +1,3 @@
+ALTER TABLE "production_order_lines" ADD COLUMN "source_location_id" uuid;--> statement-breakpoint
+ALTER TABLE "production_order_lines" ADD CONSTRAINT "production_order_lines_source_location_id_locations_id_fk" FOREIGN KEY ("source_location_id") REFERENCES "public"."locations"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "production_order_lines" ADD CONSTRAINT "production_order_lines_source_is_stocked_check" CHECK ("production_order_lines"."source_location_id" is null or "production_order_lines"."supply_type" = 'stocked');

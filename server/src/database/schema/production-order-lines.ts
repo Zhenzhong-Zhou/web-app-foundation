@@ -10,6 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { primaryKey, timestamps } from './columns';
+import { locations } from './locations';
 import { organizations } from './organizations';
 import { productVariants } from './product-variants';
 import { productionOrders } from './production-orders';
@@ -77,6 +78,26 @@ export const productionOrderLines = pgTable(
     supplyType: text('supply_type').notNull().default('stocked'),
 
     /**
+     * Which leaf this component is picked from, recorded at release.
+     *
+     * On the line rather than the run because a run's components do not come
+     * from one place: the blend is in the cold room, the bottles are in the
+     * packaging aisle. One column on the run would hold one value where
+     * reality holds several — the same mistake `output_lot_id` would have been
+     * (ADR-032). Per line there genuinely is one source.
+     *
+     * Close reads it back to top up from the same place when actual
+     * consumption exceeds what was issued.
+     *
+     * RESTRICT: a location a run drew from is not deletable while the run
+     * refers to it.
+     */
+    sourceLocationId: uuid('source_location_id').references(
+      () => locations.id,
+      { onDelete: 'restrict' },
+    ),
+
+    /**
      * For an external line: the lot number the manufacturer reports for the
      * input they provided.
      *
@@ -123,6 +144,15 @@ export const productionOrderLines = pgTable(
     check(
       'production_order_lines_external_consumes_nothing_check',
       sql`${t.quantityConsumed} >= 0 and (${t.supplyType} <> 'external' or ${t.quantityConsumed} = 0)`,
+    ),
+
+    /**
+     * An external component is never picked from our shelves, so a source
+     * location on one of those lines means someone recorded the wrong thing.
+     */
+    check(
+      'production_order_lines_source_is_stocked_check',
+      sql`${t.sourceLocationId} is null or ${t.supplyType} = 'stocked'`,
     ),
 
     /**
