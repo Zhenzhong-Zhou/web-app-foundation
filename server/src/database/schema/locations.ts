@@ -12,6 +12,7 @@ import {
 
 import { primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
+import { partners } from './partners';
 
 /**
  * Five levels, and no more without a migration. A type nobody uses is noise,
@@ -66,6 +67,17 @@ export const locations = pgTable(
     code: text('code'),
 
     /**
+     * Set when this site belongs to someone else — a contract manufacturer, a
+     * 3PL. Our stock still sits here and is still ours (ADR-030); only the
+     * building is theirs.
+     *
+     * RESTRICT: a partner holding our material is not deletable while it does.
+     */
+    partnerId: uuid('partner_id').references(() => partners.id, {
+      onDelete: 'restrict',
+    }),
+
+    /**
      * False for Quarantine, Returns, and WIP.
      *
      * Those are locations, not a status on the stock row: a status does not
@@ -91,6 +103,15 @@ export const locations = pgTable(
     // A location cannot contain itself. Deeper cycles are not expressible in a
     // check constraint and are prevented in the service.
     check('locations_no_self_parent_check', sql`${t.id} <> ${t.parentId}`),
+    /**
+     * Only a site can belong to a partner. A bin inside their building is
+     * still just a bin — hanging the relationship off every level would let
+     * two rows in one branch disagree about whose site it is.
+     */
+    check(
+      'locations_partner_is_site_check',
+      sql`${t.partnerId} is null or ${t.type} = 'site'`,
+    ),
 
     // Codes are unique within their parent: Bin 5 in two different aisles is
     // two bins, and printing "5" on both labels is normal.
@@ -107,5 +128,8 @@ export const locations = pgTable(
 
     index('locations_parent_id_idx').on(t.parentId),
     index('locations_organization_id_idx').on(t.organizationId),
+    index('locations_partner_id_idx')
+      .on(t.partnerId)
+      .where(sql`${t.partnerId} is not null`),
   ],
 );
