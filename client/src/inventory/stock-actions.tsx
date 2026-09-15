@@ -14,11 +14,13 @@ type Choice = MoveMode | 'history' | 'lot';
  */
 export function StockActions({
   row,
+  canAdjust,
   onSelect,
   onHistory,
   onEditLot,
 }: {
   row: StockRow;
+  canAdjust: boolean;
   onSelect: (mode: MoveMode, row: StockRow) => void;
   onHistory: (row: StockRow) => void;
   onEditLot: (row: StockRow) => void;
@@ -76,14 +78,21 @@ export function StockActions({
         >
           Ship out
         </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setPending('adjust');
-            setAnchor(null);
-          }}
-        >
-          Correct the count
-        </MenuItem>
+        {/* stock.adjust, not stock.move. Receiving, shipping, and transferring
+            record what happened in the world; an adjustment overrides the
+            record itself, and is held by fewer people. The guard refuses it
+            server-side either way — this is so the menu does not offer a
+            control that always fails. */}
+        {canAdjust && (
+          <MenuItem
+            onClick={() => {
+              setPending('adjust');
+              setAnchor(null);
+            }}
+          >
+            Correct the count
+          </MenuItem>
+        )}
         {/* Only for a lot-tracked row — there is nothing to edit otherwise,
             and the label would be a dead end on most of the warehouse. */}
         {row.lotId && (

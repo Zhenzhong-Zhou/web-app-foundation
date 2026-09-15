@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
@@ -17,6 +18,7 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { AdjustmentGuard } from './adjustment.guard';
 import { ListLotsDto } from './dto/list-lots.dto';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
@@ -50,6 +52,7 @@ export class StockController {
   @Post('movements')
   @HttpCode(HttpStatus.CREATED)
   @RequirePermissions(PERMISSIONS.STOCK_MOVE)
+  @UseGuards(AdjustmentGuard)
   @Audited({
     action: AUDIT_ACTIONS.STOCK_MOVEMENT_RECORDED,
     resourceType: 'stock_movement',

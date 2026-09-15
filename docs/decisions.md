@@ -1773,16 +1773,6 @@ they exist so the reasoning is not rediscovered from scratch.
   count as 1 or 500? And quarantined stock occupies space physically, so it
   counts, which means the check cannot simply filter on `is_available`. Not
   worth a column until there is an answer to what to do with it.
-- **Addresses.** A warehouse needs one for shipping documents and freight
-  quotes, and customers and suppliers need several each — a shipping address
-  and a billing address are not the same row. That is a one-to-many, so it is
-  its own table keyed by owner rather than columns on each. Two shapes to
-  choose between: polymorphic (`owner_type`, `owner_id`), which cannot have a
-  foreign key, or one table per owner with real keys and duplicated columns.
-  Arrives with the first thing that generates a document. Separately: an order
-  stores the address it shipped to **as text**, copied at the time — a customer
-  moving house must not rewrite where last year's order went, the same
-  snapshotting rule as SKUs in movements (ADR-023).
 - **Barcodes.** One variant carries several — a UPC on the bottle, an EAN for
   Europe, a supplier's own code, an inner-case GTIN — so a column forces one
   and the workaround is a comma-separated string. Its own table,
@@ -1854,15 +1844,6 @@ they exist so the reasoning is not rediscovered from scratch.
   "copy to new order" rather than un-cancelling — the history stays honest
   and nobody retypes. Build it when cancelling by accident actually stings;
   until then the workaround is raising a new order by hand.
-- **Splitting `stock.adjust` out of `stock.move`.** One permission covers
-  receive, ship, transfer, and adjust today, on the reasoning in
-  permissions.ts that a split would imply one is safer than another.
-  Adjusting is different in kind, though: receiving and shipping record what
-  happened in the world, adjusting overrides the record itself, and it is the
-  one movement with no external event behind it. The standard answer is a
-  narrower permission held by fewer people. Costs a new key and a re-seed
-  everywhere, so it waits until more than one person can reach the
-  inventory screen.
 
 ---
 

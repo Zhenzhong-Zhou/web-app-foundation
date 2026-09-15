@@ -59,7 +59,13 @@ export default function App() {
 
   if (loading) {
     return showSpinner ? (
-      <Stack sx={{ p: 8, alignItems: 'center' }}>
+      <Stack
+        sx={{
+          minHeight: '100dvh',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <CircularProgress />
       </Stack>
     ) : null;
@@ -74,9 +80,19 @@ export default function App() {
    */
   if (error) {
     return (
-      <Stack spacing={2} sx={{ p: 4, alignItems: 'flex-start' }}>
+      <Stack
+        spacing={2}
+        sx={{
+          minHeight: '100dvh',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 4,
+        }}
+      >
         <Alert severity="error">Could not reach the server.</Alert>
-        <Button onClick={() => void refresh()}>Try again</Button>
+        <Button variant="contained" onClick={() => void refresh()}>
+          Try again
+        </Button>
       </Stack>
     );
   }

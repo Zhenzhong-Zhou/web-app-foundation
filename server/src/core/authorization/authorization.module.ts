@@ -14,6 +14,6 @@ import { RolesService } from './roles.service';
 @Module({
   controllers: [RolesController],
   providers: [PermissionGuard, PermissionsService, RolesService],
-  exports: [PermissionGuard, PermissionsService],
+  exports: [PermissionGuard, PermissionsService, RolesService],
 })
 export class AuthorizationModule {}

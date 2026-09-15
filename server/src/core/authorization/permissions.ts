@@ -40,6 +40,7 @@ export const PERMISSIONS = {
 
   STOCK_VIEW: 'stock.view',
   STOCK_MOVE: 'stock.move',
+  STOCK_ADJUST: 'stock.adjust',
 
   PARTNERS_VIEW: 'partners.view',
   PARTNERS_CREATE: 'partners.create',
@@ -73,11 +74,14 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'locations.create': 'Add a location',
   'locations.update': 'Edit, move, or retire a location',
   'stock.view': 'See what is on hand and where',
-  // One permission for every kind of movement, matching the endpoint. Receiving
-  // and shipping are the same operation with the direction reversed, and a
-  // split would suggest one is safer than the other — an adjustment is the
-  // riskier action and would sit on whichever side someone chose.
-  'stock.move': 'Receive, ship, transfer, or adjust stock',
+  // One permission for receiving, shipping, and transferring: each records
+  // something that happened in the world, and splitting them would suggest
+  // one is riskier than another. Adjustment is separate for the opposite
+  // reason — it overrides the record itself.
+  'stock.move': 'Receive, ship, or transfer stock',
+  // Separate from stock.move: an adjustment overrides the record itself, and
+  // is the one movement with no external event behind it.
+  'stock.adjust': 'Correct a count when the system is wrong',
   'partners.view': 'See customers and suppliers',
   'partners.create': 'Add a customer or supplier',
   // No delete: a partner referenced by an order cannot be removed without
@@ -134,6 +138,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.LOCATIONS_UPDATE,
     PERMISSIONS.STOCK_VIEW,
     PERMISSIONS.STOCK_MOVE,
+    PERMISSIONS.STOCK_ADJUST,
     PERMISSIONS.PARTNERS_VIEW,
     PERMISSIONS.PARTNERS_CREATE,
     PERMISSIONS.PARTNERS_UPDATE,

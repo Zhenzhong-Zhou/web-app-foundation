@@ -1,6 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { ThrottlerStorage } from '@nestjs/throttler';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import {
   type Database,
@@ -8,6 +8,8 @@ import {
 } from '../src/database/database.module';
 import {
   lots,
+  permissions,
+  rolePermissions,
   roles,
   stockLevels,
   stockMovements,
@@ -191,6 +193,34 @@ describe('Stock (e2e)', () => {
       quantity,
       reason: 'receipt',
     };
+  }
+
+  /**
+   * A role with stock.move but not stock.adjust, which no seeded role has.
+   * Inserted directly because roles are read-only over HTTP — the API has no
+   * way to make one, and this is testing the guard rather than role
+   * management.
+   */
+  async function moverRole(organizationId: string) {
+    const [role] = await db
+      .insert(roles)
+      .values({ organizationId, name: 'Mover', isSystem: false })
+      .returning();
+
+    const keys = ['stock.view', 'stock.move'];
+    const rows = await db
+      .select()
+      .from(permissions)
+      .where(inArray(permissions.key, keys));
+
+    await db.insert(rolePermissions).values(
+      rows.map((permission) => ({
+        roleId: role.id,
+        permissionId: permission.id,
+      })),
+    );
+
+    return role.id;
   }
 
   describe('POST /v1/stock/movements', () => {
@@ -567,6 +597,59 @@ describe('Stock (e2e)', () => {
         .post('/v1/stock/movements')
         .send(receipt(alpha.variant.id, alpha.locationId, '40'))
         .expect(403);
+    });
+
+    it('refuses an adjustment without stock.adjust', async () => {
+      const ctx = await setup('alpha');
+
+      await ctx.agent
+        .post('/v1/users')
+        .send({
+          email: 'mover@alpha.example.com',
+          name: 'Mover',
+          password: PASSWORD,
+          roleId: await moverRole(ctx.organizationId),
+        })
+        .expect(201);
+
+      const mover = authedAgent(app);
+      await mover
+        .post('/v1/auth/login')
+        .send({ email: 'mover@alpha.example.com', password: PASSWORD })
+        .expect(200);
+
+      // Receiving is what happened in the world, and stock.move covers it.
+      await mover
+        .post('/v1/stock/movements')
+        .send({
+          variantId: ctx.variant.id,
+          toLocationId: ctx.locationId,
+          quantity: '10',
+          reason: 'receipt',
+        })
+        .expect(201);
+
+      /**
+       * The same person, the same route, refused — because an adjustment
+       * overrides the record itself rather than recording an event. The guard
+       * reads the body: a route-level decorator could not express this, and
+       * splitting /adjustments out to get one would put a second write path
+       * into the ledger (ADR-023).
+       */
+      await mover
+        .post('/v1/stock/movements')
+        .send({
+          variantId: ctx.variant.id,
+          fromLocationId: ctx.locationId,
+          quantity: '3',
+          reason: 'adjustment',
+          reasonDetail: 'miscount',
+          note: 'Three missing from the shelf',
+        })
+        .expect(403);
+
+      // And nothing was written by the attempt.
+      expect(await db.select().from(stockMovements)).toHaveLength(1);
     });
   });
 

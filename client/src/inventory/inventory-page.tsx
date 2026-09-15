@@ -81,6 +81,8 @@ export function InventoryPage() {
   const showSkeleton = useDelayedFlag(loading);
   const leaves = locations ? leavesOf(locations) : [];
 
+  const canAdjust = !!session?.permissions.includes('stock.adjust');
+
   /**
    * Both the callback and the effect need this, and URLSearchParams rather
    * than string concatenation now that there are two optional params — the
@@ -254,6 +256,7 @@ export function InventoryPage() {
                     {session?.permissions.includes('stock.move') && (
                       <StockActions
                         row={row}
+                        canAdjust={canAdjust}
                         onSelect={(mode, selected) =>
                           setMoving({ mode, row: selected })
                         }
