@@ -19,26 +19,7 @@ import { useEffect, useState } from 'react';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
-import type { StockRow } from '../lib/types';
-
-interface Movement {
-  id: string;
-  sku: string;
-  quantity: string;
-  reason: string;
-  reasonDetail: string | null;
-  note: string | null;
-  fromLocationName: string | null;
-  toLocationName: string | null;
-  lotCode: string | null;
-  actorEmail: string | null;
-  createdAt: string;
-}
-
-interface MovementPage {
-  entries: Movement[];
-  nextCursor: string | null;
-}
+import type { Movement, MovementPage, StockRow } from '../lib/types';
 
 const PAGE_SIZE = 25;
 

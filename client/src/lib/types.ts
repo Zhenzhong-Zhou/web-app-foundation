@@ -19,6 +19,27 @@ export interface Location {
   isActive: boolean;
 }
 
+export interface Movement {
+  id: string;
+  /** Snapshotted at the time (ADR-023) — not joined from the variant. */
+  sku: string;
+  quantity: string;
+  reason: string;
+  reasonDetail: string | null;
+  note: string | null;
+  fromLocationName: string | null;
+  toLocationName: string | null;
+  lotCode: string | null;
+  /** Null when the actor was anonymised (ADR-012). */
+  actorEmail: string | null;
+  createdAt: string;
+}
+
+export interface MovementPage {
+  entries: Movement[];
+  nextCursor: string | null;
+}
+
 export interface StockRow {
   variantId: string;
   sku: string;

@@ -12,6 +12,7 @@ import { ResetPasswordPage } from './auth/reset-password-page';
 import { useAuth } from './auth/use-auth';
 import { VerifyEmailPage } from './auth/verify-email-page';
 import { InventoryPage } from './inventory/inventory-page';
+import { MovementsPage } from './inventory/movements-page';
 import { AppLayout } from './layout/app-layout';
 import { useDelayedFlag } from './lib/use-delayed-flag';
 import { LocationsPage } from './locations/locations-page';
@@ -133,6 +134,7 @@ export default function App() {
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
         <Route path="/inventory" element={<InventoryPage />} />
+        <Route path="/movements" element={<MovementsPage />} />
         <Route path="/locations" element={<LocationsPage />} />
         <Route path="/partners" element={<PartnersPage />} />
         <Route path="/partners/:id" element={<PartnerDetailPage />} />

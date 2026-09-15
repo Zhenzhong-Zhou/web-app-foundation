@@ -32,6 +32,7 @@ import { api } from '../lib/api';
  */
 const NAV = [
   { label: 'Inventory', to: '/inventory', permission: 'stock.view' },
+  { label: 'Movements', to: '/movements', permission: 'stock.view' },
   { label: 'Orders', to: '/orders', permission: 'orders.view' },
   { label: 'Products', to: '/products', permission: 'products.view' },
   { label: 'Partners', to: '/partners', permission: 'partners.view' },
