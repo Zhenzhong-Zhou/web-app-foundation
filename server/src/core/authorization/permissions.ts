@@ -54,6 +54,11 @@ export const PERMISSIONS = {
   BOMS_VIEW: 'boms.view',
   BOMS_CREATE: 'boms.create',
   BOMS_UPDATE: 'boms.update',
+
+  PRODUCTION_VIEW: 'production.view',
+  PRODUCTION_CREATE: 'production.create',
+  PRODUCTION_RELEASE: 'production.release',
+  PRODUCTION_COMPLETE: 'production.complete',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -100,6 +105,10 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'boms.view': 'See recipes and what they consume',
   'boms.create': 'Add a recipe or draft a new version of one',
   'boms.update': 'Edit a draft, promote it, or archive it',
+  'production.view': 'See production runs and what they consumed',
+  'production.create': 'Plan a run',
+  'production.release': 'Issue components to a run, or cancel one',
+  'production.complete': 'Record output and consume components',
 };
 
 export const SYSTEM_ROLES = {
@@ -156,6 +165,10 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.ORDERS_CREATE,
     PERMISSIONS.ORDERS_UPDATE,
     PERMISSIONS.ORDERS_RECEIVE,
+    PERMISSIONS.PRODUCTION_VIEW,
+    PERMISSIONS.PRODUCTION_CREATE,
+    PERMISSIONS.PRODUCTION_RELEASE,
+    PERMISSIONS.PRODUCTION_COMPLETE,
   ],
 
   [SYSTEM_ROLES.VIEWER]: [
@@ -167,6 +180,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.BOMS_VIEW,
     PERMISSIONS.LOCATIONS_VIEW,
     PERMISSIONS.STOCK_VIEW,
+    PERMISSIONS.PRODUCTION_VIEW,
     PERMISSIONS.PARTNERS_VIEW,
     PERMISSIONS.ORDERS_VIEW,
   ],

@@ -51,6 +51,15 @@ export const AUDIT_ACTIONS = {
   /** The moment a recipe becomes the one runs are made against. */
   BOM_PROMOTED: 'bom.promoted',
   BOM_ARCHIVED: 'bom.archived',
+
+  PRODUCTION_ORDER_CREATED: 'production_order.created',
+  PRODUCTION_ORDER_UPDATED: 'production_order.updated',
+  /** Components issued and the recipe frozen onto the run. */
+  PRODUCTION_ORDER_RELEASED: 'production_order.released',
+  PRODUCTION_ORDER_OUTPUT_RECORDED: 'production_order.output_recorded',
+  /** Carries the variance figures — see ADR-032. */
+  PRODUCTION_ORDER_CLOSED: 'production_order.closed',
+  PRODUCTION_ORDER_CANCELLED: 'production_order.cancelled',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

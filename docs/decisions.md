@@ -2393,6 +2393,14 @@ they exist so the reasoning is not rediscovered from scratch.
   "copy to new order" rather than un-cancelling — the history stays honest
   and nobody retypes. Build it when cancelling by accident actually stings;
   until then the workaround is raising a new order by hand.
+- **A run with no BOM can be planned but not released.** `production_orders.bom_id`
+  is nullable because a rework, a trial batch, and a sample are real runs with no
+  recipe behind them — and those are the runs that later become recipes. But
+  release copies lines from a BOM, so a run without one has nothing to issue and
+  nothing to consume, and it currently dead-ends: plan it, cancel it, nothing
+  else. The fix is letting release take explicit lines in its payload, which is
+  a shape nobody has asked for. Worth doing the first time somebody needs to
+  record a rework against stock rather than adjusting it by hand.
 
 ---
 
