@@ -1628,6 +1628,301 @@ vocabulary rather than a format.
 
 ---
 
+## ADR-029 — A bill of materials is a header plus lines, and nesting is data
+
+**Context.** Production consumes components to produce something else: one
+bottle of Vitamin D3 60ct is 60 capsules, one bottle, one cap, one label. Open
+decisions carried this as a join table — `(parent_variant_id,
+component_variant_id, quantity)` — with two questions named as expensive to
+retrofit: whether a BOM is **versioned**, since a recipe changes and a run from
+last year consumed the old one, and whether it **nests**, since a sub-assembly
+is itself made of components. "Assuming flat and unversioned is the cheap start
+and the costly mistake" was the note.
+
+Both questions turn out to be answerable without knowing this organization's
+answer, which matters because this foundation is meant to be re-pointed at
+another industry (ADR-001's premise) and the recipes there are not yet imagined.
+
+**Decision — components point at `product_variants`, the same table outputs do.**
+
+Nesting then costs nothing and needs no schema support. A blend that feeds three
+finished SKUs is a variant with its own BOM; a component that is simply bought
+is a variant without one. Whether this organization nests is a fact about its
+rows, and an explosion is a `WITH RECURSIVE` query written the day someone asks,
+against a table that already holds the tree.
+
+The version that costs a migration is a separate `raw_materials` or `components`
+table, on the reasoning that raw materials "are not products". A sub-assembly is
+both, so it belongs in both, and the day something bought becomes something
+made, its history is in the wrong one. This is ADR-023's granularity test
+passing again: the BOM needs no change to products or variants.
+
+**Decision — the output is a variant, not a product.**
+
+Stock, lots, and movements all sit at the variant (ADR-023). A BOM naming a
+product could not tell a production order what to increment. 60ct and 120ct are
+different recipes in any case.
+
+**Decision — a header table, and versioning by snapshot at consumption.**
+
+    boms       id, organization_id, output_variant_id, output_quantity,
+               version, status, notes
+    bom_lines  id, organization_id, bom_id, component_variant_id,
+               quantity, supply_type, notes
+
+The header is what a bare join table has nowhere to put: a version, a status, a
+yield. Splitting it out after the table holds data is the retrofit the open
+decision warned about.
+
+Versioning is then mostly not the header's job. A production order copies its
+lines from the BOM at release and reads its own copy forever after — the same
+move 0012 made for the order ship-to snapshot, for the same reason. A run from
+last year keeps showing what it actually consumed no matter what happened to the
+recipe since. Given that, `version` is an integer for people to read and
+`status` is what stops a draft being released against; neither is load-bearing
+for history. Effective-date ranges were considered and rejected as two columns
+answering a question nobody asks ("which recipe was current on 3 March"), and
+they remain two nullable columns whenever someone does.
+
+`output_quantity` is yield, not per-unit. A recipe stated per single unit forces
+a division at data entry, someone rounds 2.4 / 1000 to four places, and the
+rounding reappears as stock drift. Batch quantities are also what people say out
+loud, which is what they will type.
+
+At most one `active` BOM per output variant, enforced by a partial unique index
+rather than in the service — the reasoning `addresses.is_default` got in
+ADR-028. A second active row is writable, the picker chooses between them
+arbitrarily, and the bug is invisible until a batch is made wrong.
+
+**Decision — a `product_licences` registry, referenced from the BOM header.**
+
+A regulated formulation is made under a registration, and which one a given lot
+was made under is history — the one kind of fact that cannot be backfilled. In
+Canada the alignment is exact: under the NHP Regulations a change to the
+quantity of a medicinal ingredient per dosage unit requires a new product
+licence application and, if approved, a new NPN, which is the same event that
+produces a new BOM version. Runs point at a `bom_id`, so the trace from lot to
+licence already exists.
+
+A table, not a column, because one licence covers several recipes. A licence
+attaches to a formulation, dosage form, and recommended use — pack size is none
+of those, so 60ct and 120ct of the same product are two BOMs under one number.
+A column would copy that number into both and leave the next amendment to
+update each, which is the kind of maintenance that is skipped once and wrong
+thereafter. A licence is an entity with its own lifecycle; the first version of
+this decision made it a string, and the flaw appeared on the first product with
+two pack sizes.
+
+The test for what belongs in the registry is whether the registration changes
+when the formulation changes — a cosmetic notification number, a DIN, an FCC ID
+whose filing is invalidated by a design change, a furniture flammability
+certification all pass. A site licence, a food safety permit, and an export
+permit all fail: they are properties of a facility or a shipment and belong on
+the location, the partner, or the order.
+
+`authority` is free text and `number` is never parsed, because the point is that
+schemes differ between markets. The table is identity only — amendment history,
+renewals, submission tracking, label versions, and certificates of analysis are
+the compliance domain, still open below, and this is what they would hang off
+rather than a first instalment of them.
+
+Barcodes are a different axis and are not this. A GTIN identifies a sellable
+unit, so it belongs on the variant, two pack sizes have two of them, and two
+products sharing one is a GS1 violation rather than a shape worth modelling.
+
+**An empty registry is the expected case in most industries, not a fault.**
+Grocery licenses the facility rather than the product, clothing licenses almost
+nothing, furniture mostly self-certifies. Those tenants leave this table with no
+rows and every `licence_id` null, which is what `lots` already does for an
+organization that tracks nothing by lot. The portability test was never that
+every industry uses every table — it is that no table blocks an industry and
+nothing needs renaming. An `npn_registrations` table with monograph IDs and
+declared ingredients would have failed that; free-text `authority` is what
+avoids it.
+
+The limit worth knowing: this assumes a certification attaches to a
+*formulation*. Some attach to a *batch* — kosher and halal supervision are per
+run, and organic certification often is too. That is a lot-level or run-level
+record and a different table when it arrives, not a widening of this one. It is
+the case most likely to surface first in food.
+
+**Decision — no unit column on `bom_lines`.**
+
+A line's quantity is in the component variant's own `unit_of_measure`. A second
+unit on the line invites grams against stock kept in kilograms, and nothing
+converts yet — unit-of-measure conversion is still open (ADR-023). The
+production order snapshots the unit because a run is a document; a recipe is a
+live definition and reads the variant.
+
+**Decision — a cycle guard in the service, not a constraint.**
+
+A BOM whose components reach its own output through any path is an infinite loop
+in the exploder. A check constraint cannot see across tables, so this is a
+recursive query at write time, in the same class as the `tracks_lots` invariant
+ADR-023 put in the service for the same reason.
+
+**Consequence.** Two tables, both of which a future industry can use unchanged.
+The naming carries that: `boms` not `formulas` or `recipes`, `supply_type`
+values `stocked` and `external` not `we_buy` and `copacker_buys`,
+`output_variant_id` not `finished_product_id`. Industry lives in rows, the way
+`locations.type` holds five generic words rather than warehouse vocabulary
+(ADR-024). A clothing tenant free-issuing fabric to a cut-and-sew factory writes
+the same rows as a supplement brand.
+
+What a different industry will want is line *attributes* — a size and colour
+matrix for apparel, overage and allergen flags for food, revision and ECO
+numbers for engineering. Every one of those is a column added to `bom_lines`, or
+its own table keyed on it. None of them changes the two tables above, which is
+the test this decision was built to pass.
+
+**Rejected: the bare join table.** Faster, and it is the version that has to be
+split the first time a recipe changes.
+
+**Rejected: assuming flat.** Not because nesting was needed, but because
+avoiding it required actively choosing a separate component table. Pointing at
+`product_variants` is both the simpler choice and the one that leaves the door
+open.
+ 
+---
+
+## ADR-030 — Who supplies a component is a property of the run
+
+**Context.** Manufacturing arrives in three arrangements, and only one of them
+is a production order.
+
+We buy the ingredients and hold them. We send some of our own material to a
+contract manufacturer who supplies the rest. Or the manufacturer buys
+everything and hands over finished goods.
+
+The third is not a run. Nothing of ours was consumed, no stock moved, there is
+nothing to explode. It is a purchase order against that partner for the output
+variant — identical to buying a finished bottle from a wholesaler — and forcing
+it into a production order invents consumption that never happened. The BOM for
+that product still exists as the recipe, for the label claim and for the day it
+comes in-house. It simply does not fire.
+
+The second is the case that decides the schema. It is free-issue: our stock is
+consumed at somebody else's site alongside inputs we never owned.
+
+**Decision — `supply_type` on the line, defaulted by the BOM, actual on the run.**
+
+`stocked` means ours: we buy it, hold it, and the run writes a `consumption`
+movement. `external` means whoever manufactures provides it: it never enters our
+stock and the run writes no movement, but the line is still there, so the record
+of the batch is complete and the arrangement is visible.
+
+This cannot live on the variant. The same herb extract is bought by us this
+quarter and by the co-packer next quarter because their price changed — who
+supplies a component is a fact about a run, not about a thing. The BOM line
+holds the usual case; the production order line holds what happened.
+
+A check constraint carries the consequence: an external line's
+`quantity_consumed` must stay zero. A non-zero value would mean a `consumption`
+movement for material we never received, which is exactly how a ledger stops
+balancing.
+
+**Decision — `partner_id` on the production order, null meaning in-house.**
+
+One nullable column separates outsourced from in-house, the way
+`stock_movements` encodes direction by which location column is null. A `kind`
+column alongside it would state the same fact twice and let the two disagree.
+
+**Decision — the manufacturer's facility is a `site` in the locations tree,
+with `locations.partner_id` marking it as theirs.**
+
+Issuing material is then an ordinary transfer, leaf to leaf, and consumption
+happens when the run completes. This is what makes "how much of our material is
+sitting at the co-packer" a query rather than a spreadsheet, which is money that
+otherwise goes untracked.
+
+ADR-028 warned against putting partner locations in the tree. That warning is
+about *addresses* — a billing address becoming selectable in the move-stock
+dialog, and four hundred units transferred into Acme's accounts payable
+department. A co-packer's facility is genuinely somewhere our stock sits, which
+is the definition of a location under ADR-024. The two cases share a word and
+nothing else, and a check keeps `partner_id` to `site` rows so nobody hangs one
+off a bin.
+
+Nor is this the consignment question ADR-027 deferred. Ownership never changes:
+free-issued material is ours the whole time it is there. Consignment is stock
+that is physically elsewhere *and* owned by someone else, and it still waits.
+
+**Decision — a manufacturer's lot code is text on the line, not a `lots` row.**
+
+A supplement recall traces through every input, including the ones we did not
+buy, so the code has to be recorded. A `lots` row for material we never held has
+no stock balance anywhere, and creating one to hold a code puts phantom quantity
+in the ledger. `external_lot_code` is free text that cannot be mistaken for
+stock, constrained to external lines.
+
+**Decision — a run's output lots are read from the ledger, not stored on it.**
+
+A column for the lot produced assumes one lot per run, and a run splits: it
+spans two days, QA holds part of it, some is packed to a different expiry. The
+`production` movements already carry `lot_id` individually, and ADR-023 made the
+ledger the record. A pointer alongside it can hold one value where the ledger
+holds several, which makes it a cache that can only disagree. The lots for a run
+are the movements referencing it.
+
+**Consequence.** Two tables, one column on `bom_lines`, one on `locations`.
+`stock_movements.reason` already carried `production` and `consumption`
+(ADR-023), and `reference_type` was built nullable for precisely this — a run
+attaches a reference, it does not change the ledger.
+
+Our books only ever hold half of an outsourced batch. That is correct, and it
+means finished-good cost for those runs arrives inside the price on the
+manufacturer's invoice rather than being rolled up from components. Cost rollup
+is open, and this is one of the reasons it is not simple.
+ 
+---
+
+## ADR-031 — A duplicate re-resolves snapshots; it never copies history forward
+
+**Context.** An order is raised wrong — wrong partner, wrong quantities, wrong
+items — and has already been confirmed. Editing it rewrites what was agreed with
+the supplier, and partial-line cancellation is still open, so there is no clean
+way to amend part of it. The operation people actually want is: make a fresh one
+like this, fix it, and cancel the old.
+
+**Decision.** `POST /v1/orders/:id/duplicate` returns a new `draft`, and what it
+does with each field follows one rule — **a duplicate re-resolves snapshots from
+their live source and never copies frozen ones forward.** A snapshot exists to
+freeze what happened; a new order has not happened yet.
+
+- Copied: `partner_id`, `notes`, and each line's `variant_id` and
+  `quantity_ordered`.
+- Re-resolved: `sku`, read from the variant again rather than copied from the
+  old line. `ship_to_*`, re-snapshotted from `ship_to_address_id` if that
+  address is still active, falling back to the partner's current default if it
+  is not — and saying so in the dialog. Copying a dead address into a live order
+  is exactly what the snapshot was never meant to enable.
+- Reset: `status` to `draft`, every `quantity_fulfilled` to zero, `created_by`
+  to the current actor, `expected_at` to null, and `reference` to null. The last
+  matters most: a supplier's PO number belongs to the order it was issued
+  against, and two orders claiming it is a reconciliation problem.
+- Added: `duplicated_from_id`, a nullable self-reference, RESTRICT.
+  **Decision — duplicate first, cancel last.** Duplicate, fix the draft, confirm
+  it, then cancel the original. Cancel-first leaves nothing behind if the create
+  fails, and this is the order people do it in anyway, so it is the dialog's flow
+  rather than a note in a manual.
+
+**Decision — one helper, three callers.** The same operation makes a new BOM
+version (`active` BOM copied to a draft at `version + 1`) and re-raises a
+cancelled production run. Written three times it drifts three ways.
+
+**Consequence.** `duplicated_from_id` is the one part that cannot be backfilled.
+`@Audited` records the create (ADR-018), but the payload is JSONB and searching
+it is still an open decision, so "what replaced order X" is unanswerable from
+the audit log — and "why was this cancelled, where did it go" are the two
+questions asked about every cancelled order.
+
+**Rejected: duplicating a partially received order.** Re-ordering what already
+arrived. Copying only the shortfall is a backorder, which means something
+different, and one button with two behaviours depending on data is how a control
+becomes untrustworthy. Open below.
+ 
+---
+
 # Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -1740,16 +2035,113 @@ they exist so the reasoning is not rediscovered from scratch.
   time-ordered id, so the cursor has to be `(name, id)` compared as a row —
   `name >= last and id > lastId` silently skips rows sharing a name. Build it
   with the filters, once the client shows which filters matter.
-- **Bills of materials.** Production consumes components to produce something
-  else: one bottle of Vitamin D3 60ct is 60 capsules, one bottle, one cap, one
-  label. That is a join table, `(parent_variant_id, component_variant_id,
-  quantity)`, and it needs no change to products or variants — which is the
-  test ADR-023's granularity decision passes. Two questions hide inside it and
-  are both expensive to retrofit: whether a BOM is **versioned**, since a
-  recipe changes and a production order from last year consumed the old one;
-  and whether it **nests**, since a sub-assembly is itself made of components.
-  Assuming flat and unversioned is the cheap start and the costly mistake.
-  Arrives with production orders.
+- **Routing and operations.** A BOM says what goes in, not what is done to it —
+  mix for twenty minutes, then encapsulate, then a QA hold. Real for a
+  manufacturer, meaningless for a brand that outsources, and the reason
+  `bom_lines` has no sequence column: ordering ingredients is not the same as
+  ordering steps, and a `line_no` used for the second would be the wrong
+  mechanism arriving quietly. Its own table when someone needs labour or machine
+  time.
+- **Scrap and yield loss.** A recipe consumes 2.4 kg and loses 3% to the
+  equipment. Either a percentage on the line or a lower `output_quantity` — the
+  second is free today and a lie in a costing report, since it hides loss inside
+  the recipe. A column on `bom_lines` whenever costing or a variance report
+  needs to tell the two apart.
+- **Substitute components.** The same label from either of two suppliers. A
+  self-reference on `bom_lines` (`substitute_for_id`) or a small child table;
+  the real question is whether a substitution at release is a line edit or a
+  recorded event, which is a traceability question, not a schema one.
+- **By-products and co-products.** One run yielding two outputs — a trim, a
+  grade B, a recovered solvent. `production_orders` has one
+  `output_variant_id` and would need output lines to carry more, which is a
+  shape change rather than a column. Deferred until a real second output exists;
+  guessing produces a table where every run has exactly one output row.
+- **Phantom assemblies.** A blend that exists as a recipe but is never stocked:
+  the exploder should see through it to its components rather than expecting a
+  balance. One boolean on `boms`, and the reason to wait is that a blend that is
+  genuinely never held is indistinguishable from one nobody has counted yet.
+- **BOM cost rollup.** What a finished unit costs from its components, which
+  needs component cost first — and costing (batch, moving average, FIFO) is
+  already open from ADR-023. Outsourced runs complicate it further: their cost
+  arrives inside the manufacturer's invoice price rather than from a rollup
+  (ADR-030), so the two paths give different numbers for the same SKU.
+- **The manufacturing fee on an outsourced run.** A co-packer charges for the
+  work, and that charge is neither a component nor part of the output's stock
+  value today. A purchase order line against them for a service variant is the
+  cheap version; doing it properly means landed cost, which is costing again.
+- **Production order numbering.** `id` is a UUIDv7 and nobody says one aloud.
+  Runs need a human reference the way lots do, and the same scheme question
+  applies — see the lot code entry above, and answer both at once or they
+  diverge.
+- **"How many can I make", and from where.** The arithmetic is free —
+  `bom_lines` joined to `stock_levels`, on-hand over per-unit quantity, take the
+  smallest, external lines excluded. Two things are not decided. **Scope:** one
+  site or everywhere, since material at a co-packer counts toward a run there
+  and not toward one in our own building. **Explosion:** whether the count stops
+  at what is on hand, or walks down — "no blend, but enough of the blend's
+  inputs, so really 400". Both are legitimate and they give different numbers,
+  so the screen has to say which it means.
+- **Reservation, and why production makes it urgent.** `on_hand` is not
+  `available`: a released run has material committed that a pending shipment can
+  still pick, so both documents promise the same units and the buildable count
+  lies to each. This is ADR-023's `available = on_hand − reserved` entry, and it
+  bites harder here than it did for orders. Worth settling before production
+  orders carry real work, not before they are written.
+- **Partner sites collide with our own on `locations_org_root_code_key`.** A
+  partner site is a root, so it shares the `(organization_id, code)` scope with
+  our warehouses: our `MAIN` and a co-packer's `MAIN` cannot coexist. Safe to
+  leave, because loosening a unique index later is free — no data can have
+  violated it. The fix when it bites is splitting that index into two partials,
+  `(organization_id, code)` where `partner_id is null` and
+  `(organization_id, partner_id, code)` where it is not, giving each partner its
+  own namespace. Prefixing codes (`ACME-MAIN`) costs nothing meanwhile.
+- **Scrap and overage are the same arithmetic for different reasons.** The scrap
+  entry above covers cutting waste, evaporation, and offcuts. Nutraceutical
+  overage — extra active dosed in so the product still meets label claim at end
+  of shelf life — is arithmetically identical and regulatorily distinct. One
+  column cannot report on them separately. Decide whether that reporting is ever
+  needed *before* naming the column, since `scrap_percent` leans one way and
+  `quantity_factor` covers both.
+- **Duplicating a partially received order.** Rejected in ADR-031 because
+  duplicating the whole thing re-orders what already arrived. Copying only the
+  shortfall is a backorder: a different operation, probably its own action, and
+  it needs a rule for what happens to the original line. Downstream of the
+  partial-line cancellation entry.
+- **Cancelling a partially received order.** Related and separate. `cancelled`
+  is a whole-order status, but a partly received order has real movements
+  against it and no clean terminal state — closed-short is what most systems
+  call it, and it is not currently expressible.
+- **If apparel is ever a target, two deferrals move to the front.** Matrix BOMs
+  (five sizes in four colours is twenty recipes differing by one number, since
+  consumption varies by size) and multi-output runs (one cutting run yields
+  several sizes from a single marker). Both are listed above as ordinary
+  deferrals; for cut-and-sew they are prerequisites, not refinements. Furniture
+  and machining hit neither.
+- **Purchase pack versus stock unit.** A supplier sells a 25 kg drum, stock is
+  kept in grams, and receiving means multiplying. This is where unit conversion
+  will actually arrive — before recipes ever need it. The shape is worth
+  recording now even though the work is deferred: two suppliers of the same
+  extract sell different pack sizes, so the factor belongs to the pairing of
+  partner and variant, which is a table, not a column on `product_variants`.
+  That is the wrong guess most people make, this entry included until it was
+  checked.
+- **Compliance is its own domain, and this is the line.** `product_licences`
+  records which registration a formulation is made under, because that is
+  history and cannot be backfilled (ADR-029). Everything else — registrations per market,
+  amendment and submission history, renewal dates, label versions, certificates
+  of analysis, a co-packer's site licence, a licence held by someone else under
+  private label — is a table set, and designing it
+  without a real regulatory workflow in front of you produces something that
+  gets rewritten. The trigger to build it is a second licence for one product,
+  or a second market. Note also what the label is *not*: medicinal quantity per
+  dose is declared, while a BOM line is what goes into a batch, and the two are
+  related by lot potency. Nothing should derive one from the other.
+- **Micro-dose units are a data-entry convention nothing enforces.**
+  `numeric(18,4)` is exact only if the unit is right: 50 mg held in kilograms is
+  0.00005 and truncates, held in grams it is 50 and does not. Lines inherit the
+  component variant's `unit_of_measure`, so the decision is made once per
+  variant at creation and is invisible afterwards. No constraint can catch it —
+  the defence is seed data and review.
 - **Unit display preference.** Storage is grams and millimetres, always
   (ADR-023). Showing pounds and inches is formatting, not conversion, and
   arrives as a function next to `relativeTime` plus a setting — but where the
@@ -1849,23 +2241,30 @@ they exist so the reasoning is not rediscovered from scratch.
 
 # Resolved
 
-| Decision                               | Outcome                                            | ADR              |
-|----------------------------------------|----------------------------------------------------|------------------|
-| ORM: Prisma vs. Drizzle vs. Knex       | Drizzle                                            | ADR-009          |
-| Primary key strategy                   | UUIDv7 on `uuid` column                            | ADR-010          |
-| PostgreSQL version                     | 18 (for native `uuidv7()`)                         | ADR-002, ADR-010 |
-| Session strategy                       | Opaque token in httpOnly cookie, no JWT            | ADR-011          |
-| Account deletion vs. audit retention   | Anonymize user, retain audit rows                  | ADR-012          |
-| Data ownership on user departure       | Org owns data, user attributed                     | ADR-012          |
-| API versioning                         | URL prefix `/v1/`, global, from first endpoint     | ADR-013          |
-| CSRF defence                           | Custom header, no token                            | ADR-014          |
-| Concurrent sessions per user           | Multiple; login revokes only the presented session | ADR-015          |
-| Permission resolution                  | Per request, never cached                          | ADR-016          |
-| Audit write path                       | Interceptor, opt in per route, writes only         | ADR-018          |
-| Audit pagination                       | Keyset on UUIDv7 cursor                            | ADR-018          |
-| Dependency upgrades vs. peer conflicts | Never override; a blocked upgrade waits            | ADR-019          |
-| Client route protection                | Three categories: protected, auth-only, public     | ADR-020          |
-| Component library                      | Material UI, CSS variables, three color modes      | ADR-021          |
-| Auditing account actions               | Separate account_events table, 90-day retention    | ADR-022          |
-| Inventory stock granularity            | Variants carry stock; quantity is a ledger         | ADR-023          |
-| Address and contact ownership          | Shared tables, exclusive arc FK                    | ADR-028          |
+| Decision                               | Outcome                                              | ADR              |
+|----------------------------------------|------------------------------------------------------|------------------|
+| ORM: Prisma vs. Drizzle vs. Knex       | Drizzle                                              | ADR-009          |
+| Primary key strategy                   | UUIDv7 on `uuid` column                              | ADR-010          |
+| PostgreSQL version                     | 18 (for native `uuidv7()`)                           | ADR-002, ADR-010 |
+| Session strategy                       | Opaque token in httpOnly cookie, no JWT              | ADR-011          |
+| Account deletion vs. audit retention   | Anonymize user, retain audit rows                    | ADR-012          |
+| Data ownership on user departure       | Org owns data, user attributed                       | ADR-012          |
+| API versioning                         | URL prefix `/v1/`, global, from first endpoint       | ADR-013          |
+| CSRF defence                           | Custom header, no token                              | ADR-014          |
+| Concurrent sessions per user           | Multiple; login revokes only the presented session   | ADR-015          |
+| Permission resolution                  | Per request, never cached                            | ADR-016          |
+| Audit write path                       | Interceptor, opt in per route, writes only           | ADR-018          |
+| Audit pagination                       | Keyset on UUIDv7 cursor                              | ADR-018          |
+| Dependency upgrades vs. peer conflicts | Never override; a blocked upgrade waits              | ADR-019          |
+| Client route protection                | Three categories: protected, auth-only, public       | ADR-020          |
+| Component library                      | Material UI, CSS variables, three color modes        | ADR-021          |
+| Auditing account actions               | Separate account_events table, 90-day retention      | ADR-022          |
+| Inventory stock granularity            | Variants carry stock; quantity is a ledger           | ADR-023          |
+| Address and contact ownership          | Shared tables, exclusive arc FK                      | ADR-028          |
+| Bill of materials shape                | Header plus lines; nesting is data, not schema       | ADR-029          |
+| BOM versioning                         | Version on the header, history by snapshot at run    | ADR-029          |
+| Who supplies a component               | `supply_type` on the line; actual on the run         | ADR-030          |
+| Outsourced manufacturing               | `partner_id` on the run; external lines move nothing | ADR-030          |
+| A run's output lots                    | Read from the ledger, not stored on the run          | ADR-030          |
+| Amending a wrong, confirmed order      | Duplicate to a draft, then cancel the original       | ADR-031          |
+| What a duplicate copies                | Re-resolves snapshots; never copies frozen ones      | ADR-031          |
