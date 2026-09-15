@@ -1849,11 +1849,6 @@ they exist so the reasoning is not rediscovered from scratch.
   after the row lock and answered with a 409 on mismatch — an ETag by another
   name. Deferred because the response shape is a guess until a counting screen
   exists to receive it. The trigger is the first stocktake.
-- **Splitting the inventory screen.** It holds locations, stock rows, and four
-  dialogs' open state in one file, and the table is about seventy lines of JSX
-  with no state of its own — the same shape as the LocationNode extraction. Left
-  whole because extracting now is guessing at the seam; when a fifth dialog or a
-  second filter lands, the seam will be obvious rather than inferred.
 - **Reopening a closed order.** Received and cancelled are terminal
   (ADR-027), so a mistake means retyping. Real systems answer this with
   "copy to new order" rather than un-cancelling — the history stays honest
@@ -1868,11 +1863,6 @@ they exist so the reasoning is not rediscovered from scratch.
   narrower permission held by fewer people. Costs a new key and a re-seed
   everywhere, so it waits until more than one person can reach the
   inventory screen.
-- **Confirming before closing an unreceived order.** `received` is a person
-  saying the order is done, and that stays true of a short shipment
-  (ADR-027) — but the screen currently lets someone close an order with
-  nothing received and no warning. `fullyReceived` on the detail response is
-  what a confirmation would read; the dialog is not built.
 
 ---
 

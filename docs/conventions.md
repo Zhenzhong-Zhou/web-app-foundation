@@ -190,6 +190,26 @@ and silently goes stale.
 
 ---
 
+### What is worth a component test
+
+Pure functions first — no rendering, most logic per test:
+`lib/validation.ts`, `lib/format.ts`, `locations/tree.ts` including the
+orphan case, `edit-location-dialog`'s `eligibleParents` (a real graph walk,
+currently covered only by one expensive e2e test), and `lib/api.ts` —
+`ApiError` construction, the 204 path, the array-message flattening.
+
+Then components with real branching: `move-stock-dialog` (three modes, the
+adjust direction flip — most branches of anything here),
+`change-password-form` (the mismatch logic, and a security path),
+`variant-row` (inline SKU edit and its blur commit),
+`movement-history-dialog` (the direction reconstruction in `describe`).
+
+Not worth it: pages, which are mostly loading and dialog state that e2e
+already covers; the simple create dialogs, which fill fields and POST; and
+`error-boundary`, `color-mode-select`, `form-error`, `auth-layout`.
+
+---
+
 ## Loading states
 
 Block only on what cannot be rendered around.
@@ -217,7 +237,7 @@ MUI's breakpoint props (`sx={{ py: { xs: 3, sm: 8 } }}`), applied where a
 layout actually breaks — not pre-emptively. A rule added for a width nobody
 checked is a rule nobody can safely remove later.
 
-Nav is a top bar while it holds a handful of items, wrapping to two rows on
-narrow screens rather than hiding anything. A drawer costs open/closed state
-and a toggle, and earns that at roughly six items with real hierarchy — which
-is step 9, not before.
+Nav is a top bar. Daily destinations sit in it; account and admin screens live
+behind a menu, which is what kept six items readable without a drawer. A drawer
+costs open/closed state and a toggle, and earns that when the sections have
+real hierarchy rather than just length.
