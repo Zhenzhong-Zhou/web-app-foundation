@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
+import { openDialog } from '../lib/open-dialog';
 import type { Location } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateLocationDialog } from './create-location-dialog';
@@ -84,10 +85,10 @@ export function LocationsPage() {
             the actual control (ADR-016). */}
         {canCreate && (
           <Button
-            onClick={() => {
+            onClick={openDialog(() => {
               setCreatingUnder(null);
               setCreating(true);
-            }}
+            })}
           >
             Add location
           </Button>

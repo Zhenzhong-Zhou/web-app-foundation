@@ -1,5 +1,6 @@
 import { Button, Chip, Stack, Typography } from '@mui/material';
 
+import { openDialog } from '../lib/open-dialog';
 import type { Location } from '../lib/types';
 import { childrenOf } from './tree';
 
@@ -80,14 +81,14 @@ export function LocationNode({
             <Button
               variant="text"
               size="small"
-              onClick={() => onAddChild(location)}
+              onClick={openDialog(() => onAddChild(location))}
             >
               Add inside
             </Button>
             <Button
               variant="text"
               size="small"
-              onClick={() => onEdit(location)}
+              onClick={openDialog(() => onEdit(location))}
             >
               Edit
             </Button>
