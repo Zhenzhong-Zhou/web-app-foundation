@@ -21,7 +21,7 @@ jobs:
       # Pinned to the major rather than .node-version: setup-node fails hard
       # when an exact patch is not yet on the runner, and it fails in seconds
       # with an error that looks like a config problem.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '26'
           cache: npm
@@ -72,7 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '26'
           cache: npm
@@ -170,7 +170,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '26'
           cache: npm
