@@ -55,6 +55,10 @@ export const handlers = [
     HttpResponse.json({ movement: { id: 'movement-1' } }, { status: 201 }),
   ),
   http.get('/api/v1/stock/lots', () => HttpResponse.json([])),
+  http.get(`${BASE}/boms`, () => HttpResponse.json([])),
+  http.post(`${BASE}/boms`, () =>
+    HttpResponse.json({ bom: { id: 'bom-1' } }, { status: 201 }),
+  ),
 ];
 
 /**

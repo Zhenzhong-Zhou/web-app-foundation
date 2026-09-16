@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
+import { RecipePanel } from '../boms/recipe-panel';
 import { api, ApiError } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { AddVariantDialog } from './add-variant-dialog';
@@ -234,6 +235,12 @@ export function ProductDetailPage() {
           </TableBody>
         </Table>
       </Paper>
+
+      {/* Below the variants, not above: a recipe outputs one variant, so the
+          reader has to have met them first. The panel owns its own data and
+          renders nothing without boms.view, so there is no permission check
+          or reload to wire here. */}
+      {product && <RecipePanel variants={product.variants} />}
 
       <AddVariantDialog
         open={adding}
