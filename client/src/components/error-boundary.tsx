@@ -42,24 +42,48 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     // only thing connecting what the user saw to a line in the server log.
     const requestId = error instanceof ApiError ? error.requestId : undefined;
 
+    /**
+     * A page chunk that no longer exists.
+     *
+     * Routes are split per page, so deploying while a tab is open leaves it
+     * asking for filenames that were replaced. Matching on the message is
+     * fragile and there is no error type for it — but the only cost of the
+     * wording changing is falling back to the generic branch, which is where
+     * this used to land anyway.
+     */
+    const isStaleChunk =
+      !(error instanceof ApiError) &&
+      /dynamically imported module|Importing a module script failed/i.test(
+        error.message,
+      );
+
     return (
       <Stack spacing={2} sx={{ py: 4 }}>
         <Typography variant="h5" component="h1">
-          Something went wrong
+          {isStaleChunk ? 'A new version is available' : 'Something went wrong'}
         </Typography>
 
-        <Alert severity="error">
-          {error.message}
-          {requestId && (
-            <Typography variant="caption" component="div" sx={{ mt: 1 }}>
-              Reference: {requestId}
-            </Typography>
-          )}
-        </Alert>
+        {isStaleChunk ? (
+          // The browser's own message names a module URL and reads like a bug.
+          // This is not one, and a reload is the whole fix.
+          <Alert severity="info">
+            The app was updated while this tab was open. Reload to pick up the
+            new version — nothing is lost.
+          </Alert>
+        ) : (
+          <Alert severity="error">
+            {error.message}
+            {requestId && (
+              <Typography variant="caption" component="div" sx={{ mt: 1 }}>
+                Reference: {requestId}
+              </Typography>
+            )}
+          </Alert>
+        )}
 
         {/* Full reload rather than clearing state: whatever the component was
             holding is what broke it, and a soft reset would render the same
-            thing again. */}
+            thing again. For a stale chunk it is also the fix itself. */}
         <Button
           onClick={() => window.location.reload()}
           sx={{ alignSelf: 'flex-start' }}
