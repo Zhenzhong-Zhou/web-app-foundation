@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Chip,
+  IconButton,
   Link,
   Paper,
   Skeleton,
@@ -12,6 +13,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
@@ -29,9 +31,12 @@ import type {
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { leavesOf } from '../locations/tree';
+import { AddOrderLineDialog } from './add-order-line-dialog';
+import { CloseLineDialog } from './close-line-dialog';
 import { CloseOrderDialog } from './close-order-dialog';
 import { DuplicateOrderDialog } from './duplicate-order-dialog';
 import { EditOrderDialog } from './edit-order-dialog';
+import { EditOrderLineDialog } from './edit-order-line-dialog';
 import { ReceiveLineDialog } from './receive-line-dialog';
 
 function messageFor(caught: unknown): string {
@@ -92,6 +97,9 @@ export function OrderDetailPage() {
   const [working, setWorking] = useState(false);
   const [closing, setClosing] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
+  const [addingLine, setAddingLine] = useState(false);
+  const [editingLine, setEditingLine] = useState<OrderLine | null>(null);
+  const [closingLine, setClosingLine] = useState<OrderLine | null>(null);
 
   const canUpdate = !!session?.permissions.includes('orders.update');
   const canReceive = !!session?.permissions.includes('orders.receive');
@@ -146,6 +154,24 @@ export function OrderDetailPage() {
     }
   }
 
+  /**
+   * A line action with no form behind it — remove and reopen. Both are a
+   * single request and a reload, so a dialog would only add a click.
+   */
+  async function lineAction(path: string, method: string) {
+    setWorking(true);
+    setError(null);
+
+    try {
+      await api(path, { method });
+      await load();
+    } catch (caught) {
+      setError(messageFor(caught));
+    } finally {
+      setWorking(false);
+    }
+  }
+
   if (loading) {
     return showSkeleton ? (
       <Stack spacing={2}>
@@ -170,6 +196,10 @@ export function OrderDetailPage() {
     canReceive &&
     order.direction === 'purchase' &&
     order.status === 'confirmed';
+
+  /** Lines are editable on a draft, and amendable while confirmed (ADR-033). */
+  const isDraft = order.status === 'draft';
+  const amendable = canUpdate && (isDraft || order.status === 'confirmed');
 
   return (
     <Stack spacing={3}>
@@ -264,9 +294,23 @@ export function OrderDetailPage() {
       )}
 
       <Box>
-        <Typography variant="h6" component="h2" sx={{ mb: 1 }}>
-          Items
-        </Typography>
+        <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 1 }}>
+          <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
+            Items
+          </Typography>
+
+          {/* Draft only: adding to an order the supplier has already been sent
+              is a new agreement, not a correction (ADR-033). */}
+          {canUpdate && isDraft && (
+            <Button
+              variant="text"
+              disabled={working}
+              onClick={() => setAddingLine(true)}
+            >
+              Add item
+            </Button>
+          )}
+        </Stack>
 
         <Paper variant="outlined">
           <Table size="small">
@@ -276,29 +320,36 @@ export function OrderDetailPage() {
                 <TableCell>Ordered</TableCell>
                 <TableCell>Received</TableCell>
                 <TableCell>Outstanding</TableCell>
-                {receivable && <TableCell align="right">Receive</TableCell>}
+                <TableCell align="right" />
               </TableRow>
             </TableHead>
 
             <TableBody>
               {order.lines.map((line) => (
                 <TableRow key={line.id} hover>
-                  {/* Snapshotted when the order was raised, so a rename
-                      affects the catalogue and nothing historical
-                      (ADR-023). */}
                   <TableCell>{line.sku}</TableCell>
-
-                  {/* Both rendered as Postgres stored them. Subtracting one
-                      from the other to show what is outstanding would mean
-                      parsing a numeric(18,4) into a double (ADR-025) — if
-                      that column is wanted, the server computes it. */}
                   <TableCell>{line.quantityOrdered}</TableCell>
                   <TableCell>{line.quantityFulfilled}</TableCell>
-                  <TableCell>{line.quantityOutstanding}</TableCell>
 
-                  {receivable && (
-                    <TableCell align="right">
-                      {!line.isComplete && (
+                  <TableCell>
+                    {line.isClosedShort ? (
+                      /* The reason in place of the number: outstanding is
+                         zero, and why it is zero is the useful part. */
+                      <Tooltip title={line.closedReason ?? ''}>
+                        <Chip label="Closed short" size="small" />
+                      </Tooltip>
+                    ) : (
+                      line.quantityOutstanding
+                    )}
+                  </TableCell>
+
+                  <TableCell align="right">
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{ justifyContent: 'flex-end' }}
+                    >
+                      {receivable && !line.isComplete && (
                         <Button
                           variant="text"
                           size="small"
@@ -307,8 +358,71 @@ export function OrderDetailPage() {
                           Receive
                         </Button>
                       )}
-                    </TableCell>
-                  )}
+
+                      {amendable && !line.isClosedShort && !line.isComplete && (
+                        <Button
+                          variant="text"
+                          size="small"
+                          disabled={working}
+                          onClick={() => setEditingLine(line)}
+                        >
+                          Edit
+                        </Button>
+                      )}
+
+                      {/* Confirmed only, and only while something is still
+                          outstanding — a draft has promised nothing, so
+                          removing the line is the right act there. */}
+                      {canUpdate &&
+                        order.status === 'confirmed' &&
+                        !line.isComplete && (
+                          <Button
+                            variant="text"
+                            size="small"
+                            disabled={working}
+                            onClick={() => setClosingLine(line)}
+                          >
+                            Close short
+                          </Button>
+                        )}
+
+                      {canUpdate && line.isClosedShort && (
+                        <Button
+                          variant="text"
+                          size="small"
+                          disabled={working}
+                          onClick={() =>
+                            void lineAction(
+                              `/orders/${order.id}/lines/${line.id}/reopen`,
+                              'POST',
+                            )
+                          }
+                        >
+                          Reopen
+                        </Button>
+                      )}
+
+                      {/* Draft only, and never the last one — an order with no
+                          lines orders nothing (ADR-033). The server refuses
+                          both and those 409s render, but a control that always
+                          fails is worth not offering. */}
+                      {canUpdate && isDraft && order.lines.length > 1 && (
+                        <IconButton
+                          size="small"
+                          aria-label={`Remove ${line.sku}`}
+                          disabled={working}
+                          onClick={() =>
+                            void lineAction(
+                              `/orders/${order.id}/lines/${line.id}`,
+                              'DELETE',
+                            )
+                          }
+                        >
+                          ×
+                        </IconButton>
+                      )}
+                    </Stack>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -397,6 +511,32 @@ export function OrderDetailPage() {
         order={order}
         onClose={() => setDuplicating(false)}
         onDuplicated={(newOrderId) => navigate(`/orders/${newOrderId}`)}
+      />
+
+      <AddOrderLineDialog
+        open={addingLine}
+        order={order}
+        variants={variants}
+        onClose={() => setAddingLine(false)}
+        onAdded={load}
+      />
+
+      <EditOrderLineDialog
+        key={editingLine?.id ?? 'no-line'}
+        open={editingLine !== null}
+        orderId={order.id}
+        orderStatus={order.status}
+        line={editingLine}
+        onClose={() => setEditingLine(null)}
+        onSaved={load}
+      />
+
+      <CloseLineDialog
+        open={closingLine !== null}
+        orderId={order.id}
+        line={closingLine}
+        onClose={() => setClosingLine(null)}
+        onClosed={load}
       />
     </Stack>
   );

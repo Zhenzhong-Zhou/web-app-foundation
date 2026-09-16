@@ -152,6 +152,9 @@ export interface OrderLine {
   quantityFulfilled: string;
   quantityOutstanding: string;
   isComplete: boolean;
+  /** No more is coming (ADR-034). The quantities above stay as they were. */
+  isClosedShort: boolean;
+  closedReason: string | null;
 }
 
 /** What GET /orders/:id returns — the order with its lines. */
