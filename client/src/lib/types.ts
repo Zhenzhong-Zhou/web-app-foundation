@@ -161,6 +161,8 @@ export interface OrderDetail {
   partnerName: string;
   direction: OrderDirection;
   fullyReceived: boolean;
+  /** Set when this order was raised by duplicating another (ADR-031). */
+  duplicatedFromId: string | null;
   status: OrderStatus;
   reference: string | null;
   expectedAt: string | null;

@@ -15,7 +15,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
@@ -30,6 +30,8 @@ import type {
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { leavesOf } from '../locations/tree';
 import { CloseOrderDialog } from './close-order-dialog';
+import { DuplicateOrderDialog } from './duplicate-order-dialog';
+import { EditOrderDialog } from './edit-order-dialog';
 import { ReceiveLineDialog } from './receive-line-dialog';
 
 function messageFor(caught: unknown): string {
@@ -61,27 +63,39 @@ const NEXT_STATUSES: Record<OrderStatus, OrderStatus[]> = {
   cancelled: [],
 };
 
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  draft: 'Draft',
+/** Button labels. What clicking does, not what the order is. */
+const TRANSITION_LABEL: Partial<Record<OrderStatus, string>> = {
   confirmed: 'Confirm',
   received: 'Mark received',
   cancelled: 'Cancel order',
 };
 
+/** Chip labels. What the order is, rather than relying on CSS capitalisation. */
+const STATUS_LABEL: Record<OrderStatus, string> = {
+  draft: 'Draft',
+  confirmed: 'Confirmed',
+  received: 'Received',
+  cancelled: 'Cancelled',
+};
+
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { session } = useAuth();
+  const navigate = useNavigate();
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [variants, setVariants] = useState<VariantOption[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
   const [receiving, setReceiving] = useState<OrderLine | null>(null);
   const [working, setWorking] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
 
   const canUpdate = !!session?.permissions.includes('orders.update');
   const canReceive = !!session?.permissions.includes('orders.receive');
+  const canCreate = !!session?.permissions.includes('orders.create');
   const loading = order === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 
@@ -166,24 +180,76 @@ export function OrderDetailPage() {
 
         <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mt: 1 }}>
           <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-            <Link component={RouterLink} to={`/partners/${order.partnerId}`}>
+            {/* underline="hover": MUI underlines links always, which makes a
+                heading read as body text and competes with the breadcrumb
+                directly above it. */}
+            <Link
+              component={RouterLink}
+              to={`/partners/${order.partnerId}`}
+              underline="hover"
+              color="inherit"
+            >
               {order.partnerName}
             </Link>
           </Typography>
 
+          {/* Record-level actions, grouped tightly so they read as a pair
+              rather than as two separate things beside the status. They change
+              what this order says about itself; the lifecycle buttons at the
+              foot move it along. */}
+          <Stack direction="row" spacing={1}>
+            {canUpdate && (
+              <Button
+                variant="text"
+                disabled={working}
+                onClick={() => setEditing(true)}
+              >
+                Edit
+              </Button>
+            )}
+
+            {canCreate && (
+              <Button
+                variant={
+                  NEXT_STATUSES[order.status].length === 0 ? 'outlined' : 'text'
+                }
+                disabled={working}
+                onClick={() => setDuplicating(true)}
+              >
+                Duplicate
+              </Button>
+            )}
+          </Stack>
+
           <Chip
-            label={order.status}
+            label={STATUS_LABEL[order.status]}
             color={STATUS_COLOUR[order.status]}
-            sx={{ textTransform: 'capitalize' }}
           />
         </Stack>
 
+        {/* Everything about what this order is, on one line. The
+            duplicated-from link belongs here rather than in the header row:
+            it is context, not an action or a status. */}
         <Typography variant="body2" color="text.secondary">
           {order.direction === 'purchase' ? 'Buying' : 'Selling'}
           {order.reference ? ` · ${order.reference}` : ''}
           {order.expectedAt
             ? ` · expected ${formatDate(order.expectedAt)}`
             : ''}
+          {order.duplicatedFromId && (
+            <>
+              {' · Duplicated from '}
+              <Link
+                component={RouterLink}
+                to={`/orders/${order.duplicatedFromId}`}
+                color="inherit"
+                underline="hover"
+                variant="body2"
+              >
+                the previous order
+              </Link>
+            </>
+          )}
         </Typography>
       </Box>
 
@@ -195,29 +261,6 @@ export function OrderDetailPage() {
             {order.note}
           </Typography>
         </Paper>
-      )}
-
-      {canUpdate && NEXT_STATUSES[order.status].length > 0 && (
-        <Stack direction="row" spacing={2}>
-          {NEXT_STATUSES[order.status].map((next) => (
-            <Button
-              key={next}
-              variant={next === 'confirmed' ? 'contained' : 'text'}
-              disabled={working}
-              onClick={() => {
-                // Only the close needs asking about. Confirming commits to an
-                // order and cancelling is already phrased as a decision.
-                if (next === 'received' && !order.fullyReceived) {
-                  setClosing(true);
-                  return;
-                }
-                void moveTo(next);
-              }}
-            >
-              {STATUS_LABEL[next]}
-            </Button>
-          ))}
-        </Stack>
       )}
 
       <Box>
@@ -280,8 +323,56 @@ export function OrderDetailPage() {
         )}
       </Box>
 
+      {canUpdate && NEXT_STATUSES[order.status].length > 0 && (
+        <Stack direction="row" spacing={2} sx={{ justifyContent: 'flex-end' }}>
+          {/* Cancel first, Confirm last: the rightmost position is where
+              "proceed" lives, and the destructive one should not be where a
+              thumb lands by default. */}
+          {NEXT_STATUSES[order.status]
+            .filter((next) => next === 'cancelled')
+            .map((next) => (
+              <Button
+                key={next}
+                variant="text"
+                color="error"
+                disabled={working}
+                onClick={() => void moveTo(next)}
+              >
+                {TRANSITION_LABEL[next]}
+              </Button>
+            ))}
+
+          {NEXT_STATUSES[order.status]
+            .filter((next) => next !== 'cancelled')
+            .map((next) => (
+              <Button
+                key={next}
+                variant="contained"
+                disabled={working}
+                onClick={() => {
+                  if (next === 'received' && !order.fullyReceived) {
+                    setClosing(true);
+                    return;
+                  }
+                  void moveTo(next);
+                }}
+              >
+                {TRANSITION_LABEL[next]}
+              </Button>
+            ))}
+        </Stack>
+      )}
+
       {/* Keyed on the line, so the form is seeded at mount and never needs an
           effect to resync. */}
+      <EditOrderDialog
+        key={`${order.id}-${order.reference ?? ''}-${order.expectedAt ?? ''}`}
+        open={editing}
+        order={order}
+        onClose={() => setEditing(false)}
+        onSaved={load}
+      />
+
       <ReceiveLineDialog
         key={receiving?.id ?? 'closed'}
         orderId={order.id}
@@ -299,6 +390,13 @@ export function OrderDetailPage() {
           setClosing(false);
           void moveTo('received');
         }}
+      />
+
+      <DuplicateOrderDialog
+        open={duplicating}
+        order={order}
+        onClose={() => setDuplicating(false)}
+        onDuplicated={(newOrderId) => navigate(`/orders/${newOrderId}`)}
       />
     </Stack>
   );

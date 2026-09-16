@@ -157,6 +157,7 @@ export class OrdersService {
           reference: orders.reference,
           expectedAt: orders.expectedAt,
           note: orders.note,
+          duplicatedFromId: orders.duplicatedFromId,
           createdAt: orders.createdAt,
 
           /**
@@ -419,6 +420,22 @@ export class OrdersService {
     );
 
     if (!existing) throw new NotFoundException('No such order');
+
+    /**
+     * A reference is matched against a supplier invoice once goods arrive, so
+     * changing it afterwards breaks that link silently. Expected date and note
+     * carry no such dependency and stay editable at any status — what other
+     * records depend on is what becomes immutable.
+     */
+    if (
+      input.reference !== undefined &&
+      input.reference !== existing.reference &&
+      existing.status === 'received'
+    ) {
+      throw new ConflictException(
+        'The reference cannot change once an order is received — it is what a supplier invoice is matched against',
+      );
+    }
 
     if (input.status && input.status !== existing.status) {
       const from = ALLOWED_FROM[input.status] ?? [];
