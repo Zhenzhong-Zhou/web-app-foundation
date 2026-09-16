@@ -11,11 +11,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  POSTGRES_USER: app
-  POSTGRES_PASSWORD: ci_password
-  POSTGRES_DB: foundation
-
 jobs:
   client:
     name: Client — lint, types, unit
@@ -23,18 +18,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Pinned to the major rather than .node-version: setup-node fails hard
+      # when an exact patch is not yet on the runner, and it fails in seconds
+      # with an error that looks like a config problem.
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
+          node-version: '26'
           cache: npm
           cache-dependency-path: client/package-lock.json
 
       - run: npm ci
         working-directory: client
 
-      # lint:ci, not lint: the local script runs eslint --fix, which would make
-      # a failing lint pass by rewriting files nobody reviews.
+      # lint:ci, not lint: the local script runs eslint --fix and prettier
+      # --write, which in CI rewrites files and then reports success — a
+      # failing lint becoming a silent pass.
       - run: npm run lint:ci
+        working-directory: client
+
+      - run: npm run format:check
         working-directory: client
 
       - run: npx tsc --noEmit
@@ -43,7 +45,7 @@ jobs:
       - run: npm run build
         working-directory: client
 
-      - run: npm run test:unit
+      - run: npm test
         working-directory: client
 
   server:
@@ -72,7 +74,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
+          node-version: '26'
           cache: npm
           cache-dependency-path: server/package-lock.json
 
@@ -170,7 +172,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
+          node-version: '26'
           cache: npm
           cache-dependency-path: |
             server/package-lock.json
@@ -191,7 +193,7 @@ jobs:
           POSTGRES_USER=app
           POSTGRES_PASSWORD=ci_password
           POSTGRES_DB=foundation
-          DATABASE_URL=postgresql://app:ci_password@localhost:5432/foundation
+          DATABASE_URL=postgresql://app:ci_password@localhost:5432/foundation_e2e
           DATABASE_URL_TEST=postgresql://app:ci_password@localhost:5432/foundation_e2e
           DATABASE_URL_E2E=postgresql://app:ci_password@localhost:5432/foundation_e2e
           SESSION_MAX_AGE_MS=2592000000
@@ -208,26 +210,23 @@ jobs:
           THROTTLE_FACTOR=100
           ENVFILE
 
+      # The server tree too: playwright.config.ts starts the API itself with
+      # `npm run start:dev`, and pretest:e2e runs drizzle-kit from there.
       - run: npm ci
         working-directory: server
 
       - run: npm ci
         working-directory: client
-
-      - run: npm run migrate:e2e
-        working-directory: server
-
-      - run: npm run seed
-        working-directory: server
-        env:
-          DATABASE_URL: postgresql://app:ci_password@localhost:5432/foundation_e2e
 
       - name: Install browsers
         run: npx playwright install --with-deps chromium
         working-directory: client
 
-      # playwright.config.ts starts both servers itself on 3100 and 5273.
-      - run: npx playwright test
+      # One script, not four steps. pretest:e2e already migrates and seeds
+      # against DATABASE_URL_E2E through dotenv-cli, and test:e2e wraps
+      # playwright in the same loader — reimplementing either here would be a
+      # second definition of the setup, free to drift from the one people run.
+      - run: npm run test:e2e
         working-directory: client
 
       - uses: actions/upload-artifact@v4
