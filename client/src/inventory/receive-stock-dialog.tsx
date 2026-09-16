@@ -71,7 +71,8 @@ export function ReceiveStockDialog({
   /**
    * The codes already on this variant, so a typo shows the real one sitting
    * beside it. Refetched when the item changes, since lots belong to one
-   * variant.
+   * variant — and when tracksLots resolves, because the catalogue may not have
+   * arrived when the variant was chosen, and without that this never runs.
    */
   useEffect(() => {
     if (!variant?.tracksLots || !form.variantId) return;
@@ -88,7 +89,7 @@ export function ReceiveStockDialog({
     return () => {
       ignore = true;
     };
-  }, [form.variantId]);
+  }, [form.variantId, variant?.tracksLots]);
 
   // Loaded when the dialog opens rather than on mount: the catalogue changes
   // between visits, and a list fetched once at page load goes stale in exactly
