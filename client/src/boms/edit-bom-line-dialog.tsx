@@ -13,8 +13,8 @@ import { type SubmitEvent, useState } from 'react';
 
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import type { BomLine } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
-import type { BomLine } from './recipe-panel';
 
 /**
  * Quantity, supply type, notes.

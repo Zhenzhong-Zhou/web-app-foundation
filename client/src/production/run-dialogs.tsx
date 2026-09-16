@@ -1,0 +1,506 @@
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { type SubmitEvent, useEffect, useState } from 'react';
+
+import { FormError } from '../components/form-error';
+import { api } from '../lib/api';
+import type { LineVariance, RunDetail } from '../lib/types';
+import { useSubmit } from '../lib/use-submit';
+
+interface LocationSummary {
+  id: string;
+  name: string;
+}
+
+/**
+ * Release: pick a source, issue the components, freeze the recipe onto the run.
+ *
+ * One source with per-line overrides rather than a source on every line,
+ * because most components do come from the same place and a form repeating the
+ * same answer eight times is a form people stop reading (ADR-032).
+ */
+export function ReleaseRunDialog({
+  open,
+  runId,
+  onClose,
+  onReleased,
+}: {
+  open: boolean;
+  runId: string;
+  onClose: () => void;
+  onReleased: () => Promise<void> | void;
+}) {
+  const [sourceLocationId, setSource] = useState('');
+  const [locations, setLocations] = useState<LocationSummary[]>([]);
+
+  const { submitting, error, reset, submit } = useSubmit(async () => {
+    close();
+    await onReleased();
+  });
+
+  useEffect(() => {
+    if (!open) return;
+
+    let ignore = false;
+
+    void api<LocationSummary[]>('/locations')
+      .then((rows) => {
+        if (!ignore) setLocations(rows);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      ignore = true;
+    };
+  }, [open]);
+
+  function close() {
+    setSource('');
+    reset();
+    onClose();
+  }
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+
+    void submit(() =>
+      api(`/production-orders/${runId}/release`, {
+        method: 'POST',
+        body: JSON.stringify({ sourceLocationId }),
+      }),
+    );
+  }
+
+  return (
+    <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>Release this run</DialogTitle>
+
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            {error && <FormError message={error} />}
+
+            <TextField
+              id="release-source"
+              label="Pick components from"
+              select
+              required
+              fullWidth
+              value={sourceLocationId}
+              onChange={(event) => setSource(event.target.value)}
+            >
+              {locations.map((row) => (
+                <MenuItem key={row.id} value={row.id}>
+                  {row.name}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <Alert severity="info">
+              Releasing copies the recipe onto this run and moves the components
+              to where it is made. Editing the recipe afterwards will not change
+              what this run consumed.
+            </Alert>
+
+            {/* Said plainly because "released" sounds terminal and is not:
+                material has moved but nothing has been used up yet. */}
+            <Typography variant="caption" color="text.secondary">
+              Nothing is consumed yet — that happens when you close the run,
+              with the amounts actually used.
+            </Typography>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions>
+          <Button variant="text" onClick={close} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Releasing…' : 'Release'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+}
+
+/**
+ * Output: repeatable, and defaulting to the lot already open on this run.
+ *
+ * Joining is the default because of how recalls fail. One batch split across
+ * two lots means recalling the second leaves the first — the same material —
+ * on shelves; two batches merged means recalling one pulls both, which is
+ * wasteful and safe (ADR-032).
+ */
+export function RecordOutputDialog({
+  open,
+  run,
+  onClose,
+  onRecorded,
+}: {
+  open: boolean;
+  run: RunDetail;
+  onClose: () => void;
+  onRecorded: () => Promise<void> | void;
+}) {
+  const [quantity, setQuantity] = useState('');
+  const [lotChoice, setLotChoice] = useState('');
+  const [newCode, setNewCode] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
+
+  const { submitting, error, reset, submit } = useSubmit(async () => {
+    close();
+    await onRecorded();
+  });
+
+  const openLot = run.outputLots[run.outputLots.length - 1] ?? '';
+  const effective = lotChoice || openLot;
+
+  function close() {
+    setQuantity('');
+    setLotChoice('');
+    setNewCode('');
+    setExpiresAt('');
+    reset();
+    onClose();
+  }
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+
+    void submit(() =>
+      api(`/production-orders/${run.id}/output`, {
+        method: 'POST',
+        body: JSON.stringify({
+          quantity,
+          lotId: effective === 'new' ? undefined : effective || undefined,
+          lot:
+            effective === 'new' || !openLot
+              ? {
+                  code: newCode,
+                  expiresAt: expiresAt
+                    ? new Date(expiresAt).toISOString()
+                    : undefined,
+                }
+              : undefined,
+        }),
+      }),
+    );
+  }
+
+  const makingNew = effective === 'new' || !openLot;
+
+  return (
+    <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>Record output</DialogTitle>
+
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            {error && <FormError message={error} />}
+
+            <TextField
+              id="output-quantity"
+              label="Finished this time"
+              required
+              fullWidth
+              value={quantity}
+              onChange={(event) => setQuantity(event.target.value)}
+              helperText={`${run.quantityProduced} recorded so far against a plan of ${run.quantityPlanned}.`}
+              slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 19 } }}
+            />
+
+            {openLot && (
+              <TextField
+                id="output-lot"
+                label="Batch number"
+                select
+                fullWidth
+                value={effective}
+                onChange={(event) => setLotChoice(event.target.value)}
+                helperText="Same batch unless this part was genuinely separate."
+              >
+                {run.outputLots.map((lotId) => (
+                  <MenuItem key={lotId} value={lotId}>
+                    Add to the batch already open
+                  </MenuItem>
+                ))}
+                <MenuItem value="new">Start a new batch</MenuItem>
+              </TextField>
+            )}
+
+            {makingNew && (
+              <>
+                <TextField
+                  id="output-lot-code"
+                  label="Batch number"
+                  required
+                  fullWidth
+                  value={newCode}
+                  onChange={(event) => setNewCode(event.target.value)}
+                  slotProps={{ htmlInput: { maxLength: 64 } }}
+                />
+
+                <TextField
+                  id="output-expires"
+                  label="Expires"
+                  type="date"
+                  fullWidth
+                  value={expiresAt}
+                  onChange={(event) => setExpiresAt(event.target.value)}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
+              </>
+            )}
+
+            <Typography variant="caption" color="text.secondary">
+              The run stays open until you close it, so a batch made over
+              several days is recorded a bit at a time.
+            </Typography>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions>
+          <Button variant="text" onClick={close} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Recording…' : 'Record'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+}
+
+/**
+ * Close: actual quantities per line, then consumption is written.
+ *
+ * Every line is pre-filled with what was planned, so the only thing to type is
+ * what differed. Leaving one alone means "this went as planned", which is what
+ * the operator is asserting by closing.
+ */
+export function CloseRunDialog({
+  open,
+  run,
+  onClose,
+  onClosed,
+}: {
+  open: boolean;
+  run: RunDetail;
+  onClose: () => void;
+  onClosed: (variances: LineVariance[]) => Promise<void> | void;
+}) {
+  const stocked = run.lines.filter((line) => line.supplyType === 'stocked');
+
+  const [amounts, setAmounts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(stocked.map((line) => [line.id, line.quantityPlanned])),
+  );
+
+  const { submitting, error, reset, submit } = useSubmit(async () => {
+    close();
+  });
+
+  function close() {
+    reset();
+    onClose();
+  }
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+
+    void submit(async () => {
+      const result = await api<{ variances: LineVariance[] }>(
+        `/production-orders/${run.id}/close`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            lines: stocked
+              .filter((line) => amounts[line.id] !== line.quantityPlanned)
+              .map((line) => ({
+                lineId: line.id,
+                quantityConsumed: amounts[line.id],
+              })),
+          }),
+        },
+      );
+
+      close();
+      await onClosed(result.variances);
+    });
+  }
+
+  return (
+    <Dialog open={open} onClose={close} fullWidth maxWidth="md">
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>Close this run</DialogTitle>
+
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            {error && <FormError message={error} />}
+
+            <Typography variant="body2" color="text.secondary">
+              Enter what was actually used. Anything left as planned is recorded
+              as planned.
+            </Typography>
+
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Component</TableCell>
+                  <TableCell align="right">Planned</TableCell>
+                  <TableCell align="right">Actually used</TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {stocked.map((line) => (
+                  <TableRow key={line.id}>
+                    <TableCell>{line.sku}</TableCell>
+                    <TableCell align="right">
+                      {line.quantityPlanned} {line.unitOfMeasure}
+                    </TableCell>
+                    <TableCell align="right">
+                      <TextField
+                        id={`close-line-${line.id}`}
+                        size="small"
+                        value={amounts[line.id] ?? ''}
+                        onChange={(event) =>
+                          setAmounts((current) => ({
+                            ...current,
+                            [line.id]: event.target.value,
+                          }))
+                        }
+                        slotProps={{
+                          htmlInput: {
+                            inputMode: 'decimal',
+                            maxLength: 19,
+                            style: { textAlign: 'right' },
+                          },
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {/* Over plan is normal and is never refused — the material was
+                already used. Anything short stays where it was issued, for a
+                person to put away (ADR-032). */}
+            <Alert severity="info">
+              Using more than planned is fine — the extra is taken from the same
+              place the rest came from. Anything left over stays where the run
+              is and needs putting away by hand.
+            </Alert>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions>
+          <Button variant="text" onClick={close} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Closing…' : 'Close run'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+}
+
+export function CancelRunDialog({
+  open,
+  run,
+  onClose,
+  onCancelled,
+}: {
+  open: boolean;
+  run: RunDetail;
+  onClose: () => void;
+  onCancelled: () => Promise<void> | void;
+}) {
+  const [reason, setReason] = useState('');
+
+  const { submitting, error, reset, submit } = useSubmit(async () => {
+    close();
+    await onCancelled();
+  });
+
+  function close() {
+    setReason('');
+    reset();
+    onClose();
+  }
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+
+    void submit(() =>
+      api(`/production-orders/${run.id}/cancel`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      }),
+    );
+  }
+
+  const issued = run.status === 'released';
+
+  return (
+    <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>Cancel this run</DialogTitle>
+
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            {error && <FormError message={error} />}
+
+            {issued && (
+              <Alert severity="warning">
+                The components already issued stay where the run is. Cancelling
+                does not carry them back — somebody has to move them.
+              </Alert>
+            )}
+
+            <TextField
+              id="cancel-reason"
+              label="Why"
+              required
+              fullWidth
+              multiline
+              minRows={2}
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              helperText="The first thing whoever finds the leftover material will ask."
+              slotProps={{ htmlInput: { maxLength: 1000 } }}
+            />
+          </Stack>
+        </DialogContent>
+
+        <DialogActions>
+          <Button variant="text" onClick={close} disabled={submitting}>
+            Keep it
+          </Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Cancelling…' : 'Cancel run'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+}

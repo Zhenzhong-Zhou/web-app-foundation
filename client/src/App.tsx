@@ -1,29 +1,39 @@
-import { Alert, Button, CircularProgress, Stack } from '@mui/material';
-import type { ReactNode } from 'react';
+import {
+  Alert,
+  Button,
+  CircularProgress,
+  Skeleton,
+  Stack,
+} from '@mui/material';
+import { type ComponentType, type ReactNode, Suspense } from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
-import { AccountPage } from './account/account-page';
-import { SessionsPage } from './account/sessions-page';
-import { AuditPage } from './audit/audit-page';
 import { ForgotPasswordPage } from './auth/forgot-password-page';
 import { LoginPage } from './auth/login-page';
 import { RegisterPage } from './auth/register-page';
 import { ResetPasswordPage } from './auth/reset-password-page';
 import { useAuth } from './auth/use-auth';
 import { VerifyEmailPage } from './auth/verify-email-page';
-import { InventoryPage } from './inventory/inventory-page';
-import { MovementsPage } from './inventory/movements-page';
 import { AppLayout } from './layout/app-layout';
 import { useDelayedFlag } from './lib/use-delayed-flag';
-import { LocationsPage } from './locations/locations-page';
-import { MembersPage } from './members/members-page';
-import { CreateOrderPage } from './orders/create-order-page';
-import { OrderDetailPage } from './orders/order-detail-page';
-import { OrdersPage } from './orders/orders-page';
-import { PartnerDetailPage } from './partners/partner-detail-page';
-import { PartnersPage } from './partners/partners-page';
-import { ProductDetailPage } from './products/product-detail-page';
-import { ProductsPage } from './products/products-page';
+import {
+  AccountPage,
+  AuditPage,
+  CreateOrderPage,
+  InventoryPage,
+  LocationsPage,
+  MembersPage,
+  MovementsPage,
+  OrderDetailPage,
+  OrdersPage,
+  PartnerDetailPage,
+  PartnersPage,
+  ProductDetailPage,
+  ProductionOrderDetailPage,
+  ProductionOrdersPage,
+  ProductsPage,
+  SessionsPage,
+} from './pages';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -51,6 +61,31 @@ function Protected({ children }: { children: ReactNode }) {
 function AuthOnly({ children }: { children: ReactNode }) {
   const { session } = useAuth();
   return session ? <Navigate to="/" replace /> : children;
+}
+
+/**
+ * Delayed like every other loading state here: a chunk that arrives in 40ms
+ * would otherwise flash a skeleton, which reads as slower than showing nothing.
+ */
+function RouteFallback() {
+  const show = useDelayedFlag(true);
+  return show ? <Skeleton height={240} /> : null;
+}
+
+/**
+ * A split page as a route element.
+ *
+ * One boundary per route rather than one around AppLayout: a boundary wrapping
+ * the layout suspends the layout, so the header and nav would tear down and
+ * remount on every navigation to a chunk that is not loaded yet. Inside the
+ * outlet, only the content swaps.
+ */
+function split(Page: ComponentType) {
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <Page />
+    </Suspense>
+  );
 }
 
 export default function App() {
@@ -143,20 +178,25 @@ export default function App() {
         }
       >
         <Route path="/" element={<Navigate to="/products" replace />} />
-        <Route path="/account" element={<AccountPage />} />
-        <Route path="/account/sessions" element={<SessionsPage />} />
-        <Route path="/members" element={<MembersPage />} />
-        <Route path="/audit" element={<AuditPage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/products/:id" element={<ProductDetailPage />} />
-        <Route path="/inventory" element={<InventoryPage />} />
-        <Route path="/movements" element={<MovementsPage />} />
-        <Route path="/locations" element={<LocationsPage />} />
-        <Route path="/partners" element={<PartnersPage />} />
-        <Route path="/partners/:id" element={<PartnerDetailPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/orders/new" element={<CreateOrderPage />} />
-        <Route path="/orders/:id" element={<OrderDetailPage />} />
+        <Route path="/account" element={split(AccountPage)} />
+        <Route path="/account/sessions" element={split(SessionsPage)} />
+        <Route path="/members" element={split(MembersPage)} />
+        <Route path="/audit" element={split(AuditPage)} />
+        <Route path="/products" element={split(ProductsPage)} />
+        <Route path="/products/:id" element={split(ProductDetailPage)} />
+        <Route path="/inventory" element={split(InventoryPage)} />
+        <Route path="/movements" element={split(MovementsPage)} />
+        <Route path="/locations" element={split(LocationsPage)} />
+        <Route path="/partners" element={split(PartnersPage)} />
+        <Route path="/partners/:id" element={split(PartnerDetailPage)} />
+        <Route path="/orders" element={split(OrdersPage)} />
+        <Route path="/orders/new" element={split(CreateOrderPage)} />
+        <Route path="/orders/:id" element={split(OrderDetailPage)} />
+        <Route path="/production" element={split(ProductionOrdersPage)} />
+        <Route
+          path="/production/:id"
+          element={split(ProductionOrderDetailPage)}
+        />
       </Route>
 
       {/* Outside both guards deliberately. Inside Protected, a signed-out

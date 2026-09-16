@@ -12,8 +12,8 @@ import { type SubmitEvent, useRef, useState } from 'react';
 
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import type { Bom } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
-import type { Bom } from './recipe-panel';
 
 const EMPTY = { outputQuantity: '', notes: '' };
 

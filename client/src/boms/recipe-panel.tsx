@@ -19,41 +19,11 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
+import type { Bom, BomDetail, BomLine, VariantOption } from '../lib/types';
 import type { Variant } from '../products/products-page';
 import { AddBomLineDialog } from './add-bom-line-dialog';
 import { CreateBomDialog } from './create-bom-dialog';
 import { EditBomLineDialog } from './edit-bom-line-dialog';
-
-export interface Bom {
-  id: string;
-  outputVariantId: string;
-  outputQuantity: string;
-  version: number;
-  status: 'draft' | 'active' | 'archived';
-  licenceId: string | null;
-  notes: string | null;
-}
-
-export interface BomLine {
-  id: string;
-  componentVariantId: string;
-  quantity: string;
-  supplyType: 'stocked' | 'external';
-  notes: string | null;
-}
-
-interface BomDetail extends Bom {
-  lines: BomLine[];
-}
-
-/** The shape GET /products/variants returns — the flat catalogue. */
-export interface VariantSummary {
-  id: string;
-  sku: string;
-  variantName: string | null;
-  productName: string;
-  unitOfMeasure: string;
-}
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -87,7 +57,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const [catalogue, setCatalogue] = useState<VariantSummary[]>([]);
+  const [catalogue, setCatalogue] = useState<VariantOption[]>([]);
   const [creating, setCreating] = useState(false);
   const [addingLine, setAddingLine] = useState(false);
   const [editingLine, setEditingLine] = useState<BomLine | null>(null);
@@ -132,7 +102,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
 
     let ignore = false;
 
-    void api<VariantSummary[]>('/products/variants')
+    void api<VariantOption[]>('/products/variants')
       .then((rows) => {
         if (!ignore) setCatalogue(rows);
       })

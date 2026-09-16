@@ -15,8 +15,8 @@ import { type SubmitEvent, useState } from 'react';
 
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import type { VariantOption } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
-import type { VariantSummary } from './recipe-panel';
 
 const EMPTY = { componentVariantId: '', quantity: '', notes: '' };
 
@@ -42,7 +42,7 @@ export function AddBomLineDialog({
 }: {
   open: boolean;
   bomId: string | null;
-  catalogue: VariantSummary[];
+  catalogue: VariantOption[];
   excludeVariantIds: string[];
   onClose: () => void;
   onAdded: () => Promise<void> | void;

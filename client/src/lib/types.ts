@@ -163,9 +163,72 @@ export interface OrderDetail {
   lines: OrderLine[];
 }
 
-export interface Location {
+export type BomStatus = 'draft' | 'active' | 'archived';
+
+/** A recipe header. Lines arrive only from GET /boms/:id (ADR-029). */
+export interface Bom {
   id: string;
-  name: string;
-  code: string | null;
-  parentId: string | null;
+  outputVariantId: string;
+  /** Yield: what one batch makes, not an amount per unit. */
+  outputQuantity: string;
+  version: number;
+  status: BomStatus;
+  licenceId: string | null;
+  notes: string | null;
+}
+
+export interface BomLine {
+  id: string;
+  componentVariantId: string;
+  /** In the component variant's own unit — bom_lines carries no unit column. */
+  quantity: string;
+  supplyType: 'stocked' | 'external';
+  notes: string | null;
+}
+
+/** What GET /boms/:id returns — the recipe with its components. */
+export interface BomDetail extends Bom {
+  lines: BomLine[];
+}
+
+export type RunStatus = 'draft' | 'released' | 'completed' | 'cancelled';
+
+export interface ProductionRun {
+  id: string;
+  outputVariantId: string;
+  bomId: string | null;
+  partnerId: string | null;
+  locationId: string;
+  quantityPlanned: string;
+  quantityProduced: string;
+  status: RunStatus;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface RunLine {
+  id: string;
+  componentVariantId: string;
+  /** Snapshotted at release — not joined from the variant (ADR-029). */
+  sku: string;
+  unitOfMeasure: string;
+  quantityPlanned: string;
+  quantityConsumed: string;
+  supplyType: 'stocked' | 'external';
+  sourceLocationId: string | null;
+  externalLotCode: string | null;
+}
+
+export interface RunDetail extends ProductionRun {
+  lines: RunLine[];
+  /** Lot ids, read from the run's production movements (ADR-032). */
+  outputLots: string[];
+}
+
+export interface LineVariance {
+  lineId: string;
+  componentVariantId: string;
+  quantityPlanned: string;
+  quantityConsumed: string;
+  variance: number;
 }
