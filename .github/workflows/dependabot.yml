@@ -1,0 +1,69 @@
+version: 2
+
+updates:
+  # Two npm entries, not one: server and client have separate package.json
+  # files rather than npm workspaces, so Dependabot has to be pointed at each.
+  - package-ecosystem: npm
+    directory: /server
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    # Grouped, because twenty single-package PRs a week is a volume people
+    # learn to ignore — and an ignored security PR is worse than none.
+    groups:
+      nest:
+        patterns:
+          - '@nestjs/*'
+      types:
+        patterns:
+          - '@types/*'
+      dev-minor:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      prod-minor:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Majors land as their own PR when someone has time to read the
+      # changelog, not on a Monday alongside eleven others.
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: npm
+    directory: /client
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      mui:
+        patterns:
+          - '@mui/*'
+      types:
+        patterns:
+          - '@types/*'
+      dev-minor:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      prod-minor:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
+
+  # Actions pinned by major tag still drift, and a deprecated runner image
+  # fails every workflow at once with an error that names nothing useful.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

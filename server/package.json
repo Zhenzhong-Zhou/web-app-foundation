@@ -17,6 +17,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint . --fix",
+    "lint:ci": "eslint .",
     "migrate": "drizzle-kit migrate",
     "migrate:test": "MIGRATE_TARGET=test drizzle-kit migrate",
     "migrate:e2e": "MIGRATE_TARGET=e2e drizzle-kit migrate",
