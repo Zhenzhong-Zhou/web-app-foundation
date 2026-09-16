@@ -44,6 +44,22 @@ interface RegisterResponse {
   user: { id: string; organizationId: string };
 }
 
+interface OrderResponse {
+  id: string;
+  partnerId: string;
+  direction: string;
+  status: string;
+  reference: string | null;
+  expectedAt: string | null;
+  duplicatedFromId: string | null;
+  lines: {
+    id: string;
+    sku: string;
+    quantityOrdered: string;
+    quantityFulfilled: string;
+  }[];
+}
+
 function body<T>(res: { body: unknown }): T {
   return res.body as T;
 }
@@ -285,6 +301,109 @@ describe('Orders (e2e)', () => {
         .post('/v1/orders')
         .send(purchase(ctx.partnerId, ctx.variant.id))
         .expect(403);
+    });
+  });
+
+  describe('POST /v1/orders/:id/duplicate', () => {
+    it('copies the lines into a fresh draft and links back', async () => {
+      const ctx = await setup('alpha');
+
+      const original = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send({
+            ...purchase(ctx.partnerId, ctx.variant.id),
+            reference: 'PO-1234',
+            expectedAt: '2026-01-01T00:00:00.000Z',
+          })
+          .expect(201),
+      ).order;
+
+      await ctx.agent
+        .patch(`/v1/orders/${original.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+
+      const copy = body<{ order: OrderResponse }>(
+        await ctx.agent.post(`/v1/orders/${original.id}/duplicate`).expect(201),
+      ).order;
+
+      expect(copy.id).not.toBe(original.id);
+      expect(copy.status).toBe('draft');
+      expect(copy.duplicatedFromId).toBe(original.id);
+
+      // Reset, not copied: a supplier's PO number belongs to the order it was
+      // issued against, and last month's date is wrong on a new one.
+      expect(copy.reference).toBeNull();
+      expect(copy.expectedAt).toBeNull();
+
+      expect(copy.lines).toHaveLength(1);
+      expect(copy.lines[0].quantityOrdered).toBe('40.0000');
+      expect(copy.lines[0].quantityFulfilled).toBe('0.0000');
+    });
+
+    /**
+     * The flow ADR-031 is for: duplicate first, then cancel. The original
+     * keeps its own state, so a failure anywhere leaves something behind.
+     */
+    it('leaves the original untouched', async () => {
+      const ctx = await setup('alpha');
+      const original = await confirmed(ctx);
+
+      await ctx.agent.post(`/v1/orders/${original.id}/duplicate`).expect(201);
+
+      const [row] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, original.id));
+
+      expect(row.status).toBe('confirmed');
+    });
+
+    it('refuses an order that has already been partly received', async () => {
+      const ctx = await setup('alpha');
+      const original = await confirmed(ctx);
+
+      await ctx.agent
+        .post(
+          `/v1/orders/${original.id}/lines/${original.lines[0].id}/receipts`,
+        )
+        .send({ toLocationId: ctx.locationId, quantity: '10' })
+        .expect(201);
+
+      // Copying the whole thing re-orders what arrived; copying the shortfall
+      // is a backorder, which is a different operation (ADR-031).
+      await ctx.agent.post(`/v1/orders/${original.id}/duplicate`).expect(409);
+    });
+
+    it('refuses to duplicate onto a retired partner', async () => {
+      const ctx = await setup('alpha');
+      const original = await confirmed(ctx);
+
+      await ctx.agent
+        .patch(`/v1/partners/${ctx.partnerId}`)
+        .send({ isActive: false })
+        .expect(204);
+
+      // Retiring a partner is exactly what should stop a new order reaching
+      // them, and a duplicate is a new order (ADR-026).
+      await ctx.agent.post(`/v1/orders/${original.id}/duplicate`).expect(409);
+    });
+
+    it('does not duplicate another organization order', async () => {
+      const alpha = await registerOrg('alpha');
+      const beta = await setup('beta');
+      const theirs = await confirmed(beta);
+
+      await alpha.agent.post(`/v1/orders/${theirs.id}/duplicate`).expect(404);
+    });
+
+    it('refuses a Viewer, which lacks orders.create', async () => {
+      const ctx = await setup('alpha');
+      const original = await confirmed(ctx);
+      const viewer = await addViewer(ctx, 'viewer@alpha.example.com');
+
+      await viewer.post(`/v1/orders/${original.id}/duplicate`).expect(403);
     });
   });
 

@@ -5,10 +5,11 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 
 import { isCheckViolation, isUniqueViolation } from '../../database/errors';
 import {
+  addresses,
   orderLines,
   orders,
   partners,
@@ -290,6 +291,123 @@ export class OrdersService {
   }
 
   /**
+   * Copies an order into a fresh draft (ADR-031).
+   *
+   * One rule decides every field: a duplicate re-resolves snapshots from their
+   * live source and never copies frozen ones forward. A snapshot exists to
+   * freeze what happened, and this has not happened yet.
+   *
+   * The intended flow is duplicate, fix, confirm, then cancel the original.
+   * Cancelling first leaves nothing behind if this fails, and it is the order
+   * people do it in anyway.
+   */
+  async duplicate(orderId: string, actorId: string) {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const [source] = await tx
+        .select()
+        .from(orders)
+        .where(
+          and(
+            eq(orders.organizationId, organizationId),
+            eq(orders.id, orderId),
+          ),
+        );
+
+      if (!source) throw new NotFoundException('No such order');
+
+      const [partner] = await tx
+        .select()
+        .from(partners)
+        .where(
+          and(
+            eq(partners.id, source.partnerId),
+            eq(partners.organizationId, organizationId),
+          ),
+        );
+
+      /**
+       * Checked again rather than assumed from the original. The partner was
+       * active when that order was raised; retiring one is exactly what should
+       * stop a new order going to them, and a duplicate is a new order
+       * (ADR-026).
+       */
+      if (!partner?.isActive) {
+        throw new ConflictException(
+          `${partner?.name ?? 'That partner'} is retired`,
+        );
+      }
+
+      const sourceLines = await tx
+        .select()
+        .from(orderLines)
+        .where(eq(orderLines.orderId, orderId))
+        .orderBy(asc(orderLines.id));
+
+      if (sourceLines.length === 0) {
+        throw new ConflictException('That order has no lines to copy');
+      }
+
+      /**
+       * Duplicating a partly received order would re-order what already
+       * arrived (ADR-031). Copying only the shortfall is a backorder, which
+       * means something different and is open — so this refuses rather than
+       * quietly doing the wrong one.
+       */
+      if (sourceLines.some((line) => Number(line.quantityFulfilled) > 0)) {
+        throw new ConflictException(
+          'Part of this order has already been received — duplicating it would re-order what arrived',
+        );
+      }
+
+      const shipTo = await this.reResolveShipTo(tx, organizationId, source);
+
+      const [order] = await tx
+        .insert(orders)
+        .values({
+          organizationId,
+          partnerId: source.partnerId,
+          direction: source.direction,
+          note: source.note,
+          createdBy: actorId,
+          duplicatedFromId: source.id,
+          ...shipTo,
+
+          /**
+           * Absent on purpose, each for its own reason. `status` defaults to
+           * draft because the point is that somebody reviews it. `reference`
+           * is the supplier's PO number for the order it was issued against,
+           * and two orders claiming it is a reconciliation problem.
+           * `expectedAt` would be last month's date on a new order, wrong
+           * every time. Quantities fulfilled start at zero because nothing has
+           * arrived.
+           */
+        })
+        .returning();
+
+      /**
+       * insertLines re-reads each variant to snapshot its SKU, so the copy
+       * picks up a renamed SKU for free — and refuses a variant that has since
+       * moved organizations, which a blind copy of the old line would not.
+       */
+      const lines = await this.insertLines(
+        tx,
+        organizationId,
+        order.id,
+        sourceLines.map((line) => ({
+          variantId: line.variantId,
+          quantityOrdered: line.quantityOrdered,
+        })),
+      );
+
+      this.logger.log(
+        `Order ${order.id} duplicated from ${source.id}, ${lines.length} lines`,
+      );
+
+      return { ...order, lines };
+    });
+  }
+
+  /**
    * Header fields and status. Lines are edited through their own routes,
    * because changing a quantity that has already been partly received is a
    * different question from renaming a reference.
@@ -488,5 +606,65 @@ export class OrdersService {
     }
 
     return inserted;
+  }
+
+  /**
+   * The ship-to snapshot, read from the live address rather than copied.
+   *
+   * Copying the stored columns forward would put an address that may have been
+   * retired since onto a live order — the exact thing the snapshot was never
+   * meant to enable. If the original address is gone, the partner's default
+   * shipping address stands in, and the caller is told so the difference is
+   * visible before the order is confirmed.
+   *
+   * Returns nothing when the source had no ship-to, which today is every
+   * order: `create` does not set one yet. The rule is here for when it does.
+   */
+  private async reResolveShipTo(
+    tx: Tx,
+    organizationId: string,
+    source: typeof orders.$inferSelect,
+  ) {
+    if (!source.shipToAddressId) return {};
+
+    const [original] = await tx
+      .select()
+      .from(addresses)
+      .where(
+        and(
+          eq(addresses.id, source.shipToAddressId),
+          eq(addresses.organizationId, organizationId),
+        ),
+      );
+
+    let address = original?.isActive ? original : undefined;
+
+    if (!address) {
+      [address] = await tx
+        .select()
+        .from(addresses)
+        .where(
+          and(
+            eq(addresses.organizationId, organizationId),
+            eq(addresses.partnerId, source.partnerId),
+            eq(addresses.isShipping, true),
+            eq(addresses.isDefault, true),
+            eq(addresses.isActive, true),
+          ),
+        );
+    }
+
+    if (!address) return {};
+
+    return {
+      shipToAddressId: address.id,
+      shipToLabel: address.label,
+      shipToLine1: address.line1,
+      shipToLine2: address.line2,
+      shipToCity: address.city,
+      shipToRegion: address.region,
+      shipToPostalCode: address.postalCode,
+      shipToCountry: address.country,
+    };
   }
 }

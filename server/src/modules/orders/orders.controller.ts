@@ -59,6 +59,29 @@ export class OrdersController {
   }
 
   /**
+   * Requires orders.create, not orders.update: this makes a new order, and
+   * starting from an old one does not change what the caller ends up holding.
+   *
+   * Reuses ORDER_CREATED rather than its own action. What happened is that an
+   * order came into existence; where its lines came from is on the row, in
+   * duplicated_from_id, which is queryable in a way an audit payload is not.
+   */
+  @Post(':id/duplicate')
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(PERMISSIONS.ORDERS_CREATE)
+  @Audited({
+    action: AUDIT_ACTIONS.ORDER_CREATED,
+    resourceType: 'order',
+    resourceId: (response: { order: { id: string } }) => response.order.id,
+  })
+  async duplicate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: RequestContext,
+  ) {
+    return { order: await this.orders.duplicate(id, user.userId) };
+  }
+
+  /**
    * Status changes come through here rather than through verbs like /confirm.
    * The service owns which transitions are legal, and a route per transition
    * would put half that table in the URL space.

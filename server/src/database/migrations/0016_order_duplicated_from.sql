@@ -1,0 +1,4 @@
+ALTER TABLE "orders" ADD COLUMN "duplicated_from_id" uuid;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_duplicated_from_id_orders_id_fk" FOREIGN KEY ("duplicated_from_id") REFERENCES "public"."orders"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "orders_duplicated_from_id_idx" ON "orders" USING btree ("duplicated_from_id") WHERE "orders"."duplicated_from_id" is not null;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_no_self_duplicate_check" CHECK ("orders"."duplicated_from_id" is null or "orders"."duplicated_from_id" <> "orders"."id");

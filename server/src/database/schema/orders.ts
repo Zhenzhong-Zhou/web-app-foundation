@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   char,
   check,
   index,
@@ -139,6 +140,26 @@ export const orders = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
 
+    /**
+     * The order this one was copied from, when it was raised by duplicating a
+     * wrong one (ADR-031).
+     *
+     * A column rather than leaving it to the audit log. `@Audited` records the
+     * create, but the payload is JSONB and searching it is still open — so
+     * "what replaced order X" would be unanswerable, and "why was this
+     * cancelled, where did it go" are the two questions asked about every
+     * cancelled order. It is also the one part of a duplicate that cannot be
+     * reconstructed afterwards.
+     *
+     * RESTRICT, and orders are cancelled rather than deleted anyway, so the
+     * link stays resolvable: the original is usually the cancelled one, and a
+     * dangling reference would break the trail exactly where it is wanted.
+     */
+    duplicatedFromId: uuid('duplicated_from_id').references(
+      (): AnyPgColumn => orders.id,
+      { onDelete: 'restrict' },
+    ),
+
     ...timestamps,
   },
   (t) => [
@@ -168,11 +189,24 @@ export const orders = pgTable(
       sql`${t.shipToCountry} is null or ${t.shipToCountry} ~ '^[A-Z]{2}$'`,
     ),
 
+    // An order cannot be its own source. Cheap, and the only way this happens
+    // is a bug, which is exactly when a constraint earns its place.
+    check(
+      'orders_no_self_duplicate_check',
+      sql`${t.duplicatedFromId} is null or ${t.duplicatedFromId} <> ${t.id}`,
+    ),
+
     // "What is open" and "what did we buy from them", the two reads the screens
     // make. created_at descending because a list of orders is newest first.
     index('orders_org_status_idx').on(t.organizationId, t.status),
     index('orders_org_partner_idx').on(t.organizationId, t.partnerId),
     index('orders_org_created_at_idx').on(t.organizationId, t.createdAt.desc()),
     index('orders_org_id_idx').on(t.organizationId, t.id.desc()),
+
+    // "What replaced this one", and the lookup the RESTRICT foreign key runs
+    // on every delete. Partial because almost no order is a duplicate.
+    index('orders_duplicated_from_id_idx')
+      .on(t.duplicatedFromId)
+      .where(sql`${t.duplicatedFromId} is not null`),
   ],
 );
