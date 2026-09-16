@@ -2401,6 +2401,44 @@ they exist so the reasoning is not rediscovered from scratch.
   else. The fix is letting release take explicit lines in its payload, which is
   a shape nobody has asked for. Worth doing the first time somebody needs to
   record a rework against stock rather than adjusting it by hand.
+- **Reservation, and whether the window it protects actually exists.** ADR-023
+  left `available = on_hand − reserved` open. Production makes it look urgent
+  and then partly answers it: release *transfers* components to the run's
+  location (ADR-032), so from that moment they are physically out of the pick
+  face and no shipment can take them. Reservation therefore only protects the
+  window between planning and releasing, which for same-day work barely exists.
+  Watch the screen in use before building anything.
+
+  If it is needed, the shape is settled. Rows in their own table — item,
+  location, demand document, quantity — never a `reserved` column on
+  `stock_levels`, which is the maintained running total ADR-023 rejected for
+  quantity itself; rows also answer "who reserved this", which is what someone
+  asks when a pick fails. Reserve at release, not at plan: a draft is a wish.
+  Warn rather than block, for the variance reason — the physical pick already
+  happened.
+
+  Reserving at plan time is the variant worth taking if planning is days ahead,
+  and only with an `expires_at` set at plan time. Reservations otherwise
+  accumulate: six runs planned, two released, four holding material forever
+  because nobody cancels a plan they abandoned. Expiry belongs in the
+  availability query (`expires_at > now()`), not a scheduled sweep — a cron
+  that flips rows to expired is a second source of truth that can lag, and if
+  it fails silently the material stays fenced off with no sign why. A sweep is
+  housekeeping, never the mechanism.
+
+  Two things to answer first. What sets the window: the honest anchor is the
+  run's planned date, which `production_orders` does not have, so it needs a
+  `planned_for` column. And what a lapsed reservation means for a run still in
+  draft — the plan does not cancel itself, so the UI has to stop showing it as
+  ready.
+
+  The warning half needs no notifications domain: expiry shown on the run in
+  the production list, and a release-time message when it has already lapsed,
+  which is the moment it matters.
+- **Shortfall warning at release.** Cheaper than reservation and catches the
+  actual failure: "this run needs 1200 g, 800 is at the shelf." A read query
+  against existing data, no schema. Probably the first thing to build if
+  shortfalls turn out to be the real problem rather than contention.
 
 ---
 
