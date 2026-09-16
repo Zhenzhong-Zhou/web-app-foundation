@@ -119,6 +119,11 @@ export interface OrderPage {
   nextCursor: string | null;
 }
 
+export interface ProductionRunPage {
+  entries: ProductionRun[];
+  nextCursor: string | null;
+}
+
 export interface Lot {
   id: string;
   code: string;

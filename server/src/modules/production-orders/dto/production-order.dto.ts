@@ -1,10 +1,14 @@
+import { Type } from 'class-transformer';
 import {
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
   Matches,
+  Max,
   MaxLength,
+  Min,
 } from 'class-validator';
 
 import { trim } from '../../../common/dto/trim';
@@ -103,4 +107,12 @@ export class ListProductionOrdersDto {
   @IsOptional()
   @IsUUID()
   before?: string;
+
+  // Capped, or ?limit=999999 pulls the table in one query.
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }

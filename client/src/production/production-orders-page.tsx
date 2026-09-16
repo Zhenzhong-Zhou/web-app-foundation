@@ -21,7 +21,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
-import type { ProductionRun, RunStatus } from '../lib/types';
+import type { ProductionRun, ProductionRunPage, RunStatus } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateRunDialog } from './create-run-dialog';
 import { STATUS_COLOUR, STATUS_LABEL } from './status';
@@ -40,8 +40,6 @@ const FILTERS = [
   { value: 'cancelled', label: 'Cancelled' },
 ] as const;
 
-const PAGE_SIZE = 50;
-
 export function ProductionOrdersPage() {
   const { session } = useAuth();
 
@@ -50,18 +48,19 @@ export function ProductionOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [cursor, setCursor] = useState<string | null>(null);
 
   const canCreate = !!session?.permissions.includes('production.create');
   const loading = items === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 
   /**
-   * The cursor is the last row's id rather than one the server hands back.
-   * Rows come newest-first on a UUIDv7 id (ADR-018), so the oldest id on
-   * screen is the next `before` — but unlike /orders this endpoint returns a
-   * bare array, so there is no nextCursor and no way to know whether more
-   * exists. A full page is the only signal, which is wrong exactly once, when
-   * the last page happens to be full.
+   * `before` absent loads the first page and replaces; present appends.
+   *
+   * The cursor comes from the server, which fetches one row past the limit to
+   * know whether more exists. Inferring it from a full page is wrong exactly
+   * once — on a final page that happens to be full — and the symptom is a Load
+   * more button that returns nothing.
    */
   const load = useCallback(
     async (nextFilter: RunStatus | '', before?: string) => {
@@ -69,14 +68,15 @@ export function ProductionOrdersPage() {
       if (nextFilter) params.set('status', nextFilter);
       if (before) params.set('before', before);
 
-      const rows = await api<ProductionRun[]>(
+      const page = await api<ProductionRunPage>(
         `/production-orders?${params.toString()}`,
       );
 
-      setItems((current) => (before ? [...(current ?? []), ...rows] : rows));
+      setItems((current) =>
+        before ? [...(current ?? []), ...page.entries] : page.entries,
+      );
+      setCursor(page.nextCursor);
       setError(null);
-
-      return rows.length;
     },
     [],
   );
@@ -87,10 +87,11 @@ export function ProductionOrdersPage() {
     const params = new URLSearchParams();
     if (filter) params.set('status', filter);
 
-    void api<ProductionRun[]>(`/production-orders?${params.toString()}`)
-      .then((rows) => {
+    void api<ProductionRunPage>(`/production-orders?${params.toString()}`)
+      .then((page) => {
         if (ignore) return;
-        setItems(rows);
+        setItems(page.entries);
+        setCursor(page.nextCursor);
         setError(null);
       })
       .catch((caught: unknown) => {
@@ -103,11 +104,11 @@ export function ProductionOrdersPage() {
   }, [filter]);
 
   async function loadMore() {
-    if (!items?.length) return;
+    if (!cursor) return;
 
     setLoadingMore(true);
     try {
-      await load(filter, items[items.length - 1].id);
+      await load(filter, cursor);
     } catch (caught) {
       setError(messageFor(caught));
     } finally {
@@ -207,7 +208,7 @@ export function ProductionOrdersPage() {
             </Table>
           </Paper>
 
-          {items.length % PAGE_SIZE === 0 && (
+          {cursor && (
             <Button
               variant="text"
               disabled={loadingMore}

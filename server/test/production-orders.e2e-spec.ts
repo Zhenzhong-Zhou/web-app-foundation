@@ -69,6 +69,11 @@ interface RegisterResponse {
   user: { id: string; organizationId: string };
 }
 
+interface RunPage {
+  entries: RunResponse[];
+  nextCursor: string | null;
+}
+
 function body<T>(res: { body: unknown }): T {
   return res.body as T;
 }
@@ -790,14 +795,49 @@ describe('Production orders (e2e)', () => {
 
       await alpha.agent.get(`/v1/production-orders/${run.id}`).expect(404);
       expect(
-        body<RunResponse[]>(
+        body<RunPage>(
           await alpha.agent.get('/v1/production-orders').expect(200),
-        ),
+        ).entries,
       ).toHaveLength(0);
     });
 
     it('requires a session', async () => {
       await authedAgent(app).get('/v1/production-orders').expect(401);
+    });
+  });
+
+  describe('paging', () => {
+    it('pages with a cursor and stops when there is nothing left', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+
+      for (let i = 0; i < 3; i += 1) {
+        await createRun(alpha, {
+          outputVariantId: s.output,
+          bomId: s.bomId,
+          locationId: s.wip,
+          quantityPlanned: '10',
+        });
+      }
+
+      const first = body<RunPage>(
+        await alpha.agent.get('/v1/production-orders?limit=2').expect(200),
+      );
+
+      expect(first.entries).toHaveLength(2);
+      expect(first.nextCursor).toBe(first.entries[1].id);
+
+      const second = body<RunPage>(
+        await alpha.agent
+          .get(`/v1/production-orders?limit=2&before=${first.nextCursor!}`)
+          .expect(200),
+      );
+
+      expect(second.entries).toHaveLength(1);
+      // Null rather than the last id: the extra row fetched is what proves
+      // there is nothing more, and guessing from a short page is exactly what
+      // the envelope exists to avoid.
+      expect(second.nextCursor).toBeNull();
     });
   });
 });

@@ -45,6 +45,8 @@ export type ProductionOrderLine = typeof productionOrderLines.$inferSelect;
  */
 const VARIANCE_FLAG_RATIO = 0.1;
 
+const DEFAULT_LIMIT = 25;
+
 export interface LineVariance {
   lineId: string;
   componentVariantId: string;
@@ -75,7 +77,17 @@ export class ProductionOrdersService {
     private readonly stock: StockService,
   ) {}
 
-  list(query: ListProductionOrdersDto) {
+  /**
+   * Keyset paging, in the envelope /orders uses (ADR-018).
+   *
+   * One row over the limit is fetched and dropped. That extra row is the only
+   * honest way to answer "is there more" — inferring it from a full page is
+   * wrong exactly once, on a final page that happens to be full, and the
+   * symptom is a Load more button that returns nothing.
+   */
+  async list(query: ListProductionOrdersDto) {
+    const limit = query.limit ?? DEFAULT_LIMIT;
+
     const filters = [
       query.status ? eq(productionOrders.status, query.status) : undefined,
       query.outputVariantId
@@ -87,11 +99,19 @@ export class ProductionOrdersService {
       query.before ? lt(productionOrders.id, query.before) : undefined,
     ].filter((f): f is NonNullable<typeof f> => f !== undefined);
 
-    return this.tenantDb.select(
+    const rows = await this.tenantDb.select(
       productionOrders,
       filters.length > 0 ? and(...filters) : undefined,
-      { orderBy: [desc(productionOrders.id)], limit: 50 },
+      { orderBy: [desc(productionOrders.id)], limit: limit + 1 },
     );
+
+    const hasMore = rows.length > limit;
+    const entries = hasMore ? rows.slice(0, limit) : rows;
+
+    return {
+      entries,
+      nextCursor: hasMore ? entries[entries.length - 1].id : null,
+    };
   }
 
   async findById(runId: string) {
