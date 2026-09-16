@@ -463,6 +463,281 @@ describe('Orders (e2e)', () => {
     });
   });
 
+  describe('order lines', () => {
+    it('adds, amends, and removes on a draft', async () => {
+      const ctx = await setup('alpha');
+
+      const second = body<{ product: { variants: { id: string }[] } }>(
+        await ctx.agent
+          .post('/v1/products')
+          .send({
+            type: 'good',
+            name: 'Second',
+            variant: { sku: 'WIDGET-2' },
+          })
+          .expect(201),
+      ).product.variants[0];
+
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+
+      const added = body<{ line: { id: string } }>(
+        await ctx.agent
+          .post(`/v1/orders/${order.id}/lines`)
+          .send({ variantId: second.id, quantityOrdered: '5' })
+          .expect(201),
+      ).line;
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}/lines/${added.id}`)
+        .send({ quantityOrdered: '8' })
+        .expect(204);
+
+      const [amended] = await db
+        .select()
+        .from(orderLines)
+        .where(eq(orderLines.id, added.id));
+      expect(amended.quantityOrdered).toBe('8.0000');
+
+      await ctx.agent
+        .delete(`/v1/orders/${order.id}/lines/${added.id}`)
+        .expect(204);
+
+      expect(await db.select().from(orderLines)).toHaveLength(1);
+    });
+
+    it('refuses the same item twice', async () => {
+      const ctx = await setup('alpha');
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines`)
+        .send({ variantId: ctx.variant.id, quantityOrdered: '5' })
+        .expect(409);
+    });
+
+    /**
+     * An order with no lines is a document that orders nothing (ADR-027), so
+     * removal cannot produce what creation refuses.
+     */
+    it('refuses to remove the only item', async () => {
+      const ctx = await setup('alpha');
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+
+      await ctx.agent
+        .delete(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
+        .expect(409);
+    });
+
+    it('amends a confirmed order but will not remove from one', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      // A supplier saying they can only do 30 is an ordinary amendment.
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
+        .send({ quantityOrdered: '30' })
+        .expect(204);
+
+      // Removing an item from an order already sent is a partial
+      // cancellation, which ADR-027 left open.
+      await ctx.agent
+        .delete(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
+        .expect(409);
+    });
+
+    it('freezes a line once anything has been received against it', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: ctx.locationId, quantity: '10' })
+        .expect(201);
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
+        .send({ quantityOrdered: '50' })
+        .expect(409);
+    });
+
+    it('refuses a line belonging to another order', async () => {
+      const ctx = await setup('alpha');
+      const first = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+      const second = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+
+      await ctx.agent
+        .patch(`/v1/orders/${second.id}/lines/${first.lines[0].id}`)
+        .send({ quantityOrdered: '1' })
+        .expect(404);
+    });
+
+    it('refuses a Viewer, which lacks orders.update', async () => {
+      const ctx = await setup('alpha');
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+
+      const viewer = await addViewer(ctx, 'viewer@alpha.example.com');
+
+      await viewer
+        .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
+        .send({ quantityOrdered: '1' })
+        .expect(403);
+    });
+  });
+
+  describe('closing a line short', () => {
+    it('leaves the quantities alone and settles what is outstanding', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: ctx.locationId, quantity: '10' })
+        .expect(201);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/close`)
+        .send({ reason: 'Supplier discontinued the item' })
+        .expect(204);
+
+      const detail = body<{
+        fullyReceived: boolean;
+        lines: {
+          quantityOrdered: string;
+          quantityFulfilled: string;
+          quantityOutstanding: string;
+          isComplete: boolean;
+          isClosedShort: boolean;
+          closedReason: string | null;
+        }[];
+      }>(await ctx.agent.get(`/v1/orders/${order.id}`).expect(200));
+
+      const [line] = detail.lines;
+
+      // The variance survives: 40 was ordered, 10 came (ADR-034).
+      expect(line.quantityOrdered).toBe('40.0000');
+      expect(line.quantityFulfilled).toBe('10.0000');
+
+      // But nothing is outstanding, and the order can be closed.
+      expect(line.quantityOutstanding).toBe('0.0000');
+      expect(line.isComplete).toBe(true);
+      expect(line.isClosedShort).toBe(true);
+      expect(line.closedReason).toBe('Supplier discontinued the item');
+      expect(detail.fullyReceived).toBe(true);
+    });
+
+    it('closes a line nothing ever arrived against', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      // The other half of ADR-027's deferral: cancelling a whole line and
+      // cancelling its remainder differ only in the number.
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/close`)
+        .send({ reason: 'Ordered by mistake' })
+        .expect(204);
+
+      const [row] = await db.select().from(orderLines);
+      expect(row.quantityFulfilled).toBe('0.0000');
+      expect(row.isClosedShort).toBe(true);
+    });
+
+    it('requires a reason', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/close`)
+        .send({ reason: '   ' })
+        .expect(400);
+    });
+
+    it('refuses a line that is already complete', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: ctx.locationId, quantity: '40' })
+        .expect(201);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/close`)
+        .send({ reason: 'Nothing left to close' })
+        .expect(409);
+    });
+
+    it('refuses a receipt against a closed line until it is reopened', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/close`)
+        .send({ reason: 'Backordered indefinitely' })
+        .expect(204);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: ctx.locationId, quantity: '5' })
+        .expect(409);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/reopen`)
+        .expect(204);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: ctx.locationId, quantity: '5' })
+        .expect(201);
+    });
+
+    it('refuses on a draft', async () => {
+      const ctx = await setup('alpha');
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+
+      // A draft has promised nothing, so there is no shortfall — remove the
+      // line instead (ADR-033).
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/close`)
+        .send({ reason: 'Changed my mind' })
+        .expect(409);
+    });
+  });
+
   describe('POST /v1/orders/:id/lines/:lineId/receipts', () => {
     it('writes a referenced movement and raises the fulfilment together', async () => {
       const ctx = await setup('alpha');

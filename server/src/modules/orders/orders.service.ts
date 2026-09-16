@@ -17,8 +17,10 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { StockService, type Tx } from '../stock/stock.service';
+import { CloseLineDto } from './dto/close-line.dto';
 import type { CreateOrderDto } from './dto/create-order.dto';
 import { ListOrdersDto } from './dto/list-orders.dto';
+import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
 import type { ReceiveLineDto } from './dto/receive-line.dto';
 import type { UpdateOrderDto } from './dto/update-order.dto';
 
@@ -168,6 +170,7 @@ export class OrdersService {
           fullyReceived: sql<boolean>`coalesce((
             select bool_and(
               ${orderLines.quantityFulfilled} >= ${orderLines.quantityOrdered}
+              or ${orderLines.isClosedShort}
             )
             from ${orderLines} where ${orderLines.orderId} = ${orders.id}
           ), false)`,
@@ -192,26 +195,42 @@ export class OrdersService {
           quantityFulfilled: orderLines.quantityFulfilled,
 
           /**
+           * No more is coming, and why (ADR-034). The quantities above stay as
+           * they are — reducing the ordered amount to what arrived would erase
+           * the shortfall, and with it any way to tell a short shipment from an
+           * accurate one.
+           */
+          isClosedShort: orderLines.isClosedShort,
+          closedReason: orderLines.closedReason,
+
+          /**
            * What is still to come. Computed here because subtracting two
            * numeric(18,4) values in JS means parsing both into doubles
            * (ADR-025). greatest(…, 0) because an over-receipt is recorded as
            * an unreferenced movement rather than on the line — a negative
            * would be nonsense if that ever changed.
+           *
+           * Zero on a closed line: outstanding means still expected, and
+           * nothing is.
            */
-          quantityOutstanding: sql<string>`greatest(
+          quantityOutstanding: sql<string>`case
+          when ${orderLines.isClosedShort} then 0::numeric(18,4)
+          else greatest(
             ${orderLines.quantityOrdered} - ${orderLines.quantityFulfilled}, 0
-          )::text`,
+          )
+        end::text`,
 
           /**
            * For hiding the Receive control, which the server refuses with a
-           * 409 once a line is full. A boolean rather than leaving the client
-           * to compare: it could only do so by parsing, and matching the
-           * outstanding string against '0.0000' would break the day the scale
-           * changes.
+           * 409 once a line is full or closed. A boolean rather than leaving
+           * the client to compare: it could only do so by parsing, and matching
+           * the outstanding string against '0.0000' would break the day the
+           * scale changes.
            */
           isComplete: sql<boolean>`
-            ${orderLines.quantityFulfilled} >= ${orderLines.quantityOrdered}
-          `,
+          ${orderLines.quantityFulfilled} >= ${orderLines.quantityOrdered}
+          or ${orderLines.isClosedShort}
+        `,
         })
         .from(orderLines)
         .where(
@@ -471,6 +490,190 @@ export class OrdersService {
     this.logger.log(`Order ${orderId} updated`);
   }
 
+  async addLine(orderId: string, input: AddOrderLineDto) {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const order = await this.loadOrder(tx, organizationId, orderId);
+
+      /**
+       * Draft only. Adding an item to an order the supplier has already been
+       * sent is a new agreement, not a correction — raise another order
+       * (ADR-033).
+       */
+      if (order.status !== 'draft') {
+        throw new ConflictException(
+          `An item cannot be added to a ${order.status} order — raise a new one`,
+        );
+      }
+
+      try {
+        const [line] = await this.insertLines(tx, organizationId, orderId, [
+          input,
+        ]);
+
+        this.logger.log(`Order ${orderId} gained line ${line.id}`);
+        return line;
+      } catch (error) {
+        if (isUniqueViolation(error)) {
+          throw new ConflictException(
+            'That item is already on this order — amend its quantity instead',
+          );
+        }
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * Quantity only, and only while nothing has arrived.
+   *
+   * Allowed on a confirmed order as well as a draft: a supplier saying they
+   * can only do 800 is an ordinary amendment to a live agreement, and the
+   * audit entry records who changed it (ADR-033).
+   */
+  async updateLine(
+    orderId: string,
+    lineId: string,
+    input: UpdateOrderLineDto,
+  ): Promise<void> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const order = await this.loadOrder(tx, organizationId, orderId);
+      const line = await this.loadLine(tx, orderId, lineId);
+
+      if (order.status !== 'draft' && order.status !== 'confirmed') {
+        throw new ConflictException(
+          `A ${order.status} order cannot be amended`,
+        );
+      }
+
+      this.assertNothingReceived(line, 'amended');
+
+      await tx
+        .update(orderLines)
+        .set({ quantityOrdered: input.quantityOrdered })
+        .where(eq(orderLines.id, lineId));
+
+      this.logger.log(
+        `Order ${orderId} line ${lineId}: quantity now ${input.quantityOrdered}`,
+      );
+    });
+  }
+
+  async removeLine(orderId: string, lineId: string): Promise<void> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const order = await this.loadOrder(tx, organizationId, orderId);
+      const line = await this.loadLine(tx, orderId, lineId);
+
+      /**
+       * Draft only. Removing an item from an order already sent is not a
+       * correction but a partial cancellation, which needs a reason and is
+       * still open from ADR-027.
+       */
+      if (order.status !== 'draft') {
+        throw new ConflictException(
+          `An item cannot be removed from a ${order.status} order — cancel the order instead`,
+        );
+      }
+
+      this.assertNothingReceived(line, 'removed');
+
+      const [{ count }] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(orderLines)
+        .where(eq(orderLines.orderId, orderId));
+
+      /**
+       * An order with no lines is a document that orders nothing, which is why
+       * the header and its lines are written together (ADR-027). Removing the
+       * last one would produce by deletion the state creation refuses.
+       */
+      if (count <= 1) {
+        throw new ConflictException(
+          'That is the only item on this order — cancel the order instead',
+        );
+      }
+
+      await tx.delete(orderLines).where(eq(orderLines.id, lineId));
+
+      this.logger.log(`Order ${orderId} line ${lineId} removed`);
+    });
+  }
+
+  /**
+   * Stops expecting the rest of a line (ADR-034).
+   *
+   * Allowed with nothing received: a line where nothing arrived and never will
+   * is the same operation with quantity_fulfilled at zero.
+   */
+  async closeLineShort(
+    orderId: string,
+    lineId: string,
+    input: CloseLineDto,
+  ): Promise<void> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const order = await this.loadOrder(tx, organizationId, orderId);
+      const line = await this.loadLine(tx, orderId, lineId);
+
+      /**
+       * Confirmed only. A draft has promised nothing, so there is no shortfall
+       * to record — remove the line instead (ADR-033). A received or cancelled
+       * order is already closed.
+       */
+      if (order.status !== 'confirmed') {
+        throw new ConflictException(
+          `A line on a ${order.status} order cannot be closed short`,
+        );
+      }
+
+      if (line.isClosedShort) {
+        throw new ConflictException('That line is already closed');
+      }
+
+      if (Number(line.quantityFulfilled) >= Number(line.quantityOrdered)) {
+        throw new ConflictException(
+          'That line is already complete — there is nothing outstanding to close',
+        );
+      }
+
+      await tx
+        .update(orderLines)
+        .set({ isClosedShort: true, closedReason: input.reason })
+        .where(eq(orderLines.id, lineId));
+
+      this.logger.log(
+        `Order ${orderId} line ${lineId} closed short at ${line.quantityFulfilled} of ${line.quantityOrdered}`,
+      );
+    });
+  }
+
+  /**
+   * A supplier finding stock after all is ordinary, and closing wrote no
+   * movement — so this costs nothing and its absence would mean a database
+   * edit the first time somebody mis-clicks (ADR-034).
+   */
+  async reopenLine(orderId: string, lineId: string): Promise<void> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const order = await this.loadOrder(tx, organizationId, orderId);
+      const line = await this.loadLine(tx, orderId, lineId);
+
+      if (order.status !== 'confirmed') {
+        throw new ConflictException(
+          `A line on a ${order.status} order cannot be reopened`,
+        );
+      }
+
+      if (!line.isClosedShort) {
+        throw new ConflictException('That line is not closed');
+      }
+
+      await tx
+        .update(orderLines)
+        .set({ isClosedShort: false, closedReason: null })
+        .where(eq(orderLines.id, lineId));
+
+      this.logger.log(`Order ${orderId} line ${lineId} reopened`);
+    });
+  }
+
   /**
    * Receiving against a line: the movement and the fulfilment in one
    * transaction.
@@ -529,6 +732,17 @@ export class OrdersService {
         .where(and(eq(orderLines.id, lineId), eq(orderLines.orderId, orderId)));
 
       if (!line) throw new NotFoundException('No such line on this order');
+
+      /**
+       * Reopen first. A delivery against a line somebody closed means one of
+       * them is wrong, and making the reversal explicit puts an audit entry on
+       * the decision rather than inferring it from the receipt (ADR-034).
+       */
+      if (line.isClosedShort) {
+        throw new ConflictException(
+          'That line was closed short — reopen it before receiving against it',
+        );
+      }
 
       const movement = await this.stock.recordWithin(
         tx,
@@ -623,6 +837,46 @@ export class OrdersService {
     }
 
     return inserted;
+  }
+
+  private async loadOrder(tx: Tx, organizationId: string, orderId: string) {
+    const [order] = await tx
+      .select()
+      .from(orders)
+      .where(
+        and(eq(orders.id, orderId), eq(orders.organizationId, organizationId)),
+      );
+
+    if (!order) throw new NotFoundException('No such order');
+
+    return order;
+  }
+
+  /**
+   * Both ids together, as the receipt path does: without the second condition
+   * any line in the organization could be reached through any order's URL.
+   */
+  private async loadLine(tx: Tx, orderId: string, lineId: string) {
+    const [line] = await tx
+      .select()
+      .from(orderLines)
+      .where(and(eq(orderLines.id, lineId), eq(orderLines.orderId, orderId)));
+
+    if (!line) throw new NotFoundException('No such line on this order');
+
+    return line;
+  }
+
+  /**
+   * Whatever the order's status. Below what has arrived is nonsense and above
+   * it is a renegotiation that should be visible as one (ADR-033).
+   */
+  private assertNothingReceived(line: OrderLine, verb: string): void {
+    if (Number(line.quantityFulfilled) > 0) {
+      throw new ConflictException(
+        `${line.quantityFulfilled} has already been received against this item, so it cannot be ${verb}`,
+      );
+    }
   }
 
   /**

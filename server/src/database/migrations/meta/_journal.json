@@ -120,6 +120,13 @@
       "when": 1789535515772,
       "tag": "0016_order_duplicated_from",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789596421527,
+      "tag": "0017_order_line_close_short",
+      "breakpoints": true
     }
   ]
 }

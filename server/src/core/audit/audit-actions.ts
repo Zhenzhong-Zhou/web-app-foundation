@@ -33,6 +33,12 @@ export const AUDIT_ACTIONS = {
   ORDER_CREATED: 'order.created',
   ORDER_UPDATED: 'order.updated',
   ORDER_LINE_RECEIVED: 'order.line_received',
+  ORDER_LINE_ADDED: 'order.line_added',
+  ORDER_LINE_UPDATED: 'order.line_updated',
+  ORDER_LINE_REMOVED: 'order.line_removed',
+  /** Carries the reason — see ADR-034. */
+  ORDER_LINE_CLOSED_SHORT: 'order.line_closed_short',
+  ORDER_LINE_REOPENED: 'order.line_reopened',
 
   PARTNER_ADDRESS_CREATED: 'partner.address.created',
   PARTNER_ADDRESS_UPDATED: 'partner.address.updated',

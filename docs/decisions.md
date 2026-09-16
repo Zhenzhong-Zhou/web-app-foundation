@@ -2049,7 +2049,117 @@ one finished lot to be traced to its specific inputs rather than to its batch.
 Dropping `output_lot_id` is what makes several output lots per run expressible
 at all; each `production` movement carries its own `lot_id`, so one lot and
 several are the same table.
- 
+
+---
+
+## ADR-033 — A line is editable until something depends on it
+
+**Context.** `UpdateOrderDto` has said since it was written that "lines are
+edited through their own routes". Those routes were never built, so a draft
+with a wrong quantity has one remedy: cancel it and raise another. Duplicating
+does not help — it copies the wrong quantity.
+
+ADR-027 deferred **partial-line cancellation**, which is a different question:
+what a line means once fulfilment has started, and what reason it needs. That
+deferral was read as covering line editing generally. It does not.
+
+**Decision — the same rule that froze the order reference.** What other records
+depend on becomes immutable; what nothing depends on stays editable.
+
+    add a line       draft only
+    change quantity  draft or confirmed, refused once anything is received
+    remove a line    draft only, and never the last one
+
+A draft line is not a record of anything that happened. No movement references
+it, no snapshot copies it, and the order has not been sent. Correcting one is
+the same act as correcting a draft BOM's lines (ADR-029), and forcing a
+cancelled document for a typo is the outcome worth avoiding.
+
+A confirmed order is different but not frozen. The supplier saying they can
+only do 800 is an ordinary amendment to a live agreement, and the audit entry
+records who changed it. Removing a line is where this stops: deleting an item
+from an order somebody has already been sent is not a correction, it is a
+partial cancellation, and that is ADR-027's open question — it needs a reason,
+and possibly a status of its own.
+
+**Decision — anything received freezes the line.** `quantity_fulfilled > 0`
+refuses both edit and removal, whatever the order's status. Below what has
+arrived is nonsense; above it is a renegotiation that should be visible as one.
+The `order_lines_fulfilled_within_ordered_check` constraint would catch the
+first case anyway, but as a constraint violation rather than an explanation.
+
+**Decision — the last line cannot be removed.** An order with no lines is a
+document that orders nothing, which is why `create` writes the header and its
+lines in one transaction (ADR-027). Removing the last line would produce by
+deletion the state that cannot be produced by creation. Cancel the order
+instead.
+
+**Consequence.** No schema change. `variant_id` is not editable for the reason
+`UpdateBomLineDto` gives: changing which item a line points at is not an edit
+but a different line, and it would have to re-snapshot the SKU and re-check the
+unique constraint. Remove and add, both audited, so the trail says what
+happened rather than showing one line that quietly became another.
+
+**Rejected: editing a received line with a reason.** That is partial-line
+cancellation with a different name, and taking it here would settle ADR-027's
+open question by accident rather than by deciding it.
+
+---
+
+## ADR-034 — A short line is closed, not shrunk
+
+**Context.** Order 100, receive 40, supplier says the rest is discontinued. The
+line is not complete, the order is not received, and nothing lets anyone say
+"this is as done as it gets". ADR-027 deferred this as partial-line
+cancellation, needing a reason and a decision about what a line means once
+fulfilment has started.
+
+The workaround was marking the whole order received, which is honest at small
+scale — a person deciding an order is done is ADR-027's own mechanism — but it
+records nothing about which line fell short or why.
+
+**Decision — a flag on the line, and the quantities stay true.**
+`is_closed_short` with a required `closed_reason`. `quantity_ordered` remains
+100 and `quantity_fulfilled` remains 40.
+
+Reducing the ordered quantity to 40 is the shortcut, and it destroys the
+variance: nobody can afterwards tell a short shipment from an accurate one, or
+report on which suppliers under-deliver. Production keeps `quantity_planned`
+beside `quantity_consumed` for exactly this reason (ADR-032), and an order line
+is the same shape.
+
+This is what SAP calls the delivery completed indicator and what Oracle and
+NetSuite call closing a line, which is some evidence the shape survives
+contact.
+
+**Decision — completeness is derived, and the order's status is not.**
+`is_complete` becomes `fulfilled >= ordered or is_closed_short`, and
+`fully_received` follows. `quantity_outstanding` goes to zero on a closed line,
+because outstanding means still expected and nothing is.
+
+The order's own status still moves by a person marking it received (ADR-027).
+Deriving it from the lines would make a document close itself, which is the
+thing that ADR rejected — but with every line resolved, that decision is now an
+easy one rather than a judgement about a half-finished order.
+
+**Decision — closing is allowed with nothing received, which settles the rest
+of the deferral.** A line where nothing arrived and never will is the same
+operation with `quantity_fulfilled = 0`. Cancelling a whole line and cancelling
+its remainder differ only in the number, and giving them separate mechanisms
+would mean two ways to record one fact.
+
+That is also why ADR-033 refuses to *remove* a line from a confirmed order:
+this is what removal was standing in for, and it keeps the row and the reason
+instead of deleting both.
+
+**Decision — reversible while the order is open.** A supplier finding stock
+after all is ordinary. Closing writes no movement and changes no quantity, so
+reopening costs nothing and the absence of it would mean a database edit the
+first time somebody mis-clicks.
+
+**Consequence.** Receiving against a closed line is refused — reopen first, so
+the reversal is deliberate and audited rather than implied by a delivery.
+
 ---
 
 # Open decisions

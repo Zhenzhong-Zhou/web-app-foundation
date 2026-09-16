@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -17,8 +18,10 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { CloseLineDto } from './dto/close-line.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ListOrdersDto } from './dto/list-orders.dto';
+import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
 import { ReceiveLineDto } from './dto/receive-line.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrdersService } from './orders.service';
@@ -103,6 +106,88 @@ export class OrdersController {
     @Body() dto: UpdateOrderDto,
   ): Promise<void> {
     await this.orders.update(id, dto);
+  }
+
+  @Post(':id/lines')
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(PERMISSIONS.ORDERS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.ORDER_LINE_ADDED,
+    resourceType: 'order',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async addLine(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AddOrderLineDto,
+  ) {
+    return { line: await this.orders.addLine(id, dto) };
+  }
+
+  @Patch(':id/lines/:lineId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.ORDERS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.ORDER_LINE_UPDATED,
+    resourceType: 'order',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async updateLine(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('lineId', ParseUUIDPipe) lineId: string,
+    @Body() dto: UpdateOrderLineDto,
+  ): Promise<void> {
+    await this.orders.updateLine(id, lineId, dto);
+  }
+
+  /**
+   * A real delete, unlike almost everything else here. A draft line is not a
+   * record of anything that happened — what happened is on the movements, and
+   * the audit entry is the trail (ADR-033).
+   */
+  @Delete(':id/lines/:lineId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.ORDERS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.ORDER_LINE_REMOVED,
+    resourceType: 'order',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async removeLine(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('lineId', ParseUUIDPipe) lineId: string,
+  ): Promise<void> {
+    await this.orders.removeLine(id, lineId);
+  }
+
+  @Post(':id/lines/:lineId/close')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.ORDERS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.ORDER_LINE_CLOSED_SHORT,
+    resourceType: 'order',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async closeLine(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('lineId', ParseUUIDPipe) lineId: string,
+    @Body() dto: CloseLineDto,
+  ): Promise<void> {
+    await this.orders.closeLineShort(id, lineId, dto);
+  }
+
+  @Post(':id/lines/:lineId/reopen')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.ORDERS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.ORDER_LINE_REOPENED,
+    resourceType: 'order',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async reopenLine(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('lineId', ParseUUIDPipe) lineId: string,
+  ): Promise<void> {
+    await this.orders.reopenLine(id, lineId);
   }
 
   /**

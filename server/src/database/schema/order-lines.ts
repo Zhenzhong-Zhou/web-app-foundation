@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   check,
   index,
   numeric,
@@ -76,6 +77,24 @@ export const orderLines = pgTable(
       .notNull()
       .default('0'),
 
+    /**
+     * No more is coming: treat the shortfall as final (ADR-034).
+     *
+     * The quantities stay as they are. Reducing quantity_ordered to what
+     * arrived is the tempting shortcut and it erases the fact that 100 was
+     * ordered, so a short shipment stops being distinguishable from an
+     * accurate one — the same reason a production run keeps quantity_planned
+     * beside quantity_consumed (ADR-032).
+     */
+    isClosedShort: boolean('is_closed_short').notNull().default(false),
+
+    /**
+     * Why. Required by the service when closing, and the thing that makes
+     * this different from deleting the line: "supplier discontinued it" is
+     * information, a missing row is not.
+     */
+    closedReason: text('closed_reason'),
+
     ...timestamps,
   },
   (t) => [
@@ -106,6 +125,11 @@ export const orderLines = pgTable(
     check(
       'order_lines_fulfilled_within_ordered_check',
       sql`${t.quantityFulfilled} >= 0 and ${t.quantityFulfilled} <= ${t.quantityOrdered}`,
+    ),
+
+    check(
+      'order_lines_closed_reason_check',
+      sql`${t.isClosedShort} = (${t.closedReason} is not null)`,
     ),
   ],
 );
