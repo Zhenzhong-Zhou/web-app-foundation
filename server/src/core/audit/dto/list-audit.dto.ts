@@ -1,8 +1,8 @@
 import { Transform, Type } from 'class-transformer';
 import {
+  IsDate,
   IsIn,
   IsInt,
-  IsISO8601,
   IsOptional,
   IsUUID,
   Max,
@@ -45,19 +45,26 @@ export class ListAuditDto {
   @IsUUID()
   resourceId?: string;
 
-  // ISO 8601, and converted here rather than in the service: a controller
-  // hands services values, not strings to parse.
+  /**
+   * Transformed to a Date here so the service is handed values, not strings to
+   * parse.
+   *
+   * @IsDate rather than @IsISO8601: transformation runs before validation, so
+   * the validator sees a Date and an ISO check on it always fails. isDate also
+   * rejects `new Date('garbage')`, which is a Date with a NaN time, so a
+   * malformed string still returns 400.
+   */
   @IsOptional()
-  @IsISO8601()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? new Date(value) : value,
   )
+  @IsDate()
   from?: Date;
 
   @IsOptional()
-  @IsISO8601()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? new Date(value) : value,
   )
+  @IsDate()
   to?: Date;
 }

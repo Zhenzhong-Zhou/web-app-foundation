@@ -100,6 +100,9 @@ export class OrdersController {
     action: AUDIT_ACTIONS.ORDER_UPDATED,
     resourceType: 'order',
     resourceId: (_response, request) => request.params.id,
+    // note is deliberately absent: free text is where people put things that
+    // should not sit in a two-year table (ADR-018).
+    fields: ['status', 'reference', 'expectedAt'],
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -130,6 +133,7 @@ export class OrdersController {
     action: AUDIT_ACTIONS.ORDER_LINE_UPDATED,
     resourceType: 'order',
     resourceId: (_response, request) => request.params.id,
+    fields: ['quantityOrdered', 'unitPrice', 'currency'],
   })
   async updateLine(
     @Param('id', ParseUUIDPipe) id: string,

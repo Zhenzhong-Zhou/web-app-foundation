@@ -2688,29 +2688,39 @@ they exist so the reasoning is not rediscovered from scratch.
   needs fixing, so it is a small change rather than a shape one. The trigger
   is somebody entering a price on the wrong line and wanting it gone rather
   than corrected.
-- **The audit log records that something changed, never what.** The
-  interceptor captures no request body, deliberately — POST /v1/users carries a
-  password, and pino's reason for redacting it applies twice as hard to a row
-  kept for 24 months (ADR-012). `payload` is opt-in per route and no route
-  supplies one, so "order.updated" is the whole entry: the actor, the resource,
-  the time.
+  **Now partly closed.** `@Audited({ fields: [...] })` records the values a
+  route names, on four of them: an order's status, reference and expected date;
+  a line's quantity, price and currency; a variant's SKU; a membership's role.
+  An allow-list rather than a redaction list, because the failure modes are not
+  symmetric — forgetting to redact a new sensitive field puts it in a two-year
+  table, while forgetting to allow one means a missing value in a log. `note`
+  is deliberately absent: free text is where people put things that should not
+  be retained for two years.
 
-  That answers "who changed this order" and not "what did they change it
-  from". The second question arrives with a dispute — a reference edited after
-  receipt, a quantity amended on a confirmed order — which is exactly when the
-  answer is wanted and gone.
+  What this is not is before-and-after. The interceptor runs after the handler
+  and never saw the old row, so it records what a field was set *to*.
+  Reconstructing a change means reading the previous entry for the same
+  resource. That is weaker than the textbook answer and deliberately so: real
+  before/after means triggers writing full rows to a history table, which is
+  what paper_trail and supa_audit do, and which ADR-024 and ADR-025 both
+  rejected for cross-table rules on the grounds that logic in SQL is invisible
+  to a TypeScript test suite.
 
-  Recording before and after is not free. It roughly doubles the log, and half
-  of what would be captured is field values that have no business sitting in a
-  two-year table: a note, a contact's phone number, eventually a price somebody
-  considers confidential. A per-route allow-list of fields is the shape that
-  works — `@Audited({ fields: ['reference', 'expectedAt'] })` — since it keeps
-  the decision at the route, where somebody can see what they are committing to
-  retaining.
+  **The ceiling, if it is ever needed.** Trigger-based row history on the four
+  or five tables that matter, sitting beside `audit_log` rather than replacing
+  it — one says who did something, the other says what the row was. The
+  forcing function is a question this cannot answer: "what did this row look
+  like on 3 March", a regulator, or a dispute with money attached. Note that
+  movements already are that history for quantities, and the SKU, ship-to and
+  recipe snapshots are point-in-time history for the documents that needed it,
+  decided case by case.
 
-  Searching it is a second problem and downstream of this one. JSONB is
-  queryable with a GIN index, but there is nothing to query until something is
-  written; "every time anyone changed a price" needs both halves.
+  **And searching is still not built, deliberately.** GIN on a column that is
+  null in most rows costs write time to serve a query nobody runs weekly, and
+  the keys here are fixed by the allow-list rather than unpredictable — so when
+  a question does arrive, a partial expression index on that one key
+  (`((payload->>'sku')) where payload ? 'sku'`) is smaller and cheaper than
+  GIN. Volume is answered by monthly range partitioning, not a cleverer index.
 
 ---
 

@@ -60,6 +60,7 @@ export class UsersController {
     resourceType: 'user',
     // 204, so the id comes from the path rather than a response body.
     resourceId: (_response, request) => request.params.id,
+    fields: ['roleId'],
   })
   async update(
     @CurrentUser() context: RequestContext,

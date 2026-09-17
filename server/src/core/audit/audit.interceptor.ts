@@ -87,9 +87,14 @@ export class AuditInterceptor implements NestInterceptor {
           response,
           req as Request<Record<string, string>>,
         ),
-        // No request body, ever. POST /v1/users carries a password, and the
-        // reason pino redacts it applies twice as hard to a row kept for two
-        // years. Payload is opt-in and explicit or it is absent.
+
+        /**
+         * Only the fields a route named. The reason pino redacts passwords
+         * applies twice as hard to a row kept for two years, so the body is
+         * never recorded wholesale (ADR-018).
+         */
+        payload: pick(req.body, options.fields),
+
         ip: req.ip,
         userAgent: req.headers['user-agent'],
       });
@@ -97,4 +102,28 @@ export class AuditInterceptor implements NestInterceptor {
       this.logger.error(`Audit write failed: ${String(error)}`);
     }
   }
+}
+
+/**
+ * The named fields of a body, or undefined when a route named none.
+ *
+ * undefined rather than an empty object: a null payload says "this route does
+ * not record values", while `{}` would say "it does, and nothing changed".
+ */
+function pick(
+  body: unknown,
+  fields: readonly string[] | undefined,
+): Record<string, unknown> | undefined {
+  if (!fields?.length || typeof body !== 'object' || body === null) {
+    return undefined;
+  }
+
+  const source = body as Record<string, unknown>;
+  const picked: Record<string, unknown> = {};
+
+  for (const field of fields) {
+    if (field in source) picked[field] = source[field];
+  }
+
+  return Object.keys(picked).length > 0 ? picked : undefined;
 }

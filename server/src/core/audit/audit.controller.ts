@@ -18,4 +18,17 @@ export class AuditController {
   list(@Query() query: ListAuditDto) {
     return this.audit.list(query);
   }
+
+  /**
+   * The action vocabulary present in this organization's log, for the filter.
+   *
+   * Declared before any future @Get(':id'): Nest matches in declaration order,
+   * and 'actions' would otherwise be read as an id — the same trap the
+   * products controller documents for 'variants'.
+   */
+  @Get('actions')
+  @RequirePermissions(PERMISSIONS.AUDIT_VIEW)
+  listActions() {
+    return this.audit.listActions();
+  }
 }

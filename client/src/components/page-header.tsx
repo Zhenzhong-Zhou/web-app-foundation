@@ -60,29 +60,34 @@ export function PageHeader({
 
   return (
     <Stack spacing={1}>
-      {/* Collapses the middle of a long trail rather than wrapping onto a
-          second line. Four is generous for a hierarchy this shallow and means
-          nothing changes until one genuinely gets deep. */}
-      <Breadcrumbs aria-label="breadcrumb" maxItems={4} itemsAfterCollapse={2}>
-        {crumbs.map((crumb) => (
-          <Link
-            key={crumb.to}
-            component={RouterLink}
-            to={crumb.to}
-            variant="body2"
-            underline="hover"
-            color="inherit"
-          >
-            {crumb.label}
-          </Link>
-        ))}
+      {/* No trail on a top-level page: the breadcrumb would be the title
+          repeated, which is furniture rather than navigation. */}
+      {crumbs.length > 0 && (
+        <Breadcrumbs
+          aria-label="breadcrumb"
+          maxItems={4}
+          itemsAfterCollapse={2}
+        >
+          {crumbs.map((crumb) => (
+            <Link
+              key={crumb.to}
+              component={RouterLink}
+              to={crumb.to}
+              variant="body2"
+              underline="hover"
+              color="inherit"
+            >
+              {crumb.label}
+            </Link>
+          ))}
 
-        {/* Present but not a link, so the path is complete and the current
-            page is visibly where you are. */}
-        <Typography variant="body2" color="text.primary">
-          {title}
-        </Typography>
-      </Breadcrumbs>
+          {/* Present but not a link, so the path is complete and the current
+              page is visibly where you are. */}
+          <Typography variant="body2" color="text.primary">
+            {title}
+          </Typography>
+        </Breadcrumbs>
+      )}
 
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>

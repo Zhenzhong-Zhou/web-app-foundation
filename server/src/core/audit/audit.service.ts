@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, desc, eq, gte, lt, lte, SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lt, lte, SQL } from 'drizzle-orm';
 
 import { auditLog, users } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -21,6 +21,7 @@ export interface AuditRecord {
   action: string;
   resourceType: string | null;
   resourceId: string | null;
+  payload: Record<string, unknown> | null;
   actorId: string | null;
   /** Joined so the client is not left resolving UUIDs it cannot look up. */
   actorEmail: string | null;
@@ -88,6 +89,9 @@ export class AuditService {
         action: auditLog.action,
         resourceType: auditLog.resourceType,
         resourceId: auditLog.resourceId,
+        // What a field was set to, for routes that name fields (ADR-018). Small
+        // — an allow-list of two or three values — so it costs little on a list.
+        payload: auditLog.payload,
         actorId: auditLog.actorId,
         actorEmail: users.email,
         ip: auditLog.ip,
@@ -108,5 +112,28 @@ export class AuditService {
       entries: entries as unknown as AuditRecord[],
       nextCursor: hasMore ? entries[entries.length - 1].id : null,
     };
+  }
+
+  /**
+   * The actions that have actually occurred here, for the filter.
+   *
+   * From the data rather than a constant, because the client cannot import the
+   * server's AUDIT_ACTIONS and a duplicated list drifts. It also offers only
+   * what exists, so the filter never contains an option that returns nothing.
+   *
+   * Through transaction rather than TenantDb.select: there is no distinct
+   * helper, and adding one for a single caller is more surface than a scoped
+   * query here.
+   */
+  async listActions(): Promise<string[]> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const rows = await tx
+        .selectDistinct({ action: auditLog.action })
+        .from(auditLog)
+        .where(eq(auditLog.organizationId, organizationId))
+        .orderBy(asc(auditLog.action));
+
+      return rows.map((row) => row.action);
+    });
   }
 }

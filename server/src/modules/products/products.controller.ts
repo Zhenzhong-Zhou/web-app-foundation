@@ -109,6 +109,9 @@ export class ProductsController {
     action: AUDIT_ACTIONS.PRODUCT_VARIANT_UPDATED,
     resourceType: 'product_variant',
     resourceId: (_response, request) => request.params.variantId,
+    // The case ADR-023 named: a rename affects the catalogue and nothing
+    // historical, so the previous SKU is otherwise unrecoverable.
+    fields: ['sku'],
   })
   async updateVariant(
     @Param('id', ParseUUIDPipe) id: string,

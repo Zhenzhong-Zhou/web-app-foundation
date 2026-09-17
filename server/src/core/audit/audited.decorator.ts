@@ -29,6 +29,20 @@ export interface AuditOptions<T = unknown> {
     response: T,
     request: Request<Record<string, string>>,
   ) => string | undefined;
+
+  /**
+   * Request body fields to record, by name. Everything else is dropped.
+   *
+   * An allow-list rather than a redaction list, because the failure modes are
+   * not symmetric: forgetting to redact a new sensitive field puts it in a
+   * two-year table, while forgetting to allow a new field means one missing
+   * value in a log. The default stays silence (ADR-018).
+   *
+   * This records what a field was set *to*, never what it was before — the
+   * interceptor runs after the handler and never saw the old row. Reconstructing
+   * a change means reading the previous entry for the same resource.
+   */
+  fields?: readonly string[];
 }
 
 /**

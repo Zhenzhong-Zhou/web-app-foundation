@@ -7,6 +7,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import {
+  auditLog,
   orderLines,
   orders,
   roles,
@@ -1270,6 +1271,33 @@ describe('Orders (e2e)', () => {
       // Scoped, so not found rather than forbidden — a 403 would confirm the
       // id exists somewhere.
       await alpha.agent.get(`/v1/orders/${theirs.id}`).expect(404);
+    });
+  });
+
+  describe('audit payload', () => {
+    it('records only the fields a route named', async () => {
+      const ctx = await setup('alpha');
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send(purchase(ctx.partnerId, ctx.variant.id))
+          .expect(201),
+      ).order;
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ reference: 'PO-1234', note: 'call the warehouse first' })
+        .expect(204);
+
+      const [entry] = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'order.updated'));
+
+      // The allow-list is a retention promise, and without this it is a
+      // comment. note is absent deliberately: free text is where people put
+      // what should not sit in a two-year table (ADR-018).
+      expect(entry.payload).toEqual({ reference: 'PO-1234' });
     });
   });
 });

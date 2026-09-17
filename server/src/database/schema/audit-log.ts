@@ -49,8 +49,9 @@ export const auditLog = pgTable(
     resourceType: text('resource_type'),
     resourceId: uuid('resource_id'),
 
-    // Before/after values, request details — whatever the event needs.
-    // JSONB rather than columns, because the shape differs per action (ADR-002).
+    // What a field was set to, for the routes that name fields. Not before/after:
+    // the interceptor runs after the handler and never saw the old row
+    // (ADR-018). JSONB rather than columns, because the shape differs per action.
     payload: jsonb('payload'),
 
     // Captured at event time, because the user row will later stop identifying
