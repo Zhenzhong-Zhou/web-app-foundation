@@ -2418,12 +2418,6 @@ they exist so the reasoning is not rediscovered from scratch.
   at what is on hand, or walks down — "no blend, but enough of the blend's
   inputs, so really 400". Both are legitimate and they give different numbers,
   so the screen has to say which it means.
-- **Reservation, and why production makes it urgent.** `on_hand` is not
-  `available`: a released run has material committed that a pending shipment can
-  still pick, so both documents promise the same units and the buildable count
-  lies to each. This is ADR-023's `available = on_hand − reserved` entry, and it
-  bites harder here than it did for orders. Worth settling before production
-  orders carry real work, not before they are written.
 - **Partner sites collide with our own on `locations_org_root_code_key`.** A
   partner site is a root, so it shares the `(organization_id, code)` scope with
   our warehouses: our `MAIN` and a co-packer's `MAIN` cannot coexist. Safe to
@@ -2444,10 +2438,6 @@ they exist so the reasoning is not rediscovered from scratch.
   shortfall is a backorder: a different operation, probably its own action, and
   it needs a rule for what happens to the original line. Downstream of the
   partial-line cancellation entry.
-- **Cancelling a partially received order.** Related and separate. `cancelled`
-  is a whole-order status, but a partly received order has real movements
-  against it and no clean terminal state — closed-short is what most systems
-  call it, and it is not currently expressible.
 - **If apparel is ever a target, two deferrals move to the front.** Matrix BOMs
   (five sizes in four colours is twenty recipes differing by one number, since
   consumption varies by size) and multi-output runs (one cutting run yields
@@ -2473,34 +2463,76 @@ they exist so the reasoning is not rediscovered from scratch.
   or a second market. Note also what the label is *not*: medicinal quantity per
   dose is declared, while a BOM line is what goes into a batch, and the two are
   related by lot potency. Nothing should derive one from the other.
-- **Capture unit cost at receipt, before deciding anything about costing.** A
-  purchase price is known when stock is received and unrecoverable afterwards
-  — reconstructing it means reading old invoices. Same class as licence
-  history: cheap now, impossible to backfill, and independent of which costing
-  method eventually wins. A unit cost column on `order_lines` is the whole of
-  it; everything downstream waits.
-- **Per-batch cost is accurate and not obviously worth its work.** With actual
-  consumption (ADR-032) two batches of one product genuinely cost different
-  amounts, so actual and standard costing diverge here specifically, and
-  outsourced runs give a third answer again because their cost arrives inside
-  the manufacturer's invoice rather than from a rollup. The test is whether a
-  batch costing 8% more would change a decision: "I would look into why" is
-  already answered by the variance report, for free, from two columns; "I would
-  reprice" needs real per-batch cost. The hard part is not the arithmetic but
-  the chain behind it — cost per batch needs cost per input lot, which needs
-  prices landing on lots at receipt. Consumption movements already carry
-  `lot_id`, so nothing about production forecloses it.
+- **Capture unit cost at receipt, before deciding anything about costing.**
+  Half done: `order_lines.unit_price` exists (ADR-035), so what was agreed is
+  recorded. What is still missing is carrying it onto the lot at receipt, which
+  is what everything downstream reads. A purchase price is known when stock
+  arrives and unrecoverable afterwards — same class as licence history: cheap
+  now, impossible to backfill, and independent of which costing method
+  eventually wins.
+- **Per-batch cost, and which method values it.** With actual consumption
+  (ADR-032) two batches of one product genuinely cost different amounts, so
+  actual and standard costing diverge here specifically; outsourced runs give a
+  third answer again, since their cost arrives inside the manufacturer's
+  invoice rather than from a rollup. The test for whether it is worth building
+  is whether a batch costing 8% more would change a decision: "I would look
+  into why" is already answered by the variance report, for free, from two
+  columns; "I would reprice" needs real per-batch cost.
+ 
+  The chain is price on the order line (ADR-035) → cost on the lot → cost of a
+  run → cost of a unit. The first link exists. The second is `lots.unit_cost`
+  and a currency written at receipt from the order line, which is small — and
+  blocked on the method, because stock is not one lot. Receive 1000 at 0.25,
+  then 1000 at 0.30, and consume 1500:
+ 
+      FIFO             1000 at 0.25 and 500 at 0.30. Matches physical flow.
+      Weighted average all 1500 at 0.275. Simple, and cannot say which batch
+                       cost what.
+      Standard         a set figure with the difference posted to variance.
+                       What most manufacturers do, and it needs the variance
+                       machinery to mean anything.
+ 
+  Each gives a different number for the same physical facts, and switching
+  afterwards means revaluing history, because past consumptions were valued
+  under the old rule.
+ 
+  Lot-level costing is the cheap one here and falls out of work already done: a
+  consumption movement already names its lot (ADR-023), so the cost is on that
+  lot and FIFO is nearly free. The traceability built for recalls pays for the
+  costing. What still needs a rule is a lot received across two purchase orders
+  at different prices, or topped up after the fact.
+ 
+  Deciding needs real receipts. If prices barely move, weighted average is fine
+  and nobody notices; if they swing — herbs and botanicals do — the method
+  changes the margin. A few months of data answers it; guessing now means
+  revaluing later.
 - **Variance reporting is a query, not a table.** The audit log answers "what
   happened to this run"; it cannot answer "every run that ran over plan last
   quarter". Both quantities sit on `production_order_lines`, so that report is
   arithmetic over existing columns and needs no stored number. Worth building
   when someone asks for it; worth not storing either way, because a maintained
   total drifts and a computed one cannot.
-- **Notifications, if a second thing ever needs to notify someone.** The
-  variance flag lives in the audit payload and the close response (ADR-032).
-  A notifications domain means delivery, read state, per-user targeting, and
-  digests — too much machinery for one flag, and the trigger to start it is a
-  second caller.
+- **Notifications: two callers now, and still no domain.** A run closed with a
+  variance past threshold (ADR-032) and an order line closed short (ADR-034)
+  both detect something worth telling somebody about, and both currently only
+  say it in the response and the audit entry — which reaches whoever happened
+  to click the button.
+
+  The shape is one table, one row per recipient, with read state: `user_id`,
+  `type`, `resource_type`, `resource_id`, `read_at`. Targeting by permission to
+  start — anyone holding `production.complete` gets the variance — because
+  targeting by involvement needs `created_by` to mean "owner", which it does
+  not, and targeting by subscription is its own feature.
+
+  Two other candidates are absences rather than events: an expected date passed
+  with the order still open, and a run that cannot be released for want of
+  material. Both need something looking on a schedule, which is a cron and a
+  rule about what happens when it does not run — considerably more than the
+  table, and worth separating from the two that are already detected.
+
+  A toast is not this. A toast confirms what you just did and needs no storage;
+  the bell holds what somebody else did. Conflating them is the usual mistake,
+  and the toast is buildable today with no schema at all.
 - **Micro-dose units are a data-entry convention nothing enforces.**
   `numeric(18,4)` is exact only if the unit is right: 50 mg held in kilograms is
   0.00005 and truncates, held in grams it is 50 and does not. Lines inherit the
@@ -2656,41 +2688,67 @@ they exist so the reasoning is not rediscovered from scratch.
   needs fixing, so it is a small change rather than a shape one. The trigger
   is somebody entering a price on the wrong line and wanting it gone rather
   than corrected.
+- **The audit log records that something changed, never what.** The
+  interceptor captures no request body, deliberately — POST /v1/users carries a
+  password, and pino's reason for redacting it applies twice as hard to a row
+  kept for 24 months (ADR-012). `payload` is opt-in per route and no route
+  supplies one, so "order.updated" is the whole entry: the actor, the resource,
+  the time.
+
+  That answers "who changed this order" and not "what did they change it
+  from". The second question arrives with a dispute — a reference edited after
+  receipt, a quantity amended on a confirmed order — which is exactly when the
+  answer is wanted and gone.
+
+  Recording before and after is not free. It roughly doubles the log, and half
+  of what would be captured is field values that have no business sitting in a
+  two-year table: a note, a contact's phone number, eventually a price somebody
+  considers confidential. A per-route allow-list of fields is the shape that
+  works — `@Audited({ fields: ['reference', 'expectedAt'] })` — since it keeps
+  the decision at the route, where somebody can see what they are committing to
+  retaining.
+
+  Searching it is a second problem and downstream of this one. JSONB is
+  queryable with a GIN index, but there is nothing to query until something is
+  written; "every time anyone changed a price" needs both halves.
 
 ---
 
 # Resolved
 
-| Decision                               | Outcome                                              | ADR              |
-|----------------------------------------|------------------------------------------------------|------------------|
-| ORM: Prisma vs. Drizzle vs. Knex       | Drizzle                                              | ADR-009          |
-| Primary key strategy                   | UUIDv7 on `uuid` column                              | ADR-010          |
-| PostgreSQL version                     | 18 (for native `uuidv7()`)                           | ADR-002, ADR-010 |
-| Session strategy                       | Opaque token in httpOnly cookie, no JWT              | ADR-011          |
-| Account deletion vs. audit retention   | Anonymize user, retain audit rows                    | ADR-012          |
-| Data ownership on user departure       | Org owns data, user attributed                       | ADR-012          |
-| API versioning                         | URL prefix `/v1/`, global, from first endpoint       | ADR-013          |
-| CSRF defence                           | Custom header, no token                              | ADR-014          |
-| Concurrent sessions per user           | Multiple; login revokes only the presented session   | ADR-015          |
-| Permission resolution                  | Per request, never cached                            | ADR-016          |
-| Audit write path                       | Interceptor, opt in per route, writes only           | ADR-018          |
-| Audit pagination                       | Keyset on UUIDv7 cursor                              | ADR-018          |
-| Dependency upgrades vs. peer conflicts | Never override; a blocked upgrade waits              | ADR-019          |
-| Client route protection                | Three categories: protected, auth-only, public       | ADR-020          |
-| Component library                      | Material UI, CSS variables, three color modes        | ADR-021          |
-| Auditing account actions               | Separate account_events table, 90-day retention      | ADR-022          |
-| Inventory stock granularity            | Variants carry stock; quantity is a ledger           | ADR-023          |
-| Address and contact ownership          | Shared tables, exclusive arc FK                      | ADR-028          |
-| Bill of materials shape                | Header plus lines; nesting is data, not schema       | ADR-029          |
-| BOM versioning                         | Version on the header, history by snapshot at run    | ADR-029          |
-| Regulatory registrations               | product_licences registry, referenced by the BOM     | ADR-029          |
-| Who supplies a component               | `supply_type` on the line; actual on the run         | ADR-030          |
-| Outsourced manufacturing               | `partner_id` on the run; external lines move nothing | ADR-030          |
-| A run's output lots                    | Read from the ledger, not stored on the run          | ADR-030          |
-| Amending a wrong, confirmed order      | Duplicate to a draft, then cancel the original       | ADR-031          |
-| What a duplicate copies                | Re-resolves snapshots; never copies frozen ones      | ADR-031          |
-| Finishing a run that spans days        | Output repeats; closing is explicit and terminal     | ADR-032          |
-| Planned vs actual consumption          | Consume at close with actuals; variance computed     | ADR-032          |
-| Consumption over plan                  | Warn and record; never block a real event            | ADR-032          |
-| Which lot a day's output joins         | The run's open lot by default; over-recall is safe   | ADR-032          |
-| Where a run picks components from      | source_location_id per line, set at release          | ADR-032          |
+| Decision                               | Outcome                                               | ADR              |
+|----------------------------------------|-------------------------------------------------------|------------------|
+| ORM: Prisma vs. Drizzle vs. Knex       | Drizzle                                               | ADR-009          |
+| Primary key strategy                   | UUIDv7 on `uuid` column                               | ADR-010          |
+| PostgreSQL version                     | 18 (for native `uuidv7()`)                            | ADR-002, ADR-010 |
+| Session strategy                       | Opaque token in httpOnly cookie, no JWT               | ADR-011          |
+| Account deletion vs. audit retention   | Anonymize user, retain audit rows                     | ADR-012          |
+| Data ownership on user departure       | Org owns data, user attributed                        | ADR-012          |
+| API versioning                         | URL prefix `/v1/`, global, from first endpoint        | ADR-013          |
+| CSRF defence                           | Custom header, no token                               | ADR-014          |
+| Concurrent sessions per user           | Multiple; login revokes only the presented session    | ADR-015          |
+| Permission resolution                  | Per request, never cached                             | ADR-016          |
+| Audit write path                       | Interceptor, opt in per route, writes only            | ADR-018          |
+| Audit pagination                       | Keyset on UUIDv7 cursor                               | ADR-018          |
+| Dependency upgrades vs. peer conflicts | Never override; a blocked upgrade waits               | ADR-019          |
+| Client route protection                | Three categories: protected, auth-only, public        | ADR-020          |
+| Component library                      | Material UI, CSS variables, three color modes         | ADR-021          |
+| Auditing account actions               | Separate account_events table, 90-day retention       | ADR-022          |
+| Inventory stock granularity            | Variants carry stock; quantity is a ledger            | ADR-023          |
+| Address and contact ownership          | Shared tables, exclusive arc FK                       | ADR-028          |
+| Bill of materials shape                | Header plus lines; nesting is data, not schema        | ADR-029          |
+| BOM versioning                         | Version on the header, history by snapshot at run     | ADR-029          |
+| Regulatory registrations               | product_licences registry, referenced by the BOM      | ADR-029          |
+| Who supplies a component               | `supply_type` on the line; actual on the run          | ADR-030          |
+| Outsourced manufacturing               | `partner_id` on the run; external lines move nothing  | ADR-030          |
+| A run's output lots                    | Read from the ledger, not stored on the run           | ADR-030          |
+| Amending a wrong, confirmed order      | Duplicate to a draft, then cancel the original        | ADR-031          |
+| What a duplicate copies                | Re-resolves snapshots; never copies frozen ones       | ADR-031          |
+| Finishing a run that spans days        | Output repeats; closing is explicit and terminal      | ADR-032          |
+| Planned vs actual consumption          | Consume at close with actuals; variance computed      | ADR-032          |
+| Consumption over plan                  | Warn and record; never block a real event             | ADR-032          |
+| Which lot a day's output joins         | The run's open lot by default; over-recall is safe    | ADR-032          |
+| Where a run picks components from      | source_location_id per line, set at release           | ADR-032          |
+| Editing an order line                  | Editable until something depends on it                | ADR-033          |
+| Cancelling part of an order            | Line closed short with a reason, quantities kept      | ADR-034          |
+| Price on a purchase order              | unit_price and currency per line; subtotals not total | ADR-035          |
