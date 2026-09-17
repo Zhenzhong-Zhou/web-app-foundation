@@ -1,7 +1,6 @@
 import {
   Alert,
   Button,
-  Chip,
   Link,
   Paper,
   Skeleton,
@@ -18,6 +17,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
 import { RecipePanel } from '../boms/recipe-panel';
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -143,32 +143,32 @@ export function ProductDetailPage() {
     );
   }
 
+  // Narrows for everything below. The loading and error branches above cover
+  // the only two ways product stays null.
+  if (!product) return null;
+
   return (
     <Stack spacing={3}>
-      <Link component={RouterLink} to="/products" variant="body2">
-        ← Products
-      </Link>
-
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          {product?.name}
-        </Typography>
-
-        <Chip label={product?.type} size="small" />
-
-        {canEdit && (
-          // Discontinuing, not deleting. The product's flag is never cascaded
-          // to its variants: reactivating could not then know which had been
-          // individually discontinued first (ADR-023).
-          <Button
-            variant="text"
-            disabled={saving !== null}
-            onClick={() => void patchProduct({ isActive: !product?.isActive })}
-          >
-            {product?.isActive ? 'Discontinue' : 'Reactivate'}
-          </Button>
-        )}
-      </Stack>
+      <PageHeader
+        crumbs={[{ label: 'Products', to: '/products' }]}
+        title={product.name}
+        status={{ label: product.type, color: 'default' }}
+        actions={
+          canEdit && (
+            // Discontinuing, not deleting. The product's flag is never
+            // cascaded to its variants: reactivating could not then know which
+            // had been individually discontinued first (ADR-023).
+            <Button
+              variant="text"
+              disabled={saving !== null}
+              onClick={() => void patchProduct({ isActive: !product.isActive })}
+            >
+              {product.isActive ? 'Discontinue' : 'Reactivate'}
+            </Button>
+          )
+        }
+        subtitle={product.description ?? undefined}
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -177,10 +177,6 @@ export function ProductDetailPage() {
           This product is discontinued. Its variants keep their own status, so
           reactivating restores each to what it was.
         </Alert>
-      )}
-
-      {product?.description && (
-        <Typography color="text.secondary">{product.description}</Typography>
       )}
 
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>

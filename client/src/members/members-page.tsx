@@ -16,6 +16,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateMemberDialog } from './create-member-dialog.tsx';
@@ -113,25 +114,27 @@ export function MembersPage() {
   return (
     // Heading draws immediately; only the table holds space and fills in.
     <Stack spacing={3}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          Members
-        </Typography>
+      <PageHeader
+        crumbs={[]}
+        title="Members"
+        actions={
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="text"
+              disabled={loading}
+              onClick={() => void load()}
+            >
+              Refresh
+            </Button>
 
-        <Button
-          variant="text"
-          disabled={loading || saving !== null}
-          onClick={() => void load()}
-        >
-          Refresh
-        </Button>
-
-        {/* Hidden without users.create — display only, since the 403 is the
+            {/* Hidden without users.create — display only, since the 403 is the
             actual control (ADR-016). */}
-        {session?.permissions.includes('users.create') && (
-          <Button onClick={() => setCreating(true)}>Add member</Button>
-        )}
-      </Stack>
+            {session?.permissions.includes('users.create') && (
+              <Button onClick={() => setCreating(true)}>Add member</Button>
+            )}
+          </Stack>
+        }
+      />
 
       <CreateMemberDialog
         open={creating}

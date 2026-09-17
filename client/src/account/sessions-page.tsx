@@ -15,6 +15,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -156,27 +157,20 @@ export function SessionsPage() {
     // fills in. A full-page spinner here would discard structure already known
     // to be correct.
     <Stack spacing={3}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          Active sessions
-        </Typography>
-
-        {/* Manual rather than polled: another device signing in while this
-            page is open is rare, and last_seen_at is throttled to one write a
-            minute server-side, so polling could not be fresher anyway. */}
-        <Button
-          variant="text"
-          disabled={loading || revoking !== null}
-          onClick={() => void load()}
-        >
-          Refresh
-        </Button>
-      </Stack>
-
-      <Typography color="text.secondary">
-        Every device signed in to your account. If you do not recognise one,
-        sign it out and change your password.
-      </Typography>
+      <PageHeader
+        crumbs={[{ label: 'Account', to: '/account' }]}
+        title="Active sessions"
+        actions={
+          <Button
+            variant="text"
+            disabled={loading || revoking !== null}
+            onClick={() => void load()}
+          >
+            Refresh
+          </Button>
+        }
+        subtitle="Every device signed in to your account. If you do not recognise one, sign it out and change your password."
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 

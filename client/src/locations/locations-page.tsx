@@ -10,6 +10,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { Location } from '../lib/types';
@@ -72,28 +73,26 @@ export function LocationsPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          Locations
-        </Typography>
-
-        <Button variant="text" disabled={loading} onClick={() => void load()}>
-          Refresh
-        </Button>
-
-        {/* Hidden without locations.create — display only, since the 403 is
-            the actual control (ADR-016). */}
-        {canCreate && (
-          <Button
-            onClick={openDialog(() => {
-              setCreatingUnder(null);
-              setCreating(true);
-            })}
-          >
-            Add location
-          </Button>
-        )}
-      </Stack>
+      <PageHeader
+        crumbs={[]}
+        title="Locations"
+        actions={
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="text"
+              disabled={loading}
+              onClick={() => void load()}
+            >
+              Refresh
+            </Button>
+            {canCreate && (
+              <Button onClick={openDialog(() => setCreating(true))}>
+                Add location
+              </Button>
+            )}
+          </Stack>
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 

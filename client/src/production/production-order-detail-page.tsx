@@ -18,7 +18,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
+import { openDialog } from '../lib/open-dialog';
 import type { LineVariance, RunDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import {
@@ -101,43 +103,49 @@ export function ProductionOrderDetailPage() {
 
   return (
     <Stack spacing={3}>
-      <Link component={RouterLink} to="/production" variant="body2">
-        ← Production
-      </Link>
+      <PageHeader
+        crumbs={[{ label: 'Production', to: '/production' }]}
+        title={`${run.quantityPlanned} planned`}
+        status={{
+          label: STATUS_LABEL[run.status],
+          color: STATUS_COLOUR[run.status],
+        }}
+        actions={
+          <Stack direction="row" spacing={1}>
+            {canRelease && isDraft && (
+              <Tooltip title="Copies the recipe onto this run and moves components to it">
+                <span>
+                  <Button onClick={openDialog(() => setReleasing(true))}>
+                    Release
+                  </Button>
+                </span>
+              </Tooltip>
+            )}
 
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          {run.quantityPlanned} planned
-        </Typography>
+            {canComplete && isReleased && (
+              <Button onClick={openDialog(() => setRecording(true))}>
+                Record output
+              </Button>
+            )}
 
-        <Chip
-          label={STATUS_LABEL[run.status]}
-          size="small"
-          color={STATUS_COLOUR[run.status]}
-        />
+            {canComplete && isReleased && (
+              <Button onClick={openDialog(() => setClosing(true))}>
+                Close run
+              </Button>
+            )}
 
-        {canRelease && isDraft && (
-          <Tooltip title="Copies the recipe onto this run and moves components to it">
-            <span>
-              <Button onClick={() => setReleasing(true)}>Release</Button>
-            </span>
-          </Tooltip>
-        )}
-
-        {canComplete && isReleased && (
-          <Button onClick={() => setRecording(true)}>Record output</Button>
-        )}
-
-        {canComplete && isReleased && (
-          <Button onClick={() => setClosing(true)}>Close run</Button>
-        )}
-
-        {canRelease && (isDraft || isReleased) && (
-          <Button variant="text" onClick={() => setCancelling(true)}>
-            Cancel
-          </Button>
-        )}
-      </Stack>
+            {canRelease && (isDraft || isReleased) && (
+              <Button
+                variant="text"
+                color="error"
+                onClick={openDialog(() => setCancelling(true))}
+              >
+                Cancel
+              </Button>
+            )}
+          </Stack>
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 

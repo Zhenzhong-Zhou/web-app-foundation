@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -131,14 +132,11 @@ export function AuditPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h5" component="h1">
-        Audit log
-      </Typography>
-
-      <Typography color="text.secondary">
-        Every change made in this organization, newest first. Entries are kept
-        for two years and cannot be edited or removed.
-      </Typography>
+      <PageHeader
+        crumbs={[]}
+        title="Audit log"
+        subtitle="Every change made in this organization, newest first. Entries are kept for two years and cannot be edited or removed."
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 

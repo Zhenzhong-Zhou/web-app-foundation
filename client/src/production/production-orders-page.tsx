@@ -13,14 +13,15 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
+import { openDialog } from '../lib/open-dialog';
 import type { ProductionRun, ProductionRunPage, RunStatus } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateRunDialog } from './create-run-dialog';
@@ -118,34 +119,39 @@ export function ProductionOrdersPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          Production
-        </Typography>
+      <PageHeader
+        crumbs={[]}
+        title="Production"
+        actions={
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <TextField
+              id="run-filter"
+              label="Show"
+              select
+              size="small"
+              value={filter}
+              onChange={(event) => {
+                setItems(null);
+                setCursor(null);
+                setFilter(event.target.value as RunStatus | '');
+              }}
+              sx={{ minWidth: 160 }}
+            >
+              {FILTERS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
 
-        <TextField
-          id="run-filter"
-          label="Show"
-          select
-          size="small"
-          value={filter}
-          onChange={(event) => {
-            setItems(null);
-            setFilter(event.target.value as RunStatus | '');
-          }}
-          sx={{ minWidth: 160 }}
-        >
-          {FILTERS.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        {canCreate && (
-          <Button onClick={() => setCreating(true)}>Plan a run</Button>
-        )}
-      </Stack>
+            {canCreate && (
+              <Button onClick={openDialog(() => setCreating(true))}>
+                Plan a run
+              </Button>
+            )}
+          </Stack>
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 

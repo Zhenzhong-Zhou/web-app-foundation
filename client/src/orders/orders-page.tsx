@@ -19,6 +19,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
 import type { OrderPage, OrderStatus, OrderSummary } from '../lib/types';
@@ -130,32 +131,34 @@ export function OrdersPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          Orders
-        </Typography>
+      <PageHeader
+        crumbs={[]}
+        title="Orders"
+        actions={
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <TextField
+              select
+              size="small"
+              label="Show"
+              value={filter}
+              onChange={(event) => changeFilter(event.target.value as Filter)}
+              sx={{ minWidth: 140 }}
+            >
+              {FILTERS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
 
-        <TextField
-          select
-          size="small"
-          label="Show"
-          value={filter}
-          onChange={(event) => changeFilter(event.target.value as Filter)}
-          sx={{ minWidth: 140 }}
-        >
-          {FILTERS.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        {canCreate && (
-          <Button component={RouterLink} to="/orders/new">
-            Raise an order
-          </Button>
-        )}
-      </Stack>
+            {canCreate && (
+              <Button component={RouterLink} to="/orders/new">
+                Raise an order
+              </Button>
+            )}
+          </Stack>
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 

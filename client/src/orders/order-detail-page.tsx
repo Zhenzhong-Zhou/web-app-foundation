@@ -20,8 +20,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
+import { openDialog } from '../lib/open-dialog';
 import type {
   Location,
   OrderDetail,
@@ -203,85 +205,61 @@ export function OrderDetailPage() {
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Link component={RouterLink} to="/orders" variant="body2">
-          Orders
-        </Link>
-
-        <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mt: 1 }}>
-          <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-            {/* underline="hover": MUI underlines links always, which makes a
-                heading read as body text and competes with the breadcrumb
-                directly above it. */}
-            <Link
-              component={RouterLink}
-              to={`/partners/${order.partnerId}`}
-              underline="hover"
-              color="inherit"
-            >
-              {order.partnerName}
-            </Link>
-          </Typography>
-
-          {/* Record-level actions, grouped tightly so they read as a pair
-              rather than as two separate things beside the status. They change
-              what this order says about itself; the lifecycle buttons at the
-              foot move it along. */}
+      <PageHeader
+        crumbs={[{ label: 'Orders', to: '/orders' }]}
+        title={order.partnerName}
+        titleTo={`/partners/${order.partnerId}`}
+        status={{
+          label: STATUS_LABEL[order.status],
+          color: STATUS_COLOUR[order.status],
+        }}
+        actions={
           <Stack direction="row" spacing={1}>
             {canUpdate && (
               <Button
                 variant="text"
                 disabled={working}
-                onClick={() => setEditing(true)}
+                onClick={openDialog(() => setEditing(true))}
               >
                 Edit
               </Button>
             )}
-
             {canCreate && (
               <Button
                 variant={
                   NEXT_STATUSES[order.status].length === 0 ? 'outlined' : 'text'
                 }
                 disabled={working}
-                onClick={() => setDuplicating(true)}
+                onClick={openDialog(() => setDuplicating(true))}
               >
                 Duplicate
               </Button>
             )}
           </Stack>
-
-          <Chip
-            label={STATUS_LABEL[order.status]}
-            color={STATUS_COLOUR[order.status]}
-          />
-        </Stack>
-
-        {/* Everything about what this order is, on one line. The
-            duplicated-from link belongs here rather than in the header row:
-            it is context, not an action or a status. */}
-        <Typography variant="body2" color="text.secondary">
-          {order.direction === 'purchase' ? 'Buying' : 'Selling'}
-          {order.reference ? ` · ${order.reference}` : ''}
-          {order.expectedAt
-            ? ` · expected ${formatDate(order.expectedAt)}`
-            : ''}
-          {order.duplicatedFromId && (
-            <>
-              {' · Duplicated from '}
-              <Link
-                component={RouterLink}
-                to={`/orders/${order.duplicatedFromId}`}
-                color="inherit"
-                underline="hover"
-                variant="body2"
-              >
-                the previous order
-              </Link>
-            </>
-          )}
-        </Typography>
-      </Box>
+        }
+        subtitle={
+          <>
+            {order.direction === 'purchase' ? 'Buying' : 'Selling'}
+            {order.reference ? ` · ${order.reference}` : ''}
+            {order.expectedAt
+              ? ` · expected ${formatDate(order.expectedAt)}`
+              : ''}
+            {order.duplicatedFromId && (
+              <>
+                {' · '}
+                <Link
+                  component={RouterLink}
+                  to={`/orders/${order.duplicatedFromId}`}
+                  color="inherit"
+                  underline="hover"
+                >
+                  duplicated from a previous order
+                </Link>
+              </>
+            )}
+          </>
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 

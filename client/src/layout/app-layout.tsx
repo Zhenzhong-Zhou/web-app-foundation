@@ -37,6 +37,7 @@ const NAV = [
   { label: 'Products', to: '/products', permission: 'products.view' },
   { label: 'Partners', to: '/partners', permission: 'partners.view' },
   { label: 'Locations', to: '/locations', permission: 'locations.view' },
+  { label: 'Production', to: '/production', permission: 'production.view' },
 ];
 
 /** Reached occasionally, and not worth a slot in the bar. */

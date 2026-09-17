@@ -4,16 +4,16 @@ import {
   Button,
   Chip,
   Divider,
-  Link,
   Paper,
   Skeleton,
   Stack,
   Typography,
 } from '@mui/material';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { Address, Contact, PartnerDetail } from '../lib/types';
@@ -127,33 +127,27 @@ export function PartnerDetailPage() {
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Link component={RouterLink} to="/partners" variant="body2">
-          Partners
-        </Link>
-
-        <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mt: 1 }}>
-          <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-            {partner.name}
-          </Typography>
-
-          {!partner.isActive && <Chip label="Retired" size="small" />}
-
-          {canEdit && (
+      <PageHeader
+        crumbs={[{ label: 'Partners', to: '/partners' }]}
+        title={partner.name}
+        status={
+          partner.isActive ? undefined : { label: 'Retired', color: 'default' }
+        }
+        actions={
+          canEdit && (
             <Button
               variant="text"
               onClick={openDialog(() => setEditingPartner(true))}
             >
               Edit
             </Button>
-          )}
-        </Stack>
-
-        <Typography variant="body2" color="text.secondary">
-          {[partner.code, partner.taxId].filter(Boolean).join(' · ') ||
-            'No code or tax ID'}
-        </Typography>
-      </Box>
+          )
+        }
+        subtitle={
+          [partner.code, partner.taxId].filter(Boolean).join(' · ') ||
+          'No code or tax ID'
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 

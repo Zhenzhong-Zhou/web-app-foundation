@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import type {
@@ -190,9 +191,11 @@ export function MovementsPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h5" component="h1">
-        Movements
-      </Typography>
+      <PageHeader
+        crumbs={[]}
+        title="Movements"
+        subtitle="Every quantity change, newest first. Movements are never edited or removed — a mistake is corrected by another movement."
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 

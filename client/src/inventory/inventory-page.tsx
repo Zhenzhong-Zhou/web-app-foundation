@@ -19,6 +19,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
+import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { Location, StockRow } from '../lib/types';
@@ -138,26 +139,32 @@ export function InventoryPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          Inventory
-        </Typography>
+      <PageHeader
+        crumbs={[]}
+        title="Partners"
+        actions={
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="text"
+              disabled={loading}
+              onClick={() => void loadStock()}
+            >
+              Refresh
+            </Button>
 
-        <Button variant="text" onClick={() => void loadStock()}>
-          Refresh
-        </Button>
-
-        {/* Hidden without stock.move — display only, since the 403 is the
+            {/* Hidden without stock.move — display only, since the 403 is the
             actual control (ADR-016). */}
-        {session?.permissions.includes('stock.move') && (
-          <Button
-            disabled={!leaves.length}
-            onClick={openDialog(() => setReceiving(true))}
-          >
-            Receive stock
-          </Button>
-        )}
-      </Stack>
+            {session?.permissions.includes('stock.move') && (
+              <Button
+                disabled={!leaves.length}
+                onClick={openDialog(() => setReceiving(true))}
+              >
+                Receive stock
+              </Button>
+            )}
+          </Stack>
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
