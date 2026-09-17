@@ -19,6 +19,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/use-auth';
 import { RecipePanel } from '../boms/recipe-panel';
 import { api, ApiError } from '../lib/api';
+import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { AddVariantDialog } from './add-variant-dialog';
 import { EditVariantDialog } from './edit-variant-dialog';
@@ -188,7 +189,9 @@ export function ProductDetailPage() {
         </Typography>
 
         {canEdit && (
-          <Button onClick={() => setAdding(true)}>Add variant</Button>
+          <Button onClick={openDialog(() => setAdding(true))}>
+            Add variant
+          </Button>
         )}
       </Stack>
 

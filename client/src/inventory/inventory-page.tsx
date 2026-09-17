@@ -20,6 +20,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
+import { openDialog } from '../lib/open-dialog';
 import type { Location, StockRow } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { EditLotDialog } from './edit-lot-dialog';
@@ -149,7 +150,10 @@ export function InventoryPage() {
         {/* Hidden without stock.move — display only, since the 403 is the
             actual control (ADR-016). */}
         {session?.permissions.includes('stock.move') && (
-          <Button disabled={!leaves.length} onClick={() => setReceiving(true)}>
+          <Button
+            disabled={!leaves.length}
+            onClick={openDialog(() => setReceiving(true))}
+          >
             Receive stock
           </Button>
         )}

@@ -18,6 +18,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
+import { openDialog } from '../lib/open-dialog';
 import type { Partner } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreatePartnerDialog } from './create-partner-dialog';
@@ -89,7 +90,9 @@ export function PartnersPage() {
         {/* Hidden without partners.create — display only, since the 403 is the
             actual control (ADR-016). */}
         {canCreate && (
-          <Button onClick={() => setCreating(true)}>Add partner</Button>
+          <Button onClick={openDialog(() => setCreating(true))}>
+            Add partner
+          </Button>
         )}
       </Stack>
 
@@ -149,7 +152,7 @@ export function PartnersPage() {
                       <Button
                         variant="text"
                         size="small"
-                        onClick={() => setEditing(partner)}
+                        onClick={openDialog(() => setEditing(partner))}
                       >
                         Edit
                       </Button>

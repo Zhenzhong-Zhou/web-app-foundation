@@ -18,6 +18,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
+import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateProductDialog } from './create-product-dialog';
 
@@ -94,7 +95,9 @@ export function ProductsPage() {
         {/* Hidden without products.create — display only, since the 403 is the
             actual control (ADR-016). */}
         {session?.permissions.includes('products.create') && (
-          <Button onClick={() => setCreating(true)}>Add product</Button>
+          <Button onClick={openDialog(() => setCreating(true))}>
+            Add product
+          </Button>
         )}
       </Stack>
 

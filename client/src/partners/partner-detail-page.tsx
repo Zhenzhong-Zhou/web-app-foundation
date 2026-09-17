@@ -15,6 +15,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
+import { openDialog } from '../lib/open-dialog';
 import type { Address, Contact, PartnerDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { AddressDialog } from './address-dialog';
@@ -139,7 +140,10 @@ export function PartnerDetailPage() {
           {!partner.isActive && <Chip label="Retired" size="small" />}
 
           {canEdit && (
-            <Button variant="text" onClick={() => setEditingPartner(true)}>
+            <Button
+              variant="text"
+              onClick={openDialog(() => setEditingPartner(true))}
+            >
               Edit
             </Button>
           )}
@@ -197,7 +201,7 @@ export function PartnerDetailPage() {
                 <Button
                   variant="text"
                   size="small"
-                  onClick={() => setEditingAddress(address)}
+                  onClick={openDialog(() => setEditingAddress(address))}
                 >
                   Edit
                 </Button>
@@ -248,7 +252,7 @@ export function PartnerDetailPage() {
                 <Button
                   variant="text"
                   size="small"
-                  onClick={() => setEditingContact(contact)}
+                  onClick={openDialog(() => setEditingContact(contact))}
                 >
                   Edit
                 </Button>
@@ -266,7 +270,7 @@ export function PartnerDetailPage() {
       />
 
       <EditPartnerDialog
-        key={editingPartner ? partner.id : 'closed'}
+        key={editingPartner ? partner.id : 'partner-closed'}
         partner={editingPartner ? partner : null}
         onClose={() => setEditingPartner(false)}
         onSaved={load}
@@ -278,7 +282,10 @@ export function PartnerDetailPage() {
        * would rebuild MUI's element while useState kept its first value.
        */}
       <AddressDialog
-        key={editingAddress?.id ?? (addingAddress ? 'new' : 'closed')}
+        key={
+          editingAddress?.id ??
+          (addingAddress ? 'address-new' : 'address-closed')
+        }
         partnerId={partner.id}
         address={editingAddress}
         open={addingAddress || !!editingAddress}
@@ -290,7 +297,10 @@ export function PartnerDetailPage() {
       />
 
       <ContactDialog
-        key={editingContact?.id ?? (addingContact ? 'new' : 'closed')}
+        key={
+          editingContact?.id ??
+          (addingContact ? 'contact-new' : 'contact-closed')
+        }
         partnerId={partner.id}
         contact={editingContact}
         open={addingContact || !!editingContact}

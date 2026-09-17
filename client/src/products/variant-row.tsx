@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
+import { openDialog } from '../lib/open-dialog';
 import type { Variant } from './products-page';
 
 /**
@@ -125,7 +126,11 @@ export function VariantRow({
 
         <TableCell align="right">
           {canEdit && (
-            <Button variant="text" size="small" onClick={onOpenEdit}>
+            <Button
+              variant="text"
+              size="small"
+              onClick={openDialog(() => onOpenEdit())}
+            >
               Edit
             </Button>
           )}
