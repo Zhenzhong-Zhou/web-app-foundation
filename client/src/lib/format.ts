@@ -47,3 +47,26 @@ const DATE = new Intl.DateTimeFormat(undefined, {
 export function formatDate(value: string | Date): string {
   return DATE.format(new Date(value));
 }
+
+/**
+ * A money amount in its own currency.
+ *
+ * Intl knows each currency's minor units, so JPY renders without decimals and
+ * CAD with two — which is why the server returns the number unrounded and
+ * leaves this decision here (ADR-035).
+ *
+ * The amount arrives as a string from numeric(18,4) and is parsed only at the
+ * point of display. Nothing computed from it is ever stored.
+ */
+export function formatMoney(
+  amount: string | null,
+  currency: string | null,
+): string {
+  if (amount === null) return '—';
+  if (!currency) return amount;
+
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency,
+  }).format(Number(amount));
+}

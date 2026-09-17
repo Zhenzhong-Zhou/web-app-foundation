@@ -25,10 +25,16 @@ interface LineDraft {
   key: string;
   variant: VariantOption | null;
   quantityOrdered: string;
+  unitPrice: string;
 }
 
 function emptyLine(): LineDraft {
-  return { key: crypto.randomUUID(), variant: null, quantityOrdered: '' };
+  return {
+    key: crypto.randomUUID(),
+    variant: null,
+    quantityOrdered: '',
+    unitPrice: '',
+  };
 }
 
 /**
@@ -56,6 +62,14 @@ export function CreateOrderPage() {
   const [expectedAt, setExpectedAt] = useState('');
   const [note, setNote] = useState('');
   const [lines, setLines] = useState<LineDraft[]>([emptyLine()]);
+
+  /**
+   * One field for the whole order, though the column is per line (ADR-035).
+   * A mixed-currency order is supported and rare, and it can be made by
+   * editing a line afterwards — asking on every row here would be friction
+   * on the case that almost never happens.
+   */
+  const [currency, setCurrency] = useState('');
 
   const { submitting, error, submit } = useSubmit(() => {
     // Nothing to reset — the page unmounts on success.
@@ -137,13 +151,18 @@ export function CreateOrderPage() {
           expectedAt: expectedAt || undefined,
           note: note || undefined,
           /**
-           * Quantities stay strings from the input to the column. A JSON
-           * number has already been through a double before any validator
-           * sees it (ADR-025), and 2.75 kg of raw material is ordinary.
+           * Quantities and prices stay strings from the input to the column. A
+           * JSON number has already been through a double before any validator
+           * sees it (ADR-025), and 2.75 kg of raw material is ordinary — as is a
+           * price like 0.0125.
            */
           lines: complete.map((line) => ({
             variantId: line.variant!.id,
             quantityOrdered: line.quantityOrdered.trim(),
+            // Both or neither: the server refuses half a price, and a blank
+            // field means this line simply has none yet.
+            unitPrice: line.unitPrice.trim() || undefined,
+            currency: line.unitPrice.trim() ? currency : undefined,
           })),
         }),
       });
@@ -213,6 +232,18 @@ export function CreateOrderPage() {
                 onChange={(event) => setExpectedAt(event.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
               />
+
+              <TextField
+                id="order-currency"
+                label="Currency"
+                value={currency}
+                onChange={(event) =>
+                  setCurrency(event.target.value.toUpperCase())
+                }
+                helperText="For any prices below"
+                sx={{ width: 160, flexShrink: 0 }}
+                slotProps={{ htmlInput: { maxLength: 3 } }}
+              />
             </Stack>
 
             <TextField
@@ -273,6 +304,20 @@ export function CreateOrderPage() {
                     // unit of measure.
                     helperText={line.variant?.unitOfMeasure ?? ' '}
                     sx={{ width: 140 }}
+                  />
+
+                  <TextField
+                    label="Unit price"
+                    value={line.unitPrice}
+                    disabled={!currency}
+                    onChange={(event) =>
+                      updateLine(line.key, { unitPrice: event.target.value })
+                    }
+                    helperText={currency || 'Set a currency first'}
+                    sx={{ width: 140 }}
+                    slotProps={{
+                      htmlInput: { inputMode: 'decimal', maxLength: 19 },
+                    }}
                   />
 
                   <IconButton

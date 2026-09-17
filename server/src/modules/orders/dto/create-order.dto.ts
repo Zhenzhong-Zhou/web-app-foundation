@@ -32,6 +32,22 @@ export class CreateOrderLineDto {
       'quantityOrdered must be a positive number with at most 4 decimal places, sent as a string',
   })
   quantityOrdered!: string;
+
+  /** Zero is allowed: a free replacement line is real (ADR-035). */
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{1,14}(\.\d{1,4})?$/, {
+    message:
+      'unitPrice must be a number with at most 4 decimal places, sent as a string',
+  })
+  unitPrice?: string;
+
+  /** Required whenever a price is given — the service enforces the pairing. */
+  @IsOptional()
+  @trim()
+  @IsString()
+  @Matches(/^[A-Z]{3}$/, { message: 'currency must be a 3-letter ISO code' })
+  currency?: string;
 }
 
 export class CreateOrderDto {

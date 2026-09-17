@@ -151,6 +151,9 @@ export interface OrderLine {
   quantityOrdered: string;
   quantityFulfilled: string;
   quantityOutstanding: string;
+  unitPrice: string | null;
+  currency: string | null;
+  lineTotal: string | null;
   isComplete: boolean;
   /** No more is coming (ADR-034). The quantities above stay as they were. */
   isClosedShort: boolean;
@@ -169,6 +172,8 @@ export interface OrderDetail {
   status: OrderStatus;
   reference: string | null;
   expectedAt: string | null;
+  totals: { currency: string; amount: string }[];
+  totalsComplete: boolean;
   note: string | null;
   lines: OrderLine[];
 }

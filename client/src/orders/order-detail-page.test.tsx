@@ -36,6 +36,9 @@ function line(over: Partial<OrderLine> = {}): OrderLine {
     quantityOrdered: '40.0000',
     quantityFulfilled: '0.0000',
     quantityOutstanding: '40.0000',
+    unitPrice: null,
+    currency: null,
+    lineTotal: null,
     isComplete: false,
     isClosedShort: false,
     closedReason: null,
@@ -55,6 +58,8 @@ function order(over: Partial<OrderDetail> = {}): OrderDetail {
     note: null,
     duplicatedFromId: null,
     fullyReceived: false,
+    totals: [],
+    totalsComplete: false,
     lines: [line()],
     ...over,
   };
@@ -301,6 +306,52 @@ describe('OrderDetailPage lines', () => {
       expect(
         await screen.findByText('That line is not closed'),
       ).toBeInTheDocument();
+    });
+
+    it('shows a price in its own currency and a total per currency', async () => {
+      serve(
+        order({
+          totals: [{ currency: 'CAD', amount: '50.00000000' }],
+          totalsComplete: true,
+          lines: [
+            line({
+              unitPrice: '1.2500',
+              currency: 'CAD',
+              lineTotal: '50.00000000',
+            }),
+          ],
+        }),
+      );
+      renderPage();
+
+      const row = within(await rowFor('WIDGET-1'));
+      // Intl rounds at display and picks the symbol for the locale — CA$ here,
+      // $ elsewhere. The assertion is about rounding, so it matches the digits
+      // and leaves the prefix to Intl (ADR-035).
+      expect(row.getByText(/1\.25$/)).toBeInTheDocument();
+      expect(row.getByText(/50\.00$/)).toBeInTheDocument();
+    });
+
+    it('says so rather than showing a partial total', async () => {
+      serve(
+        order({
+          totals: [{ currency: 'CAD', amount: '20.00000000' }],
+          totalsComplete: false,
+          lines: [
+            line({
+              unitPrice: '2.0000',
+              currency: 'CAD',
+              lineTotal: '20.00000000',
+            }),
+            line({ id: 'line-2' }),
+          ],
+        }),
+      );
+      renderPage();
+
+      // A subtotal that quietly excludes a line is the number somebody
+      // reconciles against (ADR-035).
+      expect(await screen.findByText(/not the full total/)).toBeInTheDocument();
     });
   });
 });

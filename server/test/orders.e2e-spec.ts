@@ -614,6 +614,263 @@ describe('Orders (e2e)', () => {
     });
   });
 
+  describe('pricing', () => {
+    /**
+     * Amounts are asserted as numbers, not strings.
+     *
+     * numeric(18,4) times numeric(18,4) is scale 8, and sum() keeps it — so a
+     * line total comes back as 50.00000000 while the unit price is 1.2500.
+     * Both are exact; only the scale differs, and pinning the query to four
+     * places would throw away digits on a line like 1,000,000 × 0.000125.
+     * Formatting rounds at display, where it knows the currency (ADR-035).
+     */
+    it('records a price and its currency, and totals by currency', async () => {
+      const ctx = await setup('alpha');
+
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: ctx.partnerId,
+            direction: 'purchase',
+            lines: [
+              {
+                variantId: ctx.variant.id,
+                quantityOrdered: '40',
+                unitPrice: '1.25',
+                currency: 'CAD',
+              },
+            ],
+          })
+          .expect(201),
+      ).order;
+
+      const detail = body<{
+        totals: { currency: string; amount: string }[];
+        totalsComplete: boolean;
+        lines: { unitPrice: string; currency: string; lineTotal: string }[];
+      }>(await ctx.agent.get(`/v1/orders/${order.id}`).expect(200));
+
+      expect(detail.lines[0].unitPrice).toBe('1.2500');
+      expect(detail.lines[0].currency).toBe('CAD');
+      expect(Number(detail.lines[0].lineTotal)).toBe(50);
+
+      expect(detail.totals).toHaveLength(1);
+      expect(detail.totals[0].currency).toBe('CAD');
+      expect(Number(detail.totals[0].amount)).toBe(50);
+      expect(detail.totalsComplete).toBe(true);
+    });
+
+    /**
+     * One group per currency. Same currency sums, different currencies list —
+     * CAD plus USD is not a quantity until a rate and a date are chosen
+     * (ADR-035).
+     */
+    it('subtotals a mixed-currency order rather than summing it', async () => {
+      const ctx = await setup('alpha');
+
+      const second = body<{ product: { variants: { id: string }[] } }>(
+        await ctx.agent
+          .post('/v1/products')
+          .send({ type: 'good', name: 'Second', variant: { sku: 'WIDGET-2' } })
+          .expect(201),
+      ).product.variants[0];
+
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: ctx.partnerId,
+            direction: 'purchase',
+            lines: [
+              {
+                variantId: ctx.variant.id,
+                quantityOrdered: '10',
+                unitPrice: '2',
+                currency: 'CAD',
+              },
+              {
+                variantId: second.id,
+                quantityOrdered: '10',
+                unitPrice: '3',
+                currency: 'USD',
+              },
+            ],
+          })
+          .expect(201),
+      ).order;
+
+      const detail = body<{
+        totals: { currency: string; amount: string }[];
+      }>(await ctx.agent.get(`/v1/orders/${order.id}`).expect(200));
+
+      // Ordered by currency, so the list does not reshuffle between requests.
+      expect(detail.totals.map((total) => total.currency)).toEqual([
+        'CAD',
+        'USD',
+      ]);
+      expect(detail.totals.map((total) => Number(total.amount))).toEqual([
+        20, 30,
+      ]);
+    });
+
+    it('withholds totals when any line is unpriced', async () => {
+      const ctx = await setup('alpha');
+
+      const second = body<{ product: { variants: { id: string }[] } }>(
+        await ctx.agent
+          .post('/v1/products')
+          .send({ type: 'good', name: 'Second', variant: { sku: 'WIDGET-2' } })
+          .expect(201),
+      ).product.variants[0];
+
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: ctx.partnerId,
+            direction: 'purchase',
+            lines: [
+              {
+                variantId: ctx.variant.id,
+                quantityOrdered: '10',
+                unitPrice: '2',
+                currency: 'CAD',
+              },
+              { variantId: second.id, quantityOrdered: '10' },
+            ],
+          })
+          .expect(201),
+      ).order;
+
+      const detail = body<{
+        totals: { currency: string; amount: string }[];
+        totalsComplete: boolean;
+      }>(await ctx.agent.get(`/v1/orders/${order.id}`).expect(200));
+
+      /**
+       * The subtotal is real but partial, which is the number somebody
+       * reconciles against — hence a flag saying so rather than a smaller
+       * figure with nothing to explain it (ADR-035).
+       */
+      expect(detail.totals).toHaveLength(1);
+      expect(Number(detail.totals[0].amount)).toBe(20);
+      expect(detail.totalsComplete).toBe(false);
+    });
+
+    it('allows a free line at zero', async () => {
+      const ctx = await setup('alpha');
+
+      // A replacement or a sample on a purchase order is real, and recording
+      // it at zero is more honest than leaving the price blank (ADR-035).
+      await ctx.agent
+        .post('/v1/orders')
+        .send({
+          partnerId: ctx.partnerId,
+          direction: 'purchase',
+          lines: [
+            {
+              variantId: ctx.variant.id,
+              quantityOrdered: '5',
+              unitPrice: '0',
+              currency: 'CAD',
+            },
+          ],
+        })
+        .expect(201);
+    });
+
+    it('refuses a price without a currency, or the reverse', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      // A price with no currency is a number with no unit; a currency with no
+      // price says nothing. The check constraint refuses both, but the service
+      // says which half is missing.
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
+        .send({ quantityOrdered: '40', unitPrice: '1.25' })
+        .expect(400);
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
+        .send({ quantityOrdered: '40', currency: 'CAD' })
+        .expect(400);
+    });
+
+    it('amends a price while nothing has been received', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
+        .send({ quantityOrdered: '40', unitPrice: '1.50', currency: 'CAD' })
+        .expect(204);
+
+      const [line] = await db.select().from(orderLines);
+      expect(line.unitPrice).toBe('1.5000');
+      expect(line.currency).toBe('CAD');
+    });
+
+    /**
+     * A price freezes when the line does. By then it has been matched against
+     * a supplier invoice, and changing it afterwards breaks that link
+     * silently — the argument that froze the order reference (ADR-035).
+     */
+    it('refuses a price change once anything has been received', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: ctx.locationId, quantity: '10' })
+        .expect(201);
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
+        .send({ quantityOrdered: '40', unitPrice: '9.99', currency: 'CAD' })
+        .expect(409);
+    });
+
+    it('carries prices into a duplicate', async () => {
+      const ctx = await setup('alpha');
+
+      const order = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: ctx.partnerId,
+            direction: 'purchase',
+            lines: [
+              {
+                variantId: ctx.variant.id,
+                quantityOrdered: '40',
+                unitPrice: '1.25',
+                currency: 'CAD',
+              },
+            ],
+          })
+          .expect(201),
+      ).order;
+
+      const copy = body<{ order: OrderResponse }>(
+        await ctx.agent.post(`/v1/orders/${order.id}/duplicate`).expect(201),
+      ).order;
+
+      /**
+       * Unlike the reference and expected date, which belong to the original
+       * order, the price agreed with this supplier is the best available
+       * starting point (ADR-031, ADR-035).
+       */
+      const detail = body<{ lines: { unitPrice: string; currency: string }[] }>(
+        await ctx.agent.get(`/v1/orders/${copy.id}`).expect(200),
+      );
+
+      expect(detail.lines[0].unitPrice).toBe('1.2500');
+      expect(detail.lines[0].currency).toBe('CAD');
+    });
+  });
+
   describe('closing a line short', () => {
     it('leaves the quantities alone and settles what is outstanding', async () => {
       const ctx = await setup('alpha');

@@ -174,6 +174,41 @@ export class OrdersService {
             )
             from ${orderLines} where ${orderLines.orderId} = ${orders.id}
           ), false)`,
+
+          /**
+           * One row per currency on the order, not a single total. With a
+           * currency per line there is no meaningful sum unless every line
+           * agrees, and converting at display time would change the number every
+           * day the page is opened (ADR-035).
+           *
+           * An order in one currency yields one row, which is the common case
+           * and reads as a total. A mixed one yields two, which is the truth.
+           */
+          totals: sql<{ currency: string; amount: string }[]>`coalesce((
+          select json_agg(
+            json_build_object('currency', t.currency, 'amount', t.amount::text)
+            order by t.currency
+          )
+          from (
+            select ${orderLines.currency} as currency,
+                   sum(${orderLines.unitPrice} * ${orderLines.quantityOrdered}) as amount
+            from ${orderLines}
+            where ${orderLines.orderId} = ${orders.id}
+              and ${orderLines.unitPrice} is not null
+            group by ${orderLines.currency}
+          ) t
+        ), '[]'::json)`,
+
+          /**
+           * False when any line is unpriced. The subtotals above then exclude it
+           * silently, and a number that quietly omits a line is the one somebody
+           * reconciles against.
+           */
+          totalsComplete: sql<boolean>`not exists (
+          select 1 from ${orderLines}
+          where ${orderLines.orderId} = ${orders.id}
+            and ${orderLines.unitPrice} is null
+        )`,
         })
         .from(orders)
         .innerJoin(partners, eq(partners.id, orders.partnerId))
@@ -193,6 +228,18 @@ export class OrdersService {
           sku: orderLines.sku,
           quantityOrdered: orderLines.quantityOrdered,
           quantityFulfilled: orderLines.quantityFulfilled,
+
+          unitPrice: orderLines.unitPrice,
+          currency: orderLines.currency,
+
+          /**
+           * Unrounded. Rounding to two places is currency-specific — JPY has
+           * no minor unit — so the query would be baking one convention into
+           * every order. Formatting knows the currency; this does not.
+           */
+          lineTotal: sql<string | null>`(
+            ${orderLines.unitPrice} * ${orderLines.quantityOrdered}
+          )::text`,
 
           /**
            * No more is coming, and why (ADR-034). The quantities above stay as
@@ -416,6 +463,8 @@ export class OrdersService {
         sourceLines.map((line) => ({
           variantId: line.variantId,
           quantityOrdered: line.quantityOrdered,
+          unitPrice: line.unitPrice ?? undefined,
+          currency: line.currency ?? undefined,
         })),
       );
 
@@ -491,6 +540,8 @@ export class OrdersService {
   }
 
   async addLine(orderId: string, input: AddOrderLineDto) {
+    this.assertPriceAndCurrency(input);
+
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const order = await this.loadOrder(tx, organizationId, orderId);
 
@@ -535,6 +586,8 @@ export class OrdersService {
     lineId: string,
     input: UpdateOrderLineDto,
   ): Promise<void> {
+    this.assertPriceAndCurrency(input);
+
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const order = await this.loadOrder(tx, organizationId, orderId);
       const line = await this.loadLine(tx, orderId, lineId);
@@ -549,7 +602,14 @@ export class OrdersService {
 
       await tx
         .update(orderLines)
-        .set({ quantityOrdered: input.quantityOrdered })
+        .set({
+          quantityOrdered: input.quantityOrdered,
+          // Only when supplied: omitting both leaves the existing price alone,
+          // which is what an edit that only changes a quantity should do.
+          ...(input.unitPrice !== undefined
+            ? { unitPrice: input.unitPrice, currency: input.currency }
+            : {}),
+        })
         .where(eq(orderLines.id, lineId));
 
       this.logger.log(
@@ -830,6 +890,8 @@ export class OrdersService {
           variantId: line.variantId,
           sku: variant.sku,
           quantityOrdered: line.quantityOrdered,
+          unitPrice: line.unitPrice ?? null,
+          currency: line.currency ?? null,
         })
         .returning();
 
@@ -875,6 +937,22 @@ export class OrdersService {
     if (Number(line.quantityFulfilled) > 0) {
       throw new ConflictException(
         `${line.quantityFulfilled} has already been received against this item, so it cannot be ${verb}`,
+      );
+    }
+  }
+
+  /**
+   * The check constraint refuses a half-priced line, but as a constraint
+   * violation rather than an explanation. This says which half is missing
+   * (ADR-035).
+   */
+  private assertPriceAndCurrency(input: {
+    unitPrice?: string;
+    currency?: string;
+  }): void {
+    if ((input.unitPrice === undefined) !== (input.currency === undefined)) {
+      throw new BadRequestException(
+        'A price needs a currency, and a currency needs a price',
       );
     }
   }

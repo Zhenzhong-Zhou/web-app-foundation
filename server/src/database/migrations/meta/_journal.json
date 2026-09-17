@@ -127,6 +127,13 @@
       "when": 1789596421527,
       "tag": "0017_order_line_close_short",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789619676702,
+      "tag": "0018_order_line_pricing",
+      "breakpoints": true
     }
   ]
 }

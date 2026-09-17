@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   boolean,
+  char,
   check,
   index,
   numeric,
@@ -78,6 +79,26 @@ export const orderLines = pgTable(
       .default('0'),
 
     /**
+     * What was agreed per unit (ADR-035).
+     *
+     * Nullable because existing lines have none and one cannot be invented.
+     * The line total is computed rather than stored: a third number is free to
+     * disagree with the two it came from.
+     */
+    unitPrice: numeric('unit_price', { precision: 18, scale: 4 }),
+
+    /**
+     * ISO 4217, per line rather than per order.
+     *
+     * A supplier relationship here spans currencies — the previous system
+     * carried one per row on both its supplier links and its batches — so an
+     * order header currency would force a genuinely mixed order to be split
+     * into two documents that are really one. The cost is that an order has
+     * subtotals rather than a total (ADR-035).
+     */
+    currency: char('currency', { length: 3 }),
+
+    /**
      * No more is coming: treat the shortfall as final (ADR-034).
      *
      * The quantities stay as they are. Reducing quantity_ordered to what
@@ -125,6 +146,28 @@ export const orderLines = pgTable(
     check(
       'order_lines_fulfilled_within_ordered_check',
       sql`${t.quantityFulfilled} >= 0 and ${t.quantityFulfilled} <= ${t.quantityOrdered}`,
+    ),
+
+    // Zero rather than positive: a free-of-charge line is real — a
+    // replacement, a sample — and recording it at zero is more honest than
+    // leaving the price blank.
+    check(
+      'order_lines_unit_price_not_negative_check',
+      sql`${t.unitPrice} >= 0`,
+    ),
+
+    check(
+      'order_lines_currency_format_check',
+      sql`${t.currency} is null or ${t.currency} ~ '^[A-Z]{3}$'`,
+    ),
+
+    /**
+     * A price with no currency is a number with no unit, and a currency with
+     * no price says nothing. Neither half is useful alone.
+     */
+    check(
+      'order_lines_price_currency_together_check',
+      sql`(${t.unitPrice} is null) = (${t.currency} is null)`,
     ),
 
     check(

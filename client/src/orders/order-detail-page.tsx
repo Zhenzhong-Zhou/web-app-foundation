@@ -22,7 +22,7 @@ import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
-import { formatDate } from '../lib/format';
+import { formatDate, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
   Location,
@@ -298,6 +298,8 @@ export function OrderDetailPage() {
                 <TableCell>Ordered</TableCell>
                 <TableCell>Received</TableCell>
                 <TableCell>Outstanding</TableCell>
+                <TableCell align="right">Unit price</TableCell>
+                <TableCell align="right">Total</TableCell>
                 <TableCell align="right" />
               </TableRow>
             </TableHead>
@@ -319,6 +321,13 @@ export function OrderDetailPage() {
                     ) : (
                       line.quantityOutstanding
                     )}
+                  </TableCell>
+
+                  <TableCell align="right">
+                    {formatMoney(line.unitPrice, line.currency)}
+                  </TableCell>
+                  <TableCell align="right">
+                    {formatMoney(line.lineTotal, line.currency)}
                   </TableCell>
 
                   <TableCell align="right">
@@ -405,6 +414,25 @@ export function OrderDetailPage() {
               ))}
             </TableBody>
           </Table>
+
+          <Stack sx={{ alignItems: 'flex-end', mt: 1 }} spacing={0.5}>
+            {order.totals.map((total) => (
+              <Typography key={total.currency} variant="body2">
+                {formatMoney(total.amount, total.currency)}
+              </Typography>
+            ))}
+
+            {/* Said rather than shown as a smaller number: a subtotal that
+              silently excludes a line is what somebody reconciles against
+              (ADR-035). */}
+            {!order.totalsComplete && (
+              <Typography variant="caption" color="text.secondary">
+                {order.totals.length
+                  ? 'Some lines have no price — this is not the full total'
+                  : 'No prices recorded on this order'}
+              </Typography>
+            )}
+          </Stack>
         </Paper>
 
         {order.status === 'draft' && (
@@ -505,6 +533,9 @@ export function OrderDetailPage() {
         orderId={order.id}
         orderStatus={order.status}
         line={editingLine}
+        defaultCurrency={
+          order.lines.find((row) => row.currency)?.currency ?? ''
+        }
         onClose={() => setEditingLine(null)}
         onSaved={load}
       />

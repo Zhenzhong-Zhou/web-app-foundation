@@ -19,9 +19,9 @@ import { useSubmit } from '../lib/use-submit';
  * Adds an item to a draft.
  *
  * Items already on the order are excluded: the server refuses a duplicate with
- * a 409 (one line per variant, so that "how much did we order" has one
- * answer), and offering a choice that always fails is a worse way to learn
- * that than not offering it.
+ * a 409 (one line per variant, so "how much did we order" has one answer), and
+ * offering a choice that always fails is a worse way to learn that than not
+ * offering it.
  */
 export function AddOrderLineDialog({
   open,
@@ -38,6 +38,17 @@ export function AddOrderLineDialog({
 }) {
   const [variantId, setVariantId] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [price, setPrice] = useState('');
+
+  /**
+   * Seeded from the order's other lines. A currency per line supports a mixed
+   * order (ADR-035), but mixed is the exception — so the default should be the
+   * case that is not, and typing it again on every line is the friction that
+   * makes people leave prices blank.
+   */
+  const [currency, setCurrency] = useState(
+    order.lines.find((row) => row.currency)?.currency ?? '',
+  );
 
   const { submitting, error, reset, submit } = useSubmit(async () => {
     close();
@@ -47,6 +58,7 @@ export function AddOrderLineDialog({
   function close() {
     setVariantId('');
     setQuantity('');
+    setPrice('');
     reset();
     onClose();
   }
@@ -57,14 +69,23 @@ export function AddOrderLineDialog({
     void submit(() =>
       api(`/orders/${order.id}/lines`, {
         method: 'POST',
-        // The string as typed. Number() here would undo numeric(18,4).
-        body: JSON.stringify({ variantId, quantityOrdered: quantity }),
+        body: JSON.stringify({
+          variantId,
+          // Strings as typed. Number() here would undo numeric(18,4).
+          quantityOrdered: quantity,
+          // Both or neither: the server refuses half a price, and sending an
+          // empty string would fail the format check rather than read as
+          // absent.
+          unitPrice: price.trim() || undefined,
+          currency: price.trim() ? currency : undefined,
+        }),
       }),
     );
   }
 
   const onOrder = new Set(order.lines.map((line) => line.variantId));
   const choices = variants.filter((row) => !onOrder.has(row.id));
+  const unit = variants.find((row) => row.id === variantId)?.unitOfMeasure;
 
   return (
     <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
@@ -99,13 +120,40 @@ export function AddOrderLineDialog({
               fullWidth
               value={quantity}
               onChange={(event) => setQuantity(event.target.value)}
-              helperText={
-                variants.find((row) => row.id === variantId)?.unitOfMeasure
-                  ? `In ${variants.find((row) => row.id === variantId)!.unitOfMeasure}.`
-                  : 'Up to 4 decimal places.'
-              }
+              helperText={unit ? `In ${unit}.` : 'Up to 4 decimal places.'}
               slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 19 } }}
             />
+
+            {/* A pair, because neither half is useful alone — a price with no
+                currency is a number with no unit (ADR-035). */}
+            <Stack direction="row" spacing={2}>
+              <TextField
+                id="add-line-price"
+                label="Unit price"
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                helperText="Optional. Zero is valid for a free line."
+                sx={{ flexGrow: 1 }}
+                slotProps={{
+                  htmlInput: { inputMode: 'decimal', maxLength: 19 },
+                }}
+              />
+
+              <TextField
+                id="add-line-currency"
+                label="Currency"
+                required={price.trim() !== ''}
+                value={currency}
+                // Uppercased on the way in rather than validated on the way
+                // out: the server takes ISO 4217 and "cad" is a typo nobody
+                // means.
+                onChange={(event) =>
+                  setCurrency(event.target.value.toUpperCase())
+                }
+                sx={{ width: 120 }}
+                slotProps={{ htmlInput: { maxLength: 3 } }}
+              />
+            </Stack>
           </Stack>
         </DialogContent>
 
