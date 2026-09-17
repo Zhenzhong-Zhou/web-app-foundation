@@ -2656,14 +2656,6 @@ they exist so the reasoning is not rediscovered from scratch.
   needs fixing, so it is a small change rather than a shape one. The trigger
   is somebody entering a price on the wrong line and wanting it gone rather
   than corrected.
-- **The role grant backfill is one statement and will outgrow it.** Grants are
-  organizations × system roles × permissions, so an e2e database with a few
-  hundred organizations already produced an insert of over a thousand rows and
-  failed with "bind message has 2208 parameter formats but 0 parameters" — two
-  bind parameters per row against a hard limit of 65535. Dropping the database
-  cleared it, which is why it will come back. Chunking at five hundred fixes it
-  in about six lines; worth doing the next time the seed is touched rather than
-  the next time it fails.
 
 ---
 

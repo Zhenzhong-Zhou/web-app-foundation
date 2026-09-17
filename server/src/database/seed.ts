@@ -19,6 +19,16 @@ import { permissions, rolePermissions, roles } from './schema';
 const DEFAULT_ORG = { name: 'Default Organization', slug: 'default' };
 
 /**
+ * Rows per insert in the grant backfill.
+ *
+ * A multi-row insert carries two bind parameters per row against a hard limit
+ * of 65535, so this could be far larger — 500 is small enough that the number
+ * never needs thinking about again, and the cost is a handful of round trips
+ * on a script that runs once per deploy.
+ */
+const GRANT_CHUNK = 500;
+
+/**
  * Seeds the permission vocabulary and the default organization (ADR-003).
  *
  * **Idempotent by design.** You will run this repeatedly while building steps
@@ -43,7 +53,12 @@ async function seed(): Promise<void> {
   try {
     const db = app.get<Database>(UNSAFE_GLOBAL_DB);
 
-    // 1. Permission vocabulary. Global, so this runs once regardless of orgs.
+    /**
+     * 1. Permission vocabulary. Global, so this runs once regardless of orgs.
+     *
+     * Not chunked, unlike the backfill below: this is bounded by the
+     * vocabulary rather than by tenants, so it cannot grow with use.
+     */
     await db
       .insert(permissions)
       .values(
@@ -118,13 +133,29 @@ async function syncSystemRoleGrants(db: Database): Promise<number> {
 
   if (grants.length === 0) return 0;
 
-  const inserted = await db
-    .insert(rolePermissions)
-    .values(grants)
-    .onConflictDoNothing()
-    .returning();
+  /**
+   * Chunked, because this is the one insert here that grows with use:
+   * organizations × system roles × permissions. An e2e database with a few
+   * hundred organizations produced over a thousand rows in one statement and
+   * failed with "bind message has 2208 parameter formats but 0 parameters".
+   *
+   * Dropping the database clears it, which is why it is worth fixing rather
+   * than working around — the count grows back on every run, and the error
+   * means nothing on the day it returns.
+   */
+  let inserted = 0;
 
-  return inserted.length;
+  for (let start = 0; start < grants.length; start += GRANT_CHUNK) {
+    const rows = await db
+      .insert(rolePermissions)
+      .values(grants.slice(start, start + GRANT_CHUNK))
+      .onConflictDoNothing()
+      .returning();
+
+    inserted += rows.length;
+  }
+
+  return inserted;
 }
 
 void seed();
