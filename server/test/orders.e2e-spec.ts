@@ -1297,7 +1297,10 @@ describe('Orders (e2e)', () => {
       // The allow-list is a retention promise, and without this it is a
       // comment. note is absent deliberately: free text is where people put
       // what should not sit in a two-year table (ADR-018).
-      expect(entry.payload).toEqual({ reference: 'PO-1234' });
+      expect(entry.payload).toEqual({
+        // null from, because the order was raised without a reference.
+        reference: { from: null, to: 'PO-1234' },
+      });
     });
   });
 });

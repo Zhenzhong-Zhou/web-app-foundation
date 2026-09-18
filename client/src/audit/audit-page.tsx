@@ -88,17 +88,43 @@ function describe(action: string): string {
 }
 
 /**
+ * A value as it should read in the log.
+ *
+ * null is the common case rather than an edge one — a reference set for the
+ * first time has no previous value — and `String(null)` puts the word "null"
+ * in front of somebody investigating a change.
+ */
+function show(value: unknown): string {
+  return value === null || value === undefined ? '—' : String(value);
+}
+
+/**
  * The recorded values as one line.
+ *
+ * Two shapes, because a route only reports a previous value when its service
+ * recorded one (ADR-018): `{ from, to }` renders as an arrow, a bare value as
+ * itself. Keeping them distinguishable matters — "set to 30" and "3 → 30" are
+ * different claims, and collapsing the first into the second would invent a
+ * before-value that was never captured.
  *
  * Generic rather than per-action: the allow-list is small and its field names
  * are already the words people use — `reference`, `sku`, `roleId`.
  */
 function summarise(payload: Record<string, unknown> | null): string | null {
   if (!payload) return null;
-
-  const parts = Object.entries(payload).map(
-    ([key, value]) => `${key}: ${String(value)}`,
-  );
+  console.log(Object.entries(payload));
+  const parts = Object.entries(payload).map(([key, value]) => {
+    if (
+      value &&
+      typeof value === 'object' &&
+      'from' in value &&
+      'to' in value
+    ) {
+      const { from, to } = value as { from: unknown; to: unknown };
+      return `${key}: ${show(from)} → ${show(to)}`;
+    }
+    return `${key}: ${show(value)}`;
+  });
 
   return parts.length > 0 ? parts.join(' · ') : null;
 }

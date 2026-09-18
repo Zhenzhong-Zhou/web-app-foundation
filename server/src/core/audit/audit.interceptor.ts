@@ -11,6 +11,7 @@ import { concatMap, type Observable } from 'rxjs';
 
 import { getRequestContext } from '../auth/request-context';
 import { AuditService } from './audit.service';
+import { enterAuditContext, takePrevious } from './audit-context';
 import { AUDITED, type AuditOptions } from './audited.decorator';
 
 /**
@@ -41,12 +42,14 @@ export class AuditInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const options = this.reflector.get<AuditOptions | undefined>(
+    const options = this.reflector.get<AuditOptions>(
       AUDITED,
       context.getHandler(),
     );
 
     if (!options) return next.handle();
+
+    enterAuditContext();
 
     const req = context.switchToHttp().getRequest<Request>();
 
@@ -93,7 +96,7 @@ export class AuditInterceptor implements NestInterceptor {
          * applies twice as hard to a row kept for two years, so the body is
          * never recorded wholesale (ADR-018).
          */
-        payload: pick(req.body, options.fields),
+        payload: combine(pick(req.body, options.fields), takePrevious()),
 
         ip: req.ip,
         userAgent: req.headers['user-agent'],
@@ -102,6 +105,27 @@ export class AuditInterceptor implements NestInterceptor {
       this.logger.error(`Audit write failed: ${String(error)}`);
     }
   }
+}
+
+/**
+ * `{ field: { from, to } }` where a previous value was recorded, and the bare
+ * new value where it was not.
+ *
+ * Both shapes in one column deliberately: a route that reports no previous
+ * value should not be indistinguishable from one whose old value was null.
+ */
+function combine(
+  current: Record<string, unknown> | undefined,
+  previous: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  if (!current) return undefined;
+  if (!previous) return current;
+
+  return Object.fromEntries(
+    Object.entries(current).map(([key, to]) =>
+      key in previous ? [key, { from: previous[key], to }] : [key, to],
+    ),
+  );
 }
 
 /**

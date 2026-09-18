@@ -2688,33 +2688,27 @@ they exist so the reasoning is not rediscovered from scratch.
   needs fixing, so it is a small change rather than a shape one. The trigger
   is somebody entering a price on the wrong line and wanting it gone rather
   than corrected.
-  **Now partly closed.** `@Audited({ fields: [...] })` records the values a
-  route names, on four of them: an order's status, reference and expected date;
-  a line's quantity, price and currency; a variant's SKU; a membership's role.
-  An allow-list rather than a redaction list, because the failure modes are not
-  symmetric — forgetting to redact a new sensitive field puts it in a two-year
-  table, while forgetting to allow one means a missing value in a log. `note`
-  is deliberately absent: free text is where people put things that should not
-  be retained for two years.
-
-  What this is not is before-and-after. The interceptor runs after the handler
-  and never saw the old row, so it records what a field was set *to*.
-  Reconstructing a change means reading the previous entry for the same
-  resource. That is weaker than the textbook answer and deliberately so: real
-  before/after means triggers writing full rows to a history table, which is
-  what paper_trail and supa_audit do, and which ADR-024 and ADR-025 both
-  rejected for cross-table rules on the grounds that logic in SQL is invisible
-  to a TypeScript test suite.
-
+  **Now partly answered.** The service records what a field was, through
+  async-local storage the interceptor reads, so the four annotated routes carry
+  `{ from, to }` where a previous value was recorded and a bare value where it
+  was not. Deliberately not normalised: a route reporting no previous value
+  should not be indistinguishable from one whose previous value was null. It is
+  per-route and forgettable — a second thing the coverage test does not check —
+  but it covers the fields where the old value is otherwise unrecoverable.
+  **Worth correcting an earlier claim here.** ADR-024 and ADR-025 rejected
+  *business rules* in SQL — a cycle check, a quantity calculation — because
+  logic in the database is invisible to a TypeScript test suite. An audit
+  trigger decides nothing; it copies OLD and NEW into a row, and that objection
+  does not reach it. Triggers are open on their merits rather than excluded.
   **The ceiling, if it is ever needed.** Trigger-based row history on the four
   or five tables that matter, sitting beside `audit_log` rather than replacing
-  it — one says who did something, the other says what the row was. The
-  forcing function is a question this cannot answer: "what did this row look
-  like on 3 March", a regulator, or a dispute with money attached. Note that
-  movements already are that history for quantities, and the SKU, ship-to and
-  recipe snapshots are point-in-time history for the documents that needed it,
-  decided case by case.
-
+  it — one says who did something, the other says what the row was. The reasons
+  to wait are ordinary: a trigger per table, regenerated on every schema
+  change, and no question yet that the current shape cannot answer. The forcing
+  function would be one it cannot: "what did this row look like on 3 March", a
+  regulator, or a dispute with money attached. Note that movements already are
+  that history for quantities, and the SKU, ship-to and recipe snapshots are
+  point-in-time history for the documents that needed it, decided case by case.
   **And searching is still not built, deliberately.** GIN on a column that is
   null in most rows costs write time to serve a query nobody runs weekly, and
   the keys here are fixed by the allow-list rather than unpredictable — so when

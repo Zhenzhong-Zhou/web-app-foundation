@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 
+import { recordPrevious } from '../../core/audit/audit-context';
 import { isCheckViolation, isUniqueViolation } from '../../database/errors';
 import {
   addresses,
@@ -536,6 +537,11 @@ export class OrdersService {
       eq(orders.id, orderId),
     );
 
+    recordPrevious({
+      reference: existing.reference,
+      expectedAt: existing.expectedAt,
+    });
+
     this.logger.log(`Order ${orderId} updated`);
   }
 
@@ -611,6 +617,12 @@ export class OrdersService {
             : {}),
         })
         .where(eq(orderLines.id, lineId));
+
+      recordPrevious({
+        quantityOrdered: line.quantityOrdered,
+        unitPrice: line.unitPrice,
+        currency: line.currency,
+      });
 
       this.logger.log(
         `Order ${orderId} line ${lineId}: quantity now ${input.quantityOrdered}`,

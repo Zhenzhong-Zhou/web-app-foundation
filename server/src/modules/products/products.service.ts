@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
 
+import { recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
 import { products, productVariants } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -191,6 +192,8 @@ export class ProductsService {
         input,
         eq(productVariants.id, variantId),
       );
+
+      recordPrevious({ sku: variant.sku });
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException(`SKU ${input.sku} is already in use`);

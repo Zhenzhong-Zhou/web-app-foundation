@@ -214,8 +214,12 @@ describe('Audit (e2e)', () => {
 
       const { entries } = await page(alpha, '?action=product.variant_updated');
 
-      // sku is named; nothing else on that DTO is.
-      expect(entries[0].payload).toEqual({ sku: 'RENAMED-1' });
+      // sku is named; nothing else on that DTO is. Two values because the
+      // service recorded what it was (ADR-018) — a rename is exactly the case
+      // where the old value is otherwise unrecoverable.
+      expect(entries[0].payload).toEqual({
+        sku: { from: 'WIDGET-1', to: 'RENAMED-1' },
+      });
     });
 
     it('records no payload for a route that names no fields', async () => {

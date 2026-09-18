@@ -11,6 +11,7 @@ import { eq, sql } from 'drizzle-orm';
 import { isUniqueViolation } from '../../database/errors';
 import { memberships, roles, users } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { recordPrevious } from '../audit/audit-context';
 import { PasswordService } from '../auth/password.service';
 import { RequestContext } from '../auth/request-context';
 import { SYSTEM_ROLES } from '../authorization/permissions';
@@ -195,6 +196,8 @@ export class UsersService {
       { roleId },
       eq(memberships.id, membership.id),
     );
+
+    recordPrevious({ roleId: membership.roleId });
 
     this.logger.log(`Role of ${userId} changed to ${role.name}`);
   }
