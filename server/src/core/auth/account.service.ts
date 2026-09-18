@@ -173,6 +173,17 @@ export class AccountService {
   }
 
   /**
+   * Recent account activity, for the sessions page.
+   *
+   * Through this service rather than the controller reaching for
+   * AccountEventService directly: the controller has one dependency and every
+   * other route goes through here.
+   */
+  listEvents(context: RequestContext) {
+    return this.events.listForUser(context.userId);
+  }
+
+  /**
    * Returns false when the row does not exist or belongs to someone else —
    * the caller cannot tell which, and should not.
    */

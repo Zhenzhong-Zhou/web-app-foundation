@@ -18,6 +18,7 @@ import { users } from './users';
  * convention.
  */
 export const ACCOUNT_EVENT_ACTIONS = [
+  'account.registered',
   'session.created',
   'session.ended',
   'session.revoked',
@@ -65,7 +66,7 @@ export const accountEvents = pgTable(
   (table) => [
     check(
       'account_events_action_check',
-      sql`${table.action} in ('session.created', 'session.ended', 'session.revoked', 'account.password_changed', 'account.password_reset', 'account.profile_updated', 'account.email_verified')`,
+      sql`${table.action} in ('account.registered', 'session.created', 'session.ended', 'session.revoked', 'account.password_changed', 'account.password_reset', 'account.profile_updated', 'account.email_verified')`,
     ),
     // (user_id, id desc) rather than created_at: UUIDv7 sorts by creation
     // time (ADR-010), so one index serves both the read and the keyset cursor

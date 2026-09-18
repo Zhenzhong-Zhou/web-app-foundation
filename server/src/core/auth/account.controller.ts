@@ -66,6 +66,15 @@ export class AccountController {
     return this.account.listSessions(context);
   }
 
+  /**
+   * The history behind the sessions list. A notification says a new sign-in
+   * happened; this is where somebody goes next to ask what else has.
+   */
+  @Get('events')
+  listEvents(@CurrentUser() context: RequestContext) {
+    return this.account.listEvents(context);
+  }
+
   @Delete('sessions/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async revokeSession(

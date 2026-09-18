@@ -243,6 +243,8 @@ export interface RunDetail extends ProductionRun {
 export interface LineVariance {
   lineId: string;
   componentVariantId: string;
+  /** Snapshotted on the line at release — a UUID reads as nothing on screen. */
+  sku: string;
   quantityPlanned: string;
   quantityConsumed: string;
   variance: number;

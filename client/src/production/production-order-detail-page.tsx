@@ -157,10 +157,13 @@ export function ProductionOrderDetailPage() {
           {variances.length === 1
             ? 'One component was well off plan: '
             : `${variances.length} components were well off plan: `}
+          {/* variance.sku rather than a lookup in run.lines: the server has
+              snapshotted it, and the lookup would fail for a line that is no
+              longer on the run. */}
           {variances
             .map(
               (variance) =>
-                `${run.lines.find((line) => line.id === variance.lineId)?.sku ?? 'a line'} at ${Math.round(variance.variance * 100)}%`,
+                `${variance.sku} at ${Math.round(variance.variance * 100)}%`,
             )
             .join(', ')}
           . Recorded as it happened — worth a look at the recipe or the batch.
@@ -253,21 +256,18 @@ export function ProductionOrderDetailPage() {
           </Table>
         </Paper>
       )}
-
       <ReleaseRunDialog
         open={releasing}
         runId={run.id}
         onClose={() => setReleasing(false)}
         onReleased={load}
       />
-
       <RecordOutputDialog
         open={recording}
         run={run}
         onClose={() => setRecording(false)}
         onRecorded={load}
       />
-
       <CloseRunDialog
         open={closing}
         run={run}
@@ -277,7 +277,6 @@ export function ProductionOrderDetailPage() {
           await load();
         }}
       />
-
       <CancelRunDialog
         open={cancelling}
         run={run}

@@ -19,6 +19,7 @@ import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { RecentActivity } from './recent-activity';
 
 interface SessionSummary {
   id: string;
@@ -188,6 +189,8 @@ export function SessionsPage() {
           list
         )}
       </Paper>
+
+      <RecentActivity />
 
       <Link component={RouterLink} to="/account">
         Back to account

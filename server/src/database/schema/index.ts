@@ -15,6 +15,7 @@ export * from './contacts';
 export * from './locations';
 export * from './lots';
 export * from './memberships';
+export * from './notifications';
 export * from './order-lines';
 export * from './orders';
 export * from './organizations';

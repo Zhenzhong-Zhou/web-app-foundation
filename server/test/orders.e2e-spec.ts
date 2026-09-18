@@ -8,6 +8,7 @@ import {
 } from '../src/database/database.module';
 import {
   auditLog,
+  notifications,
   orderLines,
   orders,
   roles,
@@ -993,6 +994,28 @@ describe('Orders (e2e)', () => {
         .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/close`)
         .send({ reason: 'Changed my mind' })
         .expect(409);
+    });
+
+    it('tells everyone who maintains orders about a short close', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/close`)
+        .send({ reason: 'Supplier discontinued the item' })
+        .expect(204);
+
+      const rows = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.type, 'order.line_closed_short'));
+
+      expect(rows).toHaveLength(1);
+      // 'order', not 'order_line': clicking a notification should land on a
+      // page that exists, and lines do not have one.
+      expect(rows[0].resourceType).toBe('order');
+      expect(rows[0].resourceId).toBe(order.id);
+      expect(rows[0].body).toContain('Supplier discontinued the item');
     });
   });
 

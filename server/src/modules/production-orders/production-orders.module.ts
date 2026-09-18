@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { NotificationsModule } from '../../core/notifications/notifications.module';
 import { StockModule } from '../stock/stock.module';
 import { ProductionOrdersController } from './production-orders.controller';
 import { ProductionOrdersService } from './production-orders.service';
@@ -16,7 +17,7 @@ import { ProductionOrdersService } from './production-orders.service';
  * decimals, which is what ADR-025 exists to avoid.
  */
 @Module({
-  imports: [StockModule],
+  imports: [StockModule, NotificationsModule],
   controllers: [ProductionOrdersController],
   providers: [ProductionOrdersService],
   exports: [ProductionOrdersService],

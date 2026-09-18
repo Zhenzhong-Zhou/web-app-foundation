@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { NotificationsModule } from '../../core/notifications/notifications.module';
 import { PartnersModule } from '../partners/partners.module';
 import { StockModule } from '../stock/stock.module';
 import { OrdersController } from './orders.controller';
@@ -16,7 +17,7 @@ import { OrdersService } from './orders.service';
  * partners, even though this module is the only caller so far.
  */
 @Module({
-  imports: [StockModule, PartnersModule],
+  imports: [StockModule, PartnersModule, NotificationsModule],
   controllers: [OrdersController],
   providers: [OrdersService],
   exports: [OrdersService],

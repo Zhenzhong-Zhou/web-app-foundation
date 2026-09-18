@@ -21,6 +21,7 @@ import { useAuth } from '../auth/use-auth';
 import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { api } from '../lib/api';
+import { NotificationBell } from './notification-bell';
 
 /**
  * The work, in the order it happens: what you have, what you have asked for,
@@ -113,6 +114,8 @@ export function AppLayout() {
           >
             <AccountCircle />
           </IconButton>
+
+          <NotificationBell />
 
           <Menu anchorEl={menu} open={!!menu} onClose={() => setMenu(null)}>
             <MenuItem disabled sx={{ opacity: '1 !important' }}>

@@ -2,6 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 
 import { MailModule } from '../../shared/mail/mail.module';
 import { AuthorizationModule } from '../authorization/authorization.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 import { AccountEventService } from './account-event.service';
@@ -13,7 +14,7 @@ import { SessionService } from './session.service';
 import { SessionContextMiddleware } from './session-context.middleware';
 
 @Module({
-  imports: [AuthorizationModule, MailModule],
+  imports: [AuthorizationModule, MailModule, NotificationsModule],
   controllers: [AuthController, AccountController],
   providers: [
     AuthService,

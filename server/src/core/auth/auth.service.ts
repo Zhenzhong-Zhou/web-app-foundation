@@ -162,6 +162,14 @@ export class AuthService implements OnModuleInit {
       meta,
     );
 
+    /**
+     * A distinct action, not session.created. Registration does create a
+     * session, but "the account was opened" and "somebody signed in" are
+     * different facts, and a history where both render as "Signed in" cannot
+     * say when the account began except by inference (ADR-022).
+     */
+    await this.events.record(user.id, 'account.registered', meta);
+
     await this.sendVerificationEmail(user.id, user.email, user.name);
 
     return {

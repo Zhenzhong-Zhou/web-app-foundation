@@ -73,7 +73,10 @@ export default tseslint.config(
               ],
               importNames: ['UNSAFE_GLOBAL_DB', 'PG_POOL'],
               message:
-                'Services must use TenantDb — it applies organization_id (ADR-003/ADR-009). If this query is legitimately global, it belongs in core/auth.',
+                'Services must use TenantDb — it applies organization_id (ADR-003/ADR-009). ' +
+                'Global queries are allowed in core/auth, ' +
+                'core/authorization and core/notifications; ' +
+                'anywhere else, this is a scoping mistake.',
             },
           ],
         },
@@ -82,11 +85,18 @@ export default tseslint.config(
   },
 
   {
-    // UNSAFE_GLOBAL_DB is allowed in exactly two places, both of which run
-    // before or outside tenant scope. core/auth resolves a user by email before
-    // any organization is known. core/authorization joins the permission
-    // catalogue, which has no organization_id by design.
-    files: ['src/core/auth/**/*.ts', 'src/core/authorization/**/*.ts'],
+    // UNSAFE_GLOBAL_DB is allowed in exactly three places, none of which has a
+    // tenant to scope to. core/auth resolves a user by email before any
+    // organization is known. core/authorization joins the permission
+    // catalogue, which has no organization_id by design. core/notifications is
+    // scoped by recipient instead: an account notification — "somebody signed
+    // in to your account" — belongs to a person who may belong to no
+    // organization at all (ADR-036).
+    files: [
+      'src/core/auth/**/*.ts',
+      'src/core/authorization/**/*.ts',
+      'src/core/notifications/**/*.ts',
+    ],
     rules: { 'no-restricted-imports': 'off' },
   },
 

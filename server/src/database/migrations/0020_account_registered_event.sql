@@ -1,0 +1,2 @@
+ALTER TABLE "account_events" DROP CONSTRAINT "account_events_action_check";--> statement-breakpoint
+ALTER TABLE "account_events" ADD CONSTRAINT "account_events_action_check" CHECK ("account_events"."action" in ('account.registered', 'session.created', 'session.ended', 'session.revoked', 'account.password_changed', 'account.password_reset', 'account.profile_updated', 'account.email_verified'));

@@ -7,6 +7,9 @@ import {
 } from '@nestjs/common';
 import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
 
+import { PERMISSIONS } from '../../core/authorization/permissions';
+import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
+import { NotificationsService } from '../../core/notifications/notifications.service';
 import { isForeignKeyViolation } from '../../database/errors';
 import {
   boms,
@@ -50,6 +53,8 @@ const DEFAULT_LIMIT = 25;
 export interface LineVariance {
   lineId: string;
   componentVariantId: string;
+  /** Snapshotted on the line at release — a UUID reads as nothing in a bell. */
+  sku: string;
   quantityPlanned: string;
   quantityConsumed: string;
   /** Positive is over plan. Computed, never stored. */
@@ -75,6 +80,7 @@ export class ProductionOrdersService {
   constructor(
     private readonly tenantDb: TenantDb,
     private readonly stock: StockService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /**
@@ -504,6 +510,7 @@ export class ProductionOrdersService {
           variances.push({
             lineId: line.id,
             componentVariantId: line.componentVariantId,
+            sku: line.sku,
             quantityPlanned: line.quantityPlanned,
             quantityConsumed: consumed,
             variance: Number(ratio.toFixed(4)),
@@ -521,6 +528,33 @@ export class ProductionOrdersService {
           ? `Production order ${runId} closed with ${variances.length} lines over threshold`
           : `Production order ${runId} closed`,
       );
+
+      /**
+       * After the transaction, not inside it. emit uses its own connection, so
+       * a notification written inside would survive a rollback and announce a
+       * run that never closed — and it would hold the transaction open on an
+       * insert nobody is waiting for (ADR-036).
+       */
+      if (variances.length > 0) {
+        const recipients = await this.notifications.recipientsWith(
+          organizationId,
+          PERMISSIONS.PRODUCTION_COMPLETE,
+        );
+
+        await this.notifications.emit(
+          recipients.map((userId) => ({
+            userId,
+            organizationId,
+            type: NOTIFICATION_TYPES.PRODUCTION_VARIANCE,
+            title: `A production run closed with ${variances.length} line${variances.length === 1 ? '' : 's'} off plan`,
+            body: variances
+              .map((v) => `${v.sku}: ${Math.round(v.variance * 100)}%`)
+              .join(', '),
+            resourceType: 'production_order',
+            resourceId: runId,
+          })),
+        );
+      }
 
       return { variances };
     });

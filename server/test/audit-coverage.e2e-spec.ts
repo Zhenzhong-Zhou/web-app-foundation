@@ -59,6 +59,11 @@ const NOT_AUDITED = new Map<string, string>([
   ],
   ['AccountController.changePassword', 'Account events (ADR-022)'],
   ['AccountController.revokeSession', 'Account events (ADR-022)'],
+  [
+    'NotificationsController.markRead',
+    'Reading your own notification is not an act on the organization (ADR-036)',
+  ],
+  ['NotificationsController.markAllRead', 'As above (ADR-036)'],
 ]);
 
 interface Controller {

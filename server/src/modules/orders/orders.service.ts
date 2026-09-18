@@ -8,6 +8,9 @@ import {
 import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 
 import { recordPrevious } from '../../core/audit/audit-context';
+import { PERMISSIONS } from '../../core/authorization/permissions';
+import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
+import { NotificationsService } from '../../core/notifications/notifications.service';
 import { isCheckViolation, isUniqueViolation } from '../../database/errors';
 import {
   addresses,
@@ -54,6 +57,7 @@ export class OrdersService {
   constructor(
     private readonly tenantDb: TenantDb,
     private readonly stock: StockService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /**
@@ -681,40 +685,70 @@ export class OrdersService {
     lineId: string,
     input: CloseLineDto,
   ): Promise<void> {
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      const order = await this.loadOrder(tx, organizationId, orderId);
-      const line = await this.loadLine(tx, orderId, lineId);
+    const { organizationId, sku, fulfilled, ordered } =
+      await this.tenantDb.transaction(async (tx, organizationId) => {
+        const order = await this.loadOrder(tx, organizationId, orderId);
+        const line = await this.loadLine(tx, orderId, lineId);
 
-      /**
-       * Confirmed only. A draft has promised nothing, so there is no shortfall
-       * to record — remove the line instead (ADR-033). A received or cancelled
-       * order is already closed.
-       */
-      if (order.status !== 'confirmed') {
-        throw new ConflictException(
-          `A line on a ${order.status} order cannot be closed short`,
+        /**
+         * Confirmed only. A draft has promised nothing, so there is no
+         * shortfall to record — remove the line instead (ADR-033). A received
+         * or cancelled order is already closed.
+         */
+        if (order.status !== 'confirmed') {
+          throw new ConflictException(
+            `A line on a ${order.status} order cannot be closed short`,
+          );
+        }
+
+        if (line.isClosedShort) {
+          throw new ConflictException('That line is already closed');
+        }
+
+        if (Number(line.quantityFulfilled) >= Number(line.quantityOrdered)) {
+          throw new ConflictException(
+            'That line is already complete — there is nothing outstanding to close',
+          );
+        }
+
+        await tx
+          .update(orderLines)
+          .set({ isClosedShort: true, closedReason: input.reason })
+          .where(eq(orderLines.id, lineId));
+
+        this.logger.log(
+          `Order ${orderId} line ${lineId} closed short at ${line.quantityFulfilled} of ${line.quantityOrdered}`,
         );
-      }
 
-      if (line.isClosedShort) {
-        throw new ConflictException('That line is already closed');
-      }
+        return {
+          organizationId,
+          sku: line.sku,
+          fulfilled: line.quantityFulfilled,
+          ordered: line.quantityOrdered,
+        };
+      });
 
-      if (Number(line.quantityFulfilled) >= Number(line.quantityOrdered)) {
-        throw new ConflictException(
-          'That line is already complete — there is nothing outstanding to close',
-        );
-      }
+    /**
+     * After the transaction, not inside it. emit uses its own connection, so
+     * a notification written inside would survive a rollback and announce a
+     * shortfall that was never recorded (ADR-036).
+     */
+    const recipients = await this.notifications.recipientsWith(
+      organizationId,
+      PERMISSIONS.ORDERS_UPDATE,
+    );
 
-      await tx
-        .update(orderLines)
-        .set({ isClosedShort: true, closedReason: input.reason })
-        .where(eq(orderLines.id, lineId));
-
-      this.logger.log(
-        `Order ${orderId} line ${lineId} closed short at ${line.quantityFulfilled} of ${line.quantityOrdered}`,
-      );
-    });
+    await this.notifications.emit(
+      recipients.map((userId) => ({
+        userId,
+        organizationId,
+        type: NOTIFICATION_TYPES.ORDER_LINE_CLOSED_SHORT,
+        title: `${sku} will not be delivered in full`,
+        body: `${fulfilled} of ${ordered} received. ${input.reason}`,
+        resourceType: 'order',
+        resourceId: orderId,
+      })),
+    );
   }
 
   /**

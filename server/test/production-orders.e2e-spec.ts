@@ -7,6 +7,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import {
+  notifications,
   productionOrderLines,
   productionOrders,
   stockLevels,
@@ -700,6 +701,54 @@ describe('Production orders (e2e)', () => {
         .post(`/v1/production-orders/${s.run.id}/close`)
         .send({})
         .expect(409);
+    });
+
+    it('tells everyone who can close a run about a variance', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await released(alpha);
+
+      const blendLine = s.lines.find(
+        (line) => line.componentVariantId === s.blend,
+      )!;
+
+      // 50% over plan, well past the flag threshold.
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/close`)
+        .send({ lines: [{ lineId: blendLine.id, quantityConsumed: '1800' }] })
+        .expect(200);
+
+      const rows = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.type, 'production.variance'));
+
+      /**
+       * Targeting is by permission: the Owner holds production.complete. By
+       * involvement would need created_by to mean "owner", which it means
+       * only by accident — it records who typed it in (ADR-036).
+       */
+      expect(rows).toHaveLength(1);
+      expect(rows[0].resourceId).toBe(s.run.id);
+      expect(rows[0].organizationId).toBe(alpha.organizationId);
+      // The SKU, not a UUID — a bell nobody can read is a bell nobody opens.
+      expect(rows[0].body).toContain('BLEND-D3');
+    });
+
+    it('says nothing when everything went to plan', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await released(alpha);
+
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/close`)
+        .send({})
+        .expect(200);
+
+      expect(
+        await db
+          .select()
+          .from(notifications)
+          .where(eq(notifications.type, 'production.variance')),
+      ).toHaveLength(0);
     });
   });
 
