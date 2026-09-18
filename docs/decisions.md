@@ -2688,6 +2688,24 @@ they exist so the reasoning is not rediscovered from scratch.
   needs fixing, so it is a small change rather than a shape one. The trigger
   is somebody entering a price on the wrong line and wanting it gone rather
   than corrected.
+- **The audit log records that something changed, never what.** The
+  interceptor captures no request body, deliberately — POST /v1/users carries a
+  password, and pino's reason for redacting it applies twice as hard to a row
+  kept for 24 months (ADR-012). `payload` is opt-in per route, so
+  "order.updated" was the whole entry: the actor, the resource, the time.
+
+  That answers "who changed this order" and not "what did they change it
+  from". The second question arrives with a dispute — a reference edited after
+  receipt, a quantity amended on a confirmed order — which is exactly when the
+  answer is wanted and gone.
+
+  Recording before and after is not free. It roughly doubles the log, and half
+  of what would be captured is field values that have no business sitting in a
+  two-year table: a note, a contact's phone number, eventually a price somebody
+  considers confidential. A per-route allow-list of fields is the shape that
+  works — `@Audited({ fields: ['reference', 'expectedAt'] })` — since it keeps
+  the decision at the route, where somebody can see what they are committing to
+  retaining.
   **Now partly answered.** The service records what a field was, through
   async-local storage the interceptor reads, so the four annotated routes carry
   `{ from, to }` where a previous value was recorded and a bare value where it
@@ -2695,11 +2713,13 @@ they exist so the reasoning is not rediscovered from scratch.
   should not be indistinguishable from one whose previous value was null. It is
   per-route and forgettable — a second thing the coverage test does not check —
   but it covers the fields where the old value is otherwise unrecoverable.
+
   **Worth correcting an earlier claim here.** ADR-024 and ADR-025 rejected
   *business rules* in SQL — a cycle check, a quantity calculation — because
   logic in the database is invisible to a TypeScript test suite. An audit
   trigger decides nothing; it copies OLD and NEW into a row, and that objection
   does not reach it. Triggers are open on their merits rather than excluded.
+
   **The ceiling, if it is ever needed.** Trigger-based row history on the four
   or five tables that matter, sitting beside `audit_log` rather than replacing
   it — one says who did something, the other says what the row was. The reasons
@@ -2709,6 +2729,7 @@ they exist so the reasoning is not rediscovered from scratch.
   regulator, or a dispute with money attached. Note that movements already are
   that history for quantities, and the SKU, ship-to and recipe snapshots are
   point-in-time history for the documents that needed it, decided case by case.
+
   **And searching is still not built, deliberately.** GIN on a column that is
   null in most rows costs write time to serve a query nobody runs weekly, and
   the keys here are fixed by the allow-list rather than unpredictable — so when
