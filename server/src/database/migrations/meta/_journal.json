@@ -148,6 +148,13 @@
       "when": 1789767904476,
       "tag": "0020_account_registered_event",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790025595419,
+      "tag": "0021_audit_resource_label",
+      "breakpoints": true
     }
   ]
 }

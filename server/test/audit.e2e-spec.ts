@@ -22,6 +22,7 @@ interface AuditEntry {
   action: string;
   resourceType: string | null;
   resourceId: string | null;
+  resourceLabel: string | null;
   actorId: string | null;
   actorEmail: string | null;
   payload: Record<string, unknown> | null;
@@ -171,31 +172,56 @@ describe('Audit (e2e)', () => {
     });
 
     /**
-     * What the History link on a product page shows. A variant keyed to its
-     * own id would be missing from it, and a SKU rename is the change people
-     * most often go looking for.
+     * A snapshot, not a join (ADR-038). The rename is the case that decides
+     * it: a join would relabel the creation as RENAMED, and the log would
+     * claim something was created under a name it never had.
      */
-    it('files variant changes under the product', async () => {
+    it('names the resource as it was at the time', async () => {
       const alpha = await registerOrg('alpha');
       const product = await makeProduct(alpha, 'WIDGET-1');
 
       await alpha.agent
-        .patch(`/v1/products/${product.id}/variants/${product.variants[0].id}`)
-        .send({ sku: 'RENAMED-1' })
+        .patch(`/v1/products/${product.id}`)
+        .send({ name: 'Renamed widget' })
         .expect(204);
-
-      await alpha.agent
-        .post(`/v1/products/${product.id}/variants`)
-        .send({ sku: 'WIDGET-1-XL' })
-        .expect(201);
 
       const { entries } = await page(alpha, `?resourceId=${product.id}`);
 
-      expect(entries.map((entry) => entry.action)).toEqual([
-        'product.variant_added',
-        'product.variant_updated',
-        'product.created',
+      expect(entries.map((entry) => entry.resourceLabel)).toEqual([
+        'Renamed widget',
+        'WIDGET-1',
       ]);
+    });
+
+    /**
+     * A person's name in a two-year table would outlive the anonymisation of
+     * their user row (ADR-012). Member events are left unlabelled.
+     */
+    it('does not snapshot a member name', async () => {
+      const alpha = await registerOrg('alpha');
+
+      const [viewerRole] = await db
+        .select({ id: roles.id })
+        .from(roles)
+        .where(
+          and(
+            eq(roles.organizationId, alpha.organizationId),
+            eq(roles.name, 'Viewer'),
+          ),
+        );
+
+      await alpha.agent
+        .post('/v1/users')
+        .send({
+          email: 'viewer@alpha.example.com',
+          name: 'Viewer',
+          password: PASSWORD,
+          roleId: viewerRole.id,
+        })
+        .expect(201);
+
+      const { entries } = await page(alpha, '?action=user.created');
+      expect(entries[0].resourceLabel).toBeNull();
     });
 
     it('filters by date range', async () => {

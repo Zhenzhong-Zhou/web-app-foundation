@@ -49,6 +49,12 @@ export const auditLog = pgTable(
     resourceType: text('resource_type'),
     resourceId: uuid('resource_id'),
 
+    // What the resource was called when this happened (ADR-038). Snapshotted
+    // rather than joined at read time: a rename must not rewrite history, and
+    // a deleted record must still be named. Null on rows written before the
+    // column existed, and for types with no resolver — user, deliberately.
+    resourceLabel: text('resource_label'),
+
     // What a field was set to, for the routes that name fields. Not before/after:
     // the interceptor runs after the handler and never saw the old row
     // (ADR-018). JSONB rather than columns, because the shape differs per action.

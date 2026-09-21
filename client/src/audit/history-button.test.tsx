@@ -14,6 +14,7 @@ const ENTRY: AuditRecord = {
   action: 'product.variant_updated',
   resourceType: 'product',
   resourceId: 'product-1',
+  resourceLabel: 'Widget',
   actorId: 'user-1',
   actorEmail: 'owner@alpha.example.com',
   payload: { sku: { from: 'WIDGET-1', to: 'RENAMED-1' } },

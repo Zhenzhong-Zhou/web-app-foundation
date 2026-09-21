@@ -11,6 +11,12 @@ export interface AuditRecord {
   action: string;
   resourceType: string | null;
   resourceId: string | null;
+  /**
+   * What the resource was called when this happened (ADR-038). Snapshotted,
+   * so it may differ from the record's name today — which is the point. Null
+   * on rows from before it was recorded, and for member events.
+   */
+  resourceLabel: string | null;
   actorId: string | null;
   /** Joined server-side: a tombstoned actor is not in GET /v1/users. */
   actorEmail: string | null;

@@ -277,6 +277,18 @@ export function AuditPage() {
                   <TableRow key={entry.id}>
                     <TableCell>
                       {describe(entry.action)}
+                      {/* Which one. Without it the organization-wide log
+                          reads as a column of "Product updated" (ADR-038). */}
+                      {entry.resourceLabel && (
+                        <Typography
+                          component="span"
+                          variant="inherit"
+                          sx={{ fontWeight: 600 }}
+                        >
+                          {' · '}
+                          {entry.resourceLabel}
+                        </Typography>
+                      )}
                       {/* component="div": the default <p> inside a cell
                           alongside text is invalid markup. */}
                       {summarise(entry.payload) && (

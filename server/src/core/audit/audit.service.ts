@@ -4,6 +4,7 @@ import { and, asc, desc, eq, gte, lt, lte, SQL } from 'drizzle-orm';
 import { auditLog, users } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { AuditAction } from './audit-actions';
+import { resolveLabel } from './audit-labels';
 import type { ListAuditDto } from './dto/list-audit.dto';
 
 export interface AuditEntry {
@@ -21,6 +22,8 @@ export interface AuditRecord {
   action: string;
   resourceType: string | null;
   resourceId: string | null;
+  /** What it was called at the time (ADR-038). Null on older rows. */
+  resourceLabel: string | null;
   payload: Record<string, unknown> | null;
   actorId: string | null;
   /** Joined so the client is not left resolving UUIDs it cannot look up. */
@@ -57,6 +60,11 @@ export class AuditService {
       action: entry.action,
       resourceType: entry.resourceType,
       resourceId: entry.resourceId,
+      resourceLabel: await resolveLabel(
+        this.tenantDb,
+        entry.resourceType,
+        entry.resourceId,
+      ),
       payload: entry.payload,
       ip: entry.ip,
       userAgent: entry.userAgent,
@@ -89,6 +97,7 @@ export class AuditService {
         action: auditLog.action,
         resourceType: auditLog.resourceType,
         resourceId: auditLog.resourceId,
+        resourceLabel: auditLog.resourceLabel,
         // What a field was set to, for routes that name fields (ADR-018). Small
         // — an allow-list of two or three values — so it costs little on a list.
         payload: auditLog.payload,

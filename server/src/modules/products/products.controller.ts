@@ -94,6 +94,9 @@ export class ProductsController {
     // it was a variant.
     resourceType: 'product',
     resourceId: (_response, request) => request.params.id,
+    // Which variant, now that the row names the product. Already allowed on
+    // the update route, and a SKU is a catalogue code, not personal data.
+    fields: ['sku'],
   })
   async addVariant(
     @Param('id', ParseUUIDPipe) id: string,
