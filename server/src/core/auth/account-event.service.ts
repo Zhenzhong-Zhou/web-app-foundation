@@ -1,14 +1,22 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { and, desc, eq, lt, sql } from 'drizzle-orm';
+import { ConfigService } from '@nestjs/config';
+import { and, desc, eq, isNull, lt, sql } from 'drizzle-orm';
 
+import type { Env } from '../../config/env';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
-import { type AccountEventAction, accountEvents } from '../../database/schema';
+import {
+  type AccountEventAction,
+  accountEvents,
+  users,
+} from '../../database/schema';
+import { MailService } from '../../shared/mail/mail.service';
 import {
   NOTIFICATION_TYPES,
   NotificationType,
 } from '../notifications/notification-types';
 import { NotificationsService } from '../notifications/notifications.service';
+import { buildSecurityMail } from './security-mail';
 
 export interface EventMeta {
   ip?: string;
@@ -66,6 +74,8 @@ export class AccountEventService {
   constructor(
     @Inject(UNSAFE_GLOBAL_DB) private readonly db: Database,
     private readonly notifications: NotificationsService,
+    private readonly mail: MailService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   /**
@@ -186,6 +196,52 @@ export class AccountEventService {
         body: meta.ip ? `From ${meta.ip}` : undefined,
       },
     ]);
+
+    await this.email(userId, action, meta);
+  }
+
+  /**
+   * The same events, by email (ADR-037).
+   *
+   * The bell alone has a hole ADR-036 named: after a takeover it arrives
+   * where the attacker is, and "Mark all read" is one click. The inbox is the
+   * one place they are least likely to also hold, so the same decision —
+   * same events, same unfamiliar-browser rule — goes out on both channels.
+   *
+   * Sent without awaiting. This runs inside login, and Resend's ten-second
+   * timeout on a bad day would be ten seconds on the sign-in button. The
+   * send is started before this returns — RecordingMailService sees it
+   * synchronously — and its failure is logged. A crash mid-send loses the
+   * email, which is the trade ADR-036 already made for the notification.
+   */
+  private async email(
+    userId: string,
+    action: AccountEventAction,
+    meta: EventMeta,
+  ): Promise<void> {
+    const [user] = await this.db
+      .select({ email: users.email, name: users.name })
+      .from(users)
+      .where(and(eq(users.id, userId), isNull(users.deletedAt)));
+
+    if (!user) return;
+
+    const mail = buildSecurityMail(action, {
+      to: user.email,
+      name: user.name,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+      at: new Date(),
+      clientUrl: this.config.get('CLIENT_URL', { infer: true }),
+    });
+
+    if (!mail) return;
+
+    void this.mail.send(mail).catch((error: unknown) => {
+      this.logger.error(
+        `Could not email ${action} to ${userId}: ${String(error)}`,
+      );
+    });
   }
 
   /**

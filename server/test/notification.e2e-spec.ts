@@ -1,6 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { ThrottlerStorage } from '@nestjs/throttler';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import {
   type Database,
@@ -74,6 +74,10 @@ describe('Notifications (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
+  // Kept in reach rather than constructed inline: the security emails are
+  // asserted on, not just absorbed.
+  const mail = new RecordingMailService();
+
   const PASSWORD = 'correct-horse-battery';
 
   beforeAll(async () => {
@@ -82,7 +86,7 @@ describe('Notifications (e2e)', () => {
         .overrideProvider(ThrottlerStorage)
         .useValue(unlimitedThrottler)
         .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
+        .useValue(mail),
     );
 
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
@@ -95,6 +99,7 @@ describe('Notifications (e2e)', () => {
 
   beforeEach(async () => {
     await resetDatabase(app);
+    mail.reset();
   });
 
   async function registerOrg(slugish: string) {
@@ -209,6 +214,140 @@ describe('Notifications (e2e)', () => {
       expect(entries.map((entry) => entry.type)).toContain(
         'account.password_changed',
       );
+    });
+  });
+
+  /**
+   * The same decision on a second channel (ADR-037). The bell arrives where
+   * the attacker is; the inbox is the one place they probably are not.
+   */
+  describe('security emails', () => {
+    const SIGN_IN_SUBJECT = 'New sign-in to your account';
+
+    function sentWith(subject: string) {
+      return mail.sent.filter((message) => message.subject === subject);
+    }
+
+    it('emails a sign-in from a browser it has not seen', async () => {
+      const alpha = await registerOrg('alpha');
+      await signInFromNewBrowser(alpha);
+
+      const [message] = sentWith(SIGN_IN_SUBJECT);
+      expect(message.to).toBe(alpha.email);
+    });
+
+    // Same rule as the bell, or the inbox becomes the thing people filter.
+    it('does not email a sign-in from a familiar browser', async () => {
+      const alpha = await registerOrg('alpha');
+
+      await alpha.agent
+        .post('/v1/auth/login')
+        .set('User-Agent', BROWSER)
+        .send({ email: alpha.email, password: PASSWORD })
+        .expect(200);
+
+      expect(sentWith(SIGN_IN_SUBJECT)).toHaveLength(0);
+    });
+
+    it('emails a password change', async () => {
+      const alpha = await registerOrg('alpha');
+
+      await alpha.agent
+        .post('/v1/account/password')
+        .send({ currentPassword: PASSWORD, newPassword: 'a-longer-one-here' })
+        .expect(200);
+
+      expect(sentWith('Your password was changed')).toHaveLength(1);
+    });
+
+    /**
+     * A name is typed by whoever created the account, and this email goes out
+     * from our own domain — unescaped, it is a phishing link with our sender
+     * reputation on it.
+     */
+    it('escapes the name in the HTML', async () => {
+      const alpha = await registerOrg('alpha');
+
+      await alpha.agent
+        .patch('/v1/account/profile')
+        .send({ name: '<a href="https://evil.example">Verify</a>' })
+        .expect(204);
+
+      await signInFromNewBrowser(alpha);
+
+      const [message] = sentWith(SIGN_IN_SUBJECT);
+      expect(message.html).not.toContain('evil.example">');
+      expect(message.html).toContain('&lt;a href=');
+    });
+
+    // Nothing in a security email should do anything when clicked.
+    it('carries no token', async () => {
+      const alpha = await registerOrg('alpha');
+      await signInFromNewBrowser(alpha);
+
+      const [message] = sentWith(SIGN_IN_SUBJECT);
+      expect(message.text).not.toContain('token=');
+      expect(message.html).not.toContain('token=');
+    });
+  });
+
+  /**
+   * Retention runs on emit, per recipient (ADR-037). Rows are backdated
+   * directly — waiting ninety days is not a test.
+   */
+  describe('retention', () => {
+    async function seed(
+      userId: string,
+      title: string,
+      ageDays: number,
+      read: boolean,
+    ) {
+      await db.insert(notifications).values({
+        userId,
+        type: 'account.session_created',
+        title,
+        createdAt: sql`now() - make_interval(days => ${ageDays}::int)`,
+        readAt: read ? sql`now()` : null,
+      });
+    }
+
+    async function titles(userId: string) {
+      const rows = await db
+        .select({ title: notifications.title })
+        .from(notifications)
+        .where(eq(notifications.userId, userId));
+
+      return rows.map((row) => row.title).sort();
+    }
+
+    it('drops old read rows and very old unread ones on the next emit', async () => {
+      const alpha = await registerOrg('alpha');
+
+      await seed(alpha.userId, 'old read', 100, true);
+      await seed(alpha.userId, 'recent read', 10, true);
+      await seed(alpha.userId, 'old unread', 100, false);
+      await seed(alpha.userId, 'ancient unread', 400, false);
+
+      await signInFromNewBrowser(alpha);
+
+      // Unread under a year stays: deleting what somebody has not seen is the
+      // one way this loses information.
+      expect(await titles(alpha.userId)).toEqual([
+        'A new sign-in to your account',
+        'old unread',
+        'recent read',
+      ]);
+    });
+
+    it('sweeps only the recipient', async () => {
+      const alpha = await registerOrg('alpha');
+      const beta = await registerOrg('beta');
+
+      await seed(beta.userId, 'old read', 100, true);
+
+      await signInFromNewBrowser(alpha);
+
+      expect(await titles(beta.userId)).toEqual(['old read']);
     });
   });
 
