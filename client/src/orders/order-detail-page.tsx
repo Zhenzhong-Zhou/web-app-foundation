@@ -285,7 +285,7 @@ export function OrderDetailPage() {
             <Button
               variant="text"
               disabled={working}
-              onClick={() => setAddingLine(true)}
+              onClick={openDialog(() => setAddingLine(true))}
             >
               Add item
             </Button>
@@ -342,7 +342,7 @@ export function OrderDetailPage() {
                         <Button
                           variant="text"
                           size="small"
-                          onClick={() => setReceiving(line)}
+                          onClick={openDialog(() => setReceiving(line))}
                         >
                           Receive
                         </Button>
@@ -353,7 +353,7 @@ export function OrderDetailPage() {
                           variant="text"
                           size="small"
                           disabled={working}
-                          onClick={() => setEditingLine(line)}
+                          onClick={openDialog(() => setEditingLine(line))}
                         >
                           Edit
                         </Button>
@@ -369,7 +369,7 @@ export function OrderDetailPage() {
                             variant="text"
                             size="small"
                             disabled={working}
-                            onClick={() => setClosingLine(line)}
+                            onClick={openDialog(() => setClosingLine(line))}
                           >
                             Close short
                           </Button>
@@ -471,9 +471,12 @@ export function OrderDetailPage() {
                 key={next}
                 variant="contained"
                 disabled={working}
-                onClick={() => {
+                onClick={(event) => {
+                  // Only this branch opens a dialog, so only it needs the
+                  // blur openDialog does — the direct transition keeps focus
+                  // on the button, which is right when nothing covers it.
                   if (next === 'received' && !order.fullyReceived) {
-                    setClosing(true);
+                    openDialog(() => setClosing(true))(event);
                     return;
                   }
                   void moveTo(next);

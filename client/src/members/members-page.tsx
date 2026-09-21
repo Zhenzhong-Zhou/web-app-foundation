@@ -18,6 +18,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
+import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateMemberDialog } from './create-member-dialog.tsx';
 
@@ -130,7 +131,9 @@ export function MembersPage() {
             {/* Hidden without users.create — display only, since the 403 is the
             actual control (ADR-016). */}
             {session?.permissions.includes('users.create') && (
-              <Button onClick={() => setCreating(true)}>Add member</Button>
+              <Button onClick={openDialog(() => setCreating(true))}>
+                Add member
+              </Button>
             )}
           </Stack>
         }

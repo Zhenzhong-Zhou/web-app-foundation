@@ -19,6 +19,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
+import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import {
   type AuditPageResponse,
@@ -58,7 +59,8 @@ export function HistoryButton({ resourceId }: { resourceId: string }) {
 
   return (
     <>
-      <Button variant="text" onClick={() => setOpen(true)}>
+      {/* A Drawer is a Modal: it hides #root the same way a Dialog does. */}
+      <Button variant="text" onClick={openDialog(() => setOpen(true))}>
         History
       </Button>
 

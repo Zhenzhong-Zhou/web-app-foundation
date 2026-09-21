@@ -19,6 +19,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
+import { openDialog } from '../lib/open-dialog';
 import type { Bom, BomDetail, BomLine, VariantOption } from '../lib/types';
 import type { Variant } from '../products/products-page';
 import { AddBomLineDialog } from './add-bom-line-dialog';
@@ -252,7 +253,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
         )}
 
         {canCreate && (
-          <Button onClick={() => setCreating(true)} disabled={busy}>
+          <Button onClick={openDialog(() => setCreating(true))} disabled={busy}>
             New recipe
           </Button>
         )}
@@ -349,7 +350,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
               <Button
                 variant="text"
                 disabled={busy}
-                onClick={() => setAddingLine(true)}
+                onClick={openDialog(() => setAddingLine(true))}
               >
                 Add component
               </Button>
@@ -401,7 +402,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
                             size="small"
                             variant="text"
                             disabled={busy}
-                            onClick={() => setEditingLine(line)}
+                            onClick={openDialog(() => setEditingLine(line))}
                           >
                             Edit
                           </Button>
