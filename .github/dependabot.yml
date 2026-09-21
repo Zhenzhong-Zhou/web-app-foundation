@@ -33,6 +33,13 @@ updates:
       # changelog, not on a Monday alongside eleven others.
       - dependency-name: '*'
         update-types: [version-update:semver-major]
+      # 30.1.0 hands focus events a Document as relatedTarget once the focused
+      # element is removed; MUI's FocusTrap stores it and calls .focus() on it
+      # at unmount, so every dialog spec after the first throws.
+      # jsdom/jsdom#4345, mui/material-ui#49159. Version-pinned, not a blanket
+      # ignore, so the release carrying the fix still arrives on its own.
+      - dependency-name: 'jsdom'
+        versions: ['30.1.0']
 
   - package-ecosystem: npm
     directory: /client
