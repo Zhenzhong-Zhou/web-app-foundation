@@ -12,6 +12,7 @@ import {
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { HistoryButton } from '../audit/history-button';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
@@ -134,14 +135,17 @@ export function PartnerDetailPage() {
           partner.isActive ? undefined : { label: 'Retired', color: 'default' }
         }
         actions={
-          canEdit && (
-            <Button
-              variant="text"
-              onClick={openDialog(() => setEditingPartner(true))}
-            >
-              Edit
-            </Button>
-          )
+          <Stack direction="row" spacing={1}>
+            <HistoryButton resourceId={partner.id} />
+            {canEdit && (
+              <Button
+                variant="text"
+                onClick={openDialog(() => setEditingPartner(true))}
+              >
+                Edit
+              </Button>
+            )}
+          </Stack>
         }
         subtitle={
           [partner.code, partner.taxId].filter(Boolean).join(' · ') ||

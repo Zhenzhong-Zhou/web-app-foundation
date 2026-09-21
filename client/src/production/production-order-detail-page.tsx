@@ -17,8 +17,8 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
+import { HistoryButton } from '../audit/history-button';
 import { useAuth } from '../auth/use-auth';
-import { HistoryLink } from '../components/history-link';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
@@ -113,7 +113,7 @@ export function ProductionOrderDetailPage() {
         }}
         actions={
           <Stack direction="row" spacing={1}>
-            <HistoryLink resourceId={run.id} />
+            <HistoryButton resourceId={run.id} />
             {canRelease && isDraft && (
               <Tooltip title="Copies the recipe onto this run and moves components to it">
                 <span>

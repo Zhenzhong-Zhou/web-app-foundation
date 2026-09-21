@@ -15,9 +15,9 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
+import { HistoryButton } from '../audit/history-button';
 import { useAuth } from '../auth/use-auth';
 import { RecipePanel } from '../boms/recipe-panel';
-import { HistoryLink } from '../components/history-link';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
@@ -156,7 +156,7 @@ export function ProductDetailPage() {
         status={{ label: product.type, color: 'default' }}
         actions={
           <Stack direction="row" spacing={1}>
-            <HistoryLink resourceId={product.id} />
+            <HistoryButton resourceId={product.id} />
             {canEdit && (
               // Discontinuing, not deleting. The product's flag is never
               // cascaded to its variants: reactivating could not then know

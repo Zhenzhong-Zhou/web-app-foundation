@@ -19,8 +19,8 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
+import { HistoryButton } from '../audit/history-button';
 import { useAuth } from '../auth/use-auth';
-import { HistoryLink } from '../components/history-link';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { formatDate, formatMoney } from '../lib/format';
@@ -216,7 +216,7 @@ export function OrderDetailPage() {
         }}
         actions={
           <Stack direction="row" spacing={1}>
-            <HistoryLink resourceId={order.id} />
+            <HistoryButton resourceId={order.id} />
             {canUpdate && (
               <Button
                 variant="text"
