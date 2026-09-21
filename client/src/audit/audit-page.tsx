@@ -112,7 +112,7 @@ function show(value: unknown): string {
  */
 function summarise(payload: Record<string, unknown> | null): string | null {
   if (!payload) return null;
-  console.log(Object.entries(payload));
+
   const parts = Object.entries(payload).map(([key, value]) => {
     if (
       value &&
