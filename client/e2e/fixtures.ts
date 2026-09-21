@@ -1,4 +1,4 @@
-import { type APIRequestContext,test as base } from '@playwright/test';
+import { type APIRequestContext, test as base } from '@playwright/test';
 
 import { OWNER_STATE_PATH } from './global-setup';
 import {
@@ -60,7 +60,7 @@ export const test = base.extend<Fixtures>({
     // undefined" three lines later.
     if (!viewer)
       throw new Error('No Viewer role — is the organisation seeded?');
-    
+
     await api.post('/v1/users', {
       data: {
         email,
@@ -77,7 +77,7 @@ export const test = base.extend<Fixtures>({
 
     await use(context);
     await context.dispose();
-  }
+  },
 });
 
 export { expect } from '@playwright/test';

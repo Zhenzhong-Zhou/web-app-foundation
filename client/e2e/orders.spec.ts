@@ -31,7 +31,7 @@ test('raises an order, receives against it, and moves the stock', async ({
 
   await page.getByLabel('Partner').fill('E2E Mill');
   await page.getByRole('option', { name: /E2E Mill Co/ }).click();
-  
+
   await page.getByLabel('Item', { exact: true }).fill('E2E-ORD-1');
   await page.getByRole('option', { name: /E2E-ORD-1/ }).click();
   await page.getByLabel('Quantity').fill('40');

@@ -102,7 +102,9 @@ test('refuses a child under a location holding stock', async ({
   await dialog.getByRole('button', { name: 'Add location' }).click();
 
   // The server is what actually enforces it — the warning above is courtesy.
-  await expect(dialog.getByRole('alert', { name: 'Error' })).toContainText(/holds stock/i,);
+  await expect(dialog.getByRole('alert', { name: 'Error' })).toContainText(
+    /holds stock/i,
+  );
   await expect(page.getByText('E2E Doomed Bin')).toBeHidden();
 });
 

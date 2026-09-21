@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import {signInAs} from "./support/api";
+import { signInAs } from './support/api';
 
 /**
  * One write path. The interesting behaviour here — an Admin may not assign the

@@ -29,7 +29,7 @@ test('shows a product that already exists in the organisation', async ({
    * query — all of which pass while the table is empty.
    */
   const row = page.getByRole('row', { name: new RegExp(product.name, 'i') });
-  
+
   await expect(row).toBeVisible();
   // SKU is a variant attribute, not a product one — the products table lists
   // products, so asserting on it here would be asserting the wrong screen.
@@ -44,11 +44,11 @@ test('creates a product through the form and shows it in the table', async ({
 
   await page.goto('/products');
   await page.getByRole('button', { name: /new product|add product/i }).click();
-  
+
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
   await dialog.getByRole('textbox', { name: 'SKU' }).fill(sku);
-  
+
   await dialog.getByRole('button', { name: 'Add product' }).click();
 
   /**

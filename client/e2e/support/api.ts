@@ -122,7 +122,7 @@ export async function createProduct(
 ): Promise<SeededProduct> {
   const sku = overrides.sku ?? unique('SKU').toUpperCase();
   const name = overrides.name ?? `E2E Widget ${sku}`;
-  
+
   const response = await api.post('/v1/products', {
     data: {
       type: overrides.type ?? 'good',
@@ -130,17 +130,17 @@ export async function createProduct(
       variant: { sku, tracksLots: overrides.tracksLots ?? false },
     },
   });
-  
+
   if (!response.ok()) {
     throw new Error(
       `Product creation failed: ${response.status()} ${await response.text()}`,
     );
   }
-  
+
   const body = (await response.json()) as {
     product: { id: string; variants: { id: string }[] };
   };
-  
+
   return {
     id: body.product.id,
     variantId: body.product.variants[0].id,
@@ -167,7 +167,7 @@ export async function createLocation(
   overrides: Partial<{ name: string; type: string; parentId: string }> = {},
 ): Promise<SeededLocation> {
   const name = overrides.name ?? unique('Shelf').toUpperCase();
-  
+
   const response = await api.post('/v1/locations', {
     data: {
       type: overrides.type ?? 'site',
@@ -175,13 +175,13 @@ export async function createLocation(
       parentId: overrides.parentId,
     },
   });
-  
+
   if (!response.ok()) {
     throw new Error(
       `Location creation failed: ${response.status()} ${await response.text()}`,
     );
   }
-  
+
   const body = (await response.json()) as { location: { id: string } };
   return { id: body.location.id, name };
 }
@@ -212,17 +212,17 @@ export async function createPartner(
   overrides: Partial<{ name: string; code: string; taxId: string }> = {},
 ): Promise<SeededPartner> {
   const name = overrides.name ?? unique('Partner').toUpperCase();
-  
+
   const response = await api.post('/v1/partners', {
     data: { name, code: overrides.code, taxId: overrides.taxId },
   });
-  
+
   if (!response.ok()) {
     throw new Error(
       `Partner creation failed: ${response.status()} ${await response.text()}`,
     );
   }
-  
+
   const body = (await response.json()) as { partner: { id: string } };
   return { id: body.partner.id, name, code: overrides.code };
 }
