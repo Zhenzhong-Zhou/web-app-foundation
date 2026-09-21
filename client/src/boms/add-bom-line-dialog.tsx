@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
-  MenuItem,
   Stack,
   Switch,
   TextField,
@@ -14,6 +13,7 @@ import {
 import { type SubmitEvent, useState } from 'react';
 
 import { FormError } from '../components/form-error';
+import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
 import type { VariantOption } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
@@ -96,28 +96,16 @@ export function AddBomLineDialog({
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
 
-            <TextField
+            <VariantPicker
               id="bom-line-component"
               label="Component"
-              select
               required
-              fullWidth
+              options={choices}
               value={form.componentVariantId}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  componentVariantId: event.target.value,
-                }))
+              onChange={(componentVariantId) =>
+                setForm((current) => ({ ...current, componentVariantId }))
               }
-            >
-              {choices.map((row) => (
-                <MenuItem key={row.id} value={row.id}>
-                  {row.sku}
-                  {row.variantName ? ` — ${row.variantName}` : ''} (
-                  {row.productName})
-                </MenuItem>
-              ))}
-            </TextField>
+            />
 
             <TextField
               id="bom-line-quantity"

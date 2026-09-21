@@ -14,20 +14,12 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 
 import { FormError } from '../components/form-error';
+import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
 import { formatDate } from '../lib/format';
 import type { Location, Lot } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
-
-interface Variant {
-  id: string;
-  sku: string;
-  variantName: string | null;
-  productName: string;
-  type: string;
-  unitOfMeasure: string;
-  tracksLots: boolean;
-}
+import { useVariants } from '../lib/use-variants';
 
 const EMPTY = {
   variantId: '',
@@ -57,8 +49,7 @@ export function ReceiveStockDialog({
   onReceived: () => Promise<void>;
 }) {
   const [form, setForm] = useState({ ...EMPTY, locationId: defaultLocationId });
-  const [variants, setVariants] = useState<Variant[]>([]);
-  const [variantsError, setVariantsError] = useState(false);
+  const { variants, failed: variantsError } = useVariants(open);
   const [knownLots, setKnownLots] = useState<Lot[]>([]);
 
   const { submitting, error, reset, submit } = useSubmit(async () => {
@@ -90,28 +81,6 @@ export function ReceiveStockDialog({
       ignore = true;
     };
   }, [form.variantId, variant?.tracksLots]);
-
-  // Loaded when the dialog opens rather than on mount: the catalogue changes
-  // between visits, and a list fetched once at page load goes stale in exactly
-  // the case that matters — a product added a moment ago, to be received now.
-  useEffect(() => {
-    if (!open) return;
-    let ignore = false;
-
-    void api<Variant[]>('/products/variants')
-      .then((all) => {
-        if (!ignore) setVariants(all);
-      })
-      .catch(() => {
-        // The submit error surfaces this well enough; an empty picker with no
-        // explanation is the only bad outcome and the required field covers it.
-        if (!ignore) setVariantsError(true);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [open]);
 
   function close() {
     setForm({ ...EMPTY, locationId: defaultLocationId });
@@ -173,22 +142,16 @@ export function ReceiveStockDialog({
               </Alert>
             )}
 
-            <TextField
+            <VariantPicker
               id="receive-variant"
               label="Item"
-              select
               required
-              fullWidth
+              options={variants}
               value={form.variantId}
-              onChange={update('variantId')}
-            >
-              {variants.map((item) => (
-                <MenuItem key={item.id} value={item.id}>
-                  {item.sku} — {item.productName}
-                  {item.variantName ? ` (${item.variantName})` : ''}
-                </MenuItem>
-              ))}
-            </TextField>
+              onChange={(variantId) =>
+                setForm((current) => ({ ...current, variantId }))
+              }
+            />
 
             <TextField
               id="receive-location"

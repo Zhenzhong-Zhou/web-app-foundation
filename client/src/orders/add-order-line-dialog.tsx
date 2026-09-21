@@ -4,16 +4,17 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  MenuItem,
   Stack,
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
 import { FormError } from '../components/form-error';
+import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
-import type { OrderDetail, VariantOption } from '../lib/types';
+import type { OrderDetail } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
+import { useVariants } from '../lib/use-variants';
 
 /**
  * Adds an item to a draft.
@@ -22,20 +23,23 @@ import { useSubmit } from '../lib/use-submit';
  * a 409 (one line per variant, so "how much did we order" has one answer), and
  * offering a choice that always fails is a worse way to learn that than not
  * offering it.
+ *
+ * The catalogue is fetched here, on open, rather than handed down from the
+ * page: a variant created after the order page loaded is exactly the one
+ * someone opens this dialog to add (useVariants).
  */
 export function AddOrderLineDialog({
   open,
   order,
-  variants,
   onClose,
   onAdded,
 }: {
   open: boolean;
   order: OrderDetail;
-  variants: VariantOption[];
   onClose: () => void;
   onAdded: () => Promise<void> | void;
 }) {
+  const { variants, failed } = useVariants(open);
   const [variantId, setVariantId] = useState('');
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
@@ -96,22 +100,19 @@ export function AddOrderLineDialog({
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
 
-            <TextField
+            <VariantPicker
               id="add-line-variant"
               label="Item"
-              select
               required
-              fullWidth
+              options={choices}
               value={variantId}
-              onChange={(event) => setVariantId(event.target.value)}
-            >
-              {choices.map((row) => (
-                <MenuItem key={row.id} value={row.id}>
-                  {row.sku} — {row.productName}
-                  {row.variantName ? ` (${row.variantName})` : ''}
-                </MenuItem>
-              ))}
-            </TextField>
+              onChange={setVariantId}
+              helperText={
+                failed
+                  ? 'Could not load the catalogue. Close and try again.'
+                  : undefined
+              }
+            />
 
             <TextField
               id="add-line-quantity"

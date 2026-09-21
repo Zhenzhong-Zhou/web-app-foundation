@@ -47,7 +47,10 @@ function open(onReceived = vi.fn()) {
   return { onReceived };
 }
 
-/** MUI renders a select as a button opening a listbox, so choosing is two steps. */
+/**
+ * Two steps for both kinds of picker: the Item autocomplete and the Into
+ * select each open a listbox from a combobox.
+ */
 async function choose(label: string, option: string | RegExp) {
   const user = userEvent.setup();
 

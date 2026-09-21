@@ -15,8 +15,9 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { formatDate } from '../lib/format';
-import type { Location, Lot, OrderLine, VariantOption } from '../lib/types';
+import type { Location, Lot, OrderLine } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
+import { useVariants } from '../lib/use-variants';
 
 /**
  * Receiving against one line: a movement and a fulfilment in one transaction
@@ -31,14 +32,12 @@ import { useSubmit } from '../lib/use-submit';
 export function ReceiveLineDialog({
   orderId,
   line,
-  variant,
   locations,
   onClose,
   onReceived,
 }: {
   orderId: string;
   line: OrderLine | null;
-  variant: VariantOption | undefined;
   locations: Location[];
   onClose: () => void;
   onReceived: () => Promise<void>;
@@ -51,6 +50,15 @@ export function ReceiveLineDialog({
     note: '',
   });
   const [knownLots, setKnownLots] = useState<Lot[]>([]);
+
+  /**
+   * Fetched on open for the same reason as AddOrderLineDialog, and it matters
+   * more here: tracksLots decides whether the lot field shows, and a variant
+   * switched to lot tracking after the page loaded would otherwise be
+   * received without one, then refused by the server.
+   */
+  const { variants } = useVariants(line !== null);
+  const variant = variants.find((row) => row.id === line?.variantId);
 
   const { submitting, error, reset, submit } = useSubmit(async () => {
     close();

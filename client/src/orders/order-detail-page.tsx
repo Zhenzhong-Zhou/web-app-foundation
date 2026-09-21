@@ -11,6 +11,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   Tooltip,
@@ -30,7 +31,6 @@ import type {
   OrderDetail,
   OrderLine,
   OrderStatus,
-  VariantOption,
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { leavesOf } from '../locations/tree';
@@ -92,7 +92,6 @@ export function OrderDetailPage() {
   const navigate = useNavigate();
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
-  const [variants, setVariants] = useState<VariantOption[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -121,13 +120,11 @@ export function OrderDetailPage() {
 
     void Promise.all([
       api<OrderDetail>(`/orders/${id}`),
-      api<VariantOption[]>('/products/variants'),
       api<Location[]>('/locations'),
     ])
-      .then(([detail, variantRows, locationRows]) => {
+      .then(([detail, locationRows]) => {
         if (ignore) return;
         setOrder(detail);
-        setVariants(variantRows);
         setLocations(locationRows);
       })
       .catch((caught: unknown) => {
@@ -293,131 +290,151 @@ export function OrderDetailPage() {
         </Stack>
 
         <Paper variant="outlined">
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>SKU</TableCell>
-                <TableCell>Ordered</TableCell>
-                <TableCell>Received</TableCell>
-                <TableCell>Outstanding</TableCell>
-                <TableCell align="right">Unit price</TableCell>
-                <TableCell align="right">Total</TableCell>
-                <TableCell align="right" />
-              </TableRow>
-            </TableHead>
+          {/* The table scrolls inside its own frame; the page never does.
+              Seven columns do not fit a narrow window, and letting them push
+              past the Paper is what put "Close short" over the border.
+              nowrap on the numbers and the actions, so a squeeze becomes a
+              scroll rather than "Close" above "short". */}
+          <TableContainer>
+            <Table
+              size="small"
+              sx={{
+                '& th, & td': { whiteSpace: 'nowrap' },
+              }}
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>SKU</TableCell>
+                  {/* Right-aligned like the money: quantities are compared
+                    down a column, and digits only line up on the right. */}
+                  <TableCell align="right">Ordered</TableCell>
+                  <TableCell align="right">Received</TableCell>
+                  <TableCell align="right">Outstanding</TableCell>
+                  <TableCell align="right">Unit price</TableCell>
+                  <TableCell align="right">Total</TableCell>
+                  <TableCell align="right" />
+                </TableRow>
+              </TableHead>
 
-            <TableBody>
-              {order.lines.map((line) => (
-                <TableRow key={line.id} hover>
-                  <TableCell>{line.sku}</TableCell>
-                  <TableCell>{line.quantityOrdered}</TableCell>
-                  <TableCell>{line.quantityFulfilled}</TableCell>
+              <TableBody>
+                {order.lines.map((line) => (
+                  <TableRow key={line.id} hover>
+                    <TableCell>{line.sku}</TableCell>
+                    <TableCell align="right">{line.quantityOrdered}</TableCell>
+                    <TableCell align="right">
+                      {line.quantityFulfilled}
+                    </TableCell>
 
-                  <TableCell>
-                    {line.isClosedShort ? (
-                      /* The reason in place of the number: outstanding is
+                    <TableCell align="right">
+                      {line.isClosedShort ? (
+                        /* The reason in place of the number: outstanding is
                          zero, and why it is zero is the useful part. */
-                      <Tooltip title={line.closedReason ?? ''}>
-                        <Chip label="Closed short" size="small" />
-                      </Tooltip>
-                    ) : (
-                      line.quantityOutstanding
-                    )}
-                  </TableCell>
-
-                  <TableCell align="right">
-                    {formatMoney(line.unitPrice, line.currency)}
-                  </TableCell>
-                  <TableCell align="right">
-                    {formatMoney(line.lineTotal, line.currency)}
-                  </TableCell>
-
-                  <TableCell align="right">
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      sx={{ justifyContent: 'flex-end' }}
-                    >
-                      {receivable && !line.isComplete && (
-                        <Button
-                          variant="text"
-                          size="small"
-                          onClick={openDialog(() => setReceiving(line))}
-                        >
-                          Receive
-                        </Button>
+                        <Tooltip title={line.closedReason ?? ''}>
+                          <Chip label="Closed short" size="small" />
+                        </Tooltip>
+                      ) : (
+                        line.quantityOutstanding
                       )}
+                    </TableCell>
 
-                      {amendable && !line.isClosedShort && !line.isComplete && (
-                        <Button
-                          variant="text"
-                          size="small"
-                          disabled={working}
-                          onClick={openDialog(() => setEditingLine(line))}
-                        >
-                          Edit
-                        </Button>
-                      )}
+                    <TableCell align="right">
+                      {formatMoney(line.unitPrice, line.currency)}
+                    </TableCell>
+                    <TableCell align="right">
+                      {formatMoney(line.lineTotal, line.currency)}
+                    </TableCell>
 
-                      {/* Confirmed only, and only while something is still
+                    <TableCell align="right">
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{ justifyContent: 'flex-end' }}
+                      >
+                        {receivable && !line.isComplete && (
+                          <Button
+                            variant="text"
+                            size="small"
+                            onClick={openDialog(() => setReceiving(line))}
+                          >
+                            Receive
+                          </Button>
+                        )}
+
+                        {amendable &&
+                          !line.isClosedShort &&
+                          !line.isComplete && (
+                            <Button
+                              variant="text"
+                              size="small"
+                              disabled={working}
+                              onClick={openDialog(() => setEditingLine(line))}
+                            >
+                              Edit
+                            </Button>
+                          )}
+
+                        {/* Confirmed only, and only while something is still
                           outstanding — a draft has promised nothing, so
                           removing the line is the right act there. */}
-                      {canUpdate &&
-                        order.status === 'confirmed' &&
-                        !line.isComplete && (
+                        {canUpdate &&
+                          order.status === 'confirmed' &&
+                          !line.isComplete && (
+                            <Button
+                              variant="text"
+                              size="small"
+                              disabled={working}
+                              onClick={openDialog(() => setClosingLine(line))}
+                            >
+                              Close short
+                            </Button>
+                          )}
+
+                        {canUpdate && line.isClosedShort && (
                           <Button
                             variant="text"
                             size="small"
                             disabled={working}
-                            onClick={openDialog(() => setClosingLine(line))}
+                            onClick={() =>
+                              void lineAction(
+                                `/orders/${order.id}/lines/${line.id}/reopen`,
+                                'POST',
+                              )
+                            }
                           >
-                            Close short
+                            Reopen
                           </Button>
                         )}
 
-                      {canUpdate && line.isClosedShort && (
-                        <Button
-                          variant="text"
-                          size="small"
-                          disabled={working}
-                          onClick={() =>
-                            void lineAction(
-                              `/orders/${order.id}/lines/${line.id}/reopen`,
-                              'POST',
-                            )
-                          }
-                        >
-                          Reopen
-                        </Button>
-                      )}
-
-                      {/* Draft only, and never the last one — an order with no
+                        {/* Draft only, and never the last one — an order with no
                           lines orders nothing (ADR-033). The server refuses
                           both and those 409s render, but a control that always
                           fails is worth not offering. */}
-                      {canUpdate && isDraft && order.lines.length > 1 && (
-                        <IconButton
-                          size="small"
-                          aria-label={`Remove ${line.sku}`}
-                          disabled={working}
-                          onClick={() =>
-                            void lineAction(
-                              `/orders/${order.id}/lines/${line.id}`,
-                              'DELETE',
-                            )
-                          }
-                        >
-                          ×
-                        </IconButton>
-                      )}
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                        {canUpdate && isDraft && order.lines.length > 1 && (
+                          <IconButton
+                            size="small"
+                            aria-label={`Remove ${line.sku}`}
+                            disabled={working}
+                            onClick={() =>
+                              void lineAction(
+                                `/orders/${order.id}/lines/${line.id}`,
+                                'DELETE',
+                              )
+                            }
+                          >
+                            ×
+                          </IconButton>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-          <Stack sx={{ alignItems: 'flex-end', mt: 1 }} spacing={0.5}>
+          {/* Padded to the cells' own inset, so the grand total lines up
+              under the Total column rather than touching the frame. */}
+          <Stack sx={{ alignItems: 'flex-end', px: 2, py: 1.5 }} spacing={0.5}>
             {order.totals.map((total) => (
               <Typography key={total.currency} variant="body2">
                 {formatMoney(total.amount, total.currency)}
@@ -502,7 +519,6 @@ export function OrderDetailPage() {
         key={receiving?.id ?? 'closed'}
         orderId={order.id}
         line={receiving}
-        variant={variants.find((row) => row.id === receiving?.variantId)}
         locations={leaves}
         onClose={() => setReceiving(null)}
         onReceived={load}
@@ -527,7 +543,6 @@ export function OrderDetailPage() {
       <AddOrderLineDialog
         open={addingLine}
         order={order}
-        variants={variants}
         onClose={() => setAddingLine(false)}
         onAdded={load}
       />

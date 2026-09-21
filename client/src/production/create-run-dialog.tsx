@@ -13,6 +13,7 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 
 import { FormError } from '../components/form-error';
+import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
 import type {
   Bom,
@@ -140,29 +141,20 @@ export function CreateRunDialog({
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
 
-            <TextField
+            <VariantPicker
               id="run-output"
               label="Making"
-              select
               required
-              fullWidth
+              options={variants}
               value={form.outputVariantId}
-              onChange={(event) =>
+              onChange={(outputVariantId) =>
                 setForm((current) => ({
                   ...current,
-                  outputVariantId: event.target.value,
+                  outputVariantId,
                   bomId: '',
                 }))
               }
-            >
-              {variants.map((row) => (
-                <MenuItem key={row.id} value={row.id}>
-                  {row.sku}
-                  {row.variantName ? ` — ${row.variantName}` : ''} (
-                  {row.productName})
-                </MenuItem>
-              ))}
-            </TextField>
+            />
 
             {form.outputVariantId && boms.length === 0 && (
               <Alert severity="warning">
