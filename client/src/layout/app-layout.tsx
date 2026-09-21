@@ -106,6 +106,8 @@ export function AppLayout() {
             ))}
           </Stack>
 
+          <NotificationBell />
+
           <IconButton
             // The email rather than "Account": on a shared terminal, who you
             // are signed in as is the thing worth being able to check.
@@ -114,8 +116,6 @@ export function AppLayout() {
           >
             <AccountCircle />
           </IconButton>
-
-          <NotificationBell />
 
           <Menu anchorEl={menu} open={!!menu} onClose={() => setMenu(null)}>
             <MenuItem disabled sx={{ opacity: '1 !important' }}>
