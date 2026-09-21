@@ -51,6 +51,14 @@ export function ProductionOrdersPage() {
   const [creating, setCreating] = useState(false);
   const [cursor, setCursor] = useState<string | null>(null);
 
+  /**
+   * Bumped to refetch without changing the filter. After planning a run the
+   * list must reload, and setFilter('') alone does nothing when the filter
+   * is already '' — React skips an update to the same value, the effect never
+   * reruns, and a list cleared to null stays on its skeleton forever.
+   */
+  const [reloads, setReloads] = useState(0);
+
   const canCreate = !!session?.permissions.includes('production.create');
   const loading = items === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
@@ -102,7 +110,7 @@ export function ProductionOrdersPage() {
     return () => {
       ignore = true;
     };
-  }, [filter]);
+  }, [filter, reloads]);
 
   async function loadMore() {
     if (!cursor) return;
@@ -123,35 +131,42 @@ export function ProductionOrdersPage() {
         crumbs={[]}
         title="Production"
         actions={
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <TextField
-              id="run-filter"
-              label="Show"
-              select
-              size="small"
-              value={filter}
-              onChange={(event) => {
-                setItems(null);
-                setCursor(null);
-                setFilter(event.target.value as RunStatus | '');
-              }}
-              sx={{ minWidth: 160 }}
-            >
-              {FILTERS.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            {canCreate && (
-              <Button onClick={openDialog(() => setCreating(true))}>
-                Plan a run
-              </Button>
-            )}
-          </Stack>
+          canCreate && (
+            <Button onClick={openDialog(() => setCreating(true))}>
+              Plan a run
+            </Button>
+          )
         }
       />
+
+      {/* Its own row, as on the orders and audit pages (see OrdersPage). */}
+      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+        <TextField
+          id="run-filter"
+          label="Show"
+          select
+          size="small"
+          value={filter}
+          onChange={(event) => {
+            setItems(null);
+            setCursor(null);
+            setFilter(event.target.value as RunStatus | '');
+          }}
+          // '' is "All", and MUI renders an empty value as blank unless told
+          // otherwise. The label shrinks so it does not sit over the text.
+          slotProps={{
+            select: { displayEmpty: true },
+            inputLabel: { shrink: true },
+          }}
+          sx={{ minWidth: 160 }}
+        >
+          {FILTERS.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Stack>
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -230,8 +245,12 @@ export function ProductionOrdersPage() {
         open={creating}
         onClose={() => setCreating(false)}
         onCreated={() => {
-          setItems(null);
+          // Back to All so the new run, which is a draft, is certainly in
+          // view. The current rows stay up while the refetch runs rather
+          // than blanking to a skeleton.
+          setCursor(null);
           setFilter('');
+          setReloads((count) => count + 1);
         }}
       />
     </Stack>
