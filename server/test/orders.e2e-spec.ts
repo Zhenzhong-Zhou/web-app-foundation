@@ -1066,6 +1066,13 @@ describe('Orders (e2e)', () => {
 
       expect(entry.resourceType).toBe('order');
       expect(entry.resourceId).toBe(order.id);
+
+      // What and how much, so the History drawer can say "WIDGET-1, 15"
+      // rather than "Order line received".
+      expect(entry.payload).toEqual({
+        sku: order.lines[0].sku,
+        quantity: '15',
+      });
     });
 
     it('does not advance the status on a full receipt', async () => {

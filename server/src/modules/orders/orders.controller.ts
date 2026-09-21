@@ -212,6 +212,9 @@ export class OrdersController {
     // and it is the one the receiving dock is asked about.
     resourceType: 'order',
     resourceId: (_response, request) => request.params.id,
+    // How much. Not the note (free text) or the lot (the movement has it).
+    // The SKU comes from the service through recordContext.
+    fields: ['quantity'],
   })
   async receive(
     @Param('id', ParseUUIDPipe) id: string,

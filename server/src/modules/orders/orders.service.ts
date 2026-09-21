@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 
-import { recordPrevious } from '../../core/audit/audit-context';
+import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
 import { NotificationsService } from '../../core/notifications/notifications.service';
@@ -838,6 +838,10 @@ export class OrdersService {
         .where(and(eq(orderLines.id, lineId), eq(orderLines.orderId, orderId)));
 
       if (!line) throw new NotFoundException('No such line on this order');
+
+      // Which item, for the audit row: the body names a quantity, and an
+      // order has several lines. The snapshotted SKU, as the line shows it.
+      recordContext({ sku: line.sku });
 
       /**
        * Reopen first. A delivery against a line somebody closed means one of

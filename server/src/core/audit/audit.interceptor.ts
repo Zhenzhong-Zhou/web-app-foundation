@@ -11,7 +11,7 @@ import { concatMap, type Observable } from 'rxjs';
 
 import { getRequestContext } from '../auth/request-context';
 import { AuditService } from './audit.service';
-import { enterAuditContext, takePrevious } from './audit-context';
+import { enterAuditContext, takeContext, takePrevious } from './audit-context';
 import { AUDITED, type AuditOptions } from './audited.decorator';
 
 /**
@@ -96,7 +96,10 @@ export class AuditInterceptor implements NestInterceptor {
          * applies twice as hard to a row kept for two years, so the body is
          * never recorded wholesale (ADR-018).
          */
-        payload: combine(pick(req.body, options.fields), takePrevious()),
+        payload: withContext(
+          combine(pick(req.body, options.fields), takePrevious()),
+          takeContext(),
+        ),
 
         ip: req.ip,
         userAgent: req.headers['user-agent'],
@@ -105,6 +108,19 @@ export class AuditInterceptor implements NestInterceptor {
       this.logger.error(`Audit write failed: ${String(error)}`);
     }
   }
+}
+
+/**
+ * What the service said about the thing acted on, ahead of what changed:
+ * `{ sku, quantity }` reads as "WIDGET-1, 15" in the log. Context never
+ * overwrites a recorded field — the request's own value wins a collision.
+ */
+function withContext(
+  payload: Record<string, unknown> | undefined,
+  context: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  if (!context) return payload;
+  return { ...context, ...payload };
 }
 
 /**

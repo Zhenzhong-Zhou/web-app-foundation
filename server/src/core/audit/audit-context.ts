@@ -3,7 +3,10 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 /** Field name to its value before the handler changed it. */
 type PreviousValues = Record<string, unknown>;
 
-const storage = new AsyncLocalStorage<{ previous: PreviousValues }>();
+const storage = new AsyncLocalStorage<{
+  previous: PreviousValues;
+  context: Record<string, unknown>;
+}>();
 
 /**
  * Opens a store for this request.
@@ -17,7 +20,7 @@ const storage = new AsyncLocalStorage<{ previous: PreviousValues }>();
  * it, which is the rest of the request. This is why nestjs-cls does the same.
  */
 export function enterAuditContext(): void {
-  storage.enterWith({ previous: {} });
+  storage.enterWith({ previous: {}, context: {} });
 }
 
 /**
@@ -39,6 +42,30 @@ export function recordPrevious(values: PreviousValues): void {
   // Merged rather than replaced: a handler that updates a header and a line
   // calls this twice, and the second should not erase the first.
   Object.assign(store.previous, values);
+}
+
+/**
+ * Records a value the row needs that the request body does not carry.
+ *
+ * A receipt's body says how much and where; which item it was is on the
+ * order line, which only the service loads. Without it the log reads "15
+ * received" on an order of six lines. Stored as a bare value, not from/to:
+ * it describes the thing acted on, it did not change.
+ *
+ * The same allow-list discipline as `fields` (ADR-018) applies, enforced by
+ * the caller: a catalogue code or a quantity, never a note or anything that
+ * names a person.
+ */
+export function recordContext(values: Record<string, unknown>): void {
+  const store = storage.getStore();
+  if (!store) return;
+
+  Object.assign(store.context, values);
+}
+
+export function takeContext(): Record<string, unknown> | undefined {
+  const context = storage.getStore()?.context;
+  return context && Object.keys(context).length > 0 ? context : undefined;
 }
 
 export function takePrevious(): PreviousValues | undefined {
