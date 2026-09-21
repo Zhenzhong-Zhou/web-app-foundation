@@ -10,6 +10,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -359,46 +360,48 @@ export function CloseRunDialog({
               as planned.
             </Typography>
 
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Component</TableCell>
-                  <TableCell align="right">Planned</TableCell>
-                  <TableCell align="right">Actually used</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {stocked.map((line) => (
-                  <TableRow key={line.id}>
-                    <TableCell>{line.sku}</TableCell>
-                    <TableCell align="right">
-                      {line.quantityPlanned} {line.unitOfMeasure}
-                    </TableCell>
-                    <TableCell align="right">
-                      <TextField
-                        id={`close-line-${line.id}`}
-                        size="small"
-                        value={amounts[line.id] ?? ''}
-                        onChange={(event) =>
-                          setAmounts((current) => ({
-                            ...current,
-                            [line.id]: event.target.value,
-                          }))
-                        }
-                        slotProps={{
-                          htmlInput: {
-                            inputMode: 'decimal',
-                            maxLength: 19,
-                            style: { textAlign: 'right' },
-                          },
-                        }}
-                      />
-                    </TableCell>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Component</TableCell>
+                    <TableCell align="right">Planned</TableCell>
+                    <TableCell align="right">Actually used</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+
+                <TableBody>
+                  {stocked.map((line) => (
+                    <TableRow key={line.id}>
+                      <TableCell>{line.sku}</TableCell>
+                      <TableCell align="right">
+                        {line.quantityPlanned} {line.unitOfMeasure}
+                      </TableCell>
+                      <TableCell align="right">
+                        <TextField
+                          id={`close-line-${line.id}`}
+                          size="small"
+                          value={amounts[line.id] ?? ''}
+                          onChange={(event) =>
+                            setAmounts((current) => ({
+                              ...current,
+                              [line.id]: event.target.value,
+                            }))
+                          }
+                          slotProps={{
+                            htmlInput: {
+                              inputMode: 'decimal',
+                              maxLength: 19,
+                              style: { textAlign: 'right' },
+                            },
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
             {/* Over plan is normal and is never refused — the material was
                 already used. Anything short stays where it was issued, for a

@@ -8,6 +8,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -262,58 +263,60 @@ export function AuditPage() {
       {!!entries?.length && (
         <>
           <Paper variant="outlined">
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Action</TableCell>
-                  <TableCell>By</TableCell>
-                  <TableCell>When</TableCell>
-                  <TableCell>From</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {entries.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell>
-                      {describe(entry.action)}
-                      {/* Which one. Without it the organization-wide log
-                          reads as a column of "Product updated" (ADR-038). */}
-                      {entry.resourceLabel && (
-                        <Typography
-                          component="span"
-                          variant="inherit"
-                          sx={{ fontWeight: 600 }}
-                        >
-                          {' · '}
-                          {entry.resourceLabel}
-                        </Typography>
-                      )}
-                      {/* component="div": the default <p> inside a cell
-                          alongside text is invalid markup. */}
-                      {summarise(entry.payload) && (
-                        <Typography
-                          variant="caption"
-                          component="div"
-                          color="text.secondary"
-                        >
-                          {summarise(entry.payload)}
-                        </Typography>
-                      )}
-                    </TableCell>
-
-                    <TableCell>
-                      {/* A tombstoned actor keeps its id and loses its email
-                          (ADR-012). The row stays, which is the point. */}
-                      {entry.actorEmail ?? 'A removed account'}
-                    </TableCell>
-
-                    <TableCell>{relativeTime(entry.createdAt)}</TableCell>
-                    <TableCell>{entry.ip ?? '—'}</TableCell>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Action</TableCell>
+                    <TableCell>By</TableCell>
+                    <TableCell>When</TableCell>
+                    <TableCell>From</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+
+                <TableBody>
+                  {entries.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell>
+                        {describe(entry.action)}
+                        {/* Which one. Without it the organization-wide log
+                          reads as a column of "Product updated" (ADR-038). */}
+                        {entry.resourceLabel && (
+                          <Typography
+                            component="span"
+                            variant="inherit"
+                            sx={{ fontWeight: 600 }}
+                          >
+                            {' · '}
+                            {entry.resourceLabel}
+                          </Typography>
+                        )}
+                        {/* component="div": the default <p> inside a cell
+                          alongside text is invalid markup. */}
+                        {summarise(entry.payload) && (
+                          <Typography
+                            variant="caption"
+                            component="div"
+                            color="text.secondary"
+                          >
+                            {summarise(entry.payload)}
+                          </Typography>
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        {/* A tombstoned actor keeps its id and loses its email
+                          (ADR-012). The row stays, which is the point. */}
+                        {entry.actorEmail ?? 'A removed account'}
+                      </TableCell>
+
+                      <TableCell>{relativeTime(entry.createdAt)}</TableCell>
+                      <TableCell>{entry.ip ?? '—'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Paper>
 
           {cursor && (

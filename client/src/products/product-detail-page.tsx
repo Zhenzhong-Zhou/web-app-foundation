@@ -8,6 +8,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -198,47 +199,51 @@ export function ProductDetailPage() {
       </Stack>
 
       <Paper variant="outlined">
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell padding="checkbox" />
-              <TableCell>SKU</TableCell>
-              <TableCell>Variation</TableCell>
-              <TableCell>Unit</TableCell>
-              <TableCell align="right">Per case</TableCell>
-              <TableCell>Lots</TableCell>
-              <TableCell align="center">Active</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell padding="checkbox" />
+                <TableCell>SKU</TableCell>
+                <TableCell>Variation</TableCell>
+                <TableCell>Unit</TableCell>
+                <TableCell align="right">Per case</TableCell>
+                <TableCell>Lots</TableCell>
+                <TableCell align="center">Active</TableCell>
+                <TableCell />
+              </TableRow>
+            </TableHead>
 
-          <TableBody>
-            {product?.variants.map((variant) => (
-              <VariantRow
-                key={variant.id}
-                variant={variant}
-                canEdit={canEdit}
-                saving={saving}
-                editing={editing}
-                onStartEdit={() =>
-                  setEditing({ id: variant.id, sku: variant.sku })
-                }
-                onEditChange={(sku) => setEditing({ id: variant.id, sku })}
-                onCommitSku={() => {
-                  if (editing && editing.sku !== variant.sku) {
-                    void patchVariant(variant.id, { sku: editing.sku });
-                  } else {
-                    setEditing(null);
+            <TableBody>
+              {product?.variants.map((variant) => (
+                <VariantRow
+                  key={variant.id}
+                  variant={variant}
+                  canEdit={canEdit}
+                  saving={saving}
+                  editing={editing}
+                  onStartEdit={() =>
+                    setEditing({ id: variant.id, sku: variant.sku })
                   }
-                }}
-                onToggleActive={() =>
-                  void patchVariant(variant.id, { isActive: !variant.isActive })
-                }
-                onOpenEdit={() => setEditingVariant(variant)}
-              />
-            ))}
-          </TableBody>
-        </Table>
+                  onEditChange={(sku) => setEditing({ id: variant.id, sku })}
+                  onCommitSku={() => {
+                    if (editing && editing.sku !== variant.sku) {
+                      void patchVariant(variant.id, { sku: editing.sku });
+                    } else {
+                      setEditing(null);
+                    }
+                  }}
+                  onToggleActive={() =>
+                    void patchVariant(variant.id, {
+                      isActive: !variant.isActive,
+                    })
+                  }
+                  onOpenEdit={() => setEditingVariant(variant)}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Paper>
 
       {/* Below the variants, not above: a recipe outputs one variant, so the

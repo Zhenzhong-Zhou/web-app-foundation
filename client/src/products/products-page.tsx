@@ -9,6 +9,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -114,41 +115,43 @@ export function ProductsPage() {
             ) : null}
           </Stack>
         ) : items?.length ? (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Status</TableCell>
-              </TableRow>
-            </TableHead>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Status</TableCell>
+                </TableRow>
+              </TableHead>
 
-            <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id} hover>
-                  <TableCell>
-                    {/* The detail page is where variants live. The list shows
+              <TableBody>
+                {items.map((item) => (
+                  <TableRow key={item.id} hover>
+                    <TableCell>
+                      {/* The detail page is where variants live. The list shows
                         products because that is the grouping a person scans;
                         the variant is what they act on once they are there. */}
-                    <Link component={RouterLink} to={`/products/${item.id}`}>
-                      {item.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{item.type}</TableCell>
-                  <TableCell>
-                    {item.isActive ? (
-                      'Active'
-                    ) : (
-                      // Discontinued rather than deleted: a product whose
-                      // variants have movement history cannot be removed
-                      // (ADR-023).
-                      <Chip label="Discontinued" size="small" />
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                      <Link component={RouterLink} to={`/products/${item.id}`}>
+                        {item.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{item.type}</TableCell>
+                    <TableCell>
+                      {item.isActive ? (
+                        'Active'
+                      ) : (
+                        // Discontinued rather than deleted: a product whose
+                        // variants have movement history cannot be removed
+                        // (ADR-023).
+                        <Chip label="Discontinued" size="small" />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
             No products yet.

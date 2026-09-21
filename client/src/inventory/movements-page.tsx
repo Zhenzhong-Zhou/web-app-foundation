@@ -10,6 +10,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -260,83 +261,85 @@ export function MovementsPage() {
             ) : null}
           </Stack>
         ) : entries?.length ? (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>When</TableCell>
-                <TableCell>Item</TableCell>
-                <TableCell align="right">Change</TableCell>
-                <TableCell>Where</TableCell>
-                <TableCell>Why</TableCell>
-                <TableCell>By</TableCell>
-              </TableRow>
-            </TableHead>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>When</TableCell>
+                  <TableCell>Item</TableCell>
+                  <TableCell align="right">Change</TableCell>
+                  <TableCell>Where</TableCell>
+                  <TableCell>Why</TableCell>
+                  <TableCell>By</TableCell>
+                </TableRow>
+              </TableHead>
 
-            <TableBody>
-              {entries.map((movement) => {
-                const { sign, where } = describe(movement);
+              <TableBody>
+                {entries.map((movement) => {
+                  const { sign, where } = describe(movement);
 
-                return (
-                  <TableRow key={movement.id} hover>
-                    <TableCell>
-                      <span
-                        title={new Date(movement.createdAt).toLocaleString()}
-                      >
-                        {relativeTime(movement.createdAt)}
-                      </span>
-                    </TableCell>
+                  return (
+                    <TableRow key={movement.id} hover>
+                      <TableCell>
+                        <span
+                          title={new Date(movement.createdAt).toLocaleString()}
+                        >
+                          {relativeTime(movement.createdAt)}
+                        </span>
+                      </TableCell>
 
-                    {/* Snapshotted on the row (ADR-023), so a rename does not
+                      {/* Snapshotted on the row (ADR-023), so a rename does not
                         rewrite what this movement said at the time. */}
-                    <TableCell>
-                      {movement.sku}
-                      {movement.lotCode && (
-                        <Chip
-                          label={movement.lotCode}
-                          size="small"
-                          sx={{ ml: 1 }}
-                        />
-                      )}
-                    </TableCell>
+                      <TableCell>
+                        {movement.sku}
+                        {movement.lotCode && (
+                          <Chip
+                            label={movement.lotCode}
+                            size="small"
+                            sx={{ ml: 1 }}
+                          />
+                        )}
+                      </TableCell>
 
-                    {/* Rendered as it arrived. Formatting means parsing, and a
+                      {/* Rendered as it arrived. Formatting means parsing, and a
                         numeric through a JS double is the precision loss
                         ADR-025 exists to avoid. */}
-                    <TableCell align="right">
-                      {sign}
-                      {movement.quantity}
-                    </TableCell>
+                      <TableCell align="right">
+                        {sign}
+                        {movement.quantity}
+                      </TableCell>
 
-                    <TableCell>{where}</TableCell>
+                      <TableCell>{where}</TableCell>
 
-                    <TableCell>
-                      <Chip label={movement.reason} size="small" />
-                      {movement.reasonDetail && ` ${movement.reasonDetail}`}
-                      {/* Required on an adjustment, because a person asserting
+                      <TableCell>
+                        <Chip label={movement.reason} size="small" />
+                        {movement.reasonDetail && ` ${movement.reasonDetail}`}
+                        {/* Required on an adjustment, because a person asserting
                           the system is wrong has to say what they found
                           (ADR-023). This is where it gets read. */}
-                      {movement.note && (
-                        <Typography
-                          variant="caption"
-                          component="div"
-                          color="text.secondary"
-                        >
-                          {movement.note}
-                        </Typography>
-                      )}
-                    </TableCell>
+                        {movement.note && (
+                          <Typography
+                            variant="caption"
+                            component="div"
+                            color="text.secondary"
+                          >
+                            {movement.note}
+                          </Typography>
+                        )}
+                      </TableCell>
 
-                    {/* Null when the actor was anonymised (ADR-012). The row
+                      {/* Null when the actor was anonymised (ADR-012). The row
                         survives its author, which is what RESTRICT on actor_id
                         is for. */}
-                    <TableCell>
-                      {movement.actorEmail ?? 'Deleted user'}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      <TableCell>
+                        {movement.actorEmail ?? 'Deleted user'}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
             {variant || locationId || reason

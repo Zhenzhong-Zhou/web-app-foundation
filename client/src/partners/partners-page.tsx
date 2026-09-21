@@ -9,6 +9,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -113,59 +114,64 @@ export function PartnersPage() {
             ) : null}
           </Stack>
         ) : items?.length ? (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Code</TableCell>
-                <TableCell>Tax ID</TableCell>
-                <TableCell>Status</TableCell>
-                {/* The column exists only when it can hold anything. An empty
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Code</TableCell>
+                  <TableCell>Tax ID</TableCell>
+                  <TableCell>Status</TableCell>
+                  {/* The column exists only when it can hold anything. An empty
                     actions column is a promise the screen cannot keep. */}
-                {canEdit && <TableCell align="right">Edit</TableCell>}
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {items.map((partner) => (
-                <TableRow key={partner.id} hover>
-                  <TableCell>
-                    <Link component={RouterLink} to={`/partners/${partner.id}`}>
-                      {partner.name}
-                    </Link>
-                  </TableCell>
-
-                  {/* An em dash rather than an empty cell: blank reads as a
-                      rendering fault, and every one of these is optional. */}
-                  <TableCell>{partner.code ?? '—'}</TableCell>
-                  <TableCell>{partner.taxId ?? '—'}</TableCell>
-
-                  <TableCell>
-                    {partner.isActive ? (
-                      'Active'
-                    ) : (
-                      // Retired rather than deleted: a partner referenced by
-                      // an order cannot be removed without inventing gaps in
-                      // the history the order exists to record.
-                      <Chip label="Retired" size="small" />
-                    )}
-                  </TableCell>
-
-                  {canEdit && (
-                    <TableCell align="right">
-                      <Button
-                        variant="text"
-                        size="small"
-                        onClick={openDialog(() => setEditing(partner))}
-                      >
-                        Edit
-                      </Button>
-                    </TableCell>
-                  )}
+                  {canEdit && <TableCell align="right">Edit</TableCell>}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+
+              <TableBody>
+                {items.map((partner) => (
+                  <TableRow key={partner.id} hover>
+                    <TableCell>
+                      <Link
+                        component={RouterLink}
+                        to={`/partners/${partner.id}`}
+                      >
+                        {partner.name}
+                      </Link>
+                    </TableCell>
+
+                    {/* An em dash rather than an empty cell: blank reads as a
+                      rendering fault, and every one of these is optional. */}
+                    <TableCell>{partner.code ?? '—'}</TableCell>
+                    <TableCell>{partner.taxId ?? '—'}</TableCell>
+
+                    <TableCell>
+                      {partner.isActive ? (
+                        'Active'
+                      ) : (
+                        // Retired rather than deleted: a partner referenced by
+                        // an order cannot be removed without inventing gaps in
+                        // the history the order exists to record.
+                        <Chip label="Retired" size="small" />
+                      )}
+                    </TableCell>
+
+                    {canEdit && (
+                      <TableCell align="right">
+                        <Button
+                          variant="text"
+                          size="small"
+                          onClick={openDialog(() => setEditing(partner))}
+                        >
+                          Edit
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
             No partners yet. Add the firms you buy from and sell to — an order

@@ -10,6 +10,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -178,60 +179,62 @@ export function OrdersPage() {
             ) : null}
           </Stack>
         ) : items?.length ? (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Partner</TableCell>
-                <TableCell>Direction</TableCell>
-                <TableCell>Reference</TableCell>
-                <TableCell>Expected</TableCell>
-                <TableCell>Received</TableCell>
-                <TableCell>Status</TableCell>
-              </TableRow>
-            </TableHead>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Partner</TableCell>
+                  <TableCell>Direction</TableCell>
+                  <TableCell>Reference</TableCell>
+                  <TableCell>Expected</TableCell>
+                  <TableCell>Received</TableCell>
+                  <TableCell>Status</TableCell>
+                </TableRow>
+              </TableHead>
 
-            <TableBody>
-              {items.map((order) => (
-                <TableRow key={order.id} hover>
-                  <TableCell>
-                    <Link component={RouterLink} to={`/orders/${order.id}`}>
-                      {order.partnerName}
-                    </Link>
-                  </TableCell>
+              <TableBody>
+                {items.map((order) => (
+                  <TableRow key={order.id} hover>
+                    <TableCell>
+                      <Link component={RouterLink} to={`/orders/${order.id}`}>
+                        {order.partnerName}
+                      </Link>
+                    </TableCell>
 
-                  {/* Which way the goods go, in a person's words — the first
+                    {/* Which way the goods go, in a person's words — the first
                       thing anyone scanning this list wants to know. */}
-                  <TableCell>
-                    {order.direction === 'purchase' ? 'Buying' : 'Selling'}
-                  </TableCell>
+                    <TableCell>
+                      {order.direction === 'purchase' ? 'Buying' : 'Selling'}
+                    </TableCell>
 
-                  {/* Their number, not ours. Nullable, because an order placed
+                    {/* Their number, not ours. Nullable, because an order placed
                       by phone has none. */}
-                  <TableCell>{order.reference ?? '—'}</TableCell>
+                    <TableCell>{order.reference ?? '—'}</TableCell>
 
-                  <TableCell>
-                    {order.expectedAt ? formatDate(order.expectedAt) : '—'}
-                  </TableCell>
+                    <TableCell>
+                      {order.expectedAt ? formatDate(order.expectedAt) : '—'}
+                    </TableCell>
 
-                  {/* Rendered as Postgres computed them. Parsing a
+                    {/* Rendered as Postgres computed them. Parsing a
                       numeric(18,4) into a JS number to make a percentage is
                       how a quantity loses its last decimal place (ADR-025). */}
-                  <TableCell>
-                    {order.quantityFulfilled} / {order.quantityOrdered}
-                  </TableCell>
+                    <TableCell>
+                      {order.quantityFulfilled} / {order.quantityOrdered}
+                    </TableCell>
 
-                  <TableCell>
-                    <Chip
-                      label={order.status}
-                      size="small"
-                      color={STATUS_COLOUR[order.status]}
-                      sx={{ textTransform: 'capitalize' }}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    <TableCell>
+                      <Chip
+                        label={order.status}
+                        size="small"
+                        color={STATUS_COLOUR[order.status]}
+                        sx={{ textTransform: 'capitalize' }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
             {filter === 'open'

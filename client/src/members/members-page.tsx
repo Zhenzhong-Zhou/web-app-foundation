@@ -9,6 +9,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -159,64 +160,66 @@ export function MembersPage() {
             ) : null}
           </Stack>
         ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Role</TableCell>
-              </TableRow>
-            </TableHead>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Role</TableCell>
+                </TableRow>
+              </TableHead>
 
-            <TableBody>
-              {members?.map((member) => {
-                const isSelf = member.id === session?.user.id;
+              <TableBody>
+                {members?.map((member) => {
+                  const isSelf = member.id === session?.user.id;
 
-                return (
-                  <TableRow key={member.id}>
-                    <TableCell>{member.name}</TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell>
-                      {/* Rendered as plain text when the caller lacks
+                  return (
+                    <TableRow key={member.id}>
+                      <TableCell>{member.name}</TableCell>
+                      <TableCell>{member.email}</TableCell>
+                      <TableCell>
+                        {/* Rendered as plain text when the caller lacks
                           users.update. That is display only — the 403 from
                           the server is the actual control (ADR-016). */}
-                      {session?.permissions.includes('users.update') ? (
-                        <Select
-                          size="small"
-                          value={member.roleId}
-                          disabled={saving !== null}
-                          onChange={(event) =>
-                            void changeRole(member.id, event.target.value)
-                          }
-                        >
-                          {roles.map((role) => (
-                            <MenuItem key={role.id} value={role.id}>
-                              {role.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      ) : (
-                        roleName(member.roleId)
-                      )}
+                        {session?.permissions.includes('users.update') ? (
+                          <Select
+                            size="small"
+                            value={member.roleId}
+                            disabled={saving !== null}
+                            onChange={(event) =>
+                              void changeRole(member.id, event.target.value)
+                            }
+                          >
+                            {roles.map((role) => (
+                              <MenuItem key={role.id} value={role.id}>
+                                {role.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        ) : (
+                          roleName(member.roleId)
+                        )}
 
-                      {/* Not disabled: an Owner may legitimately demote
+                        {/* Not disabled: an Owner may legitimately demote
                           themselves once a second Owner exists, and the
                           server answers 409 when they cannot. */}
-                      {isSelf && (
-                        <Typography
-                          variant="caption"
-                          sx={{ ml: 1 }}
-                          color="text.secondary"
-                        >
-                          you
-                        </Typography>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                        {isSelf && (
+                          <Typography
+                            variant="caption"
+                            sx={{ ml: 1 }}
+                            color="text.secondary"
+                          >
+                            you
+                          </Typography>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </Paper>
     </Stack>

@@ -11,6 +11,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -220,66 +221,68 @@ export function InventoryPage() {
             ) : null}
           </Stack>
         ) : rows?.length ? (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>SKU</TableCell>
-                <TableCell>Item</TableCell>
-                <TableCell>Location</TableCell>
-                <TableCell>Lot</TableCell>
-                <TableCell>Expires</TableCell>
-                <TableCell align="right">Quantity</TableCell>
-                {/* The actions column. Headerless because a column of menu
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>SKU</TableCell>
+                  <TableCell>Item</TableCell>
+                  <TableCell>Location</TableCell>
+                  <TableCell>Lot</TableCell>
+                  <TableCell>Expires</TableCell>
+                  <TableCell align="right">Quantity</TableCell>
+                  {/* The actions column. Headerless because a column of menu
                     buttons has no name worth reading out. */}
-                <TableCell padding="checkbox" />
-              </TableRow>
-            </TableHead>
+                  <TableCell padding="checkbox" />
+                </TableRow>
+              </TableHead>
 
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow
-                  key={`${row.variantId}:${row.locationId}:${row.lotId ?? ''}`}
-                  hover
-                >
-                  <TableCell>{row.sku}</TableCell>
-                  <TableCell>{row.variantName ?? '—'}</TableCell>
-                  <TableCell>{row.locationName}</TableCell>
-                  <TableCell>
-                    {row.lotCode ? (
-                      <Chip label={row.lotCode} size="small" />
-                    ) : (
-                      '—'
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {row.lotExpiresAt
-                      ? new Date(row.lotExpiresAt).toLocaleDateString()
-                      : '—'}
-                  </TableCell>
-                  {/* Rendered as it arrived. Formatting it means parsing it,
+              <TableBody>
+                {rows.map((row) => (
+                  <TableRow
+                    key={`${row.variantId}:${row.locationId}:${row.lotId ?? ''}`}
+                    hover
+                  >
+                    <TableCell>{row.sku}</TableCell>
+                    <TableCell>{row.variantName ?? '—'}</TableCell>
+                    <TableCell>{row.locationName}</TableCell>
+                    <TableCell>
+                      {row.lotCode ? (
+                        <Chip label={row.lotCode} size="small" />
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {row.lotExpiresAt
+                        ? new Date(row.lotExpiresAt).toLocaleDateString()
+                        : '—'}
+                    </TableCell>
+                    {/* Rendered as it arrived. Formatting it means parsing it,
                       and a numeric that passes through a JS double is the
                       precision loss ADR-025 exists to avoid. */}
-                  <TableCell align="right">
-                    {row.quantity} {row.unitOfMeasure}
-                  </TableCell>
+                    <TableCell align="right">
+                      {row.quantity} {row.unitOfMeasure}
+                    </TableCell>
 
-                  <TableCell padding="checkbox">
-                    {session?.permissions.includes('stock.move') && (
-                      <StockActions
-                        row={row}
-                        canAdjust={canAdjust}
-                        onSelect={(mode, selected) =>
-                          setMoving({ mode, row: selected })
-                        }
-                        onHistory={setViewing}
-                        onEditLot={setEditingLot}
-                      />
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    <TableCell padding="checkbox">
+                      {session?.permissions.includes('stock.move') && (
+                        <StockActions
+                          row={row}
+                          canAdjust={canAdjust}
+                          onSelect={(mode, selected) =>
+                            setMoving({ mode, row: selected })
+                          }
+                          onHistory={setViewing}
+                          onEditLot={setEditingLot}
+                        />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
             Nothing here yet.

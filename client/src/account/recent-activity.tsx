@@ -6,6 +6,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   Typography,
@@ -121,29 +122,31 @@ export function RecentActivity() {
 
       {!!events?.length && (
         <Paper variant="outlined">
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>What</TableCell>
-                <TableCell>Browser</TableCell>
-                <TableCell>From</TableCell>
-                <TableCell>When</TableCell>
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {events.map((event) => (
-                <TableRow key={event.id}>
-                  <TableCell>
-                    {ACTION_LABELS[event.action] ?? event.action}
-                  </TableCell>
-                  <TableCell>{browserOf(event.userAgent)}</TableCell>
-                  <TableCell>{event.ip ?? '—'}</TableCell>
-                  <TableCell>{relativeTime(event.createdAt)}</TableCell>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>What</TableCell>
+                  <TableCell>Browser</TableCell>
+                  <TableCell>From</TableCell>
+                  <TableCell>When</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+
+              <TableBody>
+                {events.map((event) => (
+                  <TableRow key={event.id}>
+                    <TableCell>
+                      {ACTION_LABELS[event.action] ?? event.action}
+                    </TableCell>
+                    <TableCell>{browserOf(event.userAgent)}</TableCell>
+                    <TableCell>{event.ip ?? '—'}</TableCell>
+                    <TableCell>{relativeTime(event.createdAt)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Paper>
       )}
     </Stack>

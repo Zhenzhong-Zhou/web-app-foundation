@@ -9,6 +9,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -365,62 +366,64 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
           )}
 
           <Paper variant="outlined">
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Component</TableCell>
-                  <TableCell align="right">Per batch</TableCell>
-                  <TableCell>Supplied by</TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {selected.lines.map((line) => (
-                  <TableRow key={line.id}>
-                    <TableCell>{labelFor(line.componentVariantId)}</TableCell>
-                    <TableCell align="right">
-                      {line.quantity} {unitFor(line.componentVariantId)}
-                    </TableCell>
-                    <TableCell>
-                      {line.supplyType === 'external' ? (
-                        <Tooltip title="Provided by whoever manufactures — never enters our stock">
-                          <Chip label="Manufacturer" size="small" />
-                        </Tooltip>
-                      ) : (
-                        <Chip label="Us" size="small" variant="outlined" />
-                      )}
-                    </TableCell>
-                    <TableCell align="right">
-                      {canUpdate && isDraft && (
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          sx={{ justifyContent: 'flex-end' }}
-                        >
-                          <Button
-                            size="small"
-                            variant="text"
-                            disabled={busy}
-                            onClick={openDialog(() => setEditingLine(line))}
-                          >
-                            Edit
-                          </Button>
-                          <IconButton
-                            size="small"
-                            aria-label={`Remove ${labelFor(line.componentVariantId)}`}
-                            disabled={busy}
-                            onClick={() => void removeLine(line.id)}
-                          >
-                            ×
-                          </IconButton>
-                        </Stack>
-                      )}
-                    </TableCell>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Component</TableCell>
+                    <TableCell align="right">Per batch</TableCell>
+                    <TableCell>Supplied by</TableCell>
+                    <TableCell />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+
+                <TableBody>
+                  {selected.lines.map((line) => (
+                    <TableRow key={line.id}>
+                      <TableCell>{labelFor(line.componentVariantId)}</TableCell>
+                      <TableCell align="right">
+                        {line.quantity} {unitFor(line.componentVariantId)}
+                      </TableCell>
+                      <TableCell>
+                        {line.supplyType === 'external' ? (
+                          <Tooltip title="Provided by whoever manufactures — never enters our stock">
+                            <Chip label="Manufacturer" size="small" />
+                          </Tooltip>
+                        ) : (
+                          <Chip label="Us" size="small" variant="outlined" />
+                        )}
+                      </TableCell>
+                      <TableCell align="right">
+                        {canUpdate && isDraft && (
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ justifyContent: 'flex-end' }}
+                          >
+                            <Button
+                              size="small"
+                              variant="text"
+                              disabled={busy}
+                              onClick={openDialog(() => setEditingLine(line))}
+                            >
+                              Edit
+                            </Button>
+                            <IconButton
+                              size="small"
+                              aria-label={`Remove ${labelFor(line.componentVariantId)}`}
+                              disabled={busy}
+                              onClick={() => void removeLine(line.id)}
+                            >
+                              ×
+                            </IconButton>
+                          </Stack>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Paper>
         </>
       )}

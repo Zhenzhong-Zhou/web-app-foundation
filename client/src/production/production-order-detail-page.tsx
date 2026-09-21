@@ -9,6 +9,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   Tooltip,
@@ -213,49 +214,52 @@ export function ProductionOrderDetailPage() {
         </Alert>
       ) : (
         <Paper variant="outlined">
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Component</TableCell>
-                <TableCell align="right">Planned</TableCell>
-                <TableCell align="right">Used</TableCell>
-                <TableCell>Supplied by</TableCell>
-              </TableRow>
-            </TableHead>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Component</TableCell>
+                  <TableCell align="right">Planned</TableCell>
+                  <TableCell align="right">Used</TableCell>
+                  <TableCell>Supplied by</TableCell>
+                </TableRow>
+              </TableHead>
 
-            <TableBody>
-              {run.lines.map((line) => {
-                const over =
-                  Number(line.quantityConsumed) > Number(line.quantityPlanned);
+              <TableBody>
+                {run.lines.map((line) => {
+                  const over =
+                    Number(line.quantityConsumed) >
+                    Number(line.quantityPlanned);
 
-                return (
-                  <TableRow key={line.id}>
-                    <TableCell>{line.sku}</TableCell>
-                    <TableCell align="right">
-                      {line.quantityPlanned} {line.unitOfMeasure}
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={over ? { color: 'warning.main' } : undefined}
-                    >
-                      {line.supplyType === 'external'
-                        ? '—'
-                        : `${line.quantityConsumed} ${line.unitOfMeasure}`}
-                    </TableCell>
-                    <TableCell>
-                      {line.supplyType === 'external' ? (
-                        <Tooltip title="Never enters our stock, so nothing is consumed for it">
-                          <Chip label="Manufacturer" size="small" />
-                        </Tooltip>
-                      ) : (
-                        <Chip label="Us" size="small" variant="outlined" />
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                  return (
+                    <TableRow key={line.id}>
+                      <TableCell>{line.sku}</TableCell>
+                      <TableCell align="right">
+                        {line.quantityPlanned} {line.unitOfMeasure}
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={over ? { color: 'warning.main' } : undefined}
+                      >
+                        {line.supplyType === 'external'
+                          ? '—'
+                          : `${line.quantityConsumed} ${line.unitOfMeasure}`}
+                      </TableCell>
+                      <TableCell>
+                        {line.supplyType === 'external' ? (
+                          <Tooltip title="Never enters our stock, so nothing is consumed for it">
+                            <Chip label="Manufacturer" size="small" />
+                          </Tooltip>
+                        ) : (
+                          <Chip label="Us" size="small" variant="outlined" />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Paper>
       )}
       <ReleaseRunDialog
