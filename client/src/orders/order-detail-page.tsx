@@ -24,7 +24,7 @@ import { HistoryButton } from '../audit/history-button';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
-import { formatDate, formatMoney } from '../lib/format';
+import { formatDay, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
   Location,
@@ -241,7 +241,7 @@ export function OrderDetailPage() {
             {order.direction === 'purchase' ? 'Buying' : 'Selling'}
             {order.reference ? ` · ${order.reference}` : ''}
             {order.expectedAt
-              ? ` · expected ${formatDate(order.expectedAt)}`
+              ? ` · expected ${formatDay(order.expectedAt)}`
               : ''}
             {order.duplicatedFromId && (
               <>
@@ -312,7 +312,9 @@ export function OrderDetailPage() {
                   <TableCell align="right">Outstanding</TableCell>
                   <TableCell align="right">Unit price</TableCell>
                   <TableCell align="right">Total</TableCell>
-                  <TableCell align="right" />
+                  {/* No visible title — the buttons explain themselves —
+                      but a screen reader announces the column by name. */}
+                  <TableCell align="right" aria-label="Actions" />
                 </TableRow>
               </TableHead>
 

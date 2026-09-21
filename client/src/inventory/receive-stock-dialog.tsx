@@ -16,7 +16,7 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
-import { formatDate } from '../lib/format';
+import { formatDay } from '../lib/format';
 import type { Location, Lot } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
@@ -211,7 +211,7 @@ export function ReceiveStockDialog({
                           <Typography variant="body2">{option.code}</Typography>
                           <Typography variant="caption" color="text.secondary">
                             {option.expiresAt
-                              ? `Expires ${formatDate(option.expiresAt)}`
+                              ? `Expires ${formatDay(option.expiresAt)}`
                               : 'No expiry'}
                             {option.isAssigned ? ' · code assigned here' : ''}
                           </Typography>

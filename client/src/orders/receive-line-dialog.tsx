@@ -14,7 +14,7 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { formatDate } from '../lib/format';
+import { formatDay } from '../lib/format';
 import type { Location, Lot, OrderLine } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
@@ -168,10 +168,14 @@ export function ReceiveLineDialog({
                * typed (ADR-025).
                */
               slotProps={{ htmlInput: { inputMode: 'decimal' } }}
+              // The limit as a number, not a rule: "up to 111.0000" makes a
+              // 1111 look wrong before it is sent. The server's check stays
+              // the guarantee; this is only so the typo is visible first.
               helperText={
-                variant
-                  ? `In ${variant.unitOfMeasure}. More than was ordered is refused.`
-                  : 'More than was ordered is refused.'
+                line &&
+                `Up to ${line.quantityOutstanding}${
+                  variant ? ` ${variant.unitOfMeasure}` : ''
+                } still outstanding.`
               }
             />
 
@@ -194,7 +198,7 @@ export function ReceiveLineDialog({
                             a code that exists but belongs to another run. */}
                         <Typography variant="caption" color="text.secondary">
                           {option.expiresAt
-                            ? `Expires ${formatDate(option.expiresAt)}`
+                            ? `Expires ${formatDay(option.expiresAt)}`
                             : 'No expiry'}
                           {option.isAssigned ? ' · code assigned here' : ''}
                         </Typography>

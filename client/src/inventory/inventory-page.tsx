@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
+import { formatDay } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { Location, StockRow } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -254,9 +255,7 @@ export function InventoryPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {row.lotExpiresAt
-                        ? new Date(row.lotExpiresAt).toLocaleDateString()
-                        : '—'}
+                      {row.lotExpiresAt ? formatDay(row.lotExpiresAt) : '—'}
                     </TableCell>
                     {/* Rendered as it arrived. Formatting it means parsing it,
                       and a numeric that passes through a JS double is the

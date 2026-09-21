@@ -35,17 +35,40 @@ const DATE = new Intl.DateTimeFormat(undefined, {
 });
 
 /**
- * "12 Sep 2026". Absolute rather than relative, unlike relativeTime above: a
- * delivery three weeks out reads as noise as "in 21 days", and someone
- * planning a dock wants the date.
+ * "12 Sep 2026" for a moment in time — when a run was planned, when a row was
+ * created. Absolute rather than relative, unlike relativeTime above, and in
+ * the browser's timezone, because a moment happened at a local time.
  *
- * Rendered in the browser's timezone. Correct for timestamps; slightly wrong
- * for expected_at, which is a calendar day stored as timestamptz and can show
- * as the previous day in another timezone. A non-issue for one timezone, and
- * a `date` column if that ever changes.
+ * Not for calendar days. Use formatDay for those.
  */
 export function formatDate(value: string | Date): string {
   return DATE.format(new Date(value));
+}
+
+const DAY = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
+
+/**
+ * A calendar day — an expiry, an expected delivery — stored as timestamptz.
+ *
+ * Every form sends the picked day as UTC midnight ("2026-10-10" parses as
+ * 2026-10-10T00:00Z), so the day is recovered exactly by reading it back in
+ * UTC. formatDate reads it in the browser's zone instead, and anywhere west
+ * of Greenwich UTC midnight is still the previous evening: a lot entered as
+ * expiring 10 Oct showed as 9 Oct in Vancouver, beside a date field that
+ * correctly said 10.
+ *
+ * The date inputs already agree: they prefill with `.slice(0, 10)`, which is
+ * the UTC day. A `date` column would remove the question entirely; until then
+ * this is exact, not an approximation, as long as writes keep sending
+ * midnight UTC.
+ */
+export function formatDay(value: string | Date): string {
+  return DAY.format(new Date(value));
 }
 
 /**

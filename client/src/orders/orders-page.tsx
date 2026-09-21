@@ -22,7 +22,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
-import { formatDate } from '../lib/format';
+import { formatDay } from '../lib/format';
 import type { OrderPage, OrderStatus, OrderSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 
@@ -212,7 +212,7 @@ export function OrdersPage() {
                     <TableCell>{order.reference ?? '—'}</TableCell>
 
                     <TableCell>
-                      {order.expectedAt ? formatDate(order.expectedAt) : '—'}
+                      {order.expectedAt ? formatDay(order.expectedAt) : '—'}
                     </TableCell>
 
                     {/* Rendered as Postgres computed them. Parsing a
