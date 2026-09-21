@@ -1,5 +1,15 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, desc, eq, isNull, lt, sql } from 'drizzle-orm';
+import {
+  and,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  or,
+  sql,
+} from 'drizzle-orm';
 
 import {
   type Database,
@@ -14,6 +24,21 @@ import {
 import type { NotificationType } from './notification-types';
 
 const DEFAULT_LIMIT = 20;
+
+/**
+ * How long a notification outlives its usefulness.
+ *
+ * Read ones go at ninety days, matching account_events (ADR-022): by then the
+ * thing it pointed at has its own history — the audit log, the account
+ * events — and the bell was only ever the pointer.
+ *
+ * Unread ones get a year. Somebody may be on leave, and deleting what they
+ * have not seen is the one way this could lose information. But a year-old
+ * unread row is not going to be read either; it only keeps the badge at 99+,
+ * which teaches people to stop looking at it.
+ */
+const READ_RETENTION_DAYS = 90;
+const UNREAD_RETENTION_DAYS = 365;
 
 export interface Emission {
   userId: string;
@@ -63,6 +88,55 @@ export class NotificationsService {
       await this.db.insert(notifications).values(rows);
     } catch (error) {
       this.logger.error(`Notification write failed: ${String(error)}`);
+    }
+
+    await this.sweep([...new Set(rows.map((row) => row.userId))]);
+  }
+
+  /**
+   * Lazy retention, the way sessions, auth_tokens and account_events already
+   * do it (ADR-005): no scheduler to run, and no scheduler to notice when it
+   * has stopped running.
+   *
+   * On emit rather than on list(). The list is a GET that runs every time
+   * somebody opens the bell, and a read that deletes is a read that takes
+   * write locks and bloats on every click. Emit is the only thing that grows
+   * the table, so sweeping there bounds it exactly: a user who is never sent
+   * anything new is not accumulating anything either.
+   *
+   * Cheap because it is per recipient. (user_id, id) is already indexed for
+   * the list, so this touches one user's rows — tens, not the table — and
+   * produces a handful of dead tuples at a time rather than a vacuum-sized
+   * batch.
+   *
+   * Never throws, for the same reason emit does not.
+   */
+  private async sweep(userIds: string[]): Promise<void> {
+    if (userIds.length === 0) return;
+
+    try {
+      await this.db
+        .delete(notifications)
+        .where(
+          and(
+            inArray(notifications.userId, userIds),
+            or(
+              and(
+                isNotNull(notifications.readAt),
+                lt(
+                  notifications.createdAt,
+                  sql`now() - interval '${sql.raw(String(READ_RETENTION_DAYS))} days'`,
+                ),
+              ),
+              lt(
+                notifications.createdAt,
+                sql`now() - interval '${sql.raw(String(UNREAD_RETENTION_DAYS))} days'`,
+              ),
+            ),
+          ),
+        );
+    } catch (error) {
+      this.logger.error(`Notification sweep failed: ${String(error)}`);
     }
   }
 
