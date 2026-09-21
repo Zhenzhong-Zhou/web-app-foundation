@@ -16,6 +16,7 @@ import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { organizations } from '../../database/schema';
 import { memberships, users } from '../../database/schema';
+import { escapeHtml } from '../../shared/mail/escape-html';
 import { MailService } from '../../shared/mail/mail.service';
 import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
@@ -372,7 +373,7 @@ export class AuthService implements OnModuleInit {
         to: email,
         subject: 'Confirm your email address',
         text: `Hi ${name},\n\nConfirm your email address:\n${link}\n\nThe link expires in 24 hours. If you did not sign up, ignore this message.`,
-        html: `<p>Hi ${name},</p><p><a href="${link}">Confirm your email address</a></p><p>The link expires in 24 hours. If you did not sign up, ignore this message.</p>`,
+        html: `<p>Hi ${escapeHtml(name)},</p><p><a href="${link}">Confirm your email address</a></p><p>The link expires in 24 hours. If you did not sign up, ignore this message.</p>`,
       });
     } catch (error) {
       // Broad by design: registration must survive a dead SMTP connection.
@@ -465,7 +466,7 @@ export class AuthService implements OnModuleInit {
       to: user.email,
       subject: 'Reset your password',
       text: `Hi ${user.name},\n\nReset your password:\n${link}\n\nThe link expires in one hour and can be used once. If you did not request this, ignore this message — your password has not changed.`,
-      html: `<p>Hi ${user.name},</p><p><a href="${link}">Reset your password</a></p><p>The link expires in one hour and can be used once. If you did not request this, ignore this message — your password has not changed.</p>`,
+      html: `<p>Hi ${escapeHtml(user.name)},</p><p><a href="${link}">Reset your password</a></p><p>The link expires in one hour and can be used once. If you did not request this, ignore this message — your password has not changed.</p>`,
     });
 
     this.logger.log(`Password reset link sent for ${user.id}`);
