@@ -135,30 +135,35 @@ export function OrdersPage() {
         crumbs={[]}
         title="Orders"
         actions={
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <TextField
-              select
-              size="small"
-              label="Show"
-              value={filter}
-              onChange={(event) => changeFilter(event.target.value as Filter)}
-              sx={{ minWidth: 140 }}
-            >
-              {FILTERS.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            {canCreate && (
-              <Button component={RouterLink} to="/orders/new">
-                Raise an order
-              </Button>
-            )}
-          </Stack>
+          canCreate && (
+            <Button component={RouterLink} to="/orders/new">
+              Raise an order
+            </Button>
+          )
         }
       />
+
+      {/* Its own row, as on the audit page: the header holds what the page
+          is and what you can do on it, and a filter is neither. It is also
+          where the next filter goes — partner and direction are the obvious
+          ones — without crowding the title. */}
+      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+        <TextField
+          id="order-filter"
+          select
+          size="small"
+          label="Show"
+          value={filter}
+          onChange={(event) => changeFilter(event.target.value as Filter)}
+          sx={{ minWidth: 160 }}
+        >
+          {FILTERS.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Stack>
 
       {error && <Alert severity="error">{error}</Alert>}
 
