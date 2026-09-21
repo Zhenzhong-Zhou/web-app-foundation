@@ -88,8 +88,12 @@ export class ProductsController {
   @RequirePermissions(PERMISSIONS.PRODUCTS_UPDATE)
   @Audited({
     action: AUDIT_ACTIONS.PRODUCT_VARIANT_ADDED,
-    resourceType: 'product_variant',
-    resourceId: (response: { variant: { id: string } }) => response.variant.id,
+    // The product, not the variant — the partner-address precedent. The log
+    // is read as a product's history, from the product page's History link,
+    // and a variant id is a row nobody navigates to. The action already says
+    // it was a variant.
+    resourceType: 'product',
+    resourceId: (_response, request) => request.params.id,
   })
   async addVariant(
     @Param('id', ParseUUIDPipe) id: string,
@@ -107,8 +111,10 @@ export class ProductsController {
   @RequirePermissions(PERMISSIONS.PRODUCTS_UPDATE)
   @Audited({
     action: AUDIT_ACTIONS.PRODUCT_VARIANT_UPDATED,
-    resourceType: 'product_variant',
-    resourceId: (_response, request) => request.params.variantId,
+    // The product, as above. Which variant is in the payload: the SKU is the
+    // one field recorded, and it names the variant better than its id would.
+    resourceType: 'product',
+    resourceId: (_response, request) => request.params.id,
     // The case ADR-023 named: a rename affects the catalogue and nothing
     // historical, so the previous SKU is otherwise unrecoverable.
     fields: ['sku'],

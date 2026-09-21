@@ -170,6 +170,34 @@ describe('Audit (e2e)', () => {
       expect(entries[0].resourceId).toBe(first.id);
     });
 
+    /**
+     * What the History link on a product page shows. A variant keyed to its
+     * own id would be missing from it, and a SKU rename is the change people
+     * most often go looking for.
+     */
+    it('files variant changes under the product', async () => {
+      const alpha = await registerOrg('alpha');
+      const product = await makeProduct(alpha, 'WIDGET-1');
+
+      await alpha.agent
+        .patch(`/v1/products/${product.id}/variants/${product.variants[0].id}`)
+        .send({ sku: 'RENAMED-1' })
+        .expect(204);
+
+      await alpha.agent
+        .post(`/v1/products/${product.id}/variants`)
+        .send({ sku: 'WIDGET-1-XL' })
+        .expect(201);
+
+      const { entries } = await page(alpha, `?resourceId=${product.id}`);
+
+      expect(entries.map((entry) => entry.action)).toEqual([
+        'product.variant_added',
+        'product.variant_updated',
+        'product.created',
+      ]);
+    });
+
     it('filters by date range', async () => {
       const alpha = await registerOrg('alpha');
       await makeProduct(alpha, 'WIDGET-1');

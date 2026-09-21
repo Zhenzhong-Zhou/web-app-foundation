@@ -207,8 +207,11 @@ export class OrdersController {
   @RequirePermissions(PERMISSIONS.ORDERS_RECEIVE)
   @Audited({
     action: AUDIT_ACTIONS.ORDER_LINE_RECEIVED,
-    resourceType: 'order_line',
-    resourceId: (_response, request) => request.params.lineId,
+    // The order, like every other line action on this controller. A receipt
+    // keyed to the line was the one event missing from an order's History,
+    // and it is the one the receiving dock is asked about.
+    resourceType: 'order',
+    resourceId: (_response, request) => request.params.id,
   })
   async receive(
     @Param('id', ParseUUIDPipe) id: string,

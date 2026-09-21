@@ -1048,6 +1048,26 @@ describe('Orders (e2e)', () => {
       expect(level.quantity).toBe('15.0000');
     });
 
+    // The order's History link must include receipts, which are what the
+    // receiving dock gets asked about.
+    it('files the receipt under the order', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: ctx.locationId, quantity: '15' })
+        .expect(201);
+
+      const [entry] = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'order.line_received'));
+
+      expect(entry.resourceType).toBe('order');
+      expect(entry.resourceId).toBe(order.id);
+    });
+
     it('does not advance the status on a full receipt', async () => {
       const ctx = await setup('alpha');
       const order = await confirmed(ctx);
