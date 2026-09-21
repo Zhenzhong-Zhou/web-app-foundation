@@ -17,6 +17,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
 import { RecipePanel } from '../boms/recipe-panel';
+import { HistoryLink } from '../components/history-link';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
@@ -154,18 +155,23 @@ export function ProductDetailPage() {
         title={product.name}
         status={{ label: product.type, color: 'default' }}
         actions={
-          canEdit && (
-            // Discontinuing, not deleting. The product's flag is never
-            // cascaded to its variants: reactivating could not then know which
-            // had been individually discontinued first (ADR-023).
-            <Button
-              variant="text"
-              disabled={saving !== null}
-              onClick={() => void patchProduct({ isActive: !product.isActive })}
-            >
-              {product.isActive ? 'Discontinue' : 'Reactivate'}
-            </Button>
-          )
+          <Stack direction="row" spacing={1}>
+            <HistoryLink resourceId={product.id} />
+            {canEdit && (
+              // Discontinuing, not deleting. The product's flag is never
+              // cascaded to its variants: reactivating could not then know
+              // which had been individually discontinued first (ADR-023).
+              <Button
+                variant="text"
+                disabled={saving !== null}
+                onClick={() =>
+                  void patchProduct({ isActive: !product.isActive })
+                }
+              >
+                {product.isActive ? 'Discontinue' : 'Reactivate'}
+              </Button>
+            )}
+          </Stack>
         }
         subtitle={product.description ?? undefined}
       />
