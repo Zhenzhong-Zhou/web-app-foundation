@@ -103,6 +103,22 @@ export function ProductionOrderDetailPage() {
   const isDraft = run.status === 'draft';
   const isReleased = run.status === 'released';
 
+  /** "EARLY 1500.0000 · LATE 900.0000" for one component, or null. */
+  const lotsFor = (componentVariantId: string): string | null => {
+    const used = run.componentLots.filter(
+      (lot) => lot.componentVariantId === componentVariantId,
+    );
+    if (used.length === 0) return null;
+
+    return used
+      .map((lot) =>
+        run.status === 'completed'
+          ? `${lot.code}: ${lot.consumed} used`
+          : `${lot.code}: ${lot.issued}`,
+      )
+      .join(' · ');
+  };
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -233,7 +249,20 @@ export function ProductionOrderDetailPage() {
 
                   return (
                     <TableRow key={line.id}>
-                      <TableCell>{line.sku}</TableCell>
+                      <TableCell>
+                        {line.sku}
+                        {/* Which lots went in: the recall trail, visible
+                            rather than only stored (ADR-039). */}
+                        {lotsFor(line.componentVariantId) && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            component="div"
+                          >
+                            {lotsFor(line.componentVariantId)}
+                          </Typography>
+                        )}
+                      </TableCell>
                       <TableCell align="right">
                         {line.quantityPlanned} {line.unitOfMeasure}
                       </TableCell>

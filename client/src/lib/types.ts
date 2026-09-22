@@ -234,10 +234,47 @@ export interface RunLine {
   externalLotCode: string | null;
 }
 
+/**
+ * One lot of one component, as it went into a run: the recall trail
+ * (ADR-039). Issued includes top-ups; consumed is filled in at close.
+ */
+export interface ComponentLot {
+  componentVariantId: string;
+  lotId: string;
+  code: string;
+  expiresAt: string | null;
+  issued: string;
+  consumed: string;
+}
+
 export interface RunDetail extends ProductionRun {
   lines: RunLine[];
+  componentLots: ComponentLot[];
   /** Lot ids, read from the run's production movements (ADR-032). */
   outputLots: string[];
+}
+
+/** A lot at the source, with what earliest-expiry-first would take from it. */
+export interface IssuePlanLot {
+  lotId: string;
+  code: string;
+  expiresAt: string | null;
+  onHand: string;
+  take: string;
+  taken: boolean;
+}
+
+/** One recipe line as release would issue it, before anything moves. */
+export interface IssuePlanLine {
+  componentVariantId: string;
+  sku: string;
+  unitOfMeasure: string;
+  tracksLots: boolean;
+  supplyType: 'stocked' | 'external';
+  quantity: string;
+  lots: IssuePlanLot[];
+  /** How much the source is missing, or null when it can cover the line. */
+  shortBy: string | null;
 }
 
 export interface LineVariance {

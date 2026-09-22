@@ -23,6 +23,7 @@ import { api } from '../lib/api';
 import { formatDay } from '../lib/format';
 import type {
   Bom,
+  IssuePlanLine,
   LineVariance,
   Lot,
   ProductionRun,
@@ -68,6 +69,73 @@ export function ReleaseRunDialog({
   const chosenBom =
     bomId || recipes.find((row) => row.status === 'active')?.id || '';
 
+  /**
+   * What release will issue from the chosen source, lot by lot (ADR-039).
+   * Shown so the earliest-expiry pick is seen before it happens, and can be
+   * replaced for a line when something on the shelf says otherwise — a
+   * damaged box, a lot on hold. Not available until the run has a recipe,
+   * because there is nothing to plan without one.
+   */
+  const [plan, setPlan] = useState<IssuePlanLine[] | null>(null);
+  const [planError, setPlanError] = useState<string | null>(null);
+
+  /** Hand-picked quantities per component, keyed by lot id. */
+  const [picks, setPicks] = useState<Record<string, Record<string, string>>>(
+    {},
+  );
+
+  useEffect(() => {
+    if (!open || needsRecipe || !sourceLocationId) return;
+
+    let ignore = false;
+
+    void api<{ lines: IssuePlanLine[] }>(
+      `/production-orders/${run.id}/issue-plan?sourceLocationId=${sourceLocationId}`,
+    )
+      .then((result) => {
+        if (!ignore) setPlan(result.lines);
+      })
+      .catch((caught: unknown) => {
+        if (!ignore) {
+          setPlanError(
+            caught instanceof Error ? caught.message : 'Could not load lots.',
+          );
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [open, needsRecipe, sourceLocationId, run.id]);
+
+  const trackedLines = (plan ?? []).filter(
+    (line) => line.supplyType === 'stocked' && line.tracksLots,
+  );
+
+  function startPicking(line: IssuePlanLine) {
+    setPicks((current) => ({
+      ...current,
+      [line.componentVariantId]: Object.fromEntries(
+        line.lots.map((lot) => [lot.lotId, lot.taken ? lot.take : '']),
+      ),
+    }));
+  }
+
+  function stopPicking(componentVariantId: string) {
+    setPicks((current) => {
+      const next = { ...current };
+      delete next[componentVariantId];
+      return next;
+    });
+  }
+
+  function setPick(componentVariantId: string, lotId: string, value: string) {
+    setPicks((current) => ({
+      ...current,
+      [componentVariantId]: { ...current[componentVariantId], [lotId]: value },
+    }));
+  }
+
   useEffect(() => {
     if (!open || !needsRecipe) return;
 
@@ -109,6 +177,9 @@ export function ReleaseRunDialog({
   function close() {
     setSource('');
     setBomId('');
+    setPlan(null);
+    setPlanError(null);
+    setPicks({});
     reset();
     onClose();
   }
@@ -127,9 +198,24 @@ export function ReleaseRunDialog({
         });
       }
 
+      // Only lines someone changed. The rest are picked by the server at
+      // release time, earliest expiry first, against stock as it is then —
+      // not as the preview saw it.
+      const lots = Object.entries(picks)
+        .map(([componentVariantId, byLot]) => ({
+          componentVariantId,
+          lots: Object.entries(byLot)
+            .filter(([, quantity]) => quantity.trim() !== '')
+            .map(([lotId, quantity]) => ({ lotId, quantity: quantity.trim() })),
+        }))
+        .filter((entry) => entry.lots.length > 0);
+
       await api(`/production-orders/${run.id}/release`, {
         method: 'POST',
-        body: JSON.stringify({ sourceLocationId }),
+        body: JSON.stringify({
+          sourceLocationId,
+          lots: lots.length > 0 ? lots : undefined,
+        }),
       });
     });
   }
@@ -177,7 +263,13 @@ export function ReleaseRunDialog({
               required
               fullWidth
               value={sourceLocationId}
-              onChange={(event) => setSource(event.target.value)}
+              onChange={(event) => {
+                // A new source is a new plan: the old one's lots are not here.
+                setPlan(null);
+                setPlanError(null);
+                setPicks({});
+                setSource(event.target.value);
+              }}
             >
               {locations.map((row) => (
                 <MenuItem key={row.id} value={row.id}>
@@ -185,6 +277,121 @@ export function ReleaseRunDialog({
                 </MenuItem>
               ))}
             </TextField>
+
+            {planError && <Alert severity="error">{planError}</Alert>}
+
+            {trackedLines.map((line) => {
+              const picking = picks[line.componentVariantId];
+
+              return (
+                <Stack key={line.componentVariantId} spacing={1}>
+                  <Stack
+                    direction="row"
+                    sx={{
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Typography variant="subtitle2">
+                      {line.sku} — needs {line.quantity} {line.unitOfMeasure}
+                    </Typography>
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() =>
+                        picking
+                          ? stopPicking(line.componentVariantId)
+                          : startPicking(line)
+                      }
+                    >
+                      {picking ? 'Use earliest expiry' : 'Choose lots'}
+                    </Button>
+                  </Stack>
+
+                  {line.shortBy && (
+                    <Alert severity="warning">
+                      This location is {line.shortBy} {line.unitOfMeasure} short
+                      across all its lots.
+                    </Alert>
+                  )}
+
+                  {!picking && (
+                    <Typography variant="body2" color="text.secondary">
+                      {line.lots.some((lot) => lot.taken)
+                        ? line.lots
+                            .filter((lot) => lot.taken)
+                            .map(
+                              (lot) =>
+                                `${lot.code}${lot.expiresAt ? ` (expires ${formatDay(lot.expiresAt)})` : ''}: ${lot.take}`,
+                            )
+                            .join(' · ')
+                        : 'No lots of this at the chosen location.'}
+                    </Typography>
+                  )}
+
+                  {picking && (
+                    <TableContainer>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Lot</TableCell>
+                            <TableCell>Expires</TableCell>
+                            <TableCell align="right">On hand</TableCell>
+                            <TableCell align="right">Use</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {line.lots.map((lot) => (
+                            <TableRow key={lot.lotId}>
+                              <TableCell>{lot.code}</TableCell>
+                              <TableCell>
+                                {lot.expiresAt
+                                  ? formatDay(lot.expiresAt)
+                                  : 'Does not expire'}
+                              </TableCell>
+                              <TableCell align="right">{lot.onHand}</TableCell>
+                              <TableCell align="right" sx={{ width: 140 }}>
+                                <TextField
+                                  size="small"
+                                  value={picking[lot.lotId] ?? ''}
+                                  onChange={(event) =>
+                                    setPick(
+                                      line.componentVariantId,
+                                      lot.lotId,
+                                      event.target.value,
+                                    )
+                                  }
+                                  slotProps={{
+                                    htmlInput: {
+                                      inputMode: 'decimal',
+                                      maxLength: 19,
+                                      'aria-label': `Use from lot ${lot.code}`,
+                                    },
+                                  }}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  )}
+
+                  {picking && (
+                    <Typography variant="caption" color="text.secondary">
+                      The amounts must add up to {line.quantity}. The server
+                      checks when you release.
+                    </Typography>
+                  )}
+                </Stack>
+              );
+            })}
+
+            {needsRecipe && (
+              <Typography variant="caption" color="text.secondary">
+                Lot-tracked components are taken earliest expiry first.
+              </Typography>
+            )}
 
             <Alert severity="info">
               Releasing copies the recipe onto this run and moves the components
