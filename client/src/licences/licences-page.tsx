@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
+import { HistoryButton } from '../audit/history-button';
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
@@ -141,6 +142,10 @@ export function LicencesPage() {
                     </TableCell>
                     <TableCell>{licence.notes ?? '—'}</TableCell>
                     <TableCell align="right">
+                      {/* A correction is the change people come looking for:
+                          "who changed the number, and when". */}
+                      <HistoryButton resourceId={licence.id} />
+
                       {canUpdate && (
                         <Button
                           variant="text"

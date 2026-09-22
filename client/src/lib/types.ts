@@ -213,6 +213,12 @@ export interface BomLine {
 /** What GET /boms/:id returns — the recipe with its components. */
 export interface BomDetail extends Bom {
   lines: BomLine[];
+  /**
+   * True once a run has been made against a promoted recipe. Until then the
+   * licence can still be attached — an NPN often arrives after the
+   * formulation is settled (ADR-029).
+   */
+  licenceLocked: boolean;
 }
 
 export type RunStatus = 'draft' | 'released' | 'completed' | 'cancelled';

@@ -11,7 +11,7 @@ import {
   isForeignKeyViolation,
   isUniqueViolation,
 } from '../../database/errors';
-import { bomLines, boms } from '../../database/schema';
+import { bomLines, boms, productionOrders } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { ProductLicencesService } from '../product-licences/product-licences.service';
 import type { CreateBomDto } from './dto/create-bom.dto';
@@ -102,13 +102,20 @@ export class BomsService {
   async findDetail(bomId: string) {
     const bom = await this.findById(bomId);
 
-    const lines = await this.tenantDb.select(
-      bomLines,
-      eq(bomLines.bomId, bomId),
-      { orderBy: [asc(bomLines.id)] },
-    );
+    const [lines, used] = await Promise.all([
+      this.tenantDb.select(bomLines, eq(bomLines.bomId, bomId), {
+        orderBy: [asc(bomLines.id)],
+      }),
+      this.usedByARun(bomId),
+    ]);
 
-    return { ...bom, lines };
+    /**
+     * `licenceLocked` answers the one question the recipe panel cannot work
+     * out for itself: whether the number can still be attached (ADR-029). A
+     * draft is always editable; an active recipe stays editable only until a
+     * run is planned against it.
+     */
+    return { ...bom, lines, licenceLocked: bom.status !== 'draft' && used };
   }
 
   /**
@@ -161,8 +168,7 @@ export class BomsService {
   async update(bomId: string, input: UpdateBomDto) {
     const bom = await this.findById(bomId);
 
-    this.assertDraft(bom.status, 'edited');
-
+    await this.assertEditable(bom, input);
     await this.assertLicenceWithin(input.licenceId);
 
     try {
@@ -175,6 +181,58 @@ export class BomsService {
     }
 
     this.logger.log(`BOM ${bomId} updated`);
+  }
+
+  /**
+   * A promoted recipe is frozen, with one exception: the licence, and only
+   * while nothing has been made against it.
+   *
+   * The case is ordinary for a natural health product. You promote a recipe,
+   * the application goes in, and the NPN lands six weeks later. Without this
+   * the only way to record it is a new version identical to the last but for
+   * a number, which puts a fiction in the version history — the formulation
+   * never changed.
+   *
+   * It locks the moment a run references the recipe, because from then on the
+   * licence is a claim about what a finished batch was made under, and
+   * changing it would rewrite that. Archived recipes never reopen: the
+   * question there is what was true, not what is.
+   */
+  private async assertEditable(bom: Bom, input: UpdateBomDto): Promise<void> {
+    if (bom.status === 'draft') return;
+
+    /**
+     * Keys actually sent. A validated DTO carries every declared property,
+     * the unsent ones as undefined, so counting keys alone reads a
+     * licence-only PATCH as an attempt to rewrite the whole recipe. Clearing
+     * the licence sends null, which counts as sent.
+     */
+    const sent = Object.entries(input)
+      .filter(([, value]) => value !== undefined)
+      .map(([key]) => key);
+
+    const onlyLicence = sent.length === 1 && sent[0] === 'licenceId';
+
+    if (!onlyLicence || bom.status !== 'active') {
+      this.assertDraft(bom.status, 'edited');
+    }
+
+    if (await this.usedByARun(bom.id)) {
+      throw new ConflictException(
+        'A run has been made against this recipe, so its licence is fixed — draft a new version instead',
+      );
+    }
+  }
+
+  /** Whether any production run points at this recipe, in any state. */
+  private async usedByARun(bomId: string): Promise<boolean> {
+    const [run] = await this.tenantDb.select(
+      productionOrders,
+      eq(productionOrders.bomId, bomId),
+      { limit: 1 },
+    );
+
+    return !!run;
   }
 
   async addLine(bomId: string, input: CreateBomLineDto): Promise<BomLine> {

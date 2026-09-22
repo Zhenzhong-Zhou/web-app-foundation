@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
+import { HistoryButton } from '../audit/history-button';
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
@@ -366,6 +367,11 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
               </Tooltip>
             )}
 
+            {/* Per version, not per product: a product with twenty versions
+                would bury "discontinued" under a hundred recipe edits, and
+                the question here is always about this recipe. */}
+            <HistoryButton resourceId={selected.id} />
+
             {canCreate && !isDraft && (
               <Tooltip title="An active recipe cannot be edited — this copies it to a new draft">
                 <span>
@@ -402,27 +408,39 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
             )}
           </Stack>
 
-          {/* Changeable only while the recipe is a draft, like everything
-              else about it: once promoted it is the snapshot runs are made
-              against (ADR-029). A new version is how a licence changes after
-              that. */}
-          {canUpdate && isDraft && licences.length > 0 && (
+          {/* A promoted recipe is frozen except for this, and only until a
+              run is made against it: the NPN often lands weeks after the
+              formulation is settled, and a version identical but for a
+              number would be a fiction in the history (ADR-029). */}
+          {canUpdate && !selected.licenceLocked && licences.length > 0 && (
             <TextField
               id="recipe-licence"
               label="Licence"
               select
               size="small"
-              disabled={busy}
               value={selected.licenceId ?? ''}
-              onChange={(event) =>
+              /*
+               * Not disabled while the request runs. MUI hides the open menu
+               * with aria-hidden as it closes, and disabling the field in the
+               * same tick strands focus on the item just clicked — which the
+               * browser blocks and reports. Guarding on busy refuses a second
+               * change without touching focus.
+               */
+              onChange={(event) => {
+                if (busy) return;
+
                 void act(`/boms/${selected.id}`, {
                   method: 'PATCH',
                   preferId: selected.id,
                   body: { licenceId: event.target.value || null },
-                })
-              }
+                });
+              }}
               sx={{ maxWidth: 360 }}
-              helperText="What this formulation is registered under."
+              helperText={
+                isDraft
+                  ? 'What this formulation is registered under.'
+                  : 'Still changeable: nothing has been made against this version yet.'
+              }
             >
               <MenuItem value="">Not registered</MenuItem>
               {licences

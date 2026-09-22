@@ -534,6 +534,92 @@ describe('BOMs (e2e)', () => {
         .expect(409);
     });
 
+    /**
+     * The NPN usually lands after the formulation is settled. A new version
+     * identical to the last but for a number would be a fiction in the
+     * history, so the licence stays attachable — until a run makes it a claim
+     * about a finished batch (ADR-029).
+     */
+    it('attaches a licence to a promoted recipe nothing was made against', async () => {
+      const alpha = await registerOrg('alpha');
+      const { output, blend } = await fixtures(alpha);
+
+      const licence = body<{ licence: { id: string } }>(
+        await alpha.agent
+          .post('/v1/product-licences')
+          .send({ number: '80012345', authority: 'Health Canada' })
+          .expect(201),
+      ).licence;
+
+      const bom = await createBom(alpha, {
+        outputVariantId: output,
+        outputQuantity: '1000',
+        lines: [{ componentVariantId: blend, quantity: '2400' }],
+      });
+
+      await alpha.agent.post(`/v1/boms/${bom.id}/promote`).expect(204);
+
+      await alpha.agent
+        .patch(`/v1/boms/${bom.id}`)
+        .send({ licenceId: licence.id })
+        .expect(204);
+
+      // Still nothing else: the formulation is frozen, the number is not.
+      await alpha.agent
+        .patch(`/v1/boms/${bom.id}`)
+        .send({ licenceId: licence.id, outputQuantity: '2000' })
+        .expect(409);
+    });
+
+    it('fixes the licence once a run has been made against the recipe', async () => {
+      const alpha = await registerOrg('alpha');
+      const { output, blend } = await fixtures(alpha);
+
+      const licence = body<{ licence: { id: string } }>(
+        await alpha.agent
+          .post('/v1/product-licences')
+          .send({ number: '80012345', authority: 'Health Canada' })
+          .expect(201),
+      ).licence;
+
+      const site = body<{ location: { id: string } }>(
+        await alpha.agent
+          .post('/v1/locations')
+          .send({ type: 'site', name: 'Main' })
+          .expect(201),
+      ).location;
+
+      const bom = await createBom(alpha, {
+        outputVariantId: output,
+        outputQuantity: '1000',
+        lines: [{ componentVariantId: blend, quantity: '2400' }],
+      });
+
+      await alpha.agent.post(`/v1/boms/${bom.id}/promote`).expect(204);
+
+      // A plan alone is enough: from here the licence is a claim about what
+      // that run is making.
+      await alpha.agent
+        .post('/v1/production-orders')
+        .send({
+          outputVariantId: output,
+          bomId: bom.id,
+          locationId: site.id,
+          quantityPlanned: '1000',
+        })
+        .expect(201);
+
+      await alpha.agent
+        .patch(`/v1/boms/${bom.id}`)
+        .send({ licenceId: licence.id })
+        .expect(409);
+
+      const detail = body<{ licenceLocked: boolean }>(
+        await alpha.agent.get(`/v1/boms/${bom.id}`).expect(200),
+      );
+      expect(detail.licenceLocked).toBe(true);
+    });
+
     it('archives, and refuses to archive twice', async () => {
       const alpha = await registerOrg('alpha');
       const { output, blend } = await fixtures(alpha);
