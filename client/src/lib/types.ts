@@ -181,6 +181,15 @@ export interface OrderDetail {
 export type BomStatus = 'draft' | 'active' | 'archived';
 
 /** A recipe header. Lines arrive only from GET /boms/:id (ADR-029). */
+/** A registration a formulation is made and sold under: an NPN, a DIN. */
+export interface ProductLicence {
+  id: string;
+  number: string;
+  authority: string;
+  isActive: boolean;
+  notes: string | null;
+}
+
 export interface Bom {
   id: string;
   outputVariantId: string;

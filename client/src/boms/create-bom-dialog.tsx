@@ -4,18 +4,19 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  MenuItem,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useRef, useState } from 'react';
+import { type SubmitEvent, useEffect, useRef, useState } from 'react';
 
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import type { Bom } from '../lib/types';
+import type { Bom, ProductLicence } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
-const EMPTY = { outputQuantity: '', notes: '' };
+const EMPTY = { outputQuantity: '', licenceId: '', notes: '' };
 
 /**
  * Creates the header. Components are added afterwards, because the first
@@ -38,6 +39,32 @@ export function CreateBomDialog({
   onCreated: (bomId: string) => Promise<void> | void;
 }) {
   const [form, setForm] = useState(EMPTY);
+
+  /**
+   * What the formulation is registered under — an NPN for a natural health
+   * product, blank for anything unregulated. Only current licences are
+   * offered: a withdrawn one stays on the recipes already made under it, but
+   * nothing new should be started against it.
+   */
+  const [licences, setLicences] = useState<ProductLicence[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    let ignore = false;
+
+    void api<ProductLicence[]>('/product-licences')
+      .then((rows) => {
+        if (!ignore) setLicences(rows.filter((row) => row.isActive));
+      })
+      // Silent: without the list the field is empty, and a recipe with no
+      // licence is valid.
+      .catch(() => undefined);
+
+    return () => {
+      ignore = true;
+    };
+  }, [open]);
 
   /**
    * A ref, not state. `useSubmit` captures its callback at render time, so a
@@ -69,6 +96,7 @@ export function CreateBomDialog({
         body: JSON.stringify({
           outputVariantId,
           outputQuantity: form.outputQuantity,
+          licenceId: form.licenceId || undefined,
           notes: form.notes || undefined,
         }),
       });
@@ -101,6 +129,30 @@ export function CreateBomDialog({
               helperText="How many this recipe produces in one run — 1000, not 1."
               slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 19 } }}
             />
+
+            {licences.length > 0 && (
+              <TextField
+                id="bom-licence"
+                label="Licence"
+                select
+                fullWidth
+                value={form.licenceId}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    licenceId: event.target.value,
+                  }))
+                }
+                helperText="What this formulation is registered under. Leave blank if it is not."
+              >
+                <MenuItem value="">Not registered</MenuItem>
+                {licences.map((licence) => (
+                  <MenuItem key={licence.id} value={licence.id}>
+                    {licence.number} — {licence.authority}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
 
             <TextField
               id="bom-notes"

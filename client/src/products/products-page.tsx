@@ -89,6 +89,14 @@ export function ProductsPage() {
           Products
         </Typography>
 
+        {/* Reference data for recipes, so it hangs off the catalogue rather
+            than the top nav, which is already seven items wide. */}
+        {session?.permissions.includes('product_licences.view') && (
+          <Button variant="text" component={RouterLink} to="/licences">
+            Licences
+          </Button>
+        )}
+
         <Button variant="text" disabled={loading} onClick={() => void load()}>
           Refresh
         </Button>

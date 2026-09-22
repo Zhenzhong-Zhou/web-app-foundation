@@ -42,6 +42,11 @@ export const ProductDetailPage = lazyNamed(
   'ProductDetailPage',
 );
 
+export const LicencesPage = lazyNamed(
+  () => import('./licences/licences-page'),
+  'LicencesPage',
+);
+
 export const InventoryPage = lazyNamed(
   () => import('./inventory/inventory-page'),
   'InventoryPage',

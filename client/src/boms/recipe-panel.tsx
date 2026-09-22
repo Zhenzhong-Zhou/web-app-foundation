@@ -21,7 +21,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
-import type { Bom, BomDetail, BomLine, VariantOption } from '../lib/types';
+import type {
+  Bom,
+  BomDetail,
+  BomLine,
+  ProductLicence,
+  VariantOption,
+} from '../lib/types';
 import type { Variant } from '../products/products-page';
 import { AddBomLineDialog } from './add-bom-line-dialog';
 import { CreateBomDialog } from './create-bom-dialog';
@@ -63,6 +69,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
   const [creating, setCreating] = useState(false);
   const [addingLine, setAddingLine] = useState(false);
   const [editingLine, setEditingLine] = useState<BomLine | null>(null);
+  const [licences, setLicences] = useState<ProductLicence[]>([]);
 
   const canView = session?.permissions.includes('boms.view') ?? false;
   const canCreate = session?.permissions.includes('boms.create') ?? false;
@@ -99,6 +106,28 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
    * put on this recipe now — and it is the same reasoning ReceiveStockDialog
    * loads its catalogue on open.
    */
+  /**
+   * The licences this recipe could be registered under. Fetched whether or
+   * not any exist: for an unregulated product the list is empty and the field
+   * never appears, which is the right answer rather than a setting to turn
+   * off.
+   */
+  useEffect(() => {
+    if (!canView) return;
+
+    let ignore = false;
+
+    void api<ProductLicence[]>('/product-licences')
+      .then((rows) => {
+        if (!ignore) setLicences(rows);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      ignore = true;
+    };
+  }, [canView]);
+
   useEffect(() => {
     if (!canView) return;
 
@@ -155,13 +184,16 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
 
   async function act(
     path: string,
-    options: { method: string; preferId?: string },
+    options: { method: string; preferId?: string; body?: unknown },
   ) {
     setBusy(true);
     setError(null);
 
     try {
-      await api(path, { method: options.method });
+      await api(path, {
+        method: options.method,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      });
       await load(options.preferId);
     } catch (caught) {
       setError(messageFor(caught));
@@ -218,6 +250,16 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
     return match.variantName
       ? `${match.sku} — ${match.variantName}`
       : match.sku;
+  }
+
+  /** "NPN 80012345 (Health Canada)", or null when the recipe carries none. */
+  function licenceFor(licenceId: string | null): string | null {
+    if (!licenceId) return null;
+
+    const licence = licences.find((row) => row.id === licenceId);
+    if (!licence) return null;
+
+    return `${licence.number} (${licence.authority})`;
   }
 
   function unitFor(componentVariantId: string): string {
@@ -302,6 +344,8 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
               sx={{ flexGrow: 1 }}
             >
               Makes {selected.outputQuantity} per batch
+              {licenceFor(selected.licenceId) &&
+                ` · made under ${licenceFor(selected.licenceId)}`}
             </Typography>
 
             {canUpdate && isDraft && (
@@ -357,6 +401,42 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
               </Button>
             )}
           </Stack>
+
+          {/* Changeable only while the recipe is a draft, like everything
+              else about it: once promoted it is the snapshot runs are made
+              against (ADR-029). A new version is how a licence changes after
+              that. */}
+          {canUpdate && isDraft && licences.length > 0 && (
+            <TextField
+              id="recipe-licence"
+              label="Licence"
+              select
+              size="small"
+              disabled={busy}
+              value={selected.licenceId ?? ''}
+              onChange={(event) =>
+                void act(`/boms/${selected.id}`, {
+                  method: 'PATCH',
+                  preferId: selected.id,
+                  body: { licenceId: event.target.value || null },
+                })
+              }
+              sx={{ maxWidth: 360 }}
+              helperText="What this formulation is registered under."
+            >
+              <MenuItem value="">Not registered</MenuItem>
+              {licences
+                .filter(
+                  (licence) =>
+                    licence.isActive || licence.id === selected.licenceId,
+                )
+                .map((licence) => (
+                  <MenuItem key={licence.id} value={licence.id}>
+                    {licence.number} — {licence.authority}
+                  </MenuItem>
+                ))}
+            </TextField>
+          )}
 
           {isDraft && selected.lines.length === 0 && (
             <Alert severity="info">

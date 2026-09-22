@@ -21,6 +21,7 @@ import {
   AuditPage,
   CreateOrderPage,
   InventoryPage,
+  LicencesPage,
   LocationsPage,
   MembersPage,
   MovementsPage,
@@ -184,6 +185,7 @@ export default function App() {
         <Route path="/audit" element={split(AuditPage)} />
         <Route path="/products" element={split(ProductsPage)} />
         <Route path="/products/:id" element={split(ProductDetailPage)} />
+        <Route path="/licences" element={split(LicencesPage)} />
         <Route path="/inventory" element={split(InventoryPage)} />
         <Route path="/movements" element={split(MovementsPage)} />
         <Route path="/locations" element={split(LocationsPage)} />
