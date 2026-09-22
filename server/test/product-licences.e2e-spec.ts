@@ -22,6 +22,8 @@ interface LicenceResponse {
   number: string;
   authority: string;
   isActive: boolean;
+  issuedAt: string | null;
+  expiresAt: string | null;
   notes: string | null;
 }
 
@@ -170,6 +172,58 @@ describe('Product licences (e2e)', () => {
         number: { from: '80012344', to: '80012345' },
       });
       expect(entry.resourceLabel).toBe('Health Canada 80012345');
+    });
+
+    /**
+     * Usually blank — an NPN stays valid while the product is marketed — but
+     * an FDA facility registration or an ISO certificate does expire, and the
+     * client derives Expired from the date rather than a switch somebody has
+     * to remember to flip.
+     */
+    it('stores an expiry when the scheme has one', async () => {
+      const alpha = await registerOrg('alpha');
+      const licence = await makeLicence(alpha);
+
+      expect(licence.expiresAt).toBeNull();
+
+      await alpha.agent
+        .patch(`/v1/product-licences/${licence.id}`)
+        .send({ expiresAt: '2027-03-01' })
+        .expect(204);
+
+      const [stored] = body<LicenceResponse[]>(
+        await alpha.agent.get('/v1/product-licences').expect(200),
+      );
+
+      // Midnight UTC of the day chosen, the shape every date here takes.
+      expect(stored.expiresAt).toBe('2027-03-01T00:00:00.000Z');
+
+      await alpha.agent
+        .patch(`/v1/product-licences/${licence.id}`)
+        .send({ expiresAt: null })
+        .expect(204);
+
+      const [cleared] = body<LicenceResponse[]>(
+        await alpha.agent.get('/v1/product-licences').expect(200),
+      );
+      expect(cleared.expiresAt).toBeNull();
+    });
+
+    // Meaningless in that order, and a row saying so would make every
+    // derived status wrong at once, so the database refuses it too.
+    it('refuses an expiry before the issue date', async () => {
+      const alpha = await registerOrg('alpha');
+      const licence = await makeLicence(alpha);
+
+      await alpha.agent
+        .patch(`/v1/product-licences/${licence.id}`)
+        .send({ issuedAt: '2027-03-01', expiresAt: '2026-03-01' })
+        .expect(400);
+
+      await alpha.agent
+        .patch(`/v1/product-licences/${licence.id}`)
+        .send({ issuedAt: '2026-03-01', expiresAt: '2027-03-01' })
+        .expect(204);
     });
 
     it('withdraws rather than deletes', async () => {

@@ -187,6 +187,10 @@ export interface ProductLicence {
   number: string;
   authority: string;
   isActive: boolean;
+  /** When it took effect. Null when nobody recorded it. */
+  issuedAt: string | null;
+  /** Null for schemes that do not expire, which includes an NPN. */
+  expiresAt: string | null;
   notes: string | null;
 }
 

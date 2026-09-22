@@ -38,6 +38,10 @@ export function EditLicenceDialog({
   const [form, setForm] = useState({
     number: licence?.number ?? '',
     authority: licence?.authority ?? '',
+    // The stored instant is UTC midnight of the chosen day, so the first ten
+    // characters are that day (ADR: formatDay).
+    issuedAt: licence?.issuedAt?.slice(0, 10) ?? '',
+    expiresAt: licence?.expiresAt?.slice(0, 10) ?? '',
     notes: licence?.notes ?? '',
     isActive: licence?.isActive ?? true,
   });
@@ -62,6 +66,8 @@ export function EditLicenceDialog({
         body: JSON.stringify({
           number: form.number,
           authority: form.authority,
+          issuedAt: form.issuedAt || null,
+          expiresAt: form.expiresAt || null,
           notes: form.notes || undefined,
           isActive: form.isActive,
         }),
@@ -122,6 +128,38 @@ export function EditLicenceDialog({
                 }))
               }
               slotProps={{ htmlInput: { maxLength: 1000 } }}
+            />
+
+            <TextField
+              id="edit-licence-issued"
+              label="Issued"
+              type="date"
+              fullWidth
+              value={form.issuedAt}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  issuedAt: event.target.value,
+                }))
+              }
+              slotProps={{ inputLabel: { shrink: true } }}
+              helperText="The date on the notice, if you have it."
+            />
+
+            <TextField
+              id="edit-licence-expires"
+              label="Valid until"
+              type="date"
+              fullWidth
+              value={form.expiresAt}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  expiresAt: event.target.value,
+                }))
+              }
+              slotProps={{ inputLabel: { shrink: true } }}
+              helperText="Blank for a scheme that does not expire."
             />
 
             <FormControlLabel

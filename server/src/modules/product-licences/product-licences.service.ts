@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -7,7 +8,7 @@ import {
 import { asc, eq } from 'drizzle-orm';
 
 import { recordPrevious } from '../../core/audit/audit-context';
-import { isUniqueViolation } from '../../database/errors';
+import { isCheckViolation, isUniqueViolation } from '../../database/errors';
 import { productLicences } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { CreateProductLicenceDto } from './dto/create-product-licence.dto';
@@ -40,6 +41,8 @@ export class ProductLicencesService {
         .insert(productLicences, {
           number: input.number,
           authority: input.authority,
+          issuedAt: this.dayOrNull(input.issuedAt),
+          expiresAt: this.dayOrNull(input.expiresAt),
           notes: input.notes,
         })
         .returning();
@@ -54,8 +57,22 @@ export class ProductLicencesService {
           'That number is already recorded for that authority',
         );
       }
+      if (isCheckViolation(error, 'product_licences_dates_ordered_check')) {
+        throw new BadRequestException(
+          'A licence cannot expire before it was issued',
+        );
+      }
       throw error;
     }
+  }
+
+  /**
+   * A calendar day as it arrives, stored as the instant that day begins in
+   * UTC — read back the same way by the client's formatDay. undefined stays
+   * undefined so a PATCH that omits it leaves the column alone.
+   */
+  private dayOrNull(value: string | undefined): Date | null {
+    return value ? new Date(value) : null;
   }
 
   /**
@@ -80,10 +97,25 @@ export class ProductLicencesService {
       isActive: existing.isActive,
     });
 
+    /**
+     * Pulled out of the spread rather than overridden inside it: a
+     * conditional spread widens the type to string | Date, and the column
+     * takes a Date. undefined means "not sent"; null clears the date.
+     */
+    const { issuedAt, expiresAt, ...rest } = input;
+
     try {
       await this.tenantDb.update(
         productLicences,
-        input,
+        {
+          ...rest,
+          ...(issuedAt !== undefined
+            ? { issuedAt: this.dayOrNull(issuedAt) }
+            : {}),
+          ...(expiresAt !== undefined
+            ? { expiresAt: this.dayOrNull(expiresAt) }
+            : {}),
+        },
         eq(productLicences.id, licenceId),
       );
     } catch (error) {
@@ -92,6 +124,11 @@ export class ProductLicencesService {
       ) {
         throw new ConflictException(
           'That number is already recorded for that authority',
+        );
+      }
+      if (isCheckViolation(error, 'product_licences_dates_ordered_check')) {
+        throw new BadRequestException(
+          'A licence cannot expire before it was issued',
         );
       }
       throw error;

@@ -13,7 +13,13 @@ import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 
-const EMPTY = { number: '', authority: '', notes: '' };
+const EMPTY = {
+  number: '',
+  authority: '',
+  issuedAt: '',
+  expiresAt: '',
+  notes: '',
+};
 
 /**
  * Number and authority together, because the same digits could be issued by
@@ -55,6 +61,8 @@ export function NewLicenceDialog({
         body: JSON.stringify({
           number: form.number,
           authority: form.authority,
+          issuedAt: form.issuedAt || undefined,
+          expiresAt: form.expiresAt || undefined,
           notes: form.notes || undefined,
         }),
       }),
@@ -90,6 +98,28 @@ export function NewLicenceDialog({
               onChange={update('authority')}
               helperText="Health Canada, FDA, TGA."
               slotProps={{ htmlInput: { maxLength: 100 } }}
+            />
+
+            <TextField
+              id="licence-issued"
+              label="Issued"
+              type="date"
+              fullWidth
+              value={form.issuedAt}
+              onChange={update('issuedAt')}
+              slotProps={{ inputLabel: { shrink: true } }}
+              helperText="The date on the notice, if you have it."
+            />
+
+            <TextField
+              id="licence-expires"
+              label="Valid until"
+              type="date"
+              fullWidth
+              value={form.expiresAt}
+              onChange={update('expiresAt')}
+              slotProps={{ inputLabel: { shrink: true } }}
+              helperText="Blank for a scheme that does not expire, which includes an NPN."
             />
 
             <TextField

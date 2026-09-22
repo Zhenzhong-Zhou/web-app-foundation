@@ -15,6 +15,7 @@ import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import type { Bom, ProductLicence } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
+import { licenceStatus } from '../licences/licence-status';
 
 const EMPTY = { outputQuantity: '', licenceId: '', notes: '' };
 
@@ -55,7 +56,10 @@ export function CreateBomDialog({
 
     void api<ProductLicence[]>('/product-licences')
       .then((rows) => {
-        if (!ignore) setLicences(rows.filter((row) => row.isActive));
+        // Expired counts as unusable too, without anyone having flipped the
+        // withdrawn switch.
+        if (!ignore)
+          setLicences(rows.filter((row) => licenceStatus(row).usable));
       })
       // Silent: without the list the field is empty, and a recipe with no
       // licence is valid.

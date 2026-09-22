@@ -1,0 +1,3 @@
+ALTER TABLE "product_licences" ADD COLUMN "issued_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "product_licences" ADD COLUMN "expires_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "product_licences" ADD CONSTRAINT "product_licences_dates_ordered_check" CHECK ("product_licences"."issued_at" is null or "product_licences"."expires_at" is null or "product_licences"."issued_at" <= "product_licences"."expires_at");

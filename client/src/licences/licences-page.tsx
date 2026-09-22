@@ -18,10 +18,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { HistoryButton } from '../audit/history-button';
 import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
+import { formatDay } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { ProductLicence } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { EditLicenceDialog } from './edit-licence-dialog';
+import { licenceStatus } from './licence-status';
 import { NewLicenceDialog } from './new-licence-dialog';
 
 /**
@@ -97,9 +99,10 @@ export function LicencesPage() {
       </Stack>
 
       <Typography variant="body2" color="text.secondary">
-        Recipes are made under these. A licence that is withdrawn or expired is
-        deactivated rather than deleted, so a batch made under it still traces
-        back.
+        Recipes are made under these. Withdrawn or expired ones stay listed
+        rather than being deleted, so a batch made under one still traces back.
+        Leave &ldquo;Valid until&rdquo; blank for a scheme that does not expire
+        — an NPN does not.
       </Typography>
 
       {error && <Alert severity="error">{error}</Alert>}
@@ -121,6 +124,8 @@ export function LicencesPage() {
                 <TableRow>
                   <TableCell>Number</TableCell>
                   <TableCell>Issued by</TableCell>
+                  <TableCell>Issued</TableCell>
+                  <TableCell>Valid until</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Notes</TableCell>
                   <TableCell align="right" aria-label="Actions" />
@@ -133,11 +138,21 @@ export function LicencesPage() {
                     <TableCell>{licence.number}</TableCell>
                     <TableCell>{licence.authority}</TableCell>
                     <TableCell>
+                      {licence.issuedAt ? formatDay(licence.issuedAt) : '—'}
+                    </TableCell>
+                    <TableCell>
+                      {licence.expiresAt ? formatDay(licence.expiresAt) : '—'}
+                    </TableCell>
+                    <TableCell>
+                      {/* Derived, not stored: a date passes on its own, and a
+                          flag needs somebody to remember. */}
                       <Chip
                         size="small"
-                        label={licence.isActive ? 'Current' : 'Withdrawn'}
-                        color={licence.isActive ? 'success' : 'default'}
-                        variant={licence.isActive ? 'filled' : 'outlined'}
+                        label={licenceStatus(licence).label}
+                        color={licenceStatus(licence).tone}
+                        variant={
+                          licenceStatus(licence).usable ? 'filled' : 'outlined'
+                        }
                       />
                     </TableCell>
                     <TableCell>{licence.notes ?? '—'}</TableCell>

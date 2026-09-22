@@ -54,7 +54,7 @@ export class ProductLicencesController {
     action: AUDIT_ACTIONS.PRODUCT_LICENCE_UPDATED,
     resourceType: 'product_licence',
     resourceId: (_response, request) => request.params.id,
-    fields: ['number', 'authority', 'isActive'],
+    fields: ['number', 'authority', 'isActive', 'expiresAt'],
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,

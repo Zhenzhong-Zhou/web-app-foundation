@@ -5,6 +5,7 @@ import {
   index,
   pgTable,
   text,
+  timestamp,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -56,6 +57,28 @@ export const productLicences = pgTable(
      */
     isActive: boolean('is_active').notNull().default(true),
 
+    /**
+     * When the registration took effect. Nullable, because plenty are
+     * recorded without anyone looking the date up, and useful for the one
+     * case a number alone cannot express: a licence issued from a future
+     * date, which happens on a renewal or a transfer and must not be
+     * offered to a recipe a month early.
+     */
+    issuedAt: timestamp('issued_at', { withTimezone: true }),
+
+    /**
+     * Usually null, and that is not a design flaw. A Health Canada product
+     * licence stays valid while the product is marketed and compliant — it is
+     * the *site* licence that renews annually. Other schemes do expire: an FDA
+     * facility registration renews on a cycle, an export certificate ends, an
+     * ISO or UL certification has a date on it.
+     *
+     * A calendar day stored as timestamptz, like a lot's expiry, written as
+     * UTC midnight and read back in UTC (ADR-025's neighbour: the client's
+     * formatDay).
+     */
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+
     notes: text('notes'),
 
     ...timestamps,
@@ -76,6 +99,16 @@ export const productLicences = pgTable(
     check(
       'product_licences_number_not_blank_check',
       sql`length(btrim(${t.number})) > 0`,
+    ),
+
+    /**
+     * A licence cannot lapse before it starts. Enforced here rather than only
+     * in the service because the two dates are meaningless in that order, and
+     * a row that says so would make every derived status wrong at once.
+     */
+    check(
+      'product_licences_dates_ordered_check',
+      sql`${t.issuedAt} is null or ${t.expiresAt} is null or ${t.issuedAt} <= ${t.expiresAt}`,
     ),
   ],
 );

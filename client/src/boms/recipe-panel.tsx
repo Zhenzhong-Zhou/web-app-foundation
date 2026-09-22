@@ -29,6 +29,7 @@ import type {
   ProductLicence,
   VariantOption,
 } from '../lib/types';
+import { licenceStatus } from '../licences/licence-status';
 import type { Variant } from '../products/products-page';
 import { AddBomLineDialog } from './add-bom-line-dialog';
 import { CreateBomDialog } from './create-bom-dialog';
@@ -446,7 +447,8 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
               {licences
                 .filter(
                   (licence) =>
-                    licence.isActive || licence.id === selected.licenceId,
+                    licenceStatus(licence).usable ||
+                    licence.id === selected.licenceId,
                 )
                 .map((licence) => (
                   <MenuItem key={licence.id} value={licence.id}>

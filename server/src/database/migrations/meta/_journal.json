@@ -169,6 +169,13 @@
       "when": 1790102815413,
       "tag": "0023_production_order_reference",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790117214286,
+      "tag": "0024_product_licence_dates",
+      "breakpoints": true
     }
   ]
 }
