@@ -7,6 +7,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import {
+  lots,
   notifications,
   productionOrderLines,
   productionOrders,
@@ -413,6 +414,339 @@ describe('Production orders (e2e)', () => {
         .patch(`/v1/production-orders/${run.id}`)
         .send({ quantityPlanned: '600' })
         .expect(409);
+    });
+  });
+
+  /**
+   * A lot-tracked component leaves the shelf earliest expiry first, one
+   * transfer per lot, and close consumes the lots the run was given
+   * (ADR-039). Without this a recipe containing any lot-tracked stocked
+   * component could not be released at all.
+   */
+  describe('lot-tracked components', () => {
+    interface IssuePlan {
+      lines: {
+        componentVariantId: string;
+        quantity: string;
+        tracksLots: boolean;
+        lots: { code: string; take: string; taken: boolean }[];
+        shortBy: string | null;
+      }[];
+    }
+
+    interface ComponentLotsDetail extends RunDetailResponse {
+      componentLots: {
+        componentVariantId: string;
+        code: string;
+        issued: string;
+        consumed: string;
+      }[];
+    }
+
+    /**
+     * A tracked blend in three lots on the shelf: one expiring soon, one
+     * later, one that never expires. 2400 per 1000 made, so a run of 1000
+     * needs 2400 — more than the earliest lot holds.
+     */
+    async function trackedScenario(org: Org) {
+      const site = await makeLocation(org, 'SITE');
+      const [shelf, wip] = await Promise.all([
+        makeLocation(org, 'SHELF', site),
+        makeLocation(org, 'WIP', site),
+      ]);
+
+      const [output, blend] = await Promise.all([
+        makeVariant(org, 'FOCUS-60CT', 'good', true),
+        makeVariant(org, 'BLEND-T', 'material', true),
+      ]);
+
+      const bomRes = await org.agent
+        .post('/v1/boms')
+        .send({
+          outputVariantId: output,
+          outputQuantity: '1000',
+          lines: [{ componentVariantId: blend, quantity: '2400' }],
+        })
+        .expect(201);
+
+      const bomId = body<CreatedBom>(bomRes).bom.id;
+      await org.agent.post(`/v1/boms/${bomId}/promote`).expect(204);
+
+      for (const [code, quantity, expiresAt] of [
+        ['LATE', '1500', '2027-06-01T00:00:00.000Z'],
+        ['EARLY', '1500', '2026-12-01T00:00:00.000Z'],
+        ['NEVER', '5000', undefined],
+      ] as const) {
+        await org.agent
+          .post('/v1/stock/movements')
+          .send({
+            variantId: blend,
+            toLocationId: shelf,
+            quantity,
+            reason: 'receipt',
+            lot: { code, expiresAt },
+          })
+          .expect(201);
+      }
+
+      const run = await createRun(org, {
+        outputVariantId: output,
+        bomId,
+        locationId: wip,
+        quantityPlanned: '1000',
+      });
+
+      return { shelf, wip, output, blend, bomId, run };
+    }
+
+    /** Quantity per lot code of one variant at one location. */
+    async function byLot(variantId: string, locationId: string) {
+      const rows = await db
+        .select({ code: lots.code, quantity: stockLevels.quantity })
+        .from(stockLevels)
+        .innerJoin(lots, eq(lots.id, stockLevels.lotId))
+        .where(
+          and(
+            eq(stockLevels.variantId, variantId),
+            eq(stockLevels.locationId, locationId),
+          ),
+        );
+
+      return Object.fromEntries(rows.map((row) => [row.code, row.quantity]));
+    }
+
+    async function lotIdOf(code: string) {
+      const [lot] = await db.select().from(lots).where(eq(lots.code, code));
+      return lot.id;
+    }
+
+    it('issues earliest expiry first, splitting across lots', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await trackedScenario(alpha);
+
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/release`)
+        .send({ sourceLocationId: s.shelf })
+        .expect(200);
+
+      // EARLY is emptied, LATE covers the rest, NEVER is untouched.
+      expect(await byLot(s.blend, s.wip)).toEqual({
+        EARLY: '1500.0000',
+        LATE: '900.0000',
+      });
+      expect(await byLot(s.blend, s.shelf)).toEqual({
+        EARLY: '0.0000',
+        LATE: '600.0000',
+        NEVER: '5000.0000',
+      });
+
+      // One transfer per lot, so the ledger names each one.
+      const transfers = await db
+        .select()
+        .from(stockMovements)
+        .where(
+          and(
+            eq(stockMovements.referenceId, s.run.id),
+            eq(stockMovements.reason, 'transfer'),
+          ),
+        );
+      expect(transfers).toHaveLength(2);
+    });
+
+    it('previews the same pick without moving anything', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await trackedScenario(alpha);
+
+      const plan = body<IssuePlan>(
+        await alpha.agent
+          .get(
+            `/v1/production-orders/${s.run.id}/issue-plan?sourceLocationId=${s.shelf}`,
+          )
+          .expect(200),
+      );
+
+      const [line] = plan.lines;
+      expect(line.quantity).toBe('2400.0000');
+      expect(line.shortBy).toBeNull();
+      expect(
+        line.lots.filter((lot) => lot.taken).map((lot) => [lot.code, lot.take]),
+      ).toEqual([
+        ['EARLY', '1500.0000'],
+        ['LATE', '900.0000'],
+      ]);
+
+      expect(await byLot(s.blend, s.wip)).toEqual({});
+    });
+
+    it('takes hand-picked lots instead of the default', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await trackedScenario(alpha);
+
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/release`)
+        .send({
+          sourceLocationId: s.shelf,
+          lots: [
+            {
+              componentVariantId: s.blend,
+              lots: [{ lotId: await lotIdOf('NEVER'), quantity: '2400' }],
+            },
+          ],
+        })
+        .expect(200);
+
+      expect(await byLot(s.blend, s.wip)).toEqual({ NEVER: '2400.0000' });
+    });
+
+    it('refuses hand-picked lots that do not add up', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await trackedScenario(alpha);
+
+      const res = await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/release`)
+        .send({
+          sourceLocationId: s.shelf,
+          lots: [
+            {
+              componentVariantId: s.blend,
+              lots: [{ lotId: await lotIdOf('NEVER'), quantity: '100' }],
+            },
+          ],
+        })
+        .expect(400);
+
+      expect((res.body as { message: string }).message).toContain('add up to');
+      expect(await byLot(s.blend, s.wip)).toEqual({});
+    });
+
+    it('refuses a release the lots cannot cover, naming the component', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await trackedScenario(alpha);
+
+      // 5000 needs 12000; the shelf holds 8000.
+      const big = await createRun(alpha, {
+        outputVariantId: s.output,
+        bomId: s.bomId,
+        locationId: s.wip,
+        quantityPlanned: '5000',
+      });
+
+      const res = await alpha.agent
+        .post(`/v1/production-orders/${big.id}/release`)
+        .send({ sourceLocationId: s.shelf })
+        .expect(409);
+
+      expect((res.body as { message: string }).message).toContain('BLEND-T');
+      expect(await byLot(s.blend, s.wip)).toEqual({});
+    });
+
+    it('consumes the lots the run was given, and shows them', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await trackedScenario(alpha);
+
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/release`)
+        .send({ sourceLocationId: s.shelf })
+        .expect(200);
+
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/close`)
+        .send({})
+        .expect(200);
+
+      expect(await byLot(s.blend, s.wip)).toEqual({
+        EARLY: '0.0000',
+        LATE: '0.0000',
+      });
+
+      const detail = body<ComponentLotsDetail>(
+        await alpha.agent.get(`/v1/production-orders/${s.run.id}`).expect(200),
+      );
+
+      // The recall question: which lots went into this run.
+      expect(
+        detail.componentLots.map((lot) => [lot.code, lot.issued, lot.consumed]),
+      ).toEqual([
+        ['EARLY', '1500.0000', '1500.0000'],
+        ['LATE', '900.0000', '900.0000'],
+      ]);
+    });
+
+    /**
+     * The single-site case: stored and blended in the same room. Nothing
+     * moves, because a transfer to its own location is a ledger row for an
+     * event that did not happen — and close consumes straight off the shelf.
+     */
+    it('issues nothing when the source is the run location, and still consumes', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await trackedScenario(alpha);
+
+      const inPlace = await createRun(alpha, {
+        outputVariantId: s.output,
+        bomId: s.bomId,
+        locationId: s.shelf,
+        quantityPlanned: '1000',
+      });
+
+      await alpha.agent
+        .post(`/v1/production-orders/${inPlace.id}/release`)
+        .send({ sourceLocationId: s.shelf })
+        .expect(200);
+
+      const transfers = await db
+        .select()
+        .from(stockMovements)
+        .where(
+          and(
+            eq(stockMovements.referenceId, inPlace.id),
+            eq(stockMovements.reason, 'transfer'),
+          ),
+        );
+      expect(transfers).toHaveLength(0);
+
+      await alpha.agent
+        .post(`/v1/production-orders/${inPlace.id}/close`)
+        .send({})
+        .expect(200);
+
+      // 2400 consumed earliest expiry first, straight from the shelf.
+      expect(await byLot(s.blend, s.shelf)).toEqual({
+        EARLY: '0.0000',
+        LATE: '600.0000',
+        NEVER: '5000.0000',
+      });
+    });
+
+    it('tops up over plan from the next lot to expire', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await trackedScenario(alpha);
+
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/release`)
+        .send({ sourceLocationId: s.shelf })
+        .expect(200);
+
+      const detail = body<RunDetailResponse>(
+        await alpha.agent.get(`/v1/production-orders/${s.run.id}`).expect(200),
+      );
+
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/close`)
+        .send({
+          lines: [{ lineId: detail.lines[0].id, quantityConsumed: '2500' }],
+        })
+        .expect(200);
+
+      // 100 more came from LATE, the next to expire, not from NEVER.
+      expect(await byLot(s.blend, s.shelf)).toEqual({
+        EARLY: '0.0000',
+        LATE: '500.0000',
+        NEVER: '5000.0000',
+      });
+      expect(await byLot(s.blend, s.wip)).toEqual({
+        EARLY: '0.0000',
+        LATE: '0.0000',
+      });
     });
   });
 

@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
@@ -15,6 +15,7 @@ import {
   boms,
   productionOrderLines,
   productionOrders,
+  productVariants,
   stockMovements,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -27,11 +28,23 @@ import type {
 import type {
   CancelProductionOrderDto,
   CloseProductionOrderDto,
+  IssuePlanQueryDto,
   RecordOutputDto,
   ReleaseProductionOrderDto,
 } from './dto/transitions.dto';
+import {
+  allocateFefo,
+  type LotCandidate,
+  lotCandidates,
+} from './lot-allocation';
 
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
+
+/**
+ * Local, unlike the exported row types below: it appears only in a private
+ * helper's signature, so declaration emit never has to name it.
+ */
+type Bom = typeof boms.$inferSelect;
 /**
  * Exported because they appear in this service's public return types, and a
  * type the controller's inferred signature references has to be nameable from
@@ -39,6 +52,18 @@ type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
  */
 export type ProductionOrder = typeof productionOrders.$inferSelect;
 export type ProductionOrderLine = typeof productionOrderLines.$inferSelect;
+
+/** One recipe line as release would issue it, lots included (ADR-039). */
+export interface IssuePlanLine {
+  componentVariantId: string;
+  sku: string;
+  unitOfMeasure: string;
+  tracksLots: boolean;
+  supplyType: 'stocked' | 'external';
+  quantity: string;
+  lots: LotCandidate[];
+  shortBy: string | null;
+}
 
 /**
  * Flagged, never blocked (ADR-032). A cap that refuses to record a real event
@@ -162,6 +187,7 @@ export class ProductionOrdersService {
     return {
       ...run,
       lines,
+      componentLots: await this.componentLots(run),
       outputLots: [
         ...new Set(
           outputLots
@@ -170,6 +196,117 @@ export class ProductionOrdersService {
         ),
       ],
     };
+  }
+
+  /**
+   * Which lot of each component went into this run, and how much of it was
+   * consumed — the recall question, answered from the ledger (ADR-039).
+   * Issued counts transfers into the run's location, top-ups included;
+   * consumed counts what close used up.
+   */
+  private async componentLots(run: ProductionOrder) {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const result = await tx.execute(sql`
+        select
+          sm.variant_id as component_variant_id,
+          sm.lot_id,
+          l.code,
+          l.expires_at,
+          coalesce(
+            sum(sm.quantity) filter (
+              where sm.reason = 'transfer'
+                and sm.to_location_id = ${run.locationId}::uuid
+            ),
+            0
+          )::text as issued,
+          coalesce(
+            sum(sm.quantity) filter (where sm.reason = 'consumption'),
+            0
+          )::text as consumed
+        from stock_movements sm
+        join lots l on l.id = sm.lot_id
+        where sm.organization_id = ${organizationId}::uuid
+          and sm.reference_type = 'production_order'
+          and sm.reference_id = ${run.id}::uuid
+          and sm.reason in ('transfer', 'consumption')
+        group by sm.variant_id, sm.lot_id, l.code, l.expires_at
+        order by l.expires_at asc nulls last, l.code asc
+      `);
+
+      return result.rows.map((row) => ({
+        componentVariantId: row.component_variant_id as string,
+        lotId: row.lot_id as string,
+        code: row.code as string,
+        expiresAt: (row.expires_at as Date | null) ?? null,
+        issued: row.issued as string,
+        consumed: row.consumed as string,
+      }));
+    });
+  }
+
+  /**
+   * What release would issue from a source, and from which lots, without
+   * moving anything (ADR-039).
+   *
+   * The release dialog shows this so the earliest-expiry pick is visible
+   * before it happens and can be changed. Read-only and unlocked: stock can
+   * move between the preview and the release, and release recomputes rather
+   * than trusting what the dialog saw. Scaling is the same SQL expression
+   * release uses, so the numbers agree.
+   */
+  async issuePlan(runId: string, query: IssuePlanQueryDto) {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const { run, bom } = await this.loadForIssue(tx, organizationId, runId);
+
+      const planned = await tx.execute(sql`
+        select
+          bl.component_variant_id,
+          pv.sku,
+          pv.unit_of_measure,
+          pv.tracks_lots,
+          bl.supply_type,
+          round(
+            bl.quantity * (${run.quantityPlanned}::numeric / ${bom.outputQuantity}::numeric),
+            4
+          )::text as quantity
+        from bom_lines bl
+        join product_variants pv on pv.id = bl.component_variant_id
+        where bl.bom_id = ${bom.id}::uuid
+          and bl.organization_id = ${organizationId}::uuid
+        order by pv.sku
+      `);
+
+      const lines: IssuePlanLine[] = [];
+
+      for (const row of planned.rows) {
+        const line: IssuePlanLine = {
+          componentVariantId: row.component_variant_id as string,
+          sku: row.sku as string,
+          unitOfMeasure: row.unit_of_measure as string,
+          tracksLots: row.tracks_lots as boolean,
+          supplyType: row.supply_type as 'stocked' | 'external',
+          quantity: row.quantity as string,
+          lots: [],
+          shortBy: null,
+        };
+
+        if (line.supplyType === 'stocked' && line.tracksLots) {
+          const { candidates, shortBy } = await lotCandidates(tx, {
+            organizationId,
+            variantId: line.componentVariantId,
+            locationId: query.sourceLocationId,
+            quantity: line.quantity,
+          });
+
+          line.lots = candidates;
+          line.shortBy = shortBy;
+        }
+
+        lines.push(line);
+      }
+
+      return { lines };
+    });
   }
 
   async create(input: CreateProductionOrderDto): Promise<ProductionOrder> {
@@ -262,24 +399,7 @@ export class ProductionOrdersService {
     actorId: string,
   ): Promise<ProductionOrderLine[]> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const run = await this.loadWithin(tx, organizationId, runId);
-
-      this.assertStatus(run.status, 'draft', 'released');
-
-      if (!run.bomId) {
-        throw new ConflictException(
-          'This run has no BOM, so there is nothing to issue — attach one first',
-        );
-      }
-
-      const [bom] = await tx
-        .select()
-        .from(boms)
-        .where(
-          and(eq(boms.organizationId, organizationId), eq(boms.id, run.bomId)),
-        );
-
-      if (!bom) throw new NotFoundException('No such BOM');
+      const { run, bom } = await this.loadForIssue(tx, organizationId, runId);
 
       const lines = await tx.execute(sql`
         insert into production_order_lines (
@@ -300,7 +420,7 @@ export class ProductionOrdersService {
           case when bl.supply_type = 'stocked' then ${input.sourceLocationId}::uuid end
         from bom_lines bl
         join product_variants pv on pv.id = bl.component_variant_id
-        where bl.bom_id = ${run.bomId}::uuid
+        where bl.bom_id = ${bom.id}::uuid
           and bl.organization_id = ${organizationId}::uuid
         returning *
       `);
@@ -333,6 +453,39 @@ export class ProductionOrdersService {
         .where(eq(productionOrderLines.productionOrderId, runId))
         .orderBy(asc(productionOrderLines.id));
 
+      const tracked = await this.trackedComponents(
+        tx,
+        organizationId,
+        issued.map((line) => line.componentVariantId),
+      );
+
+      // Hand-picked lots only make sense for a line that moves lot-tracked
+      // stock. Anything else is a mistake worth a 400, not a silent ignore.
+      const picked = new Map(
+        (input.lots ?? []).map((entry) => [
+          entry.componentVariantId,
+          entry.lots,
+        ]),
+      );
+
+      for (const componentVariantId of picked.keys()) {
+        const line = issued.find(
+          (row) => row.componentVariantId === componentVariantId,
+        );
+
+        if (!line || line.supplyType !== 'stocked') {
+          throw new BadRequestException(
+            'Lots were given for a component this run does not issue from stock',
+          );
+        }
+
+        if (!tracked.has(componentVariantId)) {
+          throw new BadRequestException(
+            `${line.sku} is not lot tracked, so it cannot be issued by lot`,
+          );
+        }
+      }
+
       /**
        * Issuing is a transfer, not a consumption. The material has moved to
        * where the work happens and is still ours — which is the whole reason a
@@ -344,20 +497,45 @@ export class ProductionOrdersService {
       for (const line of issued) {
         if (line.supplyType !== 'stocked' || !line.sourceLocationId) continue;
 
-        await this.stock.recordWithin(
-          tx,
-          organizationId,
-          {
-            variantId: line.componentVariantId,
-            fromLocationId: line.sourceLocationId,
-            toLocationId: run.locationId,
-            quantity: line.quantityPlanned,
-            reason: 'transfer',
-            referenceType: 'production_order',
-            referenceId: runId,
-          },
-          actorId,
-        );
+        /**
+         * Nothing to move when the components are already where the work
+         * happens — the common shape for a single-site maker, who stores and
+         * blends in the same room. A transfer to its own location is refused
+         * by stock_movements_distinct_locations_check, and rightly: it would
+         * be a ledger row claiming something happened that did not. Close
+         * then consumes straight from that location.
+         */
+        if (line.sourceLocationId === run.locationId) continue;
+
+        // One transfer per lot, so the ledger records exactly which lots
+        // went to the run. An untracked component is one transfer, as before.
+        const allocations = tracked.has(line.componentVariantId)
+          ? await this.lotsToIssue(
+              tx,
+              organizationId,
+              line,
+              line.sourceLocationId,
+              picked.get(line.componentVariantId),
+            )
+          : [{ lotId: null, quantity: line.quantityPlanned }];
+
+        for (const allocation of allocations) {
+          await this.stock.recordWithin(
+            tx,
+            organizationId,
+            {
+              variantId: line.componentVariantId,
+              lotId: allocation.lotId,
+              fromLocationId: line.sourceLocationId,
+              toLocationId: run.locationId,
+              quantity: allocation.quantity,
+              reason: 'transfer',
+              referenceType: 'production_order',
+              referenceId: runId,
+            },
+            actorId,
+          );
+        }
       }
 
       await tx
@@ -458,44 +636,90 @@ export class ProductionOrdersService {
 
       const variances: LineVariance[] = [];
 
+      const tracked = await this.trackedComponents(
+        tx,
+        organizationId,
+        lines.map((line) => line.componentVariantId),
+      );
+
       for (const line of lines) {
         if (line.supplyType !== 'stocked') continue;
 
         const consumed = actuals.get(line.id) ?? line.quantityPlanned;
         const shortfall = this.difference(consumed, line.quantityPlanned);
 
-        if (shortfall > 0 && line.sourceLocationId) {
+        const isTracked = tracked.has(line.componentVariantId);
+
+        /**
+         * True when release moved nothing because the source is the run's own
+         * location. There is no top-up to make, and no set of issued lots to
+         * consume within: the whole location is what this run drew on.
+         */
+        const issuedInPlace = line.sourceLocationId === run.locationId;
+
+        if (shortfall > 0 && line.sourceLocationId && !issuedInPlace) {
+          // A top-up follows the same rule as release: earliest expiry first
+          // from the source, one transfer per lot (ADR-039).
+          const topUps = isTracked
+            ? await allocateFefo(tx, {
+                organizationId,
+                variantId: line.componentVariantId,
+                locationId: line.sourceLocationId,
+                quantity: shortfall.toFixed(4),
+                sku: line.sku,
+              })
+            : [{ lotId: null, quantity: shortfall.toFixed(4) }];
+
+          for (const topUp of topUps) {
+            await this.stock.recordWithin(
+              tx,
+              organizationId,
+              {
+                variantId: line.componentVariantId,
+                lotId: topUp.lotId,
+                fromLocationId: line.sourceLocationId,
+                toLocationId: run.locationId,
+                quantity: topUp.quantity,
+                reason: 'transfer',
+                referenceType: 'production_order',
+                referenceId: runId,
+                note: 'Top-up for consumption over plan',
+              },
+              actorId,
+            );
+          }
+        }
+
+        // Consumed from the lots this run was given — not from whatever else
+        // shares its location — so the recall trail stays exact.
+        const consumption = isTracked
+          ? await allocateFefo(tx, {
+              organizationId,
+              variantId: line.componentVariantId,
+              locationId: run.locationId,
+              quantity: consumed,
+              sku: line.sku,
+              fromRunId: issuedInPlace ? undefined : runId,
+            })
+          : [{ lotId: null, quantity: consumed }];
+
+        for (const part of consumption) {
           await this.stock.recordWithin(
             tx,
             organizationId,
             {
               variantId: line.componentVariantId,
-              fromLocationId: line.sourceLocationId,
-              toLocationId: run.locationId,
-              quantity: shortfall.toFixed(4),
-              reason: 'transfer',
+              lotId: part.lotId,
+              fromLocationId: run.locationId,
+              quantity: part.quantity,
+              reason: 'consumption',
               referenceType: 'production_order',
               referenceId: runId,
-              note: 'Top-up for consumption over plan',
+              note: input.note,
             },
             actorId,
           );
         }
-
-        await this.stock.recordWithin(
-          tx,
-          organizationId,
-          {
-            variantId: line.componentVariantId,
-            fromLocationId: run.locationId,
-            quantity: consumed,
-            reason: 'consumption',
-            referenceType: 'production_order',
-            referenceId: runId,
-            note: input.note,
-          },
-          actorId,
-        );
 
         await tx
           .update(productionOrderLines)
@@ -660,6 +884,113 @@ export class ProductionOrdersService {
         'That BOM makes a different variant than this run',
       );
     }
+  }
+
+  /**
+   * The run and the recipe behind it, for the two paths that answer "what
+   * would this issue": the preview and the release itself.
+   *
+   * Shared so they cannot drift. A preview built from a different recipe, or
+   * one that allowed a status release refuses, would show somebody a plan
+   * they cannot act on. What differs comes after: release copies the lines
+   * and takes locks, the preview does neither.
+   */
+  private async loadForIssue(
+    tx: Tx,
+    organizationId: string,
+    runId: string,
+  ): Promise<{ run: ProductionOrder; bom: Bom }> {
+    const run = await this.loadWithin(tx, organizationId, runId);
+
+    this.assertStatus(run.status, 'draft', 'released');
+
+    if (!run.bomId) {
+      throw new ConflictException(
+        'This run has no BOM, so there is nothing to issue — attach one first',
+      );
+    }
+
+    const [bom] = await tx
+      .select()
+      .from(boms)
+      .where(
+        and(eq(boms.organizationId, organizationId), eq(boms.id, run.bomId)),
+      );
+
+    if (!bom) throw new NotFoundException('No such BOM');
+
+    return { run, bom };
+  }
+
+  /** The subset of these components whose stock moves by lot. */
+  private async trackedComponents(
+    tx: Tx,
+    organizationId: string,
+    variantIds: string[],
+  ): Promise<Set<string>> {
+    if (variantIds.length === 0) return new Set();
+
+    const rows = await tx
+      .select({ id: productVariants.id })
+      .from(productVariants)
+      .where(
+        and(
+          eq(productVariants.organizationId, organizationId),
+          inArray(productVariants.id, variantIds),
+          eq(productVariants.tracksLots, true),
+        ),
+      );
+
+    return new Set(rows.map((row) => row.id));
+  }
+
+  /**
+   * The lots one tracked line is issued from: the person's pick if they made
+   * one, otherwise earliest expiry first.
+   *
+   * A pick must add up to exactly what the line needs. Checked in SQL,
+   * because summing decimal strings in JavaScript is the drift ADR-025 exists
+   * to prevent. Whether each lot belongs to the component and holds enough at
+   * the source is left to the stock service, which already refuses both.
+   */
+  private async lotsToIssue(
+    tx: Tx,
+    organizationId: string,
+    line: ProductionOrderLine,
+    sourceLocationId: string,
+    picked: { lotId: string; quantity: string }[] | undefined,
+  ): Promise<{ lotId: string; quantity: string }[]> {
+    if (!picked) {
+      return allocateFefo(tx, {
+        organizationId,
+        variantId: line.componentVariantId,
+        locationId: sourceLocationId,
+        quantity: line.quantityPlanned,
+        sku: line.sku,
+      });
+    }
+
+    const values = sql.join(
+      picked.map((entry) => sql`(${entry.quantity}::numeric)`),
+      sql`, `,
+    );
+
+    const result = await tx.execute(sql`
+      select
+        sum(v.q) = ${line.quantityPlanned}::numeric as matches,
+        sum(v.q)::text as total
+      from (values ${values}) as v(q)
+    `);
+
+    const [check] = result.rows as { matches: boolean; total: string }[];
+
+    if (!check.matches) {
+      throw new BadRequestException(
+        `The lots chosen for ${line.sku} add up to ${check.total}, but the run needs ${line.quantityPlanned}`,
+      );
+    }
+
+    return picked;
   }
 
   /**

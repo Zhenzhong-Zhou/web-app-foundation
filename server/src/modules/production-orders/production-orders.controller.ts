@@ -25,6 +25,7 @@ import {
 import {
   CancelProductionOrderDto,
   CloseProductionOrderDto,
+  IssuePlanQueryDto,
   RecordOutputDto,
   ReleaseProductionOrderDto,
 } from './dto/transitions.dto';
@@ -45,6 +46,20 @@ export class ProductionOrdersController {
   @RequirePermissions(PERMISSIONS.PRODUCTION_VIEW)
   find(@Param('id', ParseUUIDPipe) id: string) {
     return this.runs.findDetail(id);
+  }
+
+  /**
+   * What releasing from a source would issue, lot by lot, without moving
+   * anything. Release's permission, since it shows exactly what release
+   * would take (ADR-039).
+   */
+  @Get(':id/issue-plan')
+  @RequirePermissions(PERMISSIONS.PRODUCTION_RELEASE)
+  issuePlan(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: IssuePlanQueryDto,
+  ) {
+    return this.runs.issuePlan(id, query);
   }
 
   @Post()

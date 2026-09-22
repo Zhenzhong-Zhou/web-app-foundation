@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsISO8601,
   IsOptional,
@@ -32,6 +33,35 @@ class LineSourceDto {
  * the shape that matches the work is a default with overrides rather than a
  * source repeated on every line.
  */
+class LotAllocationDto {
+  @IsUUID()
+  lotId!: string;
+
+  @IsString()
+  @Matches(POSITIVE_DECIMAL, {
+    message:
+      'quantity must be a positive number with at most 4 decimal places, sent as a string',
+  })
+  quantity!: string;
+}
+
+/**
+ * The lots a person chose for one lot-tracked component, replacing the
+ * earliest-expiry-first pick for that line only (ADR-039). They must add up
+ * to exactly what the line needs; the server checks, in SQL.
+ */
+class LineLotsDto {
+  @IsUUID()
+  componentVariantId!: string;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => LotAllocationDto)
+  lots!: LotAllocationDto[];
+}
+
 export class ReleaseProductionOrderDto {
   @IsUUID()
   sourceLocationId!: string;
@@ -42,6 +72,23 @@ export class ReleaseProductionOrderDto {
   @ValidateNested({ each: true })
   @Type(() => LineSourceDto)
   overrides?: LineSourceDto[];
+
+  /**
+   * Hand-picked lots, per component. Omitted lines are picked earliest
+   * expiry first, which is the default and the common case.
+   */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(200)
+  @ValidateNested({ each: true })
+  @Type(() => LineLotsDto)
+  lots?: LineLotsDto[];
+}
+
+/** What release would issue from a source, before anything moves. */
+export class IssuePlanQueryDto {
+  @IsUUID()
+  sourceLocationId!: string;
 }
 
 class OutputLotDto {
