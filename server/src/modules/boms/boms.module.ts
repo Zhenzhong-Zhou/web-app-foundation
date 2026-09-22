@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { ProductLicencesModule } from '../product-licences/product-licences.module';
 import { BomsController } from './boms.controller';
 import { BomsService } from './boms.service';
 
@@ -15,6 +16,10 @@ import { BomsService } from './boms.service';
  * runs.
  */
 @Module({
+  // For the tenant-scoped licence check: the foreign key is global, so
+  // without it a recipe could be attached to another organization's licence
+  // by id and the database would accept it (ADR-003).
+  imports: [ProductLicencesModule],
   controllers: [BomsController],
   providers: [BomsService],
   exports: [BomsService],

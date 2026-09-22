@@ -7,6 +7,7 @@ import {
   orders,
   partners,
   productionOrders,
+  productLicences,
   products,
   productVariants,
   stockMovements,
@@ -84,6 +85,11 @@ const RESOLVERS: Record<string, Resolver> = {
       eq(boms.id, id),
     );
     return row && `${row.sku} v${row.version}`;
+  },
+
+  product_licence: async (db, id) => {
+    const [row] = await db.select(productLicences, eq(productLicences.id, id));
+    return row && `${row.authority} ${row.number}`;
   },
 
   lot: async (db, id) => {

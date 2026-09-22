@@ -13,6 +13,7 @@ import {
 } from '../../database/errors';
 import { bomLines, boms } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { ProductLicencesService } from '../product-licences/product-licences.service';
 import type { CreateBomDto } from './dto/create-bom.dto';
 import type { CreateBomLineDto } from './dto/create-bom-line.dto';
 import type { ListBomsDto } from './dto/list-boms.dto';
@@ -47,7 +48,24 @@ type BomLine = typeof bomLines.$inferSelect;
 export class BomsService {
   private readonly logger = new Logger(BomsService.name);
 
-  constructor(private readonly tenantDb: TenantDb) {}
+  constructor(
+    private readonly tenantDb: TenantDb,
+    private readonly licences: ProductLicencesService,
+  ) {}
+
+  /**
+   * The licence foreign key is global, like every id here: without this check
+   * another organization's licence would be accepted by the database, and the
+   * recall trail would point outside the tenant (ADR-003). The foreign-key
+   * catch below still covers an id that exists nowhere at all.
+   */
+  private async assertLicenceWithin(licenceId: string | undefined) {
+    if (!licenceId) return;
+
+    if (!(await this.licences.existsWithin(licenceId))) {
+      throw new BadRequestException('licenceId does not exist');
+    }
+  }
 
   list(query: ListBomsDto) {
     const filters = [
@@ -118,6 +136,8 @@ export class BomsService {
         );
       }
 
+      await this.assertLicenceWithin(input.licenceId);
+
       const bom = await this.insertHeader(tx, {
         organizationId,
         outputVariantId: input.outputVariantId,
@@ -142,6 +162,8 @@ export class BomsService {
     const bom = await this.findById(bomId);
 
     this.assertDraft(bom.status, 'edited');
+
+    await this.assertLicenceWithin(input.licenceId);
 
     try {
       await this.tenantDb.update(boms, input, eq(boms.id, bomId));

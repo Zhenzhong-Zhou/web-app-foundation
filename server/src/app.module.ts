@@ -22,6 +22,7 @@ import { BomsModule } from './modules/boms/boms.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PartnersModule } from './modules/partners/partners.module';
+import { ProductLicencesModule } from './modules/product-licences/product-licences.module';
 import { ProductionOrdersModule } from './modules/production-orders/production-orders.module';
 import { ProductsModule } from './modules/products/products.module';
 import { StockModule } from './modules/stock/stock.module';
@@ -114,6 +115,7 @@ import { StockModule } from './modules/stock/stock.module';
 
     // Feature modules. These consume the above and add nothing to it.
     ProductsModule,
+    ProductLicencesModule,
     BomsModule,
     ProductionOrdersModule,
     LocationsModule,

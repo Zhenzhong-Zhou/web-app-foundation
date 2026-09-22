@@ -34,6 +34,13 @@ export const PERMISSIONS = {
   PRODUCTS_CREATE: 'products.create',
   PRODUCTS_UPDATE: 'products.update',
 
+  // Separate from products.*: a licence is compliance data, and the person
+  // who keeps registrations current is not always the person who edits the
+  // catalogue. No delete — a recipe made under one keeps pointing at it.
+  PRODUCT_LICENCES_VIEW: 'product_licences.view',
+  PRODUCT_LICENCES_CREATE: 'product_licences.create',
+  PRODUCT_LICENCES_UPDATE: 'product_licences.update',
+
   LOCATIONS_VIEW: 'locations.view',
   LOCATIONS_CREATE: 'locations.create',
   LOCATIONS_UPDATE: 'locations.update',
@@ -79,6 +86,9 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'products.view': 'See the product catalogue',
   'products.create': 'Add a product to the catalogue',
   'products.update': 'Edit or discontinue a product',
+  'product_licences.view': 'See product licences and registrations',
+  'product_licences.create': 'Record a licence number',
+  'product_licences.update': 'Correct a licence, or mark it withdrawn',
   'locations.view': 'See warehouses, zones, and bins',
   'locations.create': 'Add a location',
   'locations.update': 'Edit, move, or retire a location',
@@ -149,6 +159,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.PRODUCTS_VIEW,
     PERMISSIONS.PRODUCTS_CREATE,
     PERMISSIONS.PRODUCTS_UPDATE,
+    PERMISSIONS.PRODUCT_LICENCES_VIEW,
+    PERMISSIONS.PRODUCT_LICENCES_CREATE,
+    PERMISSIONS.PRODUCT_LICENCES_UPDATE,
     PERMISSIONS.BOMS_VIEW,
     PERMISSIONS.BOMS_CREATE,
     PERMISSIONS.BOMS_UPDATE,
@@ -177,6 +190,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.ORGANIZATIONS_VIEW,
     // Read-only means read: a Viewer sees the catalogue and changes nothing.
     PERMISSIONS.PRODUCTS_VIEW,
+    PERMISSIONS.PRODUCT_LICENCES_VIEW,
     PERMISSIONS.BOMS_VIEW,
     PERMISSIONS.LOCATIONS_VIEW,
     PERMISSIONS.STOCK_VIEW,

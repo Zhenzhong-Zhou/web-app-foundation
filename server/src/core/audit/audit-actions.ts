@@ -49,6 +49,9 @@ export const AUDIT_ACTIONS = {
 
   STOCK_LOT_UPDATED: 'stock.lot_updated',
 
+  PRODUCT_LICENCE_CREATED: 'product_licence.created',
+  PRODUCT_LICENCE_UPDATED: 'product_licence.updated',
+
   BOM_CREATED: 'bom.created',
   BOM_UPDATED: 'bom.updated',
   BOM_LINE_ADDED: 'bom.line_added',
