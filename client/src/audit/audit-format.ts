@@ -1,3 +1,5 @@
+import { formatDay } from '../lib/format';
+
 /**
  * How an audit row reads, shared by the audit page and the history drawer.
  *
@@ -68,14 +70,46 @@ export function describe(action: string): string {
 }
 
 /**
+ * Fields that hold a calendar day, stored as UTC midnight. Named rather than
+ * guessed from the value: a real timestamp that happens to fall on midnight
+ * UTC would otherwise read as a day, and the list is two entries long.
+ */
+const CALENDAR_DAYS = new Set(['expectedAt', 'expiresAt']);
+
+const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+
+const MOMENT = new Intl.DateTimeFormat(undefined, {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
+
+/**
  * A value as it should read in the log.
  *
  * null is the common case rather than an edge one — a reference set for the
  * first time has no previous value — and `String(null)` puts the word "null"
  * in front of somebody investigating a change.
+ *
+ * Dates are the other raw form that leaked through: "2026-10-10T00:00:00.000Z"
+ * is a storage format, not an answer. A calendar day reads as the day that
+ * was picked (formatDay, in UTC, for the reason given there); any other
+ * timestamp reads in the viewer's local time, because it was a moment.
  */
-function show(value: unknown): string {
-  return value === null || value === undefined ? '—' : String(value);
+function show(key: string, value: unknown): string {
+  if (value === null || value === undefined) return '—';
+
+  if (typeof value === 'string' && ISO_TIMESTAMP.test(value)) {
+    return CALENDAR_DAYS.has(key)
+      ? formatDay(value)
+      : MOMENT.format(new Date(value));
+  }
+
+  return String(value);
+}
+
+/** "expectedAt" → "expected at": the field names are the words, just joined. */
+function label(key: string): string {
+  return key.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
 }
 
 /**
@@ -87,6 +121,11 @@ function show(value: unknown): string {
  * different claims, and collapsing the first into the second would invent a
  * before-value that was never captured.
  *
+ * A `{ from, to }` that did not move is left out. A form sends every field
+ * it shows, so an edit to the date also reports the unchanged reference, and
+ * "reference: X → X" beside the real change only hides it. Rows where nothing
+ * moved at all predate the interceptor skipping them, and say so.
+ *
  * Generic rather than per-action: the allow-list is small and its field names
  * are already the words people use — `reference`, `sku`, `roleId`.
  */
@@ -95,18 +134,25 @@ export function summarise(
 ): string | null {
   if (!payload) return null;
 
-  const parts = Object.entries(payload).map(([key, value]) => {
+  const entries = Object.entries(payload);
+  const parts: string[] = [];
+
+  for (const [key, value] of entries) {
     if (
-      value &&
+      value !== null &&
       typeof value === 'object' &&
       'from' in value &&
       'to' in value
     ) {
       const { from, to } = value as { from: unknown; to: unknown };
-      return `${key}: ${show(from)} → ${show(to)}`;
-    }
-    return `${key}: ${show(value)}`;
-  });
+      if (JSON.stringify(from) === JSON.stringify(to)) continue;
 
-  return parts.length > 0 ? parts.join(' · ') : null;
+      parts.push(`${label(key)}: ${show(key, from)} → ${show(key, to)}`);
+    } else {
+      parts.push(`${label(key)}: ${show(key, value)}`);
+    }
+  }
+
+  if (parts.length > 0) return parts.join(' · ');
+  return entries.length > 0 ? 'Saved with no changes' : null;
 }
