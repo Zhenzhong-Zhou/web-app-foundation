@@ -42,6 +42,7 @@ const ACTION_LABELS: Record<string, string> = {
   'account.password_reset': 'Password reset',
   'account.profile_updated': 'Profile updated',
   'account.email_verified': 'Email verified',
+  'account.verification_resent': 'Verification email resent',
 };
 
 /**

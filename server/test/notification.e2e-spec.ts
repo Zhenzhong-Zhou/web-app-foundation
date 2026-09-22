@@ -494,6 +494,22 @@ describe('Notifications (e2e)', () => {
       expect(mine).toHaveLength(1);
     });
 
+    it('records a resent verification email', async () => {
+      const alpha = await registerOrg('alpha');
+
+      await alpha.agent.post('/v1/auth/verify-email/resend').expect(202);
+
+      const events = body<AccountEvent[]>(
+        await alpha.agent.get('/v1/account/events').expect(200),
+      );
+
+      expect(
+        events.filter(
+          (event) => event.action === 'account.verification_resent',
+        ),
+      ).toHaveLength(1);
+    });
+
     it('requires a session', async () => {
       await authedAgent(app).get('/v1/account/events').expect(401);
     });

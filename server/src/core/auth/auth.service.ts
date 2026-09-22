@@ -426,6 +426,15 @@ export class AuthService implements OnModuleInit {
     if (!user || user.emailVerifiedAt !== null) return;
 
     await this.sendVerificationEmail(context.userId, user.email, user.name);
+
+    // Only when a link actually went out. A resend is the one step of
+    // verification that was missing from the account's own history, and "I
+    // asked for it three times" is what somebody checks when the mail never
+    // arrives.
+    await this.events.record(context.userId, 'account.verification_resent', {
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
   }
 
   /**
