@@ -51,6 +51,12 @@ export class CreateProductionOrderDto {
   @IsOptional()
   @trim()
   @IsString()
+  @MaxLength(100)
+  reference?: string;
+
+  @IsOptional()
+  @trim()
+  @IsString()
   @MaxLength(1000)
   notes?: string;
 }
@@ -82,6 +88,12 @@ export class UpdateProductionOrderDto {
       'quantityPlanned must be a positive number with at most 4 decimal places, sent as a string',
   })
   quantityPlanned?: string;
+
+  @IsOptional()
+  @trim()
+  @IsString()
+  @MaxLength(100)
+  reference?: string;
 
   @IsOptional()
   @trim()

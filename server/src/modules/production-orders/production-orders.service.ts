@@ -75,6 +75,17 @@ const VARIANCE_FLAG_RATIO = 0.1;
 
 const DEFAULT_LIMIT = 25;
 
+/**
+ * How the batch itself came out against its plan (ADR-032's rule applied to
+ * output). Null unless it is far enough off to be worth saying.
+ */
+export interface OutputVariance {
+  quantityPlanned: string;
+  quantityProduced: string;
+  /** Positive is over plan. Computed, never stored. */
+  variance: number;
+}
+
 export interface LineVariance {
   lineId: string;
   componentVariantId: string;
@@ -612,7 +623,10 @@ export class ProductionOrdersService {
     runId: string,
     input: CloseProductionOrderDto,
     actorId: string,
-  ): Promise<{ variances: LineVariance[] }> {
+  ): Promise<{
+    variances: LineVariance[];
+    outputVariance: OutputVariance | null;
+  }> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const run = await this.loadWithin(tx, organizationId, runId);
 
@@ -742,14 +756,35 @@ export class ProductionOrdersService {
         }
       }
 
+      /**
+       * The batch against its own plan, flagged on the same threshold as the
+       * components. Components being 10% off was reported while output six
+       * times over said nothing, which is the wrong way round: the yield is
+       * the number the run exists to produce. Flagged, never refused — a run
+       * that made 1020 against 1000 is ordinary, and a run that made nothing
+       * is worth knowing about rather than worth blocking.
+       */
+      const outputRatio =
+        this.difference(run.quantityProduced, run.quantityPlanned) /
+        Number(run.quantityPlanned);
+
+      const outputVariance: OutputVariance | null =
+        Math.abs(outputRatio) >= VARIANCE_FLAG_RATIO
+          ? {
+              quantityPlanned: run.quantityPlanned,
+              quantityProduced: run.quantityProduced,
+              variance: Number(outputRatio.toFixed(4)),
+            }
+          : null;
+
       await tx
         .update(productionOrders)
         .set({ status: 'completed' })
         .where(eq(productionOrders.id, runId));
 
       this.logger.log(
-        variances.length > 0
-          ? `Production order ${runId} closed with ${variances.length} lines over threshold`
+        variances.length > 0 || outputVariance
+          ? `Production order ${runId} closed with ${variances.length} lines and output ${outputVariance ? 'over' : 'within'} threshold`
           : `Production order ${runId} closed`,
       );
 
@@ -759,28 +794,35 @@ export class ProductionOrdersService {
        * run that never closed — and it would hold the transaction open on an
        * insert nobody is waiting for (ADR-036).
        */
-      if (variances.length > 0) {
+      if (variances.length > 0 || outputVariance) {
         const recipients = await this.notifications.recipientsWith(
           organizationId,
           PERMISSIONS.PRODUCTION_COMPLETE,
         );
+
+        // The yield leads when it is off, because it is the run's own result;
+        // the components explain it underneath.
+        const title = outputVariance
+          ? `A production run made ${run.quantityProduced} against a plan of ${run.quantityPlanned}`
+          : `A production run closed with ${variances.length} line${variances.length === 1 ? '' : 's'} off plan`;
 
         await this.notifications.emit(
           recipients.map((userId) => ({
             userId,
             organizationId,
             type: NOTIFICATION_TYPES.PRODUCTION_VARIANCE,
-            title: `A production run closed with ${variances.length} line${variances.length === 1 ? '' : 's'} off plan`,
-            body: variances
-              .map((v) => `${v.sku}: ${Math.round(v.variance * 100)}%`)
-              .join(', '),
+            title,
+            body:
+              variances
+                .map((v) => `${v.sku}: ${Math.round(v.variance * 100)}%`)
+                .join(', ') || undefined,
             resourceType: 'production_order',
             resourceId: runId,
           })),
         );
       }
 
-      return { variances };
+      return { variances, outputVariance };
     });
   }
 

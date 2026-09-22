@@ -26,6 +26,7 @@ import type {
   IssuePlanLine,
   LineVariance,
   Lot,
+  OutputVariance,
   ProductionRun,
   RunDetail,
 } from '../lib/types';
@@ -617,6 +618,12 @@ export function RecordOutputDialog({
  * what differed. Leaving one alone means "this went as planned", which is what
  * the operator is asserting by closing.
  */
+/** What close reports back: lines off plan, and the yield if it was too. */
+export interface CloseResult {
+  variances: LineVariance[];
+  outputVariance: OutputVariance | null;
+}
+
 export function CloseRunDialog({
   open,
   run,
@@ -626,7 +633,7 @@ export function CloseRunDialog({
   open: boolean;
   run: RunDetail;
   onClose: () => void;
-  onClosed: (variances: LineVariance[]) => Promise<void> | void;
+  onClosed: (result: CloseResult) => Promise<void> | void;
 }) {
   const stocked = run.lines.filter((line) => line.supplyType === 'stocked');
 
@@ -647,7 +654,7 @@ export function CloseRunDialog({
     event.preventDefault();
 
     void submit(async () => {
-      const result = await api<{ variances: LineVariance[] }>(
+      const result = await api<CloseResult>(
         `/production-orders/${run.id}/close`,
         {
           method: 'POST',
@@ -663,7 +670,7 @@ export function CloseRunDialog({
       );
 
       close();
-      await onClosed(result.variances);
+      await onClosed(result);
     });
   }
 

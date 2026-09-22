@@ -67,10 +67,12 @@ const RESOLVERS: Record<string, Resolver> = {
       productionOrders,
       productVariants,
       eq(productVariants.id, productionOrders.outputVariantId),
-      { sku: productVariants.sku },
+      { sku: productVariants.sku, reference: productionOrders.reference },
       eq(productionOrders.id, id),
     );
-    return row?.sku;
+    // The SKU alone reads the same for every run of a product; the reference
+    // is what tells two of them apart in the log.
+    return row && [row.sku, row.reference].filter(Boolean).join(' · ');
   },
 
   bom: async (db, id) => {

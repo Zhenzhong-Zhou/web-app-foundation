@@ -10,7 +10,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -183,55 +182,53 @@ export function ProductionOrdersPage() {
       {!!items?.length && (
         <>
           <Paper variant="outlined">
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Planned</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell align="right">Quantity</TableCell>
-                    <TableCell align="right">Produced</TableCell>
-                    <TableCell>Made by</TableCell>
-                    <TableCell />
-                  </TableRow>
-                </TableHead>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Planned</TableCell>
+                  <TableCell>Reference</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="right">Quantity</TableCell>
+                  <TableCell align="right">Produced</TableCell>
+                  <TableCell>Made by</TableCell>
+                  <TableCell />
+                </TableRow>
+              </TableHead>
 
-                <TableBody>
-                  {items.map((run) => (
-                    <TableRow key={run.id} hover>
-                      <TableCell>{formatDate(run.createdAt)}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={STATUS_LABEL[run.status]}
-                          size="small"
-                          color={STATUS_COLOUR[run.status]}
-                        />
-                      </TableCell>
-                      <TableCell align="right">{run.quantityPlanned}</TableCell>
-                      {/* Produced is not a percentage of planned. A batch
+              <TableBody>
+                {items.map((run) => (
+                  <TableRow key={run.id} hover>
+                    <TableCell>{formatDate(run.createdAt)}</TableCell>
+                    <TableCell>{run.reference ?? '—'}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={STATUS_LABEL[run.status]}
+                        size="small"
+                        color={STATUS_COLOUR[run.status]}
+                      />
+                    </TableCell>
+                    <TableCell align="right">{run.quantityPlanned}</TableCell>
+                    {/* Produced is not a percentage of planned. A batch
                         yielding 980 against 1000 is finished, not 98% done
                         (ADR-032), so showing a bar would imply a shortfall
                         that is not one. */}
-                      <TableCell align="right">
-                        {run.quantityProduced}
-                      </TableCell>
-                      <TableCell>
-                        {run.partnerId ? 'Contract manufacturer' : 'In house'}
-                      </TableCell>
-                      <TableCell align="right">
-                        <Link
-                          component={RouterLink}
-                          to={`/production/${run.id}`}
-                          variant="body2"
-                        >
-                          Open
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    <TableCell align="right">{run.quantityProduced}</TableCell>
+                    <TableCell>
+                      {run.partnerId ? 'Contract manufacturer' : 'In house'}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Link
+                        component={RouterLink}
+                        to={`/production/${run.id}`}
+                        variant="body2"
+                      >
+                        Open
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </Paper>
 
           {cursor && (

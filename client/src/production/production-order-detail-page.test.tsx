@@ -32,6 +32,7 @@ const BASE: RunDetail = {
   quantityPlanned: '500.0000',
   quantityProduced: '0.0000',
   status: 'draft',
+  reference: null,
   notes: null,
   createdAt: '2026-09-15T10:00:00.000Z',
   lines: [],

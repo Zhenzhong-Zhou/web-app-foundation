@@ -23,7 +23,7 @@ import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
-import type { LineVariance, RunDetail } from '../lib/types';
+import type { LineVariance, OutputVariance, RunDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import {
   CancelRunDialog,
@@ -46,6 +46,9 @@ export function ProductionOrderDetailPage() {
   const [run, setRun] = useState<RunDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [variances, setVariances] = useState<LineVariance[]>([]);
+  const [outputVariance, setOutputVariance] = useState<OutputVariance | null>(
+    null,
+  );
 
   const [releasing, setReleasing] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -123,7 +126,7 @@ export function ProductionOrderDetailPage() {
     <Stack spacing={3}>
       <PageHeader
         crumbs={[{ label: 'Production', to: '/production' }]}
-        title={`${run.quantityPlanned} planned`}
+        title={run.reference ?? `${run.quantityPlanned} planned`}
         status={{
           label: STATUS_LABEL[run.status],
           color: STATUS_COLOUR[run.status],
@@ -186,6 +189,18 @@ export function ProductionOrderDetailPage() {
             )
             .join(', ')}
           . Recorded as it happened — worth a look at the recipe or the batch.
+        </Alert>
+      )}
+
+      {/* The yield against its plan, on the same threshold as the
+          components and shown the same way: once, at the moment somebody can
+          act on it. Recorded, never refused (ADR-032). */}
+      {outputVariance && (
+        <Alert severity="warning">
+          This run made {outputVariance.quantityProduced} against a plan of{' '}
+          {outputVariance.quantityPlanned} —{' '}
+          {Math.round(outputVariance.variance * 100)}% off. Worth checking the
+          yield on the recipe, or whether output was recorded twice.
         </Alert>
       )}
 
@@ -307,8 +322,9 @@ export function ProductionOrderDetailPage() {
         open={closing}
         run={run}
         onClose={() => setClosing(false)}
-        onClosed={async (reported) => {
-          setVariances(reported);
+        onClosed={async (result) => {
+          setVariances(result.variances);
+          setOutputVariance(result.outputVariance);
           await load();
         }}
       />

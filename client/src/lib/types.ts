@@ -217,6 +217,8 @@ export interface ProductionRun {
   quantityPlanned: string;
   quantityProduced: string;
   status: RunStatus;
+  /** What people call this run: a batch number, a co-packer's works order. */
+  reference: string | null;
   notes: string | null;
   createdAt: string;
 }
@@ -275,6 +277,13 @@ export interface IssuePlanLine {
   lots: IssuePlanLot[];
   /** How much the source is missing, or null when it can cover the line. */
   shortBy: string | null;
+}
+
+/** The batch against its own plan, when it is far enough off to say so. */
+export interface OutputVariance {
+  quantityPlanned: string;
+  quantityProduced: string;
+  variance: number;
 }
 
 export interface LineVariance {

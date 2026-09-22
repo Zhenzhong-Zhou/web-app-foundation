@@ -30,6 +30,7 @@ const EMPTY = {
   locationId: '',
   partnerId: '',
   quantityPlanned: '',
+  reference: '',
 };
 
 /**
@@ -120,18 +121,12 @@ export function CreateRunDialog({
         method: 'POST',
         body: JSON.stringify({
           outputVariantId: form.outputVariantId,
-          // The recipe the select is showing. It displays the active one
-          // until someone picks another, and sending only form.bomId meant an
-          // untouched select planned the run with no recipe at all — which
-          // release then refused.
-          bomId:
-            form.bomId ||
-            boms.find((row) => row.status === 'active')?.id ||
-            undefined,
+          bomId: form.bomId || undefined,
           locationId: form.locationId,
           partnerId: form.partnerId || undefined,
           // The string as typed. Number() here would undo numeric(18, 4).
           quantityPlanned: form.quantityPlanned,
+          reference: form.reference || undefined,
         }),
       }),
     );
@@ -195,6 +190,20 @@ export function CreateRunDialog({
                 ))}
               </TextField>
             )}
+
+            <TextField
+              id="run-reference"
+              label="Reference"
+              fullWidth
+              value={form.reference}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  reference: event.target.value,
+                }))
+              }
+              helperText="A batch number or the maker's works order. Optional."
+            />
 
             <TextField
               id="run-quantity"

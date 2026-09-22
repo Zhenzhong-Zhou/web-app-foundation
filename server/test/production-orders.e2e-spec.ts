@@ -49,6 +49,11 @@ interface CreatedRun {
 
 interface CloseResponse {
   variances: { lineId: string; variance: number }[];
+  outputVariance: {
+    quantityPlanned: string;
+    quantityProduced: string;
+    variance: number;
+  } | null;
 }
 
 interface CancelResponse {
@@ -1037,6 +1042,42 @@ describe('Production orders (e2e)', () => {
         .expect(409);
     });
 
+    /**
+     * The yield is the number the run exists to produce, so it is flagged on
+     * the same threshold as the components — including a run that made
+     * nothing, which is the case somebody most wants to hear about.
+     */
+    it('flags output that came out far off plan', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await released(alpha);
+
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/output`)
+        .send({ quantity: '100', lot: { code: 'B1' } })
+        .expect(201);
+
+      const res = await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/close`)
+        .send({})
+        .expect(200);
+
+      const { outputVariance } = body<CloseResponse>(res);
+      expect(outputVariance).toEqual({
+        quantityPlanned: '500.0000',
+        quantityProduced: '100.0000',
+        variance: -0.8,
+      });
+
+      const [row] = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.type, 'production.variance'));
+
+      // The yield leads the title; components, if any, explain it in the body.
+      expect(row.title).toContain('100.0000');
+      expect(row.title).toContain('500.0000');
+    });
+
     it('tells everyone who can close a run about a variance', async () => {
       const alpha = await registerOrg('alpha');
       const s = await released(alpha);
@@ -1071,6 +1112,12 @@ describe('Production orders (e2e)', () => {
     it('says nothing when everything went to plan', async () => {
       const alpha = await registerOrg('alpha');
       const s = await released(alpha);
+
+      // The whole plan, so the yield is on target too.
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/output`)
+        .send({ quantity: '500', lot: { code: 'B1' } })
+        .expect(201);
 
       await alpha.agent
         .post(`/v1/production-orders/${s.run.id}/close`)

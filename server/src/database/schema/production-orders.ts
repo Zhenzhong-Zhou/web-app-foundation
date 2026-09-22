@@ -119,6 +119,15 @@ export const productionOrders = pgTable(
      */
     status: text('status').notNull().default('draft'),
 
+    /**
+     * What people call this run — a batch number, a works order from the
+     * co-packer. Nullable, because a run planned in a hurry has none, and not
+     * unique: a contract manufacturer's numbering is theirs, and two of them
+     * can collide. Without it a run has no name at all, and its page is
+     * titled by its planned quantity.
+     */
+    reference: text('reference'),
+
     notes: text('notes'),
 
     ...timestamps,
