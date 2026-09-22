@@ -1075,6 +1075,34 @@ describe('Orders (e2e)', () => {
       });
     });
 
+    /**
+     * A Save that changed nothing writes no audit row. The service recorded
+     * the previous values, so it can prove nothing moved; the row would only
+     * put "40 → 40" in the order's History.
+     */
+    it('records no audit row for an update that changed nothing', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+      const line = `/v1/orders/${order.id}/lines/${order.lines[0].id}`;
+
+      await ctx.agent
+        .patch(line)
+        .send({ quantityOrdered: '40.0000' })
+        .expect(204);
+
+      await ctx.agent.patch(line).send({ quantityOrdered: '41' }).expect(204);
+
+      const rows = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'order.line_updated'));
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0].payload).toEqual({
+        quantityOrdered: { from: '40.0000', to: '41' },
+      });
+    });
+
     it('does not advance the status on a full receipt', async () => {
       const ctx = await setup('alpha');
       const order = await confirmed(ctx);

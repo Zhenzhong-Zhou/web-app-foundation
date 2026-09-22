@@ -70,6 +70,15 @@ export class AuditInterceptor implements NestInterceptor {
 
     // @Audited() on a @Public() route. Nothing to attribute the event to, and
     // audit_log.organization_id is NOT NULL by design.
+    const payload = withContext(
+      combine(pick(req.body, options.fields), takePrevious()),
+      takeContext(),
+    );
+
+    // A Save that changed nothing. The handler ran and succeeded, but a row
+    // saying "quantity: 222 → 222" is noise in every history that shows it.
+    if (unchanged(payload)) return;
+
     if (!context?.organizationId) {
       this.logger.warn(
         `@Audited() on an unauthenticated route: ${req.method} ${req.originalUrl}`,
@@ -96,10 +105,7 @@ export class AuditInterceptor implements NestInterceptor {
          * applies twice as hard to a row kept for two years, so the body is
          * never recorded wholesale (ADR-018).
          */
-        payload: withContext(
-          combine(pick(req.body, options.fields), takePrevious()),
-          takeContext(),
-        ),
+        payload,
 
         ip: req.ip,
         userAgent: req.headers['user-agent'],
@@ -108,6 +114,33 @@ export class AuditInterceptor implements NestInterceptor {
       this.logger.error(`Audit write failed: ${String(error)}`);
     }
   }
+}
+
+/**
+ * True only when every recorded field has a previous value equal to the new
+ * one — the case the service can prove, because it recorded what was there.
+ *
+ * Deliberately narrow. A bare value, with no previous recorded, may or may
+ * not have changed, so any bare value means "write the row". Compared as
+ * JSON because values arrive as strings, numbers and nulls, and a date the
+ * client sent as an ISO string compares equal to the one the service read.
+ * "222" against a stored "222.0000" counts as a change: the strings differ,
+ * and parsing them here would be the JS arithmetic ADR-025 rules out.
+ */
+function unchanged(payload: Record<string, unknown> | undefined): boolean {
+  if (!payload) return false;
+
+  const values = Object.values(payload);
+  if (values.length === 0) return false;
+
+  return values.every(
+    (value) =>
+      value !== null &&
+      typeof value === 'object' &&
+      'from' in value &&
+      'to' in value &&
+      JSON.stringify(value.from) === JSON.stringify(value.to),
+  );
 }
 
 /**
