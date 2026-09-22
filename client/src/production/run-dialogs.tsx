@@ -20,7 +20,14 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import type { LineVariance, RunDetail } from '../lib/types';
+import { formatDay } from '../lib/format';
+import type {
+  Bom,
+  LineVariance,
+  Lot,
+  ProductionRun,
+  RunDetail,
+} from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
 interface LocationSummary {
@@ -37,17 +44,46 @@ interface LocationSummary {
  */
 export function ReleaseRunDialog({
   open,
-  runId,
+  run,
   onClose,
   onReleased,
 }: {
   open: boolean;
-  runId: string;
+  run: ProductionRun;
   onClose: () => void;
   onReleased: () => Promise<void> | void;
 }) {
   const [sourceLocationId, setSource] = useState('');
   const [locations, setLocations] = useState<LocationSummary[]>([]);
+
+  /**
+   * A draft planned without a recipe can be given one here, where the need
+   * shows up. Release is the step that needs a recipe, and sending somebody
+   * back to "attach one first" with no way to do it on this screen was a dead
+   * end: the run had no edit form.
+   */
+  const needsRecipe = run.bomId === null;
+  const [recipes, setRecipes] = useState<Bom[]>([]);
+  const [bomId, setBomId] = useState('');
+  const chosenBom =
+    bomId || recipes.find((row) => row.status === 'active')?.id || '';
+
+  useEffect(() => {
+    if (!open || !needsRecipe) return;
+
+    let ignore = false;
+
+    void api<Bom[]>(`/boms?outputVariantId=${run.outputVariantId}`)
+      .then((rows) => {
+        // Drafts are unfinished; the create dialog offers the same set.
+        if (!ignore) setRecipes(rows.filter((row) => row.status !== 'draft'));
+      })
+      .catch(() => undefined);
+
+    return () => {
+      ignore = true;
+    };
+  }, [open, needsRecipe, run.outputVariantId]);
 
   const { submitting, error, reset, submit } = useSubmit(async () => {
     close();
@@ -72,6 +108,7 @@ export function ReleaseRunDialog({
 
   function close() {
     setSource('');
+    setBomId('');
     reset();
     onClose();
   }
@@ -79,12 +116,22 @@ export function ReleaseRunDialog({
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    void submit(() =>
-      api(`/production-orders/${runId}/release`, {
+    void submit(async () => {
+      // Two requests, not one. Attaching is an edit the server already
+      // allows on a draft, and if release then fails the run simply keeps
+      // its recipe — a draft with a recipe is what it should have been.
+      if (needsRecipe) {
+        await api(`/production-orders/${run.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ bomId: chosenBom }),
+        });
+      }
+
+      await api(`/production-orders/${run.id}/release`, {
         method: 'POST',
         body: JSON.stringify({ sourceLocationId }),
-      }),
-    );
+      });
+    });
   }
 
   return (
@@ -95,6 +142,33 @@ export function ReleaseRunDialog({
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
+
+            {needsRecipe && recipes.length === 0 && (
+              <Alert severity="warning">
+                There is no recipe for this item yet. Create one on the
+                product&apos;s page and make it active, then release.
+              </Alert>
+            )}
+
+            {needsRecipe && recipes.length > 0 && (
+              <TextField
+                id="release-recipe"
+                label="Recipe"
+                select
+                required
+                fullWidth
+                value={chosenBom}
+                onChange={(event) => setBomId(event.target.value)}
+                helperText="This run was planned without one. It is attached before releasing."
+              >
+                {recipes.map((row) => (
+                  <MenuItem key={row.id} value={row.id}>
+                    v{row.version} — {row.status}, makes {row.outputQuantity}{' '}
+                    per batch
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
 
             <TextField
               id="release-source"
@@ -131,7 +205,10 @@ export function ReleaseRunDialog({
           <Button variant="text" onClick={close} disabled={submitting}>
             Cancel
           </Button>
-          <Button type="submit" disabled={submitting}>
+          <Button
+            type="submit"
+            disabled={submitting || (needsRecipe && !chosenBom)}
+          >
             {submitting ? 'Releasing…' : 'Release'}
           </Button>
         </DialogActions>
@@ -163,11 +240,48 @@ export function RecordOutputDialog({
   const [lotChoice, setLotChoice] = useState('');
   const [newCode, setNewCode] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const [lots, setLots] = useState<Lot[]>([]);
 
   const { submitting, error, reset, submit } = useSubmit(async () => {
     close();
     await onRecorded();
   });
+
+  /**
+   * The run knows its batches only by id. Their codes live on the lots,
+   * which are listed per variant — so fetched on open and matched up, rather
+   * than widening the run response for one dialog.
+   */
+  useEffect(() => {
+    if (!open || run.outputLots.length === 0) return;
+
+    let ignore = false;
+
+    void api<Lot[]>(`/stock/lots?variantId=${run.outputVariantId}`)
+      .then((rows) => {
+        if (!ignore) setLots(rows);
+      })
+      // Silent: without codes the options still work, they just say less.
+      .catch(() => undefined);
+
+    return () => {
+      ignore = true;
+    };
+  }, [open, run.outputVariantId, run.outputLots.length]);
+
+  /**
+   * "Batch 24-118, expires 10 Oct 2026". Every option used to read "Add to
+   * the batch already open", which was fine for one batch and meaningless
+   * for two — the choice this field exists for.
+   */
+  function describeLot(lotId: string): string {
+    const lot = lots.find((row) => row.id === lotId);
+    if (!lot) return 'An existing batch';
+
+    return lot.expiresAt
+      ? `Batch ${lot.code}, expires ${formatDay(lot.expiresAt)}`
+      : `Batch ${lot.code}`;
+  }
 
   const openLot = run.outputLots[run.outputLots.length - 1] ?? '';
   const effective = lotChoice || openLot;
@@ -238,7 +352,7 @@ export function RecordOutputDialog({
               >
                 {run.outputLots.map((lotId) => (
                   <MenuItem key={lotId} value={lotId}>
-                    Add to the batch already open
+                    Add to {describeLot(lotId)}
                   </MenuItem>
                 ))}
                 <MenuItem value="new">Start a new batch</MenuItem>

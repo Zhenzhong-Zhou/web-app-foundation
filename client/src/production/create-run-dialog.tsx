@@ -120,7 +120,14 @@ export function CreateRunDialog({
         method: 'POST',
         body: JSON.stringify({
           outputVariantId: form.outputVariantId,
-          bomId: form.bomId || undefined,
+          // The recipe the select is showing. It displays the active one
+          // until someone picks another, and sending only form.bomId meant an
+          // untouched select planned the run with no recipe at all — which
+          // release then refused.
+          bomId:
+            form.bomId ||
+            boms.find((row) => row.status === 'active')?.id ||
+            undefined,
           locationId: form.locationId,
           partnerId: form.partnerId || undefined,
           // The string as typed. Number() here would undo numeric(18, 4).

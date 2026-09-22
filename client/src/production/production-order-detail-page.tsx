@@ -264,7 +264,7 @@ export function ProductionOrderDetailPage() {
       )}
       <ReleaseRunDialog
         open={releasing}
-        runId={run.id}
+        run={run}
         onClose={() => setReleasing(false)}
         onReleased={load}
       />
