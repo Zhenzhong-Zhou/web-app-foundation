@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { useToast } from '../components/use-toast';
 import { ApiError } from './api';
 
 /**
@@ -12,10 +13,18 @@ import { ApiError } from './api';
  *
  * `onDone` runs only on success and outside the try, so a failing refetch does
  * not surface as an error about the thing that was just created successfully.
+ *
+ * `success` is the confirmation toast. Here rather than in each dialog, for
+ * the reason this hook exists: said once, it cannot be forgotten on the next
+ * dialog, and it cannot fire for a save that failed.
  */
-export function useSubmit(onDone: () => void | Promise<void>) {
+export function useSubmit(
+  onDone: () => void | Promise<void>,
+  options: { success?: string } = {},
+) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   /** Clears state when a dialog closes, so reopening starts clean. */
   function reset() {
@@ -39,6 +48,8 @@ export function useSubmit(onDone: () => void | Promise<void>) {
     } finally {
       setSubmitting(false);
     }
+
+    if (options.success) toast(options.success);
 
     await onDone();
   }
