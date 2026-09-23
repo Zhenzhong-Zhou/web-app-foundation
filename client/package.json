@@ -1,7 +1,13 @@
 {
-  "name": "client",
+  "name": "web-app-foundation-client",
+  "version": "0.1.0",
+  "description": "React client for the Web Application Foundation",
+  "author": "Zhenzhong Zhou",
   "private": true,
-  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=26"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,7 +22,10 @@
     "pretest:e2e": "dotenv -e ../.env -- sh -c 'cd ../server && npm run migrate:e2e && DATABASE_URL=\"$DATABASE_URL_E2E\" npm run seed'",
     "test:e2e": "dotenv -e ../.env -- playwright test",
     "test:e2e:ui": "dotenv -e ../.env -- playwright test --ui",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "fix": "npm run format && npm run lint",
+    "verify": "npm run format:check && npm run lint:ci && npm run build && npm test",
+    "verify:all": "npm run verify && npm run test:e2e"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -6,7 +6,7 @@
   "private": true,
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=26"
   },
   "scripts": {
     "prebuild": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true});require('node:fs').rmSync('tsconfig.build.tsbuildinfo',{force:true})\"",
@@ -25,12 +25,16 @@
     "migrate:new": "node scripts/check-snapshots.js && drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "seed": "ts-node src/database/seed.ts",
+    "seed:demo": "ts-node src/database/seed-demo.ts",
     "smoke:auth": "bash scripts/smoke-auth.sh",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json --runInBand"
+    "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json --runInBand",
+    "fix": "npm run format && npm run lint",
+    "verify": "npm run format:check && npm run lint:ci && npm run build && npm test && npm run test:e2e",
+    "pretest:e2e": "npm run migrate:test"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
