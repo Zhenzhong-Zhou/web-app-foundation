@@ -242,7 +242,17 @@ MUI's breakpoint props (`sx={{ py: { xs: 3, sm: 8 } }}`), applied where a
 layout actually breaks — not pre-emptively. A rule added for a width nobody
 checked is a rule nobody can safely remove later.
 
-Nav is a top bar. Daily destinations sit in it; account and admin screens live
-behind a menu, which is what kept six items readable without a drawer. A drawer
-costs open/closed state and a toggle, and earns that when the sections have
-real hierarchy rather than just length.
+Nav is a top bar from `lg` up. Daily destinations sit in it; account and admin
+screens live behind the avatar menu at every width. Below `lg` the same links
+move into a left drawer behind a menu button — the bar measures a little over
+1000px, and letting it wrap made the header change height with the window and
+drag every page with it. Which elements show is CSS `display` at the
+breakpoint, not a `useMediaQuery` branch, so the first paint is right; the hook
+is used only to close an open drawer when the window widens past `lg`.
+
+Rows that mix a label with actions (page headers, the recipe status row) are
+two flex groups that wrap as wholes: the text group takes the remaining space
+down to a floor, and below it the action group drops to its own line,
+right-aligned. Button labels never wrap (set once on `MuiButton`). One filled
+button per group at most — the action the current state is waiting for; the
+rest are text weight.

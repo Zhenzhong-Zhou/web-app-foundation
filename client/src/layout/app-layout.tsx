@@ -1,4 +1,6 @@
 import AccountCircle from '@mui/icons-material/AccountCircle';
+import CloseIcon from '@mui/icons-material/Close';
+import MenuIcon from '@mui/icons-material/Menu';
 import {
   Alert,
   AppBar,
@@ -6,14 +8,20 @@ import {
   Button,
   Container,
   Divider,
+  Drawer,
   IconButton,
   Link,
+  List,
+  ListItemButton,
+  ListItemText,
   Menu,
   MenuItem,
   Stack,
   Toolbar,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
 import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 
@@ -50,6 +58,24 @@ const ACCOUNT_MENU = [
 ];
 
 /**
+ * Where the bar stops fitting on one line. Seven links, the organisation name
+ * and two icons measure a little over 1000px; below `lg` (1200) the old bar
+ * wrapped onto a second row and every page below it jumped as the window
+ * resized. A single breakpoint where the links move into a drawer replaces
+ * that with two stable layouts.
+ */
+const BAR = 'lg' as const;
+
+/**
+ * Exact or a child path, not a bare prefix: "/products".startsWith would also
+ * light up a future "/products-archive", and a highlighted wrong tab is worse
+ * than none.
+ */
+function isActive(pathname: string, to: string): boolean {
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
+
+/**
  * The frame every signed-in screen shares. A layout route, so the header
  * renders once and children swap through <Outlet /> — and Protected wraps
  * this rather than each child, so there is one guard rather than one per
@@ -62,53 +88,98 @@ const ACCOUNT_MENU = [
 export function AppLayout() {
   const { session, refresh } = useAuth();
   const location = useLocation();
+  const theme = useTheme();
   const [menu, setMenu] = useState<HTMLElement | null>(null);
+  const [drawer, setDrawer] = useState(false);
+
+  /**
+   * Only to close the drawer when the window grows past the breakpoint with
+   * it open — otherwise a modal holding a copy of the bar would sit over the
+   * bar itself. Which elements show is CSS (`display` below), so the first
+   * paint is already right and nothing flashes while this resolves.
+   */
+  const wide = useMediaQuery(theme.breakpoints.up(BAR));
 
   const visible = (item: { permission?: string }) =>
     !item.permission || session?.permissions.includes(item.permission);
 
+  const links = NAV.filter(visible);
+  const orgName = session?.organization?.name ?? 'No organization';
+
   return (
     <Box>
+      {/* Sticky: on a long inventory list the way to another section should
+          not be a scroll to the top. */}
       <AppBar
-        position="static"
+        position="sticky"
         color="default"
         elevation={0}
-        variant="outlined"
+        sx={{
+          bgcolor: 'background.default',
+          borderBottom: 1,
+          borderColor: 'divider',
+        }}
       >
-        <Toolbar sx={{ gap: 2, flexWrap: 'wrap', py: { xs: 1, sm: 0 } }}>
+        {/* No flexWrap. A bar that wraps changes height with the window and
+            drags the page with it — the jump this layout exists to stop. */}
+        <Toolbar sx={{ gap: 1 }}>
+          <IconButton
+            edge="start"
+            aria-label="Open navigation"
+            onClick={() => setDrawer(true)}
+            sx={{ display: { xs: 'inline-flex', [BAR]: 'none' } }}
+          >
+            <MenuIcon />
+          </IconButton>
+
           {/* The organisation name is the way home, which is what a person
-              expects of the thing in the top-left corner. */}
+              expects of the thing in the top-left corner. Truncated rather
+              than wrapped: a long name is the one thing here of unknown
+              width, so it is the one thing that gives. */}
           <Link
             component={RouterLink}
             to="/"
             underline="none"
             color="inherit"
-            sx={{ mr: 2 }}
+            title={orgName}
+            sx={{ minWidth: 0, flexShrink: 1, mr: { [BAR]: 2 } }}
           >
-            <Typography variant="h6" component="div">
-              {session?.organization?.name ?? 'No organization'}
+            <Typography
+              variant="h6"
+              component="div"
+              noWrap
+              sx={{ maxWidth: { xs: '50vw', [BAR]: 260 } }}
+            >
+              {orgName}
             </Typography>
           </Link>
 
-          <Stack direction="row" spacing={2} sx={{ flexGrow: 1 }}>
-            {NAV.filter(visible).map((item) => (
-              <Link
+          <Box
+            component="nav"
+            aria-label="Main"
+            sx={{
+              display: { xs: 'none', [BAR]: 'flex' },
+              gap: 0.5,
+              flexGrow: 1,
+            }}
+          >
+            {links.map((item) => (
+              <NavLink
                 key={item.to}
-                component={RouterLink}
                 to={item.to}
-                underline={
-                  location.pathname.startsWith(item.to) ? 'always' : 'hover'
-                }
-                color="inherit"
-              >
-                {item.label}
-              </Link>
+                label={item.label}
+                active={isActive(location.pathname, item.to)}
+              />
             ))}
-          </Stack>
+          </Box>
+
+          {/* Pushes the icons right when the links are in the drawer. */}
+          <Box sx={{ flexGrow: 1, display: { [BAR]: 'none' } }} />
 
           <NotificationBell />
 
           <IconButton
+            edge="end"
             // The email rather than "Account": on a shared terminal, who you
             // are signed in as is the thing worth being able to check.
             aria-label={`Signed in as ${session?.user.email ?? 'unknown'}`}
@@ -164,7 +235,51 @@ export function AppLayout() {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* The same destinations as the bar, not a different set: narrowing the
+          window should move the links, never hide one. Account stays on the
+          avatar at every width, so there is still exactly one place for it. */}
+      <Drawer
+        anchor="left"
+        open={drawer && !wide}
+        onClose={() => setDrawer(false)}
+        slotProps={{ paper: { sx: { width: 280 } } }}
+      >
+        <Stack direction="row" sx={{ alignItems: 'center', px: 2, py: 1.5 }}>
+          <Typography variant="subtitle1" noWrap sx={{ flexGrow: 1 }}>
+            {orgName}
+          </Typography>
+          <IconButton
+            aria-label="Close navigation"
+            onClick={() => setDrawer(false)}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Stack>
+
+        <Divider />
+
+        <List component="nav" aria-label="Main" sx={{ px: 1 }}>
+          {links.map((item) => {
+            const active = isActive(location.pathname, item.to);
+
+            return (
+              <ListItemButton
+                key={item.to}
+                component={RouterLink}
+                to={item.to}
+                selected={active}
+                aria-current={active ? 'page' : undefined}
+                onClick={() => setDrawer(false)}
+                sx={{ borderRadius: 1, mb: 0.5 }}
+              >
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            );
+          })}
+        </List>
+      </Drawer>
+
+      <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
         <Stack spacing={3}>
           <UnverifiedBanner />
           {/* Inside the Container so the header and nav survive: a person
@@ -175,6 +290,50 @@ export function AppLayout() {
         </Stack>
       </Container>
     </Box>
+  );
+}
+
+/**
+ * A pill rather than an underline. The underline moved the text's visual
+ * weight when it appeared, and on a dark bar it was the only cue — a filled
+ * background is readable at a glance in both modes and matches the drawer's
+ * selected row, so the current section looks the same at every width.
+ */
+function NavLink({
+  to,
+  label,
+  active,
+}: {
+  to: string;
+  label: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      component={RouterLink}
+      to={to}
+      underline="none"
+      aria-current={active ? 'page' : undefined}
+      sx={{
+        px: 1.5,
+        py: 0.75,
+        borderRadius: 1,
+        typography: 'body2',
+        fontWeight: 500,
+        whiteSpace: 'nowrap',
+        color: active ? 'text.primary' : 'text.secondary',
+        bgcolor: active ? 'action.selected' : 'transparent',
+        transition: 'background-color 120ms, color 120ms',
+        '&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
+        '&:focus-visible': {
+          outline: '2px solid',
+          outlineColor: 'primary.main',
+          outlineOffset: 2,
+        },
+      }}
+    >
+      {label}
+    </Link>
   );
 }
 
