@@ -26,6 +26,14 @@ export class HealthController {
       status: 'ok',
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
+      /**
+       * Which build is answering. Render sets RENDER_GIT_COMMIT on every
+       * deploy, so "is my fix live?" is a URL rather than a guess. Null
+       * locally, where there is no deploy to name. Read from the environment
+       * directly rather than the validated config: it is operational
+       * metadata, and its absence is normal, not a misconfiguration.
+       */
+      commit: process.env.RENDER_GIT_COMMIT ?? null,
     };
   }
 
