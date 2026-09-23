@@ -1,17 +1,19 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { AppModule } from '../app.module';
+import { AuthService } from '../core/auth/auth.service';
 import { BomsService } from '../modules/boms/boms.service';
 import { LocationsService } from '../modules/locations/locations.service';
 import { OrdersService } from '../modules/orders/orders.service';
+import { ShipmentsService } from '../modules/orders/shipments.service';
 import { PartnersService } from '../modules/partners/partners.service';
 import { ProductLicencesService } from '../modules/product-licences/product-licences.service';
 import { ProductionOrdersService } from '../modules/production-orders/production-orders.service';
 import { ProductsService } from '../modules/products/products.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
-import { memberships, users } from './schema';
+import { memberships, productVariants, users } from './schema';
 import { runInTenantContext } from './tenant-context';
 
 /**
@@ -30,11 +32,22 @@ import { runInTenantContext } from './tenant-context';
  *
  * Usage, from `server/`:
  *
- *     npm run seed:demo -- owner@alpha.example.com
+ *     npm run seed:demo
+ *     npm run seed:demo -- someone@example.com
  *
- * The account must already exist: everything here is tenant-scoped, so a demo
- * organization nobody can sign in to would be unreachable from the UI.
+ * With no argument it registers a fresh account and organization — through
+ * AuthService, as the Register page does — and prints how to sign in. Every
+ * run gets its own organization, so nothing collides and there is nothing to
+ * clean up first.
+ *
+ * With an email, it seeds that existing account's organization instead, and
+ * refuses up front if the demo is already there, rather than failing partway
+ * on the first duplicate.
  */
+
+/** Fixed rather than random, so a demo account can always be signed into. */
+const DEMO_PASSWORD = 'demo-password-2026';
+
 async function seedDemo(): Promise<void> {
   const logger = new Logger('SeedDemo');
 
@@ -44,13 +57,7 @@ async function seedDemo(): Promise<void> {
     return;
   }
 
-  const email = process.argv[2]?.trim().toLowerCase();
-
-  if (!email) {
-    logger.error('Usage: npm run seed:demo -- <owner email>');
-    process.exitCode = 1;
-    return;
-  }
+  const requested = process.argv[2]?.trim().toLowerCase();
 
   const app = await NestFactory.createApplicationContext(AppModule, {
     logger: ['log', 'warn', 'error'],
@@ -59,17 +66,43 @@ async function seedDemo(): Promise<void> {
   try {
     const db = app.get<Database>(UNSAFE_GLOBAL_DB);
 
-    const [account] = await db
-      .select({ userId: users.id, organizationId: memberships.organizationId })
-      .from(users)
-      .innerJoin(memberships, eq(memberships.userId, users.id))
-      .where(eq(users.email, email));
+    const account = requested
+      ? await existingAccount(db, requested)
+      : await freshAccount(app.get(AuthService));
 
     if (!account) {
-      logger.error(`No account for ${email} — register it first`);
+      logger.error(
+        `No account for ${requested} — register it, or run without an email`,
+      );
       process.exitCode = 1;
       return;
     }
+
+    /**
+     * Checked before anything is written. Each step would refuse a duplicate
+     * on its own, but the first refusal would come after nothing — or, with a
+     * different order of steps, after something — and a clear "already there"
+     * is worth one query.
+     */
+    const [seeded] = await db
+      .select({ id: productVariants.id })
+      .from(productVariants)
+      .where(
+        and(
+          eq(productVariants.organizationId, account.organizationId),
+          eq(productVariants.sku, 'FOCUS-60CT'),
+        ),
+      );
+
+    if (seeded) {
+      logger.error(
+        `${account.email}'s organization already has the demo. Run without an email for a fresh one.`,
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    const email = account.email;
 
     const products = app.get(ProductsService);
     const locations = app.get(LocationsService);
@@ -78,6 +111,7 @@ async function seedDemo(): Promise<void> {
     const orders = app.get(OrdersService);
     const boms = app.get(BomsService);
     const runs = app.get(ProductionOrdersService);
+    const shipments = app.get(ShipmentsService);
 
     // Every service below resolves its tenant from here, the same way a
     // request does through the auth guard (ADR-003).
@@ -235,14 +269,106 @@ async function seedDemo(): Promise<void> {
           actor,
         );
 
+        // Sold and shipped from the batch just made, so the demo covers the
+        // sell side too — and the recall trail runs both ways: ingredient lot
+        // BF-2609 into batch FOC-2609-01, and that batch out to a customer.
+        const customer = await partners.create({
+          name: 'Northside Pharmacy',
+          code: 'NORTH',
+        });
+
+        const sale = await orders.create(
+          {
+            partnerId: customer.id,
+            direction: 'sale',
+            reference: 'SO-DEMO-1',
+            lines: [
+              {
+                variantId: finished.variants[0].id,
+                quantityOrdered: '600',
+                unitPrice: '24.9900',
+                currency: 'CAD',
+              },
+            ],
+          },
+          actor,
+        );
+
+        await orders.update(sale.id, { status: 'confirmed' });
+
+        // Part of it, on purpose: 400 of 600 leaves the rest outstanding, so
+        // the order page shows a partial shipment and the Ship button stays.
+        await shipments.ship(
+          sale.id,
+          {
+            fromLocationId: blending.id,
+            carrier: 'Canada Post',
+            trackingNumber: 'DEMO123456789CA',
+            lines: [{ lineId: sale.lines[0].id, quantity: '400' }],
+          },
+          actor,
+        );
+
         logger.log(
-          `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s)`,
+          `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s), SO-DEMO-1 shipped 400 of 600`,
         );
       },
     );
   } finally {
     await app.close();
   }
+}
+
+interface DemoAccount {
+  userId: string;
+  organizationId: string;
+  email: string;
+}
+
+async function existingAccount(
+  db: Database,
+  email: string,
+): Promise<DemoAccount | undefined> {
+  const [row] = await db
+    .select({ userId: users.id, organizationId: memberships.organizationId })
+    .from(users)
+    .innerJoin(memberships, eq(memberships.userId, users.id))
+    .where(eq(users.email, email));
+
+  return row && { ...row, email };
+}
+
+/**
+ * A new account and organization, registered exactly as the Register page
+ * does it — user, organization and Owner membership in one transaction
+ * (ADR-004) — so the demo is signed into like any real account. The email is
+ * stamped with the time, so every run is its own organization.
+ */
+async function freshAccount(auth: AuthService): Promise<DemoAccount> {
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace('T', '-')
+    .slice(0, 15);
+
+  const email = `demo-${stamp}@example.com`;
+
+  const { user } = await auth.register({
+    email,
+    password: DEMO_PASSWORD,
+    name: 'Demo Owner',
+    organizationName: `Demo ${stamp}`,
+  });
+
+  if (!user.organizationId) {
+    throw new Error('Registration created no organization');
+  }
+
+  new Logger('SeedDemo').log(
+    `Registered ${email} — sign in with password ${DEMO_PASSWORD}`,
+  );
+
+  return { userId: user.id, organizationId: user.organizationId, email };
 }
 
 /**
