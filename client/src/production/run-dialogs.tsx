@@ -802,7 +802,20 @@ export function CancelRunDialog({
     );
   }
 
-  const issued = run.status === 'released';
+  /**
+   * Only lines that actually moved something. A stocked line whose source
+   * is the run's own location issued nothing (the single-site case), so
+   * warning that it stays behind would describe a movement that never
+   * happened.
+   */
+  const issued =
+    run.status === 'released' &&
+    run.lines.some(
+      (line) =>
+        line.supplyType === 'stocked' &&
+        line.sourceLocationId !== null &&
+        line.sourceLocationId !== run.locationId,
+    );
 
   return (
     <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
