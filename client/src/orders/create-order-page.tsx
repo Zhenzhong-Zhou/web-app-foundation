@@ -4,7 +4,9 @@ import {
   Autocomplete,
   Box,
   Button,
+  Checkbox,
   Divider,
+  FormControlLabel,
   IconButton,
   MenuItem,
   Paper,
@@ -58,6 +60,7 @@ export function CreateOrderPage() {
 
   const [partner, setPartner] = useState<Partner | null>(null);
   const [direction, setDirection] = useState<OrderDirection>('purchase');
+  const [isSample, setIsSample] = useState(false);
   const [reference, setReference] = useState('');
   const [expectedAt, setExpectedAt] = useState('');
   const [note, setNote] = useState('');
@@ -146,6 +149,8 @@ export function CreateOrderPage() {
         body: JSON.stringify({
           partnerId: partner.id,
           direction,
+          // Sales only; the server refuses it on a purchase (ADR-042).
+          isSample: direction === 'sale' && isSample ? true : undefined,
           reference: reference || undefined,
           // A date input yields YYYY-MM-DD, which IsISO8601 accepts. Sent as
           // typed rather than converted: expected_at is a calendar day
@@ -202,9 +207,13 @@ export function CreateOrderPage() {
               select
               label="Direction"
               value={direction}
-              onChange={(event) =>
-                setDirection(event.target.value as OrderDirection)
-              }
+              onChange={(event) => {
+                const next = event.target.value as OrderDirection;
+                setDirection(next);
+                // A purchase cannot be a sample, so switching away clears it
+                // rather than sending a flag the server would refuse.
+                if (next === 'purchase') setIsSample(false);
+              }}
               // Which way the goods go. A column and not a table (ADR-027):
               // two values the service branches on, carrying no attributes.
               helperText={
@@ -216,6 +225,22 @@ export function CreateOrderPage() {
               <MenuItem value="purchase">Buying from them</MenuItem>
               <MenuItem value="sale">Selling to them</MenuItem>
             </TextField>
+
+            {/* A sample ships, prints and traces exactly like a sale — the
+                lots it takes are found by a recall the same way. The flag is
+                for telling them apart afterwards, not for a different flow
+                (ADR-042). */}
+            {direction === 'sale' && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={isSample}
+                    onChange={(event) => setIsSample(event.target.checked)}
+                  />
+                }
+                label="This is a sample — price it at zero if it is free"
+              />
+            )}
 
             <Stack direction="row" spacing={2}>
               <TextField

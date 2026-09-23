@@ -109,6 +109,8 @@ export interface OrderSummary {
   partnerId: string;
   partnerName: string;
   direction: OrderDirection;
+  /** A sale sent as a sample (ADR-042). Always false on a purchase. */
+  isSample: boolean;
   status: OrderStatus;
   reference: string | null;
   expectedAt: string | null;
@@ -171,6 +173,8 @@ export interface OrderDetail {
   partnerId: string;
   partnerName: string;
   direction: OrderDirection;
+  /** A sale sent as a sample (ADR-042). Always false on a purchase. */
+  isSample: boolean;
   /** Every line received or shipped, or closed short. */
   fullyFulfilled: boolean;
   /** Set when this order was raised by duplicating another (ADR-031). */

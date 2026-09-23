@@ -35,6 +35,7 @@ import { useSubmit } from '../lib/use-submit';
 interface LocationSummary {
   id: string;
   name: string;
+  isAvailable: boolean;
 }
 
 /**
@@ -169,7 +170,8 @@ export function ReleaseRunDialog({
 
     void api<LocationSummary[]>('/locations')
       .then((rows) => {
-        if (!ignore) setLocations(rows);
+        // Retained or quarantined stock is not raw material (ADR-042).
+        if (!ignore) setLocations(rows.filter((row) => row.isAvailable));
       })
       .catch(() => undefined);
 

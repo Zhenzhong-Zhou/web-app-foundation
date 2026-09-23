@@ -58,6 +58,7 @@ function order(over: Partial<OrderDetail> = {}): OrderDetail {
     note: null,
     duplicatedFromId: null,
     fullyFulfilled: false,
+    isSample: false,
     totals: [],
     totalsComplete: false,
     lines: [line()],

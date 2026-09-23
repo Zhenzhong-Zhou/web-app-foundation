@@ -8,9 +8,10 @@ import type { MoveMode } from './move-stock-dialog';
 type Choice = MoveMode | 'history' | 'lot';
 
 /**
- * A menu rather than three buttons per row. Shipping, moving, and correcting
- * are all uncommon relative to reading the table, and three controls on every
- * line makes the numbers — the thing people actually came for — harder to scan.
+ * A menu rather than a row of buttons. Shipping, sampling, moving and
+ * correcting are all uncommon relative to reading the table, and a control
+ * for each on every line makes the numbers — the thing people actually came
+ * for — harder to scan.
  */
 export function StockActions({
   row,
@@ -77,6 +78,17 @@ export function StockActions({
           }}
         >
           Ship out
+        </MenuItem>
+        {/* A hand-out: a trade show, a visitor, a bottle opened for a test.
+            A posted sample is a sale flagged as one, raised from Orders
+            (ADR-042). */}
+        <MenuItem
+          onClick={() => {
+            setPending('sample');
+            setAnchor(null);
+          }}
+        >
+          Send sample
         </MenuItem>
         {/* stock.adjust, not stock.move. Receiving, shipping, and transferring
             record what happened in the world; an adjustment overrides the

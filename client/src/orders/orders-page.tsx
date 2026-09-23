@@ -35,7 +35,7 @@ function messageFor(caught: unknown): string {
 /**
  * `status` is the document's lifecycle and says nothing about how much has
  * arrived — a confirmed order may be half received, and a received one may be
- * a short shipment somebody closed (ADR-027). The Received column is the
+ * a short shipment somebody closed (ADR-027). The Fulfilled column is the
  * arithmetic; this is the decision.
  */
 const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
@@ -205,6 +205,16 @@ export function OrdersPage() {
                       thing anyone scanning this list wants to know. */}
                     <TableCell>
                       {order.direction === 'purchase' ? 'Buying' : 'Selling'}
+                      {/* Beside the direction rather than instead of it: a
+                        sample is still stock leaving (ADR-042). */}
+                      {order.isSample && (
+                        <Chip
+                          label="Sample"
+                          size="small"
+                          variant="outlined"
+                          sx={{ ml: 1 }}
+                        />
+                      )}
                     </TableCell>
 
                     {/* Their number, not ours. Nullable, because an order placed

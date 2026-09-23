@@ -264,6 +264,7 @@ export function OrderDetailPage() {
         subtitle={
           <>
             {order.direction === 'purchase' ? 'Buying' : 'Selling'}
+            {order.isSample ? ' · sample' : ''}
             {order.reference ? ` · ${order.reference}` : ''}
             {order.expectedAt
               ? ` · expected ${formatDay(order.expectedAt)}`
@@ -605,7 +606,7 @@ export function OrderDetailPage() {
         key={shipping ? `ship-${order.id}` : 'ship-closed'}
         open={shipping}
         order={order}
-        locations={leaves}
+        locations={leaves.filter((location) => location.isAvailable)}
         onClose={() => setShipping(false)}
         onShipped={async () => {
           await load();
