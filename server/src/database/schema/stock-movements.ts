@@ -149,6 +149,22 @@ export const stockMovements = pgTable(
       t.createdAt.desc(),
     ),
 
+    /**
+     * Recall: every movement of one lot, whichever direction. "Which
+     * customers received lot X" reads through this and nothing else.
+     */
+    index('stock_movements_org_lot_idx').on(t.organizationId, t.lotId),
+
+    /**
+     * Everything one document caused — a run's issues and consumption, a
+     * shipment's lots. Read on every run and order page.
+     */
+    index('stock_movements_org_reference_idx').on(
+      t.organizationId,
+      t.referenceType,
+      t.referenceId,
+    ),
+
     check(
       'stock_movements_reason_check',
       sql`${t.reason} in ('receipt', 'shipment', 'transfer', 'adjustment', 'production', 'consumption', 'sample', 'return')`,

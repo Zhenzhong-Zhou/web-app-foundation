@@ -30,6 +30,7 @@ export * from './products';
 export * from './role-permissions';
 export * from './roles';
 export * from './sessions';
+export * from './shipments';
 export * from './stock-levels';
 export * from './stock-movements';
 export * from './users';

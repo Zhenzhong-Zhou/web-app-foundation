@@ -20,6 +20,11 @@ import {
   stockMovements,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import {
+  allocateFefo,
+  type LotCandidate,
+  lotCandidates,
+} from '../stock/lot-allocation';
 import { StockService } from '../stock/stock.service';
 import type {
   CreateProductionOrderDto,
@@ -33,11 +38,6 @@ import type {
   RecordOutputDto,
   ReleaseProductionOrderDto,
 } from './dto/transitions.dto';
-import {
-  allocateFefo,
-  type LotCandidate,
-  lotCandidates,
-} from './lot-allocation';
 
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 

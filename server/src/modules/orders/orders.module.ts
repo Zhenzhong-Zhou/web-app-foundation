@@ -5,6 +5,8 @@ import { PartnersModule } from '../partners/partners.module';
 import { StockModule } from '../stock/stock.module';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { ShipmentsController } from './shipments.controller';
+import { ShipmentsService } from './shipments.service';
 
 /**
  * Imports StockModule because receiving against a line writes a movement, and
@@ -18,8 +20,8 @@ import { OrdersService } from './orders.service';
  */
 @Module({
   imports: [StockModule, PartnersModule, NotificationsModule],
-  controllers: [OrdersController],
-  providers: [OrdersService],
+  controllers: [OrdersController, ShipmentsController],
+  providers: [OrdersService, ShipmentsService],
   exports: [OrdersService],
 })
 export class OrdersModule {}

@@ -41,7 +41,7 @@ type OrderLine = typeof orderLines.$inferSelect;
 const ALLOWED_FROM: Record<string, readonly string[]> = {
   draft: [],
   confirmed: ['draft'],
-  received: ['confirmed'],
+  fulfilled: ['confirmed'],
   cancelled: ['draft', 'confirmed'],
 };
 
@@ -172,7 +172,7 @@ export class OrdersService {
            * null, but an order always has at least one (ADR-027), so the
            * coalesce is belt and braces rather than a real case.
            */
-          fullyReceived: sql<boolean>`coalesce((
+          fullyFulfilled: sql<boolean>`coalesce((
             select bool_and(
               ${orderLines.quantityFulfilled} >= ${orderLines.quantityOrdered}
               or ${orderLines.isClosedShort}
@@ -503,10 +503,10 @@ export class OrdersService {
     if (
       input.reference !== undefined &&
       input.reference !== existing.reference &&
-      existing.status === 'received'
+      existing.status === 'fulfilled'
     ) {
       throw new ConflictException(
-        'The reference cannot change once an order is received — it is what a supplier invoice is matched against',
+        'The reference cannot change once an order is fulfilled — it is what an invoice is matched against',
       );
     }
 

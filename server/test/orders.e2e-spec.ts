@@ -441,7 +441,7 @@ describe('Orders (e2e)', () => {
       // fails rather than a branch someone forgot to write.
       await ctx.agent
         .patch(`/v1/orders/${order.id}`)
-        .send({ status: 'received' })
+        .send({ status: 'fulfilled' })
         .expect(409);
     });
 
@@ -889,7 +889,7 @@ describe('Orders (e2e)', () => {
         .expect(204);
 
       const detail = body<{
-        fullyReceived: boolean;
+        fullyFulfilled: boolean;
         lines: {
           quantityOrdered: string;
           quantityFulfilled: string;
@@ -911,7 +911,7 @@ describe('Orders (e2e)', () => {
       expect(line.isComplete).toBe(true);
       expect(line.isClosedShort).toBe(true);
       expect(line.closedReason).toBe('Supplier discontinued the item');
-      expect(detail.fullyReceived).toBe(true);
+      expect(detail.fullyFulfilled).toBe(true);
     });
 
     it('closes a line nothing ever arrived against', async () => {
@@ -1306,7 +1306,7 @@ describe('Orders (e2e)', () => {
 
       const before = body<{
         partnerName: string;
-        fullyReceived: boolean;
+        fullyFulfilled: boolean;
         lines: { quantityOutstanding: string; isComplete: boolean }[];
       }>(await ctx.agent.get(`/v1/orders/${order.id}`).expect(200));
 
@@ -1314,7 +1314,7 @@ describe('Orders (e2e)', () => {
       expect(before.partnerName).toBe('Acme Supplies');
       expect(before.lines[0].quantityOutstanding).toBe('40.0000');
       expect(before.lines[0].isComplete).toBe(false);
-      expect(before.fullyReceived).toBe(false);
+      expect(before.fullyFulfilled).toBe(false);
 
       await ctx.agent
         .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
@@ -1322,7 +1322,7 @@ describe('Orders (e2e)', () => {
         .expect(201);
 
       const after = body<{
-        fullyReceived: boolean;
+        fullyFulfilled: boolean;
         status: string;
         lines: { quantityOutstanding: string; isComplete: boolean }[];
       }>(await ctx.agent.get(`/v1/orders/${order.id}`).expect(200));
@@ -1334,7 +1334,7 @@ describe('Orders (e2e)', () => {
        */
       expect(after.lines[0].quantityOutstanding).toBe('0.0000');
       expect(after.lines[0].isComplete).toBe(true);
-      expect(after.fullyReceived).toBe(true);
+      expect(after.fullyFulfilled).toBe(true);
 
       // The status has not moved. Arithmetic does not close a document
       // (ADR-027) — that stays a person's decision.

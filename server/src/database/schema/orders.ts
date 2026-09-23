@@ -26,25 +26,16 @@ export const ORDER_DIRECTIONS = ['purchase', 'sale'] as const;
 export type OrderDirection = (typeof ORDER_DIRECTIONS)[number];
 
 /**
- * The document's lifecycle, and nothing about how much has arrived.
- *
- * The temptation is `partially_received` and `fully_received` beside these.
- * That is stored arithmetic: progress is sum(quantity_fulfilled) against
- * sum(quantity_ordered) across the lines, and a copy of it goes stale the first
- * time a line changes (ADR-027).
- *
- * `received` is a person saying the order is done, which can be true of a short
- * shipment nobody expects to complete. That is a decision rather than a
- * calculation, which is why it belongs here and the percentages do not.
- *
- * Widening is expected when sales orders arrive — `received` does not describe
- * an outbound order — and costs a dropped and re-added constraint with no row
- * to rewrite.
+ * The order's lifecycle, the same in both directions (ADR-041). `fulfilled`
+ * is a person saying the order is done — every line received or shipped, or
+ * closed short — which is a decision rather than a calculation. The client
+ * shows it as "Received" on a purchase and "Shipped" on a sale; one stored
+ * value means one rule for what can still change, not two kept in step.
  */
 export const ORDER_STATUSES = [
   'draft',
   'confirmed',
-  'received',
+  'fulfilled',
   'cancelled',
 ] as const;
 
@@ -169,7 +160,7 @@ export const orders = pgTable(
     ),
     check(
       'orders_status_check',
-      sql`${t.status} in ('draft', 'confirmed', 'received', 'cancelled')`,
+      sql`${t.status} in ('draft', 'confirmed', 'fulfilled', 'cancelled')`,
     ),
 
     /**

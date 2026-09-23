@@ -57,6 +57,7 @@ export const PERMISSIONS = {
   ORDERS_CREATE: 'orders.create',
   ORDERS_UPDATE: 'orders.update',
   ORDERS_RECEIVE: 'orders.receive',
+  ORDERS_SHIP: 'orders.ship',
 
   BOMS_VIEW: 'boms.view',
   BOMS_CREATE: 'boms.create',
@@ -112,6 +113,9 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   // Separate from update: receiving writes to the ledger, and the person on
   // the dock is not usually the person who raises orders.
   'orders.receive': 'Receive stock against an order',
+  // Separate from receive and update, for the reason receive is: the person
+  // packing boxes is not usually the person raising orders.
+  'orders.ship': 'Ship stock against a sales order',
   'boms.view': 'See recipes and what they consume',
   'boms.create': 'Add a recipe or draft a new version of one',
   'boms.update': 'Edit a draft, promote it, or archive it',
@@ -178,6 +182,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.ORDERS_CREATE,
     PERMISSIONS.ORDERS_UPDATE,
     PERMISSIONS.ORDERS_RECEIVE,
+    PERMISSIONS.ORDERS_SHIP,
     PERMISSIONS.PRODUCTION_VIEW,
     PERMISSIONS.PRODUCTION_CREATE,
     PERMISSIONS.PRODUCTION_RELEASE,

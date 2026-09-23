@@ -13,7 +13,10 @@ import {
 } from 'class-validator';
 
 import { trim } from '../../../common/dto/trim';
-import { ORDER_DIRECTIONS } from '../../../database/schema';
+import {
+  ORDER_DIRECTIONS,
+  type OrderDirection,
+} from '../../../database/schema';
 
 /**
  * A positive decimal, as a string — the same rule quantities take everywhere
@@ -55,7 +58,7 @@ export class CreateOrderDto {
   partnerId!: string;
 
   @IsIn([...ORDER_DIRECTIONS])
-  direction!: (typeof ORDER_DIRECTIONS)[number];
+  direction!: OrderDirection;
 
   /**
    * Their number for this order, not ours — a supplier's confirmation code, a

@@ -64,6 +64,10 @@ const NOT_AUDITED = new Map<string, string>([
     'Reading your own notification is not an act on the organization (ADR-036)',
   ],
   ['NotificationsController.markAllRead', 'As above (ADR-036)'],
+  [
+    'ShipmentsController.preview',
+    'Reads only: computes what a shipment would take. A POST because the question has a body (ADR-041)',
+  ],
 ]);
 
 interface Controller {
