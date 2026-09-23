@@ -57,7 +57,7 @@ function order(over: Partial<OrderDetail> = {}): OrderDetail {
     expectedAt: null,
     note: null,
     duplicatedFromId: null,
-    fullyReceived: false,
+    fullyFulfilled: false,
     totals: [],
     totalsComplete: false,
     lines: [line()],
@@ -199,7 +199,7 @@ describe('OrderDetailPage lines', () => {
   describe('a line closed short', () => {
     const closed = order({
       status: 'confirmed',
-      fullyReceived: true,
+      fullyFulfilled: true,
       lines: [
         line({
           quantityFulfilled: '10.0000',

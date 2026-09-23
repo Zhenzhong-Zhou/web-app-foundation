@@ -41,13 +41,13 @@ function messageFor(caught: unknown): string {
 const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
   draft: 'default',
   confirmed: 'primary',
-  received: 'success',
+  fulfilled: 'success',
   cancelled: 'default',
 };
 
 const FILTERS = [
   { value: 'open', label: 'Open' },
-  { value: 'received', label: 'Received' },
+  { value: 'fulfilled', label: 'Fulfilled' },
   { value: 'cancelled', label: 'Cancelled' },
   { value: 'all', label: 'All' },
 ] as const;
@@ -187,7 +187,7 @@ export function OrdersPage() {
                   <TableCell>Direction</TableCell>
                   <TableCell>Reference</TableCell>
                   <TableCell>Expected</TableCell>
-                  <TableCell>Received</TableCell>
+                  <TableCell>Fulfilled</TableCell>
                   <TableCell>Status</TableCell>
                 </TableRow>
               </TableHead>
@@ -224,7 +224,13 @@ export function OrdersPage() {
 
                     <TableCell>
                       <Chip
-                        label={order.status}
+                        label={
+                          order.status === 'fulfilled'
+                            ? order.direction === 'sale'
+                              ? 'Shipped'
+                              : 'Received'
+                            : order.status
+                        }
                         size="small"
                         color={STATUS_COLOUR[order.status]}
                         sx={{ textTransform: 'capitalize' }}

@@ -29,6 +29,7 @@ import { openDialog } from '../lib/open-dialog';
 import type {
   Location,
   OrderDetail,
+  OrderDirection,
   OrderLine,
   OrderStatus,
 } from '../lib/types';
@@ -41,6 +42,8 @@ import { DuplicateOrderDialog } from './duplicate-order-dialog';
 import { EditOrderDialog } from './edit-order-dialog';
 import { EditOrderLineDialog } from './edit-order-line-dialog';
 import { ReceiveLineDialog } from './receive-line-dialog';
+import { ShipOrderDialog } from './ship-order-dialog';
+import { ShipmentsList } from './shipments-list';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -51,7 +54,7 @@ function messageFor(caught: unknown): string {
 const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
   draft: 'default',
   confirmed: 'primary',
-  received: 'success',
+  fulfilled: 'success',
   cancelled: 'default',
 };
 
@@ -60,31 +63,41 @@ const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
  *
  * The server refuses an illegal transition with a 409 whatever this says —
  * offering a button that always fails is the thing being avoided, not the
- * rule being implemented. Received and cancelled are terminal: an order that
- * turns out wrong is corrected by an adjustment movement, not by reopening
- * the document (ADR-023).
+ * rule being implemented. Fulfilled and cancelled are terminal: an order
+ * that turns out wrong is corrected by an adjustment movement, not by
+ * reopening the document (ADR-023).
  */
 const NEXT_STATUSES: Record<OrderStatus, OrderStatus[]> = {
   draft: ['confirmed', 'cancelled'],
-  confirmed: ['received', 'cancelled'],
-  received: [],
+  confirmed: ['fulfilled', 'cancelled'],
+  fulfilled: [],
   cancelled: [],
 };
 
-/** Button labels. What clicking does, not what the order is. */
-const TRANSITION_LABEL: Partial<Record<OrderStatus, string>> = {
-  confirmed: 'Confirm',
-  received: 'Mark received',
-  cancelled: 'Cancel order',
+/**
+ * The word for "done" depends on which way the goods went. The server stores
+ * one status, `fulfilled`, so one rule governs both directions (ADR-041);
+ * only what a person reads differs.
+ */
+const DONE: Record<OrderDirection, string> = {
+  purchase: 'Received',
+  sale: 'Shipped',
 };
 
+/** Button labels. What clicking does, not what the order is. */
+function transitionLabel(next: OrderStatus, direction: OrderDirection): string {
+  if (next === 'fulfilled') return `Mark ${DONE[direction].toLowerCase()}`;
+  if (next === 'confirmed') return 'Confirm';
+  return 'Cancel order';
+}
+
 /** Chip labels. What the order is, rather than relying on CSS capitalisation. */
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  draft: 'Draft',
-  confirmed: 'Confirmed',
-  received: 'Received',
-  cancelled: 'Cancelled',
-};
+function statusLabel(status: OrderStatus, direction: OrderDirection): string {
+  if (status === 'fulfilled') return DONE[direction];
+  if (status === 'draft') return 'Draft';
+  if (status === 'confirmed') return 'Confirmed';
+  return 'Cancelled';
+}
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -102,9 +115,14 @@ export function OrderDetailPage() {
   const [addingLine, setAddingLine] = useState(false);
   const [editingLine, setEditingLine] = useState<OrderLine | null>(null);
   const [closingLine, setClosingLine] = useState<OrderLine | null>(null);
+  const [shipping, setShipping] = useState(false);
+
+  /** Bumped after a shipment so the list below refetches alongside the order. */
+  const [shipments, setShipments] = useState(0);
 
   const canUpdate = !!session?.permissions.includes('orders.update');
   const canReceive = !!session?.permissions.includes('orders.receive');
+  const canShip = !!session?.permissions.includes('orders.ship');
   const canCreate = !!session?.permissions.includes('orders.create');
   const loading = order === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
@@ -188,14 +206,21 @@ export function OrderDetailPage() {
   const leaves = leavesOf(locations);
 
   /**
-   * Purchase orders only. A sale is shipped, and the server says so — the
-   * outbound half is not built, and a Receive button on a sales order would
-   * be a promise this app cannot keep.
+   * Inbound is per line — a supplier's delivery is checked in line by line.
+   * Outbound is a document: one Ship for the whole order, because what
+   * leaves together is one box, one packing slip, one tracking number
+   * (ADR-041).
    */
   const receivable =
     canReceive &&
     order.direction === 'purchase' &&
     order.status === 'confirmed';
+
+  const shippable =
+    canShip &&
+    order.direction === 'sale' &&
+    order.status === 'confirmed' &&
+    order.lines.some((line) => !line.isComplete);
 
   /** Lines are editable on a draft, and amendable while confirmed (ADR-033). */
   const isDraft = order.status === 'draft';
@@ -208,7 +233,7 @@ export function OrderDetailPage() {
         title={order.partnerName}
         titleTo={`/partners/${order.partnerId}`}
         status={{
-          label: STATUS_LABEL[order.status],
+          label: statusLabel(order.status, order.direction),
           color: STATUS_COLOUR[order.status],
         }}
         actions={
@@ -287,6 +312,15 @@ export function OrderDetailPage() {
               Add item
             </Button>
           )}
+
+          {shippable && (
+            <Button
+              disabled={working}
+              onClick={openDialog(() => setShipping(true))}
+            >
+              Ship
+            </Button>
+          )}
         </Stack>
 
         <Paper variant="outlined">
@@ -308,7 +342,7 @@ export function OrderDetailPage() {
                   {/* Right-aligned like the money: quantities are compared
                     down a column, and digits only line up on the right. */}
                   <TableCell align="right">Ordered</TableCell>
-                  <TableCell align="right">Received</TableCell>
+                  <TableCell align="right">{DONE[order.direction]}</TableCell>
                   <TableCell align="right">Outstanding</TableCell>
                   <TableCell align="right">Unit price</TableCell>
                   <TableCell align="right">Total</TableCell>
@@ -458,11 +492,15 @@ export function OrderDetailPage() {
 
         {order.status === 'draft' && (
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-            Nothing can be received against a draft. Confirming is what says
-            this order is real.
+            Nothing can be {DONE[order.direction].toLowerCase()} against a
+            draft. Confirming is what says this order is real.
           </Typography>
         )}
       </Box>
+
+      {order.direction === 'sale' && (
+        <ShipmentsList orderId={order.id} refreshKey={shipments} />
+      )}
 
       {canUpdate && NEXT_STATUSES[order.status].length > 0 && (
         <Stack direction="row" spacing={2} sx={{ justifyContent: 'flex-end' }}>
@@ -479,7 +517,7 @@ export function OrderDetailPage() {
                 disabled={working}
                 onClick={() => void moveTo(next)}
               >
-                {TRANSITION_LABEL[next]}
+                {transitionLabel(next, order.direction)}
               </Button>
             ))}
 
@@ -494,14 +532,14 @@ export function OrderDetailPage() {
                   // Only this branch opens a dialog, so only it needs the
                   // blur openDialog does — the direct transition keeps focus
                   // on the button, which is right when nothing covers it.
-                  if (next === 'received' && !order.fullyReceived) {
+                  if (next === 'fulfilled' && !order.fullyFulfilled) {
                     openDialog(() => setClosing(true))(event);
                     return;
                   }
                   void moveTo(next);
                 }}
               >
-                {TRANSITION_LABEL[next]}
+                {transitionLabel(next, order.direction)}
               </Button>
             ))}
         </Stack>
@@ -531,7 +569,7 @@ export function OrderDetailPage() {
         onClose={() => setClosing(false)}
         onConfirm={() => {
           setClosing(false);
-          void moveTo('received');
+          void moveTo('fulfilled');
         }}
       />
 
@@ -560,6 +598,18 @@ export function OrderDetailPage() {
         }
         onClose={() => setEditingLine(null)}
         onSaved={load}
+      />
+
+      <ShipOrderDialog
+        key={shipping ? `ship-${order.id}` : 'ship-closed'}
+        open={shipping}
+        order={order}
+        locations={leaves}
+        onClose={() => setShipping(false)}
+        onShipped={async () => {
+          await load();
+          setShipments((count) => count + 1);
+        }}
       />
 
       <CloseLineDialog

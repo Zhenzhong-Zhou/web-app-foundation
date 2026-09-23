@@ -97,7 +97,12 @@ export interface PartnerDetail extends Partner {
 }
 
 export type OrderDirection = 'purchase' | 'sale';
-export type OrderStatus = 'draft' | 'confirmed' | 'received' | 'cancelled';
+
+/**
+ * One lifecycle for both directions (ADR-041). `fulfilled` reads as
+ * "Received" on a purchase and "Shipped" on a sale.
+ */
+export type OrderStatus = 'draft' | 'confirmed' | 'fulfilled' | 'cancelled';
 
 export interface OrderSummary {
   id: string;
@@ -166,7 +171,8 @@ export interface OrderDetail {
   partnerId: string;
   partnerName: string;
   direction: OrderDirection;
-  fullyReceived: boolean;
+  /** Every line received or shipped, or closed short. */
+  fullyFulfilled: boolean;
   /** Set when this order was raised by duplicating another (ADR-031). */
   duplicatedFromId: string | null;
   status: OrderStatus;
@@ -316,4 +322,37 @@ export interface LineVariance {
   quantityPlanned: string;
   quantityConsumed: string;
   variance: number;
+}
+
+/**
+ * One line as a shipment would send it, with the lots earliest expiry first
+ * would take (ADR-041). The same shape as a release preview, per order line.
+ */
+export interface ShipmentPlanLine {
+  lineId: string;
+  sku: string;
+  quantity: string;
+  tracksLots: boolean;
+  lots: IssuePlanLot[];
+  /** What the source is missing, or null when it can cover the line. */
+  shortBy: string | null;
+  /** More than the line still has outstanding: the ship would be refused. */
+  exceedsOutstanding: boolean;
+}
+
+/** A shipment as its order page lists it: the header and what it carried. */
+export interface Shipment {
+  id: string;
+  fromLocationId: string;
+  carrier: string | null;
+  trackingNumber: string | null;
+  note: string | null;
+  createdAt: string;
+  items: {
+    sku: string;
+    /** Null for untracked stock, which ships without a lot. */
+    lotCode: string | null;
+    expiresAt: string | null;
+    quantity: string;
+  }[];
 }
