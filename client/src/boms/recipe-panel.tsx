@@ -273,7 +273,13 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+      {/* Wraps as whole controls: on a phone the picker and the button drop
+          under the heading together rather than squeezing it. */}
+      <Stack
+        direction="row"
+        useFlexGap
+        sx={{ alignItems: 'center', flexWrap: 'wrap', columnGap: 2, rowGap: 1 }}
+      >
         <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
           Recipe
         </Typography>
@@ -297,8 +303,16 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
           </TextField>
         )}
 
+        {/* Filled only when there is nothing yet, and then it is the one
+            thing to do here. Once a recipe exists, a second one for the same
+            variant is rare, and a filled button beside "New version" made two
+            primaries compete for the same glance. */}
         {canCreate && (
-          <Button onClick={openDialog(() => setCreating(true))} disabled={busy}>
+          <Button
+            variant={versions.length === 0 ? 'contained' : 'outlined'}
+            onClick={openDialog(() => setCreating(true))}
+            disabled={busy}
+          >
             New recipe
           </Button>
         )}
@@ -333,80 +347,107 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
 
       {selected && (
         <>
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-            <Chip
-              label={selected.status}
-              size="small"
-              color={STATUS_COLOR[selected.status]}
-            />
-
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ flexGrow: 1 }}
+          {/*
+           * Two groups, not one row of five things. The summary takes what
+           * space is left but never less than ~320px; below that the actions
+           * move as a block to their own line, right-aligned. Before, every
+           * item shrank at once — the sentence wrapped to two lines and the
+           * button labels broke — so the row changed shape at every width.
+           */}
+          <Stack
+            direction="row"
+            useFlexGap
+            sx={{
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              columnGap: 2,
+              rowGap: 1,
+            }}
+          >
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{ alignItems: 'center', flex: '1 1 320px', minWidth: 0 }}
             >
-              Makes {selected.outputQuantity} per batch
-              {licenceFor(selected.licenceId) &&
-                ` · made under ${licenceFor(selected.licenceId)}`}
-            </Typography>
+              <Chip
+                label={selected.status}
+                size="small"
+                color={STATUS_COLOR[selected.status]}
+              />
 
-            {canUpdate && isDraft && (
-              <Tooltip title="Makes this the recipe new runs use, and archives the current one">
-                <span>
-                  <Button
-                    disabled={busy || selected.lines.length === 0}
-                    onClick={() =>
-                      void act(`/boms/${selected.id}/promote`, {
-                        method: 'POST',
-                        preferId: selected.id,
-                      })
-                    }
-                  >
-                    Promote
-                  </Button>
-                </span>
-              </Tooltip>
-            )}
+              <Typography variant="body2" color="text.secondary">
+                Makes {selected.outputQuantity} per batch
+                {licenceFor(selected.licenceId) &&
+                  ` · made under ${licenceFor(selected.licenceId)}`}
+              </Typography>
+            </Stack>
 
-            {/* Per version, not per product: a product with twenty versions
-                would bury "discontinued" under a hundred recipe edits, and
-                the question here is always about this recipe. */}
-            <HistoryButton resourceId={selected.id} />
+            {/* Least to most committal, left to right, so the one filled
+                button — the thing this status is waiting for — sits at the
+                end of the reading line. Everything else is text weight. */}
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ alignItems: 'center', ml: 'auto' }}
+            >
+              {/* Per version, not per product: a product with twenty versions
+                  would bury "discontinued" under a hundred recipe edits, and
+                  the question here is always about this recipe. */}
+              <HistoryButton resourceId={selected.id} />
 
-            {canCreate && !isDraft && (
-              <Tooltip title="An active recipe cannot be edited — this copies it to a new draft">
-                <span>
-                  <Button disabled={busy} onClick={() => void duplicate()}>
-                    New version
-                  </Button>
-                </span>
-              </Tooltip>
-            )}
+              {canUpdate && selected.status === 'active' && (
+                <Button
+                  variant="text"
+                  disabled={busy}
+                  onClick={() =>
+                    void act(`/boms/${selected.id}/archive`, {
+                      method: 'POST',
+                      preferId: selected.id,
+                    })
+                  }
+                >
+                  Archive
+                </Button>
+              )}
 
-            {canUpdate && selected.status === 'active' && (
-              <Button
-                variant="text"
-                disabled={busy}
-                onClick={() =>
-                  void act(`/boms/${selected.id}/archive`, {
-                    method: 'POST',
-                    preferId: selected.id,
-                  })
-                }
-              >
-                Archive
-              </Button>
-            )}
+              {canUpdate && isDraft && (
+                <Button
+                  variant="text"
+                  disabled={busy}
+                  onClick={openDialog(() => setAddingLine(true))}
+                >
+                  Add component
+                </Button>
+              )}
 
-            {canUpdate && isDraft && (
-              <Button
-                variant="text"
-                disabled={busy}
-                onClick={openDialog(() => setAddingLine(true))}
-              >
-                Add component
-              </Button>
-            )}
+              {canCreate && !isDraft && (
+                <Tooltip title="An active recipe cannot be edited — this copies it to a new draft">
+                  <span>
+                    <Button disabled={busy} onClick={() => void duplicate()}>
+                      New version
+                    </Button>
+                  </span>
+                </Tooltip>
+              )}
+
+              {canUpdate && isDraft && (
+                <Tooltip title="Makes this the recipe new runs use, and archives the current one">
+                  <span>
+                    <Button
+                      disabled={busy || selected.lines.length === 0}
+                      onClick={() =>
+                        void act(`/boms/${selected.id}/promote`, {
+                          method: 'POST',
+                          preferId: selected.id,
+                        })
+                      }
+                    >
+                      Promote
+                    </Button>
+                  </span>
+                </Tooltip>
+              )}
+            </Stack>
           </Stack>
 
           {/* A promoted recipe is frozen except for this, and only until a

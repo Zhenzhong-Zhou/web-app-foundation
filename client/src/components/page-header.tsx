@@ -89,27 +89,58 @@ export function PageHeader({
         </Breadcrumbs>
       )}
 
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          {titleTo ? (
-            // underline="hover" and inherited colour: MUI underlines links
-            // always, which makes a heading read as body text.
-            <Link
-              component={RouterLink}
-              to={titleTo}
-              underline="hover"
-              color="inherit"
-            >
-              {title}
-            </Link>
-          ) : (
-            title
+      {/*
+       * Title with its status, then actions — two groups that wrap as wholes.
+       * The status chip sits against the title because it describes it ("Acme
+       * Tablets · finished"); at the far right past the buttons it read as one
+       * more control. On a narrow screen the actions drop to their own line
+       * instead of squeezing a long product name into a column of words.
+       */}
+      <Stack
+        direction="row"
+        useFlexGap
+        sx={{ alignItems: 'center', flexWrap: 'wrap', columnGap: 2, rowGap: 1 }}
+      >
+        <Stack
+          direction="row"
+          spacing={1.5}
+          sx={{ alignItems: 'center', flex: '1 1 280px', minWidth: 0 }}
+        >
+          <Typography
+            variant="h5"
+            component="h1"
+            sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
+          >
+            {titleTo ? (
+              // underline="hover" and inherited colour: MUI underlines links
+              // always, which makes a heading read as body text.
+              <Link
+                component={RouterLink}
+                to={titleTo}
+                underline="hover"
+                color="inherit"
+              >
+                {title}
+              </Link>
+            ) : (
+              title
+            )}
+          </Typography>
+
+          {status && (
+            <Chip label={status.label} color={status.color} size="small" />
           )}
-        </Typography>
+        </Stack>
 
-        {actions}
-
-        {status && <Chip label={status.label} color={status.color} />}
+        {actions && (
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ alignItems: 'center', ml: 'auto' }}
+          >
+            {actions}
+          </Stack>
+        )}
       </Stack>
 
       {subtitle && (

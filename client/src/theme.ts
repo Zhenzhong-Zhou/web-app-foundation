@@ -17,9 +17,17 @@ export const theme = createTheme({
   // platform.
   typography: { fontFamily: 'system-ui, sans-serif' },
   components: {
+    /**
+     * A button label never wraps. "New" stacked over "version" doubles the
+     * button's height, which shoves its whole row taller and reads as a layout
+     * bug. Rows of buttons wrap as a group instead (see RecipePanel), so a
+     * narrow screen gets a second row of whole buttons, not broken ones.
+     */
     MuiButton: {
       defaultProps: { variant: 'contained' },
-      styleOverrides: { root: { textTransform: 'none' } },
+      styleOverrides: {
+        root: { textTransform: 'none', whiteSpace: 'nowrap', flexShrink: 0 },
+      },
     },
     /**
      * Tables scroll inside a TableContainer rather than wrapping into
@@ -28,7 +36,8 @@ export const theme = createTheme({
      * - Right-aligned cells. In this app those are the numbers, the money and
      *   the actions column, and "222.0000" broken across lines, or "Close"
      *   above "short", is worse than a scrollbar.
-     * - A button label anywhere in a table, for the same reason.
+     *
+     * Button labels are covered app-wide by MuiButton above.
      *
      * Left-aligned text — names, notes, reasons — keeps wrapping, because a
      * long partner name should grow the row, not push the table sideways.
@@ -38,7 +47,6 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           '&.MuiTableCell-alignRight': { whiteSpace: 'nowrap' },
-          '& .MuiButton-root': { whiteSpace: 'nowrap' },
         },
       },
     },
