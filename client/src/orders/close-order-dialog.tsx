@@ -7,24 +7,31 @@ import {
   DialogTitle,
 } from '@mui/material';
 
+import type { OrderDirection } from '../lib/types';
+
 /**
- * Asks before closing an order that has not been fully received.
+ * Asks before closing an order that has not been fully received or shipped.
  *
- * `received` is a person saying the order is done, and that stays true of a
- * short shipment nobody expects to complete (ADR-027) — so this confirms
- * rather than refuses. What it prevents is the other case: someone reaching
- * for the most prominent button on the screen and closing an order they meant
- * to receive against, with no indication anything was outstanding.
+ * `fulfilled` is a person saying the order is done, and that stays true of a
+ * short delivery nobody expects to complete (ADR-027, ADR-041) — so this
+ * confirms rather than refuses. What it prevents is the other case: someone
+ * reaching for the most prominent button on the screen and closing an order
+ * they meant to keep working, with no indication anything was outstanding.
+ *
+ * Worded by direction, because the one status reads as two different acts:
+ * goods that did not arrive, or goods that were not sent.
  *
  * Only shown when something is outstanding. A dialog that always appears is a
  * dialog people learn to dismiss without reading.
  */
 export function CloseOrderDialog({
   open,
+  direction,
   onClose,
   onConfirm,
 }: {
   open: boolean;
+  direction: OrderDirection;
   onClose: () => void;
   onConfirm: () => void;
 }) {
@@ -34,10 +41,9 @@ export function CloseOrderDialog({
 
       <DialogContent>
         <DialogContentText>
-          Some of what was ordered has not been received. Closing the order says
-          nothing more is expected — the stock already received stays exactly as
-          it is, and anything that turns up later can be received from the
-          Inventory screen.
+          {direction === 'purchase'
+            ? 'Some of what was ordered has not been received. Closing the order says nothing more is expected — the stock already received stays exactly as it is, and anything that turns up later can be received from the Inventory screen.'
+            : 'Some of what was ordered has not been shipped. Closing the order says nothing more will be sent — what has shipped stays exactly as it is, and anything sent later can be shipped from the Inventory screen.'}
         </DialogContentText>
       </DialogContent>
 
@@ -45,7 +51,7 @@ export function CloseOrderDialog({
         <Button variant="text" onClick={onClose}>
           Keep it open
         </Button>
-        {/* Terminal: received and cancelled cannot be reopened (ADR-027). */}
+        {/* Terminal: fulfilled and cancelled cannot be reopened (ADR-027). */}
         <Button onClick={onConfirm}>Close it</Button>
       </DialogActions>
     </Dialog>

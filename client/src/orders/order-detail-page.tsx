@@ -566,6 +566,7 @@ export function OrderDetailPage() {
 
       <CloseOrderDialog
         open={closing}
+        direction={order.direction}
         onClose={() => setClosing(false)}
         onConfirm={() => {
           setClosing(false);
