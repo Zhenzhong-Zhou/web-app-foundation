@@ -11,8 +11,9 @@ app; everything under `server/src/modules` is the inventory domain and depends o
 never the other way round.
 
 > **Status: pre-alpha, in daily use by its author.** Auth, tenancy, permissions and
-> auditing work end to end, and so does buying, storing, making and counting stock.
-> Selling — shipping against a sales order — is the next gap. See [Roadmap](#roadmap).
+> auditing work end to end, and so does the whole inventory cycle: buying,
+> receiving, making under a licence, and shipping, with every lot traceable in
+> both directions. See [Roadmap](#roadmap).
 ---
 
 ## Architecture
@@ -230,9 +231,13 @@ each step is server-first then the screen that uses it (ADR-019):
   close it with what was actually consumed
 - [x] **16. Notifications** — an in-app bell and security email for the handful of
   events worth interrupting someone for
+- [x] **17. Shipping** — sales orders shipped as documents: any mix of lines and
+  lots, partial by default, all or nothing per shipment, lots out earliest
+  expiry first
 
-**Next:** shipping against a sales order. Stock can be bought, stored, moved and
-made; it cannot yet be sold.
+**Next:** a lot trace — from any lot, everything it went into and every customer
+who received it, on one screen. Every movement already records its lot; this
+puts the question in one place.
 
 **Deliberately deferred** (all additive): background jobs and queues, invitations,
 file storage, search, admin UI, billing, API docs, scheduled notifications,
