@@ -150,4 +150,20 @@ export class ProductLicencesService {
 
     return !!licence;
   }
+
+  /**
+   * "80012345 (Health Canada)", for audit rows that would otherwise record an
+   * id. Read at the moment of the change, so the row says what the licence
+   * was called then.
+   */
+  async labelOf(licenceId: string | null | undefined): Promise<string | null> {
+    if (!licenceId) return null;
+
+    const [licence] = await this.tenantDb.select(
+      productLicences,
+      eq(productLicences.id, licenceId),
+    );
+
+    return licence ? `${licence.number} (${licence.authority})` : null;
+  }
 }

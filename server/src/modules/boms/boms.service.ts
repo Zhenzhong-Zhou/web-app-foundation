@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
+import { recordContext } from '../../core/audit/audit-context';
 import {
   isForeignKeyViolation,
   isUniqueViolation,
@@ -170,6 +171,17 @@ export class BomsService {
 
     await this.assertEditable(bom, input);
     await this.assertLicenceWithin(input.licenceId);
+
+    // The number, not the id: History should read "80012345 (Health
+    // Canada)". Unchanged on both sides means the interceptor skips the row.
+    if (input.licenceId !== undefined) {
+      recordContext({
+        licence: {
+          from: await this.licences.labelOf(bom.licenceId),
+          to: await this.licences.labelOf(input.licenceId),
+        },
+      });
+    }
 
     try {
       await this.tenantDb.update(boms, input, eq(boms.id, bomId));
