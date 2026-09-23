@@ -54,10 +54,13 @@ export function CreateProductDialog({
   const [form, setForm] = useState(EMPTY);
   const [tracksLots, setTracksBatches] = useState(false);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onCreated();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onCreated();
+    },
+    { success: 'Product added' },
+  );
 
   function close() {
     setForm(EMPTY);

@@ -52,10 +52,13 @@ export function CreateLocationDialog({
   const suggested = parent ? NEXT_TYPE[parent.type] : 'site';
   const [form, setForm] = useState({ type: suggested, name: '', code: '' });
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onCreated();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onCreated();
+    },
+    { success: 'Location added' },
+  );
 
   function close() {
     setForm({ type: suggested, name: '', code: '' });

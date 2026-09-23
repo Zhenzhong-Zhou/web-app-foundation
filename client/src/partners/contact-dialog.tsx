@@ -39,10 +39,13 @@ export function ContactDialog({
     isPrimary: contact?.isPrimary ?? false,
   });
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onSaved();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onSaved();
+    },
+    { success: 'Contact saved' },
+  );
 
   function close() {
     reset();

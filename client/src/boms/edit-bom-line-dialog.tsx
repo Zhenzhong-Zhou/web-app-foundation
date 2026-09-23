@@ -46,10 +46,13 @@ export function EditBomLineDialog({
   const [notes, setNotes] = useState(line?.notes ?? '');
   const [external, setExternal] = useState(line?.supplyType === 'external');
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onSaved();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onSaved();
+    },
+    { success: 'Component saved' },
+  );
 
   function close() {
     reset();

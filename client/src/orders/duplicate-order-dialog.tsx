@@ -44,7 +44,9 @@ export function DuplicateOrderDialog({
   const [reference, setReference] = useState('');
   const [expectedAt, setExpectedAt] = useState('');
 
-  const { submitting, error, reset, submit } = useSubmit(() => undefined);
+  const { submitting, error, reset, submit } = useSubmit(() => undefined, {
+    success: 'Order duplicated',
+  });
 
   function close() {
     setReference('');

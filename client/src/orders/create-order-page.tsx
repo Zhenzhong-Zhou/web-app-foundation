@@ -71,9 +71,12 @@ export function CreateOrderPage() {
    */
   const [currency, setCurrency] = useState('');
 
-  const { submitting, error, submit } = useSubmit(() => {
-    // Nothing to reset — the page unmounts on success.
-  });
+  const { submitting, error, submit } = useSubmit(
+    () => {
+      // Nothing to reset — the page unmounts on success.
+    },
+    { success: 'Order raised' },
+  );
 
   useEffect(() => {
     let ignore = false;

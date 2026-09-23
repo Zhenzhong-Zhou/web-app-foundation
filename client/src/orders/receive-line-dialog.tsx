@@ -60,10 +60,13 @@ export function ReceiveLineDialog({
   const { variants } = useVariants(line !== null);
   const variant = variants.find((row) => row.id === line?.variantId);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onReceived();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onReceived();
+    },
+    { success: 'Received' },
+  );
 
   /**
    * The codes already on this variant, so a typo shows the real one sitting

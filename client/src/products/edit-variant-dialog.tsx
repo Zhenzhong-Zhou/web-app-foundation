@@ -57,10 +57,13 @@ export function EditVariantDialog({
   const [form, setForm] = useState(EMPTY);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onSaved();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onSaved();
+    },
+    { success: 'Variant saved' },
+  );
 
   function close() {
     setForm(EMPTY);

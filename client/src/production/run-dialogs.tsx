@@ -154,10 +154,13 @@ export function ReleaseRunDialog({
     };
   }, [open, needsRecipe, run.outputVariantId]);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onReleased();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onReleased();
+    },
+    { success: 'Run released' },
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -450,10 +453,13 @@ export function RecordOutputDialog({
   const [expiresAt, setExpiresAt] = useState('');
   const [lots, setLots] = useState<Lot[]>([]);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onRecorded();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onRecorded();
+    },
+    { success: 'Output recorded' },
+  );
 
   /**
    * The run knows its batches only by id. Their codes live on the lots,
@@ -641,9 +647,12 @@ export function CloseRunDialog({
     Object.fromEntries(stocked.map((line) => [line.id, line.quantityPlanned])),
   );
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+    },
+    { success: 'Run closed' },
+  );
 
   function close() {
     reset();
@@ -768,10 +777,13 @@ export function CancelRunDialog({
 }) {
   const [reason, setReason] = useState('');
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onCancelled();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onCancelled();
+    },
+    { success: 'Run cancelled' },
+  );
 
   function close() {
     setReason('');

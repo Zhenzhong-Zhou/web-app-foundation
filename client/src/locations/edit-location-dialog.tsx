@@ -68,10 +68,13 @@ export function EditLocationDialog({
     isActive: location?.isActive ?? true,
   });
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onSaved();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onSaved();
+    },
+    { success: 'Location saved' },
+  );
 
   function close() {
     reset();

@@ -46,10 +46,13 @@ export function EditLicenceDialog({
     isActive: licence?.isActive ?? true,
   });
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onSaved();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onSaved();
+    },
+    { success: 'Licence saved' },
+  );
 
   function close() {
     reset();

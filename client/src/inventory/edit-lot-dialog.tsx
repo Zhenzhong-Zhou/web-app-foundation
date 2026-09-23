@@ -39,10 +39,13 @@ export function EditLotDialog({
     expiresAt: row?.lotExpiresAt ? row.lotExpiresAt.slice(0, 10) : '',
   });
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onSaved();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onSaved();
+    },
+    { success: 'Lot saved' },
+  );
 
   function close() {
     reset();

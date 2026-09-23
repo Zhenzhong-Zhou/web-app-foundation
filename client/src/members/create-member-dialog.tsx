@@ -55,10 +55,13 @@ export function CreateMemberDialog({
   const [form, setForm] = useState(EMPTY);
   const [roleId, setRoleId] = useState(defaultRoleId);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onCreated();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onCreated();
+    },
+    { success: 'Member added' },
+  );
 
   function close() {
     setForm(EMPTY);

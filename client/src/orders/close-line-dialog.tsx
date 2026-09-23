@@ -38,10 +38,13 @@ export function CloseLineDialog({
 }) {
   const [reason, setReason] = useState('');
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onClosed();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onClosed();
+    },
+    { success: 'Line closed short' },
+  );
 
   function close() {
     setReason('');

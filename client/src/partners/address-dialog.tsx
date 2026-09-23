@@ -50,10 +50,13 @@ export function AddressDialog({
     isDefault: address?.isDefault ?? false,
   });
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onSaved();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onSaved();
+    },
+    { success: 'Address saved' },
+  );
 
   function close() {
     reset();

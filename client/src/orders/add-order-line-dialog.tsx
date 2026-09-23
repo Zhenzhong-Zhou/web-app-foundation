@@ -54,10 +54,13 @@ export function AddOrderLineDialog({
     order.lines.find((row) => row.currency)?.currency ?? '',
   );
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onAdded();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onAdded();
+    },
+    { success: 'Line added' },
+  );
 
   function close() {
     setVariantId('');

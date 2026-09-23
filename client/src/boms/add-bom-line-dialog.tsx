@@ -50,10 +50,13 @@ export function AddBomLineDialog({
   const [form, setForm] = useState(EMPTY);
   const [external, setExternal] = useState(false);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onAdded();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onAdded();
+    },
+    { success: 'Component added' },
+  );
 
   function close() {
     setForm(EMPTY);

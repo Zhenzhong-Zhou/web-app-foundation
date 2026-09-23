@@ -44,10 +44,13 @@ export function AddVariantDialog({
   const [form, setForm] = useState(EMPTY);
   const [tracksLots, setTracksLots] = useState(false);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onCreated();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onCreated();
+    },
+    { success: 'Variant added' },
+  );
 
   function close() {
     setForm(EMPTY);

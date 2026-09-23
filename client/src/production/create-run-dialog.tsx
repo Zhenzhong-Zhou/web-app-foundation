@@ -55,10 +55,13 @@ export function CreateRunDialog({
   const [partners, setPartners] = useState<Partner[]>([]);
   const [boms, setBoms] = useState<Bom[]>([]);
 
-  const { submitting, error, reset, submit } = useSubmit(() => {
-    close();
-    onCreated();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    () => {
+      close();
+      onCreated();
+    },
+    { success: 'Run planned' },
+  );
 
   // Loaded when the dialog opens rather than at page load: a variant or a
   // location created a moment ago is exactly the one someone is here to use.

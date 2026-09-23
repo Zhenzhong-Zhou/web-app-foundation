@@ -27,10 +27,13 @@ export function CreatePartnerDialog({
 }) {
   const [form, setForm] = useState(EMPTY);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onCreated();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onCreated();
+    },
+    { success: 'Partner added' },
+  );
 
   function close() {
     setForm(EMPTY);

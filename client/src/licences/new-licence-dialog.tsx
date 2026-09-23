@@ -36,10 +36,13 @@ export function NewLicenceDialog({
 }) {
   const [form, setForm] = useState(EMPTY);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onCreated();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onCreated();
+    },
+    { success: 'Licence added' },
+  );
 
   function close() {
     setForm(EMPTY);

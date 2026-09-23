@@ -78,11 +78,14 @@ export function CreateBomDialog({
    */
   const createdId = useRef<string | null>(null);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    const bomId = createdId.current;
-    close();
-    if (bomId) await onCreated(bomId);
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      const bomId = createdId.current;
+      close();
+      if (bomId) await onCreated(bomId);
+    },
+    { success: 'Recipe created' },
+  );
 
   function close() {
     setForm(EMPTY);

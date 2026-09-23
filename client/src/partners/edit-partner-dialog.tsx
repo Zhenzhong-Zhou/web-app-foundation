@@ -33,10 +33,13 @@ export function EditPartnerDialog({
     isActive: partner?.isActive ?? true,
   });
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onSaved();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onSaved();
+    },
+    { success: 'Partner saved' },
+  );
 
   function close() {
     reset();

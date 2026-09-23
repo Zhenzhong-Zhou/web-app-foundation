@@ -52,10 +52,13 @@ export function ReceiveStockDialog({
   const { variants, failed: variantsError } = useVariants(open);
   const [knownLots, setKnownLots] = useState<Lot[]>([]);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onReceived();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onReceived();
+    },
+    { success: 'Stock received' },
+  );
 
   const variant = variants.find((item) => item.id === form.variantId);
 

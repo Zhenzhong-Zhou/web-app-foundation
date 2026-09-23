@@ -51,10 +51,13 @@ export function EditOrderDialog({
     order.expectedAt ? order.expectedAt.slice(0, 10) : '',
   );
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onSaved();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onSaved();
+    },
+    { success: 'Order saved' },
+  );
 
   function close() {
     reset();

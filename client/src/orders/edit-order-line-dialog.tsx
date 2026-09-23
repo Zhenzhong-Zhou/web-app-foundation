@@ -50,10 +50,13 @@ export function EditOrderLineDialog({
   const [price, setPrice] = useState(line?.unitPrice ?? '');
   const [currency, setCurrency] = useState(line?.currency ?? defaultCurrency);
 
-  const { submitting, error, reset, submit } = useSubmit(async () => {
-    close();
-    await onSaved();
-  });
+  const { submitting, error, reset, submit } = useSubmit(
+    async () => {
+      close();
+      await onSaved();
+    },
+    { success: 'Line saved' },
+  );
 
   function close() {
     reset();
