@@ -27,6 +27,31 @@ import type { PreviewShipmentDto, ShipOrderDto } from './dto/ship-order.dto';
 
 type OrderLine = typeof orderLines.$inferSelect;
 
+/** One SKU and lot within a shipment, as the ledger records it. */
+interface ShipmentItem {
+  shipmentId: string;
+  sku: string;
+  /** From the catalogue: for the person unpacking, beside the snapshot SKU. */
+  description: string;
+  unitOfMeasure: string;
+  /** Null for untracked stock, which ships without a lot. */
+  lotCode: string | null;
+  expiresAt: Date | null;
+  quantity: string;
+}
+
+/** An item as the API returns it: which shipment it belongs to is implied. */
+function publicItem(item: ShipmentItem) {
+  return {
+    sku: item.sku,
+    description: item.description,
+    unitOfMeasure: item.unitOfMeasure,
+    lotCode: item.lotCode,
+    expiresAt: item.expiresAt,
+    quantity: item.quantity,
+  };
+}
+
 /** One line as a shipment would send it, lots included (ADR-041). */
 export interface ShipmentPlanLine {
   lineId: string;
@@ -272,45 +297,174 @@ export class ShipmentsService {
 
       if (headers.length === 0) return [];
 
-      const moved = await tx.execute(sql`
-        select
-          sm.reference_id as shipment_id,
-          sm.sku,
-          l.code as lot_code,
-          l.expires_at,
-          sum(sm.quantity)::text as quantity
-        from stock_movements sm
-        left join lots l on l.id = sm.lot_id
-        where sm.organization_id = ${organizationId}::uuid
-          and sm.reference_type = 'shipment'
-          and sm.reference_id in (${sql.join(
-            headers.map((header) => sql`${header.id}::uuid`),
-            sql`, `,
-          )})
-        group by sm.reference_id, sm.sku, l.code, l.expires_at
-        order by sm.sku, l.expires_at asc nulls last, l.code
-      `);
-
-      const rows = moved.rows as {
-        shipment_id: string;
-        sku: string;
-        lot_code: string | null;
-        expires_at: Date | null;
-        quantity: string;
-      }[];
+      const items = await this.itemsOf(
+        tx,
+        organizationId,
+        headers.map((header) => header.id),
+      );
 
       return headers.map((header) => ({
         ...header,
-        items: rows
-          .filter((row) => row.shipment_id === header.id)
-          .map((row) => ({
-            sku: row.sku,
-            lotCode: row.lot_code,
-            expiresAt: row.expires_at,
-            quantity: row.quantity,
-          })),
+        items: items
+          .filter((item) => item.shipmentId === header.id)
+          .map(publicItem),
       }));
     });
+  }
+
+  /**
+   * Everything a packing slip prints, in one read: the shipment and what it
+   * carried, the order's reference and customer, where it was going, and who
+   * sent it.
+   *
+   * The address is the order's snapshot, not the partner's address as it is
+   * today (ADR-035's neighbour, migration 0012): a slip reprinted next year
+   * must show where the box actually went. The item names are joined from the
+   * catalogue, which is right for a slip — it is read by a person unpacking a
+   * box, not kept as a record — while the SKU beside them is the snapshot.
+   */
+  async slip(orderId: string, shipmentId: string) {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const [row] = (
+        await tx.execute(sql`
+          select
+            s.id,
+            s.created_at,
+            s.carrier,
+            s.tracking_number,
+            s.note,
+            o.reference,
+            o.direction,
+            o.ship_to_label,
+            o.ship_to_line1,
+            o.ship_to_line2,
+            o.ship_to_city,
+            o.ship_to_region,
+            o.ship_to_postal_code,
+            o.ship_to_country,
+            p.name as partner_name,
+            org.name as organization_name,
+            loc.name as from_location_name
+          from shipments s
+          join orders o on o.id = s.order_id
+          join partners p on p.id = o.partner_id
+          join organizations org on org.id = s.organization_id
+          join locations loc on loc.id = s.from_location_id
+          where s.organization_id = ${organizationId}::uuid
+            and s.order_id = ${orderId}::uuid
+            and s.id = ${shipmentId}::uuid
+        `)
+      ).rows as {
+        id: string;
+        created_at: Date;
+        carrier: string | null;
+        tracking_number: string | null;
+        note: string | null;
+        reference: string | null;
+        direction: string;
+        ship_to_label: string | null;
+        ship_to_line1: string | null;
+        ship_to_line2: string | null;
+        ship_to_city: string | null;
+        ship_to_region: string | null;
+        ship_to_postal_code: string | null;
+        ship_to_country: string | null;
+        partner_name: string;
+        organization_name: string;
+        from_location_name: string;
+      }[];
+
+      if (!row) throw new NotFoundException('No such shipment on this order');
+
+      const items = await this.itemsOf(tx, organizationId, [shipmentId]);
+
+      return {
+        id: row.id,
+        createdAt: row.created_at,
+        carrier: row.carrier,
+        trackingNumber: row.tracking_number,
+        note: row.note,
+        fromLocationName: row.from_location_name,
+        organizationName: row.organization_name,
+        order: {
+          id: orderId,
+          reference: row.reference,
+          partnerName: row.partner_name,
+        },
+        // Null when the order was raised without a destination: a slip then
+        // prints the customer's name alone rather than an empty address box.
+        shipTo: row.ship_to_line1
+          ? {
+              label: row.ship_to_label,
+              line1: row.ship_to_line1,
+              line2: row.ship_to_line2,
+              city: row.ship_to_city,
+              region: row.ship_to_region,
+              postalCode: row.ship_to_postal_code,
+              country: row.ship_to_country,
+            }
+          : null,
+        items: items.map(publicItem),
+      };
+    });
+  }
+
+  /**
+   * What some shipments carried, one row per SKU and lot. Shared by the list
+   * and the slip so the two cannot disagree about a shipment's contents.
+   */
+  private async itemsOf(
+    tx: Tx,
+    organizationId: string,
+    shipmentIds: string[],
+  ): Promise<ShipmentItem[]> {
+    const moved = await tx.execute(sql`
+      select
+        sm.reference_id as shipment_id,
+        sm.sku,
+        pr.name as product_name,
+        pv.name as variant_name,
+        pv.unit_of_measure,
+        l.code as lot_code,
+        l.expires_at,
+        sum(sm.quantity)::text as quantity
+      from stock_movements sm
+      join product_variants pv on pv.id = sm.variant_id
+      join products pr on pr.id = pv.product_id
+      left join lots l on l.id = sm.lot_id
+      where sm.organization_id = ${organizationId}::uuid
+        and sm.reference_type = 'shipment'
+        and sm.reference_id in (${sql.join(
+          shipmentIds.map((id) => sql`${id}::uuid`),
+          sql`, `,
+        )})
+      group by sm.reference_id, sm.sku, pr.name, pv.name, pv.unit_of_measure,
+        l.code, l.expires_at
+      order by sm.sku, l.expires_at asc nulls last, l.code
+    `);
+
+    return (
+      moved.rows as {
+        shipment_id: string;
+        sku: string;
+        product_name: string;
+        variant_name: string | null;
+        unit_of_measure: string;
+        lot_code: string | null;
+        expires_at: Date | null;
+        quantity: string;
+      }[]
+    ).map((row) => ({
+      shipmentId: row.shipment_id,
+      sku: row.sku,
+      description: row.variant_name
+        ? `${row.product_name} (${row.variant_name})`
+        : row.product_name,
+      unitOfMeasure: row.unit_of_measure,
+      lotCode: row.lot_code,
+      expiresAt: row.expires_at,
+      quantity: row.quantity,
+    }));
   }
 
   // ---------------------------------------------------------------------------

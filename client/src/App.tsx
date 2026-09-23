@@ -27,6 +27,7 @@ import {
   MovementsPage,
   OrderDetailPage,
   OrdersPage,
+  PackingSlipPage,
   PartnerDetailPage,
   PartnersPage,
   ProductDetailPage,
@@ -194,6 +195,10 @@ export default function App() {
         <Route path="/orders" element={split(OrdersPage)} />
         <Route path="/orders/new" element={split(CreateOrderPage)} />
         <Route path="/orders/:id" element={split(OrderDetailPage)} />
+        <Route
+          path="/orders/:id/shipments/:shipmentId/slip"
+          element={split(PackingSlipPage)}
+        />
         <Route path="/production" element={split(ProductionOrdersPage)} />
         <Route
           path="/production/:id"

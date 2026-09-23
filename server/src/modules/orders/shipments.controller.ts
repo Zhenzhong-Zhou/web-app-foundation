@@ -34,6 +34,19 @@ export class ShipmentsController {
   }
 
   /**
+   * One shipment, with everything its packing slip prints. A read, so
+   * orders.view: whoever can see the order can print what left against it.
+   */
+  @Get(':shipmentId')
+  @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
+  slip(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('shipmentId', ParseUUIDPipe) shipmentId: string,
+  ) {
+    return this.shipments.slip(id, shipmentId);
+  }
+
+  /**
    * A POST because the question has a body — which lines, how much of each —
    * but it writes nothing. Its own permission rather than orders.view: it
    * shows exactly what shipping would take from the shelf.

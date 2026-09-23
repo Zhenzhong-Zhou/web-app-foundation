@@ -1,5 +1,6 @@
 import {
   Alert,
+  Link,
   Paper,
   Stack,
   Table,
@@ -11,6 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { api, ApiError } from '../lib/api';
 import { formatDate, formatDay } from '../lib/format';
@@ -79,11 +81,25 @@ export function ShipmentsList({
 
       {shipments.map((shipment) => (
         <Paper key={shipment.id} variant="outlined" sx={{ p: 2 }}>
-          <Typography variant="subtitle2">
-            {formatDate(shipment.createdAt)}
-            {shipment.carrier ? ` · ${shipment.carrier}` : ''}
-            {shipment.trackingNumber ? ` · ${shipment.trackingNumber}` : ''}
-          </Typography>
+          <Stack direction="row" sx={{ alignItems: 'baseline' }}>
+            <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
+              {formatDate(shipment.createdAt)}
+              {shipment.carrier ? ` · ${shipment.carrier}` : ''}
+              {shipment.trackingNumber ? ` · ${shipment.trackingNumber}` : ''}
+            </Typography>
+
+            {/* Its own page, opened in a new tab: printing is a detour from
+                the order, not a step away from it. */}
+            <Link
+              component={RouterLink}
+              to={`/orders/${orderId}/shipments/${shipment.id}/slip`}
+              target="_blank"
+              rel="noopener"
+              variant="body2"
+            >
+              Packing slip
+            </Link>
+          </Stack>
 
           {shipment.note && (
             <Typography variant="body2" color="text.secondary">
@@ -109,7 +125,9 @@ export function ShipmentsList({
                     <TableCell>
                       {item.expiresAt ? formatDay(item.expiresAt) : '—'}
                     </TableCell>
-                    <TableCell align="right">{item.quantity}</TableCell>
+                    <TableCell align="right">
+                      {item.quantity} {item.unitOfMeasure}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

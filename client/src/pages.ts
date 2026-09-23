@@ -87,6 +87,11 @@ export const OrderDetailPage = lazyNamed(
   'OrderDetailPage',
 );
 
+export const PackingSlipPage = lazyNamed(
+  () => import('./orders/packing-slip-page'),
+  'PackingSlipPage',
+);
+
 export const ProductionOrdersPage = lazyNamed(
   () => import('./production/production-orders-page'),
   'ProductionOrdersPage',

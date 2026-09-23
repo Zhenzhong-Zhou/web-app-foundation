@@ -354,5 +354,31 @@ export interface Shipment {
     lotCode: string | null;
     expiresAt: string | null;
     quantity: string;
+    /** From the catalogue, beside the snapshotted SKU. */
+    description: string;
+    unitOfMeasure: string;
   }[];
+}
+
+/** Everything a packing slip prints, from one read (ADR-041). */
+export interface PackingSlip {
+  id: string;
+  createdAt: string;
+  carrier: string | null;
+  trackingNumber: string | null;
+  note: string | null;
+  fromLocationName: string;
+  organizationName: string;
+  order: { id: string; reference: string | null; partnerName: string };
+  /** The order's snapshot; null when it was raised without a destination. */
+  shipTo: {
+    label: string | null;
+    line1: string;
+    line2: string | null;
+    city: string | null;
+    region: string | null;
+    postalCode: string | null;
+    country: string | null;
+  } | null;
+  items: Shipment['items'];
 }

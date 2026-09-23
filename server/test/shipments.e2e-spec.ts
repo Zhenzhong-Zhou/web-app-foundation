@@ -377,6 +377,69 @@ describe('Shipments (e2e)', () => {
 
       expect((await byLot(s.focus, s.shelf)).NEVER).toBe('25.0000');
     });
+
+    it('returns everything a packing slip prints', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+
+      const shipment = body<{ shipment: ShipmentResponse }>(
+        await alpha.agent
+          .post(`/v1/orders/${s.order.id}/shipments`)
+          .send({
+            fromLocationId: s.shelf,
+            carrier: 'Canada Post',
+            lines: [
+              { lineId: s.focusLine, quantity: '25' },
+              { lineId: s.bottleLine, quantity: '10' },
+            ],
+          })
+          .expect(201),
+      ).shipment;
+
+      const slip = body<{
+        organizationName: string;
+        carrier: string | null;
+        order: { partnerName: string };
+        items: { sku: string; lotCode: string | null; quantity: string }[];
+      }>(
+        await alpha.agent
+          .get(`/v1/orders/${s.order.id}/shipments/${shipment.id}`)
+          .expect(200),
+      );
+
+      expect(slip.organizationName).toBe('alpha Co');
+      expect(slip.order.partnerName).toBe('Northside Pharmacy');
+      expect(slip.carrier).toBe('Canada Post');
+
+      // One row per SKU and lot; the untracked line has none.
+      expect(
+        slip.items.map((item) => [item.sku, item.lotCode, item.quantity]),
+      ).toEqual([
+        ['FOCUS-60CT', 'EARLY', '10.0000'],
+        ['FOCUS-60CT', 'LATE', '15.0000'],
+        ['SCOOP', null, '10.0000'],
+      ]);
+    });
+
+    it('does not print another organization shipment', async () => {
+      const alpha = await registerOrg('alpha');
+      const beta = await registerOrg('beta');
+      const s = await scenario(beta);
+
+      const shipment = body<{ shipment: ShipmentResponse }>(
+        await beta.agent
+          .post(`/v1/orders/${s.order.id}/shipments`)
+          .send({
+            fromLocationId: s.shelf,
+            lines: [{ lineId: s.bottleLine, quantity: '1' }],
+          })
+          .expect(201),
+      ).shipment;
+
+      await alpha.agent
+        .get(`/v1/orders/${s.order.id}/shipments/${shipment.id}`)
+        .expect(404);
+    });
   });
 
   describe('refusals', () => {
