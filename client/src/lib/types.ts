@@ -238,6 +238,9 @@ export interface ProductionRun {
   status: RunStatus;
   /** What people call this run: a batch number, a co-packer's works order. */
   reference: string | null;
+  /** Copied at release, so it says what the batch was made under then. */
+  licenceNumber: string | null;
+  licenceAuthority: string | null;
   notes: string | null;
   createdAt: string;
 }

@@ -13,6 +13,7 @@ import { primaryKey, timestamps } from './columns';
 import { locations } from './locations';
 import { organizations } from './organizations';
 import { partners } from './partners';
+import { productLicences } from './product-licences';
 import { productVariants } from './product-variants';
 
 /**
@@ -127,6 +128,16 @@ export const productionOrders = pgTable(
      * titled by its planned quantity.
      */
     reference: text('reference'),
+
+    /**
+     * The licence this run was made under, copied from its recipe at release
+     * (ADR-040), as lines are. The id says which registration; the number and
+     * authority say what it read at the time, so correcting the licence row
+     * later cannot change what a finished batch was made under.
+     */
+    licenceId: uuid('licence_id').references(() => productLicences.id),
+    licenceNumber: text('licence_number'),
+    licenceAuthority: text('licence_authority'),
 
     notes: text('notes'),
 

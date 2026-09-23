@@ -15,6 +15,7 @@ import {
   boms,
   productionOrderLines,
   productionOrders,
+  productLicences,
   productVariants,
   stockMovements,
 } from '../../database/schema';
@@ -550,9 +551,32 @@ export class ProductionOrdersService {
         }
       }
 
+      /**
+       * The licence, snapshotted alongside the lines (ADR-040). Read through
+       * the organization, like every lookup here, and copied as text as
+       * well as by id: a finished batch keeps what it was made under even if
+       * the licence row is later corrected.
+       */
+      const [licence] = bom.licenceId
+        ? await tx
+            .select()
+            .from(productLicences)
+            .where(
+              and(
+                eq(productLicences.organizationId, organizationId),
+                eq(productLicences.id, bom.licenceId),
+              ),
+            )
+        : [];
+
       await tx
         .update(productionOrders)
-        .set({ status: 'released' })
+        .set({
+          status: 'released',
+          licenceId: licence?.id ?? null,
+          licenceNumber: licence?.number ?? null,
+          licenceAuthority: licence?.authority ?? null,
+        })
         .where(eq(productionOrders.id, runId));
 
       this.logger.log(
@@ -848,16 +872,21 @@ export class ProductionOrdersService {
 
       const stranded =
         run.status === 'released'
-          ? await tx
-              .select()
-              .from(productionOrderLines)
-              .where(
-                and(
-                  eq(productionOrderLines.productionOrderId, runId),
-                  eq(productionOrderLines.supplyType, 'stocked'),
-                ),
-              )
-              .orderBy(asc(productionOrderLines.id))
+          ? (
+              await tx
+                .select()
+                .from(productionOrderLines)
+                .where(
+                  and(
+                    eq(productionOrderLines.productionOrderId, runId),
+                    eq(productionOrderLines.supplyType, 'stocked'),
+                  ),
+                )
+                .orderBy(asc(productionOrderLines.id))
+            ).filter(
+              // Issued in place moved nothing, so nothing is stranded.
+              (line) => line.sourceLocationId !== run.locationId,
+            )
           : [];
 
       await tx

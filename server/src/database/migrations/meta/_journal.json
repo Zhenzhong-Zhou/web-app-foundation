@@ -176,6 +176,13 @@
       "when": 1790117214286,
       "tag": "0024_product_licence_dates",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790141424823,
+      "tag": "0025_production_order_licence_snapshot",
+      "breakpoints": true
     }
   ]
 }

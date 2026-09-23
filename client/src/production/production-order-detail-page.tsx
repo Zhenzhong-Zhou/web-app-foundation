@@ -225,6 +225,14 @@ export function ProductionOrderDetailPage() {
           label="Batches"
           value={run.outputLots.length ? String(run.outputLots.length) : '—'}
         />
+        <Detail
+          label="Made under"
+          value={
+            run.licenceNumber
+              ? `${run.licenceNumber} (${run.licenceAuthority})`
+              : '—'
+          }
+        />
       </Stack>
 
       <Typography variant="h6" component="h2">

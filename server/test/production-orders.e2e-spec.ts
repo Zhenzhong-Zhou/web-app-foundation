@@ -30,6 +30,7 @@ interface RunResponse {
   quantityPlanned: string;
   quantityProduced: string;
   reference: string | null;
+  licenceNumber: string | null;
 }
 
 interface RunDetailResponse extends RunResponse {
@@ -437,6 +438,50 @@ describe('Production orders (e2e)', () => {
         .patch(`/v1/production-orders/${run.id}`)
         .send({ quantityPlanned: '600' })
         .expect(409);
+    });
+
+    /**
+     * The batch keeps the number it was made under. Correcting the licence
+     * row afterwards changes the registry, not the history (ADR-040).
+     */
+    it('snapshots the licence at release', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+
+      const licence = body<{ licence: { id: string } }>(
+        await alpha.agent
+          .post('/v1/product-licences')
+          .send({ number: '80012344', authority: 'Health Canada' })
+          .expect(201),
+      ).licence;
+
+      await alpha.agent
+        .patch(`/v1/boms/${s.bomId}`)
+        .send({ licenceId: licence.id })
+        .expect(204);
+
+      const run = await createRun(alpha, {
+        outputVariantId: s.output,
+        bomId: s.bomId,
+        locationId: s.wip,
+        quantityPlanned: '500',
+      });
+
+      await alpha.agent
+        .post(`/v1/production-orders/${run.id}/release`)
+        .send({ sourceLocationId: s.shelf })
+        .expect(200);
+
+      await alpha.agent
+        .patch(`/v1/product-licences/${licence.id}`)
+        .send({ number: '80012345' })
+        .expect(204);
+
+      const detail = body<RunResponse>(
+        await alpha.agent.get(`/v1/production-orders/${run.id}`).expect(200),
+      );
+
+      expect(detail.licenceNumber).toBe('80012344');
     });
   });
 

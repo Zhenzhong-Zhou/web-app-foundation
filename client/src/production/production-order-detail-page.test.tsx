@@ -33,6 +33,8 @@ const BASE: RunDetail = {
   quantityProduced: '0.0000',
   status: 'draft',
   reference: null,
+  licenceNumber: null,
+  licenceAuthority: null,
   notes: null,
   createdAt: '2026-09-15T10:00:00.000Z',
   lines: [],

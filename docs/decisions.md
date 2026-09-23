@@ -2529,14 +2529,13 @@ every id, so the BOM service checks the licence belongs to the organization
 before attaching it. Without that, another tenant's licence id was accepted,
 and the recall trail pointed outside the organization (ADR-003).
 
-**Consequences.** A batch's licence is read *through* its recipe. With the
-lock in place that is stable for recipe edits, but correcting a number on the
-licence row still changes what earlier batches appear to have been made
-under. Revisit by snapshotting `licence_id` onto the run at release,
-alongside the lines ADR-029 already copies. Also deferred: a status enum
-(suspended, cancelled, superseded), a notification sixty days before expiry,
-site licences — which belong on the organization or a partner, not a
-recipe — and amendment history.
+**Consequences.** A run copies its licence at release — the id, and the
+number and authority as text — alongside the lines ADR-029 already copies,
+so correcting a licence row changes the registry, not what finished
+batches were made under. Runs released before this carry no licence.
+Deferred: a status enum (suspended, cancelled, superseded), a notification
+sixty days before expiry, site licences — which belong on the organization
+or a partner, not a recipe — and amendment history.
 
 ---
 
