@@ -5,6 +5,8 @@ import { PartnersModule } from '../partners/partners.module';
 import { StockModule } from '../stock/stock.module';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { ReturnsController } from './returns.controller';
+import { ReturnsService } from './returns.service';
 import { ShipmentsController } from './shipments.controller';
 import { ShipmentsService } from './shipments.service';
 
@@ -20,8 +22,8 @@ import { ShipmentsService } from './shipments.service';
  */
 @Module({
   imports: [StockModule, PartnersModule, NotificationsModule],
-  controllers: [OrdersController, ShipmentsController],
-  providers: [OrdersService, ShipmentsService],
+  controllers: [OrdersController, ShipmentsController, ReturnsController],
+  providers: [OrdersService, ShipmentsService, ReturnsService],
   exports: [OrdersService],
 })
 export class OrdersModule {}

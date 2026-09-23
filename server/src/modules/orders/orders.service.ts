@@ -235,6 +235,7 @@ export class OrdersService {
           sku: orderLines.sku,
           quantityOrdered: orderLines.quantityOrdered,
           quantityFulfilled: orderLines.quantityFulfilled,
+          quantityReturned: orderLines.quantityReturned,
 
           unitPrice: orderLines.unitPrice,
           currency: orderLines.currency,

@@ -17,6 +17,7 @@ export * from './lots';
 export * from './memberships';
 export * from './notifications';
 export * from './order-lines';
+export * from './order-returns';
 export * from './orders';
 export * from './organizations';
 export * from './partners';

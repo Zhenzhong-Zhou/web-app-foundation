@@ -79,6 +79,19 @@ export const orderLines = pgTable(
       .default('0'),
 
     /**
+     * How much came back as customer returns (ADR-043). Beside fulfilled
+     * rather than subtracted from it: lowering "shipped" would erase that it
+     * shipped, which is the history a recall reads. Written only in the same
+     * transaction as the return movements.
+     */
+    quantityReturned: numeric('quantity_returned', {
+      precision: 18,
+      scale: 4,
+    })
+      .notNull()
+      .default('0'),
+
+    /**
      * What was agreed per unit (ADR-035).
      *
      * Nullable because existing lines have none and one cannot be invented.
@@ -146,6 +159,12 @@ export const orderLines = pgTable(
     check(
       'order_lines_fulfilled_within_ordered_check',
       sql`${t.quantityFulfilled} >= 0 and ${t.quantityFulfilled} <= ${t.quantityOrdered}`,
+    ),
+
+    // Nothing comes back that did not go out.
+    check(
+      'order_lines_returned_within_fulfilled_check',
+      sql`${t.quantityReturned} >= 0 and ${t.quantityReturned} <= ${t.quantityFulfilled}`,
     ),
 
     // Zero rather than positive: a free-of-charge line is real — a

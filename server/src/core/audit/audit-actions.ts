@@ -34,6 +34,7 @@ export const AUDIT_ACTIONS = {
   ORDER_UPDATED: 'order.updated',
   ORDER_LINE_RECEIVED: 'order.line_received',
   ORDER_SHIPPED: 'order.shipped',
+  ORDER_RETURN_RECEIVED: 'order.return_received',
   ORDER_LINE_ADDED: 'order.line_added',
   ORDER_LINE_UPDATED: 'order.line_updated',
   ORDER_LINE_REMOVED: 'order.line_removed',
