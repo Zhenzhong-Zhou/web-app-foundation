@@ -103,6 +103,7 @@ export class OrdersService {
           partnerId: orders.partnerId,
           partnerName: partners.name,
           direction: orders.direction,
+          isSample: orders.isSample,
           status: orders.status,
           reference: orders.reference,
           expectedAt: orders.expectedAt,
@@ -160,6 +161,7 @@ export class OrdersService {
           partnerId: orders.partnerId,
           partnerName: partners.name,
           direction: orders.direction,
+          isSample: orders.isSample,
           status: orders.status,
           reference: orders.reference,
           expectedAt: orders.expectedAt,
@@ -324,12 +326,17 @@ export class OrdersService {
           throw new ConflictException(`${partner.name} is retired`);
         }
 
+        if (input.isSample && input.direction !== 'sale') {
+          throw new BadRequestException('Only a sale can be a sample');
+        }
+
         const [order] = await tx
           .insert(orders)
           .values({
             organizationId,
             partnerId: input.partnerId,
             direction: input.direction,
+            isSample: input.isSample ?? false,
             reference: input.reference ?? null,
             expectedAt: input.expectedAt ? new Date(input.expectedAt) : null,
             note: input.note ?? null,
@@ -439,6 +446,7 @@ export class OrdersService {
           organizationId,
           partnerId: source.partnerId,
           direction: source.direction,
+          isSample: source.isSample,
           note: source.note,
           createdBy: actorId,
           duplicatedFromId: source.id,

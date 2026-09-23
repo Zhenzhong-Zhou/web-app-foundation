@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsIn,
   IsISO8601,
   IsOptional,
@@ -59,6 +60,11 @@ export class CreateOrderDto {
 
   @IsIn([...ORDER_DIRECTIONS])
   direction!: OrderDirection;
+
+  /** A sample rather than a sale. Sales only; refused on a purchase. */
+  @IsOptional()
+  @IsBoolean()
+  isSample?: boolean;
 
   /**
    * Their number for this order, not ours — a supplier's confirmation code, a

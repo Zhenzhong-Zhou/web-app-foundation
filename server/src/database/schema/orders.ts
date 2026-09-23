@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   type AnyPgColumn,
+  boolean,
   char,
   check,
   index,
@@ -60,6 +61,13 @@ export const orders = pgTable(
       .references(() => partners.id, { onDelete: 'restrict' }),
 
     direction: text('direction').notNull(),
+
+    /**
+     * A sale that is a sample: sent to a customer or prospect, usually at no
+     * charge. A flag rather than a direction, because it ships, prints and
+     * traces exactly like a sale (ADR-042); only reports tell them apart.
+     */
+    isSample: boolean('is_sample').notNull().default(false),
 
     status: text('status').notNull().default('draft'),
 
@@ -157,6 +165,11 @@ export const orders = pgTable(
     check(
       'orders_direction_check',
       sql`${t.direction} in ('purchase', 'sale')`,
+    ),
+    // Nobody sends a supplier a sample by buying from them.
+    check(
+      'orders_sample_is_sale_check',
+      sql`not ${t.isSample} or ${t.direction} = 'sale'`,
     ),
     check(
       'orders_status_check',

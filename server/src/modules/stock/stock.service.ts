@@ -13,6 +13,7 @@ import type { MovementReason } from '../../database/schema';
 import {
   locations,
   lots,
+  partners,
   productVariants,
   stockLevels,
   stockMovements,
@@ -43,6 +44,18 @@ const OUTBOUND: ReadonlySet<MovementReason> = new Set([
   'sample',
 ]);
 
+/**
+ * Reasons where stock leaves the business. A location marked unavailable —
+ * a retention bin, a quarantine shelf — may never be their source (ADR-042).
+ * Consumption is not among them: it stays in the building, and a run's own
+ * location is often marked unavailable precisely because it is work in
+ * progress.
+ */
+const LEAVES_THE_BUSINESS: ReadonlySet<MovementReason> = new Set([
+  'shipment',
+  'sample',
+]);
+
 /** The transaction handle TenantDb hands its callback. */
 export type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 
@@ -62,8 +75,11 @@ export interface RecordMovementInput {
   quantity: string;
   reason: MovementReason;
   reasonDetail?: string | null;
+  /** Set by server-side callers — an order, a run, a shipment — never by a client. */
   referenceType?: string | null;
   referenceId?: string | null;
+  /** A sample's recipient; becomes a `partner` reference once checked. */
+  recipientPartnerId?: string | null;
   note?: string | null;
 }
 
@@ -198,6 +214,8 @@ export class StockService {
 
     const lotId = await this.resolveLot(tx, organizationId, variant, input);
 
+    const reference = await this.referenceFor(tx, organizationId, input);
+
     /**
      * Locked in a deterministic order, sorted by location id.
      *
@@ -216,7 +234,28 @@ export class StockService {
     ].sort((a, b) => a.locationId.localeCompare(b.locationId));
 
     for (const { locationId, delta } of touched) {
-      await this.assertUsableLeaf(tx, organizationId, locationId);
+      const location = await this.assertUsableLeaf(
+        tx,
+        organizationId,
+        locationId,
+      );
+
+      /**
+       * Stock leaving the business may not come from a location marked
+       * unavailable: a retention bin, a quarantine shelf (ADR-042). Moving
+       * stock out of one is still allowed — it is still ours — so only the
+       * source of a shipment or a sample is checked.
+       */
+      if (
+        locationId === direction.from &&
+        LEAVES_THE_BUSINESS.has(input.reason) &&
+        !location.isAvailable
+      ) {
+        throw new ConflictException(
+          `${location.name} holds stock that is not for sending. Move it to an available location first.`,
+        );
+      }
+
       await this.applyDelta(tx, organizationId, {
         variantId: input.variantId,
         locationId,
@@ -239,8 +278,8 @@ export class StockService {
         quantity: input.quantity,
         reason: input.reason,
         reasonDetail: input.reasonDetail ?? null,
-        referenceType: input.referenceType ?? null,
-        referenceId: input.referenceId ?? null,
+        referenceType: reference.referenceType,
+        referenceId: reference.referenceId,
         note: input.note ?? null,
         actorId,
       })
@@ -411,7 +450,7 @@ export class StockService {
     tx: Tx,
     organizationId: string,
     locationId: string,
-  ): Promise<void> {
+  ): Promise<typeof locations.$inferSelect> {
     const [location] = await tx
       .select()
       .from(locations)
@@ -444,6 +483,8 @@ export class StockService {
         `${location.name} contains other locations. Stock belongs in one of them.`,
       );
     }
+
+    return location;
   }
 
   /**
@@ -645,5 +686,41 @@ export class StockService {
     }
 
     this.logger.log(`Lot ${lotId} updated`);
+  }
+
+  /**
+   * The movement's reference. Internal callers — orders, runs, shipments —
+   * pass their own; the public endpoint can only name a sample's recipient,
+   * which is checked against this organization before it is trusted.
+   */
+  private async referenceFor(
+    tx: Tx,
+    organizationId: string,
+    input: RecordMovementInput,
+  ): Promise<{ referenceType: string | null; referenceId: string | null }> {
+    if (!input.recipientPartnerId) {
+      return {
+        referenceType: input.referenceType ?? null,
+        referenceId: input.referenceId ?? null,
+      };
+    }
+
+    if (input.reason !== 'sample') {
+      throw new BadRequestException('Only a sample has a recipient');
+    }
+
+    const [partner] = await tx
+      .select({ id: partners.id })
+      .from(partners)
+      .where(
+        and(
+          eq(partners.id, input.recipientPartnerId),
+          eq(partners.organizationId, organizationId),
+        ),
+      );
+
+    if (!partner) throw new BadRequestException('Unknown recipient');
+
+    return { referenceType: 'partner', referenceId: partner.id };
   }
 }

@@ -13,6 +13,7 @@ import { NotificationsService } from '../../core/notifications/notifications.ser
 import { isForeignKeyViolation } from '../../database/errors';
 import {
   boms,
+  locations,
   productionOrderLines,
   productionOrders,
   productLicences,
@@ -413,6 +414,34 @@ export class ProductionOrdersService {
   ): Promise<ProductionOrderLine[]> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const { run, bom } = await this.loadForIssue(tx, organizationId, runId);
+
+      /**
+       * Retained or quarantined stock is not raw material. A retention bin is
+       * marked unavailable so it cannot be sent anywhere — issuing it into a
+       * new batch would be the same mistake by another route (ADR-042).
+       */
+      const sources = [
+        input.sourceLocationId,
+        ...(input.overrides ?? []).map((line) => line.sourceLocationId),
+      ];
+
+      const [held] = await tx
+        .select({ name: locations.name })
+        .from(locations)
+        .where(
+          and(
+            eq(locations.organizationId, organizationId),
+            inArray(locations.id, sources),
+            eq(locations.isAvailable, false),
+          ),
+        )
+        .limit(1);
+
+      if (held) {
+        throw new ConflictException(
+          `${held.name} holds stock that is not for use. Pick components from an available location.`,
+        );
+      }
 
       const lines = await tx.execute(sql`
         insert into production_order_lines (

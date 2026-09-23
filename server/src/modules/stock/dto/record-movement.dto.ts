@@ -84,19 +84,17 @@ export class RecordMovementDto {
   reasonDetail?: string;
 
   /**
-   * What caused this — a purchase order, a sales order, a stock count. Absent
-   * for a movement entered by hand, which is why order management can add a
-   * reference later without changing the table.
+   * Who a sample went to. Sample only, and checked against this organization:
+   * a recipient is what a recall finds, so it cannot be free text or another
+   * tenant's partner (ADR-042).
+   *
+   * Replaces the reference fields this DTO used to accept. References are
+   * the server's to set — an order, a run, a shipment — and a client naming
+   * one could attach a movement to any document, including another tenant's.
    */
   @IsOptional()
-  @trim()
-  @IsString()
-  @MaxLength(50)
-  referenceType?: string;
-
-  @IsOptional()
   @IsUUID()
-  referenceId?: string;
+  recipientPartnerId?: string;
 
   /**
    * Required for an adjustment, checked in the service and backed by a check

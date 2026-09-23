@@ -1,0 +1,2 @@
+ALTER TABLE "orders" ADD COLUMN "is_sample" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_sample_is_sale_check" CHECK (not "orders"."is_sample" or "orders"."direction" = 'sale');
