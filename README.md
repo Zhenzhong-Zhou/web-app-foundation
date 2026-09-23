@@ -1,14 +1,18 @@
 # Web Application Foundation
 
-A reusable, production-oriented foundation for building secure web applications:
-authentication, users, organizations, roles and permissions, auditing, and shared
-application infrastructure.
+A reusable, production-oriented foundation for building secure web applications —
+authentication, users, organizations, roles and permissions, auditing, shared
+infrastructure — and the first application built on it: **inventory and light
+manufacturing**.
 
-Application-specific features (CRM, inventory, e-commerce, etc.) are **not** part of
-this repo. They are built on top of it.
+The split is a layering rule, not two repositories. Everything under `server/src/core`
+knows nothing about stock or recipes and would carry unchanged into a CRM or a booking
+app; everything under `server/src/modules` is the inventory domain and depends on core,
+never the other way round.
 
-> **Status: pre-alpha.** The auth, tenancy, and permission layers work end to end.
-> See [Roadmap](#roadmap) for what remains.
+> **Status: pre-alpha, in daily use by its author.** Auth, tenancy, permissions and
+> auditing work end to end, and so does buying, storing, making and counting stock.
+> Selling — shipping against a sales order — is the next gap. See [Roadmap](#roadmap).
 ---
 
 ## Architecture
@@ -17,14 +21,15 @@ this repo. They are built on top of it.
 Core  →  Shared Services  →  Application Features
 ```
 
-- **Core** — auth, users, organizations, authorization, infrastructure, security, audit
+- **Core** — auth, users, organizations, authorization, audit, notifications
 - **Shared Services** — email (background jobs deferred, see ADR-005)
-- **Application Features** — not in this repo
+- **Application Features** — products, locations, stock, partners, orders, recipes,
+  production, licences — in `server/src/modules`
 
 ```
 web-app-foundation/
 ├── server/              NestJS API — all backend code
-├── client/              React SPA (arrives at step 8)
+├── client/              React SPA (Vite + Material UI)
 ├── docker/              container init scripts
 ├── docs/decisions.md    architecture decision log
 ├── docker-compose.yml   Postgres 18 + Mailpit
@@ -43,7 +48,8 @@ server/src/
 ├── config/       env schema + validation (zod)
 ├── database/     drizzle client, schema, migrations, TenantDb, seed
 ├── common/       filters, guards, interceptors, decorators — no business logic
-├── core/         auth, authorization, organizations, users (audit to come)
+├── core/         auth, authorization, users, audit, notifications
+├── modules/      the inventory domain — one folder per feature
 ├── shared/       email
 └── health/       operational endpoints, unversioned (ADR-013)
 ```
@@ -57,10 +63,11 @@ that has no `organization_id`. The list is closed (ADR-016); anything else
 needing a transaction across a global and a scoped table uses
 `TenantDb.transaction()`.
 
-`core/` holds one folder per module, each with its own `*.module.ts`, controller,
-service, and DTOs. Nothing in `common/` may import from `core/` — that dependency
-runs one way only, and reversing it is how a "shared" folder turns into a second
-copy of the application.
+`core/` and `modules/` both hold one folder per feature, each with its own
+`*.module.ts`, controller, service, and DTOs. Nothing in `common/` may import from
+`core/`, and nothing in `core/` may import from `modules/` — those dependencies run
+one way only, and reversing either is how a "shared" folder turns into a second copy
+of the application.
 
 Four decisions shape everything else:
 
@@ -82,9 +89,10 @@ Four decisions shape everything else:
 | Server           | NestJS (TypeScript)                     |
 | Database         | PostgreSQL 18                           |
 | ORM / migrations | Drizzle ORM + drizzle-kit               |
-| Frontend         | React + TypeScript (Vite), in `client/` |
-| Mail (dev)       | Mailpit                                 |
-| Tests            | Jest + Supertest                        |
+| Frontend         | React + TypeScript (Vite) + Material UI |
+| Mail             | Mailpit in dev, Resend in production     |
+| Tests (server)   | Jest + Supertest                        |
+| Tests (client)   | Vitest + MSW, Playwright end to end     |
 
 ---
 
@@ -136,12 +144,20 @@ Run from `server/`.
 | `npm run start:dev`   | Run API with hot reload                                       |
 | `npm run migrate`     | Apply pending migrations                                      |
 | `npm run migrate:new` | Create a new migration                                        |
-| `npm run seed`        | Seed the default org, roles, and permissions. Safe to re-run. |
+| `npm run migrate:test`| Apply migrations to the database Jest uses                     |
+| `npm run migrate:e2e` | Apply migrations to the database Playwright uses               |
+| `npm run seed`        | Seed roles and the permission vocabulary. Safe to re-run.     |
 | `npm test`            | Unit tests                                                    |
-| `npm run test:e2e`    | Integration tests (needs test DB)                             |
+| `npm run test:e2e`    | Integration tests (needs the test DB migrated)                |
 | `npm run lint`        | Lint + format                                                 |
 
-From `client/`: `npm run dev`, `npm run build`, `npm run lint`.
+A schema change means three migrate commands, not one: `migrate`, `migrate:test` and
+`migrate:e2e` each target a separate database, and a failing schema-invariant test is
+usually one of them left behind.
+
+From `client/`: `npm run dev`, `npm run build`, `npm run lint`, `npx vitest run`, and
+`npx playwright test` for the browser suite (which runs its own stack on ports
+3100/5273, never the dev server).
 
 ---
 
@@ -200,9 +216,27 @@ Build order:
 - [x] **9. Members and audit UI** — roles endpoint, role assignment with escalation
   rules, members list, add-member dialog, audit log screen
 
-**Deliberately deferred** (all additive, none block V1):
-background jobs & queues, invitations, file storage, notifications, search,
-admin UI, billing, API docs.
+The foundation is done. Everything below is the inventory domain built on it, and
+each step is server-first then the screen that uses it (ADR-019):
+
+- [x] **10. Products** — products, variants, SKUs, lot tracking flags
+- [x] **11. Locations** — a tree of sites, zones and bins; only leaves hold stock
+- [x] **12. Stock** — lots, balances, and one ledger every movement goes through
+- [x] **13. Partners and orders** — customers and suppliers, purchase and sales
+  orders, receiving against a line
+- [x] **14. Recipes** — bills of material, versioned and promoted, with the licence
+  a formulation is registered under
+- [x] **15. Production** — plan a run, issue components by lot, record output,
+  close it with what was actually consumed
+- [x] **16. Notifications** — an in-app bell and security email for the handful of
+  events worth interrupting someone for
+
+**Next:** shipping against a sales order. Stock can be bought, stored, moved and
+made; it cannot yet be sold.
+
+**Deliberately deferred** (all additive): background jobs and queues, invitations,
+file storage, search, admin UI, billing, API docs, scheduled notifications,
+reservations, cost on the lot, price lists and exchange rates.
 
 ---
 
@@ -211,4 +245,16 @@ admin UI, billing, API docs.
 - [`docs/decisions.md`](docs/decisions.md) — why the architecture is the way it is.
   **Read this before changing anything structural.**
 - [`docs/conventions.md`](docs/conventions.md) — naming and code organisation rules
+
+Both are worth reading before a change that touches money, quantities, or the
+ledger. Three rules catch most newcomers:
+
+- **Quantities are strings end to end** — typed, stored and rendered as they arrived.
+  Arithmetic happens in SQL over `numeric`, never through a JavaScript number
+  (ADR-025).
+- **Every stock change is a movement.** Balances are derived; nothing writes
+  `stock_levels` directly except the ledger path in `StockService` (ADR-023).
+- **Snapshots, not joins, for anything historical.** A line records the SKU it was
+  ordered under, a run copies its recipe at release, and an audit row stores what the
+  thing was called at the time (ADR-029, ADR-038).
   that the linter can't enforce.
