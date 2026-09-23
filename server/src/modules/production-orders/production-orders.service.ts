@@ -341,6 +341,7 @@ export class ProductionOrdersService {
             locationId: input.locationId,
             partnerId: input.partnerId,
             quantityPlanned: input.quantityPlanned,
+            reference: input.reference,
             notes: input.notes,
             status: 'draft',
           })

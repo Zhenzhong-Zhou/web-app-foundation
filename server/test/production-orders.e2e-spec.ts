@@ -29,6 +29,7 @@ interface RunResponse {
   status: 'draft' | 'released' | 'completed' | 'cancelled';
   quantityPlanned: string;
   quantityProduced: string;
+  reference: string | null;
 }
 
 interface RunDetailResponse extends RunResponse {
@@ -273,6 +274,23 @@ describe('Production orders (e2e)', () => {
           quantityPlanned: '500',
         })
         .expect(400);
+    });
+
+    // The DTO accepted a reference while create() never wrote it, and only a
+    // browser test noticed. Pinned here, where it belongs.
+    it('keeps the reference a run is planned with', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+
+      const run = await createRun(alpha, {
+        outputVariantId: s.output,
+        bomId: s.bomId,
+        locationId: s.wip,
+        quantityPlanned: '500',
+        reference: 'RUN-0042',
+      });
+
+      expect(run.reference).toBe('RUN-0042');
     });
   });
 
