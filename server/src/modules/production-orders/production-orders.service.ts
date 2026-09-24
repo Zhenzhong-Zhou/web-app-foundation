@@ -17,7 +17,6 @@ import {
   productionOrderLines,
   productionOrders,
   productLicences,
-  productVariants,
   stockMovements,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -28,6 +27,7 @@ import {
   lotCandidates,
 } from '../stock/lot-allocation';
 import { StockService } from '../stock/stock.service';
+import { trackedVariants } from '../stock/tracked-variants';
 import type {
   CreateProductionOrderDto,
   ListProductionOrdersDto,
@@ -496,7 +496,7 @@ export class ProductionOrdersService {
         .where(eq(productionOrderLines.productionOrderId, runId))
         .orderBy(asc(productionOrderLines.id));
 
-      const tracked = await this.trackedComponents(
+      const tracked = await trackedVariants(
         tx,
         organizationId,
         issued.map((line) => line.componentVariantId),
@@ -729,7 +729,7 @@ export class ProductionOrdersService {
 
       const variances: LineVariance[] = [];
 
-      const tracked = await this.trackedComponents(
+      const tracked = await trackedVariants(
         tx,
         organizationId,
         lines.map((line) => line.componentVariantId),
@@ -1046,28 +1046,6 @@ export class ProductionOrdersService {
     if (!bom) throw new NotFoundException('No such BOM');
 
     return { run, bom };
-  }
-
-  /** The subset of these components whose stock moves by lot. */
-  private async trackedComponents(
-    tx: Tx,
-    organizationId: string,
-    variantIds: string[],
-  ): Promise<Set<string>> {
-    if (variantIds.length === 0) return new Set();
-
-    const rows = await tx
-      .select({ id: productVariants.id })
-      .from(productVariants)
-      .where(
-        and(
-          eq(productVariants.organizationId, organizationId),
-          inArray(productVariants.id, variantIds),
-          eq(productVariants.tracksLots, true),
-        ),
-      );
-
-    return new Set(rows.map((row) => row.id));
   }
 
   /**
