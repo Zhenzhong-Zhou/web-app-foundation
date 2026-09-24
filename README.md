@@ -234,6 +234,12 @@ each step is server-first then the screen that uses it (ADR-019):
 - [x] **17. Shipping** — sales orders shipped as documents: any mix of lines and
   lots, partial by default, all or nothing per shipment, lots out earliest
   expiry first
+- [x] **18. Packing slips** — one printable page per shipment: address,
+  carrier, and every item with its lot and expiry
+- [x] **19. Samples** — posted samples as flagged sales, hand-outs with a
+  checked recipient, and locations that can hold stock but never send it
+- [x] **20. Returns** — customer returns against a sale, only of lots that
+  shipped on it, landing wherever they will be checked
 
 **Next:** a lot trace — from any lot, everything it went into and every customer
 who received it, on one screen. Every movement already records its lot; this
