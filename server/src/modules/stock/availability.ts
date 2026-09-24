@@ -246,14 +246,26 @@ export async function assertTakeable(
   const [check] = (
     await tx.execute(sql`
       select
+        sum(v.held) > 0 as anything_held,
         (${supply}::numeric - sum(v.held)) < ${input.quantity}::numeric as too_much,
         greatest(${supply}::numeric - sum(v.held), 0)::numeric(18, 4)::text as takeable,
         sum(v.held)::numeric(18, 4)::text as held
       from (values ${values}) as v(held)
     `)
-  ).rows as { too_much: boolean; takeable: string; held: string }[];
+  ).rows as {
+    anything_held: boolean;
+    too_much: boolean;
+    takeable: string;
+    held: string;
+  }[];
 
-  if (check.too_much) {
+  /**
+   * Only a refusal about holds when holds are the reason. With nothing held
+   * for anyone else, a shortfall is a plain shortage, and the stock check —
+   * which names the location and says "not enough stock" — is the right
+   * one to answer it.
+   */
+  if (check.anything_held && check.too_much) {
     throw new ConflictException(
       `Only ${check.takeable} ${input.sku} can be taken: ${check.held} is held for ${
         input.forOrderId ? 'other orders' : 'confirmed orders'
