@@ -7,13 +7,15 @@ import { AuthService } from '../core/auth/auth.service';
 import { BomsService } from '../modules/boms/boms.service';
 import { LocationsService } from '../modules/locations/locations.service';
 import { OrdersService } from '../modules/orders/orders.service';
+import { ReturnsService } from '../modules/orders/returns.service';
 import { ShipmentsService } from '../modules/orders/shipments.service';
 import { PartnersService } from '../modules/partners/partners.service';
 import { ProductLicencesService } from '../modules/product-licences/product-licences.service';
 import { ProductionOrdersService } from '../modules/production-orders/production-orders.service';
 import { ProductsService } from '../modules/products/products.service';
+import { StockService } from '../modules/stock/stock.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
-import { memberships, productVariants, users } from './schema';
+import { lots, memberships, productVariants, users } from './schema';
 import { runInTenantContext } from './tenant-context';
 
 /**
@@ -112,6 +114,8 @@ async function seedDemo(): Promise<void> {
     const boms = app.get(BomsService);
     const runs = app.get(ProductionOrdersService);
     const shipments = app.get(ShipmentsService);
+    const returns = app.get(ReturnsService);
+    const stock = app.get(StockService);
 
     // Every service below resolves its tenant from here, the same way a
     // request does through the auth guard (ADR-003).
@@ -155,6 +159,28 @@ async function seedDemo(): Promise<void> {
           code: 'BLENDING',
           parentId: site.id,
         });
+
+        /**
+         * Two bins that hold stock nobody may send (ADR-042): retained
+         * samples of each finished lot, which GMP requires for supplements,
+         * and returns waiting to be checked. Marked unavailable once made,
+         * since that is a separate edit in the UI too.
+         */
+        const retention = await locations.create({
+          type: 'bin',
+          name: 'Retention',
+          code: 'RETAIN',
+          parentId: site.id,
+        });
+        await locations.update(retention.id, { isAvailable: false });
+
+        const returnsBin = await locations.create({
+          type: 'bin',
+          name: 'Returns',
+          code: 'RETURNS',
+          parentId: site.id,
+        });
+        await locations.update(returnsBin.id, { isAvailable: false });
 
         const finished = await products.create({
           type: 'good',
@@ -309,8 +335,99 @@ async function seedDemo(): Promise<void> {
           actor,
         );
 
+        const [batch] = await db
+          .select({ id: lots.id })
+          .from(lots)
+          .where(
+            and(
+              eq(lots.organizationId, account.organizationId),
+              eq(lots.code, 'FOC-2609-01'),
+            ),
+          );
+
+        // Retained: still ours, never sendable (ADR-042).
+        await stock.record(
+          {
+            variantId: finished.variants[0].id,
+            lotId: batch.id,
+            fromLocationId: blending.id,
+            toLocationId: retention.id,
+            quantity: '4',
+            reason: 'transfer',
+            note: 'Retention samples, lot FOC-2609-01',
+          },
+          actor,
+        );
+
+        // A hand-out to a prospect, recorded so a recall finds it (ADR-042).
+        const prospect = await partners.create({
+          name: 'Prospect Health Foods',
+          code: 'PROSPECT',
+        });
+
+        await stock.record(
+          {
+            variantId: finished.variants[0].id,
+            lotId: batch.id,
+            fromLocationId: blending.id,
+            quantity: '2',
+            reason: 'sample',
+            recipientPartnerId: prospect.id,
+            note: 'Trade show',
+          },
+          actor,
+        );
+
+        // Some of the first shipment comes back, into the bin that checks it
+        // before anything goes out again (ADR-043).
+        await returns.receive(
+          sale.id,
+          {
+            toLocationId: returnsBin.id,
+            reason: 'damaged',
+            note: 'Crushed in transit, carton of 5',
+            lines: [
+              {
+                lineId: sale.lines[0].id,
+                lots: [{ lotId: batch.id, quantity: '5' }],
+              },
+            ],
+          },
+          actor,
+        );
+
+        /**
+         * A second customer wants more than is free. Confirmed anyway: it
+         * holds what exists after the first order's claim, and the rest shows
+         * as a backorder (ADR-045) — so Inventory's "Promised to customers"
+         * and the order page both have something to show.
+         */
+        const secondCustomer = await partners.create({
+          name: 'Harbour Health',
+          code: 'HARBOUR',
+        });
+
+        const second = await orders.create(
+          {
+            partnerId: secondCustomer.id,
+            direction: 'sale',
+            reference: 'SO-DEMO-2',
+            lines: [
+              {
+                variantId: finished.variants[0].id,
+                quantityOrdered: '500',
+                unitPrice: '24.9900',
+                currency: 'CAD',
+              },
+            ],
+          },
+          actor,
+        );
+
+        await orders.update(second.id, { status: 'confirmed' });
+
         logger.log(
-          `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s), SO-DEMO-1 shipped 400 of 600`,
+          `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s); SO-DEMO-1 shipped 400 of 600 with 5 returned; 4 retained, 2 sampled; SO-DEMO-2 confirmed for 500 and partly backordered`,
         );
       },
     );
