@@ -240,10 +240,12 @@ each step is server-first then the screen that uses it (ADR-019):
   checked recipient, and locations that can hold stock but never send it
 - [x] **20. Returns** — customer returns against a sale, only of lots that
   shipped on it, landing wherever they will be checked
+- [x] **21. Lot trace** — one page per lot: where it is, where it came from,
+  every lot up and down the production chain, and everyone who received it
+  or anything made from it
 
-**Next:** a lot trace — from any lot, everything it went into and every customer
-who received it, on one screen. Every movement already records its lot; this
-puts the question in one place.
+**Next:** reservations — holding stock for a confirmed sale so another order
+cannot take it, with what can be promised shown as on hand minus what is held.
 
 **Deliberately deferred** (all additive): background jobs and queues, invitations,
 file storage, search, admin UI, billing, API docs, scheduled notifications,
