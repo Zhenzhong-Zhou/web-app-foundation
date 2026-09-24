@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
 
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
@@ -525,6 +525,27 @@ export class OrdersService {
       if (!from.includes(existing.status)) {
         throw new ConflictException(
           `An order cannot go from ${existing.status} to ${input.status}`,
+        );
+      }
+    }
+
+    /**
+     * Cancelling says the order never happened. Once goods have moved against
+     * it, that is untrue — close it short instead, which keeps what shipped
+     * or arrived on the record (ADR-023).
+     */
+    if (input.status === 'cancelled') {
+      const [moved] = await this.tenantDb.select(
+        orderLines,
+        and(
+          eq(orderLines.orderId, orderId),
+          gt(orderLines.quantityFulfilled, '0'),
+        ),
+      );
+
+      if (moved) {
+        throw new ConflictException(
+          'Goods have already moved against this order, so it cannot be cancelled — close it instead',
         );
       }
     }

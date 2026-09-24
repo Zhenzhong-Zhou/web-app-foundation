@@ -463,6 +463,50 @@ describe('Orders (e2e)', () => {
         .send({ status: 'confirmed' })
         .expect(409);
     });
+
+    /**
+     * Cancelling says the order never happened. Once goods have moved
+     * against it that is untrue, so it is closed instead (ADR-023). The
+     * status is read back rather than inferred from the 409: a check placed
+     * after the write returns 409 and leaves the order cancelled.
+     */
+    it('refuses to cancel once anything has been received, and changes nothing', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: ctx.locationId, quantity: '10' })
+        .expect(201);
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'cancelled' })
+        .expect(409);
+
+      const [row] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, order.id));
+
+      expect(row.status).toBe('confirmed');
+    });
+
+    it('still closes a partly received order', async () => {
+      const ctx = await setup('alpha');
+      const order = await confirmed(ctx);
+
+      await ctx.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: ctx.locationId, quantity: '10' })
+        .expect(201);
+
+      // The path the refusal points to.
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'fulfilled' })
+        .expect(204);
+    });
   });
 
   describe('order lines', () => {
