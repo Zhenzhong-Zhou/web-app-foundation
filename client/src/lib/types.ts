@@ -354,6 +354,9 @@ export interface Shipment {
   carrier: string | null;
   trackingNumber: string | null;
   note: string | null;
+  /** Set when a shipment recorded too early was voided (ADR-041); null otherwise. */
+  voidedAt: string | null;
+  voidReason: string | null;
   createdAt: string;
   items: {
     sku: string;
@@ -374,6 +377,9 @@ export interface PackingSlip {
   carrier: string | null;
   trackingNumber: string | null;
   note: string | null;
+  /** Set when a shipment recorded too early was voided (ADR-041); null otherwise. */
+  voidedAt: string | null;
+  voidReason: string | null;
   fromLocationName: string;
   organizationName: string;
   order: { id: string; reference: string | null; partnerName: string };

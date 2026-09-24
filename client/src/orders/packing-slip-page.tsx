@@ -70,6 +70,7 @@ export function PackingSlipPage() {
   }
 
   const address = slip.shipTo;
+  const voided = slip.voidedAt !== null;
 
   return (
     <Stack spacing={3} sx={{ maxWidth: 800 }}>
@@ -98,6 +99,20 @@ export function PackingSlipPage() {
         <Box sx={{ flexGrow: 1 }} />
         <Button onClick={() => window.print()}>Print</Button>
       </Stack>
+
+      {/* On paper too, and bordered rather than coloured: a voided slip
+          found in a drawer later must not pass for goods that left, and a
+          coloured background is the first thing a printer drops. */}
+      {slip.voidedAt && (
+        <Box sx={{ border: 2, borderColor: 'error.main', p: 2 }}>
+          <Typography variant="h6" component="p" color="error">
+            VOID — nothing on this slip left
+          </Typography>
+          <Typography variant="body2">
+            Voided {formatDate(slip.voidedAt)}: {slip.voidReason}
+          </Typography>
+        </Box>
+      )}
 
       <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
         <Box>
@@ -177,10 +192,13 @@ export function PackingSlipPage() {
 
       {slip.note && <Typography variant="body2">{slip.note}</Typography>}
 
-      {/* For the person unpacking: a paper slip is often signed and kept. */}
-      <Typography variant="body2" sx={{ pt: 4 }}>
-        Received by: ______________________ Date: ____________
-      </Typography>
+      {/* For the person unpacking: a paper slip is often signed and kept.
+          Not on a voided one — nothing arrived to sign for. */}
+      {!voided && (
+        <Typography variant="body2" sx={{ pt: 4 }}>
+          Received by: ______________________ Date: ____________
+        </Typography>
+      )}
     </Stack>
   );
 }

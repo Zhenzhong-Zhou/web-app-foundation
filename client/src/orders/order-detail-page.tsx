@@ -597,7 +597,16 @@ export function OrderDetailPage() {
       </Box>
 
       {order.direction === 'sale' && (
-        <ShipmentsList orderId={order.id} refreshKey={shipments} />
+        <ShipmentsList
+          orderId={order.id}
+          refreshKey={shipments}
+          canVoid={canShip && order.status === 'confirmed'}
+          onVoided={async () => {
+            // The order changed too: fulfilled quantities, outstanding and holds.
+            await load();
+            setShipments((count) => count + 1);
+          }}
+        />
       )}
 
       {order.direction === 'sale' && (
