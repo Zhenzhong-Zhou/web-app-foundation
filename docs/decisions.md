@@ -2689,6 +2689,12 @@ same dock by the same person; it writes inbound movements as a receipt does.
 invoicing; returns to suppliers as a document; and restock or write-off as a
 step of the return rather than separate actions.
 
+**Deferred: return authorization (RMA).** A return is recorded when the goods
+arrive. There is no step before that where the customer asks, the return is
+approved, and the goods are expected. That approval is where replacement,
+credit, or nothing is decided, so it belongs with credit notes (v0.4), not
+before them.
+
 ---
 
 ## ADR-044 — Lot trace
