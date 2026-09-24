@@ -18,13 +18,14 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { formatDay } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { Location, StockRow } from '../lib/types';
+import type { Availability, Location, StockRow } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
@@ -81,6 +82,13 @@ export function InventoryPage() {
   const [includeEmpty, setIncludeEmpty] = useState(false);
   const [editingLot, setEditingLot] = useState<StockRow | null>(null);
 
+  /**
+   * Per product across available locations: what is held for confirmed sales,
+   * what is free to promise, and what is backordered (ADR-045). Not per row,
+   * because a hold is not on a shelf — a sale has no location until it ships.
+   */
+  const [availability, setAvailability] = useState<Availability[] | null>(null);
+
   const loading = rows === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
   const leaves = locations ? leavesOf(locations) : [];
@@ -100,16 +108,28 @@ export function InventoryPage() {
   }, [locationId, includeEmpty]);
 
   const loadStock = useCallback(async () => {
-    setRows(await api<StockRow[]>(`/stock${stockQuery}`));
+    // Together, because every action that changes a row can change what is
+    // free: a sample taken, a lot moved into retention.
+    const [found, promised] = await Promise.all([
+      api<StockRow[]>(`/stock${stockQuery}`),
+      api<Availability[]>('/stock/availability'),
+    ]);
+    setRows(found);
+    setAvailability(promised);
     setError(null);
   }, [stockQuery]);
 
   useEffect(() => {
     let ignore = false;
 
-    void api<Location[]>('/locations')
-      .then((all) => {
-        if (!ignore) setLocations(all);
+    void Promise.all([
+      api<Location[]>('/locations'),
+      api<Availability[]>('/stock/availability'),
+    ])
+      .then(([all, promised]) => {
+        if (ignore) return;
+        setLocations(all);
+        setAvailability(promised);
       })
       .catch((caught: unknown) => {
         if (!ignore) setError(messageFor(caught));
@@ -143,9 +163,14 @@ export function InventoryPage() {
     <Stack spacing={3}>
       <PageHeader
         crumbs={[]}
-        title="Partners"
+        title="Inventory"
         actions={
           <Stack direction="row" spacing={1}>
+            {/* A recall starts from a code off a label (ADR-044). */}
+            <Button variant="text" component={RouterLink} to="/lots">
+              Trace a lot
+            </Button>
+
             <Button
               variant="text"
               disabled={loading}
@@ -288,6 +313,68 @@ export function InventoryPage() {
           </Typography>
         )}
       </Paper>
+
+      {/* Only products something is promised from. A product nobody has
+          ordered is free in full, which the table above already says. A
+          numeric(18, 4) of nothing always reads '0.0000', so this is a string
+          check rather than parsing a quantity (ADR-025). */}
+      {!!availability?.some(
+        (row) => row.held !== '0.0000' || row.backordered !== '0.0000',
+      ) && (
+        <Stack spacing={1}>
+          <Typography variant="h6" component="h2">
+            Promised to customers
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Across every location stock can be sent from. Held stock is for a
+            confirmed sale, earliest confirmed first; free stock can be
+            promised, sampled or used in production.
+          </Typography>
+
+          <Paper variant="outlined">
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>SKU</TableCell>
+                    <TableCell align="right">On hand</TableCell>
+                    <TableCell align="right">Held</TableCell>
+                    <TableCell align="right">Free</TableCell>
+                    <TableCell align="right">Backordered</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {availability
+                    .filter(
+                      (row) =>
+                        row.held !== '0.0000' || row.backordered !== '0.0000',
+                    )
+                    .map((row) => (
+                      <TableRow key={row.variantId}>
+                        <TableCell>{row.sku}</TableCell>
+                        <TableCell align="right">
+                          {row.onHand} {row.unitOfMeasure}
+                        </TableCell>
+                        <TableCell align="right">{row.held}</TableCell>
+                        <TableCell align="right">{row.free}</TableCell>
+                        <TableCell
+                          align="right"
+                          sx={
+                            row.backordered !== '0.0000'
+                              ? { color: 'warning.main' }
+                              : undefined
+                          }
+                        >
+                          {row.backordered}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Stack>
+      )}
 
       <ReceiveStockDialog
         open={receiving}

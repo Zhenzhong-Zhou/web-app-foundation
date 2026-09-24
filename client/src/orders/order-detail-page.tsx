@@ -27,6 +27,7 @@ import { api, ApiError } from '../lib/api';
 import { formatDay, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
+  LineHold,
   Location,
   OrderDetail,
   OrderDirection,
@@ -127,6 +128,13 @@ export function OrderDetailPage() {
   /** The same, for returns. */
   const [returns, setReturns] = useState(0);
 
+  /**
+   * What each line holds and lacks, for a confirmed sale (ADR-045). Keyed by
+   * line. Refetched whenever the order reloads, since shipping, closing short
+   * or a change to another order all move it.
+   */
+  const [holds, setHolds] = useState<Record<string, LineHold>>({});
+
   const canUpdate = !!session?.permissions.includes('orders.update');
   const canReceive = !!session?.permissions.includes('orders.receive');
   const canShip = !!session?.permissions.includes('orders.ship');
@@ -160,6 +168,27 @@ export function OrderDetailPage() {
       ignore = true;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!order || order.direction !== 'sale' || order.status !== 'confirmed') {
+      return;
+    }
+
+    let ignore = false;
+
+    void api<LineHold[]>(`/orders/${order.id}/holds`)
+      .then((rows) => {
+        if (!ignore) {
+          setHolds(Object.fromEntries(rows.map((row) => [row.lineId, row])));
+        }
+      })
+      // Silent: without holds the page reads as it did before them.
+      .catch(() => undefined);
+
+    return () => {
+      ignore = true;
+    };
+  }, [order]);
 
   async function moveTo(status: OrderStatus) {
     setWorking(true);
@@ -409,7 +438,27 @@ export function OrderDetailPage() {
                           <Chip label="Closed short" size="small" />
                         </Tooltip>
                       ) : (
-                        line.quantityOutstanding
+                        <>
+                          {line.quantityOutstanding}
+                          {/* The backorder: needed, and not held because
+                              earlier-confirmed orders came first (ADR-045).
+                              '0.0000' is nothing, compared as text. */}
+                          {order.status === 'confirmed' &&
+                            holds[line.id] &&
+                            holds[line.id].short !== '0.0000' && (
+                              <Tooltip
+                                title={`${holds[line.id].held} held for this order; the rest waits for stock`}
+                              >
+                                <Chip
+                                  label={`${holds[line.id].short} short`}
+                                  size="small"
+                                  color="warning"
+                                  variant="outlined"
+                                  sx={{ ml: 1 }}
+                                />
+                              </Tooltip>
+                            )}
+                        </>
                       )}
                     </TableCell>
 
