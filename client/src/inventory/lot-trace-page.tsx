@@ -101,7 +101,7 @@ export function LotSearchPage() {
           label="Lot code"
           value={typed}
           onChange={(event) => setTyped(event.target.value)}
-          helperText="The start is enough, as printed on the label. Press Enter to search."
+          helperText="Any part of the code works — the batch number is usually enough. Press Enter to search."
           sx={{ maxWidth: 420 }}
           fullWidth
         />
@@ -111,7 +111,7 @@ export function LotSearchPage() {
 
       {matches?.length === 0 && (
         <Typography color="text.secondary">
-          No lot starts with “{code}”.
+          No lot contains “{code}”.
         </Typography>
       )}
 

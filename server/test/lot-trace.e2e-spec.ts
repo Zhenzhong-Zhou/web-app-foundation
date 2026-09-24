@@ -324,6 +324,18 @@ describe('Lot trace (e2e)', () => {
     ]);
   });
 
+  // What people remember is often the middle: a batch number, a date.
+  it('finds a lot by any part of its code', async () => {
+    const alpha = await registerOrg('alpha');
+    await story(alpha);
+
+    const found = body<{ code: string }[]>(
+      await alpha.agent.get('/v1/stock/lots/search?code=oc-').expect(200),
+    );
+
+    expect(found.map((lot) => lot.code)).toEqual(['FOC-1']);
+  });
+
   it('does not trace another organization lot', async () => {
     const alpha = await registerOrg('alpha');
     const beta = await registerOrg('beta');

@@ -2705,10 +2705,11 @@ shipment or sample, with what came back. Runs are the joints — what a run
 consumed is upstream of what it produced — so nothing new is recorded, and
 there is no genealogy table to fall out of step with the movements.
 
-**Decision — gaps are shown, not hidden.** Stock that left with no recipient
-on record is listed with no name. A recall has to know how much went
-somewhere it cannot name, and silently omitting it would make the list look
-complete when it is not.
+**Decision — search by any part of a code, across products.** A recall
+arrives as a code read off a label, or the part of it people remember — a
+batch number, a date — with no product attached, and the same code can exist
+for two products; every match is shown with its SKU, codes starting with the
+text first.
 
 **Decision — search by the start of a code, across products.** A recall
 arrives as a code read off a label, with no product attached, and the same

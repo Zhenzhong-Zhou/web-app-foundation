@@ -69,17 +69,23 @@ export class LotTraceService {
   }
 
   /**
-   * Lots whose code starts with what was typed, across every product. A
-   * recall usually arrives as a code read off a label, with no product
-   * attached, and the same code can exist for two products — so every match
-   * is returned with its SKU rather than guessing.
+   * Lots whose code contains what was typed, across every product. A recall
+   * usually arrives as part of a code — the batch number or date people
+   * remember, "2609" from "FOC-2609-01" — with no product attached, and the
+   * same code can exist for two products, so every match is returned with
+   * its SKU rather than guessing.
    *
-   * Prefix rather than anywhere-in: "FOC-26" should find "FOC-2609-01", and
-   * a match in the middle of a code is almost always noise. % and _ are
-   * escaped so they match themselves.
+   * Codes that start with the text come first, so typing a prefix still puts
+   * the obvious match on top. % and _ are escaped so they match themselves.
+   *
+   * Anywhere-in cannot use an ordinary index, so this reads the
+   * organization's lots in full: milliseconds for tens of thousands. A
+   * trigram index (pg_trgm) is the fix if the table ever reaches millions.
    */
   async search(code: string) {
-    const pattern = `${code.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+    const escaped = code.replace(/[\\%_]/g, (char) => `\\${char}`);
+    const anywhere = `%${escaped}%`;
+    const prefix = `${escaped}%`;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const rows = (
@@ -88,8 +94,8 @@ export class LotTraceService {
           from lots l
           join product_variants pv on pv.id = l.variant_id
           where l.organization_id = ${organizationId}::uuid
-            and l.code ilike ${pattern}
-          order by l.code, pv.sku
+            and l.code ilike ${anywhere}
+          order by (l.code ilike ${prefix}) desc, l.code, pv.sku
           limit 20
         `)
       ).rows as {
