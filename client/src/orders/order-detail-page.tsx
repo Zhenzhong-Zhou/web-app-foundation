@@ -579,6 +579,15 @@ export function OrderDetailPage() {
           </Stack>
         </Paper>
 
+        {/* Returns sit beside shipped rather than reducing what is
+            outstanding (ADR-043), which reads as a mismatch until said. */}
+        {order.lines.some((line) => Number(line.quantityReturned) > 0) && (
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+            Returns don't reopen an item. To send replacements, raise a new
+            sale.
+          </Typography>
+        )}
+
         {order.status === 'draft' && (
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
             Nothing can be {DONE[order.direction].toLowerCase()} against a
@@ -601,7 +610,11 @@ export function OrderDetailPage() {
               "proceed" lives, and the destructive one should not be where a
               thumb lands by default. */}
           {NEXT_STATUSES[order.status]
-            .filter((next) => next === 'cancelled')
+            .filter(
+              (next) =>
+                next === 'cancelled' &&
+                !order.lines.some((line) => Number(line.quantityFulfilled) > 0),
+            )
             .map((next) => (
               <Button
                 key={next}
