@@ -2,19 +2,14 @@ import {
   Alert,
   Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 
 import { api, ApiError } from '../lib/api';
-import { formatDate, formatDay } from '../lib/format';
+import { formatDate } from '../lib/format';
 import type { OrderReturn } from '../lib/types';
+import {LotItemsTable} from "./lot-items-table";
 
 /**
  * What came back against this order, newest first, lot by lot (ADR-043).
@@ -80,32 +75,7 @@ export function ReturnsList({
             </Typography>
           )}
 
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>SKU</TableCell>
-                  <TableCell>Lot</TableCell>
-                  <TableCell>Expires</TableCell>
-                  <TableCell align="right">Quantity</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {entry.items.map((item) => (
-                  <TableRow key={`${item.sku}-${item.lotCode ?? 'none'}`}>
-                    <TableCell>{item.sku}</TableCell>
-                    <TableCell>{item.lotCode ?? '—'}</TableCell>
-                    <TableCell>
-                      {item.expiresAt ? formatDay(item.expiresAt) : '—'}
-                    </TableCell>
-                    <TableCell align="right">
-                      {item.quantity} {item.unitOfMeasure}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <LotItemsTable items={entry.items} />
         </Paper>
       ))}
     </Stack>

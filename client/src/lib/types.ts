@@ -419,3 +419,69 @@ export interface OrderReturn {
   createdAt: string;
   items: Shipment['items'];
 }
+
+/** A lot matched by the start of its code (ADR-044). */
+export interface LotMatch {
+  id: string;
+  code: string;
+  expiresAt: string | null;
+  sku: string;
+}
+
+/** A lot connected through production, up or down the chain. */
+export interface RelatedLot {
+  lotId: string;
+  code: string;
+  sku: string;
+  /** Steps away: 1 is a direct ingredient or batch. */
+  depth: number;
+  runId: string;
+  runReference: string | null;
+}
+
+/** One lot's whole story, read from the ledger (ADR-044). */
+export interface LotTrace {
+  lot: {
+    id: string;
+    code: string;
+    expiresAt: string | null;
+    sku: string;
+    unitOfMeasure: string;
+    description: string;
+  };
+  balances: {
+    locationId: string;
+    locationName: string;
+    isAvailable: boolean;
+    quantity: string;
+  }[];
+  sources: {
+    kind: 'receipt' | 'production';
+    at: string;
+    quantity: string;
+    orderId: string | null;
+    orderReference: string | null;
+    supplierName: string | null;
+    runId: string | null;
+    runReference: string | null;
+    licenceNumber: string | null;
+    licenceAuthority: string | null;
+  }[];
+  madeFrom: RelatedLot[];
+  wentInto: RelatedLot[];
+  /** Everyone who received it or anything made from it. */
+  recipients: {
+    /** Null when it left with no recipient on record. */
+    partnerId: string | null;
+    partnerName: string | null;
+    orderId: string | null;
+    orderReference: string | null;
+    isSampleOrder: boolean;
+    lotId: string;
+    lotCode: string;
+    sku: string;
+    shipped: string;
+    sampled: string;
+    returned: string;
+  }[];
+}

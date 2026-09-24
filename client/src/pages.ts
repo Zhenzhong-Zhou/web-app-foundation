@@ -57,6 +57,16 @@ export const MovementsPage = lazyNamed(
   'MovementsPage',
 );
 
+export const LotSearchPage = lazyNamed(
+  () => import('./inventory/lot-trace-page'),
+  'LotSearchPage',
+);
+
+export const LotTracePage = lazyNamed(
+  () => import('./inventory/lot-trace-page'),
+  'LotTracePage',
+);
+
 export const LocationsPage = lazyNamed(
   () => import('./locations/locations-page'),
   'LocationsPage',

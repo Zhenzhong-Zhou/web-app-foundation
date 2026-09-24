@@ -1,11 +1,12 @@
 import MoreVert from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import type { StockRow } from '../lib/types';
 import type { MoveMode } from './move-stock-dialog';
 
-type Choice = MoveMode | 'history' | 'lot';
+type Choice = MoveMode | 'history' | 'lot' | 'trace';
 
 /**
  * A menu rather than a row of buttons. Shipping, sampling, moving and
@@ -26,6 +27,7 @@ export function StockActions({
   onHistory: (row: StockRow) => void;
   onEditLot: (row: StockRow) => void;
 }) {
+  const navigate = useNavigate();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [pending, setPending] = useState<Choice | null>(null);
 
@@ -42,6 +44,7 @@ export function StockActions({
 
     if (pending === 'history') onHistory(row);
     else if (pending === 'lot') onEditLot(row);
+    else if (pending === 'trace') void navigate(`/lots/${row.lotId!}`);
     else onSelect(pending, row);
 
     setPending(null);
@@ -115,6 +118,17 @@ export function StockActions({
             }}
           >
             Edit lot details
+          </MenuItem>
+        )}
+        {/* Where this lot came from and everyone who has it (ADR-044). */}
+        {row.lotId && (
+          <MenuItem
+            onClick={() => {
+              setPending('trace');
+              setAnchor(null);
+            }}
+          >
+            Trace lot
           </MenuItem>
         )}
         <MenuItem

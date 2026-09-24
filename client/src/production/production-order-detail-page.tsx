@@ -15,7 +15,13 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  Fragment,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
@@ -106,20 +112,27 @@ export function ProductionOrderDetailPage() {
   const isDraft = run.status === 'draft';
   const isReleased = run.status === 'released';
 
-  /** "EARLY 1500.0000 · LATE 900.0000" for one component, or null. */
-  const lotsFor = (componentVariantId: string): string | null => {
+  /**
+   * "EARLY: 1500.0000 · LATE: 900.0000" for one component, or null, with each
+   * code a link to that lot's trace — the step a recall takes next (ADR-044).
+   */
+  const lotsFor = (componentVariantId: string): ReactNode => {
     const used = run.componentLots.filter(
       (lot) => lot.componentVariantId === componentVariantId,
     );
     if (used.length === 0) return null;
 
-    return used
-      .map((lot) =>
-        run.status === 'completed'
-          ? `${lot.code}: ${lot.consumed} used`
-          : `${lot.code}: ${lot.issued}`,
-      )
-      .join(' · ');
+    return used.map((lot, index) => (
+      <Fragment key={lot.lotId}>
+        {index > 0 && ' · '}
+        <Link component={RouterLink} to={`/lots/${lot.lotId}`} color="inherit">
+          {lot.code}
+        </Link>
+        {run.status === 'completed'
+          ? `: ${lot.consumed} used`
+          : `: ${lot.issued}`}
+      </Fragment>
+    ));
   };
 
   return (

@@ -23,6 +23,8 @@ import {
   InventoryPage,
   LicencesPage,
   LocationsPage,
+  LotSearchPage,
+  LotTracePage,
   MembersPage,
   MovementsPage,
   OrderDetailPage,
@@ -189,6 +191,8 @@ export default function App() {
         <Route path="/licences" element={split(LicencesPage)} />
         <Route path="/inventory" element={split(InventoryPage)} />
         <Route path="/movements" element={split(MovementsPage)} />
+        <Route path="/lots" element={split(LotSearchPage)} />
+        <Route path="/lots/:id" element={split(LotTracePage)} />
         <Route path="/locations" element={split(LocationsPage)} />
         <Route path="/partners" element={split(PartnersPage)} />
         <Route path="/partners/:id" element={split(PartnerDetailPage)} />
