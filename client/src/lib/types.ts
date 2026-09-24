@@ -43,6 +43,7 @@ export interface MovementPage {
 export interface StockRow {
   variantId: string;
   sku: string;
+  productName: string;
   variantName: string | null;
   unitOfMeasure: string;
   locationId: string;

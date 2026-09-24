@@ -39,6 +39,8 @@ interface LocationResponse {
 interface StockRow {
   variantId: string;
   sku: string;
+  productName: string;
+  variantName: string | null;
   locationId: string;
   locationName: string;
   lotId: string | null;
@@ -650,6 +652,22 @@ describe('Stock (e2e)', () => {
 
       // And nothing was written by the attempt.
       expect(await db.select().from(stockMovements)).toHaveLength(1);
+    });
+
+    it('names the product, since most variants have no name of their own', async () => {
+      const ctx = await setup('alpha');
+
+      await ctx.agent
+        .post('/v1/stock/movements')
+        .send(receipt(ctx.variant.id, ctx.locationId, '40'))
+        .expect(201);
+
+      const [row] = body<StockRow[]>(
+        await ctx.agent.get('/v1/stock').expect(200),
+      );
+
+      expect(row.productName).toBe('Product WIDGET');
+      expect(row.variantName).toBeNull();
     });
   });
 

@@ -9,7 +9,7 @@ import { and, asc, desc, eq, gt, lt, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 import { isCheckViolation, isUniqueViolation } from '../../database/errors';
-import type { MovementReason } from '../../database/schema';
+import { MovementReason, products } from '../../database/schema';
 import {
   locations,
   lots,
@@ -132,6 +132,7 @@ export class StockService {
           .select({
             variantId: stockLevels.variantId,
             sku: productVariants.sku,
+            productName: products.name,
             variantName: productVariants.name,
             unitOfMeasure: productVariants.unitOfMeasure,
             locationId: stockLevels.locationId,
@@ -150,6 +151,9 @@ export class StockService {
             productVariants,
             eq(productVariants.id, stockLevels.variantId),
           )
+          // Inner: every variant belongs to a product, and the product name
+          // is what people recognise — most variants have no name of their own.
+          .innerJoin(products, eq(products.id, productVariants.productId))
           .innerJoin(locations, eq(locations.id, stockLevels.locationId))
           // Left, because lot_id is null for every untracked variant and an
           // inner join would silently drop most of the warehouse.

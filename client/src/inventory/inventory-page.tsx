@@ -270,7 +270,14 @@ export function InventoryPage() {
                     hover
                   >
                     <TableCell>{row.sku}</TableCell>
-                    <TableCell>{row.variantName ?? '—'}</TableCell>
+                    {/* The product, with the variant when it has a name of
+                      its own — "Focus (60ct)" — as the packing slip and the
+                      variant picker already say it. */}
+                    <TableCell>
+                      {row.variantName
+                        ? `${row.productName} (${row.variantName})`
+                        : row.productName}
+                    </TableCell>
                     <TableCell>{row.locationName}</TableCell>
                     <TableCell>
                       {row.lotCode ? (
