@@ -1,17 +1,11 @@
-import {
-  Alert,
-  Link,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Link, Paper, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
 import type { Shipment } from '../lib/types';
-import {LotItemsTable} from "./lot-items-table";
+import { LotItemsTable } from './lot-items-table';
 
 /**
  * What has left against this order, newest first, lot by lot (ADR-041).

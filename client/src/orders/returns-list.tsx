@@ -1,15 +1,10 @@
-import {
-  Alert,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Paper, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 
 import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
 import type { OrderReturn } from '../lib/types';
-import {LotItemsTable} from "./lot-items-table";
+import { LotItemsTable } from './lot-items-table';
 
 /**
  * What came back against this order, newest first, lot by lot (ADR-043).
