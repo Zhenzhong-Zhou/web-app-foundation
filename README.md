@@ -243,6 +243,9 @@ each step is server-first then the screen that uses it (ADR-019):
 - [x] **21. Lot trace** — one page per lot: where it is, where it came from,
   every lot up and down the production chain, and everyone who received it
   or anything made from it
+- [x] **22. Reservations** — confirmed sales hold stock, earliest confirmed
+  first, computed from open lines rather than stored; what is free, held and
+  backordered is shown per product
 
 **Next:** reservations — holding stock for a confirmed sale so another order
 cannot take it, with what can be promised shown as on hand minus what is held.
