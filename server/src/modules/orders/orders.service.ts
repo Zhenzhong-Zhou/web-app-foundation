@@ -541,6 +541,8 @@ export class OrdersService {
       orders,
       {
         status: input.status,
+        // Its place in line for stock (ADR-045). Set once, on confirming.
+        ...(input.status === 'confirmed' ? { confirmedAt: new Date() } : {}),
         reference: input.reference,
         note: input.note,
         ...(input.expectedAt !== undefined

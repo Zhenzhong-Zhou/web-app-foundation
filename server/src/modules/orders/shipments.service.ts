@@ -16,6 +16,7 @@ import {
   shipments,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { assertTakeable } from '../stock/availability';
 import {
   allocateFefo,
   assertPickedTotal,
@@ -215,6 +216,19 @@ export class ShipmentsService {
 
       for (const requested of ordered) {
         const line = this.lineFor(lines, requested.lineId);
+
+        /**
+         * This order may take its own hold and whatever nobody holds, but
+         * not stock promised to another order (ADR-045). Checked here, in
+         * variant order, so the product locks it takes cannot deadlock.
+         */
+        await assertTakeable(tx, {
+          organizationId,
+          variantId: line.variantId,
+          quantity: requested.quantity,
+          sku: line.sku,
+          forOrderId: orderId,
+        });
 
         const allocations = tracked.has(line.variantId)
           ? await this.lotsToShip(tx, organizationId, line, requested, input)

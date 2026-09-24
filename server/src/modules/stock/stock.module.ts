@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 
 import { AuthorizationModule } from '../../core/authorization/authorization.module';
 import { AdjustmentGuard } from './adjustment.guard';
+import { AvailabilityController } from './availability.controller';
+import { AvailabilityService } from './availability.service';
 import { LotTraceController } from './lot-trace.controller';
 import { LotTraceService } from './lot-trace.service';
 import { StockController } from './stock.controller';
@@ -18,8 +20,13 @@ import { StockService } from './stock.service';
   // The global PermissionGuard needs no import here — it is instantiated
   // inside AuthorizationModule and registered in AppModule.
   imports: [AuthorizationModule],
-  controllers: [StockController, LotTraceController],
-  providers: [StockService, AdjustmentGuard, LotTraceService],
+  controllers: [StockController, LotTraceController, AvailabilityController],
+  providers: [
+    StockService,
+    AdjustmentGuard,
+    LotTraceService,
+    AvailabilityService,
+  ],
   exports: [StockService],
 })
 export class StockModule {}

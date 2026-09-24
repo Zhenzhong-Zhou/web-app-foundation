@@ -20,6 +20,7 @@ import {
   users,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { assertTakeable } from './availability';
 import { ListLotsDto } from './dto/list-lots.dto';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
@@ -164,9 +165,36 @@ export class StockService {
    * their own. Opens one and delegates.
    */
   async record(input: RecordMovementInput, actorId: string) {
-    return this.tenantDb.transaction((tx, organizationId) =>
-      this.recordWithin(tx, organizationId, input, actorId),
-    );
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      /**
+       * A hand-out or a one-off shipment has no order, so it may take only
+       * what nobody holds (ADR-045). Orders check their own holds when they
+       * ship; transfers and corrections record what happened and are not
+       * checked.
+       */
+      if (LEAVES_THE_BUSINESS.has(input.reason)) {
+        const [variant] = await tx
+          .select({ sku: productVariants.sku })
+          .from(productVariants)
+          .where(
+            and(
+              eq(productVariants.id, input.variantId),
+              eq(productVariants.organizationId, organizationId),
+            ),
+          );
+
+        if (variant) {
+          await assertTakeable(tx, {
+            organizationId,
+            variantId: input.variantId,
+            quantity: input.quantity,
+            sku: variant.sku,
+          });
+        }
+      }
+
+      return this.recordWithin(tx, organizationId, input, actorId);
+    });
   }
 
   /**

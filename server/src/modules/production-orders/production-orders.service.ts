@@ -21,6 +21,7 @@ import {
   stockMovements,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { assertTakeable } from '../stock/availability';
 import {
   allocateFefo,
   type LotCandidate,
@@ -526,6 +527,30 @@ export class ProductionOrdersService {
             `${line.sku} is not lot tracked, so it cannot be issued by lot`,
           );
         }
+      }
+
+      /**
+       * Components a customer has been promised are not raw material
+       * (ADR-045). Checked in product order, so the product locks cannot
+       * deadlock with a shipment taking the same ones.
+       */
+      const committed = issued
+        .filter((line) => line.supplyType === 'stocked')
+        .sort((a, b) =>
+          a.componentVariantId < b.componentVariantId
+            ? -1
+            : a.componentVariantId > b.componentVariantId
+              ? 1
+              : 0,
+        );
+
+      for (const line of committed) {
+        await assertTakeable(tx, {
+          organizationId,
+          variantId: line.componentVariantId,
+          quantity: line.quantityPlanned,
+          sku: line.sku,
+        });
       }
 
       /**

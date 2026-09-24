@@ -72,6 +72,12 @@ export const orders = pgTable(
     status: text('status').notNull().default('draft'),
 
     /**
+     * When the order was confirmed: its place in line when stock is short
+     * (ADR-045). Earliest confirmed holds first. Null until confirmed.
+     */
+    confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
+
+    /**
      * Their number for this order, not ours — a supplier's confirmation code,
      * a customer's PO reference. Nullable, because an order placed by phone has
      * none, and not unique, because two suppliers may reuse a number.
