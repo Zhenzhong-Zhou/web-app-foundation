@@ -20,6 +20,7 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import { fromScaled, sumDecimals, toScaled } from '../lib/decimal';
 import { formatDay } from '../lib/format';
 import type {
   Bom,
@@ -113,6 +114,19 @@ export function ReleaseRunDialog({
   const trackedLines = (plan ?? []).filter(
     (line) => line.supplyType === 'stocked' && line.tracksLots,
   );
+
+  /**
+   * Every hand-picked line adds up to what it needs. Release waits for it:
+   * the server refuses a mismatch anyway, and a button that can only fail is
+   * worth not offering. Lines left to earliest expiry have nothing to check.
+   */
+  const picksMatch = trackedLines.every((line) => {
+    const picking = picks[line.componentVariantId];
+    if (!picking) return true;
+
+    const total = sumDecimals(Object.values(picking));
+    return total !== null && total === toScaled(line.quantity);
+  });
 
   function startPicking(line: IssuePlanLine) {
     setPicks((current) => ({
@@ -383,12 +397,32 @@ export function ReleaseRunDialog({
                     </TableContainer>
                   )}
 
-                  {picking && (
-                    <Typography variant="caption" color="text.secondary">
-                      The amounts must add up to {line.quantity}. The server
-                      checks when you release.
-                    </Typography>
-                  )}
+                  {picking &&
+                    (() => {
+                      const total = sumDecimals(Object.values(picking));
+
+                      if (total === null) {
+                        return (
+                          <Typography variant="caption" color="error">
+                            Enter each amount as a number, up to four decimal
+                            places.
+                          </Typography>
+                        );
+                      }
+
+                      const matches = total === toScaled(line.quantity);
+
+                      return (
+                        <Typography
+                          variant="caption"
+                          color={matches ? 'text.secondary' : 'error'}
+                        >
+                          Chosen {fromScaled(total)} of {line.quantity}{' '}
+                          {line.unitOfMeasure}
+                          {matches ? '' : ' — the amounts must add up exactly'}
+                        </Typography>
+                      );
+                    })()}
                 </Stack>
               );
             })}
@@ -420,7 +454,7 @@ export function ReleaseRunDialog({
           </Button>
           <Button
             type="submit"
-            disabled={submitting || (needsRecipe && !chosenBom)}
+            disabled={submitting || (needsRecipe && !chosenBom) || !picksMatch}
           >
             {submitting ? 'Releasing…' : 'Release'}
           </Button>
