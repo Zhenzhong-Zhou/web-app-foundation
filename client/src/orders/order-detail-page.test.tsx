@@ -36,6 +36,7 @@ function line(over: Partial<OrderLine> = {}): OrderLine {
     quantityOrdered: '40.0000',
     quantityFulfilled: '0.0000',
     quantityOutstanding: '40.0000',
+    quantityReturned: '0.0000',
     unitPrice: null,
     currency: null,
     lineTotal: null,
@@ -180,6 +181,7 @@ describe('OrderDetailPage lines', () => {
             line({
               quantityFulfilled: '40.0000',
               quantityOutstanding: '0.0000',
+              quantityReturned: '0.0000',
               isComplete: true,
             }),
           ],
@@ -205,6 +207,7 @@ describe('OrderDetailPage lines', () => {
         line({
           quantityFulfilled: '10.0000',
           quantityOutstanding: '0.0000',
+          quantityReturned: '0.0000',
           isComplete: true,
           isClosedShort: true,
           closedReason: 'Supplier discontinued the item',
@@ -257,6 +260,7 @@ describe('OrderDetailPage lines', () => {
             line({
               quantityFulfilled: '5.0000',
               quantityOutstanding: '35.0000',
+              quantityReturned: '0.0000',
             }),
           ],
         }),

@@ -15,6 +15,7 @@ function line(id: string, sku: string, outstanding: string): OrderLine {
     quantityOrdered: outstanding,
     quantityFulfilled: '0.0000',
     quantityOutstanding: outstanding,
+    quantityReturned: '0.0000',
     unitPrice: null,
     currency: null,
     lineTotal: null,

@@ -157,6 +157,8 @@ export interface OrderLine {
   sku: string;
   quantityOrdered: string;
   quantityFulfilled: string;
+  /** Customer returns, beside fulfilled rather than subtracted (ADR-043). */
+  quantityReturned: string;
   quantityOutstanding: string;
   unitPrice: string | null;
   currency: string | null;
@@ -384,5 +386,36 @@ export interface PackingSlip {
     postalCode: string | null;
     country: string | null;
   } | null;
+  items: Shipment['items'];
+}
+
+/** A lot that shipped on an order, with how much has come back (ADR-043). */
+export interface ReturnableLot {
+  lotId: string;
+  code: string;
+  expiresAt: string | null;
+  shipped: string;
+  returned: string;
+}
+
+/** One shipped line, as the return dialog offers it. */
+export interface ReturnableLine {
+  lineId: string;
+  sku: string;
+  unitOfMeasure: string;
+  tracksLots: boolean;
+  quantityFulfilled: string;
+  quantityReturned: string;
+  /** Only lots that shipped on this order; empty when untracked. */
+  lots: ReturnableLot[];
+}
+
+/** A return as its order page lists it: the header and what came back. */
+export interface OrderReturn {
+  id: string;
+  toLocationId: string;
+  reason: string | null;
+  note: string | null;
+  createdAt: string;
   items: Shipment['items'];
 }

@@ -42,6 +42,8 @@ import { DuplicateOrderDialog } from './duplicate-order-dialog';
 import { EditOrderDialog } from './edit-order-dialog';
 import { EditOrderLineDialog } from './edit-order-line-dialog';
 import { ReceiveLineDialog } from './receive-line-dialog';
+import { ReturnOrderDialog } from './return-order-dialog';
+import { ReturnsList } from './returns-list';
 import { ShipOrderDialog } from './ship-order-dialog';
 import { ShipmentsList } from './shipments-list';
 
@@ -117,8 +119,13 @@ export function OrderDetailPage() {
   const [closingLine, setClosingLine] = useState<OrderLine | null>(null);
   const [shipping, setShipping] = useState(false);
 
+  const [returning, setReturning] = useState(false);
+
   /** Bumped after a shipment so the list below refetches alongside the order. */
   const [shipments, setShipments] = useState(0);
+
+  /** The same, for returns. */
+  const [returns, setReturns] = useState(0);
 
   const canUpdate = !!session?.permissions.includes('orders.update');
   const canReceive = !!session?.permissions.includes('orders.receive');
@@ -222,6 +229,18 @@ export function OrderDetailPage() {
     order.status === 'confirmed' &&
     order.lines.some((line) => !line.isComplete);
 
+  /**
+   * Returns come back to the dock, so they sit under orders.receive, and are
+   * possible once anything has shipped — most often after the order is done
+   * (ADR-043). A numeric(18, 4) of nothing always reads '0.0000', so this is
+   * a string check rather than parsing a quantity (ADR-025).
+   */
+  const returnable =
+    canReceive &&
+    order.direction === 'sale' &&
+    (order.status === 'confirmed' || order.status === 'fulfilled') &&
+    order.lines.some((line) => line.quantityFulfilled !== '0.0000');
+
   /** Lines are editable on a draft, and amendable while confirmed (ADR-033). */
   const isDraft = order.status === 'draft';
   const amendable = canUpdate && (isDraft || order.status === 'confirmed');
@@ -314,6 +333,16 @@ export function OrderDetailPage() {
             </Button>
           )}
 
+          {returnable && (
+            <Button
+              variant="text"
+              disabled={working}
+              onClick={openDialog(() => setReturning(true))}
+            >
+              Take a return
+            </Button>
+          )}
+
           {shippable && (
             <Button
               disabled={working}
@@ -344,6 +373,11 @@ export function OrderDetailPage() {
                     down a column, and digits only line up on the right. */}
                   <TableCell align="right">Ordered</TableCell>
                   <TableCell align="right">{DONE[order.direction]}</TableCell>
+                  {/* Beside shipped, never subtracted from it: that it
+                      shipped is the history a recall reads (ADR-043). */}
+                  {order.direction === 'sale' && (
+                    <TableCell align="right">Returned</TableCell>
+                  )}
                   <TableCell align="right">Outstanding</TableCell>
                   <TableCell align="right">Unit price</TableCell>
                   <TableCell align="right">Total</TableCell>
@@ -361,6 +395,11 @@ export function OrderDetailPage() {
                     <TableCell align="right">
                       {line.quantityFulfilled}
                     </TableCell>
+                    {order.direction === 'sale' && (
+                      <TableCell align="right">
+                        {line.quantityReturned}
+                      </TableCell>
+                    )}
 
                     <TableCell align="right">
                       {line.isClosedShort ? (
@@ -503,6 +542,10 @@ export function OrderDetailPage() {
         <ShipmentsList orderId={order.id} refreshKey={shipments} />
       )}
 
+      {order.direction === 'sale' && (
+        <ReturnsList orderId={order.id} refreshKey={returns} />
+      )}
+
       {canUpdate && NEXT_STATUSES[order.status].length > 0 && (
         <Stack direction="row" spacing={2} sx={{ justifyContent: 'flex-end' }}>
           {/* Cancel first, Confirm last: the rightmost position is where
@@ -611,6 +654,20 @@ export function OrderDetailPage() {
         onShipped={async () => {
           await load();
           setShipments((count) => count + 1);
+        }}
+      />
+
+      {/* Every location, unavailable ones included: returned stock usually
+          belongs in exactly such a bin until someone has checked it. */}
+      <ReturnOrderDialog
+        key={returning ? `return-${order.id}` : 'return-closed'}
+        open={returning}
+        orderId={order.id}
+        locations={leaves}
+        onClose={() => setReturning(false)}
+        onReturned={async () => {
+          await load();
+          setReturns((count) => count + 1);
         }}
       />
 
