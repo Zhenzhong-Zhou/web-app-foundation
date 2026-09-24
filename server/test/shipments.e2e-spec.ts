@@ -9,6 +9,7 @@ import {
 import {
   lots,
   orderLines,
+  shipments,
   stockLevels,
   stockMovements,
 } from '../src/database/schema';
@@ -35,6 +36,10 @@ interface ShipmentResponse {
 interface ShipmentListItem {
   id: string;
   items: { sku: string; lotCode: string | null; quantity: string }[];
+}
+
+interface TraceResponse {
+  recipients: { partnerName: string | null; shipped: string }[];
 }
 
 interface PlanResponse {
@@ -602,6 +607,317 @@ describe('Shipments (e2e)', () => {
       );
 
       expect(plan.lines[0].exceedsOutstanding).toBe(true);
+    });
+  });
+
+  /**
+   * Void undoes a shipment recorded before the box left (ADR-041). Nothing is
+   * deleted: the shipment and its movements stay, adjustments put each lot
+   * back where it left, and the lines reopen.
+   */
+  describe('voiding', () => {
+    const REASON = 'Customer cancelled before pickup';
+
+    /** 15 of the supplement (EARLY 10, LATE 5) and all 10 of the scoop. */
+    async function shipSome(org: Org, s: Awaited<ReturnType<typeof scenario>>) {
+      return body<{ shipment: ShipmentResponse }>(
+        await org.agent
+          .post(`/v1/orders/${s.order.id}/shipments`)
+          .send({
+            fromLocationId: s.shelf,
+            lines: [
+              { lineId: s.focusLine, quantity: '15' },
+              { lineId: s.bottleLine, quantity: '10' },
+            ],
+          })
+          .expect(201),
+      ).shipment;
+    }
+
+    function voidOf(orderId: string, shipmentId: string) {
+      return `/v1/orders/${orderId}/shipments/${shipmentId}/void`;
+    }
+
+    async function untracked(variantId: string, locationId: string) {
+      const [row] = await db
+        .select({ quantity: stockLevels.quantity })
+        .from(stockLevels)
+        .where(
+          and(
+            eq(stockLevels.variantId, variantId),
+            eq(stockLevels.locationId, locationId),
+          ),
+        );
+      return row.quantity;
+    }
+
+    it('puts every lot back where it left and reopens the lines', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+      const shipment = await shipSome(alpha, s);
+
+      await alpha.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: REASON })
+        .expect(204);
+
+      expect(await byLot(s.focus, s.shelf)).toEqual({
+        EARLY: '10.0000',
+        LATE: '20.0000',
+        NEVER: '50.0000',
+      });
+      expect(await untracked(s.bottle, s.shelf)).toBe('100.0000');
+
+      expect(await fulfilled(s.focusLine)).toBe('0.0000');
+      expect(await fulfilled(s.bottleLine)).toBe('0.0000');
+
+      // The record stays, and its correction sits beside it.
+      expect(await shipmentMovements()).toHaveLength(3);
+
+      const reversals = await db
+        .select()
+        .from(stockMovements)
+        .where(
+          and(
+            eq(stockMovements.reason, 'adjustment'),
+            eq(stockMovements.referenceId, shipment.id),
+          ),
+        );
+
+      expect(reversals).toHaveLength(3);
+      expect(reversals.every((row) => row.note === REASON)).toBe(true);
+
+      const [row] = await db
+        .select()
+        .from(shipments)
+        .where(eq(shipments.id, shipment.id));
+
+      expect(row.voidedAt).not.toBeNull();
+      expect(row.voidReason).toBe(REASON);
+    });
+
+    it('still lists what the voided shipment carried, once', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+      const shipment = await shipSome(alpha, s);
+
+      await alpha.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: REASON })
+        .expect(204);
+
+      // The adjustments reference the same shipment. Counting them would
+      // show 20 of EARLY on a slip that carried 10.
+      const [listed] = body<ShipmentListItem[]>(
+        await alpha.agent.get(`/v1/orders/${s.order.id}/shipments`).expect(200),
+      );
+
+      expect(
+        listed.items.map(({ sku, lotCode, quantity }) => ({
+          sku,
+          lotCode,
+          quantity,
+        })),
+      ).toEqual([
+        { sku: 'FOCUS-60CT', lotCode: 'EARLY', quantity: '10.0000' },
+        { sku: 'FOCUS-60CT', lotCode: 'LATE', quantity: '5.0000' },
+        { sku: 'SCOOP', lotCode: null, quantity: '10.0000' },
+      ]);
+    });
+
+    it('lets the order ship again', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+      const shipment = await shipSome(alpha, s);
+
+      await alpha.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: REASON })
+        .expect(204);
+
+      await alpha.agent
+        .post(`/v1/orders/${s.order.id}/shipments`)
+        .send({
+          fromLocationId: s.shelf,
+          lines: [{ lineId: s.bottleLine, quantity: '10' }],
+        })
+        .expect(201);
+
+      expect(await fulfilled(s.bottleLine)).toBe('10.0000');
+    });
+
+    it('drops the customer from the lot trace', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+      const shipment = await shipSome(alpha, s);
+
+      const [early] = await db
+        .select()
+        .from(lots)
+        .where(eq(lots.code, 'EARLY'));
+
+      const trace = async () =>
+        body<TraceResponse>(
+          await alpha.agent.get(`/v1/stock/lots/${early.id}/trace`).expect(200),
+        ).recipients;
+
+      expect(await trace()).toHaveLength(1);
+
+      await alpha.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: REASON })
+        .expect(204);
+
+      // Nothing left, so a recall letter to Northside would be wrong.
+      expect(await trace()).toHaveLength(0);
+    });
+
+    it('no longer counts as shipped for returns', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+      const shipment = await shipSome(alpha, s);
+
+      await alpha.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: REASON })
+        .expect(204);
+
+      const [early] = await db
+        .select()
+        .from(lots)
+        .where(eq(lots.code, 'EARLY'));
+
+      // Refused as never shipped, not merely as too much: the returns check
+      // reads only shipments that stand.
+      await alpha.agent
+        .post(`/v1/orders/${s.order.id}/returns`)
+        .send({
+          toLocationId: s.shelf,
+          lines: [
+            { lineId: s.focusLine, lots: [{ lotId: early.id, quantity: '1' }] },
+          ],
+        })
+        .expect(400);
+    });
+
+    it('refuses to void the same shipment twice', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+      const shipment = await shipSome(alpha, s);
+
+      await alpha.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: REASON })
+        .expect(204);
+
+      await alpha.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: REASON })
+        .expect(409);
+
+      // Put back once, not twice.
+      expect(await byLot(s.focus, s.shelf)).toMatchObject({
+        EARLY: '10.0000',
+      });
+    });
+
+    it('requires a reason', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+      const shipment = await shipSome(alpha, s);
+
+      await alpha.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: '   ' })
+        .expect(400);
+    });
+
+    /**
+     * Goods that came back did leave. Voiding would leave the order saying
+     * more was returned than shipped.
+     */
+    it('refuses once a lot from it has been returned, and moves nothing', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+      const shipment = await shipSome(alpha, s);
+
+      const [early] = await db
+        .select()
+        .from(lots)
+        .where(eq(lots.code, 'EARLY'));
+
+      await alpha.agent
+        .post(`/v1/orders/${s.order.id}/returns`)
+        .send({
+          toLocationId: s.shelf,
+          lines: [
+            { lineId: s.focusLine, lots: [{ lotId: early.id, quantity: '2' }] },
+          ],
+        })
+        .expect(201);
+
+      await alpha.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: REASON })
+        .expect(409);
+
+      expect(await fulfilled(s.focusLine)).toBe('15.0000');
+      expect(await byLot(s.focus, s.shelf)).toMatchObject({
+        EARLY: '2.0000',
+        LATE: '15.0000',
+      });
+    });
+
+    it('refuses once an untracked item from it has been returned', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+      const shipment = await shipSome(alpha, s);
+
+      await alpha.agent
+        .post(`/v1/orders/${s.order.id}/returns`)
+        .send({
+          toLocationId: s.shelf,
+          lines: [{ lineId: s.bottleLine, quantity: '4' }],
+        })
+        .expect(201);
+
+      // No lot to compare, so the line constraint is what refuses it.
+      await alpha.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: REASON })
+        .expect(409);
+
+      expect(await untracked(s.bottle, s.shelf)).toBe('94.0000');
+    });
+
+    it('refuses on a closed order', async () => {
+      const alpha = await registerOrg('alpha');
+      const s = await scenario(alpha);
+      const shipment = await shipSome(alpha, s);
+
+      await alpha.agent
+        .patch(`/v1/orders/${s.order.id}`)
+        .send({ status: 'fulfilled' })
+        .expect(204);
+
+      // A closed order is a finished document; voiding must not reopen it
+      // by the back door (ADR-023).
+      await alpha.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: REASON })
+        .expect(409);
+    });
+
+    it('does not find another organization shipment', async () => {
+      const alpha = await registerOrg('alpha');
+      const beta = await registerOrg('beta');
+      const s = await scenario(alpha);
+      const shipment = await shipSome(alpha, s);
+
+      await beta.agent
+        .post(voidOf(s.order.id, shipment.id))
+        .send({ reason: REASON })
+        .expect(404);
     });
   });
 });

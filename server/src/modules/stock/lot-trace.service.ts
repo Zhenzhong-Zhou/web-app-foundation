@@ -336,6 +336,7 @@ export class LotTraceService {
    * recipient it was checked against (ADR-042); a return through its order. A
    * shipment or sample with no recipient on record is kept, with the partner
    * left empty: a recall has to know how much went somewhere it cannot name.
+   * A voided shipment is left out: it was recorded, but nothing left.
    */
   private async recipients(tx: Tx, organizationId: string, lotIds: string[]) {
     const ids = sql.join(
@@ -371,6 +372,10 @@ export class LotTraceService {
         where sm.organization_id = ${organizationId}::uuid
           and sm.lot_id in (${ids})
           and sm.reason in ('shipment', 'sample', 'return')
+          -- A voided shipment never left (ADR-041), so its customer did not
+          -- receive anything. True for samples and returns, which have no
+          -- shipment row to join.
+          and s.voided_at is null
         group by p.id, p.name, o.id, o.reference, o.is_sample, l.id, l.code, sm.sku
         order by p.name nulls last, o.reference nulls last, l.code
       `)

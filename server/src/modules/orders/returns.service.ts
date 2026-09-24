@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 
 import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
@@ -17,9 +17,10 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { StockService, type Tx } from '../stock/stock.service';
+import { trackedVariants } from '../stock/tracked-variants';
 import type { ReturnOrderDto } from './dto/return-order.dto';
+import { lineFor, type OrderLine, requestedLines } from './order-line-lookup';
 
-type OrderLine = typeof orderLines.$inferSelect;
 type ReturnLine = ReturnOrderDto['lines'][number];
 
 /** One lot of one line, as it can still come back. */
@@ -141,8 +142,8 @@ export class ReturnsService {
         );
       }
 
-      const lines = await this.requestedLines(tx, organizationId, orderId, ids);
-      const tracked = await this.trackedVariants(
+      const lines = await requestedLines(tx, organizationId, orderId, ids);
+      const tracked = await trackedVariants(
         tx,
         organizationId,
         lines.map((line) => line.variantId),
@@ -166,15 +167,15 @@ export class ReturnsService {
        * deadlock (ADR-023).
        */
       const ordered = [...input.lines].sort((a, b) => {
-        const left = this.lineFor(lines, a.lineId).variantId;
-        const right = this.lineFor(lines, b.lineId).variantId;
+        const left = lineFor(lines, a.lineId).variantId;
+        const right = lineFor(lines, b.lineId).variantId;
         return left < right ? -1 : left > right ? 1 : 0;
       });
 
       const summary: string[] = [];
 
       for (const requested of ordered) {
-        const line = this.lineFor(lines, requested.lineId);
+        const line = lineFor(lines, requested.lineId);
 
         const { total, parts } = tracked.has(line.variantId)
           ? await this.trackedParts(
@@ -436,6 +437,9 @@ export class ReturnsService {
             select id from shipments
             where organization_id = ${organizationId}::uuid
               and order_id = ${orderId}::uuid
+              -- A voided shipment never left (ADR-041), so nothing on it
+              -- can come back.
+              and voided_at is null
           ))
           or
           (sm.reference_type = 'order_return' and sm.reference_id in (
@@ -534,58 +538,5 @@ export class ReturnsService {
       expiresAt: row.expires_at,
       quantity: row.quantity,
     }));
-  }
-
-  private async requestedLines(
-    tx: Tx,
-    organizationId: string,
-    orderId: string,
-    lineIds: string[],
-  ): Promise<OrderLine[]> {
-    const lines = await tx
-      .select()
-      .from(orderLines)
-      .where(
-        and(
-          eq(orderLines.organizationId, organizationId),
-          eq(orderLines.orderId, orderId),
-          inArray(orderLines.id, lineIds),
-        ),
-      );
-
-    const found = new Set(lines.map((line) => line.id));
-    const missing = lineIds.find((id) => !found.has(id));
-
-    if (missing)
-      throw new NotFoundException(`No line ${missing} on this order`);
-
-    return lines;
-  }
-
-  private lineFor(lines: OrderLine[], lineId: string): OrderLine {
-    const line = lines.find((row) => row.id === lineId);
-    if (!line) throw new NotFoundException(`No line ${lineId} on this order`);
-    return line;
-  }
-
-  private async trackedVariants(
-    tx: Tx,
-    organizationId: string,
-    variantIds: string[],
-  ): Promise<Set<string>> {
-    if (variantIds.length === 0) return new Set();
-
-    const rows = await tx
-      .select({ id: productVariants.id })
-      .from(productVariants)
-      .where(
-        and(
-          eq(productVariants.organizationId, organizationId),
-          inArray(productVariants.id, variantIds),
-          eq(productVariants.tracksLots, true),
-        ),
-      );
-
-    return new Set(rows.map((row) => row.id));
   }
 }

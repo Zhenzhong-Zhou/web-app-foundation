@@ -2563,8 +2563,8 @@ together — several lines in one box, one date, one tracking number — so a
 `shipments` row is the header (order, source, carrier, tracking, note, who),
 and what it carried is the `shipment` movements that reference it, one per
 lot per line. The ledger stays the single record of stock leaving (ADR-023);
-the shipment is only what those movements hang from. Immutable, so no
-`updated_at`.
+the shipment is only what those movements hang from. Immutable apart from a
+void (below), so no `updated_at`.
 
 **Decision — all or nothing, in one transaction.** If any line cannot be
 covered, nothing moves and nothing is recorded as sent. Half a box recorded
@@ -2599,6 +2599,15 @@ additive: a printable packing slip, carrier integration, a
 minimum-remaining-shelf-life rule per customer, idempotency keys on the ship
 endpoint, reservations, a samples screen for the existing `sample` reason,
 and a returns flow for the existing `return` reason.
+
+**Amendment (v0.3) — voiding a shipment recorded too early.** A shipment 
+can be voided while its order is still confirmed and nothing from it 
+has come back. Nothing is deleted: each shipment movement gets an adjustment 
+back into the bin it left, referencing the same shipment and carrying the reason; 
+the lines' fulfilled quantities drop, which returns the order's holds; 
+and the shipment is marked voided and kept. Lot trace and returns ignore 
+voided shipments, because nothing left. A shipment that has had anything 
+returned did leave, and is corrected with a return instead.
 
 ---
 

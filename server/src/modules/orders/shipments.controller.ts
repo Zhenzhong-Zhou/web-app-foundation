@@ -16,6 +16,7 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { PreviewShipmentDto, ShipOrderDto } from './dto/ship-order.dto';
+import { VoidShipmentDto } from './dto/void-shipment.dto';
 import { ShipmentsService } from './shipments.service';
 
 /**
@@ -80,5 +81,28 @@ export class ShipmentsController {
     @CurrentUser() user: RequestContext,
   ) {
     return { shipment: await this.shipments.ship(id, dto, user.userId) };
+  }
+
+  /**
+   * Undoes a shipment that was recorded before the box left (ADR-041).
+   * orders.ship, because it is the same act run backwards by the same
+   * person — the one who clicked Ship too early. Audited under the order, so
+   * its History shows the shipment and its void side by side.
+   */
+  @Post(':shipmentId/void')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.ORDERS_SHIP)
+  @Audited({
+    action: AUDIT_ACTIONS.ORDER_SHIPMENT_VOIDED,
+    resourceType: 'order',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async void(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('shipmentId', ParseUUIDPipe) shipmentId: string,
+    @Body() dto: VoidShipmentDto,
+    @CurrentUser() user: RequestContext,
+  ): Promise<void> {
+    await this.shipments.void(id, shipmentId, dto, user.userId);
   }
 }

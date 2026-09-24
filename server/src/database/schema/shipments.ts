@@ -1,4 +1,12 @@
-import { index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import {
+  check,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { primaryKey } from './columns';
 import { locations } from './locations';
@@ -20,8 +28,12 @@ import { users } from './users';
  * record of stock leaving (ADR-023) and a recall — which customers received
  * lot X — reads straight from it.
  *
- * Immutable, like a movement: nothing edits a shipment once it has gone, so
- * there is created_at and no updated_at, and no trigger to maintain.
+ * Immutable, like a movement, with one exception: a shipment recorded before
+ * the box actually left can be voided (ADR-041). Voiding writes the three
+ * void columns once and never deletes the row — the shipment, its packing
+ * slip and its movements stay, and reversing movements reference it. There is
+ * still no updated_at: the void columns are the only change a shipment ever
+ * sees, and they say when it happened themselves.
  */
 export const shipments = pgTable(
   'shipments',
@@ -53,9 +65,27 @@ export const shipments = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+
+    /**
+     * Set together when a shipment recorded too early is voided, and never
+     * cleared. Null on every shipment that stands.
+     */
+    voidedAt: timestamp('voided_at', { withTimezone: true }),
+    voidedBy: uuid('voided_by').references(() => users.id, {
+      onDelete: 'restrict',
+    }),
+    /** Why: the first thing anyone reading the order afterwards will ask. */
+    voidReason: text('void_reason'),
   },
   (t) => [
     // An order's shipments are read together, newest first, on its page.
     index('shipments_org_order_idx').on(t.organizationId, t.orderId),
+
+    // All three or none: a void with no reason, or a reason with no void,
+    // is a half-written record that no screen can explain.
+    check(
+      'shipments_void_complete_check',
+      sql`(${t.voidedAt} is null) = (${t.voidedBy} is null) and (${t.voidedAt} is null) = (${t.voidReason} is null)`,
+    ),
   ],
 );
