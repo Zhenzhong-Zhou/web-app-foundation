@@ -1,6 +1,15 @@
-import { Breadcrumbs, Chip, Link, Stack, Typography } from '@mui/material';
+import ArrowBack from '@mui/icons-material/ArrowBack';
+import {
+  Breadcrumbs,
+  Chip,
+  IconButton,
+  Link,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { type ReactNode, useEffect } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
 interface Crumb {
   label: string;
@@ -16,10 +25,16 @@ interface Crumb {
  * to appear. The arrow is dropped: breadcrumbs read as a path, and an arrow
  * inside one implies going back rather than up.
  *
- * Which is the distinction this exists to keep. Back is the browser's job and
- * duplicating it is noise. Up is structural, and the two genuinely differ here
- * — duplicating an order lands you on the new draft, so browser-back returns
- * to the original while this returns to the list.
+ * Back and up are different, and a detail page offers both. The trail is
+ * up: where this page sits, whatever led here. The arrow beside the title is
+ * back: where you actually were. They genuinely differ — arriving at a lot
+ * from a run, the trail leads to the lot search, while back returns to the
+ * run.
+ *
+ * Back was first left to the browser, as duplication. Using the app showed
+ * otherwise: in a tool that looks like a desktop program, the browser's
+ * button is easy to forget, and reaching for the trail instead lands
+ * somewhere you never were.
  *
  * The current page appears last and is deliberately not a link. A link to
  * where you already are is a control that does nothing.
@@ -42,6 +57,26 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   const section = crumbs[0]?.label ?? 'Foundation';
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  /**
+   * Back through this app's own history when there is some; up to the
+   * nearest ancestor when there is not. The router gives the first entry of a
+   * session the key 'default' — a page opened in a new tab or reloaded — and
+   * going back from there would leave the app, to a blank tab or another
+   * site. Up is the next best answer to "take me back".
+   */
+  function goBack() {
+    if (location.key !== 'default') {
+      void navigate(-1);
+      return;
+    }
+
+    const parent = crumbs.at(-1);
+    if (parent) void navigate(parent.to);
+  }
 
   /**
    * The tab, and therefore the browser's own history and any bookmark. Without
@@ -106,6 +141,21 @@ export function PageHeader({
           spacing={1.5}
           sx={{ alignItems: 'center', flex: '1 1 280px', minWidth: 0 }}
         >
+          {/* Detail pages only: a top-level page is reached from the
+              navigation, and has nowhere to go up to. */}
+          {crumbs.length > 0 && (
+            <Tooltip title="Back">
+              <IconButton
+                aria-label="Back"
+                size="small"
+                onClick={goBack}
+                sx={{ ml: -1 }}
+              >
+                <ArrowBack fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+
           <Typography
             variant="h5"
             component="h1"
