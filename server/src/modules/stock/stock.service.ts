@@ -167,6 +167,13 @@ export class StockService {
   async record(input: RecordMovementInput, actorId: string) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       /**
+       * The shape first, then the quantity. A movement whose direction
+       * contradicts its reason is malformed, and must be refused as such
+       * (400) before anything asks whether there is enough to take (409).
+       */
+      this.resolveDirection(input);
+
+      /**
        * A hand-out or a one-off shipment has no order, so it may take only
        * what nobody holds (ADR-045). Orders check their own holds when they
        * ship; transfers and corrections record what happened and are not
