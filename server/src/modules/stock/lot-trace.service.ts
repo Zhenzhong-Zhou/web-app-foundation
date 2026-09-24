@@ -68,6 +68,46 @@ export class LotTraceService {
     });
   }
 
+  /**
+   * Lots whose code starts with what was typed, across every product. A
+   * recall usually arrives as a code read off a label, with no product
+   * attached, and the same code can exist for two products — so every match
+   * is returned with its SKU rather than guessing.
+   *
+   * Prefix rather than anywhere-in: "FOC-26" should find "FOC-2609-01", and
+   * a match in the middle of a code is almost always noise. % and _ are
+   * escaped so they match themselves.
+   */
+  async search(code: string) {
+    const pattern = `${code.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const rows = (
+        await tx.execute(sql`
+          select l.id, l.code, l.expires_at, pv.sku
+          from lots l
+          join product_variants pv on pv.id = l.variant_id
+          where l.organization_id = ${organizationId}::uuid
+            and l.code ilike ${pattern}
+          order by l.code, pv.sku
+          limit 20
+        `)
+      ).rows as {
+        id: string;
+        code: string;
+        expires_at: Date | null;
+        sku: string;
+      }[];
+
+      return rows.map((row) => ({
+        id: row.id,
+        code: row.code,
+        expiresAt: row.expires_at,
+        sku: row.sku,
+      }));
+    });
+  }
+
   private async header(tx: Tx, organizationId: string, lotId: string) {
     const [row] = (
       await tx.execute(sql`

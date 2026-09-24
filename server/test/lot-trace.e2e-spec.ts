@@ -310,6 +310,20 @@ describe('Lot trace (e2e)', () => {
     ]);
   });
 
+  // A recall arrives as a code off a label; the start of it is enough.
+  it('finds a lot by the start of its code', async () => {
+    const alpha = await registerOrg('alpha');
+    await story(alpha);
+
+    const found = body<{ code: string; sku: string }[]>(
+      await alpha.agent.get('/v1/stock/lots/search?code=foc').expect(200),
+    );
+
+    expect(found).toEqual([
+      expect.objectContaining({ code: 'FOC-1', sku: 'FOCUS' }),
+    ]);
+  });
+
   it('does not trace another organization lot', async () => {
     const alpha = await registerOrg('alpha');
     const beta = await registerOrg('beta');
