@@ -112,6 +112,21 @@ export const PackingSlipPage = lazyNamed(
   'PackingSlipPage',
 );
 
+export const InvoicesPage = lazyNamed(
+  () => import('./invoices/invoices-page'),
+  'InvoicesPage',
+);
+
+export const InvoicePage = lazyNamed(
+  () => import('./invoices/invoice-page'),
+  'InvoicePage',
+);
+
+export const CreditNotePage = lazyNamed(
+  () => import('./invoices/credit-note-page'),
+  'CreditNotePage',
+);
+
 export const ProductionOrdersPage = lazyNamed(
   () => import('./production/production-orders-page'),
   'ProductionOrdersPage',

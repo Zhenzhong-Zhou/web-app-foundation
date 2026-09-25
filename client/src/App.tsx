@@ -20,7 +20,10 @@ import {
   AccountPage,
   AuditPage,
   CreateOrderPage,
+  CreditNotePage,
   InventoryPage,
+  InvoicePage,
+  InvoicesPage,
   LicencesPage,
   LocationsPage,
   LotSearchPage,
@@ -210,6 +213,9 @@ export default function App() {
           path="/orders/:id/shipments/:shipmentId/slip"
           element={split(PackingSlipPage)}
         />
+        <Route path="/invoices" element={split(InvoicesPage)} />
+        <Route path="/invoices/:id" element={split(InvoicePage)} />
+        <Route path="/credit-notes/:id" element={split(CreditNotePage)} />
         <Route path="/production" element={split(ProductionOrdersPage)} />
         <Route
           path="/production/:id"

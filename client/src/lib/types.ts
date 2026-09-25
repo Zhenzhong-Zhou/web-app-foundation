@@ -242,6 +242,149 @@ export interface OrganizationProfile {
   address: OrganizationAddress | null;
 }
 
+export type InvoiceStatus = 'draft' | 'issued' | 'voided';
+
+/** A row in the invoice list. The total is null until issued. */
+export interface InvoiceSummary {
+  id: string;
+  number: string | null;
+  status: InvoiceStatus;
+  orderId: string;
+  shipmentId: string;
+  partnerId: string;
+  partnerName: string;
+  currency: string;
+  invoiceDate: string | null;
+  dueDate: string | null;
+  total: string | null;
+  createdAt: string;
+}
+
+export interface InvoicePage {
+  entries: InvoiceSummary[];
+  nextCursor: string | null;
+}
+
+export interface InvoiceLine {
+  id: string;
+  orderLineId: string;
+  variantId: string;
+  sku: string;
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  taxCodeId: string | null;
+  /** The live code name on a draft; the copy made at issue after that. */
+  taxCodeName: string | null;
+  /** Stored at issue; null on a draft, whose figures are in `preview`. */
+  netAmount: string | null;
+}
+
+/** One tax line: summed per component and rounded once (ADR-046). */
+export interface InvoiceTax {
+  name: string;
+  rate: string;
+  taxableAmount: string;
+  amount: string;
+}
+
+/** A draft's figures, computed the way issuing will store them. */
+export interface InvoiceAmounts {
+  lines: { id: string; netAmount: string }[];
+  taxes: InvoiceTax[];
+  subtotal: string;
+  taxTotal: string;
+  total: string;
+}
+
+export interface CreditNoteSummary {
+  id: string;
+  number: string;
+  creditDate: string;
+  reason: string;
+  isVoid: boolean;
+  total: string;
+}
+
+/** Who issued a document and who it is addressed to, as copied at issue. */
+export interface DocumentParties {
+  sellerName: string | null;
+  sellerTaxNumber: string | null;
+  sellerLine1: string | null;
+  sellerLine2: string | null;
+  sellerCity: string | null;
+  sellerRegion: string | null;
+  sellerPostalCode: string | null;
+  sellerCountry: string | null;
+  billToName: string | null;
+  billToLine1: string | null;
+  billToLine2: string | null;
+  billToCity: string | null;
+  billToRegion: string | null;
+  billToPostalCode: string | null;
+  billToCountry: string | null;
+}
+
+export interface InvoiceDetail extends DocumentParties {
+  id: string;
+  number: string | null;
+  status: InvoiceStatus;
+  orderId: string;
+  orderReference: string | null;
+  shipmentId: string;
+  partnerId: string;
+  partnerName: string;
+  currency: string;
+  invoiceDate: string | null;
+  dueDate: string | null;
+  note: string | null;
+  subtotal: string | null;
+  taxTotal: string | null;
+  total: string | null;
+  shipToLabel: string | null;
+  shipToLine1: string | null;
+  shipToLine2: string | null;
+  shipToCity: string | null;
+  shipToRegion: string | null;
+  shipToPostalCode: string | null;
+  shipToCountry: string | null;
+  issuedAt: string | null;
+  voidedAt: string | null;
+  voidReason: string | null;
+  lines: InvoiceLine[];
+  /** Stored tax lines once issued; null on a draft. */
+  taxes: InvoiceTax[] | null;
+  /** A draft's figures; null once issued. */
+  preview: InvoiceAmounts | null;
+  creditNotes: CreditNoteSummary[];
+}
+
+export interface CreditNoteDetail extends DocumentParties {
+  id: string;
+  number: string;
+  invoiceId: string;
+  invoiceNumber: string | null;
+  invoiceDate: string | null;
+  currency: string;
+  creditDate: string;
+  reason: string;
+  isVoid: boolean;
+  subtotal: string;
+  taxTotal: string;
+  total: string;
+  lines: {
+    id: string;
+    invoiceLineId: string;
+    sku: string;
+    description: string;
+    quantity: string;
+    unitPrice: string;
+    taxCodeName: string | null;
+    netAmount: string;
+  }[];
+  taxes: InvoiceTax[];
+}
+
 export interface Bom {
   id: string;
   outputVariantId: string;
