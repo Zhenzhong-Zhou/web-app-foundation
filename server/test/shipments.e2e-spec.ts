@@ -181,8 +181,18 @@ describe('Shipments (e2e)', () => {
           partnerId: partner.id,
           direction: 'sale',
           lines: [
-            { variantId: focus, quantityOrdered: lines.focus },
-            { variantId: bottle, quantityOrdered: lines.bottle },
+            {
+              variantId: focus,
+              quantityOrdered: lines.focus,
+              unitPrice: '10',
+              currency: 'CAD',
+            },
+            {
+              variantId: bottle,
+              quantityOrdered: lines.bottle,
+              unitPrice: '10',
+              currency: 'CAD',
+            },
           ],
         })
         .expect(201),
@@ -303,7 +313,14 @@ describe('Shipments (e2e)', () => {
           .send({
             partnerId: partner.id,
             direction: 'sale',
-            lines: [{ variantId: bolts, quantityOrdered: '12' }],
+            lines: [
+              {
+                variantId: bolts,
+                quantityOrdered: '12',
+                unitPrice: '10',
+                currency: 'CAD',
+              },
+            ],
           })
           .expect(201),
       ).order;

@@ -127,7 +127,14 @@ describe('Reservations (e2e)', () => {
           .send({
             partnerId: partner,
             direction: 'sale',
-            lines: [{ variantId: focus, quantityOrdered: quantity }],
+            lines: [
+              {
+                variantId: focus,
+                quantityOrdered: quantity,
+                unitPrice: '10',
+                currency: 'CAD',
+              },
+            ],
           })
           .expect(201),
       ).order;
@@ -196,7 +203,14 @@ describe('Reservations (e2e)', () => {
           .send({
             partnerId: partner,
             direction: 'sale',
-            lines: [{ variantId: s.focus, quantityOrdered: '10' }],
+            lines: [
+              {
+                variantId: s.focus,
+                quantityOrdered: '10',
+                unitPrice: '10',
+                currency: 'CAD',
+              },
+            ],
           })
           .expect(201),
       ).order;

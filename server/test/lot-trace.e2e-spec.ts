@@ -202,7 +202,14 @@ describe('Lot trace (e2e)', () => {
           partnerId: customer,
           direction: 'sale',
           reference: 'SO-1',
-          lines: [{ variantId: focus, quantityOrdered: '30' }],
+          lines: [
+            {
+              variantId: focus,
+              quantityOrdered: '30',
+              unitPrice: '10',
+              currency: 'CAD',
+            },
+          ],
         }),
       )
     ).order;

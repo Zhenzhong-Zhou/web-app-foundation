@@ -169,8 +169,18 @@ describe('Returns (e2e)', () => {
           partnerId: partner,
           direction,
           lines: [
-            { variantId: focus, quantityOrdered: '25' },
-            { variantId: scoop, quantityOrdered: '10' },
+            {
+              variantId: focus,
+              quantityOrdered: '25',
+              unitPrice: '10',
+              currency: 'CAD',
+            },
+            {
+              variantId: scoop,
+              quantityOrdered: '10',
+              unitPrice: '10',
+              currency: 'CAD',
+            },
           ],
         })
         .expect(201),
