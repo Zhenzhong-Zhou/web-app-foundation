@@ -7,6 +7,8 @@ import {
 } from '../src/database/database.module';
 import {
   ACCOUNT_EVENT_ACTIONS,
+  DOCUMENT_TYPES,
+  INVOICE_STATUSES,
   MOVEMENT_REASONS,
   ORDER_DIRECTIONS,
   ORDER_STATUSES,
@@ -82,6 +84,8 @@ describe('schema invariants', () => {
     ['orders_status_check', ORDER_STATUSES],
     ['orders_direction_check', ORDER_DIRECTIONS],
     ['stock_movements_reason_check', MOVEMENT_REASONS],
+    ['document_sequences_document_type_check', DOCUMENT_TYPES],
+    ['invoices_status_check', INVOICE_STATUSES],
   ])('%s', (constraintName, values) => {
     it('accepts every value the code can write', async () => {
       const result = await db.execute(sql`

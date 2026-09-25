@@ -218,6 +218,13 @@
       "when": 1790290355477,
       "tag": "0030_shipment_void",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790364439215,
+      "tag": "0031_invoicing",
+      "breakpoints": true
     }
   ]
 }

@@ -48,6 +48,17 @@ export const addresses = pgTable(
       onDelete: 'cascade',
     }),
 
+    /**
+     * The organization's own address: registered office, printed on every
+     * invoice it issues (ADR-046). The owner ADR-028 anticipated. Always the
+     * row's own tenant — the check below — so it can never name another
+     * organization.
+     */
+    ownerOrganizationId: uuid('owner_organization_id').references(
+      () => organizations.id,
+      { onDelete: 'cascade' },
+    ),
+
     /** "Head office", "Dock 3". What someone would call it out loud. */
     label: text('label'),
 
@@ -94,7 +105,13 @@ export const addresses = pgTable(
     // nowhere else, or a row with two owners becomes writable.
     check(
       'addresses_one_owner_check',
-      sql`num_nonnulls(${t.partnerId}, ${t.locationId}) = 1`,
+      sql`num_nonnulls(${t.partnerId}, ${t.locationId}, ${t.ownerOrganizationId}) = 1`,
+    ),
+
+    // An organization's own address belongs to that organization.
+    check(
+      'addresses_owner_organization_is_tenant_check',
+      sql`${t.ownerOrganizationId} is null or ${t.ownerOrganizationId} = ${t.organizationId}`,
     ),
 
     check(
@@ -117,10 +134,15 @@ export const addresses = pgTable(
       .on(t.locationId)
       .where(sql`${t.isDefault} and ${t.locationId} is not null`),
 
+    uniqueIndex('addresses_owner_organization_default_key')
+      .on(t.ownerOrganizationId)
+      .where(sql`${t.isDefault} and ${t.ownerOrganizationId} is not null`),
+
     // One per owner column: only one is non-null per row, so a composite index
     // across them would never be used.
     index('addresses_partner_id_idx').on(t.partnerId),
     index('addresses_location_id_idx').on(t.locationId),
+    index('addresses_owner_organization_id_idx').on(t.ownerOrganizationId),
     index('addresses_organization_id_idx').on(t.organizationId),
   ],
 );
