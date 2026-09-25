@@ -1,7 +1,7 @@
 import type { APIRequestContext } from '@playwright/test';
 
 import { expect, test } from './fixtures';
-import { signInAs } from './support/api';
+import { created, daysFromNow, signInAs } from './support/api';
 
 /**
  * Shipping a sales order through the browser (ADR-041): one dialog for the
@@ -14,20 +14,6 @@ import { signInAs } from './support/api';
  * the lines with something to ship, and that the page reads the one stored
  * status as "Shipped" on a sale.
  */
-
-async function created<T>(
-  response: Awaited<ReturnType<APIRequestContext['post']>>,
-): Promise<T> {
-  expect(response.ok(), await response.text()).toBeTruthy();
-  return (await response.json()) as T;
-}
-
-/** A calendar day the way a date input sends one. */
-function daysFromNow(days: number): string {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
 
 async function seedSale(api: APIRequestContext) {
   const { partner } = await created<{ partner: { id: string } }>(
@@ -90,8 +76,18 @@ async function seedSale(api: APIRequestContext) {
         direction: 'sale',
         reference: 'E2E-SO-1',
         lines: [
-          { variantId: focus, quantityOrdered: '25' },
-          { variantId: scoop, quantityOrdered: '10' },
+          {
+            variantId: focus,
+            quantityOrdered: '25',
+            unitPrice: '10',
+            currency: 'CAD',
+          },
+          {
+            variantId: scoop,
+            quantityOrdered: '10',
+            unitPrice: '10',
+            currency: 'CAD',
+          },
         ],
       },
     }),

@@ -1,4 +1,9 @@
-import { type APIRequestContext, type Page, request } from '@playwright/test';
+import {
+  type APIRequestContext,
+  expect,
+  type Page,
+  request,
+} from '@playwright/test';
 
 /**
  * Setup goes through the API, never the UI.
@@ -197,6 +202,21 @@ export async function createLocation(
 export async function signInAs(page: Page, api: APIRequestContext) {
   await page.context().clearCookies();
   await page.context().addCookies((await api.storageState()).cookies);
+}
+
+/** A POST that must succeed; on failure the server's reply is the message. */
+export async function created<T>(
+  response: Awaited<ReturnType<APIRequestContext['post']>>,
+): Promise<T> {
+  expect(response.ok(), await response.text()).toBeTruthy();
+  return (await response.json()) as T;
+}
+
+/** A calendar day the way a date input sends one. */
+export function daysFromNow(days: number): string {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
 }
 
 /**

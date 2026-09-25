@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { signInAs } from './support/api';
+import { daysFromNow, signInAs } from './support/api';
 
 /**
  * The licence registry through the browser: reached from Products, added,
@@ -9,13 +9,6 @@ import { signInAs } from './support/api';
  *
  * freshOrg, because the table is asserted row by row.
  */
-
-/** A calendar day the way a date input sends one. */
-function daysFromNow(days: number): string {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
 
 test('adds a licence, corrects its number, and shows the correction in History', async ({
   page,
