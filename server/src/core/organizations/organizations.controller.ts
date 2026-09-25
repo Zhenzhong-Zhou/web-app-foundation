@@ -15,7 +15,7 @@ import { PERMISSIONS } from '../authorization/permissions';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
 import { OrganizationAddressDto } from './dto/organization-address.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
-import { OrganizationService } from './organizations.service';
+import { OrganizationsService } from './organizations.service';
 
 /**
  * The signed-in organization's own details: what it prints on the documents
@@ -26,7 +26,7 @@ import { OrganizationService } from './organizations.service';
  */
 @Controller({ path: 'organization', version: '1' })
 export class OrganizationController {
-  constructor(private readonly organization: OrganizationService) {}
+  constructor(private readonly organization: OrganizationsService) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.ORGANIZATIONS_VIEW)

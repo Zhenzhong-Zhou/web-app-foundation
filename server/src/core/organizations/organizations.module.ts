@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 
 import { OrganizationController } from './organizations.controller';
-import { OrganizationService } from './organizations.service';
+import { OrganizationsService } from './organizations.service';
 
 @Module({
   controllers: [OrganizationController],
-  providers: [OrganizationService],
+  providers: [OrganizationsService],
   // Exported for invoicing, which copies the seller onto an invoice at issue.
-  exports: [OrganizationService],
+  exports: [OrganizationsService],
 })
 export class OrganizationsModule {}

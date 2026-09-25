@@ -17,8 +17,8 @@ import { registeredAddress } from './registered-address';
  * id — the only row this service ever touches is that one.
  */
 @Injectable()
-export class OrganizationService {
-  private readonly logger = new Logger(OrganizationService.name);
+export class OrganizationsService {
+  private readonly logger = new Logger(OrganizationsService.name);
 
   constructor(private readonly tenantDb: TenantDb) {}
 
