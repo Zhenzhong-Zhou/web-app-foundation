@@ -1,6 +1,6 @@
 {
   "name": "web-app-foundation-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "NestJS API for the Web Application Foundation",
   "author": "Zhenzhong Zhou",
   "private": true,
