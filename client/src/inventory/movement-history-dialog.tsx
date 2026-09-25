@@ -21,6 +21,7 @@ import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import type { Movement, MovementPage, StockRow } from '../lib/types';
+import { describeMovement } from './describe-movement';
 
 const PAGE_SIZE = 25;
 
@@ -40,23 +41,6 @@ function queryFor(row: StockRow, before?: string): string {
   if (before) params.set('before', before);
 
   return params.toString();
-}
-
-/**
- * Direction is which location is set, not a column (ADR-023), so it is
- * reconstructed here the same way the service validates it.
- */
-function describe(movement: Movement): { sign: string; where: string } {
-  if (movement.fromLocationName && movement.toLocationName) {
-    return {
-      sign: '',
-      where: `${movement.fromLocationName} → ${movement.toLocationName}`,
-    };
-  }
-
-  return movement.toLocationName
-    ? { sign: '+', where: movement.toLocationName }
-    : { sign: '−', where: movement.fromLocationName ?? '—' };
 }
 
 /**
@@ -183,7 +167,7 @@ export function MovementHistoryDialog({
 
                 <TableBody>
                   {entries.map((movement) => {
-                    const { sign, where } = describe(movement);
+                    const { sign, where } = describeMovement(movement);
 
                     return (
                       <TableRow key={movement.id}>

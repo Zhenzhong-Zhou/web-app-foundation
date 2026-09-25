@@ -20,7 +20,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
-import { relativeTime } from '../lib/format';
+import { itemName, relativeTime } from '../lib/format';
 import type {
   Location,
   Movement,
@@ -29,6 +29,7 @@ import type {
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { leavesOf } from '../locations/tree';
+import { describeMovement } from './describe-movement';
 
 const PAGE_SIZE = 25;
 
@@ -48,23 +49,6 @@ function messageFor(caught: unknown): string {
   return caught instanceof ApiError
     ? caught.message
     : 'Could not reach the server.';
-}
-
-/**
- * Direction is which location is set, not a column (ADR-023), so it is
- * reconstructed here the same way the service validates it.
- */
-function describe(movement: Movement): { sign: string; where: string } {
-  if (movement.fromLocationName && movement.toLocationName) {
-    return {
-      sign: '',
-      where: `${movement.fromLocationName} → ${movement.toLocationName}`,
-    };
-  }
-
-  return movement.toLocationName
-    ? { sign: '+', where: movement.toLocationName }
-    : { sign: '−', where: movement.fromLocationName ?? '—' };
 }
 
 /**
@@ -204,7 +188,9 @@ export function MovementsPage() {
         <Autocomplete
           sx={{ flexGrow: 1 }}
           options={variants}
-          getOptionLabel={(option) => `${option.sku} — ${option.productName}`}
+          getOptionLabel={(option) =>
+            `${option.sku} — ${itemName(option.productName, option.variantName)}`
+          }
           value={variant}
           onChange={(_event, value) => applyFilter(() => setVariant(value))}
           renderInput={(params) => <TextField {...params} label="Item" />}
@@ -276,7 +262,7 @@ export function MovementsPage() {
 
               <TableBody>
                 {entries.map((movement) => {
-                  const { sign, where } = describe(movement);
+                  const { sign, where } = describeMovement(movement);
 
                   return (
                     <TableRow key={movement.id} hover>
