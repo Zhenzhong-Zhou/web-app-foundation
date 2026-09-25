@@ -156,6 +156,7 @@ export interface OrderLine {
   variantId: string;
   /** Snapshotted when the order was raised (ADR-023). */
   sku: string;
+  description: string;
   quantityOrdered: string;
   quantityFulfilled: string;
   /** Customer returns, beside fulfilled rather than subtracted (ADR-043). */

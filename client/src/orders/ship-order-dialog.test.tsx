@@ -12,6 +12,8 @@ function line(id: string, sku: string, outstanding: string): OrderLine {
     id,
     variantId: `variant-${id}`,
     sku,
+    // Named after the SKU so each line in a fixture stays distinct.
+    description: `Item ${sku}`,
     quantityOrdered: outstanding,
     quantityFulfilled: '0.0000',
     quantityOutstanding: outstanding,

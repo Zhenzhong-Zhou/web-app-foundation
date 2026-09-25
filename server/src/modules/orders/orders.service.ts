@@ -17,9 +17,11 @@ import {
   orderLines,
   orders,
   partners,
+  products,
   productVariants,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { itemName } from '../stock/item-name';
 import { StockService, type Tx } from '../stock/stock.service';
 import { CloseLineDto } from './dto/close-line.dto';
 import type { CreateOrderDto } from './dto/create-order.dto';
@@ -233,6 +235,8 @@ export class OrdersService {
           id: orderLines.id,
           variantId: orderLines.variantId,
           sku: orderLines.sku,
+          productName: products.name,
+          variantName: productVariants.name,
           quantityOrdered: orderLines.quantityOrdered,
           quantityFulfilled: orderLines.quantityFulfilled,
           quantityReturned: orderLines.quantityReturned,
@@ -288,6 +292,11 @@ export class OrdersService {
         `,
         })
         .from(orderLines)
+        .innerJoin(
+          productVariants,
+          eq(productVariants.id, orderLines.variantId),
+        )
+        .innerJoin(products, eq(products.id, productVariants.productId))
         .where(
           and(
             eq(orderLines.orderId, orderId),
@@ -296,7 +305,15 @@ export class OrdersService {
         )
         .orderBy(desc(orderLines.createdAt));
 
-      return { ...order, lines };
+      // Named from the catalogue beside the snapshot SKU, as the packing slip
+      // does: read by a person, not kept as a record.
+      return {
+        ...order,
+        lines: lines.map(({ productName, variantName, ...line }) => ({
+          ...line,
+          description: itemName(productName, variantName),
+        })),
+      };
     });
   }
 

@@ -23,7 +23,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
-import { formatDay } from '../lib/format';
+import { formatDay, itemName } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { Availability, Location, StockRow } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -274,9 +274,7 @@ export function InventoryPage() {
                       its own — "Focus (60ct)" — as the packing slip and the
                       variant picker already say it. */}
                     <TableCell>
-                      {row.variantName
-                        ? `${row.productName} (${row.variantName})`
-                        : row.productName}
+                      {itemName(row.productName, row.variantName)}
                     </TableCell>
                     <TableCell>{row.locationName}</TableCell>
                     <TableCell>

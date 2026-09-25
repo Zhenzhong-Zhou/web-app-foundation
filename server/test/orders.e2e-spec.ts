@@ -1351,11 +1351,20 @@ describe('Orders (e2e)', () => {
       const before = body<{
         partnerName: string;
         fullyFulfilled: boolean;
-        lines: { quantityOutstanding: string; isComplete: boolean }[];
+        lines: {
+          description: string;
+          quantityOutstanding: string;
+          isComplete: boolean;
+        }[];
       }>(await ctx.agent.get(`/v1/orders/${order.id}`).expect(200));
 
       // Joined, because a detail page headed by a UUID is unreadable.
       expect(before.partnerName).toBe('Acme Supplies');
+
+      // The product's name, since this variant has none of its own — the
+      // same rule the packing slip and inventory follow.
+      expect(before.lines[0].description).toBe('Widget');
+
       expect(before.lines[0].quantityOutstanding).toBe('40.0000');
       expect(before.lines[0].isComplete).toBe(false);
       expect(before.fullyFulfilled).toBe(false);

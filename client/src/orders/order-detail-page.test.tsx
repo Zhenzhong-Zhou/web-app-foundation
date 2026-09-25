@@ -33,6 +33,7 @@ function line(over: Partial<OrderLine> = {}): OrderLine {
     // Derived, so two lines in one fixture cannot silently share a SKU and
     // make every row query ambiguous.
     sku: `WIDGET-${id.slice(-1)}`,
+    description: `Widget ${id.slice(-1)}`,
     quantityOrdered: '40.0000',
     quantityFulfilled: '0.0000',
     quantityOutstanding: '40.0000',
@@ -92,6 +93,19 @@ async function rowFor(sku: string) {
 }
 
 describe('OrderDetailPage lines', () => {
+  /**
+   * The SKU means something to whoever set up the catalogue; the name is
+   * what a person packing or answering a customer reads. Both, side by side,
+   * as the packing slip shows them.
+   */
+  it('names the item beside its SKU', async () => {
+    serve(order({ lines: [line({ description: 'Focus (60ct)' })] }));
+    renderPage();
+
+    const row = within(await rowFor('WIDGET-1'));
+    expect(row.getByText('Focus (60ct)')).toBeInTheDocument();
+  });
+
   describe('on a draft', () => {
     it('offers add, edit and remove, but not receive or close', async () => {
       serve(

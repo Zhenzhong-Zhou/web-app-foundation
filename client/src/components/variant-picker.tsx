@@ -1,14 +1,11 @@
 import { Autocomplete, TextField } from '@mui/material';
 
+import { itemName } from '../lib/format';
 import type { VariantOption } from '../lib/types';
 
 /** "WIDGET-1 — Widget (Large)": the SKU first, because it is what people type. */
 function labelFor(option: VariantOption): string {
-  const name = option.variantName
-    ? `${option.productName} (${option.variantName})`
-    : option.productName;
-
-  return `${option.sku} — ${name}`;
+  return `${option.sku} — ${itemName(option.productName, option.variantName)}`;
 }
 
 /**

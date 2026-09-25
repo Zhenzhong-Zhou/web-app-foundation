@@ -398,6 +398,7 @@ export function OrderDetailPage() {
               <TableHead>
                 <TableRow>
                   <TableCell>SKU</TableCell>
+                  <TableCell>Item</TableCell>
                   {/* Right-aligned like the money: quantities are compared
                     down a column, and digits only line up on the right. */}
                   <TableCell align="right">Ordered</TableCell>
@@ -420,6 +421,7 @@ export function OrderDetailPage() {
                 {order.lines.map((line) => (
                   <TableRow key={line.id} hover>
                     <TableCell>{line.sku}</TableCell>
+                    <TableCell>{line.description}</TableCell>
                     <TableCell align="right">{line.quantityOrdered}</TableCell>
                     <TableCell align="right">
                       {line.quantityFulfilled}

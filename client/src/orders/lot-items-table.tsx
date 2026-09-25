@@ -27,6 +27,7 @@ export function LotItemsTable({ items }: { items: Shipment['items'] }) {
         <TableHead>
           <TableRow>
             <TableCell>SKU</TableCell>
+            <TableCell>Item</TableCell>
             <TableCell>Lot</TableCell>
             <TableCell>Expires</TableCell>
             <TableCell align="right">Quantity</TableCell>
@@ -36,6 +37,7 @@ export function LotItemsTable({ items }: { items: Shipment['items'] }) {
           {items.map((item) => (
             <TableRow key={`${item.sku}-${item.lotCode ?? 'none'}`}>
               <TableCell>{item.sku}</TableCell>
+              <TableCell>{item.description}</TableCell>
               <TableCell>
                 {item.lotCode ? (
                   <Link

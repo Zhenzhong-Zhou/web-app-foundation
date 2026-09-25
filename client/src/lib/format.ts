@@ -93,3 +93,11 @@ export function formatMoney(
     currency,
   }).format(Number(amount));
 }
+
+/** "Focus (60ct)", or "Focus" when the variant has no name — the server's itemName rule. */
+export function itemName(
+  productName: string,
+  variantName: string | null,
+): string {
+  return variantName ? `${productName} (${variantName})` : productName;
+}

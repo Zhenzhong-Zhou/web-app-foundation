@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
 import { TenantDb } from '../../database/tenant-db.service';
+import { itemName } from './item-name';
 import type { Tx } from './stock.service';
 
 /**
@@ -150,9 +151,7 @@ export class LotTraceService {
       expiresAt: row.expires_at,
       sku: row.sku,
       unitOfMeasure: row.unit_of_measure,
-      description: row.variant_name
-        ? `${row.product_name} (${row.variant_name})`
-        : row.product_name,
+      description: itemName(row.product_name, row.variant_name),
     };
   }
 

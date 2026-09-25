@@ -16,6 +16,7 @@ import {
   productVariants,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { itemName } from '../stock/item-name';
 import { StockService, type Tx } from '../stock/stock.service';
 import { trackedVariants } from '../stock/tracked-variants';
 import type { ReturnOrderDto } from './dto/return-order.dto';
@@ -530,9 +531,7 @@ export class ReturnsService {
     return rows.map((row) => ({
       returnId: row.return_id,
       sku: row.sku,
-      description: row.variant_name
-        ? `${row.product_name} (${row.variant_name})`
-        : row.product_name,
+      description: itemName(row.product_name, row.variant_name),
       unitOfMeasure: row.unit_of_measure,
       lotCode: row.lot_code,
       expiresAt: row.expires_at,

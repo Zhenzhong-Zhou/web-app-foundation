@@ -17,6 +17,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { assertTakeable } from '../stock/availability';
+import { itemName } from '../stock/item-name';
 import {
   allocateFefo,
   assertPickedTotal,
@@ -706,9 +707,7 @@ export class ShipmentsService {
     ).map((row) => ({
       shipmentId: row.shipment_id,
       sku: row.sku,
-      description: row.variant_name
-        ? `${row.product_name} (${row.variant_name})`
-        : row.product_name,
+      description: itemName(row.product_name, row.variant_name),
       unitOfMeasure: row.unit_of_measure,
       lotCode: row.lot_code,
       expiresAt: row.expires_at,
