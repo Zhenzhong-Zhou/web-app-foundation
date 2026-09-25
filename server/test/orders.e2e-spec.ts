@@ -507,6 +507,153 @@ describe('Orders (e2e)', () => {
         .send({ status: 'fulfilled' })
         .expect(204);
     });
+
+    /** A second item, for a sale with two lines. */
+    async function gadget(ctx: Awaited<ReturnType<typeof setup>>) {
+      return body<{ product: { variants: { id: string }[] } }>(
+        await ctx.agent
+          .post('/v1/products')
+          .send({ type: 'good', name: 'Gadget', variant: { sku: 'GADGET-1' } })
+          .expect(201),
+      ).product.variants[0].id;
+    }
+
+    async function draftSale(
+      ctx: Awaited<ReturnType<typeof setup>>,
+      lines: Record<string, string>[],
+      isSample = false,
+    ) {
+      return body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: ctx.partnerId,
+            direction: 'sale',
+            isSample,
+            lines,
+          })
+          .expect(201),
+      ).order;
+    }
+
+    async function statusOf(orderId: string) {
+      const [row] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, orderId));
+      return row.status;
+    }
+
+    /**
+     * An invoice cannot bill a line nobody priced (ADR-046). Read back, as
+     * the cancel refusal is: a check after the write would 409 and still
+     * leave the order confirmed.
+     */
+    it('refuses to confirm a sale with an unpriced line, and changes nothing', async () => {
+      const ctx = await setup('alpha');
+      const order = await draftSale(ctx, [
+        { variantId: ctx.variant.id, quantityOrdered: '5' },
+      ]);
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(409);
+
+      expect(await statusOf(order.id)).toBe('draft');
+    });
+
+    it('refuses to confirm a sale in two currencies', async () => {
+      const ctx = await setup('alpha');
+      const order = await draftSale(ctx, [
+        {
+          variantId: ctx.variant.id,
+          quantityOrdered: '5',
+          unitPrice: '10',
+          currency: 'CAD',
+        },
+        {
+          variantId: await gadget(ctx),
+          quantityOrdered: '5',
+          unitPrice: '10',
+          currency: 'USD',
+        },
+      ]);
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(409);
+
+      expect(await statusOf(order.id)).toBe('draft');
+    });
+
+    // Zero is a price: a replacement or free goods, recorded as free.
+    it('confirms a sale priced at zero', async () => {
+      const ctx = await setup('alpha');
+      const order = await draftSale(ctx, [
+        {
+          variantId: ctx.variant.id,
+          quantityOrdered: '5',
+          unitPrice: '0',
+          currency: 'CAD',
+        },
+      ]);
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+    });
+
+    // Samples ship and trace like sales, but are never invoiced (ADR-042).
+    it('confirms an unpriced sample', async () => {
+      const ctx = await setup('alpha');
+      const order = await draftSale(
+        ctx,
+        [{ variantId: ctx.variant.id, quantityOrdered: '2' }],
+        true,
+      );
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+    });
+
+    it('keeps a confirmed sale in one currency when a line is repriced', async () => {
+      const ctx = await setup('alpha');
+      const order = await draftSale(ctx, [
+        {
+          variantId: ctx.variant.id,
+          quantityOrdered: '5',
+          unitPrice: '10',
+          currency: 'CAD',
+        },
+        {
+          variantId: await gadget(ctx),
+          quantityOrdered: '5',
+          unitPrice: '10',
+          currency: 'CAD',
+        },
+      ]);
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
+        .send({ quantityOrdered: '5', unitPrice: '8', currency: 'USD' })
+        .expect(409);
+
+      // Same currency, new price: an ordinary amendment.
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
+        .send({ quantityOrdered: '5', unitPrice: '8', currency: 'CAD' })
+        .expect(204);
+    });
   });
 
   describe('order lines', () => {

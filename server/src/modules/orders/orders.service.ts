@@ -5,7 +5,18 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  lt,
+  ne,
+  sql,
+} from 'drizzle-orm';
 
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
@@ -547,6 +558,29 @@ export class OrdersService {
     }
 
     /**
+     * A sale is priced, in one currency, before it is confirmed (ADR-046).
+     * Confirming is the customer's commitment and the moment a price is
+     * agreed; an invoice cannot bill a line nobody priced, and it is paid in
+     * one currency. Samples are exempt: they ship, but are never invoiced.
+     *
+     * Read outside a transaction, like the cancel check below, so a line
+     * added between this read and the status write slips past. That is the
+     * race in #26, and it closes when update() moves into one transaction.
+     */
+    if (
+      input.status === 'confirmed' &&
+      existing.direction === 'sale' &&
+      !existing.isSample
+    ) {
+      const lines = await this.tenantDb.select(
+        orderLines,
+        eq(orderLines.orderId, orderId),
+      );
+
+      this.assertSaleIsInvoiceable(lines);
+    }
+
+    /**
      * Cancelling says the order never happened. Once goods have moved against
      * it, that is untrue — close it short instead, which keeps what shipped
      * or arrived on the record (ADR-023).
@@ -658,6 +692,38 @@ export class OrdersService {
       }
 
       this.assertNothingReceived(line, 'amended');
+
+      /**
+       * A confirmed sale stays in one currency (ADR-046). Repricing one line
+       * in another would undo what confirm checked and leave the sale with
+       * no invoice it could be billed on. A draft may be mixed while it is
+       * put together; confirm decides.
+       */
+      if (
+        order.status === 'confirmed' &&
+        order.direction === 'sale' &&
+        !order.isSample &&
+        input.currency !== undefined
+      ) {
+        const [other] = await tx
+          .select({ currency: orderLines.currency })
+          .from(orderLines)
+          .where(
+            and(
+              eq(orderLines.orderId, orderId),
+              ne(orderLines.id, lineId),
+              isNotNull(orderLines.currency),
+              ne(orderLines.currency, input.currency),
+            ),
+          )
+          .limit(1);
+
+        if (other) {
+          throw new ConflictException(
+            `This sale is in ${other.currency}, so an item on it cannot be priced in ${input.currency}`,
+          );
+        }
+      }
 
       await tx
         .update(orderLines)
@@ -1052,6 +1118,38 @@ export class OrdersService {
     if ((input.unitPrice === undefined) !== (input.currency === undefined)) {
       throw new BadRequestException(
         'A price needs a currency, and a currency needs a price',
+      );
+    }
+  }
+
+  /**
+   * What an invoice will need from a sale, checked when it is confirmed
+   * (ADR-046): every line priced, and one currency. Zero is a price, since
+   * a free line is real; null means nobody decided, and an invoice cannot
+   * bill an undecided amount.
+   */
+  private assertSaleIsInvoiceable(
+    lines: Pick<OrderLine, 'sku' | 'unitPrice' | 'currency'>[],
+  ): void {
+    const unpriced = lines.filter((line) => line.unitPrice === null);
+
+    if (unpriced.length > 0) {
+      const skus = unpriced.map((line) => line.sku).join(', ');
+
+      throw new ConflictException(
+        `Every item on a sale needs a price before it is confirmed. ${skus} ${
+          unpriced.length === 1 ? 'has' : 'have'
+        } none; zero is a price`,
+      );
+    }
+
+    const currencies = [...new Set(lines.map((line) => line.currency))].sort();
+
+    if (currencies.length > 1) {
+      throw new ConflictException(
+        `A sale is invoiced in one currency, and this one has ${currencies.join(
+          ' and ',
+        )}. Price every item in one of them`,
       );
     }
   }
