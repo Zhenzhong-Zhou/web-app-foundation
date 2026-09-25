@@ -4,16 +4,20 @@ import { and, eq } from 'drizzle-orm';
 
 import { AppModule } from '../app.module';
 import { AuthService } from '../core/auth/auth.service';
+import { OrganizationsService } from '../core/organizations/organizations.service';
 import { BomsService } from '../modules/boms/boms.service';
+import { InvoicesService } from '../modules/invoices/invoices.service';
 import { LocationsService } from '../modules/locations/locations.service';
 import { OrdersService } from '../modules/orders/orders.service';
 import { ReturnsService } from '../modules/orders/returns.service';
 import { ShipmentsService } from '../modules/orders/shipments.service';
+import { PartnerAddressesService } from '../modules/partners/partner-addresses.service';
 import { PartnersService } from '../modules/partners/partners.service';
 import { ProductLicencesService } from '../modules/product-licences/product-licences.service';
 import { ProductionOrdersService } from '../modules/production-orders/production-orders.service';
 import { ProductsService } from '../modules/products/products.service';
 import { StockService } from '../modules/stock/stock.service';
+import { TaxCodesService } from '../modules/tax-codes/tax-codes.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
 import { lots, memberships, productVariants, users } from './schema';
 import { runInTenantContext } from './tenant-context';
@@ -116,6 +120,10 @@ async function seedDemo(): Promise<void> {
     const shipments = app.get(ShipmentsService);
     const returns = app.get(ReturnsService);
     const stock = app.get(StockService);
+    const organization = app.get(OrganizationsService);
+    const partnerAddresses = app.get(PartnerAddressesService);
+    const taxCodes = app.get(TaxCodesService);
+    const invoices = app.get(InvoicesService);
 
     // Every service below resolves its tenant from here, the same way a
     // request does through the auth guard (ADR-003).
@@ -324,7 +332,7 @@ async function seedDemo(): Promise<void> {
 
         // Part of it, on purpose: 400 of 600 leaves the rest outstanding, so
         // the order page shows a partial shipment and the Ship button stays.
-        await shipments.ship(
+        const shipment = await shipments.ship(
           sale.id,
           {
             fromLocationId: blending.id,
@@ -332,6 +340,79 @@ async function seedDemo(): Promise<void> {
             trackingNumber: 'DEMO123456789CA',
             lines: [{ lineId: sale.lines[0].id, quantity: '400' }],
           },
+          actor,
+        );
+
+        /**
+         * That shipment, invoiced and issued (ADR-046): 400 × 24.99 is
+         * 9,996.00, and GST at 5% brings it to 10,495.80.
+         *
+         * What issuing needs comes first. The registered address and tax
+         * number are set only if empty, because with an email this seeds an
+         * existing organization, and its real details must survive. Tax
+         * codes are reused by name for the same reason; the two-tax code and
+         * Exempt are there so the Tax codes page has each shape to show.
+         */
+        const profile = await organization.get();
+
+        if (!profile.taxRegistrationNumber) {
+          await organization.update({
+            taxRegistrationNumber: '123456789 RT0001',
+          });
+        }
+
+        if (!profile.address) {
+          await organization.setAddress({
+            line1: '100 Demo Way',
+            city: 'Vancouver',
+            region: 'BC',
+            postalCode: 'V6B 1A1',
+            country: 'CA',
+          });
+        }
+
+        await partnerAddresses.create(customer.id, {
+          label: 'Accounts payable',
+          line1: '12 Harbour Rd',
+          city: 'Victoria',
+          region: 'BC',
+          postalCode: 'V8W 1A1',
+          country: 'CA',
+          isBilling: true,
+          isDefault: true,
+        });
+
+        const existingCodes = await taxCodes.list();
+
+        async function taxCode(
+          name: string,
+          components: { name: string; rate: string }[],
+        ) {
+          return (
+            existingCodes.find((code) => code.name === name) ??
+            (await taxCodes.create({ name, components }))
+          );
+        }
+
+        const gst = await taxCode('GST', [{ name: 'GST', rate: '5' }]);
+        await taxCode('GST + PST (BC)', [
+          { name: 'GST', rate: '5' },
+          { name: 'PST', rate: '7' },
+        ]);
+        await taxCode('Exempt', []);
+
+        const draft = await invoices.createDraft(
+          { shipmentId: shipment.id, taxCodeId: gst.id },
+          actor,
+        );
+
+        await invoices.update(draft.id, { dueDate: daysFromNow(30) });
+
+        // The UTC day, which is fine for demo data; the app itself sends
+        // the person's own calendar day.
+        const invoice = await invoices.issue(
+          draft.id,
+          { invoiceDate: daysFromNow(0) },
           actor,
         );
 
@@ -427,7 +508,7 @@ async function seedDemo(): Promise<void> {
         await orders.update(second.id, { status: 'confirmed' });
 
         logger.log(
-          `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s); SO-DEMO-1 shipped 400 of 600 with 5 returned; 4 retained, 2 sampled; SO-DEMO-2 confirmed for 500 and partly backordered`,
+          `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s); SO-DEMO-1 shipped 400 of 600, invoiced as ${invoice.number}, with 5 returned; 4 retained, 2 sampled; SO-DEMO-2 confirmed for 500 and partly backordered`,
         );
       },
     );
