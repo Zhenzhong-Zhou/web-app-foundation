@@ -54,6 +54,16 @@ const ACCOUNT_MENU = [
   { label: 'Account', to: '/account' },
   { label: 'Devices', to: '/account/sessions' },
   { label: 'Members', to: '/members' },
+  {
+    label: 'Organization',
+    to: '/settings/organization',
+    permission: 'organizations.view',
+  },
+  {
+    label: 'Tax codes',
+    to: '/settings/tax-codes',
+    permission: 'tax_codes.view',
+  },
   { label: 'Audit log', to: '/audit', permission: 'audit.view' },
 ];
 

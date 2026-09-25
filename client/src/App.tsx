@@ -29,6 +29,7 @@ import {
   MovementsPage,
   OrderDetailPage,
   OrdersPage,
+  OrganizationPage,
   PackingSlipPage,
   PartnerDetailPage,
   PartnersPage,
@@ -37,6 +38,7 @@ import {
   ProductionOrdersPage,
   ProductsPage,
   SessionsPage,
+  TaxCodesPage,
 } from './pages';
 
 /** Needs a session. Remembers where the caller was headed. */
@@ -186,6 +188,11 @@ export default function App() {
         <Route path="/account/sessions" element={split(SessionsPage)} />
         <Route path="/members" element={split(MembersPage)} />
         <Route path="/audit" element={split(AuditPage)} />
+        <Route
+          path="/settings/organization"
+          element={split(OrganizationPage)}
+        />
+        <Route path="/settings/tax-codes" element={split(TaxCodesPage)} />
         <Route path="/products" element={split(ProductsPage)} />
         <Route path="/products/:id" element={split(ProductDetailPage)} />
         <Route path="/licences" element={split(LicencesPage)} />

@@ -208,6 +208,40 @@ export interface ProductLicence {
   notes: string | null;
 }
 
+/** One tax a code charges (ADR-046). The rate is a percentage: "5.0000". */
+export interface TaxCodeComponent {
+  id: string;
+  name: string;
+  rate: string;
+}
+
+export interface TaxCode {
+  id: string;
+  name: string;
+  isActive: boolean;
+  /** Empty for an Exempt code, which charges nothing and says so. */
+  components: TaxCodeComponent[];
+}
+
+export interface OrganizationAddress {
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string;
+}
+
+/** What every invoice prints as the seller (ADR-046). */
+export interface OrganizationProfile {
+  id: string;
+  name: string;
+  slug: string;
+  taxRegistrationNumber: string | null;
+  /** Null until set; no invoice can be issued before it is. */
+  address: OrganizationAddress | null;
+}
+
 export interface Bom {
   id: string;
   outputVariantId: string;

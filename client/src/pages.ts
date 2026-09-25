@@ -47,6 +47,16 @@ export const LicencesPage = lazyNamed(
   'LicencesPage',
 );
 
+export const OrganizationPage = lazyNamed(
+  () => import('./settings/organization-page'),
+  'OrganizationPage',
+);
+
+export const TaxCodesPage = lazyNamed(
+  () => import('./settings/tax-codes-page'),
+  'TaxCodesPage',
+);
+
 export const InventoryPage = lazyNamed(
   () => import('./inventory/inventory-page'),
   'InventoryPage',
