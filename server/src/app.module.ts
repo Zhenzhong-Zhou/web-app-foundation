@@ -15,6 +15,7 @@ import { AuthModule } from './core/auth/auth.module';
 import { SessionGuard } from './core/auth/session.guard';
 import { AuthorizationModule } from './core/authorization/authorization.module';
 import { PermissionGuard } from './core/authorization/permission.guard';
+import { OrganizationsModule } from './core/organizations/organizations.module';
 import { UsersModule } from './core/users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
@@ -26,6 +27,7 @@ import { ProductLicencesModule } from './modules/product-licences/product-licenc
 import { ProductionOrdersModule } from './modules/production-orders/production-orders.module';
 import { ProductsModule } from './modules/products/products.module';
 import { StockModule } from './modules/stock/stock.module';
+import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
 
 @Module({
   imports: [
@@ -116,6 +118,8 @@ import { StockModule } from './modules/stock/stock.module';
     // Feature modules. These consume the above and add nothing to it.
     ProductsModule,
     ProductLicencesModule,
+    OrganizationsModule,
+    TaxCodesModule,
     BomsModule,
     ProductionOrdersModule,
     LocationsModule,

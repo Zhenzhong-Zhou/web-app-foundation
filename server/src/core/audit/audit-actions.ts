@@ -72,6 +72,13 @@ export const AUDIT_ACTIONS = {
   /** Carries the variance figures — see ADR-032. */
   PRODUCTION_ORDER_CLOSED: 'production_order.closed',
   PRODUCTION_ORDER_CANCELLED: 'production_order.cancelled',
+
+  ORGANIZATION_UPDATED: 'organization.updated',
+  /** The registered address every invoice prints (ADR-046). */
+  ORGANIZATION_ADDRESS_UPDATED: 'organization.address_updated',
+
+  TAX_CODE_CREATED: 'tax_code.created',
+  TAX_CODE_UPDATED: 'tax_code.updated',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

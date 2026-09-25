@@ -41,6 +41,13 @@ export const PERMISSIONS = {
   PRODUCT_LICENCES_CREATE: 'product_licences.create',
   PRODUCT_LICENCES_UPDATE: 'product_licences.update',
 
+  // Separate from organizations.*: what a customer is charged is set by the
+  // Owner, but everyone who drafts an invoice picks a code (ADR-046). No
+  // delete — an invoice line points at the code it used.
+  TAX_CODES_VIEW: 'tax_codes.view',
+  TAX_CODES_CREATE: 'tax_codes.create',
+  TAX_CODES_UPDATE: 'tax_codes.update',
+
   LOCATIONS_VIEW: 'locations.view',
   LOCATIONS_CREATE: 'locations.create',
   LOCATIONS_UPDATE: 'locations.update',
@@ -90,6 +97,9 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'product_licences.view': 'See product licences and registrations',
   'product_licences.create': 'Record a licence number',
   'product_licences.update': 'Correct a licence, or mark it withdrawn',
+  'tax_codes.view': 'See tax codes and their rates',
+  'tax_codes.create': 'Add a tax code',
+  'tax_codes.update': 'Change a tax code’s rates, or retire it',
   'locations.view': 'See warehouses, zones, and bins',
   'locations.create': 'Add a location',
   'locations.update': 'Edit, move, or retire a location',
@@ -166,6 +176,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.PRODUCT_LICENCES_VIEW,
     PERMISSIONS.PRODUCT_LICENCES_CREATE,
     PERMISSIONS.PRODUCT_LICENCES_UPDATE,
+    PERMISSIONS.TAX_CODES_VIEW,
     PERMISSIONS.BOMS_VIEW,
     PERMISSIONS.BOMS_CREATE,
     PERMISSIONS.BOMS_UPDATE,
@@ -196,6 +207,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     // Read-only means read: a Viewer sees the catalogue and changes nothing.
     PERMISSIONS.PRODUCTS_VIEW,
     PERMISSIONS.PRODUCT_LICENCES_VIEW,
+    PERMISSIONS.TAX_CODES_VIEW,
     PERMISSIONS.BOMS_VIEW,
     PERMISSIONS.LOCATIONS_VIEW,
     PERMISSIONS.STOCK_VIEW,

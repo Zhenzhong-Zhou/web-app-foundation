@@ -5,12 +5,14 @@ import {
   locations,
   lots,
   orders,
+  organizations,
   partners,
   productionOrders,
   productLicences,
   products,
   productVariants,
   stockMovements,
+  taxCodes,
 } from '../../database/schema';
 import type { TenantDb } from '../../database/tenant-db.service';
 
@@ -26,7 +28,7 @@ type Resolver = (db: TenantDb, id: string) => Promise<string | undefined>;
  * deleted still has a name in the log.
  *
  * One entry per resource type rather than a call in every service: there are
- * forty-odd audited routes and nine types, and a lookup by primary key is a
+ * forty-odd audited routes and about a dozen types, and a lookup by primary key is a
  * single indexed read. Every query goes through TenantDb, so a mis-keyed id
  * finds nothing rather than another tenant's row.
  *
@@ -91,6 +93,27 @@ const RESOLVERS: Record<string, Resolver> = {
     const [row] = await db.select(productLicences, eq(productLicences.id, id));
     return row && `${row.authority} ${row.number}`;
   },
+
+  tax_code: async (db, id) => {
+    const [row] = await db.select(taxCodes, eq(taxCodes.id, id));
+    return row?.name;
+  },
+
+  /**
+   * organizations is the tenant root and has no organization_id, so
+   * TenantDb.select cannot scope it. The transaction hands over the
+   * session's own id, and the id check means a mis-keyed row finds nothing.
+   */
+  organization: async (db, id) =>
+    db.transaction(async (tx, organizationId) => {
+      if (id !== organizationId) return undefined;
+
+      const [row] = await tx
+        .select({ name: organizations.name })
+        .from(organizations)
+        .where(eq(organizations.id, organizationId));
+      return row?.name;
+    }),
 
   lot: async (db, id) => {
     const [row] = await db.selectJoined(

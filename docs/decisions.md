@@ -2978,7 +2978,7 @@ line shipped or closed short. The stored status stays `fulfilled` (ADR-041).
 Closing locks nothing to do with money: a closed order's shipments can still
 be invoiced, since billing after the last box leaves is ordinary.
 
-**Decision — permissions follow the people.** `invoices.read`,
+**Decision — permissions follow the people.** `invoices.view`,
 `invoices.manage` (create, edit and delete drafts) and `invoices.issue`
 (issue and void). Issuing is the finance act — the one a customer and an
 auditor see — and is often held by fewer people than drafting, the reasoning
