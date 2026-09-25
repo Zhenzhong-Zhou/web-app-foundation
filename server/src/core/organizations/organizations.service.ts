@@ -1,12 +1,12 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
-import type { Transaction } from '../../database/database.module';
 import { addresses, organizations } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { recordPrevious } from '../audit/audit-context';
 import type { OrganizationAddressDto } from './dto/organization-address.dto';
 import type { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { registeredAddress } from './registered-address';
 
 /**
  * The current organization's own details (ADR-046).
@@ -36,7 +36,7 @@ export class OrganizationService {
 
       if (!organization) throw new NotFoundException('No such organization');
 
-      const address = await this.registeredAddress(tx, organizationId);
+      const address = await registeredAddress(tx, organizationId);
 
       return { ...organization, address: address ?? null };
     });
@@ -84,7 +84,7 @@ export class OrganizationService {
         country: input.country,
       };
 
-      const existing = await this.registeredAddress(tx, organizationId);
+      const existing = await registeredAddress(tx, organizationId);
 
       if (existing) {
         await tx
@@ -109,22 +109,5 @@ export class OrganizationService {
 
       this.logger.log(`Registered address set for ${organizationId}`);
     });
-  }
-
-  /** The default, active address the organization owns, if it has one. */
-  private async registeredAddress(tx: Transaction, organizationId: string) {
-    const [address] = await tx
-      .select()
-      .from(addresses)
-      .where(
-        and(
-          eq(addresses.organizationId, organizationId),
-          eq(addresses.ownerOrganizationId, organizationId),
-          eq(addresses.isDefault, true),
-          eq(addresses.isActive, true),
-        ),
-      );
-
-    return address;
   }
 }

@@ -8,13 +8,17 @@ import {
 import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
 
 import { recordPrevious } from '../../core/audit/audit-context';
+import { registeredAddress } from '../../core/organizations/registered-address';
 import type { Transaction } from '../../database/database.module';
-import { isUniqueViolation } from '../../database/errors';
+import { isCheckViolation, isUniqueViolation } from '../../database/errors';
 import {
+  addresses,
   invoiceLines,
   invoices,
+  invoiceTaxes,
   orderLines,
   orders,
+  organizations,
   partners,
   products,
   productVariants,
@@ -25,16 +29,19 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { itemName } from '../stock/item-name';
 import { TaxCodesService } from '../tax-codes/tax-codes.service';
+import { takeNumber } from './document-numbers';
 import type { CreateInvoiceDto } from './dto/create-invoice.dto';
+import type { IssueInvoiceDto } from './dto/issue-invoice.dto';
 import type { ListInvoicesDto } from './dto/list-invoices.dto';
 import type { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import type { UpdateInvoiceLineDto } from './dto/update-invoice-line.dto';
+import { computeAmounts } from './invoice-amounts';
 
 const DEFAULT_LIMIT = 50;
 
 /**
- * Invoice drafts (ADR-046): created from a shipment, edited, deleted.
- * Issuing and voiding follow in their own steps.
+ * Invoices (ADR-046): drafts created from a shipment, edited, deleted, and
+ * issued. Voiding follows in its own step.
  *
  * Every write locks the invoice row first. Issuing will take the same lock,
  * so a price changed while someone presses Issue either lands before the
@@ -139,12 +146,48 @@ export class InvoicesService {
         )
         .orderBy(asc(invoiceLines.sku));
 
-      return {
+      const base = {
         ...invoice.invoice,
         partnerName: invoice.partnerName,
         orderReference: invoice.orderReference,
         lines,
       };
+
+      /**
+       * A draft shows what issuing would store, computed by the same
+       * function, so the figures on screen are the figures that print. An
+       * issued invoice shows what was stored, and computes nothing.
+       */
+      if (invoice.invoice.status === 'draft') {
+        return {
+          ...base,
+          taxes: null,
+          preview: await computeAmounts(
+            tx,
+            organizationId,
+            invoiceId,
+            invoice.invoice.currency,
+          ),
+        };
+      }
+
+      const taxes = await tx
+        .select({
+          name: invoiceTaxes.name,
+          rate: invoiceTaxes.rate,
+          taxableAmount: invoiceTaxes.taxableAmount,
+          amount: invoiceTaxes.amount,
+        })
+        .from(invoiceTaxes)
+        .where(
+          and(
+            eq(invoiceTaxes.organizationId, organizationId),
+            eq(invoiceTaxes.invoiceId, invoiceId),
+          ),
+        )
+        .orderBy(asc(invoiceTaxes.name), asc(invoiceTaxes.rate));
+
+      return { ...base, taxes, preview: null };
     });
   }
 
@@ -393,6 +436,275 @@ export class InvoicesService {
     });
 
     this.logger.log(`Invoice draft ${invoiceId} deleted`);
+  }
+
+  /**
+   * Issues a draft: numbers it, stores its amounts, copies both parties,
+   * and freezes it (ADR-046). One transaction under the invoice's lock, so
+   * a failure anywhere — including after the number is taken — rolls back
+   * to the draft and gives the number back.
+   *
+   * Refusals come before any write, in order: the draft must exist (404)
+   * and still be a draft (409); the due date must not precede the invoice
+   * date (400); every line needs a tax code still in use, the organization
+   * a registered address, and the customer a billing address (409).
+   */
+  async issue(invoiceId: string, input: IssueInvoiceDto, actorId: string) {
+    try {
+      const issued = await this.tenantDb.transaction(
+        async (tx, organizationId) => {
+          const invoice = await this.lockDraft(tx, organizationId, invoiceId);
+
+          // Calendar days as YYYY-MM-DD compare correctly as strings.
+          if (invoice.dueDate && invoice.dueDate < input.invoiceDate) {
+            throw new BadRequestException(
+              `The due date (${invoice.dueDate}) is before the invoice date`,
+            );
+          }
+
+          await this.assertEveryLineTaxed(tx, organizationId, invoiceId);
+
+          const seller = await this.seller(tx, organizationId);
+          const billTo = await this.billTo(
+            tx,
+            organizationId,
+            invoice.partnerId,
+          );
+          const shipTo = await this.shipTo(tx, organizationId, invoice.orderId);
+
+          const amounts = await computeAmounts(
+            tx,
+            organizationId,
+            invoiceId,
+            invoice.currency,
+          );
+
+          /**
+           * Per line, from the one calculation. A handful of lines per
+           * shipment, so a statement each is simpler than an UPDATE ... FROM
+           * and cannot compute a figure the preview did not.
+           */
+          for (const line of amounts.lines) {
+            await tx
+              .update(invoiceLines)
+              .set({
+                netAmount: line.netAmount,
+                taxCodeName: sql`(select ${taxCodes.name} from ${taxCodes} where ${taxCodes.id} = ${invoiceLines.taxCodeId})`,
+              })
+              .where(
+                and(
+                  eq(invoiceLines.organizationId, organizationId),
+                  eq(invoiceLines.id, line.id),
+                ),
+              );
+          }
+
+          if (amounts.taxes.length > 0) {
+            await tx.insert(invoiceTaxes).values(
+              amounts.taxes.map((tax) => ({
+                organizationId,
+                invoiceId,
+                name: tax.name,
+                rate: tax.rate,
+                taxableAmount: tax.taxableAmount,
+                amount: tax.amount,
+              })),
+            );
+          }
+
+          // Last, so every refusal above leaves the series untouched.
+          const number = await takeNumber(tx, organizationId, 'invoice');
+
+          const [row] = await tx
+            .update(invoices)
+            .set({
+              status: 'issued',
+              number,
+              invoiceDate: input.invoiceDate,
+              issuedAt: new Date(),
+              issuedBy: actorId,
+              subtotal: amounts.subtotal,
+              taxTotal: amounts.taxTotal,
+              total: amounts.total,
+              ...seller,
+              ...billTo,
+              ...shipTo,
+            })
+            .where(
+              and(
+                eq(invoices.organizationId, organizationId),
+                eq(invoices.id, invoiceId),
+              ),
+            )
+            .returning();
+
+          return row;
+        },
+      );
+
+      this.logger.log(`Invoice ${issued.id} issued as ${issued.number}`);
+      return issued;
+    } catch (error) {
+      // Checked above; this is the database saying so if that ever drifts.
+      if (isCheckViolation(error, 'invoices_due_after_issue_check')) {
+        throw new BadRequestException(
+          'The due date is before the invoice date',
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * "No tax" is the Exempt code, never a blank (ADR-046), and a retired
+   * code is one the organization no longer charges.
+   */
+  private async assertEveryLineTaxed(
+    tx: Transaction,
+    organizationId: string,
+    invoiceId: string,
+  ) {
+    const lines = await tx
+      .select({
+        sku: invoiceLines.sku,
+        taxCodeId: invoiceLines.taxCodeId,
+        taxCodeName: taxCodes.name,
+        taxCodeActive: taxCodes.isActive,
+      })
+      .from(invoiceLines)
+      .leftJoin(taxCodes, eq(taxCodes.id, invoiceLines.taxCodeId))
+      .where(
+        and(
+          eq(invoiceLines.organizationId, organizationId),
+          eq(invoiceLines.invoiceId, invoiceId),
+        ),
+      )
+      .orderBy(asc(invoiceLines.sku));
+
+    const untaxed = lines.filter((line) => !line.taxCodeId);
+    if (untaxed.length > 0) {
+      throw new ConflictException(
+        `${untaxed.map((line) => line.sku).join(', ')} ${
+          untaxed.length === 1 ? 'has' : 'have'
+        } no tax code — choose one, or Exempt`,
+      );
+    }
+
+    const retired = lines.filter((line) => line.taxCodeActive === false);
+    if (retired.length > 0) {
+      const names = [...new Set(retired.map((line) => line.taxCodeName))];
+      throw new ConflictException(
+        `${names.join(', ')} ${
+          names.length === 1 ? 'is' : 'are'
+        } retired — choose a code still in use`,
+      );
+    }
+  }
+
+  /** Who issued it: the organization's name, tax number and address. */
+  private async seller(tx: Transaction, organizationId: string) {
+    const [organization] = await tx
+      .select({
+        name: organizations.name,
+        taxRegistrationNumber: organizations.taxRegistrationNumber,
+      })
+      .from(organizations)
+      .where(eq(organizations.id, organizationId));
+
+    const address = await registeredAddress(tx, organizationId);
+
+    if (!address) {
+      throw new ConflictException(
+        'Set the organization’s registered address before issuing — every invoice prints it',
+      );
+    }
+
+    return {
+      sellerName: organization.name,
+      sellerTaxNumber: organization.taxRegistrationNumber,
+      sellerLine1: address.line1,
+      sellerLine2: address.line2,
+      sellerCity: address.city,
+      sellerRegion: address.region,
+      sellerPostalCode: address.postalCode,
+      sellerCountry: address.country,
+    };
+  }
+
+  /**
+   * Who pays: the customer's default billing address, or else any active
+   * billing address, oldest first, so the choice is stable between calls.
+   */
+  private async billTo(
+    tx: Transaction,
+    organizationId: string,
+    partnerId: string,
+  ) {
+    const [row] = await tx
+      .select({ partnerName: partners.name, address: addresses })
+      .from(addresses)
+      .innerJoin(partners, eq(partners.id, addresses.partnerId))
+      .where(
+        and(
+          eq(addresses.organizationId, organizationId),
+          eq(addresses.partnerId, partnerId),
+          eq(addresses.isBilling, true),
+          eq(addresses.isActive, true),
+        ),
+      )
+      .orderBy(desc(addresses.isDefault), asc(addresses.createdAt))
+      .limit(1);
+
+    if (!row) {
+      const [partner] = await tx
+        .select({ name: partners.name })
+        .from(partners)
+        .where(
+          and(
+            eq(partners.organizationId, organizationId),
+            eq(partners.id, partnerId),
+          ),
+        );
+
+      throw new ConflictException(
+        `${partner?.name ?? 'This customer'} has no billing address — add one before issuing`,
+      );
+    }
+
+    return {
+      billToAddressId: row.address.id,
+      billToName: row.partnerName,
+      billToLine1: row.address.line1,
+      billToLine2: row.address.line2,
+      billToCity: row.address.city,
+      billToRegion: row.address.region,
+      billToPostalCode: row.address.postalCode,
+      billToCountry: row.address.country,
+    };
+  }
+
+  /** Where the goods went, copied from the order's own snapshot. */
+  private async shipTo(
+    tx: Transaction,
+    organizationId: string,
+    orderId: string,
+  ) {
+    const [order] = await tx
+      .select({
+        shipToLabel: orders.shipToLabel,
+        shipToLine1: orders.shipToLine1,
+        shipToLine2: orders.shipToLine2,
+        shipToCity: orders.shipToCity,
+        shipToRegion: orders.shipToRegion,
+        shipToPostalCode: orders.shipToPostalCode,
+        shipToCountry: orders.shipToCountry,
+      })
+      .from(orders)
+      .where(
+        and(eq(orders.organizationId, organizationId), eq(orders.id, orderId)),
+      );
+
+    return order;
   }
 
   /**

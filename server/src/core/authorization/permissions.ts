@@ -55,6 +55,9 @@ export const PERMISSIONS = {
   INVOICES_CREATE: 'invoices.create',
   INVOICES_UPDATE: 'invoices.update',
   INVOICES_DELETE: 'invoices.delete',
+  // The finance act: numbers the invoice and sends it. Owner-only until an
+  // organization widens it deliberately (ADR-046).
+  INVOICES_ISSUE: 'invoices.issue',
 
   LOCATIONS_VIEW: 'locations.view',
   LOCATIONS_CREATE: 'locations.create',
@@ -112,6 +115,7 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'invoices.create': 'Draft an invoice for a shipment',
   'invoices.update': 'Edit a draft invoice’s prices, tax and dates',
   'invoices.delete': 'Delete a draft invoice',
+  'invoices.issue': 'Issue an invoice, or void one',
   'locations.view': 'See warehouses, zones, and bins',
   'locations.create': 'Add a location',
   'locations.update': 'Edit, move, or retire a location',

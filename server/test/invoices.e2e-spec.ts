@@ -6,7 +6,12 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { auditLog, invoices, roles } from '../src/database/schema';
+import {
+  auditLog,
+  invoiceLines,
+  invoices,
+  roles,
+} from '../src/database/schema';
 import { MailService } from '../src/shared/mail/mail.service';
 import {
   createTestApp,
@@ -208,7 +213,13 @@ describe('Invoices (e2e)', () => {
         .expect(201),
     ).shipment;
 
-    return { orderId: order.id, shipmentId: shipment.id };
+    return {
+      orderId: order.id,
+      shipmentId: shipment.id,
+      partnerId: partner.id,
+      shelf,
+      capsulesLine: lineOf(capsules),
+    };
   }
 
   async function taxCode(org: Org, name = 'GST', rate = '5') {
@@ -540,6 +551,404 @@ describe('Invoices (e2e)', () => {
 
       await viewer.get(`/v1/invoices/${invoice.id}`).expect(200);
       await viewer.delete(`/v1/invoices/${invoice.id}`).expect(403);
+    });
+  });
+
+  describe('issuing', () => {
+    interface IssuedInvoice {
+      id: string;
+      status: string;
+      number: string | null;
+      invoiceDate: string | null;
+      subtotal: string | null;
+      taxTotal: string | null;
+      total: string | null;
+      sellerName: string | null;
+      sellerTaxNumber: string | null;
+      sellerLine1: string | null;
+      billToName: string | null;
+      billToLine1: string | null;
+      lines: {
+        sku: string;
+        netAmount: string | null;
+        taxCodeName: string | null;
+      }[];
+      taxes:
+        | {
+            name: string;
+            rate: string;
+            taxableAmount: string;
+            amount: string;
+          }[]
+        | null;
+      preview: {
+        subtotal: string;
+        taxTotal: string;
+        total: string;
+      } | null;
+    }
+
+    const TODAY = '2026-09-25';
+
+    /**
+     * Everything issuing needs: the organization's registered address and
+     * tax number, a billing address for the customer, a GST code, and a
+     * draft for the shipment carrying it — 6 × 12.50 and 5 × 12.50.
+     */
+    async function ready(org: Org) {
+      const s = await shipped(org);
+
+      await org.agent
+        .put('/v1/organization/address')
+        .send({
+          line1: '100 Main St',
+          city: 'Vancouver',
+          region: 'BC',
+          country: 'CA',
+        })
+        .expect(204);
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ taxRegistrationNumber: '123456789 RT0001' })
+        .expect(204);
+
+      await org.agent
+        .post(`/v1/partners/${s.partnerId}/addresses`)
+        .send({
+          line1: '9 Harbour Rd',
+          country: 'CA',
+          isBilling: true,
+          isDefault: true,
+        })
+        .expect(201);
+
+      const gst = await taxCode(org);
+      const invoice = await draft(org, s.shipmentId, gst);
+
+      return { ...s, gst, invoice };
+    }
+
+    function issue(org: Org, invoiceId: string, invoiceDate = TODAY) {
+      return org.agent
+        .post(`/v1/invoices/${invoiceId}/issue`)
+        .send({ invoiceDate });
+    }
+
+    async function readIssued(org: Org, invoiceId: string) {
+      return body<{ invoice: IssuedInvoice }>(
+        await org.agent.get(`/v1/invoices/${invoiceId}`).expect(200),
+      ).invoice;
+    }
+
+    it('numbers the invoice, stores its amounts and copies both parties', async () => {
+      const org = await registerOrg('alpha');
+      const r = await ready(org);
+
+      const issued = body<{ invoice: IssuedInvoice }>(
+        await issue(org, r.invoice.id).expect(200),
+      ).invoice;
+
+      expect(issued.status).toBe('issued');
+      expect(issued.number).toBe('INV-000001');
+      expect(issued.invoiceDate).toBe(TODAY);
+
+      /**
+       * 75.00 + 62.50 = 137.50, and GST at 5% is 6.875, rounded once at
+       * the invoice to 6.88. Stored, so these never recompute.
+       */
+      expect(issued.subtotal).toBe('137.5000');
+      expect(issued.taxTotal).toBe('6.8800');
+      expect(issued.total).toBe('144.3800');
+
+      expect(issued.sellerName).toBe('alpha Co');
+      expect(issued.sellerTaxNumber).toBe('123456789 RT0001');
+      expect(issued.sellerLine1).toBe('100 Main St');
+      expect(issued.billToName).toBe('Northside Pharmacy');
+      expect(issued.billToLine1).toBe('9 Harbour Rd');
+
+      const detail = await readIssued(org, r.invoice.id);
+      expect(
+        detail.lines.map((line) => [
+          line.sku,
+          line.netAmount,
+          line.taxCodeName,
+        ]),
+      ).toEqual([
+        ['FOCUS-60CT', '75.0000', 'GST'],
+        ['SCOOP', '62.5000', 'GST'],
+      ]);
+      expect(detail.taxes).toEqual([
+        {
+          name: 'GST',
+          rate: '5.0000',
+          taxableAmount: '137.5000',
+          amount: '6.8800',
+        },
+      ]);
+      expect(detail.preview).toBeNull();
+    });
+
+    // What the draft showed is what issuing stored: one calculation.
+    it('previews on the draft exactly what issuing stores', async () => {
+      const org = await registerOrg('alpha');
+      const r = await ready(org);
+
+      const before = await readIssued(org, r.invoice.id);
+      expect(before.preview).toEqual(
+        expect.objectContaining({
+          subtotal: '137.5000',
+          taxTotal: '6.8800',
+          total: '144.3800',
+        }),
+      );
+
+      const issued = body<{ invoice: IssuedInvoice }>(
+        await issue(org, r.invoice.id).expect(200),
+      ).invoice;
+
+      expect([issued.subtotal, issued.taxTotal, issued.total]).toEqual([
+        before.preview!.subtotal,
+        before.preview!.taxTotal,
+        before.preview!.total,
+      ]);
+    });
+
+    /**
+     * 0.30 and 0.10 at 5%. Per line that is 0.015 → 0.02 and 0.005 → 0.01,
+     * three cents; on the invoice it is 0.40 × 5% = 0.02. The invoice rule
+     * is the one that must win (ADR-046).
+     */
+    it('rounds tax once per invoice, not per line', async () => {
+      const org = await registerOrg('alpha');
+      const r = await ready(org);
+
+      for (const line of r.invoice.lines) {
+        await org.agent
+          .patch(`/v1/invoices/${r.invoice.id}/lines/${line.id}`)
+          .send({ unitPrice: line.sku === 'SCOOP' ? '0.02' : '0.05' })
+          .expect(204);
+      }
+
+      const issued = body<{ invoice: IssuedInvoice }>(
+        await issue(org, r.invoice.id).expect(200),
+      ).invoice;
+
+      expect(issued.subtotal).toBe('0.4000');
+      expect(issued.taxTotal).toBe('0.0200');
+    });
+
+    // Two codes that both charge GST print one GST line, not two.
+    it('sums a shared component across codes into one tax line', async () => {
+      const org = await registerOrg('alpha');
+      const r = await ready(org);
+
+      const gstPst = body<{ taxCode: { id: string } }>(
+        await org.agent
+          .post('/v1/tax-codes')
+          .send({
+            name: 'GST + PST',
+            components: [
+              { name: 'GST', rate: '5' },
+              { name: 'PST', rate: '7' },
+            ],
+          })
+          .expect(201),
+      ).taxCode.id;
+
+      const capsules = r.invoice.lines.find(
+        (line) => line.sku === 'FOCUS-60CT',
+      )!;
+      await org.agent
+        .patch(`/v1/invoices/${r.invoice.id}/lines/${capsules.id}`)
+        .send({ taxCodeId: gstPst })
+        .expect(204);
+
+      await issue(org, r.invoice.id).expect(200);
+
+      const detail = await readIssued(org, r.invoice.id);
+      expect(detail.taxes).toEqual([
+        {
+          name: 'GST',
+          rate: '5.0000',
+          taxableAmount: '137.5000',
+          amount: '6.8800',
+        },
+        {
+          name: 'PST',
+          rate: '7.0000',
+          taxableAmount: '75.0000',
+          amount: '5.2500',
+        },
+      ]);
+      expect(detail.taxTotal).toBe('12.1300');
+      expect(detail.total).toBe('149.6300');
+    });
+
+    /**
+     * Gapless: a refused issue takes no number, and each organization
+     * counts from one.
+     */
+    it('numbers in sequence, per organization, with no gap for a refusal', async () => {
+      const alpha = await registerOrg('alpha');
+      const first = await ready(alpha);
+      await issue(alpha, first.invoice.id).expect(200);
+
+      // The 4 capsules the first shipment left behind, drafted untaxed.
+      const second = body<{ shipment: { id: string } }>(
+        await alpha.agent
+          .post(`/v1/orders/${first.orderId}/shipments`)
+          .send({
+            fromLocationId: first.shelf,
+            lines: [{ lineId: first.capsulesLine, quantity: '4' }],
+          })
+          .expect(201),
+      ).shipment;
+      const untaxed = await draft(alpha, second.id);
+
+      await issue(alpha, untaxed.id).expect(409);
+
+      await alpha.agent
+        .patch(`/v1/invoices/${untaxed.id}`)
+        .send({ taxCodeId: first.gst })
+        .expect(204);
+
+      const issued = body<{ invoice: IssuedInvoice }>(
+        await issue(alpha, untaxed.id).expect(200),
+      ).invoice;
+      expect(issued.number).toBe('INV-000002');
+
+      const beta = await registerOrg('beta');
+      const theirs = await ready(beta);
+      const betaIssued = body<{ invoice: IssuedInvoice }>(
+        await issue(beta, theirs.invoice.id).expect(200),
+      ).invoice;
+      expect(betaIssued.number).toBe('INV-000001');
+    });
+
+    it('refuses a line with no tax code, and leaves the draft as it was', async () => {
+      const org = await registerOrg('alpha');
+      const r = await ready(org);
+      const untaxed = r.invoice.lines[0];
+
+      await db
+        .update(invoiceLines)
+        .set({ taxCodeId: null })
+        .where(eq(invoiceLines.id, untaxed.id));
+
+      await issue(org, r.invoice.id).expect(409);
+
+      const detail = await readIssued(org, r.invoice.id);
+      expect(detail.status).toBe('draft');
+      expect(detail.number).toBeNull();
+    });
+
+    it('refuses without the organization’s registered address', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+      await org.agent
+        .post(`/v1/partners/${s.partnerId}/addresses`)
+        .send({ line1: '9 Harbour Rd', country: 'CA', isBilling: true })
+        .expect(201);
+      const invoice = await draft(org, s.shipmentId, await taxCode(org));
+
+      await issue(org, invoice.id).expect(409);
+    });
+
+    it('refuses when the customer has no billing address', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+      await org.agent
+        .put('/v1/organization/address')
+        .send({ line1: '100 Main St', country: 'CA' })
+        .expect(204);
+      const invoice = await draft(org, s.shipmentId, await taxCode(org));
+
+      await issue(org, invoice.id).expect(409);
+    });
+
+    it('refuses a due date before the invoice date', async () => {
+      const org = await registerOrg('alpha');
+      const r = await ready(org);
+
+      await org.agent
+        .patch(`/v1/invoices/${r.invoice.id}`)
+        .send({ dueDate: '2026-09-01' })
+        .expect(204);
+
+      await issue(org, r.invoice.id, TODAY).expect(400);
+    });
+
+    // After issue, a mistake is a credit note and a new invoice, never an edit.
+    it('freezes the invoice once issued', async () => {
+      const org = await registerOrg('alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+
+      await org.agent
+        .patch(`/v1/invoices/${r.invoice.id}`)
+        .send({ note: 'Changed' })
+        .expect(409);
+      await org.agent
+        .patch(`/v1/invoices/${r.invoice.id}/lines/${r.invoice.lines[0].id}`)
+        .send({ unitPrice: '1' })
+        .expect(409);
+      await org.agent.delete(`/v1/invoices/${r.invoice.id}`).expect(409);
+      await issue(org, r.invoice.id).expect(409);
+    });
+
+    // A rate that changes by law changes what is charged from now on.
+    it('keeps an issued invoice’s tax when the code’s rate changes', async () => {
+      const org = await registerOrg('alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+
+      await org.agent
+        .patch(`/v1/tax-codes/${r.gst}`)
+        .send({ components: [{ name: 'GST', rate: '6' }] })
+        .expect(204);
+
+      const detail = await readIssued(org, r.invoice.id);
+      expect(detail.taxes![0].rate).toBe('5.0000');
+      expect(detail.total).toBe('144.3800');
+    });
+
+    /**
+     * Issuing is the finance act, and stays with the Owner by default
+     * (ADR-046). Admin drafts; neither Admin nor Viewer issues.
+     */
+    it('lets only the Owner issue', async () => {
+      const org = await registerOrg('alpha');
+      const r = await ready(org);
+
+      const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
+      const viewer = await addMember(org, 'viewer@alpha.example.com', 'Viewer');
+
+      await admin
+        .post(`/v1/invoices/${r.invoice.id}/issue`)
+        .send({ invoiceDate: TODAY })
+        .expect(403);
+      await viewer
+        .post(`/v1/invoices/${r.invoice.id}/issue`)
+        .send({ invoiceDate: TODAY })
+        .expect(403);
+
+      await issue(org, r.invoice.id).expect(200);
+    });
+
+    it('records who issued it and on what date', async () => {
+      const org = await registerOrg('alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+
+      const [entry] = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'invoice.issued'));
+
+      expect(entry.resourceId).toBe(r.invoice.id);
+      expect(entry.resourceLabel).toBe('Northside Pharmacy · INV-000001');
+      expect(entry.payload).toEqual({ invoiceDate: TODAY });
     });
   });
 });

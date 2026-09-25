@@ -85,6 +85,8 @@ export const AUDIT_ACTIONS = {
   INVOICE_LINE_UPDATED: 'invoice.line_updated',
   /** Drafts only; an issued invoice is voided, never deleted. */
   INVOICE_DELETED: 'invoice.deleted',
+  /** Numbered, totalled and frozen — the event a customer sees. */
+  INVOICE_ISSUED: 'invoice.issued',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

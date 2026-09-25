@@ -19,14 +19,15 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { IssueInvoiceDto } from './dto/issue-invoice.dto';
 import { ListInvoicesDto } from './dto/list-invoices.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { UpdateInvoiceLineDto } from './dto/update-invoice-line.dto';
 import { InvoicesService } from './invoices.service';
 
 /**
- * Invoices for shipments (ADR-046). This step covers drafts; issue and void
- * are added in the next two.
+ * Invoices for shipments (ADR-046): drafts, and issuing them. Voiding is
+ * added in the next step.
  */
 @Controller({ path: 'invoices', version: '1' })
 export class InvoicesController {
@@ -93,6 +94,30 @@ export class InvoicesController {
     @Body() dto: UpdateInvoiceLineDto,
   ): Promise<void> {
     await this.invoices.updateLine(id, lineId, dto);
+  }
+
+  /**
+   * Numbers the draft, stores its amounts and freezes it. A POST to an
+   * action rather than a PATCH of status, as ship and void are: issuing is
+   * an event with its own checks, not a field someone edits.
+   *
+   * 200 with the issued invoice, so the caller has its number at once.
+   */
+  @Post(':id/issue')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(PERMISSIONS.INVOICES_ISSUE)
+  @Audited({
+    action: AUDIT_ACTIONS.INVOICE_ISSUED,
+    resourceType: 'invoice',
+    resourceId: (_response, request) => request.params.id,
+    fields: ['invoiceDate'],
+  })
+  async issue(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: IssueInvoiceDto,
+    @CurrentUser() user: RequestContext,
+  ) {
+    return { invoice: await this.invoices.issue(id, dto, user.userId) };
   }
 
   /**
