@@ -127,6 +127,16 @@ export const CreditNotePage = lazyNamed(
   'CreditNotePage',
 );
 
+export const InvoicePrintPage = lazyNamed(
+  () => import('./invoices/invoice-print-page'),
+  'InvoicePrintPage',
+);
+
+export const CreditNotePrintPage = lazyNamed(
+  () => import('./invoices/credit-note-print-page'),
+  'CreditNotePrintPage',
+);
+
 export const ProductionOrdersPage = lazyNamed(
   () => import('./production/production-orders-page'),
   'ProductionOrdersPage',

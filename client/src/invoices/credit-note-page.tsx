@@ -1,5 +1,6 @@
 import {
   Alert,
+  Button,
   Link,
   Paper,
   Skeleton,
@@ -79,6 +80,15 @@ export function CreditNotePage() {
           label: note.isVoid ? 'Voids invoice' : 'Credit',
           color: 'default',
         }}
+        actions={
+          <Button
+            variant="outlined"
+            component={RouterLink}
+            to={`/credit-notes/${note.id}/print`}
+          >
+            Print
+          </Button>
+        }
       />
 
       <Alert severity="info">

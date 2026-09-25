@@ -171,6 +171,14 @@ export function InvoicePage() {
           <>
             <HistoryButton resourceId={invoice.id} />
 
+            <Button
+              variant="outlined"
+              component={RouterLink}
+              to={`/invoices/${invoice.id}/print`}
+            >
+              Print
+            </Button>
+
             {isDraft && has('invoices.delete') && (
               <Button
                 variant="text"
