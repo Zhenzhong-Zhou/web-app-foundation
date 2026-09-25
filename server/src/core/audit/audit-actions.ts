@@ -79,6 +79,12 @@ export const AUDIT_ACTIONS = {
 
   TAX_CODE_CREATED: 'tax_code.created',
   TAX_CODE_UPDATED: 'tax_code.updated',
+
+  INVOICE_CREATED: 'invoice.created',
+  INVOICE_UPDATED: 'invoice.updated',
+  INVOICE_LINE_UPDATED: 'invoice.line_updated',
+  /** Drafts only; an issued invoice is voided, never deleted. */
+  INVOICE_DELETED: 'invoice.deleted',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

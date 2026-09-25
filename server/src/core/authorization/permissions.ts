@@ -48,6 +48,14 @@ export const PERMISSIONS = {
   TAX_CODES_CREATE: 'tax_codes.create',
   TAX_CODES_UPDATE: 'tax_codes.update',
 
+  // Drafting is operational; issuing is the finance act and gets its own
+  // permission with issue itself (ADR-046). Delete is drafts only — an
+  // issued invoice is reversed by a credit note, never removed.
+  INVOICES_VIEW: 'invoices.view',
+  INVOICES_CREATE: 'invoices.create',
+  INVOICES_UPDATE: 'invoices.update',
+  INVOICES_DELETE: 'invoices.delete',
+
   LOCATIONS_VIEW: 'locations.view',
   LOCATIONS_CREATE: 'locations.create',
   LOCATIONS_UPDATE: 'locations.update',
@@ -100,6 +108,10 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'tax_codes.view': 'See tax codes and their rates',
   'tax_codes.create': 'Add a tax code',
   'tax_codes.update': 'Change a tax code’s rates, or retire it',
+  'invoices.view': 'See invoices',
+  'invoices.create': 'Draft an invoice for a shipment',
+  'invoices.update': 'Edit a draft invoice’s prices, tax and dates',
+  'invoices.delete': 'Delete a draft invoice',
   'locations.view': 'See warehouses, zones, and bins',
   'locations.create': 'Add a location',
   'locations.update': 'Edit, move, or retire a location',
@@ -177,6 +189,10 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.PRODUCT_LICENCES_CREATE,
     PERMISSIONS.PRODUCT_LICENCES_UPDATE,
     PERMISSIONS.TAX_CODES_VIEW,
+    PERMISSIONS.INVOICES_VIEW,
+    PERMISSIONS.INVOICES_CREATE,
+    PERMISSIONS.INVOICES_UPDATE,
+    PERMISSIONS.INVOICES_DELETE,
     PERMISSIONS.BOMS_VIEW,
     PERMISSIONS.BOMS_CREATE,
     PERMISSIONS.BOMS_UPDATE,
@@ -208,6 +224,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.PRODUCTS_VIEW,
     PERMISSIONS.PRODUCT_LICENCES_VIEW,
     PERMISSIONS.TAX_CODES_VIEW,
+    PERMISSIONS.INVOICES_VIEW,
     PERMISSIONS.BOMS_VIEW,
     PERMISSIONS.LOCATIONS_VIEW,
     PERMISSIONS.STOCK_VIEW,

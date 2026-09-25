@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import {
   boms,
+  invoices,
   locations,
   lots,
   orders,
@@ -97,6 +98,18 @@ const RESOLVERS: Record<string, Resolver> = {
   tax_code: async (db, id) => {
     const [row] = await db.select(taxCodes, eq(taxCodes.id, id));
     return row?.name;
+  },
+
+  // The customer and the number, or "draft" before it has one.
+  invoice: async (db, id) => {
+    const [row] = await db.selectJoined(
+      invoices,
+      partners,
+      eq(partners.id, invoices.partnerId),
+      { partnerName: partners.name, number: invoices.number },
+      eq(invoices.id, id),
+    );
+    return row && `${row.partnerName} · ${row.number ?? 'draft'}`;
   },
 
   /**

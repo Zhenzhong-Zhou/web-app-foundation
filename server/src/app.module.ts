@@ -20,6 +20,7 @@ import { UsersModule } from './core/users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { BomsModule } from './modules/boms/boms.module';
+import { InvoicesModule } from './modules/invoices/invoices.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PartnersModule } from './modules/partners/partners.module';
@@ -126,6 +127,7 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     StockModule,
     PartnersModule,
     OrdersModule,
+    InvoicesModule,
 
     // Infrastructure, not domain: a liveness probe, unversioned and public.
     HealthModule,

@@ -2979,11 +2979,12 @@ Closing locks nothing to do with money: a closed order's shipments can still
 be invoiced, since billing after the last box leaves is ordinary.
 
 **Decision — permissions follow the people.** `invoices.view`,
-`invoices.manage` (create, edit and delete drafts) and `invoices.issue`
-(issue and void). Issuing is the finance act — the one a customer and an
-auditor see — and is often held by fewer people than drafting, the reasoning
-that gave `orders.ship` and `orders.receive` their own permissions. Audited
-as `invoice.created`, `invoice.updated`, `invoice.deleted`, `invoice.issued`,
+`invoices.create`, `invoices.update` and `invoices.delete` for drafts, and
+`invoices.issue` (issue and void). Issuing is the finance act — the one a
+customer and an auditor see — and is often held by fewer people than
+drafting, the reasoning that gave `orders.ship` and `orders.receive` their
+own permissions. Audited as `invoice.created`, `invoice.updated`,
+`invoice.line_updated`, `invoice.deleted`, `invoice.issued`,
 `invoice.voided` and `credit_note.issued`; the permission-coverage and
 audit-coverage tests include every new route.
 
