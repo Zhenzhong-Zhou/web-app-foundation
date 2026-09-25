@@ -1,0 +1,68 @@
+v0.3.0 — make, ship, return, trace
+
+The full cycle for a natural health products maker: buy, receive, make
+under a licence, sell, ship, take returns, and trace any lot in both
+directions, with stock held for confirmed sales.
+
+Licences (ADR-040)
+- Product licences with dates and a derived status.
+- Each production run snapshots the licence it was made under at release.
+
+Shipping (ADR-041)
+- A shipment is a document: several lines, one box, one packing slip, one
+  tracking number. All or nothing.
+- Lots leave earliest expiry first; a person can pick lots instead.
+- Printable packing slips.
+- Orders end as "fulfilled" in both directions, read as Received or Shipped.
+- Void a shipment recorded before the box left: stock goes back to its
+  bin, the lines reopen, and the shipment stays on the order struck
+  through with its reason. The packing slip is marked VOID.
+
+Samples (ADR-042)
+- Posted samples are flagged sales; hand-outs record who received them.
+- Retention and quarantine bins hold stock but never send it.
+
+Returns (ADR-043)
+- Returns against a sale, only for lots that shipped on it, into a chosen
+  bin. Returned is shown beside shipped, never subtracted from it.
+
+Lot trace (ADR-044)
+- Full genealogy through production runs, and every recipient of a lot
+  and of everything made from it.
+- Lot search matches anywhere in the code, prefix matches first.
+
+Reservations (ADR-045)
+- Confirmed sales hold stock, earliest confirmed first. Shipping,
+  production release and samples cannot take stock held for another order.
+- Free, held and backordered shown per product.
+
+Screens
+- Responsive layout: navigation becomes a drawer below 1200px, action rows
+  wrap as groups, button labels never break.
+- Back arrow on detail pages; toasts for your own actions.
+- Item names ("Focus (60ct)") beside SKUs on inventory, orders, shipments,
+  returns, packing slips and lot trace.
+- The release dialog shows the chosen lot total live and waits until it
+  matches what the run needs.
+
+Fixes from the milestone run
+- Cancelling an order is refused once goods have moved against it; close
+  it instead.
+- A note under an order's items explains that returns do not reopen an
+  item; replacements are a new sale.
+- The Inventory Item column showed a dash for most products.
+- Searching lots by the middle of a code found nothing.
+
+Known limitations
+- Returns are recorded when the goods arrive. There is no return
+  authorization step yet (#22).
+- Void is refused once an order is marked shipped. Correct it with a
+  return and the reason "never left". To be revisited with invoicing.
+- A top-up at run close always takes earliest expiry, not the run's own
+  lots, and can take stock held for a sale without flagging it (#28).
+- The end-of-milestone manual run (a real week by hand and a timed
+  recall drill) was not done for this release.
+
+Upgrade
+- New migrations through 0030. Run `npm run migrate` in server before
+  starting.
