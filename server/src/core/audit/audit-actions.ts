@@ -87,6 +87,8 @@ export const AUDIT_ACTIONS = {
   INVOICE_DELETED: 'invoice.deleted',
   /** Numbered, totalled and frozen — the event a customer sees. */
   INVOICE_ISSUED: 'invoice.issued',
+  /** Reversed in full by a credit note; carries the credit note's number. */
+  INVOICE_VOIDED: 'invoice.voided',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

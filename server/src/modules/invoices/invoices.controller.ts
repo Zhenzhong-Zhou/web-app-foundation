@@ -23,11 +23,12 @@ import { IssueInvoiceDto } from './dto/issue-invoice.dto';
 import { ListInvoicesDto } from './dto/list-invoices.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { UpdateInvoiceLineDto } from './dto/update-invoice-line.dto';
+import { VoidInvoiceDto } from './dto/void-invoice.dto';
 import { InvoicesService } from './invoices.service';
 
 /**
- * Invoices for shipments (ADR-046): drafts, and issuing them. Voiding is
- * added in the next step.
+ * Invoices for shipments (ADR-046): drafts, issuing them, and voiding an
+ * issued one by credit note.
  */
 @Controller({ path: 'invoices', version: '1' })
 export class InvoicesController {
@@ -118,6 +119,31 @@ export class InvoicesController {
     @CurrentUser() user: RequestContext,
   ) {
     return { invoice: await this.invoices.issue(id, dto, user.userId) };
+  }
+
+  /**
+   * Reverses an issued invoice with a credit note for the whole of it, and
+   * frees its shipment. The same permission as issuing: the two are the
+   * finance acts a customer sees, and whoever may send an invoice is who
+   * may take one back.
+   */
+  @Post(':id/void')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(PERMISSIONS.INVOICES_ISSUE)
+  @Audited({
+    action: AUDIT_ACTIONS.INVOICE_VOIDED,
+    resourceType: 'invoice',
+    resourceId: (_response, request) => request.params.id,
+    // Not the reason: free text stays on the documents (ADR-018). The
+    // credit note's number is added by the service.
+    fields: ['creditDate'],
+  })
+  async void(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: VoidInvoiceDto,
+    @CurrentUser() user: RequestContext,
+  ) {
+    return this.invoices.void(id, dto, user.userId);
   }
 
   /**

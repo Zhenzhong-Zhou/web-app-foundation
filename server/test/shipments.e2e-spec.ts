@@ -9,6 +9,7 @@ import {
 import {
   lots,
   orderLines,
+  orders,
   shipments,
   stockLevels,
   stockMovements,
@@ -907,7 +908,12 @@ describe('Shipments (e2e)', () => {
       expect(await untracked(s.bottle, s.shelf)).toBe('94.0000');
     });
 
-    it('refuses on a closed order', async () => {
+    /**
+     * Voiding a closed order's shipment reopens it (ADR-046): it was closed
+     * on the understanding that its goods had left, and they had not. The
+     * v0.3 workaround — a return marked "never left" — is no longer needed.
+     */
+    it('reopens a closed order', async () => {
       const alpha = await registerOrg('alpha');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
@@ -917,12 +923,18 @@ describe('Shipments (e2e)', () => {
         .send({ status: 'fulfilled' })
         .expect(204);
 
-      // A closed order is a finished document; voiding must not reopen it
-      // by the back door (ADR-023).
       await alpha.agent
         .post(voidOf(s.order.id, shipment.id))
         .send({ reason: REASON })
-        .expect(409);
+        .expect(204);
+
+      const [order] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, s.order.id));
+
+      expect(order.status).toBe('confirmed');
+      expect(await fulfilled(s.bottleLine)).toBe('0.0000');
     });
 
     it('does not find another organization shipment', async () => {

@@ -2,17 +2,21 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
 
-import { recordPrevious } from '../../core/audit/audit-context';
+import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { registeredAddress } from '../../core/organizations/registered-address';
 import type { Transaction } from '../../database/database.module';
 import { isCheckViolation, isUniqueViolation } from '../../database/errors';
 import {
   addresses,
+  creditNoteLines,
+  creditNotes,
+  creditNoteTaxes,
   invoiceLines,
   invoices,
   invoiceTaxes,
@@ -35,6 +39,7 @@ import type { IssueInvoiceDto } from './dto/issue-invoice.dto';
 import type { ListInvoicesDto } from './dto/list-invoices.dto';
 import type { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import type { UpdateInvoiceLineDto } from './dto/update-invoice-line.dto';
+import type { VoidInvoiceDto } from './dto/void-invoice.dto';
 import { computeAmounts } from './invoice-amounts';
 
 const DEFAULT_LIMIT = 50;
@@ -146,11 +151,32 @@ export class InvoicesService {
         )
         .orderBy(asc(invoiceLines.sku));
 
+      // What has reversed it, in whole or in part: the invoice page's
+      // answer to "is this still owed".
+      const credits = await tx
+        .select({
+          id: creditNotes.id,
+          number: creditNotes.number,
+          creditDate: creditNotes.creditDate,
+          reason: creditNotes.reason,
+          isVoid: creditNotes.isVoid,
+          total: creditNotes.total,
+        })
+        .from(creditNotes)
+        .where(
+          and(
+            eq(creditNotes.organizationId, organizationId),
+            eq(creditNotes.invoiceId, invoiceId),
+          ),
+        )
+        .orderBy(asc(creditNotes.id));
+
       const base = {
         ...invoice.invoice,
         partnerName: invoice.partnerName,
         orderReference: invoice.orderReference,
         lines,
+        creditNotes: credits,
       };
 
       /**
@@ -222,7 +248,14 @@ export class InvoicesService {
                 eq(shipments.organizationId, organizationId),
                 eq(shipments.id, input.shipmentId),
               ),
-            );
+            )
+            /**
+             * Shared, against Void shipment's exclusive lock (ADR-046). A
+             * void in progress makes this wait and then see the shipment
+             * voided; a draft being created makes the void wait and then
+             * see the invoice. Neither can slip past the other.
+             */
+            .for('share', { of: shipments });
 
           if (!shipment) throw new NotFoundException('No such shipment');
 
@@ -556,6 +589,234 @@ export class InvoicesService {
   }
 
   /**
+   * Voids an issued invoice by issuing a credit note for the whole of it,
+   * in one transaction (ADR-046). Nothing is deleted: both documents stay
+   * and print, and the credit note names the invoice it reverses.
+   *
+   * Voiding frees the shipment — the standing-invoice index ignores voided
+   * invoices — so it can be invoiced again or itself voided.
+   *
+   * The credit note copies the invoice rather than recomputing: its lines,
+   * amounts and tax lines are the invoice's, so the two cancel to the cent
+   * whatever has changed in tax codes or rounding since.
+   */
+  async void(invoiceId: string, input: VoidInvoiceDto, actorId: string) {
+    const result = await this.tenantDb.transaction(
+      async (tx, organizationId) => {
+        const [invoice] = await tx
+          .select()
+          .from(invoices)
+          .where(
+            and(
+              eq(invoices.organizationId, organizationId),
+              eq(invoices.id, invoiceId),
+            ),
+          )
+          .for('update');
+
+        if (!invoice) throw new NotFoundException('No such invoice');
+
+        if (invoice.status === 'draft') {
+          throw new ConflictException(
+            'A draft is deleted, not voided — nobody outside has seen it',
+          );
+        }
+
+        if (invoice.status === 'voided') {
+          throw new ConflictException('That invoice has already been voided');
+        }
+
+        const issuedOn = stored(invoice.invoiceDate, 'invoice date');
+
+        // Calendar days as YYYY-MM-DD compare correctly as strings.
+        if (input.creditDate < issuedOn) {
+          throw new BadRequestException(
+            `A credit note cannot be dated before the invoice it reverses (${issuedOn})`,
+          );
+        }
+
+        const lines = await tx
+          .select()
+          .from(invoiceLines)
+          .where(
+            and(
+              eq(invoiceLines.organizationId, organizationId),
+              eq(invoiceLines.invoiceId, invoiceId),
+            ),
+          )
+          .orderBy(asc(invoiceLines.sku));
+
+        const taxes = await tx
+          .select()
+          .from(invoiceTaxes)
+          .where(
+            and(
+              eq(invoiceTaxes.organizationId, organizationId),
+              eq(invoiceTaxes.invoiceId, invoiceId),
+            ),
+          );
+
+        // After every refusal, so a refused void leaves no gap in the series.
+        const number = await takeNumber(tx, organizationId, 'credit_note');
+
+        const [creditNote] = await tx
+          .insert(creditNotes)
+          .values({
+            organizationId,
+            invoiceId,
+            partnerId: invoice.partnerId,
+            number,
+            currency: invoice.currency,
+            creditDate: input.creditDate,
+            reason: input.reason,
+            isVoid: true,
+            subtotal: stored(invoice.subtotal, 'subtotal'),
+            taxTotal: stored(invoice.taxTotal, 'tax total'),
+            total: stored(invoice.total, 'total'),
+            sellerName: invoice.sellerName,
+            sellerTaxNumber: invoice.sellerTaxNumber,
+            sellerLine1: invoice.sellerLine1,
+            sellerLine2: invoice.sellerLine2,
+            sellerCity: invoice.sellerCity,
+            sellerRegion: invoice.sellerRegion,
+            sellerPostalCode: invoice.sellerPostalCode,
+            sellerCountry: invoice.sellerCountry,
+            billToAddressId: invoice.billToAddressId,
+            billToName: invoice.billToName,
+            billToLine1: invoice.billToLine1,
+            billToLine2: invoice.billToLine2,
+            billToCity: invoice.billToCity,
+            billToRegion: invoice.billToRegion,
+            billToPostalCode: invoice.billToPostalCode,
+            billToCountry: invoice.billToCountry,
+            createdBy: actorId,
+          })
+          .returning();
+
+        await tx.insert(creditNoteLines).values(
+          lines.map((line) => ({
+            organizationId,
+            creditNoteId: creditNote.id,
+            invoiceLineId: line.id,
+            sku: line.sku,
+            description: line.description,
+            quantity: line.quantity,
+            unitPrice: line.unitPrice,
+            taxCodeName: line.taxCodeName,
+            netAmount: stored(line.netAmount, `net amount of ${line.sku}`),
+          })),
+        );
+
+        if (taxes.length > 0) {
+          await tx.insert(creditNoteTaxes).values(
+            taxes.map((tax) => ({
+              organizationId,
+              creditNoteId: creditNote.id,
+              name: tax.name,
+              rate: tax.rate,
+              taxableAmount: tax.taxableAmount,
+              amount: tax.amount,
+            })),
+          );
+        }
+
+        const [voided] = await tx
+          .update(invoices)
+          .set({
+            status: 'voided',
+            voidedAt: new Date(),
+            voidedBy: actorId,
+            voidReason: input.reason,
+          })
+          .where(
+            and(
+              eq(invoices.organizationId, organizationId),
+              eq(invoices.id, invoiceId),
+            ),
+          )
+          .returning();
+
+        // The credit note's number, for History. The reason stays on the
+        // documents: free text is kept out of a two-year table (ADR-018).
+        recordContext({ creditNote: number });
+
+        return { invoice: voided, creditNote };
+      },
+    );
+
+    this.logger.log(
+      `Invoice ${result.invoice.number} voided by ${result.creditNote.number}`,
+    );
+    return result;
+  }
+
+  /** A credit note with its lines and tax lines, for reading and printing. */
+  async findCreditNote(creditNoteId: string) {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const [row] = await tx
+        .select({
+          creditNote: creditNotes,
+          invoiceNumber: invoices.number,
+          invoiceDate: invoices.invoiceDate,
+        })
+        .from(creditNotes)
+        .innerJoin(invoices, eq(invoices.id, creditNotes.invoiceId))
+        .where(
+          and(
+            eq(creditNotes.organizationId, organizationId),
+            eq(creditNotes.id, creditNoteId),
+          ),
+        );
+
+      if (!row) throw new NotFoundException('No such credit note');
+
+      const lines = await tx
+        .select({
+          id: creditNoteLines.id,
+          invoiceLineId: creditNoteLines.invoiceLineId,
+          sku: creditNoteLines.sku,
+          description: creditNoteLines.description,
+          quantity: creditNoteLines.quantity,
+          unitPrice: creditNoteLines.unitPrice,
+          taxCodeName: creditNoteLines.taxCodeName,
+          netAmount: creditNoteLines.netAmount,
+        })
+        .from(creditNoteLines)
+        .where(
+          and(
+            eq(creditNoteLines.organizationId, organizationId),
+            eq(creditNoteLines.creditNoteId, creditNoteId),
+          ),
+        )
+        .orderBy(asc(creditNoteLines.sku));
+
+      const taxes = await tx
+        .select({
+          name: creditNoteTaxes.name,
+          rate: creditNoteTaxes.rate,
+          taxableAmount: creditNoteTaxes.taxableAmount,
+          amount: creditNoteTaxes.amount,
+        })
+        .from(creditNoteTaxes)
+        .where(
+          and(
+            eq(creditNoteTaxes.organizationId, organizationId),
+            eq(creditNoteTaxes.creditNoteId, creditNoteId),
+          ),
+        )
+        .orderBy(asc(creditNoteTaxes.name), asc(creditNoteTaxes.rate));
+
+      return {
+        ...row.creditNote,
+        invoiceNumber: row.invoiceNumber,
+        invoiceDate: row.invoiceDate,
+        lines,
+        taxes,
+      };
+    });
+  }
+
+  /**
    * "No tax" is the Exempt code, never a blank (ADR-046), and a retired
    * code is one the organization no longer charges.
    */
@@ -808,4 +1069,18 @@ export class InvoicesService {
       );
     }
   }
+}
+
+/**
+ * A value an issued invoice always has — its check constraint guarantees
+ * it — read from a column typed nullable because drafts leave it empty.
+ * Throws rather than inventing a figure if that guarantee is ever broken.
+ */
+function stored<T>(value: T | null, what: string): T {
+  if (value === null) {
+    throw new InternalServerErrorException(
+      `An issued invoice is missing its ${what}`,
+    );
+  }
+  return value;
 }

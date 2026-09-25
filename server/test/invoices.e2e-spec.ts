@@ -950,5 +950,198 @@ describe('Invoices (e2e)', () => {
       expect(entry.resourceLabel).toBe('Northside Pharmacy · INV-000001');
       expect(entry.payload).toEqual({ invoiceDate: TODAY });
     });
+
+    describe('voiding', () => {
+      interface CreditNote {
+        id: string;
+        number: string;
+        invoiceNumber: string;
+        isVoid: boolean;
+        reason: string;
+        creditDate: string;
+        subtotal: string;
+        taxTotal: string;
+        total: string;
+        sellerName: string;
+        billToName: string;
+        lines: { sku: string; quantity: string; netAmount: string }[];
+        taxes: { name: string; rate: string; amount: string }[];
+      }
+
+      const REASON = 'Billed at the wrong price';
+
+      async function issued(org: Org) {
+        const r = await ready(org);
+        await issue(org, r.invoice.id).expect(200);
+        return r;
+      }
+
+      function voidInvoice(org: Org, invoiceId: string, creditDate = TODAY) {
+        return org.agent
+          .post(`/v1/invoices/${invoiceId}/void`)
+          .send({ reason: REASON, creditDate });
+      }
+
+      function voidShipment(org: Org, orderId: string, shipmentId: string) {
+        return org.agent
+          .post(`/v1/orders/${orderId}/shipments/${shipmentId}/void`)
+          .send({ reason: 'Box never left' });
+      }
+
+      /**
+       * The credit note is the invoice reversed to the cent: its lines,
+       * amounts and tax lines copied, never recomputed (ADR-046).
+       */
+      it('issues a credit note for the whole invoice', async () => {
+        const org = await registerOrg('alpha');
+        const r = await issued(org);
+
+        const result = body<{
+          invoice: { status: string; voidReason: string };
+          creditNote: { id: string; number: string };
+        }>(await voidInvoice(org, r.invoice.id).expect(200));
+
+        expect(result.invoice.status).toBe('voided');
+        expect(result.invoice.voidReason).toBe(REASON);
+        // Its own series: the first credit note, beside the first invoice.
+        expect(result.creditNote.number).toBe('CN-000001');
+
+        const note = body<{ creditNote: CreditNote }>(
+          await org.agent
+            .get(`/v1/credit-notes/${result.creditNote.id}`)
+            .expect(200),
+        ).creditNote;
+
+        expect(note.invoiceNumber).toBe('INV-000001');
+        expect(note.isVoid).toBe(true);
+        expect(note.reason).toBe(REASON);
+        expect([note.subtotal, note.taxTotal, note.total]).toEqual([
+          '137.5000',
+          '6.8800',
+          '144.3800',
+        ]);
+        expect(note.sellerName).toBe('alpha Co');
+        expect(note.billToName).toBe('Northside Pharmacy');
+        expect(
+          note.lines.map((line) => [line.sku, line.quantity, line.netAmount]),
+        ).toEqual([
+          ['FOCUS-60CT', '6.0000', '75.0000'],
+          ['SCOOP', '5.0000', '62.5000'],
+        ]);
+        expect(note.taxes).toEqual([
+          expect.objectContaining({ name: 'GST', amount: '6.8800' }),
+        ]);
+      });
+
+      it('lists the credit note on the invoice', async () => {
+        const org = await registerOrg('alpha');
+        const r = await issued(org);
+        await voidInvoice(org, r.invoice.id).expect(200);
+
+        const detail = body<{
+          invoice: {
+            creditNotes: { number: string; isVoid: boolean; total: string }[];
+          };
+        }>(
+          await org.agent.get(`/v1/invoices/${r.invoice.id}`).expect(200),
+        ).invoice;
+
+        expect(detail.creditNotes).toEqual([
+          expect.objectContaining({
+            number: 'CN-000001',
+            isVoid: true,
+            total: '144.3800',
+          }),
+        ]);
+      });
+
+      // A wrong price: void, then bill the same shipment again.
+      it('frees the shipment to be invoiced again', async () => {
+        const org = await registerOrg('alpha');
+        const r = await issued(org);
+        await voidInvoice(org, r.invoice.id).expect(200);
+
+        const replacement = await draft(org, r.shipmentId, r.gst);
+        await issue(org, replacement.id).expect(200);
+
+        const detail = await readIssued(org, replacement.id);
+        expect(detail.number).toBe('INV-000002');
+      });
+
+      it('refuses a draft, a second void, and a date before the invoice', async () => {
+        const org = await registerOrg('alpha');
+        const r = await ready(org);
+
+        // A draft is deleted, not voided: nobody outside has seen it.
+        await voidInvoice(org, r.invoice.id).expect(409);
+
+        await issue(org, r.invoice.id).expect(200);
+
+        await voidInvoice(org, r.invoice.id, '2026-09-01').expect(400);
+        await voidInvoice(org, r.invoice.id).expect(200);
+        await voidInvoice(org, r.invoice.id).expect(409);
+      });
+
+      it('lets only the Owner void', async () => {
+        const org = await registerOrg('alpha');
+        const r = await issued(org);
+        const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
+
+        await admin
+          .post(`/v1/invoices/${r.invoice.id}/void`)
+          .send({ reason: REASON, creditDate: TODAY })
+          .expect(403);
+      });
+
+      it('records the credit note’s number, not the reason', async () => {
+        const org = await registerOrg('alpha');
+        const r = await issued(org);
+        await voidInvoice(org, r.invoice.id).expect(200);
+
+        const [entry] = await db
+          .select()
+          .from(auditLog)
+          .where(eq(auditLog.action, 'invoice.voided'));
+
+        expect(entry.resourceId).toBe(r.invoice.id);
+        expect(entry.payload).toEqual({
+          creditDate: TODAY,
+          creditNote: 'CN-000001',
+        });
+      });
+
+      /**
+       * Void shipment is refused while an invoice stands on it (ADR-046):
+       * a draft is deleted first, an issued invoice voided first, so what
+       * is billed and what left never disagree.
+       */
+      describe('and Void shipment', () => {
+        it('is refused while a draft stands, and allowed once it is deleted', async () => {
+          const org = await registerOrg('alpha');
+          const r = await ready(org);
+
+          await voidShipment(org, r.orderId, r.shipmentId).expect(409);
+
+          await org.agent.delete(`/v1/invoices/${r.invoice.id}`).expect(204);
+          await voidShipment(org, r.orderId, r.shipmentId).expect(204);
+        });
+
+        it('is refused while an issued invoice stands, and allowed once it is voided', async () => {
+          const org = await registerOrg('alpha');
+          const r = await issued(org);
+
+          await voidShipment(org, r.orderId, r.shipmentId).expect(409);
+
+          await voidInvoice(org, r.invoice.id).expect(200);
+          await voidShipment(org, r.orderId, r.shipmentId).expect(204);
+
+          // And a voided shipment cannot be billed again.
+          await org.agent
+            .post('/v1/invoices')
+            .send({ shipmentId: r.shipmentId })
+            .expect(409);
+        });
+      });
+    });
   });
 });

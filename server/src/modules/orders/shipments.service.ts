@@ -5,11 +5,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ne, sql } from 'drizzle-orm';
 
 import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
 import {
+  invoices,
   orderLines,
   orders,
   shipments,
@@ -310,6 +311,9 @@ export class ShipmentsService {
    * Refused once anything on it has come back. Goods that were returned did
    * leave, so the shipment is true, and voiding it would leave the order
    * saying more came back than went out.
+   *
+   * Refused while an invoice stands on the shipment; allowed on a closed
+   * order, which it reopens (ADR-046).
    */
   async void(
     orderId: string,
@@ -351,12 +355,38 @@ export class ShipmentsService {
       }
 
       /**
-       * Confirmed only. A closed order is a finished document (ADR-023), and
-       * reopening it by the back door is what this must not become.
+       * Refused while an invoice stands on it (ADR-046, amending ADR-041).
+       * Read after the shipment's lock: drafting an invoice holds a share
+       * lock on the shipment, so this waits for it and then sees it. A draft
+       * is deleted first and an issued invoice voided first, so what is
+       * billed and what left never disagree.
        */
-      if (order.status !== 'confirmed') {
+      const [standing] = await tx
+        .select({ number: invoices.number })
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.organizationId, organizationId),
+            eq(invoices.shipmentId, shipmentId),
+            ne(invoices.status, 'voided'),
+          ),
+        );
+
+      if (standing) {
         throw new ConflictException(
-          `A ${order.status} order is closed, so its shipments can no longer be voided`,
+          standing.number
+            ? `This shipment is billed on ${standing.number} — void the invoice first`
+            : 'This shipment has a draft invoice — delete it first',
+        );
+      }
+
+      /**
+       * Confirmed or closed. A closed order is reopened below: it was closed
+       * on the understanding that its goods had left, and they had not.
+       */
+      if (order.status !== 'confirmed' && order.status !== 'fulfilled') {
+        throw new ConflictException(
+          `A ${order.status} order has no shipments to void`,
         );
       }
 
@@ -501,6 +531,21 @@ export class ShipmentsService {
         })
         .where(eq(shipments.id, shipmentId));
 
+      // Part of the same transaction and the same audit row as the void.
+      const reopened = order.status === 'fulfilled';
+
+      if (reopened) {
+        await tx
+          .update(orders)
+          .set({ status: 'confirmed' })
+          .where(
+            and(
+              eq(orders.organizationId, organizationId),
+              eq(orders.id, orderId),
+            ),
+          );
+      }
+
       // What was put back, for History. The reason stays on the shipment row
       // rather than in the audit payload: free text is kept out of a two-year
       // table (ADR-018).
@@ -508,6 +553,7 @@ export class ShipmentsService {
         items: moved
           .map((movement) => `${movement.sku} ${movement.quantity}`)
           .join(', '),
+        ...(reopened ? { reopened: true } : {}),
       });
 
       this.logger.log(`Order ${orderId} shipment ${shipmentId} voided`);
