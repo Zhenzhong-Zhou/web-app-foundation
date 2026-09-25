@@ -8,7 +8,6 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  Matches,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
@@ -18,41 +17,14 @@ import {
   ORDER_DIRECTIONS,
   type OrderDirection,
 } from '../../../database/schema';
+import { AddOrderLineDto } from './order-line.dto';
 
 /**
- * A positive decimal, as a string — the same rule quantities take everywhere
- * (ADR-025). A JSON number has already been through a double before any
- * validator sees it, and ordering 2.75 kg of raw material is ordinary.
+ * A line of a new order is exactly a line added to an existing one — same
+ * item, same terms, same rules — so it is that class under the name the
+ * order's own DTO has always used.
  */
-const POSITIVE_DECIMAL = /^(?=.*[1-9])\d{1,14}(\.\d{1,4})?$/;
-
-export class CreateOrderLineDto {
-  @IsUUID()
-  variantId!: string;
-
-  @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'quantityOrdered must be a positive number with at most 4 decimal places, sent as a string',
-  })
-  quantityOrdered!: string;
-
-  /** Zero is allowed: a free replacement line is real (ADR-035). */
-  @IsOptional()
-  @IsString()
-  @Matches(/^\d{1,14}(\.\d{1,4})?$/, {
-    message:
-      'unitPrice must be a number with at most 4 decimal places, sent as a string',
-  })
-  unitPrice?: string;
-
-  /** Required whenever a price is given — the service enforces the pairing. */
-  @IsOptional()
-  @trim()
-  @IsString()
-  @Matches(/^[A-Z]{3}$/, { message: 'currency must be a 3-letter ISO code' })
-  currency?: string;
-}
+export class CreateOrderLineDto extends AddOrderLineDto {}
 
 export class CreateOrderDto {
   @IsUUID()
