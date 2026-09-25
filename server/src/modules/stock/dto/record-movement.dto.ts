@@ -10,25 +10,10 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 import { MOVEMENT_REASONS } from '../../../database/schema';
 import { MovementLotDto } from './movement-lot.dto';
-
-/**
- * A positive decimal, as a string.
- *
- * Not `@IsNumber()`. A quantity that arrives as a JSON number has already
- * passed through a double before any validator sees it, which is the precision
- * loss ADR-025 chose `numeric` to avoid — 0.1 + 0.2 does not survive the trip,
- * and the ledger is the last place that should be approximate.
- *
- * The regex does four jobs at once: at most 14 digits before the point and 4
- * after, matching numeric(18, 4); no sign, because direction is the reason's
- * job and a negative here would mean two ways to express one movement; and the
- * lookahead requires a non-zero digit somewhere, so "0" and "0.0000" are
- * rejected. A zero-quantity movement is a row that records nothing happening.
- */
-const POSITIVE_DECIMAL = /^(?=.*[1-9])\d{1,14}(\.\d{1,4})?$/;
 
 export class RecordMovementDto {
   @IsUUID()

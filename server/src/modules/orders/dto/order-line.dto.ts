@@ -1,16 +1,10 @@
 import { IsOptional, IsString, IsUUID, Matches } from 'class-validator';
 
+import {
+  NON_NEGATIVE_DECIMAL,
+  POSITIVE_DECIMAL,
+} from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
-
-/**
- * A positive decimal, as a string — the same rule quantities take everywhere
- * (ADR-025). A JSON number has already been through a double before any
- * validator sees it, and ordering 2.75 kg of raw material is ordinary.
- */
-const POSITIVE_DECIMAL = /^(?=.*[1-9])\d{1,14}(\.\d{1,4})?$/;
-
-/** As above, but zero is allowed: a free replacement line is real (ADR-035). */
-const NON_NEGATIVE_DECIMAL = /^\d{1,14}(\.\d{1,4})?$/;
 
 /**
  * The terms of an order line: how much, and at what price.

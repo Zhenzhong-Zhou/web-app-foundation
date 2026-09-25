@@ -8,10 +8,9 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 import { MovementLotDto } from '../../stock/dto/movement-lot.dto';
-
-const POSITIVE_DECIMAL = /^(?=.*[1-9])\d{1,14}(\.\d{1,4})?$/;
 
 /**
  * Receiving against one line of a purchase order.

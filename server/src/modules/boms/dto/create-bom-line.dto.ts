@@ -7,19 +7,8 @@ import {
   MaxLength,
 } from 'class-validator';
 
+import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
-
-/**
- * A positive decimal, as a string — the same rule and the same reasoning as
- * RecordMovementDto. A quantity arriving as a JSON number has already been
- * through a double before any validator sees it, which is the precision loss
- * ADR-025 chose `numeric` to avoid.
- *
- * At most 14 digits before the point and 4 after, matching numeric(18, 4), and
- * the lookahead rejects "0" and "0.0000": a line consuming nothing is a line
- * that should not exist.
- */
-const POSITIVE_DECIMAL = /^(?=.*[1-9])\d{1,14}(\.\d{1,4})?$/;
 
 export class CreateBomLineDto {
   @IsUUID()

@@ -11,9 +11,9 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 
-const POSITIVE_DECIMAL = /^(?=.*[1-9])\d{1,14}(\.\d{1,4})?$/;
 const DECIMAL_MESSAGE =
   'quantity must be a positive number with at most 4 decimal places, sent as a string';
 
