@@ -9,12 +9,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { Shipment } from '../lib/types';
+import type { InvoicePage, InvoiceSummary, Shipment } from '../lib/types';
 import { LotItemsTable } from './lot-items-table';
 import { VoidShipmentDialog } from './void-shipment-dialog';
 
@@ -32,31 +32,61 @@ import { VoidShipmentDialog } from './void-shipment-dialog';
  * A voided shipment stays in the list, struck through with its reason
  * (ADR-041): it was recorded, and hiding it would make its packing slip —
  * possibly printed already — impossible to explain.
+ *
+ * Each standing shipment is where its invoice starts (ADR-046): an invoice
+ * bills exactly what one shipment carried. Once one stands, the shipment
+ * links to it instead, and offers no Void — the server refuses a void while
+ * an invoice stands, so the invoice is voided first.
  */
 export function ShipmentsList({
   orderId,
   refreshKey,
   canVoid,
+  orderClosed,
+  canViewInvoices,
+  canInvoice,
   onVoided,
 }: {
   orderId: string;
   refreshKey: number;
-  /** orders.ship on a confirmed order; the server refuses anything else. */
+  /** orders.ship on a confirmed or closed order; the server refuses anything else. */
   canVoid: boolean;
+  /** Voiding a closed order's shipment reopens it, and the dialog says so. */
+  orderClosed: boolean;
+  /** invoices.view: whether to look up which shipments are billed. */
+  canViewInvoices: boolean;
+  /** invoices.create, on a sale that is not a sample — samples are never invoiced. */
+  canInvoice: boolean;
   /** The order changes too — fulfilled quantities and holds — so the page reloads both. */
   onVoided: () => Promise<void> | void;
 }) {
+  const navigate = useNavigate();
   const [shipments, setShipments] = useState<Shipment[] | null>(null);
+  const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [voiding, setVoiding] = useState<Shipment | null>(null);
+  const [invoicing, setInvoicing] = useState<string | null>(null);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
 
   useEffect(() => {
     let ignore = false;
 
-    void api<Shipment[]>(`/orders/${orderId}/shipments`)
-      .then((rows) => {
+    /**
+     * The order's invoices beside its shipments, in one round trip, so a
+     * shipment never shows "Create invoice" for a moment before its invoice
+     * arrives. A hundred is the page cap and far above the shipments one
+     * order has.
+     */
+    void Promise.all([
+      api<Shipment[]>(`/orders/${orderId}/shipments`),
+      canViewInvoices
+        ? api<InvoicePage>(`/invoices?orderId=${orderId}&limit=100`)
+        : Promise.resolve(null),
+    ])
+      .then(([rows, page]) => {
         if (!ignore) {
           setShipments(rows);
+          setInvoices(page?.entries ?? []);
           setError(null);
         }
       })
@@ -73,7 +103,32 @@ export function ShipmentsList({
     return () => {
       ignore = true;
     };
-  }, [orderId, refreshKey]);
+  }, [orderId, refreshKey, canViewInvoices]);
+
+  /**
+   * A draft for exactly what this shipment carried, then straight to it:
+   * pricing and tax are set on the invoice, not here. A refusal — an item
+   * with no price on the order, say — is shown above the list.
+   */
+  async function createInvoice(shipmentId: string) {
+    setInvoicing(shipmentId);
+    setInvoiceError(null);
+
+    try {
+      const { invoice } = await api<{ invoice: { id: string } }>('/invoices', {
+        method: 'POST',
+        body: JSON.stringify({ shipmentId }),
+      });
+      navigate(`/invoices/${invoice.id}`);
+    } catch (caught) {
+      setInvoiceError(
+        caught instanceof ApiError
+          ? caught.message
+          : 'Could not reach the server.',
+      );
+      setInvoicing(null);
+    }
+  }
 
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!shipments) return null;
@@ -84,6 +139,8 @@ export function ShipmentsList({
         Shipments
       </Typography>
 
+      {invoiceError && <Alert severity="error">{invoiceError}</Alert>}
+
       {shipments.length === 0 && (
         <Typography variant="body2" color="text.secondary">
           Nothing has shipped against this order yet.
@@ -92,6 +149,11 @@ export function ShipmentsList({
 
       {shipments.map((shipment) => {
         const voided = shipment.voidedAt !== null;
+
+        // A voided invoice stays on record but no longer bills the shipment.
+        const invoice = invoices.find(
+          (row) => row.shipmentId === shipment.id && row.status !== 'voided',
+        );
 
         return (
           <Paper key={shipment.id} variant="outlined" sx={{ p: 2 }}>
@@ -108,7 +170,7 @@ export function ShipmentsList({
 
               {/* Before the slip link, so the destructive action is not
                   where the eye lands first. */}
-              {canVoid && !voided && (
+              {canVoid && !voided && !invoice && (
                 <Button
                   variant="text"
                   size="small"
@@ -116,6 +178,29 @@ export function ShipmentsList({
                   onClick={openDialog(() => setVoiding(shipment))}
                 >
                   Void
+                </Button>
+              )}
+
+              {invoice && (
+                <Link
+                  component={RouterLink}
+                  to={`/invoices/${invoice.id}`}
+                  variant="body2"
+                >
+                  {invoice.number
+                    ? `Invoice ${invoice.number}`
+                    : 'Draft invoice'}
+                </Link>
+              )}
+
+              {canInvoice && !voided && !invoice && (
+                <Button
+                  variant="text"
+                  size="small"
+                  disabled={invoicing !== null}
+                  onClick={() => void createInvoice(shipment.id)}
+                >
+                  {invoicing === shipment.id ? 'Creating…' : 'Create invoice'}
                 </Button>
               )}
 
@@ -166,6 +251,7 @@ export function ShipmentsList({
         open={voiding !== null}
         orderId={orderId}
         shipment={voiding}
+        orderClosed={orderClosed}
         onClose={() => setVoiding(null)}
         onVoided={onVoided}
       />

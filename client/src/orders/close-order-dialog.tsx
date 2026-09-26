@@ -23,6 +23,10 @@ import type { OrderDirection } from '../lib/types';
  *
  * Only shown when something is outstanding. A dialog that always appears is a
  * dialog people learn to dismiss without reading.
+ *
+ * Opened by "Close order", which was "Mark shipped" and "Mark received"
+ * until #24: those read as the act of shipping or receiving, which have
+ * their own buttons. Closing says only that nothing more is coming.
  */
 export function CloseOrderDialog({
   open,
@@ -51,7 +55,8 @@ export function CloseOrderDialog({
         <Button variant="text" onClick={onClose}>
           Keep it open
         </Button>
-        {/* Terminal: fulfilled and cancelled cannot be reopened (ADR-027). */}
+        {/* Terminal by hand (ADR-027). The one way back is voiding a
+            shipment that never left, which reopens the order (ADR-046). */}
         <Button onClick={onConfirm}>Close it</Button>
       </DialogActions>
     </Dialog>

@@ -66,9 +66,10 @@ const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
  *
  * The server refuses an illegal transition with a 409 whatever this says —
  * offering a button that always fails is the thing being avoided, not the
- * rule being implemented. Fulfilled and cancelled are terminal: an order
- * that turns out wrong is corrected by an adjustment movement, not by
- * reopening the document (ADR-023).
+ * rule being implemented. Fulfilled and cancelled are terminal by hand: an
+ * order that turns out wrong is corrected by an adjustment movement, not by
+ * reopening the document (ADR-023). The one way back is voiding a shipment
+ * that never left, which reopens the order (ADR-046).
  */
 const NEXT_STATUSES: Record<OrderStatus, OrderStatus[]> = {
   draft: ['confirmed', 'cancelled'],
@@ -87,9 +88,16 @@ const DONE: Record<OrderDirection, string> = {
   sale: 'Shipped',
 };
 
-/** Button labels. What clicking does, not what the order is. */
-function transitionLabel(next: OrderStatus, direction: OrderDirection): string {
-  if (next === 'fulfilled') return `Mark ${DONE[direction].toLowerCase()}`;
+/**
+ * Button labels. What clicking does, not what the order is.
+ *
+ * Closing is "Close order" in both directions (#24). It was "Mark shipped"
+ * and "Mark received", which read as the act of shipping or receiving —
+ * those have their own buttons, and closing says only that nothing more
+ * is coming.
+ */
+function transitionLabel(next: OrderStatus): string {
+  if (next === 'fulfilled') return 'Close order';
   if (next === 'confirmed') return 'Confirm';
   return 'Cancel order';
 }
@@ -139,6 +147,8 @@ export function OrderDetailPage() {
   const canReceive = !!session?.permissions.includes('orders.receive');
   const canShip = !!session?.permissions.includes('orders.ship');
   const canCreate = !!session?.permissions.includes('orders.create');
+  const canViewInvoices = !!session?.permissions.includes('invoices.view');
+  const canInvoice = !!session?.permissions.includes('invoices.create');
   const loading = order === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 
@@ -602,7 +612,14 @@ export function OrderDetailPage() {
         <ShipmentsList
           orderId={order.id}
           refreshKey={shipments}
-          canVoid={canShip && order.status === 'confirmed'}
+          // Closed too: voiding a shipment that never left reopens the order.
+          canVoid={
+            canShip &&
+            (order.status === 'confirmed' || order.status === 'fulfilled')
+          }
+          orderClosed={order.status === 'fulfilled'}
+          canViewInvoices={canViewInvoices}
+          canInvoice={canInvoice && !order.isSample}
           onVoided={async () => {
             // The order changed too: fulfilled quantities, outstanding and holds.
             await load();
@@ -634,7 +651,7 @@ export function OrderDetailPage() {
                 disabled={working}
                 onClick={() => void moveTo(next)}
               >
-                {transitionLabel(next, order.direction)}
+                {transitionLabel(next)}
               </Button>
             ))}
 
@@ -656,7 +673,7 @@ export function OrderDetailPage() {
                   void moveTo(next);
                 }}
               >
-                {transitionLabel(next, order.direction)}
+                {transitionLabel(next)}
               </Button>
             ))}
         </Stack>

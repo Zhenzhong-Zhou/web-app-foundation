@@ -96,7 +96,7 @@ test('asks before closing an order that is short', async ({
 
   await page.goto(`/orders/${order.id}`);
   await page.getByRole('button', { name: 'Confirm' }).click();
-  await page.getByRole('button', { name: 'Mark received' }).click();
+  await page.getByRole('button', { name: 'Close order' }).click();
 
   /**
    * Asked, not refused. A short shipment nobody expects to complete is a real
@@ -110,7 +110,7 @@ test('asks before closing an order that is short', async ({
     page.getByRole('button', { name: 'Receive', exact: true }),
   ).toBeVisible();
 
-  await page.getByRole('button', { name: 'Mark received' }).click();
+  await page.getByRole('button', { name: 'Close order' }).click();
   await page.getByRole('button', { name: 'Close it' }).click();
 
   /**
@@ -121,9 +121,7 @@ test('asks before closing an order that is short', async ({
   await expect(
     page.getByRole('button', { name: 'Receive', exact: true }),
   ).toBeHidden();
-  await expect(
-    page.getByRole('button', { name: 'Mark received' }),
-  ).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Close order' })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Cancel order' })).toBeHidden();
 });
 

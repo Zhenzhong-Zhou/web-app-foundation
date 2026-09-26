@@ -7,7 +7,7 @@ import { created, daysFromNow, signInAs } from './support/api';
  * Shipping a sales order through the browser (ADR-041): one dialog for the
  * whole order, a line left behind for a later shipment, lots taken earliest
  * expiry first and shown before anything moves, then the rest shipped and
- * the order marked Shipped.
+ * the order closed.
  *
  * Seeded through the API, acted on through the UI. What only a browser can
  * check is that the dialog asks for the preview and renders it, sends only
@@ -101,7 +101,7 @@ async function seedSale(api: APIRequestContext) {
   return { orderId: order.id };
 }
 
-test('ships a sale in two parts, by lot, and marks it shipped', async ({
+test('ships a sale in two parts, by lot, and closes the order', async ({
   page,
   freshOrg,
 }) => {
@@ -155,12 +155,13 @@ test('ships a sale in two parts, by lot, and marks it shipped', async ({
   await rest.getByRole('button', { name: 'Ship', exact: true }).click();
   await expect(rest).toBeHidden();
 
-  // --- Done: the stored status reads as Shipped on a sale -------------------
-  await page.getByRole('button', { name: 'Mark shipped' }).click();
+  // --- Done: closed, and the stored status reads as Shipped on a sale -----
+  // "Close order", not "Mark shipped": shipping is the button above (#24).
+  await page.getByRole('button', { name: 'Close order' }).click();
 
   // Nothing was outstanding, so no close-short confirmation stands between,
   // and a fulfilled order is terminal: neither button that ran remains.
-  await expect(page.getByRole('button', { name: 'Mark shipped' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Close order' })).toBeHidden();
   await expect(
     page.getByRole('button', { name: 'Ship', exact: true }),
   ).toBeHidden();

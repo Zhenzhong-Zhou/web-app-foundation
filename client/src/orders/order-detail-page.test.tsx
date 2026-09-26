@@ -373,4 +373,132 @@ describe('OrderDetailPage lines', () => {
       expect(await screen.findByText(/not the full total/)).toBeInTheDocument();
     });
   });
+
+  describe('closing and invoicing', () => {
+    const SALE_PERMISSIONS = [
+      ...ALL,
+      'orders.ship',
+      'invoices.view',
+      'invoices.create',
+    ];
+
+    const shipment = {
+      id: 'shipment-1',
+      fromLocationId: 'location-1',
+      carrier: null,
+      trackingNumber: null,
+      note: null,
+      voidedAt: null,
+      voidReason: null,
+      createdAt: '2026-09-25T17:00:00.000Z',
+      items: [],
+    };
+
+    function invoice(over: Record<string, unknown> = {}) {
+      return {
+        id: 'invoice-1',
+        number: 'INV-000001',
+        status: 'issued',
+        orderId: 'order-1',
+        shipmentId: 'shipment-1',
+        partnerId: 'partner-1',
+        partnerName: 'Acme Supplies',
+        currency: 'CAD',
+        invoiceDate: '2026-09-25',
+        dueDate: null,
+        total: '78.7500',
+        createdAt: '2026-09-25T17:05:00.000Z',
+        ...over,
+      };
+    }
+
+    /** A confirmed sale with one shipment, and whatever invoices it has. */
+    function serveSale(
+      invoices: ReturnType<typeof invoice>[] = [],
+      over: Partial<OrderDetail> = {},
+    ) {
+      serve(order({ direction: 'sale', status: 'confirmed', ...over }));
+      server.use(
+        http.get('/api/v1/orders/:id/shipments', () =>
+          HttpResponse.json([shipment]),
+        ),
+        http.get('/api/v1/orders/:id/returns', () => HttpResponse.json([])),
+        http.get('/api/v1/invoices', () =>
+          HttpResponse.json({ entries: invoices, nextCursor: null }),
+        ),
+      );
+    }
+
+    /**
+     * "Mark received" and "Mark shipped" read as the act of receiving or
+     * shipping, which have their own buttons (#24). Closing says only that
+     * nothing more is coming, in either direction.
+     */
+    it('calls closing "Close order"', async () => {
+      serve(order({ status: 'confirmed' }));
+      renderPage();
+
+      expect(
+        await screen.findByRole('button', { name: 'Close order' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /^Mark/ }),
+      ).not.toBeInTheDocument();
+    });
+
+    it('offers an invoice for a shipment that has none', async () => {
+      serveSale();
+      renderPage(SALE_PERMISSIONS);
+
+      expect(
+        await screen.findByRole('button', { name: 'Create invoice' }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Void' })).toBeInTheDocument();
+    });
+
+    /**
+     * The server refuses to void a billed shipment (ADR-046), so the page
+     * does not offer it: the link to the invoice is where the answer is.
+     */
+    it('links to the standing invoice, and offers no void', async () => {
+      serveSale([invoice()]);
+      renderPage(SALE_PERMISSIONS);
+
+      expect(
+        await screen.findByRole('link', { name: 'Invoice INV-000001' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Void' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Create invoice' }),
+      ).not.toBeInTheDocument();
+    });
+
+    // A voided invoice no longer bills the shipment; it can be billed again.
+    it('ignores a voided invoice', async () => {
+      serveSale([invoice({ status: 'voided' })]);
+      renderPage(SALE_PERMISSIONS);
+
+      expect(
+        await screen.findByRole('button', { name: 'Create invoice' }),
+      ).toBeInTheDocument();
+    });
+
+    // Samples ship and trace like sales, but are never invoiced (ADR-042).
+    it('offers no invoice on a sample', async () => {
+      serveSale([], { isSample: true });
+      renderPage(SALE_PERMISSIONS);
+
+      expect(
+        await screen.findByRole('heading', { name: 'Shipments' }),
+      ).toBeInTheDocument();
+      expect(
+        await screen.findByRole('button', { name: 'Void' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Create invoice' }),
+      ).not.toBeInTheDocument();
+    });
+  });
 });

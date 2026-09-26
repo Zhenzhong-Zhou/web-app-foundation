@@ -24,17 +24,22 @@ import { useSubmit } from '../lib/use-submit';
  * the first thing somebody asks about when they open the order later. The
  * warning says what this is not for — a box that did leave and came back is
  * a return, and the server refuses a void once anything has.
+ *
+ * On a closed order it says what else happens: the order reopens, because
+ * it was closed on the understanding that its goods had left (ADR-046).
  */
 export function VoidShipmentDialog({
   open,
   orderId,
   shipment,
+  orderClosed,
   onClose,
   onVoided,
 }: {
   open: boolean;
   orderId: string;
   shipment: Shipment | null;
+  orderClosed: boolean;
   onClose: () => void;
   onVoided: () => Promise<void> | void;
 }) {
@@ -89,6 +94,13 @@ export function VoidShipmentDialog({
               the order, struck through, with your reason. If the box did leave
               and came back, take a return instead.
             </Alert>
+
+            {orderClosed && (
+              <Alert severity="info">
+                This order is closed. Voiding reopens it, since what it was
+                closed on never left.
+              </Alert>
+            )}
 
             <TextField
               id="void-shipment-reason"

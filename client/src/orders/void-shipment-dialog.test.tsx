@@ -40,6 +40,7 @@ describe('VoidShipmentDialog', () => {
         open
         orderId="order-1"
         shipment={SHIPMENT}
+        orderClosed={false}
         onClose={() => undefined}
         onVoided={onVoided}
       />,
@@ -51,5 +52,38 @@ describe('VoidShipmentDialog', () => {
     await expect.poll(() => sent.length).toBe(1);
     expect(sent[0]).toEqual({ reason: 'Customer cancelled' });
     await expect.poll(() => onVoided.mock.calls.length).toBe(1);
+  });
+
+  /**
+   * Voiding a closed order's shipment reopens the order (ADR-046), so the
+   * dialog says so before it happens — and says nothing about it on an order
+   * that is still open.
+   */
+  it('warns that voiding reopens a closed order', () => {
+    const { rerender } = render(
+      <VoidShipmentDialog
+        open
+        orderId="order-1"
+        shipment={SHIPMENT}
+        orderClosed
+        onClose={() => undefined}
+        onVoided={() => undefined}
+      />,
+    );
+
+    expect(screen.getByText(/Voiding reopens it/)).toBeInTheDocument();
+
+    rerender(
+      <VoidShipmentDialog
+        open
+        orderId="order-1"
+        shipment={SHIPMENT}
+        orderClosed={false}
+        onClose={() => undefined}
+        onVoided={() => undefined}
+      />,
+    );
+
+    expect(screen.queryByText(/Voiding reopens it/)).not.toBeInTheDocument();
   });
 });

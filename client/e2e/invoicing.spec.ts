@@ -8,9 +8,10 @@ import { created, signInAs } from './support/api';
  * line, its total previewed, issued with a number, then voided by a credit
  * note that the invoice links to.
  *
- * Seeded through the API up to the draft: shipping has its own journey,
- * and creating an invoice from a shipment arrives with the order page's
- * button. freshOrg, because numbers are asserted from INV-000001.
+ * Seeded through the API up to the shipment or the draft: shipping has its
+ * own journey. One test starts the invoice from the order page's button;
+ * the rest start from a draft. freshOrg, because numbers are asserted from
+ * INV-000001.
  */
 
 /** A PUT, PATCH or DELETE that must succeed; they return no body. */
@@ -21,10 +22,12 @@ async function ok(
 }
 
 /**
- * Everything issuing needs, and a draft for one shipment: 6 capsules at
- * 12.50 CAD, with no tax code yet.
+ * Everything issuing needs, and one shipment of 6 capsules at 12.50 CAD on
+ * a confirmed sale, not yet invoiced.
  */
-async function seedDraft(api: APIRequestContext): Promise<string> {
+async function seedShipment(
+  api: APIRequestContext,
+): Promise<{ orderId: string; shipmentId: string }> {
   await ok(
     await api.put('/v1/organization/address', {
       data: { line1: '100 Main St', city: 'Vancouver', country: 'CA' },
@@ -115,8 +118,15 @@ async function seedDraft(api: APIRequestContext): Promise<string> {
     }),
   );
 
+  return { orderId: order.id, shipmentId: shipment.id };
+}
+
+/** The same, with a draft invoice for the shipment and no tax code yet. */
+async function seedDraft(api: APIRequestContext): Promise<string> {
+  const { shipmentId } = await seedShipment(api);
+
   const { invoice } = await created<{ invoice: { id: string } }>(
-    await api.post('/v1/invoices', { data: { shipmentId: shipment.id } }),
+    await api.post('/v1/invoices', { data: { shipmentId } }),
   );
 
   return invoice.id;
@@ -251,4 +261,31 @@ test('prints a draft as DRAFT, and a voided invoice and its credit note', async 
   await expect(page.getByText('CN-000001')).toBeVisible();
   await expect(page.getByText(/Voids invoice INV-000001/)).toBeVisible();
   await expect(page.getByText('Reason: Billed twice')).toBeVisible();
+});
+
+test('creates an invoice from a shipment on its order', async ({
+  page,
+  freshOrg,
+}) => {
+  const { orderId } = await seedShipment(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await page.goto(`/orders/${orderId}`);
+
+  // An invoice starts from the shipment it bills, and opens as a draft.
+  await page.getByRole('button', { name: 'Create invoice' }).click();
+  await expect(page).toHaveURL(/\/invoices\/[0-9a-f-]+$/);
+  await expect(
+    page.getByRole('heading', { name: 'Draft invoice' }),
+  ).toBeVisible();
+
+  // Back on the order, the shipment links to its invoice, and offers no
+  // Void: the invoice is voided or deleted first (ADR-046).
+  await page.goto(`/orders/${orderId}`);
+  await expect(page.getByRole('link', { name: 'Draft invoice' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Create invoice' }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Void', exact: true }),
+  ).toHaveCount(0);
 });
