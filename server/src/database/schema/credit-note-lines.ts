@@ -14,6 +14,7 @@ import { primaryKey } from './columns';
 import { creditNotes } from './credit-notes';
 import { invoiceLines } from './invoice-lines';
 import { organizations } from './organizations';
+import { returnAuthorizationLines } from './return-authorization-lines';
 
 /**
  * One invoice line credited, in whole or in part (ADR-046).
@@ -37,6 +38,17 @@ export const creditNoteLines = pgTable(
     invoiceLineId: uuid('invoice_line_id')
       .notNull()
       .references(() => invoiceLines.id, { onDelete: 'restrict' }),
+
+    /**
+     * The RMA line this credits, for a credit for returned goods (ADR-047).
+     * How "no more than the RMA authorized, less earlier credits" is summed.
+     * Null for a void and for credits without goods — a price correction,
+     * goodwill, an uncollectable debt.
+     */
+    returnAuthorizationLineId: uuid('return_authorization_line_id').references(
+      () => returnAuthorizationLines.id,
+      { onDelete: 'restrict' },
+    ),
 
     sku: text('sku').notNull(),
     description: text('description').notNull(),
@@ -73,5 +85,11 @@ export const creditNoteLines = pgTable(
       t.organizationId,
       t.invoiceLineId,
     ),
+
+    // What has been credited against an RMA line. Partial: voids and
+    // credits without goods name none.
+    index('credit_note_lines_return_authorization_line_idx')
+      .on(t.returnAuthorizationLineId)
+      .where(sql`${t.returnAuthorizationLineId} is not null`),
   ],
 );

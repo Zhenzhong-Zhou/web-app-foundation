@@ -14,7 +14,11 @@ import { organizations } from './organizations';
  * Which document series are numbered. A column and a check, as order
  * directions are (ADR-027): closed, and branched on by name.
  */
-export const DOCUMENT_TYPES = ['invoice', 'credit_note'] as const;
+export const DOCUMENT_TYPES = [
+  'invoice',
+  'credit_note',
+  'return_authorization',
+] as const;
 
 export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 
@@ -61,7 +65,7 @@ export const documentSequences = pgTable(
 
     check(
       'document_sequences_document_type_check',
-      sql`${t.documentType} in ('invoice', 'credit_note')`,
+      sql`${t.documentType} in ('invoice', 'credit_note', 'return_authorization')`,
     ),
 
     check('document_sequences_next_value_check', sql`${t.nextValue} >= 1`),

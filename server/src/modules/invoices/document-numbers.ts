@@ -10,6 +10,7 @@ import { documentSequences, type DocumentType } from '../../database/schema';
 const PREFIXES: Record<DocumentType, string> = {
   invoice: 'INV-',
   credit_note: 'CN-',
+  return_authorization: 'RMA-',
 };
 
 /**

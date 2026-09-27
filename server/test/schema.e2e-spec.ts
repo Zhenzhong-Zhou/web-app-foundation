@@ -12,6 +12,8 @@ import {
   MOVEMENT_REASONS,
   ORDER_DIRECTIONS,
   ORDER_STATUSES,
+  RETURN_AUTHORIZATION_STATUSES,
+  RETURN_RESOLUTIONS,
 } from '../src/database/schema';
 import { createTestApp } from './utils/create-test-app';
 
@@ -86,6 +88,8 @@ describe('schema invariants', () => {
     ['stock_movements_reason_check', MOVEMENT_REASONS],
     ['document_sequences_document_type_check', DOCUMENT_TYPES],
     ['invoices_status_check', INVOICE_STATUSES],
+    ['return_authorizations_status_check', RETURN_AUTHORIZATION_STATUSES],
+    ['return_authorization_lines_resolution_check', RETURN_RESOLUTIONS],
   ])('%s', (constraintName, values) => {
     it('accepts every value the code can write', async () => {
       const result = await db.execute(sql`

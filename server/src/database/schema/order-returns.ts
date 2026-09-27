@@ -1,9 +1,11 @@
+import { sql } from 'drizzle-orm';
 import { index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 import { primaryKey } from './columns';
 import { locations } from './locations';
 import { orders } from './orders';
 import { organizations } from './organizations';
+import { returnAuthorizations } from './return-authorizations';
 import { users } from './users';
 
 /**
@@ -39,6 +41,18 @@ export const orderReturns = pgTable(
       .notNull()
       .references(() => locations.id, { onDelete: 'restrict' }),
 
+    /**
+     * The RMA this return was received against, if any (ADR-047). Held to
+     * what it authorized. Nullable, because goods on the dock are a fact and
+     * are recorded whether or not anyone agreed to them; set later, once,
+     * when an RMA is raised afterwards for goods already back — the one
+     * change a return ever sees.
+     */
+    returnAuthorizationId: uuid('return_authorization_id').references(
+      () => returnAuthorizations.id,
+      { onDelete: 'restrict' },
+    ),
+
     /** Why it came back, in the customer's or the receiver's words. */
     reason: text('reason'),
     note: text('note'),
@@ -52,5 +66,12 @@ export const orderReturns = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [index('order_returns_org_order_idx').on(t.organizationId, t.orderId)],
+  (t) => [
+    index('order_returns_org_order_idx').on(t.organizationId, t.orderId),
+
+    // What came back against an RMA. Partial: most returns name none yet.
+    index('order_returns_return_authorization_idx')
+      .on(t.returnAuthorizationId)
+      .where(sql`${t.returnAuthorizationId} is not null`),
+  ],
 );

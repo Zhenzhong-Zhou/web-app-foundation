@@ -15,6 +15,7 @@ import { addresses } from './addresses';
 import { primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
 import { partners } from './partners';
+import { returnAuthorizations } from './return-authorizations';
 import { users } from './users';
 
 /**
@@ -165,6 +166,16 @@ export const orders = pgTable(
       { onDelete: 'restrict' },
     ),
 
+    /**
+     * The RMA this sale replaces goods for (ADR-047): a sale at zero, raised
+     * from the RMA's replace lines, that then confirms, ships and traces as
+     * any sale does. Null on every other order.
+     */
+    returnAuthorizationId: uuid('return_authorization_id').references(
+      (): AnyPgColumn => returnAuthorizations.id,
+      { onDelete: 'restrict' },
+    ),
+
     ...timestamps,
   },
   (t) => [
@@ -218,5 +229,10 @@ export const orders = pgTable(
     index('orders_duplicated_from_id_idx')
       .on(t.duplicatedFromId)
       .where(sql`${t.duplicatedFromId} is not null`),
+
+    // "Which order replaced these goods". Partial for the same reason.
+    index('orders_return_authorization_id_idx')
+      .on(t.returnAuthorizationId)
+      .where(sql`${t.returnAuthorizationId} is not null`),
   ],
 );

@@ -225,6 +225,13 @@
       "when": 1790364439215,
       "tag": "0031_invoicing",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790490767573,
+      "tag": "0032_return_authorizations",
+      "breakpoints": true
     }
   ]
 }
