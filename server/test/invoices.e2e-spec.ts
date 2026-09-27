@@ -9,6 +9,7 @@ import {
 import {
   auditLog,
   invoiceLines,
+  invoiceLineTaxes,
   invoices,
   roles,
 } from '../src/database/schema';
@@ -911,6 +912,32 @@ describe('Invoices (e2e)', () => {
       const detail = await readIssued(org, r.invoice.id);
       expect(detail.taxes![0].rate).toBe('5.0000');
       expect(detail.total).toBe('144.3800');
+    });
+
+    /**
+     * Which taxes applied to each line, kept at the rates charged that day,
+     * so a partial credit later uses them rather than today's (ADR-047).
+     */
+    it('records each line’s tax components at issue', async () => {
+      const org = await registerOrg('alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+
+      await org.agent
+        .patch(`/v1/tax-codes/${r.gst}`)
+        .send({ components: [{ name: 'GST', rate: '6' }] })
+        .expect(204);
+
+      const rows = await db
+        .select()
+        .from(invoiceLineTaxes)
+        .where(eq(invoiceLineTaxes.organizationId, org.organizationId));
+
+      // One per line, both at the 5% charged — not the 6% the code says now.
+      expect(rows.map((row) => [row.name, row.rate])).toEqual([
+        ['GST', '5.0000'],
+        ['GST', '5.0000'],
+      ]);
     });
 
     /**

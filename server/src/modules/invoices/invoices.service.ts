@@ -18,6 +18,7 @@ import {
   creditNotes,
   creditNoteTaxes,
   invoiceLines,
+  invoiceLineTaxes,
   invoices,
   invoiceTaxes,
   orderLines,
@@ -28,6 +29,7 @@ import {
   productVariants,
   shipments,
   stockMovements,
+  taxCodeComponents,
   taxCodes,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -531,6 +533,25 @@ export class InvoicesService {
                 ),
               );
           }
+
+          /**
+           * Which tax components applied to each line, at the rates charged
+           * today (ADR-047). A partial credit weeks from now reads these,
+           * never the code's current rates, which may have changed by law.
+           * Read in this transaction, so they are exactly the components
+           * computeAmounts just used.
+           */
+          await tx.execute(sql`
+            insert into ${invoiceLineTaxes}
+              (organization_id, invoice_line_id, name, rate)
+            select ${organizationId}::uuid, l.id, c.name, c.rate
+            from ${invoiceLines} l
+            join ${taxCodeComponents} c
+              on c.tax_code_id = l.tax_code_id
+             and c.organization_id = ${organizationId}::uuid
+            where l.organization_id = ${organizationId}::uuid
+              and l.invoice_id = ${invoiceId}::uuid
+          `);
 
           if (amounts.taxes.length > 0) {
             await tx.insert(invoiceTaxes).values(
