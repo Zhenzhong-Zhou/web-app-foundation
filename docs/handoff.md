@@ -1,93 +1,84 @@
-# web-app-foundation — handoff for v0.4 (money)
+# web-app-foundation — handoff, v0.4 in progress (money)
 
-Paste this into the new chat. The Project knowledge was re-synced from the
-v0.3.0 tag, so the new session reads current code.
+Paste this into the new chat. Re-sync Project knowledge from `main` first, so
+the new session reads current code.
 
 ## Where things stand
 
 Multi-tenant B2B SaaS (NestJS + React + Drizzle + PostgreSQL 18), deployed on
-Render. Inventory for a natural health products maker: buy → receive → make
-under a licence → sell → ship → returns, with lot traceability both ways and
-stock held for confirmed sales. It moves goods; it does not yet move money.
+Render (no real data there yet). Inventory for a natural health products
+maker: buy → receive → make under a licence → sell → ship → invoice → return
+and credit, with lot traceability both ways and stock held for confirmed
+sales.
 
-- Version: **0.3.0 tagged** ("make, ship, return, trace"); notes in
-  `docs/releases/v0.3.0.txt`.
-- Migrations: through **0030** (`shipment_void`). Next is **0031**.
-- ADRs: through **ADR-045**. Next is **ADR-046**.
-- Tests at the tag: server **425** e2e (`npm run test:e2e`, `--runInBand`);
-  client vitest **72**; Playwright **46**. `npm run seed:demo` green.
+- Last tag: **v0.3.0**. v0.4 is in progress, not yet tagged.
+- Migrations: through **0032** (`return_authorizations`). Next is **0033**.
+- ADRs: through **ADR-047**. Next is **ADR-048**.
+- Tests at the last run: server e2e about 540 (`npm run test:e2e`,
+  `--runInBand`); client vitest 83; Playwright 58. `npm run seed:demo` green
+  and invoices SO-DEMO-1's first shipment as INV-000001.
 
 ## v0.4 milestone — money
 
-1. **Invoices for shipments.**
-2. **Credit notes for returns**, together with return authorization (RMA, #22).
-3. **Cost on lots and batches.**
-4. **Price lists.**
+1. **Invoices for shipments** — done (ADR-046).
+2. **Credit notes for returns, with RMA (#22)** — done (ADR-047).
+3. **Cost on lots and batches** — next. ADR-048 before any code.
+4. **Price lists** — after that, its own ADR.
 
-Invoicing also settles two open questions:
+Then the end-of-milestone ritual, **required this time** since v0.3 skipped
+it: look around; a real week by hand, including an invoice, an RMA, a partial
+credit and a replacement; the timed recall drill on BF-2609. Then tag v0.4.0.
 
-- **Void until invoiced.** Void is refused on a closed order today; the
-  workaround is a return with the reason "never left". The intended rule is
-  that Void is allowed until the shipment is invoiced (how SAP / NetSuite do
-  it). Not filed as an issue — it is decided in the invoicing ADR.
-- **What Mark shipped is for (#24).** Ship means the box went to the carrier;
-  Mark shipped closes the order. Once invoices exist, decide whether closing
-  stays a separate act, what it is called, and what it locks.
+## What v0.4 built (read these before ADR-048)
 
-## First step: ADR-046 Invoicing, before any code
+**ADR-046 — invoicing.** An invoice bills exactly one shipment; draft →
+issued → voided. Issuing takes a gapless per-organization number
+(`document_sequences`, upsert inside the transaction, `INV-`/`CN-`/`RMA-`),
+stores every amount, and copies seller, bill-to and ship-to. Amounts are one
+SQL calculation (`invoice-amounts.ts`) shared by the draft preview and issue:
+nets rounded to the currency's minor units (from `Intl`), tax per component
+rounded once per invoice. Tax codes carry one or more components; "Exempt" is
+a code with none. A sale must be priced (zero allowed) and single-currency at
+confirm; samples are exempt and never invoiced. Void issues a full credit note
+and frees the shipment. Void shipment is refused while an invoice stands, and
+reopens a closed order. "Mark shipped/received" became "Close order" (#24).
 
-Write the ADR in `docs/decisions.md` in the house style (Context, Decision
-sections each with the rejected alternative and why, Consequences, Deferred).
-No schema or code until it is agreed. Read first:
+**ADR-047 — RMAs and credit notes.** An RMA is its own document, authorized
+when raised, with a resolution per line (credit / replace / none) and
+optionally the invoice the customer quoted. A return may name an RMA and is
+held to it; a return without one is still recorded and can be linked later,
+once. Credit notes credit part of one invoice: quantity and a unit price that
+may be lowered, never raised; capped by value per invoice line, by tax
+component (using `invoice_line_taxes`, the rates charged at issue), and by
+quantity per RMA line. Preview and issue share one calculation; there is no
+draft credit note. Void is refused once anything is credited. Replacement is
+a draft sale at zero, linked to the RMA. The uncollectable stopgap is a full
+credit with no RMA (payments are deferred).
 
-- **ADR-035** — price and currency on the line; subtotals per currency, not a
-  total; line total computed, never stored; returned unrounded (minor units
-  are the currency's business); price freezes when the line does.
-- **ADR-026** — invoicing gets separate accounting tables keyed by
-  `partner_id`, not a fork of `partners`.
-- **ADR-028** — the organization's own registered address (needed on an
-  invoice) is an owner column on `addresses`: widened check, index, partial
-  unique for its default.
-- **ADR-041** + Void amendment, **ADR-042** (samples are flagged sales),
-  **ADR-043** (returns; RMA deferred note), **ADR-025** (decimals as strings,
-  sums in SQL), **ADR-038** (audit names resources as they were).
-- Open decisions: exchange rates, "Capture unit cost at receipt", "Per-batch
-  cost, and which method values it", production order numbering (and 0023's
-  reference column).
+**Organization and tax codes.** `core/organizations/` holds the tenant's
+registered address (an owner column on `addresses`) and tax number;
+`modules/tax-codes/`. Settings pages under the account menu.
 
-Questions the ADR has to answer:
+**Client.** `useCan()` with a typed `Permission` union
+(`client/src/auth/permissions.ts`); `server/scripts/check-client-permissions.js`
+fails CI when the two lists differ. Pages for one record are
+`*-detail-page.tsx`. Print pages share `invoices/print-sheet.tsx`.
 
-- **Grain.** One invoice per shipment, or one invoice covering several
-  shipments of an order (or of a partner)? Can a shipment be split across
-  invoices?
-- **Currency.** Lines carry their own currency (ADR-035), so a shipment can
-  be mixed. One invoice per currency, or refuse mixed?
-- **Unpriced lines.** Refuse to invoice, or refuse to ship/confirm unpriced
-  sale lines earlier?
-- **Lifecycle and immutability.** Draft → issued (→ paid?). What is frozen
-  at issue, and is every correction after that a credit note?
-- **Numbering.** Sequential per organization, gapless or not, assigned at
-  issue rather than at draft; how it is generated safely under concurrency.
-- **Snapshots.** What is copied onto the invoice (bill-to address, seller
-  address, item names, prices) versus referenced.
-- **Tax.** Where rates come from, per-line or per-invoice, and rounding —
-  per line or on the total — given the unrounded line totals of ADR-035.
-- **Money precision.** `numeric(18, 4)` like quantities, or a separate money
-  rule; where rounding to minor units finally happens.
-- **Samples.** Posted samples (`is_sample`): a zero invoice, or none?
-- **Payments.** In v0.4 or deferred (recording payments, balances, aging)?
-- **Purchase side.** Supplier bills and three-way matching now, or sales
-  only in v0.4?
-- **Void and Mark shipped.** The lock rule, and what #24 becomes.
-- **Permissions and audit.** New `invoices.*` permissions (the coverage
-  invariant test will demand them), audit actions and labels.
-- **Output.** Printable invoice, like the packing slip.
+## ADR-048 — cost on lots: what to read first
 
-Then, per the delivery approach: server with e2e tests, then the client
-screens. Each later item (credit notes + RMA, cost on lots, price lists) gets
-its own ADR before code. Note from the open decisions: cost at receipt is
-"cheap now, impossible to backfill" — every receipt made before it lands is
-a lot without a cost.
+- Open decisions in `docs/decisions.md`: **"Capture unit cost at receipt"**
+  (cheap now, impossible to backfill) and **"Per-batch cost, and which method
+  values it"**; also **exchange rates** (ADR-035), since purchase prices may be
+  in another currency.
+- ADR-035 (price and currency on order lines), ADR-025 (decimals as strings,
+  sums in SQL), the production ADRs (runs consume component lots and produce a
+  batch lot), ADR-045 (holds).
+- Questions it has to answer: where cost is captured (receipt from the order
+  line; adjustments; production output); the unit (per lot, per base unit of
+  measure); currency and conversion at receipt; how a batch's cost is built
+  from the component lots it consumed; whether the valuation method (actual per
+  lot, FIFO, weighted average) is decided now or deferred; what corrects a
+  wrong cost; and what it means for returns and write-offs.
 
 ## Open GitHub issues
 
@@ -95,58 +86,62 @@ a lot without a cost.
 - #16 licence status for suspended, cancelled, superseded
 - #17 licence expiry notification (60 days)
 - #18 site licences on the organization or a partner
-- #19 generated client types from OpenAPI
-- #20 `date` column for calendar days
-- **#22 return authorization (RMA)** — v0.4, with credit notes
-- **#24 "Mark shipped" reads wrong as the close button** — v0.4, with invoicing
+- #19 generated client types from OpenAPI (would also replace the client's
+  copied permission list)
+- #20 `date` column for calendar days (invoices and credit notes already use
+  `date`; the older columns do not)
 - #25 show what the customer kept (shipped − returned)
-- #26 cancel check and update are not one transaction
+- #26 cancel check and update are not one transaction (the sale confirm checks
+  share this race and close with it)
 - #28 run-close top-up ignores holds and the lots picked at release
-- If not yet filed: shared "Load more" keyset paging hook (audit, history,
-  orders, products, partners, locations).
+- Shared "Load more" keyset paging hook, if filed: the same `loadMore` is now in
+  eight or more pages, invoices and returns included.
 
-Other deferred items live in the **Deferred** paragraphs of ADR-041 to
-ADR-045 and are deliberately not issues. File one only when it is about to be
-built.
+## Left over, small
 
-## Carried over from v0.3
-
-- The end-of-milestone ritual was skipped for v0.3 (listed as a known
-  limitation). It is required at the end of v0.4: look around, a real week by
-  hand (now including invoicing and a credit note), and the timed recall drill
-  on BF-2609.
+- **Pro forma invoices** — deferred in ADR-046; remind Bob. Bring forward if the
+  business needs them for customs, prepayment or sample values.
+- **Translation** — noted in Open decisions: the app's screens, and separately
+  the printed documents (Quebec is the likely trigger).
+- `issue()` in `invoices.service.ts` sets `taxCodeName` with a correlated
+  subquery written through Drizzle; it works only because `tax_codes` has no
+  `tax_code_id` column. Qualify it in plain SQL when that file is next touched
+  (see below).
+- The top bar now has nine links; check it still fits just above the `lg`
+  breakpoint, or move the drawer to `xl`.
+- Check ADR-047's audit list names `return_authorization.replacement_raised`.
 
 ## Working agreements (for Claude)
 
 - ADR before code for each new area; server first with e2e tests, then the
-  client screens.
+  client screens; each step its own commit.
 - **Ask for Bob's current copy of any existing file before replacing it in
-  full**; otherwise give snippets. Full files only for new files, files Claude
-  wrote and Bob has not changed, or files Bob has just sent.
-- State the exact path of every file; show the tree when several land. Real
-  paths: `server/src/modules/orders/`, `server/src/modules/production-orders/`,
-  `server/src/modules/stock/`, `client/src/orders/`,
-  `client/src/production/`, `client/src/inventory/`,
-  `client/src/components/variant-picker.tsx`, `docs/decisions.md`.
-- Commit scripts: explicit `git add` per concern, never `-A`; check
-  `git status` for pre-staged files that would sweep into the wrong commit.
-  Each commit must build on its own — don't split one file's interleaved
-  changes across commits. Messages explain the why, written as one `-m` with
-  a subject line, a blank line, and wrapped paragraphs.
-- Server e2e: always `npm run test:e2e` (or `--runInBand`) — parallel suites
-  share one database and fail at random.
-- Don't edit server files while Playwright runs against `start:dev`; watch
-  mode restarts it mid-run.
-- Migrations that rename a checked value: drop the constraint, update rows,
-  re-add — Drizzle generates only the drop and add.
-- Quantities (and, unless the ADR says otherwise, money) stay strings end to
-  end (ADR-025); compare and sum in SQL; cast computed values back to
-  `numeric(18, 4)`. On the client, exact sums use `client/src/lib/decimal.ts`,
-  never JS numbers.
-- Refusals in order: malformed (400), not found (404), not allowed (409).
-  Checks run before any write.
-- Ship means the box is handed to the carrier; Mark shipped closes the order.
-  They are different acts.
+  full**; otherwise give snippets. Full files for new files, files Claude wrote
+  that Bob has not changed, or files Bob has just sent.
+- State the exact path of every file. Real paths: `server/src/modules/…`,
+  `server/src/core/…` (organizations, audit, authorization), `client/src/…`
+  (`invoices/`, `rmas/`, `orders/`, `settings/`, `auth/permissions.ts`),
+  `docs/decisions.md`.
+- Commit scripts: explicit `git add` per concern, never `-A`; check `git status`
+  for staged files that would sweep into the wrong commit (a staged-then-deleted
+  file is still committed). Each commit must build on its own. Messages explain
+  the why, as one `-m` with a subject, a blank line and wrapped paragraphs.
+- Server e2e: always `npm run test:e2e` (`--runInBand`). Don't edit server files
+  while Playwright runs against `start:dev`.
+- **Drizzle writes a column without its table name when a query has no joins.**
+  Inside a correlated subquery, name the outer row in plain SQL
+  (`return_authorization_lines.id`), never `${table.column}` — a bare name binds
+  to the subquery's own tables. This caused a real bug in RMA progress figures.
+- Quantities and money stay strings end to end (ADR-025); compare and sum in
+  SQL; the client never does decimal arithmetic.
+- Refusals in order: malformed (400), not found (404), not allowed (409), all
+  before any write. Ids from a body that belong to another tenant are 400.
+- Every write route is audited or listed in `NOT_AUDITED` with a reason; every
+  route has `@RequirePermissions`; never seed a permission nothing gates. New
+  permissions default to Owner-only.
+- Client: dialogs take permission flags from their page rather than reading the
+  session, so they stay testable alone. `useSubmit`'s callback takes no result —
+  keep ids in a `useRef`. Hooks never inside hooks or after an early return.
+- Playwright: `getByLabel` matches substrings and aria-labels; prefer
+  `getByRole(…, { name, exact: true })`. Toasts have their own "Close" button.
 - British spelling in comments and copy is intentional.
-- At every milestone end, before tagging: look around, a real week by hand,
-  a recall drill.
