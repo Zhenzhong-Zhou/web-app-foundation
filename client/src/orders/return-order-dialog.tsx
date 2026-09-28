@@ -21,7 +21,14 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
 import { formatDay } from '../lib/format';
-import type { Location, ReturnableLine } from '../lib/types';
+import type {
+  Location,
+  ReturnableLine,
+  ReturnAuthorizationDetail,
+  ReturnAuthorizationLine,
+  ReturnAuthorizationPage,
+  ReturnAuthorizationSummary,
+} from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
 /** Why things usually come back. "Other" leaves the note to explain. */
@@ -58,11 +65,18 @@ type ReturnLinePayload =
  *
  * Tracked lines are entered per lot and untracked lines as a quantity. The
  * dialog never adds lots up — the server sums them in SQL.
+ *
+ * A return may be received against an open RMA that expects goods
+ * (ADR-047). Each line then shows what that RMA authorized and what has
+ * already come back against it, and the server holds the return to it. No
+ * RMA is the default: goods on the dock are recorded either way, and one
+ * that arrived unannounced can be linked to an RMA afterwards.
  */
 export function ReturnOrderDialog({
   open,
   orderId,
   locations,
+  canSeeRmas,
   onClose,
   onReturned,
 }: {
@@ -70,11 +84,27 @@ export function ReturnOrderDialog({
   orderId: string;
   /** All leaves, unavailable ones included: that is where returns belong. */
   locations: Location[];
+  /** return_authorizations.view: whether to offer the RMA picker at all. */
+  canSeeRmas: boolean;
   onClose: () => void;
   onReturned: () => Promise<void> | void;
 }) {
   const [lines, setLines] = useState<ReturnableLine[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  /** Open RMAs on this order that expect goods: the ones a box can meet. */
+  const [rmas, setRmas] = useState<ReturnAuthorizationSummary[]>([]);
+  const [rmaId, setRmaId] = useState('');
+
+  /**
+   * The lines of the RMA last loaded, keyed by its id, so a change of RMA
+   * shows nothing until its own lines arrive — derived below rather than
+   * cleared in an effect.
+   */
+  const [loaded, setLoaded] = useState<{
+    id: string;
+    lines: ReturnAuthorizationLine[];
+  } | null>(null);
 
   const [toLocationId, setTo] = useState('');
   const [reason, setReason] = useState('damaged');
@@ -120,6 +150,55 @@ export function ReturnOrderDialog({
     };
   }, [open, orderId]);
 
+  useEffect(() => {
+    if (!open || !canSeeRmas) return;
+
+    let ignore = false;
+
+    void api<ReturnAuthorizationPage>(
+      `/return-authorizations?orderId=${orderId}&status=open&limit=100`,
+    )
+      .then((page) => {
+        if (!ignore) {
+          setRmas(page.entries.filter((rma) => rma.expectsGoods));
+        }
+      })
+      .catch(() => {
+        // The picker stays empty; a return needs no RMA.
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [open, orderId, canSeeRmas]);
+
+  /** The chosen RMA's lines, so each item can say what it allows. */
+  useEffect(() => {
+    if (!rmaId) return;
+
+    let ignore = false;
+
+    void api<{ returnAuthorization: ReturnAuthorizationDetail }>(
+      `/return-authorizations/${rmaId}`,
+    )
+      .then((response) => {
+        if (!ignore) {
+          setLoaded({ id: rmaId, lines: response.returnAuthorization.lines });
+        }
+      })
+      .catch(() => {
+        // Without its lines the dialog simply says nothing per item; the
+        // server still holds the return to the RMA.
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [rmaId]);
+
+  const chosenRma = rmas.find((rma) => rma.id === rmaId);
+  const rmaLines = rmaId && loaded?.id === rmaId ? loaded.lines : null;
+
   function close() {
     reset();
     onClose();
@@ -153,6 +232,7 @@ export function ReturnOrderDialog({
         method: 'POST',
         body: JSON.stringify({
           toLocationId,
+          returnAuthorizationId: rmaId || undefined,
           reason,
           note: note.trim() || undefined,
           lines: sending,
@@ -206,93 +286,138 @@ export function ReturnOrderDialog({
               </TextField>
             </Stack>
 
-            {lines?.map((line) => (
-              <Stack key={line.lineId} spacing={1}>
-                <Typography>
-                  {line.sku}
-                  <Typography
-                    component="span"
-                    variant="body2"
-                    color="text.secondary"
-                  >
-                    {' '}
-                    — {line.quantityFulfilled} shipped, {line.quantityReturned}{' '}
-                    already back
-                  </Typography>
-                </Typography>
+            {rmas.length > 0 && (
+              <TextField
+                id="return-rma"
+                label="Against RMA"
+                select
+                fullWidth
+                value={rmaId}
+                onChange={(event) => setRmaId(event.target.value)}
+                helperText="If the customer was authorized to send this back. It is then held to what the RMA allows."
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {rmas.map((rma) => (
+                  <MenuItem key={rma.id} value={rma.id}>
+                    {rma.number} — {rma.reason}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
 
-                {line.tracksLots ? (
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Lot</TableCell>
-                          <TableCell>Expires</TableCell>
-                          <TableCell align="right">Shipped</TableCell>
-                          <TableCell align="right">Already back</TableCell>
-                          <TableCell align="right">Coming back</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {line.lots.map((lot) => (
-                          <TableRow key={lot.lotId}>
-                            <TableCell>{lot.code}</TableCell>
-                            <TableCell>
-                              {lot.expiresAt ? formatDay(lot.expiresAt) : '—'}
-                            </TableCell>
-                            <TableCell align="right">{lot.shipped}</TableCell>
-                            <TableCell align="right">{lot.returned}</TableCell>
-                            <TableCell align="right" sx={{ width: 140 }}>
-                              <TextField
-                                size="small"
-                                value={byLot[line.lineId]?.[lot.lotId] ?? ''}
-                                onChange={(event) =>
-                                  setByLot((current) => ({
-                                    ...current,
-                                    [line.lineId]: {
-                                      ...current[line.lineId],
-                                      [lot.lotId]: event.target.value,
-                                    },
-                                  }))
-                                }
-                                slotProps={{
-                                  htmlInput: {
-                                    inputMode: 'decimal',
-                                    maxLength: 19,
-                                    'aria-label': `Return from lot ${lot.code}`,
-                                  },
-                                }}
-                              />
-                            </TableCell>
+            {lines?.map((line) => {
+              const authorized = rmaLines?.find(
+                (rmaLine) => rmaLine.orderLineId === line.lineId,
+              );
+
+              return (
+                <Stack key={line.lineId} spacing={1}>
+                  <Typography>
+                    {line.sku}
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      color="text.secondary"
+                    >
+                      {' '}
+                      — {line.quantityFulfilled} shipped,{' '}
+                      {line.quantityReturned} already back
+                    </Typography>
+                  </Typography>
+
+                  {/* What the chosen RMA allows, as figures from the server;
+                    the dialog does not subtract them (ADR-025). */}
+                  {chosenRma &&
+                    rmaLines &&
+                    (authorized ? (
+                      <Typography variant="body2" color="text.secondary">
+                        {chosenRma.number} authorizes {authorized.quantity},{' '}
+                        {authorized.quantityReceived} back against it so far
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" color="warning.main">
+                        Not on {chosenRma.number} — leave it empty, or receive
+                        it without the RMA
+                      </Typography>
+                    ))}
+
+                  {line.tracksLots ? (
+                    <TableContainer>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Lot</TableCell>
+                            <TableCell>Expires</TableCell>
+                            <TableCell align="right">Shipped</TableCell>
+                            <TableCell align="right">Already back</TableCell>
+                            <TableCell align="right">Coming back</TableCell>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                ) : (
-                  <TextField
-                    size="small"
-                    label="Coming back"
-                    value={quantities[line.lineId] ?? ''}
-                    onChange={(event) =>
-                      setQuantities((current) => ({
-                        ...current,
-                        [line.lineId]: event.target.value,
-                      }))
-                    }
-                    slotProps={{
-                      htmlInput: {
-                        inputMode: 'decimal',
-                        maxLength: 19,
-                        'aria-label': `Return ${line.sku}`,
-                      },
-                    }}
-                    helperText={line.unitOfMeasure}
-                    sx={{ width: 180 }}
-                  />
-                )}
-              </Stack>
-            ))}
+                        </TableHead>
+                        <TableBody>
+                          {line.lots.map((lot) => (
+                            <TableRow key={lot.lotId}>
+                              <TableCell>{lot.code}</TableCell>
+                              <TableCell>
+                                {lot.expiresAt ? formatDay(lot.expiresAt) : '—'}
+                              </TableCell>
+                              <TableCell align="right">{lot.shipped}</TableCell>
+                              <TableCell align="right">
+                                {lot.returned}
+                              </TableCell>
+                              <TableCell align="right" sx={{ width: 140 }}>
+                                <TextField
+                                  size="small"
+                                  value={byLot[line.lineId]?.[lot.lotId] ?? ''}
+                                  onChange={(event) =>
+                                    setByLot((current) => ({
+                                      ...current,
+                                      [line.lineId]: {
+                                        ...current[line.lineId],
+                                        [lot.lotId]: event.target.value,
+                                      },
+                                    }))
+                                  }
+                                  slotProps={{
+                                    htmlInput: {
+                                      inputMode: 'decimal',
+                                      maxLength: 19,
+                                      'aria-label': `Return from lot ${lot.code}`,
+                                    },
+                                  }}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  ) : (
+                    <TextField
+                      size="small"
+                      label="Coming back"
+                      value={quantities[line.lineId] ?? ''}
+                      onChange={(event) =>
+                        setQuantities((current) => ({
+                          ...current,
+                          [line.lineId]: event.target.value,
+                        }))
+                      }
+                      slotProps={{
+                        htmlInput: {
+                          inputMode: 'decimal',
+                          maxLength: 19,
+                          'aria-label': `Return ${line.sku}`,
+                        },
+                      }}
+                      helperText={line.unitOfMeasure}
+                      sx={{ width: 180 }}
+                    />
+                  )}
+                </Stack>
+              );
+            })}
 
             {lines?.length === 0 && (
               <Typography color="text.secondary">

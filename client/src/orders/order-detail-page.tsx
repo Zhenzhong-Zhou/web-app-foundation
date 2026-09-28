@@ -21,6 +21,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
+import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { formatDay, formatMoney } from '../lib/format';
@@ -47,7 +48,6 @@ import { ReturnOrderDialog } from './return-order-dialog';
 import { ReturnsList } from './returns-list';
 import { ShipOrderDialog } from './ship-order-dialog';
 import { ShipmentsList } from './shipments-list';
-import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -778,6 +778,7 @@ export function OrderDetailPage() {
         open={returning}
         orderId={order.id}
         locations={leaves}
+        canSeeRmas={can('return_authorizations.view')}
         onClose={() => setReturning(false)}
         onReturned={async () => {
           await load();

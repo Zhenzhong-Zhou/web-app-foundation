@@ -177,3 +177,39 @@ test('links a return that arrived before the RMA', async ({
   const row = page.getByRole('row', { name: /FOCUS-60CT/ });
   await expect(row.getByRole('cell').nth(3)).toHaveText('2.0000');
 });
+
+test('receives a return against an RMA from the order', async ({
+  page,
+  freshOrg,
+}) => {
+  const seeded = await seedShipped(freshOrg.api);
+  const rmaId = await seedRma(freshOrg.api, seeded, 'credit');
+
+  await signInAs(page, freshOrg.api);
+  await page.goto(`/orders/${seeded.orderId}`);
+
+  await page.getByRole('button', { name: 'Take a return' }).click();
+
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Put it in').click();
+  await page.getByRole('option', { name: /Shelf/ }).click();
+
+  // Choosing the RMA shows what it allows for each item.
+  await dialog.getByLabel('Against RMA').click();
+  await page.getByRole('option', { name: /RMA-000001/ }).click();
+  await expect(dialog).toContainText('RMA-000001 authorizes 2.0000');
+
+  await dialog.getByLabel('Return FOCUS-60CT').fill('2');
+  await dialog.getByRole('button', { name: 'Receive return' }).click();
+  await expect(dialog).toBeHidden();
+
+  // The order's returns say which RMA the box counted against …
+  await expect(
+    page.getByRole('link', { name: 'Against RMA-000001' }),
+  ).toBeVisible();
+
+  // … and the RMA counts it as received.
+  await page.goto(`/return-authorizations/${rmaId}`);
+  const row = page.getByRole('row', { name: /FOCUS-60CT/ });
+  await expect(row.getByRole('cell').nth(3)).toHaveText('2.0000');
+});

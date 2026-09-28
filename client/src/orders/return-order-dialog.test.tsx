@@ -80,6 +80,7 @@ describe('ReturnOrderDialog', () => {
         open
         orderId="order-1"
         locations={[BIN]}
+        canSeeRmas={false}
         onClose={() => undefined}
         onReturned={() => undefined}
       />,
