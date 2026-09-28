@@ -24,7 +24,7 @@ import { type SubmitEvent, useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
-import {useCan} from "../auth/permissions";
+import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
@@ -71,7 +71,7 @@ export function InvoiceDetailPage() {
   const [issuing, setIssuing] = useState(false);
   const [voiding, setVoiding] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  
+
   const can = useCan();
 
   const loading = invoice === null && error === null;

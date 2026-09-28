@@ -16,13 +16,13 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
+import { useCan } from '../auth/permissions';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { TaxCode } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { TaxCodeDialog } from './tax-code-dialog';
 import { describeCharges } from './tax-rate';
-import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError

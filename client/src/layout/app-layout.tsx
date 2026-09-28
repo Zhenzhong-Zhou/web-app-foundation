@@ -124,7 +124,7 @@ export function AppLayout() {
    * paint is already right and nothing flashes while this resolves.
    */
   const wide = useMediaQuery(theme.breakpoints.up(BAR));
-  
+
   const visible = (item: NavItem) => !item.permission || can(item.permission);
 
   const links = NAV.filter(visible);

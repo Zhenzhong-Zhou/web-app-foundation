@@ -17,6 +17,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
@@ -27,7 +28,6 @@ import {
   describe,
   summarise,
 } from './audit-format';
-import { useCan } from '../auth/permissions';
 
 /**
  * Sent explicitly rather than taking the server's default.

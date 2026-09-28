@@ -17,11 +17,11 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { useCan } from '../auth/permissions';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateProductDialog } from './create-product-dialog';
-import { useCan } from '../auth/permissions';
 
 export interface Variant {
   id: string;

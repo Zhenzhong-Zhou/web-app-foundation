@@ -25,6 +25,7 @@ import {
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
+import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
@@ -37,7 +38,6 @@ import {
   ReleaseRunDialog,
 } from './run-dialogs';
 import { STATUS_COLOUR, STATUS_LABEL } from './status';
-import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError

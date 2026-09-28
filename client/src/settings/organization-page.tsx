@@ -10,12 +10,12 @@ import {
 import { type SubmitEvent, useCallback, useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
+import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
 import type { OrganizationProfile } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useSubmit } from '../lib/use-submit';
-import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError

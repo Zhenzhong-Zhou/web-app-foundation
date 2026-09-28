@@ -16,6 +16,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { useCan } from '../auth/permissions';
 import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -26,7 +27,6 @@ import {
   describe,
   summarise,
 } from './audit-format';
-import { useCan } from '../auth/permissions';
 
 /** A drawer's worth. The full log is one link away for anything longer. */
 const PAGE_SIZE = 20;

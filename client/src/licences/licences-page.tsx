@@ -16,6 +16,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
+import { useCan } from '../auth/permissions';
 import { api, ApiError } from '../lib/api';
 import { formatDay } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -24,7 +25,6 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { EditLicenceDialog } from './edit-licence-dialog';
 import { licenceStatus } from './licence-status';
 import { NewLicenceDialog } from './new-licence-dialog';
-import { useCan } from '../auth/permissions';
 
 /**
  * The registrations formulations are made and sold under — an NPN, a DIN, a
