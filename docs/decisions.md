@@ -3249,6 +3249,242 @@ credit note routes gain a preview and a create beside the void.
 
 ---
 
+## ADR-048 — Cost: value is a ledger, like quantity
+
+**Context.** The chain the costing entries have waited on is price on the
+order line (ADR-035) → cost on the lot → cost of a run → cost of a unit. The
+first link exists. Nothing carries it further, so the system cannot say what
+batch FOC-2609-01 cost to make or what the stock on hand is worth, and a
+purchase price agreed on a line is lost to costing the moment the stock
+lands — unrecoverable later, the same class as licence history.
+
+ADR-023 put `unit_cost` on the batch. The code has since shown three reasons
+it cannot sit there:
+- A lot is reused by its code, so a second delivery of L2024-A joins the
+  first, possibly at another price.
+- A variant that does not track lots has no lot at all: bottles, caps,
+  labels.
+- A batch's cost is not known when its output is written. Output is recorded
+  as it happens, and consumption only at close (ADR-032).
+
+**Decision — value is an append-only ledger beside the quantity ledger.**
+`stock_valuations`, one row per event that changes what stock is worth:
+
+    stock_valuations  id, organization_id, variant_id, lot_id,
+                      kind,                      -- see below
+                      movement_id,               -- null for rows no movement caused
+                      quantity,                  -- signed; zero for revaluations
+                      value,                     -- signed, in the base currency
+                      unit_price, currency,      -- as paid, on acquisitions
+                      exchange_rate,             -- the rate applied, on acquisitions
+                      needs_cost,                -- valued at zero for want of a price
+                      reference_type, reference_id, note, actor_id, created_at
+
+Nothing updates a row and nothing deletes one; a correction is a new row.
+The reasons are ADR-023's, applied to money. A figure that can be recomputed
+cannot answer "why did the value of this lot change". And a month that has
+been reported must not change afterwards: a price corrected in March is a
+March event, not a rewrite of January's cost of goods. SAP, Dynamics,
+NetSuite and Odoo (`stock.valuation.layer`) all keep this ledger for the
+same reasons.
+
+`kind` is closed:
+- `movement` — the value a stock movement carried;
+- `run_close` — a batch's cost arriving at close;
+- `correction` — a cost set or changed after the fact;
+- `opening` — the balance this ADR starts from.
+
+**Decision — the pool is the lot, or the variant when there is no lot; its
+cache is the lock.** `valuation_pools (organization_id, variant_id, lot_id)`
+holds `quantity` and `value`, unique with `nulls not distinct`, so an
+untracked variant has exactly one pool. A pool's unit cost is value ÷
+quantity.
+
+It works exactly as `stock_levels` does (ADR-025):
+- A movement upserts its pool row first, which takes the lock, then writes
+  its valuation row in the same transaction.
+- `quantity >= 0` is checked on the pool.
+- The e2e reconciliation extends to money: a pool's quantity and value equal
+  the sums of its valuation rows, and its quantity equals the sum of its
+  `stock_levels` rows.
+
+The pool is not per location. Value does not change when stock moves between
+shelves, so transfers write no valuation row. What one location holds is
+worth its `stock_levels` quantity × its pool's unit cost, computed.
+
+**Decision — the method: weighted average within a pool.** Each inbound adds
+its quantity and value to the pool. Each outbound takes quantity × the pool's
+current unit cost, computed in SQL under the pool's lock. When an outbound
+takes the pool's last unit, it takes the pool's remaining value exactly, so
+rounding never leaves value behind in an empty pool.
+
+- **Tracked stock.** The pool is the lot. Almost every lot has one
+  acquisition, so its cost is what that delivery cost: actual cost per
+  batch, for free. Where a lot arrived twice at different prices, its units
+  are indistinguishable, and the average is the honest figure. Picking stays
+  earliest expiry first (ADR-039), and cost follows the lot actually picked.
+- **Untracked stock.** The pool is the variant, and this is a perpetual
+  weighted average.
+
+FIFO was the alternative for untracked stock. It needs each inbound row to
+carry a remaining quantity that outbounds decrement, which is a mutable
+column on a ledger that is otherwise append-only. Standard costing is
+rejected for now: it needs variance accounts to mean anything, and lot
+tracking already yields actual cost where cost matters most.
+
+Weighted average is one of the cost formulas the accounting standards permit,
+but the method the books use is the accountant's decision: confirm it before
+these figures feed financial statements. A method is changed going forward
+from a date, never by rewriting history.
+
+**Decision — what each movement is worth.**
+
+- **Receipt against a purchase line.** The line's `unit_price` and
+  `currency`, copied as a snapshot, × the day's rate. The line records what
+  was agreed and the valuation what it cost; correcting one must never
+  rewrite the other. The difference between them is the purchase price
+  variance three-way matching will read (ADR-035).
+- **Receipt with no price**, whether a hand receipt or an unpriced line.
+  Value zero and `needs_cost`, and never blocked: refusing a real delivery
+  for want of a financial fact is ADR-032's argument again. Setting the cost
+  later posts a correction.
+- **Inbound adjustment.** The pool's current unit cost, since found stock
+  was bought at the price its pool already carries. For a new pool, zero and
+  `needs_cost`. An opening balance is given its cost the same way afterwards.
+- **Return.** The unit cost it shipped at, read from the valuation rows of
+  that order's shipments for the same pool. The customer returns what they
+  were sold, at what it cost when it went.
+- **Production output.** Quantity at zero value, marked as awaiting its run.
+  The run's cost exists only at close.
+- **Every outbound** — shipment, consumption, sample, outbound adjustment,
+  return to a supplier — takes the pool's unit cost. A write-off's value is
+  therefore recorded at the moment it happens.
+
+**Decision — a batch is valued at close, from what its run consumed.**
+
+1. Close writes the consumption movements. Each takes its lot's unit cost as
+   above, so a run's material cost is the sum of its consumption values —
+   already stored, no recursion.
+2. The unit cost is that sum ÷ `quantity_produced`.
+3. For each output lot, close posts a `run_close` row adding unit cost ×
+   what is still in the pool.
+4. For output that already left before close, it posts a correction against
+   each movement that took it, so every unit the run made ends up carrying
+   the run's cost.
+5. A run that produced nothing records its material cost as a loss on the
+   run, with no unit cost.
+
+This is material cost: our stocked components. External lines, labour,
+overhead and a co-packer's fee are conversion cost and are deferred. The
+screen names the figure accordingly.
+
+Reading a batch's cost afterwards is one sum over the run's rows. Reading a
+lot's cost is one pool row. Neither walks a tree.
+
+**Decision — a base currency, and a rate table.**
+`organizations.base_currency`, ISO 4217, nullable, set on the organization
+settings page. It cannot change once any valuation exists, since that would
+re-denominate every stored value. Nothing defaults it, for ADR-035's reason.
+
+`exchange_rates (organization_id, currency, rate_date, rate)`, unique on the
+first three: how many units of the base one unit of `currency` is worth that
+day. It is entered by finance, once per currency per day, at whatever rate
+the business uses — often a central bank's published daily rate — not
+fetched, since there is no external call in the request path (ADR-005).
+
+A receipt takes the latest rate on or before its day. The applied rate is
+copied onto the valuation row, so a rate corrected later changes nothing
+already valued. With no rate on file, the receipt is valued at zero with
+`needs_cost`, and adding the rate and re-applying it posts the correction.
+Gains and losses between that rate and the rate the bill is paid at belong
+to payments (ADR-046, deferred).
+
+**Decision — a correction revalues what remains, and records what has gone.**
+`PUT /v1/stock/movements/:id/cost` sets `unitPrice`, `currency` and
+optionally `exchangeRate` on a receipt or an inbound adjustment. It is
+refused with 409 for any other movement, saying where that movement's value
+comes from.
+
+It posts one `correction` row: the difference between the new value and the
+old. The share for units still in the pool revalues the pool. The share for
+units already gone is recorded against the receipt as a cost variance on
+issued stock, with quantity zero, outside the pool.
+
+This is what most ERPs do by default. A correction does not flow forward into
+batches that already consumed the stock: their cost stays as it was at
+close, and the variance says by how much it was wrong. Propagating
+corrections through production is Dynamics' "adjust cost" job — open, with
+its trigger.
+
+The route is audited as `stock.movement_cost_set`. Rates are set through
+their own route, audited as `exchange_rate.set`.
+
+**Decision — incomplete is said, never hidden.** A figure that depends on a
+`needs_cost` row still standing, or on an output lot whose run is still open,
+is reported as provisional, with the rows that make it so. Each row is a
+to-do with a link, the way ADR-035 withheld subtotals rather than sum part
+of an order.
+
+**Decision — permissions: `costs.view` and `costs.update`, Owner-only by
+default.**
+- `costs.view` reads valuations, pool costs, batch costs and rates.
+- `costs.update` sets costs and rates.
+
+Receiving needs neither. The row it writes is copied from a price the
+receiver can already see on the order, and a movement's valuation is part of
+the movement. What the permission protects is what stock and batches cost —
+a margin, once price lists exist.
+
+**Performance.** Every stock change gains one pool upsert and, except
+transfers, one insert, in the transaction it already has. Reads are single
+rows and indexed sums:
+- a lot's cost is one pool row;
+- a run's cost is its rows via `(organization_id, reference_type,
+  reference_id)`;
+- stock valuation is one scan of `valuation_pools`, which holds one row per
+  lot or untracked variant, not per movement.
+
+Indexes on `stock_valuations`:
+- `(organization_id, variant_id, lot_id, created_at desc)` for a pool's
+  history;
+- `(organization_id, reference_type, reference_id)`;
+- a partial index on `needs_cost` for the to-do list;
+- unique `(movement_id) where kind = 'movement'`.
+
+The pool lock serialises movements of one lot, or one untracked variant,
+across locations. That is a wider lock than `stock_levels` takes, and it is
+already the grain ADR-045's per-product advisory lock serialises for
+outbound.
+
+**Consequences.**
+- Migration 0033: `organizations.base_currency`, `exchange_rates`,
+  `valuation_pools`, and `stock_valuations` with checks — a closed `kind`,
+  currency format, a positive rate, and `needs_cost` only with zero value.
+  It also writes an `opening` row at zero with `needs_cost` for every pool
+  that holds stock today. The only deployed database is being recreated, and
+  development databases are reseeded, so nothing real is revalued.
+- `StockService.recordWithin` writes the pool and the valuation for every
+  movement, so the ledger stays the one write path (ADR-023).
+- Production close posts `run_close` rows.
+- New routes: the cost route, rates, and reads for a lot, a run and stock
+  valuation.
+- Two permissions and two audit actions.
+- Client: a base currency field and a rates page in settings; cost sections
+  on the run, lot trace and inventory pages for `costs.view`; the needs-cost
+  list.
+- That valuations match movements is a cross-table rule, enforced in the
+  service and asserted in e2e (ADR-025).
+
+**Deferred.**
+- **Propagating corrections** through closed runs.
+- **Landed cost** — freight, duty and brokerage allocated onto receipts as
+  their own rows, not folded into `unit_price`.
+- **Conversion cost** on runs, including ADR-030's manufacturing fee.
+- **FIFO** as an alternative method per variant.
+- **Period close** — refusing postings dated into a closed month.
+- **Export to the books.**
+- **Fetching rates**, and realised exchange gains and losses, with payments.
+
 # Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -3386,10 +3622,12 @@ they exist so the reasoning is not rediscovered from scratch.
   the exploder should see through it to its components rather than expecting a
   balance. One boolean on `boms`, and the reason to wait is that a blend that is
   genuinely never held is indistinguishable from one nobody has counted yet.
-- **BOM cost rollup.** What a finished unit costs from its components, which
-  needs component cost first — and costing (batch, moving average, FIFO) is
-  already open from ADR-023. Outsourced runs complicate it further: their cost
-  arrives inside the manufacturer's invoice price rather than from a rollup
+- **BOM cost rollup.** What a finished unit should cost from its recipe,
+  priced at current component costs. ADR-048 records what each batch
+  actually cost; a rollup from the recipe is a standard cost, which ADR-048
+  rejects for now, and it is useful mainly for quoting a product before it
+  is first made. Outsourced runs complicate it further: their cost arrives
+  inside the manufacturer's invoice price rather than from a rollup
   (ADR-030), so the two paths give different numbers for the same SKU.
 - **The manufacturing fee on an outsourced run.** A co-packer charges for the
   work, and that charge is neither a component nor part of the output's stock
@@ -3452,49 +3690,17 @@ they exist so the reasoning is not rediscovered from scratch.
   or a second market. Note also what the label is *not*: medicinal quantity per
   dose is declared, while a BOM line is what goes into a batch, and the two are
   related by lot potency. Nothing should derive one from the other.
-- **Capture unit cost at receipt, before deciding anything about costing.**
-  Half done: `order_lines.unit_price` exists (ADR-035), so what was agreed is
-  recorded. What is still missing is carrying it onto the lot at receipt, which
-  is what everything downstream reads. A purchase price is known when stock
-  arrives and unrecoverable afterwards — same class as licence history: cheap
-  now, impossible to backfill, and independent of which costing method
-  eventually wins.
-- **Per-batch cost, and which method values it.** With actual consumption
-  (ADR-032) two batches of one product genuinely cost different amounts, so
-  actual and standard costing diverge here specifically; outsourced runs give a
-  third answer again, since their cost arrives inside the manufacturer's
-  invoice rather than from a rollup. The test for whether it is worth building
-  is whether a batch costing 8% more would change a decision: "I would look
-  into why" is already answered by the variance report, for free, from two
-  columns; "I would reprice" needs real per-batch cost.
- 
-  The chain is price on the order line (ADR-035) → cost on the lot → cost of a
-  run → cost of a unit. The first link exists. The second is `lots.unit_cost`
-  and a currency written at receipt from the order line, which is small — and
-  blocked on the method, because stock is not one lot. Receive 1000 at 0.25,
-  then 1000 at 0.30, and consume 1500:
- 
-      FIFO             1000 at 0.25 and 500 at 0.30. Matches physical flow.
-      Weighted average all 1500 at 0.275. Simple, and cannot say which batch
-                       cost what.
-      Standard         a set figure with the difference posted to variance.
-                       What most manufacturers do, and it needs the variance
-                       machinery to mean anything.
- 
-  Each gives a different number for the same physical facts, and switching
-  afterwards means revaluing history, because past consumptions were valued
-  under the old rule.
- 
-  Lot-level costing is the cheap one here and falls out of work already done: a
-  consumption movement already names its lot (ADR-023), so the cost is on that
-  lot and FIFO is nearly free. The traceability built for recalls pays for the
-  costing. What still needs a rule is a lot received across two purchase orders
-  at different prices, or topped up after the fact.
- 
-  Deciding needs real receipts. If prices barely move, weighted average is fine
-  and nobody notices; if they swing — herbs and botanicals do — the method
-  changes the margin. A few months of data answers it; guessing now means
-  revaluing later.
+- **Propagating a cost correction through production.** ADR-048 revalues what
+  remains and records a variance for what has gone; a batch that consumed
+  mis-priced stock keeps the cost it closed with. Propagating means
+  re-running each affected close and correcting its output lots, recursively,
+  which is Dynamics' "adjust cost" job and needs a rule for batches already
+  shipped. Trigger: a correction large enough that a batch's recorded cost
+  misleads a pricing decision.
+- **Period close.** Nothing yet refuses a valuation dated into a month
+  already reported. A `closed_through` date on the organization, checked on
+  every posting, with corrections landing in the open period. Trigger: the
+  first month reported from these figures.
 - **Variance reporting is a query, not a table.** The audit log answers "what
   happened to this run"; it cannot answer "every run that ran over plan last
   quarter". Both quantities sit on `production_order_lines`, so that report is
@@ -3776,3 +3982,7 @@ they exist so the reasoning is not rediscovered from scratch.
 | Editing an order line                  | Editable until something depends on it                | ADR-033          |
 | Cancelling part of an order            | Line closed short with a reason, quantities kept      | ADR-034          |
 | Price on a purchase order              | unit_price and currency per line; subtotals not total | ADR-035          |
+| Where cost is recorded                 | Append-only valuation ledger beside the movements     | ADR-048          |
+| Valuation method                       | Weighted average per pool; the pool is the lot        | ADR-048          |
+| Cost of a batch                        | Its consumption values, posted to output at close     | ADR-048          |
+| Base currency and exchange rates       | On the organization; a dated rate table               | ADR-048          |
