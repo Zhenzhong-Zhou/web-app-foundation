@@ -647,6 +647,28 @@ export class InvoicesService {
           throw new ConflictException('That invoice has already been voided');
         }
 
+        /**
+         * A void credits the whole invoice, so once part of it has been
+         * credited (ADR-047) a void would credit that part twice. The rest
+         * is credited instead, and the value caps stop it at what was billed.
+         */
+        const [partial] = await tx
+          .select({ number: creditNotes.number })
+          .from(creditNotes)
+          .where(
+            and(
+              eq(creditNotes.organizationId, organizationId),
+              eq(creditNotes.invoiceId, invoiceId),
+            ),
+          )
+          .limit(1);
+
+        if (partial) {
+          throw new ConflictException(
+            `${partial.number} already credits part of this invoice — credit what remains instead of voiding it, so nothing is credited twice`,
+          );
+        }
+
         const issuedOn = stored(invoice.invoiceDate, 'invoice date');
 
         // Calendar days as YYYY-MM-DD compare correctly as strings.

@@ -68,6 +68,10 @@ const NOT_AUDITED = new Map<string, string>([
     'ShipmentsController.preview',
     'Reads only: computes what a shipment would take. A POST because the question has a body (ADR-041)',
   ],
+  [
+    'InvoicesController.previewCredit',
+    'Computes a credit and stores nothing — a POST only because it carries a body (ADR-047)',
+  ],
 ]);
 
 interface Controller {

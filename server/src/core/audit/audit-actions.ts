@@ -89,6 +89,8 @@ export const AUDIT_ACTIONS = {
   INVOICE_ISSUED: 'invoice.issued',
   /** Reversed in full by a credit note; carries the credit note's number. */
   INVOICE_VOIDED: 'invoice.voided',
+  /** Part of an invoice credited — goods back, a correction, a write-off. */
+  CREDIT_NOTE_ISSUED: 'credit_note.issued',
 
   RETURN_AUTHORIZATION_CREATED: 'return_authorization.created',
   RETURN_AUTHORIZATION_CANCELLED: 'return_authorization.cancelled',

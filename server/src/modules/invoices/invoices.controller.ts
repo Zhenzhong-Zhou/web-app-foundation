@@ -18,7 +18,9 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { CreditNotesService } from './credit-notes.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { CreditInvoiceDto, PreviewCreditDto } from './dto/credit-invoice.dto';
 import { IssueInvoiceDto } from './dto/issue-invoice.dto';
 import { ListInvoicesDto } from './dto/list-invoices.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
@@ -27,12 +29,15 @@ import { VoidInvoiceDto } from './dto/void-invoice.dto';
 import { InvoicesService } from './invoices.service';
 
 /**
- * Invoices for shipments (ADR-046): drafts, issuing them, and voiding an
- * issued one by credit note.
+ * Invoices for shipments (ADR-046): drafts, issuing them, voiding an issued
+ * one by credit note, and crediting part of one (ADR-047).
  */
 @Controller({ path: 'invoices', version: '1' })
 export class InvoicesController {
-  constructor(private readonly invoices: InvoicesService) {}
+  constructor(
+    private readonly invoices: InvoicesService,
+    private readonly creditNotes: CreditNotesService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
@@ -144,6 +149,48 @@ export class InvoicesController {
     @CurrentUser() user: RequestContext,
   ) {
     return this.invoices.void(id, dto, user.userId);
+  }
+
+  /**
+   * What a credit would come to, without storing anything: checked by the
+   * same rules and computed by the same calculation issuing uses, so the
+   * dialog shows what will be stored. A POST only because it carries a
+   * body; it writes nothing, so it is not audited.
+   */
+  @Post(':id/credit-notes/preview')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(PERMISSIONS.INVOICES_ISSUE)
+  async previewCredit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: PreviewCreditDto,
+  ) {
+    return { credit: await this.creditNotes.preview(id, dto) };
+  }
+
+  /**
+   * Credits part of an issued invoice (ADR-047): returned goods under an
+   * RMA, or a credit without goods — a price correction, goodwill, an
+   * uncollectable debt. The invoice stays issued. invoices.issue, as void
+   * is: whoever may send an invoice is who may take money back on it.
+   */
+  @Post(':id/credit-notes')
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(PERMISSIONS.INVOICES_ISSUE)
+  @Audited({
+    action: AUDIT_ACTIONS.CREDIT_NOTE_ISSUED,
+    resourceType: 'credit_note',
+    resourceId: (response: { creditNote: { id: string } }) =>
+      response.creditNote.id,
+    // Not the reason: free text stays on the document (ADR-018). The
+    // invoice's number and the total are added by the service.
+    fields: ['creditDate'],
+  })
+  async credit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreditInvoiceDto,
+    @CurrentUser() user: RequestContext,
+  ) {
+    return { creditNote: await this.creditNotes.issue(id, dto, user.userId) };
   }
 
   /**
