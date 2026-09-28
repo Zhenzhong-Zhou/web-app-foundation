@@ -20,10 +20,10 @@ import {
   AccountPage,
   AuditPage,
   CreateOrderPage,
-  CreditNotePage,
+  CreditNoteDetailPage,
   CreditNotePrintPage,
   InventoryPage,
-  InvoicePage,
+  InvoiceDetailPage,
   InvoicePrintPage,
   InvoicesPage,
   LicencesPage,
@@ -218,8 +218,8 @@ export default function App() {
           element={split(PackingSlipPage)}
         />
         <Route path="/invoices" element={split(InvoicesPage)} />
-        <Route path="/invoices/:id" element={split(InvoicePage)} />
-        <Route path="/credit-notes/:id" element={split(CreditNotePage)} />
+        <Route path="/invoices/:id" element={split(InvoiceDetailPage)} />
+        <Route path="/credit-notes/:id" element={split(CreditNoteDetailPage)} />
         <Route path="/invoices/:id/print" element={split(InvoicePrintPage)} />
         <Route
           path="/credit-notes/:id/print"

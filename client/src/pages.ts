@@ -117,14 +117,14 @@ export const InvoicesPage = lazyNamed(
   'InvoicesPage',
 );
 
-export const InvoicePage = lazyNamed(
-  () => import('./invoices/invoice-page'),
-  'InvoicePage',
+export const InvoiceDetailPage = lazyNamed(
+  () => import('./invoices/invoice-detail-page'),
+  'InvoiceDetailPage',
 );
 
-export const CreditNotePage = lazyNamed(
-  () => import('./invoices/credit-note-page'),
-  'CreditNotePage',
+export const CreditNoteDetailPage = lazyNamed(
+  () => import('./invoices/credit-note-detail-page'),
+  'CreditNoteDetailPage',
 );
 
 export const InvoicePrintPage = lazyNamed(

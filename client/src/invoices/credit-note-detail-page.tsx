@@ -36,7 +36,7 @@ function messageFor(caught: unknown): string {
  * step, print it. The amounts are positive: a credit note states what it
  * gives back, not a negative invoice.
  */
-export function CreditNotePage() {
+export function CreditNoteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [note, setNote] = useState<CreditNoteDetail | null>(null);
   const [error, setError] = useState<string | null>(null);

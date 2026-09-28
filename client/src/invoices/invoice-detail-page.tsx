@@ -60,7 +60,7 @@ function messageFor(caught: unknown): string {
  * issued, everything shown is what was stored that day, and the only action
  * left is to void it with a credit note.
  */
-export function InvoicePage() {
+export function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { session } = useAuth();
   const navigate = useNavigate();
