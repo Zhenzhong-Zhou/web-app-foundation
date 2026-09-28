@@ -23,6 +23,7 @@
     "migrate:test": "MIGRATE_TARGET=test drizzle-kit migrate",
     "migrate:e2e": "MIGRATE_TARGET=e2e drizzle-kit migrate",
     "migrate:new": "node scripts/check-snapshots.js && drizzle-kit generate",
+    "migrate:all": "npm run migrate && npm run migrate:test && npm run migrate:e2e",
     "db:studio": "drizzle-kit studio",
     "seed": "ts-node src/database/seed.ts",
     "seed:demo": "ts-node src/database/seed-demo.ts",
