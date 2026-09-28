@@ -22,6 +22,7 @@ import {
   CreateOrderPage,
   CreditNoteDetailPage,
   CreditNotePrintPage,
+  ExchangeRatesPage,
   InventoryPage,
   InvoiceDetailPage,
   InvoicePrintPage,
@@ -45,6 +46,7 @@ import {
   RmaDetailPage,
   RmasPage,
   SessionsPage,
+  StockValuePage,
   TaxCodesPage,
 } from './pages';
 
@@ -200,6 +202,11 @@ export default function App() {
           element={split(OrganizationPage)}
         />
         <Route path="/settings/tax-codes" element={split(TaxCodesPage)} />
+        <Route
+          path="/settings/exchange-rates"
+          element={split(ExchangeRatesPage)}
+        />
+        <Route path="/costs" element={split(StockValuePage)} />
         <Route path="/products" element={split(ProductsPage)} />
         <Route path="/products/:id" element={split(ProductDetailPage)} />
         <Route path="/licences" element={split(LicencesPage)} />

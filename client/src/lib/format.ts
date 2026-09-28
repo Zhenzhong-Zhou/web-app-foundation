@@ -94,6 +94,25 @@ export function formatMoney(
   }).format(Number(amount));
 }
 
+/**
+ * A unit cost, with the places a currency's minor units would hide: a
+ * capsule at 0.0123 is not 0.01. Up to four, never fewer than the currency's
+ * own. Display only, as formatMoney is.
+ */
+export function formatUnitCost(
+  amount: string | null,
+  currency: string | null,
+): string {
+  if (amount === null) return '—';
+  if (!currency) return amount;
+
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 4,
+  }).format(Number(amount));
+}
+
 /** "Focus (60ct)", or "Focus" when the variant has no name — the server's itemName rule. */
 export function itemName(
   productName: string,

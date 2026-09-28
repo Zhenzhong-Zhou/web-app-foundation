@@ -24,11 +24,12 @@ function messageFor(caught: unknown): string {
 }
 
 /**
- * What the organization prints as the seller on every invoice (ADR-046):
- * its tax registration number and registered address.
+ * What the organization prints as the seller on every invoice (ADR-046) —
+ * its tax registration number and registered address — and the currency its
+ * stock is valued in (ADR-048).
  *
- * Two small forms rather than one, because they save to two routes and are
- * changed for different reasons — a new registration, an office move.
+ * Small forms rather than one, because they are changed for different
+ * reasons — a new registration, an office move, the first costed receipt.
  * Anyone can read them; only the Owner changes them.
  */
 export function OrganizationPage() {
@@ -98,6 +99,12 @@ export function OrganizationPage() {
           <AddressForm
             key={JSON.stringify(organization.address)}
             address={organization.address}
+            readOnly={!canUpdate}
+            onSaved={load}
+          />
+          <BaseCurrencyForm
+            key={organization.baseCurrency ?? ''}
+            value={organization.baseCurrency}
             readOnly={!canUpdate}
             onSaved={load}
           />
@@ -318,6 +325,81 @@ function AddressForm({
               sx={{ alignSelf: 'flex-start' }}
             >
               {submitting ? 'Saving…' : 'Save address'}
+            </Button>
+          )}
+        </Stack>
+      </form>
+    </Paper>
+  );
+}
+
+/**
+ * What stock is valued in (ADR-048). Set once, before the first costed
+ * receipt: until then every receipt waits for a cost, and once anything
+ * carries a value the server refuses a change, because every stored value
+ * would silently change currency with it.
+ */
+function BaseCurrencyForm({
+  value,
+  readOnly,
+  onSaved,
+}: {
+  value: string | null;
+  readOnly: boolean;
+  onSaved: () => Promise<void>;
+}) {
+  const [currency, setCurrency] = useState(value ?? '');
+  const { submitting, error, submit } = useSubmit(onSaved, {
+    success: 'Base currency saved',
+  });
+
+  const trimmed = currency.trim().toUpperCase();
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+
+    void submit(() =>
+      api('/organization', {
+        method: 'PATCH',
+        body: JSON.stringify({ baseCurrency: trimmed }),
+      }),
+    );
+  }
+
+  return (
+    <Paper variant="outlined" sx={{ p: 2 }}>
+      <form onSubmit={handleSubmit}>
+        <Stack spacing={2}>
+          <Typography variant="subtitle1" component="h2">
+            Base currency
+          </Typography>
+
+          {!value && !readOnly && (
+            <Alert severity="info">
+              Not set yet. Stock received before it is set waits for a cost.
+            </Alert>
+          )}
+
+          {error && <FormError message={error} />}
+
+          <TextField
+            id="organization-base-currency"
+            label="Base currency"
+            value={currency}
+            onChange={(event) => setCurrency(event.target.value.toUpperCase())}
+            disabled={readOnly}
+            helperText="What stock is valued in: CAD, USD. It cannot change once stock carries a value in it."
+            slotProps={{ htmlInput: { maxLength: 3 } }}
+            sx={{ maxWidth: 240 }}
+          />
+
+          {!readOnly && (
+            <Button
+              type="submit"
+              disabled={submitting || trimmed.length !== 3 || trimmed === value}
+              sx={{ alignSelf: 'flex-start' }}
+            >
+              {submitting ? 'Saving…' : 'Save base currency'}
             </Button>
           )}
         </Stack>

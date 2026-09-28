@@ -57,6 +57,16 @@ export const TaxCodesPage = lazyNamed(
   'TaxCodesPage',
 );
 
+export const ExchangeRatesPage = lazyNamed(
+  () => import('./settings/exchange-rates-page'),
+  'ExchangeRatesPage',
+);
+
+export const StockValuePage = lazyNamed(
+  () => import('./costs/stock-value-page'),
+  'StockValuePage',
+);
+
 export const InventoryPage = lazyNamed(
   () => import('./inventory/inventory-page'),
   'InventoryPage',

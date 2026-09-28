@@ -240,6 +240,8 @@ export interface OrganizationProfile {
   taxRegistrationNumber: string | null;
   /** Null until set; no invoice can be issued before it is. */
   address: OrganizationAddress | null;
+  /** ISO 4217; null until set. Stock is valued in it (ADR-048). */
+  baseCurrency: string | null;
 }
 
 export type InvoiceStatus = 'draft' | 'issued' | 'voided';
@@ -751,4 +753,54 @@ export interface ReturnAuthorizationDetail {
   closedAt: string | null;
   cancelledAt: string | null;
   lines: ReturnAuthorizationLine[];
+}
+
+export type ValuationKind =
+  'movement' | 'run_close' | 'correction' | 'issued' | 'opening';
+
+/** What the stock on hand is worth, pool by pool (ADR-048). */
+export interface StockValuation {
+  /** Null until the organization has a base currency. */
+  currency: string | null;
+  total: string;
+  /** True while anything below depends on a row still waiting for a cost. */
+  provisional: boolean;
+  pools: {
+    variantId: string;
+    sku: string;
+    lotId: string | null;
+    lotCode: string | null;
+    quantity: string;
+    value: string;
+    unitCost: string;
+    provisional: boolean;
+  }[];
+}
+
+/** A valuation still waiting for a cost: the to-do list (ADR-048). */
+export interface NeedsCostEntry {
+  id: string;
+  kind: ValuationKind;
+  /** The movement's reason; null for the opening balance. */
+  reason: string | null;
+  sku: string;
+  variantId: string;
+  lotId: string | null;
+  lotCode: string | null;
+  quantity: string;
+  /** Set when a price is known but its rate is not. */
+  unitPrice: string | null;
+  currency: string | null;
+  referenceType: string | null;
+  referenceId: string | null;
+  createdAt: string;
+}
+
+/** One currency's rate into the base currency, for one day. */
+export interface ExchangeRate {
+  id: string;
+  currency: string;
+  /** YYYY-MM-DD. */
+  rateDate: string;
+  rate: string;
 }

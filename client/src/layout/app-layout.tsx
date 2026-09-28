@@ -78,6 +78,12 @@ const ACCOUNT_MENU: NavItem[] = [
     to: '/settings/tax-codes',
     permission: 'tax_codes.view',
   },
+  {
+    label: 'Exchange rates',
+    to: '/settings/exchange-rates',
+    permission: 'costs.view',
+  },
+  { label: 'Stock value', to: '/costs', permission: 'costs.view' },
   { label: 'Audit log', to: '/audit', permission: 'audit.view' },
 ];
 
