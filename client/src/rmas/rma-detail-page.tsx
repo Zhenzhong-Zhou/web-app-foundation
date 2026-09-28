@@ -28,7 +28,11 @@ import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { ReturnAuthorizationDetail } from '../lib/types';
+import type {
+  InvoicePage,
+  InvoiceSummary,
+  ReturnAuthorizationDetail,
+} from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useSubmit } from '../lib/use-submit';
 import { LinkReturnDialog } from './link-return-dialog';
@@ -51,9 +55,9 @@ type Confirming = 'close' | 'cancel' | null;
  * anyone deciding the next step needs side by side.
  *
  * What happens next depends on each line's resolution: credit is issued
- * from the invoice, replace raises a sale at zero, none needs nothing more.
- * Goods themselves come back through the order's Take a return, naming this
- * RMA, or are linked here if they arrived first.
+ * against an invoice, replace raises a sale at zero, none needs nothing
+ * more. Goods themselves come back through the order's Take a return,
+ * naming this RMA, or are linked here if they arrived first.
  */
 export function RmaDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -65,8 +69,17 @@ export function RmaDetailPage() {
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [linking, setLinking] = useState(false);
 
+  /**
+   * The invoices a credit for this RMA can go against: the one it names, or
+   * else every issued invoice on its order. Each gets its own link, so the
+   * usual case — one invoice — is one click, and nothing is guessed.
+   */
+  const [creditable, setCreditable] = useState<InvoiceSummary[]>([]);
+
   const showSkeleton = useDelayedFlag(rma === null && error === null);
   const canUpdate = can('return_authorizations.update');
+  // Crediting is the finance act, not customer service's (ADR-047).
+  const canCredit = can('invoices.issue');
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -102,6 +115,35 @@ export function RmaDetailPage() {
     };
   }, [id]);
 
+  const orderId = rma?.orderId;
+  const namedInvoiceId = rma?.invoiceId ?? null;
+
+  useEffect(() => {
+    if (!orderId || !canCredit) return;
+
+    let ignore = false;
+
+    void api<InvoicePage>(
+      `/invoices?orderId=${orderId}&status=issued&limit=100`,
+    )
+      .then((page) => {
+        if (!ignore) {
+          setCreditable(
+            namedInvoiceId
+              ? page.entries.filter((invoice) => invoice.id === namedInvoiceId)
+              : page.entries,
+          );
+        }
+      })
+      .catch(() => {
+        // No links; crediting is still open from the invoice page.
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [orderId, namedInvoiceId, canCredit]);
+
   // The replacement opens as soon as it exists; useSubmit's callback takes
   // no result, so its id is kept here.
   const replacementId = useRef<string | null>(null);
@@ -125,6 +167,7 @@ export function RmaDetailPage() {
       line.quantityReceived === NOTHING && line.quantityCredited === NOTHING,
   );
   const hasReplace = rma.lines.some((line) => line.resolution === 'replace');
+  const hasCredit = rma.lines.some((line) => line.resolution === 'credit');
 
   function raiseReplacement() {
     void replacement.submit(async () => {
@@ -232,7 +275,7 @@ export function RmaDetailPage() {
         </TableContainer>
       </Paper>
 
-      {open && canUpdate && (
+      {open && canUpdate && (rma.expectsGoods || hasReplace) && (
         <Stack direction="row" spacing={2}>
           {rma.expectsGoods && (
             <Button
@@ -252,6 +295,23 @@ export function RmaDetailPage() {
               {replacement.submitting ? 'Raising…' : 'Raise replacement'}
             </Button>
           )}
+        </Stack>
+      )}
+
+      {/* Its own row and its own permission: whoever issues credits may
+          not be whoever manages RMAs. */}
+      {open && canCredit && hasCredit && creditable.length > 0 && (
+        <Stack direction="row" spacing={2}>
+          {creditable.map((invoice) => (
+            <Button
+              key={invoice.id}
+              variant="outlined"
+              component={RouterLink}
+              to={`/invoices/${invoice.id}?credit=${rma.id}`}
+            >
+              Credit on {invoice.number}
+            </Button>
+          ))}
         </Stack>
       )}
 

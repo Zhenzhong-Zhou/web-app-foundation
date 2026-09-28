@@ -21,7 +21,12 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useCallback, useEffect, useState } from 'react';
-import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
+import {
+  Link as RouterLink,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
@@ -34,12 +39,14 @@ import type {
   InvoiceDetail,
   InvoiceLine,
   InvoiceTax,
+  ReturnAuthorizationDetail,
   TaxCode,
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useSubmit } from '../lib/use-submit';
 import { formatRate } from '../settings/tax-rate';
 import { oneLine } from './calendar-day';
+import { CreditInvoiceDialog } from './credit-invoice-dialog';
 import { InvoiceLineDialog } from './invoice-line-dialog';
 import { invoiceStatus } from './invoice-status';
 import { IssueInvoiceDialog } from './issue-invoice-dialog';
@@ -57,12 +64,13 @@ function messageFor(caught: unknown): string {
  * A draft is a working copy: its prices, tax codes, due date and note are
  * editable, and its totals are the server's preview — the same calculation
  * issuing stores, so the figures here are the figures that print. Once
- * issued, everything shown is what was stored that day, and the only action
- * left is to void it with a credit note.
+ * issued, everything shown is what was stored that day, and what is left
+ * is to credit part of it or void the whole (ADR-047).
  */
 export function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [taxCodes, setTaxCodes] = useState<TaxCode[]>([]);
@@ -71,6 +79,10 @@ export function InvoiceDetailPage() {
   const [issuing, setIssuing] = useState(false);
   const [voiding, setVoiding] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [crediting, setCrediting] = useState(false);
+  const [creditRma, setCreditRma] = useState<ReturnAuthorizationDetail | null>(
+    null,
+  );
 
   const can = useCan();
 
@@ -116,6 +128,36 @@ export function InvoiceDetailPage() {
       ignore = true;
     };
   }, [id]);
+
+  const creditFrom = searchParams.get('credit');
+
+  /**
+   * Opened from an RMA as /invoices/:id?credit=<rmaId> (ADR-047): the RMA is
+   * read, and the Credit dialog opens prefilled with what it settles. If it
+   * cannot be read, the dialog opens empty rather than not at all.
+   */
+  useEffect(() => {
+    if (!creditFrom) return;
+
+    let ignore = false;
+
+    void api<{ returnAuthorization: ReturnAuthorizationDetail }>(
+      `/return-authorizations/${creditFrom}`,
+    )
+      .then((response) => {
+        if (!ignore) {
+          setCreditRma(response.returnAuthorization);
+          setCrediting(true);
+        }
+      })
+      .catch(() => {
+        if (!ignore) setCrediting(true);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [creditFrom]);
 
   if (loading) {
     return showSkeleton ? (
@@ -196,12 +238,25 @@ export function InvoiceDetailPage() {
             {invoice.status === 'issued' && can('invoices.issue') && (
               <Button
                 variant="outlined"
-                color="error"
-                onClick={openDialog(() => setVoiding(true))}
+                onClick={openDialog(() => setCrediting(true))}
               >
-                Void
+                Credit
               </Button>
             )}
+
+            {/* Not once anything is credited: a void reverses the whole
+                invoice, and would credit that part twice (ADR-047). */}
+            {invoice.status === 'issued' &&
+              invoice.creditNotes.length === 0 &&
+              can('invoices.issue') && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={openDialog(() => setVoiding(true))}
+                >
+                  Void
+                </Button>
+              )}
           </>
         }
       />
@@ -374,6 +429,20 @@ export function InvoiceDetailPage() {
         open={deleting}
         onClose={() => setDeleting(false)}
         onDeleted={() => navigate('/invoices')}
+      />
+
+      <CreditInvoiceDialog
+        key={crediting ? `credit-${creditRma?.id ?? 'none'}` : 'credit-closed'}
+        invoice={invoice}
+        rma={creditRma}
+        open={crediting && invoice.status === 'issued'}
+        onClose={() => {
+          setCrediting(false);
+          setCreditRma(null);
+          // Drop ?credit= so a reload does not reopen it.
+          if (creditFrom) setSearchParams({});
+        }}
+        onIssued={load}
       />
     </Stack>
   );
@@ -590,7 +659,7 @@ function DraftDetails({
   );
 }
 
-/** Deleting a draft is final, but harmless: it can no number to leave a gap. */
+/** Deleting a draft is final, but harmless: it has no number to leave a gap. */
 function DeleteDraftDialog({
   invoiceId,
   open,

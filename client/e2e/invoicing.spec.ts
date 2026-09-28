@@ -6,12 +6,13 @@ import { created, signInAs } from './support/api';
 /**
  * An invoice through the browser (ADR-046): a draft's tax set for every
  * line, its total previewed, issued with a number, then voided by a credit
- * note that the invoice links to.
+ * note that the invoice links to — or credited in part, from the invoice
+ * or from an RMA (ADR-047).
  *
- * Seeded through the API up to the shipment or the draft: shipping has its
- * own journey. One test starts the invoice from the order page's button;
- * the rest start from a draft. freshOrg, because numbers are asserted from
- * INV-000001.
+ * Seeded through the API up to the shipment, the draft or the issued
+ * invoice: shipping has its own journey. One test starts the invoice from
+ * the order page's button; the rest start further along. freshOrg, because
+ * numbers are asserted from INV-000001.
  */
 
 /** A PUT, PATCH or DELETE that must succeed; they return no body. */
@@ -130,6 +131,36 @@ async function seedDraft(api: APIRequestContext): Promise<string> {
   );
 
   return invoice.id;
+}
+
+/** A shipment invoiced with GST and issued: 6 capsules at 12.50. */
+async function seedIssued(api: APIRequestContext) {
+  const { orderId, shipmentId } = await seedShipment(api);
+
+  const { taxCodes } = await created<{
+    taxCodes: { id: string; name: string }[];
+  }>(await api.get('/v1/tax-codes'));
+  const gst = taxCodes.find((code) => code.name === 'GST')!;
+
+  const { invoice } = await created<{
+    invoice: { id: string; lines: { orderLineId: string }[] };
+  }>(
+    await api.post('/v1/invoices', {
+      data: { shipmentId, taxCodeId: gst.id },
+    }),
+  );
+
+  await created(
+    await api.post(`/v1/invoices/${invoice.id}/issue`, {
+      data: { invoiceDate: '2026-09-25' },
+    }),
+  );
+
+  return {
+    orderId,
+    invoiceId: invoice.id,
+    orderLineId: invoice.lines[0].orderLineId,
+  };
 }
 
 test('taxes a draft, issues it, and voids it with a credit note', async ({
@@ -288,4 +319,75 @@ test('creates an invoice from a shipment on its order', async ({
   await expect(
     page.getByRole('button', { name: 'Void', exact: true }),
   ).toHaveCount(0);
+});
+
+test('credits part of an invoice, previewed before it is issued', async ({
+  page,
+  freshOrg,
+}) => {
+  const { invoiceId } = await seedIssued(freshOrg.api);
+  await signInAs(page, freshOrg.api);
+  await page.goto(`/invoices/${invoiceId}`);
+
+  await page.getByRole('button', { name: 'Credit', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+
+  // Two back at full price: 25.00 and GST 1.25, previewed by the server.
+  await dialog.getByLabel('Credit quantity for FOCUS-60CT').fill('2');
+  await expect(dialog).toContainText('26.25');
+
+  // More than was billed is refused before anything is sent.
+  await dialog.getByLabel('Credit quantity for FOCUS-60CT').fill('7');
+  await expect(dialog).toContainText('billed in a smaller quantity');
+
+  await dialog.getByLabel('Credit quantity for FOCUS-60CT').fill('2');
+  await expect(dialog).toContainText('26.25');
+  await dialog.getByLabel('Reason').fill('Two arrived cracked');
+  await dialog.getByRole('button', { name: 'Issue credit note' }).click();
+  await expect(dialog).toBeHidden();
+
+  // The invoice stays issued and lists the credit.
+  await expect(page.getByRole('link', { name: 'CN-000001' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Void' })).toHaveCount(0);
+});
+
+test('credits from an RMA, prefilled with what it authorized', async ({
+  page,
+  freshOrg,
+}) => {
+  const api = freshOrg.api;
+  const { orderId, invoiceId, orderLineId } = await seedIssued(api);
+
+  // The customer was told to keep the cracked ones: credit follows what
+  // was authorized, with nothing to receive first.
+  const { returnAuthorization } = await created<{
+    returnAuthorization: { id: string };
+  }>(
+    await api.post('/v1/return-authorizations', {
+      data: {
+        orderId,
+        invoiceId,
+        reason: 'Cracked in transit',
+        expectsGoods: false,
+        lines: [{ lineId: orderLineId, quantity: '2', resolution: 'credit' }],
+      },
+    }),
+  );
+
+  await signInAs(page, api);
+  await page.goto(`/return-authorizations/${returnAuthorization.id}`);
+  await page.getByRole('link', { name: 'Credit on INV-000001' }).click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('Credit quantity for FOCUS-60CT')).toHaveValue(
+    '2.0000',
+  );
+  await expect(dialog).toContainText('26.25');
+  await dialog.getByRole('button', { name: 'Issue credit note' }).click();
+  await expect(dialog).toBeHidden();
+
+  // Settled on the RMA.
+  await page.goto(`/return-authorizations/${returnAuthorization.id}`);
+  const row = page.getByRole('row', { name: /FOCUS-60CT/ });
+  await expect(row.getByRole('cell').nth(4)).toHaveText('2.0000');
 });
