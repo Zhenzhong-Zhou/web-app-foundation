@@ -137,6 +137,13 @@ export const CreditNotePrintPage = lazyNamed(
   'CreditNotePrintPage',
 );
 
+export const RmasPage = lazyNamed(() => import('./rmas/rmas-page'), 'RmasPage');
+
+export const RmaDetailPage = lazyNamed(
+  () => import('./rmas/rma-detail-page'),
+  'RmaDetailPage',
+);
+
 export const ProductionOrdersPage = lazyNamed(
   () => import('./production/production-orders-page'),
   'ProductionOrdersPage',

@@ -1,0 +1,322 @@
+import {
+  Alert,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  MenuItem,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { type SubmitEvent, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { FormError } from '../components/form-error';
+import { api } from '../lib/api';
+import type {
+  InvoicePage,
+  InvoiceSummary,
+  OrderLine,
+  ReturnResolution,
+} from '../lib/types';
+import { useSubmit } from '../lib/use-submit';
+import { RESOLUTION_LABELS } from './rma-labels';
+
+/** A quantity of nothing, recognised as text rather than parsed (ADR-025). */
+function isNothing(quantity: string | undefined): boolean {
+  return /^\s*0*(\.0*)?\s*$/.test(quantity ?? '');
+}
+
+/**
+ * Raises an RMA against a sale (ADR-047): what the customer may send back,
+ * and what happens to each item.
+ *
+ * Authorized when raised — the person filling this in is the person
+ * deciding. Each line shows what shipped and what already came back; the
+ * server refuses more than the customer holds, so the dialog does not
+ * subtract decimals itself. A sample offers no credit, since nothing on it
+ * was billed. On success it opens the new RMA.
+ */
+export function RaiseRmaDialog({
+  open,
+  orderId,
+  isSample,
+  lines,
+  canViewInvoices,
+  onClose,
+}: {
+  open: boolean;
+  orderId: string;
+  isSample: boolean;
+  /** The order's lines; only those that shipped are offered. */
+  lines: OrderLine[];
+  canViewInvoices: boolean;
+  onClose: () => void;
+}) {
+  const navigate = useNavigate();
+  const shipped = lines.filter((line) => line.quantityFulfilled !== '0.0000');
+
+  const [reason, setReason] = useState('');
+  const [note, setNote] = useState('');
+  const [expectsGoods, setExpectsGoods] = useState(true);
+  const [invoiceId, setInvoiceId] = useState('');
+  const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
+  const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [resolutions, setResolutions] = useState<
+    Record<string, ReturnResolution>
+  >({});
+
+  const defaultResolution: ReturnResolution = isSample ? 'replace' : 'credit';
+
+  // useSubmit's callback takes no result, so the new id is kept here.
+  const createdId = useRef<string | null>(null);
+
+  const { submitting, error, reset, submit } = useSubmit(
+    () => {
+      close();
+      navigate(`/return-authorizations/${createdId.current}`);
+    },
+    { success: 'Return authorized' },
+  );
+
+  /**
+   * The order's issued invoices, for the one the customer quoted. Only
+   * issued ones: a draft owes nothing and a voided one was credited in full,
+   * so neither could be credited against.
+   */
+  useEffect(() => {
+    if (!open || !canViewInvoices || isSample) return;
+
+    let ignore = false;
+
+    void api<InvoicePage>(
+      `/invoices?orderId=${orderId}&status=issued&limit=100`,
+    )
+      .then((page) => {
+        if (!ignore) setInvoices(page.entries);
+      })
+      .catch(() => {
+        // The picker stays empty; an RMA needs no invoice.
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [open, orderId, canViewInvoices, isSample]);
+
+  function close() {
+    reset();
+    onClose();
+  }
+
+  const sending = shipped
+    .filter((line) => !isNothing(quantities[line.id]))
+    .map((line) => ({
+      lineId: line.id,
+      quantity: quantities[line.id].trim(),
+      resolution: resolutions[line.id] ?? defaultResolution,
+    }));
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+
+    void submit(async () => {
+      const { returnAuthorization } = await api<{
+        returnAuthorization: { id: string };
+      }>('/return-authorizations', {
+        method: 'POST',
+        body: JSON.stringify({
+          orderId,
+          reason,
+          expectsGoods,
+          invoiceId: invoiceId || undefined,
+          note: note.trim() || undefined,
+          lines: sending,
+        }),
+      });
+      createdId.current = returnAuthorization.id;
+    });
+  }
+
+  return (
+    <Dialog open={open} onClose={close} fullWidth maxWidth="md">
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>Authorize a return</DialogTitle>
+
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            {error && <FormError message={error} />}
+
+            <TextField
+              id="rma-reason"
+              label="Why is it coming back"
+              required
+              fullWidth
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              helperText="What the customer said: cracked in transit, wrong item, expired on arrival."
+              slotProps={{ htmlInput: { maxLength: 500 } }}
+            />
+
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Item</TableCell>
+                    <TableCell align="right">Shipped</TableCell>
+                    <TableCell align="right">Already back</TableCell>
+                    <TableCell align="right">May come back</TableCell>
+                    <TableCell>Then</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {shipped.map((line) => (
+                    <TableRow key={line.id}>
+                      <TableCell>
+                        {line.sku}
+                        <Typography variant="body2" color="text.secondary">
+                          {line.description}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        {line.quantityFulfilled}
+                      </TableCell>
+                      <TableCell align="right">
+                        {line.quantityReturned}
+                      </TableCell>
+                      <TableCell align="right" sx={{ width: 140 }}>
+                        <TextField
+                          size="small"
+                          value={quantities[line.id] ?? ''}
+                          onChange={(event) =>
+                            setQuantities((current) => ({
+                              ...current,
+                              [line.id]: event.target.value,
+                            }))
+                          }
+                          slotProps={{
+                            htmlInput: {
+                              inputMode: 'decimal',
+                              maxLength: 19,
+                              'aria-label': `Authorize ${line.sku}`,
+                            },
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ width: 220 }}>
+                        <TextField
+                          select
+                          size="small"
+                          fullWidth
+                          value={resolutions[line.id] ?? defaultResolution}
+                          onChange={(event) =>
+                            setResolutions((current) => ({
+                              ...current,
+                              [line.id]: event.target.value as ReturnResolution,
+                            }))
+                          }
+                          slotProps={{
+                            htmlInput: { 'aria-label': `Then for ${line.sku}` },
+                          }}
+                        >
+                          {(
+                            Object.keys(RESOLUTION_LABELS) as ReturnResolution[]
+                          )
+                            // Nothing on a sample was billed (ADR-042).
+                            .filter(
+                              (value) => !(isSample && value === 'credit'),
+                            )
+                            .map((value) => (
+                              <MenuItem key={value} value={value}>
+                                {RESOLUTION_LABELS[value]}
+                              </MenuItem>
+                            ))}
+                        </TextField>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {shipped.length === 0 && (
+              <Alert severity="info">
+                Nothing has shipped on this order, so nothing can come back.
+              </Alert>
+            )}
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={expectsGoods}
+                  onChange={(event) => setExpectsGoods(event.target.checked)}
+                />
+              }
+              label="The customer is sending the goods back"
+            />
+            {!expectsGoods && (
+              <Typography variant="body2" color="text.secondary">
+                Told to keep or destroy them: credit then follows what is
+                authorized here, since no box will arrive to be received.
+              </Typography>
+            )}
+
+            {!isSample && canViewInvoices && (
+              <TextField
+                id="rma-invoice"
+                select
+                label="Invoice the customer quoted"
+                fullWidth
+                value={invoiceId}
+                onChange={(event) => setInvoiceId(event.target.value)}
+                helperText="Optional. The credit defaults to it."
+              >
+                <MenuItem value="">
+                  <em>None quoted</em>
+                </MenuItem>
+                {invoices.map((invoice) => (
+                  <MenuItem key={invoice.id} value={invoice.id}>
+                    {invoice.number}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+
+            <TextField
+              id="rma-note"
+              label="Note"
+              fullWidth
+              multiline
+              minRows={2}
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              slotProps={{ htmlInput: { maxLength: 1000 } }}
+            />
+          </Stack>
+        </DialogContent>
+
+        <DialogActions>
+          <Button variant="text" onClick={close} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={submitting || sending.length === 0 || !reason.trim()}
+          >
+            {submitting ? 'Authorizing…' : 'Authorize'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+}

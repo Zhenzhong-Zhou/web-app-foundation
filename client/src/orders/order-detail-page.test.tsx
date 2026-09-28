@@ -500,5 +500,50 @@ describe('OrderDetailPage lines', () => {
         screen.queryByRole('button', { name: 'Create invoice' }),
       ).not.toBeInTheDocument();
     });
+
+    /**
+     * An RMA is customer service's (ADR-047): its own permission, offered
+     * on a sale once anything has shipped.
+     */
+    it('offers Authorize a return on a sale that shipped', async () => {
+      serveSale([], {
+        lines: [
+          line({ quantityFulfilled: '6.0000', quantityOutstanding: '34.0000' }),
+        ],
+      });
+      renderPage([...SALE_PERMISSIONS, 'return_authorizations.create']);
+
+      expect(
+        await screen.findByRole('button', { name: 'Authorize a return' }),
+      ).toBeInTheDocument();
+    });
+
+    it('offers it neither before anything shipped nor without the permission', async () => {
+      // Nothing shipped yet: the fixture's line has fulfilled 0.
+      serveSale();
+      const { unmount } = renderPage([
+        ...SALE_PERMISSIONS,
+        'return_authorizations.create',
+      ]);
+
+      await screen.findByRole('heading', { name: 'Shipments' });
+      expect(
+        screen.queryByRole('button', { name: 'Authorize a return' }),
+      ).not.toBeInTheDocument();
+      unmount();
+
+      // Shipped, but the member cannot raise RMAs.
+      serveSale([], {
+        lines: [
+          line({ quantityFulfilled: '6.0000', quantityOutstanding: '34.0000' }),
+        ],
+      });
+      renderPage(SALE_PERMISSIONS);
+
+      await screen.findByRole('heading', { name: 'Shipments' });
+      expect(
+        screen.queryByRole('button', { name: 'Authorize a return' }),
+      ).not.toBeInTheDocument();
+    });
   });
 });

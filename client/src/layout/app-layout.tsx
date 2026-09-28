@@ -44,6 +44,11 @@ const NAV = [
   { label: 'Movements', to: '/movements', permission: 'stock.view' },
   { label: 'Orders', to: '/orders', permission: 'orders.view' },
   { label: 'Invoices', to: '/invoices', permission: 'invoices.view' },
+  {
+    label: 'Returns',
+    to: '/return-authorizations',
+    permission: 'return_authorizations.view',
+  },
   { label: 'Products', to: '/products', permission: 'products.view' },
   { label: 'Partners', to: '/partners', permission: 'partners.view' },
   { label: 'Locations', to: '/locations', permission: 'locations.view' },

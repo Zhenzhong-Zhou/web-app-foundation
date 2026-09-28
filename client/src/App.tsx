@@ -42,6 +42,8 @@ import {
   ProductionOrderDetailPage,
   ProductionOrdersPage,
   ProductsPage,
+  RmaDetailPage,
+  RmasPage,
   SessionsPage,
   TaxCodesPage,
 } from './pages';
@@ -222,6 +224,11 @@ export default function App() {
         <Route
           path="/credit-notes/:id/print"
           element={split(CreditNotePrintPage)}
+        />
+        <Route path="/return-authorizations" element={split(RmasPage)} />
+        <Route
+          path="/return-authorizations/:id"
+          element={split(RmaDetailPage)}
         />
         <Route path="/production" element={split(ProductionOrdersPage)} />
         <Route

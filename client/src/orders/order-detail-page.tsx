@@ -36,6 +36,7 @@ import type {
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { leavesOf } from '../locations/tree';
+import { RaiseRmaDialog } from '../rmas/raise-rma-dialog';
 import { AddOrderLineDialog } from './add-order-line-dialog';
 import { CloseLineDialog } from './close-line-dialog';
 import { CloseOrderDialog } from './close-order-dialog';
@@ -143,12 +144,17 @@ export function OrderDetailPage() {
    */
   const [holds, setHolds] = useState<Record<string, LineHold>>({});
 
+  const [authorizing, setAuthorizing] = useState(false);
+
   const canUpdate = !!session?.permissions.includes('orders.update');
   const canReceive = !!session?.permissions.includes('orders.receive');
   const canShip = !!session?.permissions.includes('orders.ship');
   const canCreate = !!session?.permissions.includes('orders.create');
   const canViewInvoices = !!session?.permissions.includes('invoices.view');
   const canInvoice = !!session?.permissions.includes('invoices.create');
+  const canAuthorize = !!session?.permissions.includes(
+    'return_authorizations.create',
+  );
   const loading = order === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 
@@ -280,6 +286,16 @@ export function OrderDetailPage() {
     (order.status === 'confirmed' || order.status === 'fulfilled') &&
     order.lines.some((line) => line.quantityFulfilled !== '0.0000');
 
+  /**
+   * An RMA is customer service's, not the dock's (ADR-047), so it has its
+   * own permission, but the same moment as a return: once anything shipped.
+   */
+  const authorizable =
+    canAuthorize &&
+    order.direction === 'sale' &&
+    (order.status === 'confirmed' || order.status === 'fulfilled') &&
+    order.lines.some((line) => line.quantityFulfilled !== '0.0000');
+
   /** Lines are editable on a draft, and amendable while confirmed (ADR-033). */
   const isDraft = order.status === 'draft';
   const amendable = canUpdate && (isDraft || order.status === 'confirmed');
@@ -369,6 +385,16 @@ export function OrderDetailPage() {
               onClick={openDialog(() => setAddingLine(true))}
             >
               Add item
+            </Button>
+          )}
+
+          {authorizable && (
+            <Button
+              variant="text"
+              disabled={working}
+              onClick={openDialog(() => setAuthorizing(true))}
+            >
+              Authorize a return
             </Button>
           )}
 
@@ -759,6 +785,16 @@ export function OrderDetailPage() {
           await load();
           setReturns((count) => count + 1);
         }}
+      />
+
+      <RaiseRmaDialog
+        key={authorizing ? `rma-${order.id}` : 'rma-closed'}
+        open={authorizing}
+        orderId={order.id}
+        isSample={order.isSample}
+        lines={order.lines}
+        canViewInvoices={canViewInvoices}
+        onClose={() => setAuthorizing(false)}
       />
 
       <CloseLineDialog

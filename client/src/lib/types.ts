@@ -599,6 +599,8 @@ export interface ReturnableLine {
 export interface OrderReturn {
   id: string;
   toLocationId: string;
+  /** The RMA it counts against, if any (ADR-047). */
+  returnAuthorizationId: string | null;
   reason: string | null;
   note: string | null;
   createdAt: string;
@@ -692,4 +694,61 @@ export interface LineHold {
   outstanding: string;
   held: string;
   short: string;
+}
+
+export type ReturnResolution = 'credit' | 'replace' | 'none';
+
+export type ReturnAuthorizationStatus = 'open' | 'closed' | 'cancelled';
+
+/** A row in the returns list (ADR-047). */
+export interface ReturnAuthorizationSummary {
+  id: string;
+  number: string;
+  status: ReturnAuthorizationStatus;
+  orderId: string;
+  orderReference: string | null;
+  partnerId: string;
+  partnerName: string;
+  reason: string;
+  expectsGoods: boolean;
+  createdAt: string;
+}
+
+export interface ReturnAuthorizationPage {
+  entries: ReturnAuthorizationSummary[];
+  nextCursor: string | null;
+}
+
+/** One item on an RMA, with what has happened to it so far. */
+export interface ReturnAuthorizationLine {
+  id: string;
+  orderLineId: string;
+  variantId: string;
+  sku: string;
+  /** Authorized: the ceiling for returns and credits against this line. */
+  quantity: string;
+  resolution: ReturnResolution;
+  quantityReceived: string;
+  quantityCredited: string;
+}
+
+export interface ReturnAuthorizationDetail {
+  id: string;
+  number: string;
+  status: ReturnAuthorizationStatus;
+  orderId: string;
+  orderReference: string | null;
+  partnerId: string;
+  partnerName: string;
+  /** The invoice the customer quoted, if any; the credit defaults to it. */
+  invoiceId: string | null;
+  invoiceNumber: string | null;
+  reason: string;
+  /** False when the customer was told to keep or destroy the goods. */
+  expectsGoods: boolean;
+  note: string | null;
+  createdAt: string;
+  closedAt: string | null;
+  cancelledAt: string | null;
+  lines: ReturnAuthorizationLine[];
 }
