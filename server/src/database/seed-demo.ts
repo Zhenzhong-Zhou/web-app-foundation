@@ -132,6 +132,12 @@ async function seedDemo(): Promise<void> {
       async () => {
         const actor = account.userId;
 
+        // Stock is valued in the base currency from the first receipt
+        // (ADR-048). Set only if empty, like the tax number below: an
+        // existing organization's choice must survive.
+        const { baseCurrency } = await organization.get();
+        if (!baseCurrency) await organization.update({ baseCurrency: 'CAD' });
+
         // An NPN: issued on a date, and valid while the product is marketed
         // and compliant, so no expiry. Leaving it blank is the realistic
         // shape, not an omission.
