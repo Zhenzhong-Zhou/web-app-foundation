@@ -45,5 +45,7 @@ Thumbs.db
 tmp/
 docker-data/
 
+server/.flake-hunt/
+
 # NOTE: do NOT ignore prisma/migrations/ or any migration folder.
 # Migrations are source code and must be committed.
