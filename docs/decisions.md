@@ -3220,8 +3220,9 @@ the dock's permission (ADR-043). Issuing a credit note, with or without an
 RMA, stays `invoices.issue`, the finance permission voiding already uses —
 whoever may send an invoice is who may take money back on it. Audited as
 `return_authorization.created`, `.cancelled`, `.closed`,
-`return_authorization.return_linked` and `credit_note.issued`, the last
-being the action ADR-046 held back until a route recorded it.
+`return_authorization.return_linked`, `return_authorization.replacement_raised`
+and `credit_note.issued`, the last being the action ADR-046 held back until 
+a route recorded it.
 
 **Consequences.** New tables `return_authorizations` and
 `return_authorization_lines` (each line with its resolution), and

@@ -10,6 +10,7 @@ import {
   auditLog,
   orderLines,
   orderReturns,
+  orders,
   returnAuthorizations,
   roles,
 } from '../src/database/schema';
@@ -712,6 +713,111 @@ describe('Return authorizations (e2e)', () => {
         returnId,
         returnAuthorization: 'RMA-000001',
       });
+    });
+  });
+
+  describe('raising a replacement', () => {
+    function replace(org: Org, rmaId: string) {
+      return org.agent.post(`/v1/return-authorizations/${rmaId}/replacement`);
+    }
+
+    /**
+     * Only the replace lines, at zero, in the original's currency, linked
+     * back — and confirm accepts it as it stands, since zero is a price.
+     */
+    it('raises a draft sale at zero for the replace lines only', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+      const rma = await raised(org, s, {
+        lines: [
+          { lineId: s.capsulesLine, quantity: '2', resolution: 'credit' },
+          { lineId: s.scoopLine, quantity: '1', resolution: 'replace' },
+        ],
+      });
+
+      const order = body<{ order: { id: string } }>(
+        await replace(org, rma.id).expect(201),
+      ).order;
+
+      const [row] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, order.id));
+      expect(row.status).toBe('draft');
+      expect(row.direction).toBe('sale');
+      expect(row.returnAuthorizationId).toBe(rma.id);
+      expect(row.note).toBe('Replacement for RMA-000001');
+
+      const lines = await db
+        .select()
+        .from(orderLines)
+        .where(eq(orderLines.orderId, order.id));
+      expect(
+        lines.map((line) => [
+          line.sku,
+          line.quantityOrdered,
+          line.unitPrice,
+          line.currency,
+        ]),
+      ).toEqual([['SCOOP', '1.0000', '0.0000', 'CAD']]);
+
+      await org.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+    });
+
+    it('refuses an RMA with nothing to replace', async () => {
+      const org = await registerOrg('alpha');
+      const rma = await raised(org, await shipped(org));
+
+      await replace(org, rma.id).expect(409);
+    });
+
+    // One standing replacement: the same goods are not sent twice.
+    it('raises one at a time, and another once the first is cancelled', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+      const rma = await raised(org, s, {
+        lines: [{ lineId: s.scoopLine, quantity: '1', resolution: 'replace' }],
+      });
+
+      const first = body<{ order: { id: string } }>(
+        await replace(org, rma.id).expect(201),
+      ).order;
+      await replace(org, rma.id).expect(409);
+
+      await org.agent
+        .patch(`/v1/orders/${first.id}`)
+        .send({ status: 'cancelled' })
+        .expect(204);
+      await replace(org, rma.id).expect(201);
+    });
+
+    // A sample's replacement is a sample: unpriced, and still confirmable.
+    it('replaces a sample with a sample', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org, { isSample: true });
+      const rma = await raised(org, s, {
+        lines: [
+          { lineId: s.capsulesLine, quantity: '1', resolution: 'replace' },
+        ],
+      });
+
+      const order = body<{ order: { id: string } }>(
+        await replace(org, rma.id).expect(201),
+      ).order;
+
+      const [row] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, order.id));
+      expect(row.isSample).toBe(true);
+
+      await org.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
     });
   });
 

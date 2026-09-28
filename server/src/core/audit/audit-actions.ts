@@ -97,6 +97,9 @@ export const AUDIT_ACTIONS = {
   RETURN_AUTHORIZATION_CLOSED: 'return_authorization.closed',
   /** A return received without an RMA, counted against one afterwards. */
   RETURN_AUTHORIZATION_RETURN_LINKED: 'return_authorization.return_linked',
+  /** A draft sale at zero for an RMA's replace lines; carries the order. */
+  RETURN_AUTHORIZATION_REPLACEMENT_RAISED:
+    'return_authorization.replacement_raised',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

@@ -113,4 +113,24 @@ export class ReturnAuthorizationsController {
   ): Promise<void> {
     await this.rmas.linkReturn(id, dto.returnId);
   }
+
+  /**
+   * A draft sale at zero for the lines resolved as replace. Customer
+   * service's act, as the RMA is; the order is then confirmed and shipped
+   * as any sale, by whoever does that.
+   */
+  @Post(':id/replacement')
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(PERMISSIONS.RETURN_AUTHORIZATIONS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.RETURN_AUTHORIZATION_REPLACEMENT_RAISED,
+    resourceType: 'return_authorization',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async raiseReplacement(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: RequestContext,
+  ) {
+    return { order: await this.rmas.raiseReplacement(id, user.userId) };
+  }
 }
