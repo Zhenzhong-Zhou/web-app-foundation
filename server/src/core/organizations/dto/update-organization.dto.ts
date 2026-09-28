@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 
 import { trim } from '../../../common/dto/trim';
 
@@ -18,4 +18,16 @@ export class UpdateOrganizationDto {
   @IsString()
   @MaxLength(50)
   taxRegistrationNumber?: string | null;
+
+  /**
+   * ISO 4217, what stock is valued in (ADR-048). Cannot be cleared, and
+   * cannot change once stock is valued in it — the service refuses that.
+   */
+  @IsOptional()
+  @trim()
+  @IsString()
+  @Matches(/^[A-Z]{3}$/, {
+    message: 'baseCurrency must be a 3-letter ISO code',
+  })
+  baseCurrency?: string;
 }

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core';
+import { char, check, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core';
 
 import { primaryKey, timestamps } from './columns';
 
@@ -26,6 +26,15 @@ export const organizations = pgTable(
      */
     taxRegistrationNumber: text('tax_registration_number'),
 
+    /**
+     * ISO 4217: what this organization's stock is valued in (ADR-048).
+     * Nullable and never defaulted — a default would assert a currency
+     * nobody chose (ADR-035). Fixed once any valuation carries a value or a
+     * rate; the service enforces that, since a check cannot see another
+     * table.
+     */
+    baseCurrency: char('base_currency', { length: 3 }),
+
     ...timestamps,
   },
   (t) => [
@@ -38,6 +47,10 @@ export const organizations = pgTable(
     check(
       'organizations_tax_registration_number_not_blank_check',
       sql`${t.taxRegistrationNumber} is null or length(btrim(${t.taxRegistrationNumber})) > 0`,
+    ),
+    check(
+      'organizations_base_currency_format_check',
+      sql`${t.baseCurrency} is null or ${t.baseCurrency} ~ '^[A-Z]{3}$'`,
     ),
   ],
 );

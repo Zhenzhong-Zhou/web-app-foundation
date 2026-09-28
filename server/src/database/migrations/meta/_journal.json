@@ -232,6 +232,13 @@
       "when": 1790490767573,
       "tag": "0032_return_authorizations",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790621280555,
+      "tag": "0033_stock_valuation",
+      "breakpoints": true
     }
   ]
 }

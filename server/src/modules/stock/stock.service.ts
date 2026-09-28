@@ -24,6 +24,7 @@ import { assertTakeable } from './availability';
 import { ListLotsDto } from './dto/list-lots.dto';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
+import { PurchaseCost, valueMovement } from './valuation';
 
 /**
  * Reasons that only ever add stock, and reasons that only ever remove it.
@@ -82,6 +83,12 @@ export interface RecordMovementInput {
   /** A sample's recipient; becomes a `partner` reference once checked. */
   recipientPartnerId?: string | null;
   note?: string | null;
+  /**
+   * What a receipt against a priced purchase line paid (ADR-048). Set by the
+   * order that received it, never by a client — the movement endpoint's DTO
+   * does not declare it, so the whitelist refuses one sent in a body.
+   */
+  cost?: PurchaseCost | null;
 }
 
 export interface ListStockFilters {
@@ -323,6 +330,10 @@ export class StockService {
         actorId,
       })
       .returning();
+
+    // Every movement is valued here, so value and quantity have one write
+    // path between them (ADR-048).
+    await valueMovement(tx, organizationId, movement, input.cost ?? null);
 
     this.logger.log(
       `Movement ${movement.id}: ${input.reason} ${input.quantity} of ${variant.sku}`,

@@ -1,7 +1,16 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { and, eq, sql } from 'drizzle-orm';
 
-import { addresses, organizations } from '../../database/schema';
+import {
+  addresses,
+  organizations,
+  stockValuations,
+} from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { recordPrevious } from '../audit/audit-context';
 import type { OrganizationAddressDto } from './dto/organization-address.dto';
@@ -30,6 +39,7 @@ export class OrganizationsService {
           name: organizations.name,
           slug: organizations.slug,
           taxRegistrationNumber: organizations.taxRegistrationNumber,
+          baseCurrency: organizations.baseCurrency,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
@@ -45,7 +55,10 @@ export class OrganizationsService {
   async update(input: UpdateOrganizationDto) {
     await this.tenantDb.transaction(async (tx, organizationId) => {
       const [existing] = await tx
-        .select({ taxRegistrationNumber: organizations.taxRegistrationNumber })
+        .select({
+          taxRegistrationNumber: organizations.taxRegistrationNumber,
+          baseCurrency: organizations.baseCurrency,
+        })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
 
@@ -53,17 +66,54 @@ export class OrganizationsService {
 
       recordPrevious({
         taxRegistrationNumber: existing.taxRegistrationNumber,
+        baseCurrency: existing.baseCurrency,
       });
 
-      if (input.taxRegistrationNumber === undefined) return;
+      const changesBase =
+        input.baseCurrency !== undefined &&
+        input.baseCurrency !== existing.baseCurrency;
+
+      /**
+       * Fixed once used (ADR-048). A value or a rate is denominated in the
+       * base, and changing it would silently re-denominate every one. The
+       * opening rows are zero and carry no rate, so an organization holding
+       * stock can still set its first.
+       */
+      if (changesBase) {
+        const [valued] = await tx
+          .select({ id: stockValuations.id })
+          .from(stockValuations)
+          .where(
+            and(
+              eq(stockValuations.organizationId, organizationId),
+              sql`(${stockValuations.value} <> 0 or ${stockValuations.exchangeRate} is not null)`,
+            ),
+          )
+          .limit(1);
+
+        if (valued) {
+          throw new ConflictException(
+            `Stock is already valued in ${existing.baseCurrency}, so the base currency cannot change`,
+          );
+        }
+      }
+
+      const changes = {
+        ...(input.taxRegistrationNumber !== undefined
+          ? {
+              // Empty clears it: the column refuses a blank, and a cleared
+              // field in a form arrives as "".
+              taxRegistrationNumber: input.taxRegistrationNumber || null,
+            }
+          : {}),
+        ...(changesBase ? { baseCurrency: input.baseCurrency } : {}),
+      };
+
+      if (Object.keys(changes).length === 0) return;
 
       await tx
         .update(organizations)
-        .set({
-          // Empty clears it: the column refuses a blank, and a cleared field
-          // in a form arrives as "".
-          taxRegistrationNumber: input.taxRegistrationNumber || null,
-        })
+        .set(changes)
         .where(eq(organizations.id, organizationId));
     });
   }

@@ -3383,8 +3383,10 @@ lot's cost is one pool row. Neither walks a tree.
 
 **Decision — a base currency, and a rate table.**
 `organizations.base_currency`, ISO 4217, nullable, set on the organization
-settings page. It cannot change once any valuation exists, since that would
-re-denominate every stored value. Nothing defaults it, for ADR-035's reason.
+settings page. It cannot change once any valuation carries a value or a
+rate, since that would re-denominate every stored value. The zero-valued
+opening rows do not count; otherwise an organization holding stock could
+never set one. Nothing defaults it, for ADR-035's reason.
 
 `exchange_rates (organization_id, currency, rate_date, rate)`, unique on the
 first three: how many units of the base one unit of `currency` is worth that

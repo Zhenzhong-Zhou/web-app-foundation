@@ -14,6 +14,7 @@ import {
   ORDER_STATUSES,
   RETURN_AUTHORIZATION_STATUSES,
   RETURN_RESOLUTIONS,
+  VALUATION_KINDS,
 } from '../src/database/schema';
 import { createTestApp } from './utils/create-test-app';
 
@@ -90,6 +91,7 @@ describe('schema invariants', () => {
     ['invoices_status_check', INVOICE_STATUSES],
     ['return_authorizations_status_check', RETURN_AUTHORIZATION_STATUSES],
     ['return_authorization_lines_resolution_check', RETURN_RESOLUTIONS],
+    ['stock_valuations_kind_check', VALUATION_KINDS],
   ])('%s', (constraintName, values) => {
     it('accepts every value the code can write', async () => {
       const result = await db.execute(sql`

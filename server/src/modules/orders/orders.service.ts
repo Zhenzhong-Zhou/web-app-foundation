@@ -981,6 +981,13 @@ export class OrdersService {
           referenceId: orderId,
           lot: input.lot,
           note: input.note,
+          // What was agreed on the line, carried onto the valuation as a
+          // snapshot (ADR-048). An unpriced line gives nothing, and the
+          // receipt waits for a cost.
+          cost:
+            line.unitPrice !== null && line.currency !== null
+              ? { unitPrice: line.unitPrice, currency: line.currency }
+              : null,
         },
         actorId,
       );
