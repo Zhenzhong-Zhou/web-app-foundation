@@ -528,6 +528,35 @@ describe('Return authorizations (e2e)', () => {
     });
 
     /**
+     * What came back against one RMA is not counted against another, nor
+     * for another item. Each figure is this line's alone.
+     */
+    it('counts only its own returns, for its own item', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+
+      const first = await raised(org, s);
+      const second = await raised(org, s, {
+        lines: [
+          { lineId: s.capsulesLine, quantity: '2', resolution: 'credit' },
+          { lineId: s.scoopLine, quantity: '1', resolution: 'credit' },
+        ],
+      });
+
+      await returnCapsules(org, s, '2', first.id).expect(201);
+
+      const [firstLine] = (await read(org, first.id)).lines;
+      expect(firstLine.quantityReceived).toBe('2.0000');
+
+      // Nothing came back against the second, for either item.
+      const others = (await read(org, second.id)).lines;
+      expect(others.map((line) => line.quantityReceived)).toEqual([
+        '0.0000',
+        '0.0000',
+      ]);
+    });
+
+    /**
      * 2 authorized: a third box is refused, and moves nothing — the check
      * and the movement are one transaction.
      */
