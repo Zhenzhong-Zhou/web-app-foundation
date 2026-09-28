@@ -38,7 +38,12 @@ export async function createTestApp(
   const moduleRef = await builder.compile();
   const app = configureApp(moduleRef.createNestApplication());
 
-  await app.init();
+  // Listen once, on the address supertest connects to. Left unstarted,
+  // supertest opens a fresh ephemeral port per request on `::` and connects
+  // to 127.0.0.1 — and on macOS another process can hold 127.0.0.1 on that
+  // same port, so an occasional request is answered by something else
+  // entirely (the stray 401/404/501s of issue #1).
+  await app.listen(0, '127.0.0.1');
   return app;
 }
 
