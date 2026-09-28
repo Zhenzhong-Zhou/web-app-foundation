@@ -222,7 +222,9 @@ test('plans, releases by lot, records output and closes a run', async ({
 
   // 34 against 30 is over the threshold, so it is said once, here.
   await expect(page.getByText(/One component was well off plan/)).toBeVisible();
-  await expect(page.getByRole('row', { name: /E2E-BLEND-MIX/ })).toContainText(
-    'used',
-  );
+  await expect(
+    page
+      .getByRole('table', { name: 'Components' })
+      .getByRole('row', { name: /E2E-BLEND-MIX/ }),
+  ).toContainText('used');
 });

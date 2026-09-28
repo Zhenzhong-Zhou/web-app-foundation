@@ -27,6 +27,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
+import { RunCostPanel } from '../costs/run-cost-panel';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { LineVariance, OutputVariance, RunDetail } from '../lib/types';
@@ -267,7 +268,7 @@ export function ProductionOrderDetailPage() {
       ) : (
         <Paper variant="outlined">
           <TableContainer>
-            <Table size="small">
+            <Table size="small" aria-label="Components">
               <TableHead>
                 <TableRow>
                   <TableCell>Component</TableCell>
@@ -327,6 +328,11 @@ export function ProductionOrderDetailPage() {
           </TableContainer>
         </Paper>
       )}
+
+      {run.status === 'completed' && can('costs.view') && (
+        <RunCostPanel runId={run.id} />
+      )}
+
       <ReleaseRunDialog
         open={releasing}
         run={run}

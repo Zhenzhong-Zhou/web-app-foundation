@@ -804,3 +804,57 @@ export interface ExchangeRate {
   rateDate: string;
   rate: string;
 }
+
+/** What one batch cost to make: material only (ADR-048). */
+export interface RunCost {
+  currency: string | null;
+  runId: string;
+  reference: string | null;
+  sku: string;
+  status: 'draft' | 'released' | 'completed' | 'cancelled';
+  closed: boolean;
+  quantityProduced: string;
+  /** Null until the run closes; consumption is written then. */
+  materialCost: string | null;
+  /** Null until close, and when nothing was made. */
+  unitCost: string | null;
+  provisional: boolean;
+  consumed: {
+    sku: string;
+    lotCode: string | null;
+    quantity: string;
+    value: string;
+  }[];
+  outputs: { lotCode: string | null; quantity: string; value: string }[];
+}
+
+/** One valuation row in a lot's history. */
+export interface LotCostEntry {
+  id: string;
+  kind: ValuationKind;
+  reason: string | null;
+  /** Signed: negative for stock leaving. */
+  quantity: string;
+  value: string;
+  unitPrice: string | null;
+  currency: string | null;
+  exchangeRate: string | null;
+  needsCost: boolean;
+  referenceType: string | null;
+  referenceId: string | null;
+  createdAt: string;
+}
+
+/** What one lot is worth, and how it got there. */
+export interface LotCost {
+  currency: string | null;
+  lotId: string;
+  lotCode: string;
+  sku: string;
+  quantity: string;
+  value: string;
+  /** Null when none is on hand. */
+  unitCost: string | null;
+  provisional: boolean;
+  entries: LotCostEntry[];
+}

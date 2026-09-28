@@ -23,7 +23,9 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
+import { LotCostPanel } from '../costs/lot-cost-panel';
 import { api, ApiError } from '../lib/api';
 import { formatDate, formatDay } from '../lib/format';
 import type { LotMatch, LotTrace } from '../lib/types';
@@ -160,6 +162,7 @@ export function LotSearchPage() {
  */
 export function LotTracePage() {
   const { id } = useParams<{ id: string }>();
+  const can = useCan();
 
   const [trace, setTrace] = useState<LotTrace | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -330,6 +333,8 @@ export function LotTracePage() {
           />
         )}
       </Section>
+
+      {can('costs.view') && <LotCostPanel lotId={trace.lot.id} />}
     </Stack>
   );
 }
