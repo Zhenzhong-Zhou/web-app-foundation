@@ -35,6 +35,8 @@ export const PERMISSIONS = [
   'stock.view',
   'stock.move',
   'stock.adjust',
+  'costs.view',
+  'costs.update',
   'partners.view',
   'partners.create',
   'partners.update',

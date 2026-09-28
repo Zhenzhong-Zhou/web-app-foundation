@@ -97,6 +97,7 @@ describe('Stock valuation (e2e)', () => {
         where sv.organization_id = p.organization_id
           and sv.variant_id = p.variant_id
           and sv.lot_id is not distinct from p.lot_id
+          and sv.kind <> 'issued'
       ) v
       cross join lateral (
         select coalesce(sum(sl.quantity), 0) as quantity

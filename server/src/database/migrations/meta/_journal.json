@@ -239,6 +239,13 @@
       "when": 1790621280555,
       "tag": "0033_stock_valuation",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790635657860,
+      "tag": "0034_valuation_issued_kind",
+      "breakpoints": true
     }
   ]
 }

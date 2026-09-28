@@ -111,7 +111,7 @@ export async function valueMovement(
  * pattern (ADR-025). DO UPDATE rather than DO NOTHING, because DO NOTHING
  * returns no row on conflict.
  */
-async function lockPool(
+export async function lockPool(
   tx: Tx,
   organizationId: string,
   variantId: string,

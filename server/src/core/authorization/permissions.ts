@@ -73,6 +73,9 @@ export const PERMISSIONS = {
   STOCK_MOVE: 'stock.move',
   STOCK_ADJUST: 'stock.adjust',
 
+  COSTS_VIEW: 'costs.view',
+  COSTS_UPDATE: 'costs.update',
+
   PARTNERS_VIEW: 'partners.view',
   PARTNERS_CREATE: 'partners.create',
   PARTNERS_UPDATE: 'partners.update',
@@ -137,6 +140,8 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   // Separate from stock.move: an adjustment overrides the record itself, and
   // is the one movement with no external event behind it.
   'stock.adjust': 'Correct a count when the system is wrong',
+  'costs.view': 'See what stock, lots and batches cost, and exchange rates',
+  'costs.update': 'Set and correct costs and exchange rates',
   'partners.view': 'See customers and suppliers',
   'partners.create': 'Add a customer or supplier',
   // No delete: a partner referenced by an order cannot be removed without

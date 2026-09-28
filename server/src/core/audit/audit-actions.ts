@@ -52,6 +52,9 @@ export const AUDIT_ACTIONS = {
 
   STOCK_LOT_UPDATED: 'stock.lot_updated',
 
+  STOCK_VALUATION_COST_SET: 'stock_valuation.cost_set',
+  EXCHANGE_RATE_SET: 'exchange_rate.set',
+
   PRODUCT_LICENCE_CREATED: 'product_licence.created',
   PRODUCT_LICENCE_UPDATED: 'product_licence.updated',
 

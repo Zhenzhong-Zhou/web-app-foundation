@@ -20,6 +20,7 @@ import { UsersModule } from './core/users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { BomsModule } from './modules/boms/boms.module';
+import { CostsModule } from './modules/costs/costs.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { OrdersModule } from './modules/orders/orders.module';
@@ -126,6 +127,7 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     ProductionOrdersModule,
     LocationsModule,
     StockModule,
+    CostsModule,
     PartnersModule,
     OrdersModule,
     InvoicesModule,

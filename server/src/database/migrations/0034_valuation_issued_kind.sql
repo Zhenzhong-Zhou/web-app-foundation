@@ -1,0 +1,2 @@
+ALTER TABLE "stock_valuations" DROP CONSTRAINT "stock_valuations_kind_check";--> statement-breakpoint
+ALTER TABLE "stock_valuations" ADD CONSTRAINT "stock_valuations_kind_check" CHECK ("stock_valuations"."kind" in ('movement', 'run_close', 'correction', 'issued', 'opening'));

@@ -26,6 +26,7 @@ import {
   type LotCandidate,
   lotCandidates,
 } from '../stock/lot-allocation';
+import { postRunCost } from '../stock/revaluation';
 import { StockService } from '../stock/stock.service';
 import { trackedVariants } from '../stock/tracked-variants';
 import type {
@@ -855,6 +856,9 @@ export class ProductionOrdersService {
               variance: Number(outputRatio.toFixed(4)),
             }
           : null;
+
+      // The batch's cost, now that what it consumed is valued (ADR-048).
+      await postRunCost(tx, organizationId, runId, actorId);
 
       await tx
         .update(productionOrders)

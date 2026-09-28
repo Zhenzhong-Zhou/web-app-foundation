@@ -24,14 +24,18 @@ import { users } from './users';
  *
  * movement   — what a stock movement carried; one per movement, transfers
  *              excepted.
- * run_close  — a batch's cost arriving at its run's close.
- * correction — a cost set or changed after the fact.
+ * run_close  — the share of a batch's cost still in its pool at close.
+ * correction — the share of a corrected cost still in its pool.
+ * issued     — the share of either that belongs to units already gone. Kept
+ *              against the pool's history and never in its balance, so a
+ *              pool equals the sum of its other rows.
  * opening    — the balance valuation started from, in migration 0033.
  */
 export const VALUATION_KINDS = [
   'movement',
   'run_close',
   'correction',
+  'issued',
   'opening',
 ] as const;
 
@@ -79,9 +83,10 @@ export const stockValuations = pgTable(
     value: numeric('value', { precision: 18, scale: 6 }).notNull(),
 
     /**
-     * What was paid, as it was paid, on acquisitions: a snapshot of the
-     * purchase line, never read through to it. The line says what was agreed,
-     * this says what it cost, and correcting one must not rewrite the other.
+     * What was paid, as it was paid, on acquisitions and their corrections: a
+     * snapshot, never read through to the purchase line. The line says what
+     * was agreed, this says what it cost, and correcting one must not rewrite
+     * the other.
      */
     unitPrice: numeric('unit_price', { precision: 18, scale: 4 }),
     currency: char('currency', { length: 3 }),
@@ -95,11 +100,15 @@ export const stockValuations = pgTable(
 
     /**
      * Valued at zero for want of a price, a rate or a run's close. A to-do,
-     * and the reason a pool's cost is provisional while one stands.
+     * cleared by a later row rather than by editing this one: a correction
+     * that references it, or a run_close for the run that produced it.
      */
     needsCost: boolean('needs_cost').notNull().default(false),
 
-    /** What a row without a movement belongs to: a run, a corrected receipt. */
+    /**
+     * What a row without a movement belongs to: `production_order` for a
+     * run's close, `stock_valuation` for the row a correction corrects.
+     */
     referenceType: text('reference_type'),
     referenceId: uuid('reference_id'),
 
@@ -131,6 +140,10 @@ export const stockValuations = pgTable(
       t.createdAt.desc(),
     ),
 
+    /**
+     * A run's close rows, and the corrections of one valuation — which is
+     * also how a needs-cost row is found to be cleared.
+     */
     index('stock_valuations_org_reference_idx')
       .on(t.organizationId, t.referenceType, t.referenceId)
       .where(sql`${t.referenceType} is not null`),
@@ -142,7 +155,7 @@ export const stockValuations = pgTable(
 
     check(
       'stock_valuations_kind_check',
-      sql`${t.kind} in ('movement', 'run_close', 'correction', 'opening')`,
+      sql`${t.kind} in ('movement', 'run_close', 'correction', 'issued', 'opening')`,
     ),
 
     check(
@@ -151,8 +164,8 @@ export const stockValuations = pgTable(
     ),
 
     /**
-     * Movements and the opening balance move quantity; a run's close and a
-     * correction only revalue what is there.
+     * Movements and the opening balance move quantity; everything else only
+     * revalues what is there, or what has gone.
      */
     check(
       'stock_valuations_quantity_shape_check',

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import {
   boms,
   creditNotes,
+  exchangeRates,
   invoices,
   locations,
   lots,
@@ -15,6 +16,7 @@ import {
   productVariants,
   returnAuthorizations,
   stockMovements,
+  stockValuations,
   taxCodes,
 } from '../../database/schema';
 import type { TenantDb } from '../../database/tenant-db.service';
@@ -169,6 +171,23 @@ const RESOLVERS: Record<string, Resolver> = {
   stock_movement: async (db, id) => {
     const [row] = await db.select(stockMovements, eq(stockMovements.id, id));
     return row && `${row.sku} · ${row.reason}`;
+  },
+
+  // The item a cost was set on.
+  stock_valuation: async (db, id) => {
+    const [row] = await db.selectJoined(
+      stockValuations,
+      productVariants,
+      eq(productVariants.id, stockValuations.variantId),
+      { sku: productVariants.sku },
+      eq(stockValuations.id, id),
+    );
+    return row?.sku;
+  },
+
+  exchange_rate: async (db, id) => {
+    const [row] = await db.select(exchangeRates, eq(exchangeRates.id, id));
+    return row && `${row.currency} ${row.rateDate}`;
   },
 };
 

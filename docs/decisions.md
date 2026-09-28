@@ -3487,6 +3487,26 @@ outbound.
 - **Export to the books.**
 - **Fetching rates**, and realised exchange gains and losses, with payments.
 
+**Amendment (step 2).** Four refinements found while building run close and
+corrections; the method is unchanged.
+
+- **A fifth kind, `issued`:** value belonging to units already gone from a
+  pool — a cost corrected after part of a receipt was used, or a batch's
+  cost arriving after part of it shipped. Recorded against the pool's
+  history and never in its balance, so a pool still equals the sum of its
+  other rows. Migration 0034.
+- **A correction names the valuation it corrects**, not a movement:
+  `PUT /v1/costs/valuations/:id`, `reference_type = 'stock_valuation'`,
+  audited as `stock_valuation.cost_set`. An opening balance has no movement
+  and needs a cost too. All cost routes live under `/v1/costs`.
+- **What clears `needs_cost`:** a correction referencing the row, or for
+  production output a `run_close` for its run. Nothing edits the flag.
+- **Run close posts per output lot**, not per outbound movement: a
+  `run_close` row for the share still in the pool and one `issued` row for
+  the share already gone — the same split a correction uses.
+
+---
+
 # Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
