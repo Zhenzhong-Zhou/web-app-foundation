@@ -89,6 +89,10 @@ export const AUDIT_ACTIONS = {
   INVOICE_ISSUED: 'invoice.issued',
   /** Reversed in full by a credit note; carries the credit note's number. */
   INVOICE_VOIDED: 'invoice.voided',
+
+  RETURN_AUTHORIZATION_CREATED: 'return_authorization.created',
+  RETURN_AUTHORIZATION_CANCELLED: 'return_authorization.cancelled',
+  RETURN_AUTHORIZATION_CLOSED: 'return_authorization.closed',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

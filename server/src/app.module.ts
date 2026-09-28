@@ -27,6 +27,7 @@ import { PartnersModule } from './modules/partners/partners.module';
 import { ProductLicencesModule } from './modules/product-licences/product-licences.module';
 import { ProductionOrdersModule } from './modules/production-orders/production-orders.module';
 import { ProductsModule } from './modules/products/products.module';
+import { ReturnAuthorizationsModule } from './modules/return-authorizations/return-authorizations.module';
 import { StockModule } from './modules/stock/stock.module';
 import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
 
@@ -128,6 +129,7 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     PartnersModule,
     OrdersModule,
     InvoicesModule,
+    ReturnAuthorizationsModule,
 
     // Infrastructure, not domain: a liveness probe, unversioned and public.
     HealthModule,

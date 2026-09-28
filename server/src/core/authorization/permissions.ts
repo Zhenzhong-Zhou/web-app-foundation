@@ -59,6 +59,12 @@ export const PERMISSIONS = {
   // organization widens it deliberately (ADR-046).
   INVOICES_ISSUE: 'invoices.issue',
 
+  // Customer service, not the dock or finance (ADR-047): receiving against
+  // an RMA stays orders.receive, and crediting one stays invoices.issue.
+  RETURN_AUTHORIZATIONS_VIEW: 'return_authorizations.view',
+  RETURN_AUTHORIZATIONS_CREATE: 'return_authorizations.create',
+  RETURN_AUTHORIZATIONS_UPDATE: 'return_authorizations.update',
+
   LOCATIONS_VIEW: 'locations.view',
   LOCATIONS_CREATE: 'locations.create',
   LOCATIONS_UPDATE: 'locations.update',
@@ -116,6 +122,9 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'invoices.update': 'Edit a draft invoice’s prices, tax and dates',
   'invoices.delete': 'Delete a draft invoice',
   'invoices.issue': 'Issue an invoice, or void one',
+  'return_authorizations.view': 'See return authorizations',
+  'return_authorizations.create': 'Authorize a customer to send goods back',
+  'return_authorizations.update': 'Cancel or close a return authorization',
   'locations.view': 'See warehouses, zones, and bins',
   'locations.create': 'Add a location',
   'locations.update': 'Edit, move, or retire a location',
@@ -197,6 +206,9 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.INVOICES_CREATE,
     PERMISSIONS.INVOICES_UPDATE,
     PERMISSIONS.INVOICES_DELETE,
+    PERMISSIONS.RETURN_AUTHORIZATIONS_VIEW,
+    PERMISSIONS.RETURN_AUTHORIZATIONS_CREATE,
+    PERMISSIONS.RETURN_AUTHORIZATIONS_UPDATE,
     PERMISSIONS.BOMS_VIEW,
     PERMISSIONS.BOMS_CREATE,
     PERMISSIONS.BOMS_UPDATE,
@@ -229,6 +241,7 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.PRODUCT_LICENCES_VIEW,
     PERMISSIONS.TAX_CODES_VIEW,
     PERMISSIONS.INVOICES_VIEW,
+    PERMISSIONS.RETURN_AUTHORIZATIONS_VIEW,
     PERMISSIONS.BOMS_VIEW,
     PERMISSIONS.LOCATIONS_VIEW,
     PERMISSIONS.STOCK_VIEW,

@@ -12,6 +12,7 @@ import {
   productLicences,
   products,
   productVariants,
+  returnAuthorizations,
   stockMovements,
   taxCodes,
 } from '../../database/schema';
@@ -110,6 +111,18 @@ const RESOLVERS: Record<string, Resolver> = {
       eq(invoices.id, id),
     );
     return row && `${row.partnerName} · ${row.number ?? 'draft'}`;
+  },
+
+  // The customer and the number, as an invoice is named.
+  return_authorization: async (db, id) => {
+    const [row] = await db.selectJoined(
+      returnAuthorizations,
+      partners,
+      eq(partners.id, returnAuthorizations.partnerId),
+      { partnerName: partners.name, number: returnAuthorizations.number },
+      eq(returnAuthorizations.id, id),
+    );
+    return row && `${row.partnerName} · ${row.number}`;
   },
 
   /**
