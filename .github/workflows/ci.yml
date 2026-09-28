@@ -135,6 +135,13 @@ jobs:
         run: node scripts/check-snapshots.js
         working-directory: server
 
+      # The client mirrors the server's permission list as a type; a
+      # permission added on one side only fails here rather than as a
+      # button nobody can see.
+      - name: Check client permissions
+        run: node scripts/check-client-permissions.js
+        working-directory: server
+
       # From an empty database every time, which is the path production takes
       # and the one that rarely gets exercised locally.
       - name: Migrate

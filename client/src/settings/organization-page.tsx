@@ -10,12 +10,12 @@ import {
 import { type SubmitEvent, useCallback, useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
-import { useAuth } from '../auth/use-auth';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
 import type { OrganizationProfile } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useSubmit } from '../lib/use-submit';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -32,14 +32,14 @@ function messageFor(caught: unknown): string {
  * Anyone can read them; only the Owner changes them.
  */
 export function OrganizationPage() {
-  const { session } = useAuth();
+  const can = useCan();
   const [organization, setOrganization] = useState<OrganizationProfile | null>(
     null,
   );
   const [error, setError] = useState<string | null>(null);
 
   const showSkeleton = useDelayedFlag(organization === null && !error);
-  const canUpdate = !!session?.permissions.includes('organizations.update');
+  const canUpdate = can('organizations.update');
 
   const load = useCallback(async () => {
     try {

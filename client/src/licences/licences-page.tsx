@@ -16,7 +16,6 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
-import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
 import { formatDay } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -25,6 +24,7 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { EditLicenceDialog } from './edit-licence-dialog';
 import { licenceStatus } from './licence-status';
 import { NewLicenceDialog } from './new-licence-dialog';
+import { useCan } from '../auth/permissions';
 
 /**
  * The registrations formulations are made and sold under — an NPN, a DIN, a
@@ -41,7 +41,7 @@ function messageFor(caught: unknown): string {
 }
 
 export function LicencesPage() {
-  const { session } = useAuth();
+  const can = useCan();
   const [licences, setLicences] = useState<ProductLicence[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -50,8 +50,8 @@ export function LicencesPage() {
   const loading = licences === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 
-  const canCreate = !!session?.permissions.includes('product_licences.create');
-  const canUpdate = !!session?.permissions.includes('product_licences.update');
+  const canCreate = can('product_licences.create');
+  const canUpdate = can('product_licences.update');
 
   /**
    * Reloading after a dialog saves. The first load runs in the effect below

@@ -24,7 +24,7 @@ import { type SubmitEvent, useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
-import { useAuth } from '../auth/use-auth';
+import {useCan} from "../auth/permissions";
 import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
@@ -62,7 +62,6 @@ function messageFor(caught: unknown): string {
  */
 export function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { session } = useAuth();
   const navigate = useNavigate();
 
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
@@ -72,9 +71,8 @@ export function InvoiceDetailPage() {
   const [issuing, setIssuing] = useState(false);
   const [voiding, setVoiding] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  const has = (permission: string) =>
-    !!session?.permissions.includes(permission);
+  
+  const can = useCan();
 
   const loading = invoice === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
@@ -134,7 +132,7 @@ export function InvoiceDetailPage() {
 
   const isDraft = invoice.status === 'draft';
   const status = invoiceStatus(invoice.status);
-  const canEdit = isDraft && has('invoices.update');
+  const canEdit = isDraft && can('invoices.update');
 
   // A draft reads its figures from the preview; anything issued, from what
   // was stored.
@@ -179,7 +177,7 @@ export function InvoiceDetailPage() {
               Print
             </Button>
 
-            {isDraft && has('invoices.delete') && (
+            {isDraft && can('invoices.delete') && (
               <Button
                 variant="text"
                 color="error"
@@ -189,13 +187,13 @@ export function InvoiceDetailPage() {
               </Button>
             )}
 
-            {isDraft && has('invoices.issue') && (
+            {isDraft && can('invoices.issue') && (
               <Button onClick={openDialog(() => setIssuing(true))}>
                 Issue
               </Button>
             )}
 
-            {invoice.status === 'issued' && has('invoices.issue') && (
+            {invoice.status === 'issued' && can('invoices.issue') && (
               <Button
                 variant="outlined"
                 color="error"
@@ -592,7 +590,7 @@ function DraftDetails({
   );
 }
 
-/** Deleting a draft is final, but harmless: it has no number to leave a gap. */
+/** Deleting a draft is final, but harmless: it can no number to leave a gap. */
 function DeleteDraftDialog({
   invoiceId,
   open,

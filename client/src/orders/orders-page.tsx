@@ -19,12 +19,12 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { formatDay } from '../lib/format';
 import type { OrderPage, OrderStatus, OrderSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -55,7 +55,7 @@ const FILTERS = [
 type Filter = (typeof FILTERS)[number]['value'];
 
 export function OrdersPage() {
-  const { session } = useAuth();
+  const can = useCan();
 
   const [items, setItems] = useState<OrderSummary[] | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const canCreate = !!session?.permissions.includes('orders.create');
+  const canCreate = can('orders.create');
   const loading = items === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 

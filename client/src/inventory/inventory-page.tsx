@@ -20,7 +20,6 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { formatDay, itemName } from '../lib/format';
@@ -32,6 +31,7 @@ import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { MovementHistoryDialog } from './movement-history-dialog';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { StockActions } from './stock-actions';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -67,7 +67,7 @@ function leavesOf(locations: Location[]): Location[] {
  * out whether the three actually fit together.
  */
 export function InventoryPage() {
-  const { session } = useAuth();
+  const can = useCan();
 
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [locationId, setLocationId] = useState('');
@@ -93,7 +93,7 @@ export function InventoryPage() {
   const showSkeleton = useDelayedFlag(loading);
   const leaves = locations ? leavesOf(locations) : [];
 
-  const canAdjust = !!session?.permissions.includes('stock.adjust');
+  const canAdjust = can('stock.adjust');
 
   /**
    * Both the callback and the effect need this, and URLSearchParams rather
@@ -181,7 +181,7 @@ export function InventoryPage() {
 
             {/* Hidden without stock.move — display only, since the 403 is the
             actual control (ADR-016). */}
-            {session?.permissions.includes('stock.move') && (
+            {can('stock.move') && (
               <Button
                 disabled={!leaves.length}
                 onClick={openDialog(() => setReceiving(true))}
@@ -295,7 +295,7 @@ export function InventoryPage() {
                     </TableCell>
 
                     <TableCell padding="checkbox">
-                      {session?.permissions.includes('stock.move') && (
+                      {can('stock.move') && (
                         <StockActions
                           row={row}
                           canAdjust={canAdjust}

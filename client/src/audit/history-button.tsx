@@ -16,7 +16,6 @@ import {
 import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -27,6 +26,7 @@ import {
   describe,
   summarise,
 } from './audit-format';
+import { useCan } from '../auth/permissions';
 
 /** A drawer's worth. The full log is one link away for anything longer. */
 const PAGE_SIZE = 20;
@@ -52,10 +52,10 @@ const PAGE_SIZE = 20;
  * request, and a disabled control asks a question only an admin can answer.
  */
 export function HistoryButton({ resourceId }: { resourceId: string }) {
-  const { session } = useAuth();
+  const can = useCan();
   const [open, setOpen] = useState(false);
 
-  if (!session?.permissions.includes('audit.view')) return null;
+  if (!can('audit.view')) return null;
 
   return (
     <>

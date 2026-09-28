@@ -25,11 +25,19 @@ import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
 import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 
+import { type Permission, useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { api } from '../lib/api';
 import { NotificationBell } from './notification-bell';
+
+interface NavItem {
+  label: string;
+  to: string;
+  /** Hidden from anyone without it. The server's guard is the real check. */
+  permission?: Permission;
+}
 
 /**
  * The work, in the order it happens: what you have, what you have asked for,
@@ -39,7 +47,7 @@ import { NotificationBell } from './notification-bell';
  * is more than a bar carries, and the split is not alphabetical: these are
  * visited daily, those are visited when something is wrong.
  */
-const NAV = [
+const NAV: NavItem[] = [
   { label: 'Inventory', to: '/inventory', permission: 'stock.view' },
   { label: 'Movements', to: '/movements', permission: 'stock.view' },
   { label: 'Orders', to: '/orders', permission: 'orders.view' },
@@ -56,7 +64,7 @@ const NAV = [
 ];
 
 /** Reached occasionally, and not worth a slot in the bar. */
-const ACCOUNT_MENU = [
+const ACCOUNT_MENU: NavItem[] = [
   { label: 'Account', to: '/account' },
   { label: 'Devices', to: '/account/sessions' },
   { label: 'Members', to: '/members' },
@@ -103,6 +111,7 @@ function isActive(pathname: string, to: string): boolean {
  */
 export function AppLayout() {
   const { session, refresh } = useAuth();
+  const can = useCan();
   const location = useLocation();
   const theme = useTheme();
   const [menu, setMenu] = useState<HTMLElement | null>(null);
@@ -115,9 +124,8 @@ export function AppLayout() {
    * paint is already right and nothing flashes while this resolves.
    */
   const wide = useMediaQuery(theme.breakpoints.up(BAR));
-
-  const visible = (item: { permission?: string }) =>
-    !item.permission || session?.permissions.includes(item.permission);
+  
+  const visible = (item: NavItem) => !item.permission || can(item.permission);
 
   const links = NAV.filter(visible);
   const orgName = session?.organization?.name ?? 'No organization';

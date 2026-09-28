@@ -19,7 +19,6 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
-import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type {
@@ -34,6 +33,7 @@ import type { Variant } from '../products/products-page';
 import { AddBomLineDialog } from './add-bom-line-dialog';
 import { CreateBomDialog } from './create-bom-dialog';
 import { EditBomLineDialog } from './edit-bom-line-dialog';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -59,7 +59,7 @@ const STATUS_COLOR = {
  * status rather than a single Edit that sometimes fails.
  */
 export function RecipePanel({ variants }: { variants: Variant[] }) {
-  const { session } = useAuth();
+  const can = useCan();
 
   const [variantId, setVariantId] = useState(variants[0]?.id ?? '');
   const [versions, setVersions] = useState<Bom[]>([]);
@@ -73,9 +73,9 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
   const [editingLine, setEditingLine] = useState<BomLine | null>(null);
   const [licences, setLicences] = useState<ProductLicence[]>([]);
 
-  const canView = session?.permissions.includes('boms.view') ?? false;
-  const canCreate = session?.permissions.includes('boms.create') ?? false;
-  const canUpdate = session?.permissions.includes('boms.update') ?? false;
+  const canView = can('boms.view');
+  const canCreate = can('boms.create');
+  const canUpdate = can('boms.update');
 
   const load = useCallback(
     async (preferId?: string) => {

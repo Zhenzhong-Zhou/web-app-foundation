@@ -17,7 +17,6 @@ import {
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { relativeTime } from '../lib/format';
@@ -28,6 +27,7 @@ import {
   describe,
   summarise,
 } from './audit-format';
+import { useCan } from '../auth/permissions';
 
 /**
  * Sent explicitly rather than taking the server's default.
@@ -46,7 +46,7 @@ function messageFor(caught: unknown): string {
 }
 
 export function AuditPage() {
-  const { session } = useAuth();
+  const can = useCan();
 
   /**
    * Filters live in the URL rather than in state, so a filtered view is
@@ -66,7 +66,7 @@ export function AuditPage() {
   const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const canView = !!session?.permissions.includes('audit.view');
+  const canView = can('audit.view');
   const loading = entries === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 

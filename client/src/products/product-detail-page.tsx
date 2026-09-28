@@ -17,7 +17,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
-import { useAuth } from '../auth/use-auth';
 import { RecipePanel } from '../boms/recipe-panel';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
@@ -27,6 +26,7 @@ import { AddVariantDialog } from './add-variant-dialog';
 import { EditVariantDialog } from './edit-variant-dialog';
 import type { Product, Variant } from './products-page';
 import { VariantRow } from './variant-row';
+import { useCan } from '../auth/permissions';
 
 interface ProductDetail extends Product {
   variants: Variant[];
@@ -40,7 +40,7 @@ function messageFor(caught: unknown): string {
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { session } = useAuth();
+  const can = useCan();
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +79,7 @@ export function ProductDetailPage() {
     };
   }, [id]);
 
-  const canEdit = session?.permissions.includes('products.update') ?? false;
+  const canEdit = can('products.update');
 
   async function patchProduct(body: Record<string, unknown>) {
     setSaving('product');

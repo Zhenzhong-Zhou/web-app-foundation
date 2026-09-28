@@ -9,7 +9,6 @@ import {
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
-import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
@@ -19,6 +18,7 @@ import { CreateLocationDialog } from './create-location-dialog';
 import { EditLocationDialog } from './edit-location-dialog';
 import { LocationNode } from './location-node';
 import { childrenOf } from './tree';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -35,7 +35,7 @@ function messageFor(caught: unknown): string {
  * recursive and has nothing to do with either.
  */
 export function LocationsPage() {
-  const { session } = useAuth();
+  const can = useCan();
 
   const [items, setItems] = useState<Location[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,8 +43,8 @@ export function LocationsPage() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Location | null>(null);
 
-  const canEdit = !!session?.permissions.includes('locations.update');
-  const canCreate = !!session?.permissions.includes('locations.create');
+  const canEdit = can('locations.update');
+  const canCreate = can('locations.create');
   const loading = items === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 

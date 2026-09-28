@@ -17,7 +17,6 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
@@ -25,6 +24,7 @@ import type { Partner } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreatePartnerDialog } from './create-partner-dialog';
 import { EditPartnerDialog } from './edit-partner-dialog';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -45,15 +45,15 @@ function messageFor(caught: unknown): string {
  * inactive partner would be a mistake.
  */
 export function PartnersPage() {
-  const { session } = useAuth();
+  const can = useCan();
 
   const [items, setItems] = useState<Partner[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Partner | null>(null);
 
-  const canCreate = !!session?.permissions.includes('partners.create');
-  const canEdit = !!session?.permissions.includes('partners.update');
+  const canCreate = can('partners.create');
+  const canEdit = can('partners.update');
   const loading = items === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 

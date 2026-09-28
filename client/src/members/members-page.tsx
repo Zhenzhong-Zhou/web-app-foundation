@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
@@ -43,6 +44,7 @@ function messageFor(caught: unknown): string {
 
 export function MembersPage() {
   const { session } = useAuth();
+  const can = useCan();
 
   const [members, setMembers] = useState<Member[] | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -131,7 +133,7 @@ export function MembersPage() {
 
             {/* Hidden without users.create — display only, since the 403 is the
             actual control (ADR-016). */}
-            {session?.permissions.includes('users.create') && (
+            {can('users.create') && (
               <Button onClick={openDialog(() => setCreating(true))}>
                 Add member
               </Button>
@@ -182,7 +184,7 @@ export function MembersPage() {
                         {/* Rendered as plain text when the caller lacks
                           users.update. That is display only — the 403 from
                           the server is the actual control (ADR-016). */}
-                        {session?.permissions.includes('users.update') ? (
+                        {can('users.update') ? (
                           <Select
                             size="small"
                             value={member.roleId}

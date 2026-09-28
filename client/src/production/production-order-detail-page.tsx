@@ -25,7 +25,6 @@ import {
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
-import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
@@ -38,6 +37,7 @@ import {
   ReleaseRunDialog,
 } from './run-dialogs';
 import { STATUS_COLOUR, STATUS_LABEL } from './status';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -47,7 +47,7 @@ function messageFor(caught: unknown): string {
 
 export function ProductionOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { session } = useAuth();
+  const can = useCan();
 
   const [run, setRun] = useState<RunDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,8 +61,8 @@ export function ProductionOrderDetailPage() {
   const [closing, setClosing] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
-  const canRelease = !!session?.permissions.includes('production.release');
-  const canComplete = !!session?.permissions.includes('production.complete');
+  const canRelease = can('production.release');
+  const canComplete = can('production.complete');
 
   const loading = run === null && error === null;
   const showSkeleton = useDelayedFlag(loading);

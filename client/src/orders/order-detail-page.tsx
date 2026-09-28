@@ -21,7 +21,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
-import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { formatDay, formatMoney } from '../lib/format';
@@ -48,6 +47,7 @@ import { ReturnOrderDialog } from './return-order-dialog';
 import { ReturnsList } from './returns-list';
 import { ShipOrderDialog } from './ship-order-dialog';
 import { ShipmentsList } from './shipments-list';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -113,7 +113,7 @@ function statusLabel(status: OrderStatus, direction: OrderDirection): string {
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { session } = useAuth();
+  const can = useCan();
   const navigate = useNavigate();
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
@@ -146,15 +146,13 @@ export function OrderDetailPage() {
 
   const [authorizing, setAuthorizing] = useState(false);
 
-  const canUpdate = !!session?.permissions.includes('orders.update');
-  const canReceive = !!session?.permissions.includes('orders.receive');
-  const canShip = !!session?.permissions.includes('orders.ship');
-  const canCreate = !!session?.permissions.includes('orders.create');
-  const canViewInvoices = !!session?.permissions.includes('invoices.view');
-  const canInvoice = !!session?.permissions.includes('invoices.create');
-  const canAuthorize = !!session?.permissions.includes(
-    'return_authorizations.create',
-  );
+  const canUpdate = can('orders.update');
+  const canReceive = can('orders.receive');
+  const canShip = can('orders.ship');
+  const canCreate = can('orders.create');
+  const canViewInvoices = can('invoices.view');
+  const canInvoice = can('invoices.create');
+  const canAuthorize = can('return_authorizations.create');
   const loading = order === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 

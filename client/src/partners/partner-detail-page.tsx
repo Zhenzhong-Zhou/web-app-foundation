@@ -13,7 +13,6 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
-import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
@@ -22,6 +21,7 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { AddressDialog } from './address-dialog';
 import { ContactDialog } from './contact-dialog';
 import { EditPartnerDialog } from './edit-partner-dialog';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -53,7 +53,7 @@ function formatAddress(address: Address): string {
  */
 export function PartnerDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { session } = useAuth();
+  const can = useCan();
 
   const [partner, setPartner] = useState<PartnerDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export function PartnerDetailPage() {
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [addingContact, setAddingContact] = useState(false);
 
-  const canEdit = !!session?.permissions.includes('partners.update');
+  const canEdit = can('partners.update');
   const loading = partner === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 

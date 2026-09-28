@@ -17,7 +17,6 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
@@ -26,6 +25,7 @@ import type { ProductionRun, ProductionRunPage, RunStatus } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateRunDialog } from './create-run-dialog';
 import { STATUS_COLOUR, STATUS_LABEL } from './status';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -42,7 +42,7 @@ const FILTERS = [
 ] as const;
 
 export function ProductionOrdersPage() {
-  const { session } = useAuth();
+  const can = useCan();
 
   const [items, setItems] = useState<ProductionRun[] | null>(null);
   const [filter, setFilter] = useState<RunStatus | ''>('');
@@ -59,7 +59,7 @@ export function ProductionOrdersPage() {
    */
   const [reloads, setReloads] = useState(0);
 
-  const canCreate = !!session?.permissions.includes('production.create');
+  const canCreate = can('production.create');
   const loading = items === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 

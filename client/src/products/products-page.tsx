@@ -17,11 +17,11 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateProductDialog } from './create-product-dialog';
+import { useCan } from '../auth/permissions';
 
 export interface Variant {
   id: string;
@@ -52,7 +52,7 @@ function messageFor(caught: unknown): string {
 }
 
 export function ProductsPage() {
-  const { session } = useAuth();
+  const can = useCan();
 
   const [items, setItems] = useState<Product[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +91,7 @@ export function ProductsPage() {
 
         {/* Reference data for recipes, so it hangs off the catalogue rather
             than the top nav, which is already seven items wide. */}
-        {session?.permissions.includes('product_licences.view') && (
+        {can('product_licences.view') && (
           <Button variant="text" component={RouterLink} to="/licences">
             Licences
           </Button>
@@ -103,7 +103,7 @@ export function ProductsPage() {
 
         {/* Hidden without products.create — display only, since the 403 is the
             actual control (ADR-016). */}
-        {session?.permissions.includes('products.create') && (
+        {can('products.create') && (
           <Button onClick={openDialog(() => setCreating(true))}>
             Add product
           </Button>

@@ -22,7 +22,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
-import { useAuth } from '../auth/use-auth';
 import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
 import { api, ApiError } from '../lib/api';
@@ -33,6 +32,7 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useSubmit } from '../lib/use-submit';
 import { LinkReturnDialog } from './link-return-dialog';
 import { RESOLUTION_LABELS, rmaStatus } from './rma-labels';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -57,7 +57,7 @@ type Confirming = 'close' | 'cancel' | null;
  */
 export function RmaDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { session } = useAuth();
+  const can = useCan();
   const navigate = useNavigate();
 
   const [rma, setRma] = useState<ReturnAuthorizationDetail | null>(null);
@@ -66,9 +66,7 @@ export function RmaDetailPage() {
   const [linking, setLinking] = useState(false);
 
   const showSkeleton = useDelayedFlag(rma === null && error === null);
-  const canUpdate = !!session?.permissions.includes(
-    'return_authorizations.update',
-  );
+  const canUpdate = can('return_authorizations.update');
 
   const load = useCallback(async () => {
     if (!id) return;

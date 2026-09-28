@@ -16,13 +16,13 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
-import { useAuth } from '../auth/use-auth';
 import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { TaxCode } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { TaxCodeDialog } from './tax-code-dialog';
 import { describeCharges } from './tax-rate';
+import { useCan } from '../auth/permissions';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -39,7 +39,7 @@ function messageFor(caught: unknown): string {
  * changes what a customer is charged.
  */
 export function TaxCodesPage() {
-  const { session } = useAuth();
+  const can = useCan();
   const [codes, setCodes] = useState<TaxCode[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -48,8 +48,8 @@ export function TaxCodesPage() {
   const loading = codes === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 
-  const canCreate = !!session?.permissions.includes('tax_codes.create');
-  const canUpdate = !!session?.permissions.includes('tax_codes.update');
+  const canCreate = can('tax_codes.create');
+  const canUpdate = can('tax_codes.update');
 
   const load = useCallback(async () => {
     try {
