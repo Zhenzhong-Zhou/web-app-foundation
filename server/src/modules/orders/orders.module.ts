@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { NotificationsModule } from '../../core/notifications/notifications.module';
 import { PartnersModule } from '../partners/partners.module';
+import { ReturnAuthorizationsModule } from '../return-authorizations/return-authorizations.module';
 import { StockModule } from '../stock/stock.module';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
@@ -21,7 +22,12 @@ import { ShipmentsService } from './shipments.service';
  * partners, even though this module is the only caller so far.
  */
 @Module({
-  imports: [StockModule, PartnersModule, NotificationsModule],
+  imports: [
+    StockModule,
+    PartnersModule,
+    NotificationsModule,
+    ReturnAuthorizationsModule,
+  ],
   controllers: [OrdersController, ShipmentsController, ReturnsController],
   providers: [OrdersService, ShipmentsService, ReturnsService],
   exports: [OrdersService],

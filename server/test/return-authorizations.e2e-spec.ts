@@ -6,7 +6,13 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { auditLog, returnAuthorizations, roles } from '../src/database/schema';
+import {
+  auditLog,
+  orderLines,
+  orderReturns,
+  returnAuthorizations,
+  roles,
+} from '../src/database/schema';
 import { MailService } from '../src/shared/mail/mail.service';
 import {
   createTestApp,
@@ -46,7 +52,8 @@ function body<T>(res: { body: unknown }): T {
 /**
  * Return authorizations (ADR-047): raised authorized, per-line resolutions,
  * held to what the customer holds, cancelled only while nothing has
- * happened under them.
+ * happened under them; and returns held to them, at the dock or linked
+ * afterwards.
  */
 describe('Return authorizations (e2e)', () => {
   let app: INestApplication;
@@ -482,6 +489,200 @@ describe('Return authorizations (e2e)', () => {
       expect(row.status).toBe('closed');
       expect(row.closedAt).not.toBeNull();
       expect(row.closedBy).not.toBeNull();
+    });
+  });
+
+  describe('receiving against it', () => {
+    /** Capsules back to the shelf, against an RMA or not. */
+    function returnCapsules(
+      org: Org,
+      s: Shipped,
+      quantity: string,
+      returnAuthorizationId?: string,
+    ) {
+      return org.agent.post(`/v1/orders/${s.orderId}/returns`).send({
+        toLocationId: s.shelf,
+        lines: [{ lineId: s.capsulesLine, quantity }],
+        returnAuthorizationId,
+      });
+    }
+
+    async function returnedOnLine(lineId: string) {
+      const [row] = await db
+        .select()
+        .from(orderLines)
+        .where(eq(orderLines.id, lineId));
+      return row.quantityReturned;
+    }
+
+    it('counts a return that names it, across more than one box', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+      const rma = await raised(org, s);
+
+      await returnCapsules(org, s, '1', rma.id).expect(201);
+      await returnCapsules(org, s, '1', rma.id).expect(201);
+
+      const [line] = (await read(org, rma.id)).lines;
+      expect(line.quantityReceived).toBe('2.0000');
+    });
+
+    /**
+     * 2 authorized: a third box is refused, and moves nothing — the check
+     * and the movement are one transaction.
+     */
+    it('refuses more than it authorized, and moves nothing', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+      const rma = await raised(org, s);
+
+      await returnCapsules(org, s, '2', rma.id).expect(201);
+      await returnCapsules(org, s, '1', rma.id).expect(409);
+
+      expect(await returnedOnLine(s.capsulesLine)).toBe('2.0000');
+    });
+
+    it('refuses an item not on it', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+      const rma = await raised(org, s);
+
+      await org.agent
+        .post(`/v1/orders/${s.orderId}/returns`)
+        .send({
+          toLocationId: s.shelf,
+          lines: [{ lineId: s.scoopLine, quantity: '1' }],
+          returnAuthorizationId: rma.id,
+        })
+        .expect(409);
+    });
+
+    it('refuses one that is closed, or told the customer to keep the goods', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+
+      const closed = await raised(org, s);
+      await org.agent
+        .post(`/v1/return-authorizations/${closed.id}/close`)
+        .expect(204);
+      await returnCapsules(org, s, '1', closed.id).expect(409);
+
+      const keep = await raised(org, s, { expectsGoods: false });
+      await returnCapsules(org, s, '1', keep.id).expect(409);
+    });
+
+    // Goods on the dock are a fact: a return with no RMA is still recorded.
+    it('still receives a return that names no RMA', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+
+      await returnCapsules(org, s, '1').expect(201);
+      expect(await returnedOnLine(s.capsulesLine)).toBe('1.0000');
+    });
+
+    it('is no longer cancelled once goods are back', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+      const rma = await raised(org, s);
+
+      await returnCapsules(org, s, '1', rma.id).expect(201);
+
+      await org.agent
+        .post(`/v1/return-authorizations/${rma.id}/cancel`)
+        .expect(409);
+      await org.agent
+        .post(`/v1/return-authorizations/${rma.id}/close`)
+        .expect(204);
+    });
+  });
+
+  describe('linking a return received without it', () => {
+    async function unannounced(org: Org, s: Shipped, quantity: string) {
+      return body<{ orderReturn: { id: string } }>(
+        await org.agent
+          .post(`/v1/orders/${s.orderId}/returns`)
+          .send({
+            toLocationId: s.shelf,
+            lines: [{ lineId: s.capsulesLine, quantity }],
+          })
+          .expect(201),
+      ).orderReturn.id;
+    }
+
+    function link(org: Org, rmaId: string, returnId: string) {
+      return org.agent
+        .post(`/v1/return-authorizations/${rmaId}/returns`)
+        .send({ returnId });
+    }
+
+    it('counts it, once', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+      const returnId = await unannounced(org, s, '2');
+      const rma = await raised(org, s);
+
+      await link(org, rma.id, returnId).expect(204);
+
+      const [line] = (await read(org, rma.id)).lines;
+      expect(line.quantityReceived).toBe('2.0000');
+
+      // Once: not again, and not to another RMA.
+      await link(org, rma.id, returnId).expect(409);
+      const other = await raised(org, s);
+      await link(org, other.id, returnId).expect(409);
+    });
+
+    it('refuses a return that brought more than it has left', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+      const returnId = await unannounced(org, s, '3');
+      const rma = await raised(org, s);
+
+      await link(org, rma.id, returnId).expect(409);
+
+      const [row] = await db
+        .select()
+        .from(orderReturns)
+        .where(eq(orderReturns.id, returnId));
+      expect(row.returnAuthorizationId).toBeNull();
+    });
+
+    it('refuses a return that brought an item not on it', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+
+      const returnId = body<{ orderReturn: { id: string } }>(
+        await org.agent
+          .post(`/v1/orders/${s.orderId}/returns`)
+          .send({
+            toLocationId: s.shelf,
+            lines: [{ lineId: s.scoopLine, quantity: '1' }],
+          })
+          .expect(201),
+      ).orderReturn.id;
+
+      const rma = await raised(org, s);
+      await link(org, rma.id, returnId).expect(409);
+    });
+
+    it('records the link on the RMA', async () => {
+      const org = await registerOrg('alpha');
+      const s = await shipped(org);
+      const returnId = await unannounced(org, s, '1');
+      const rma = await raised(org, s);
+
+      await link(org, rma.id, returnId).expect(204);
+
+      const [entry] = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'return_authorization.return_linked'));
+
+      expect(entry.resourceId).toBe(rma.id);
+      expect(entry.payload).toEqual({
+        returnId,
+        returnAuthorization: 'RMA-000001',
+      });
     });
   });
 

@@ -93,6 +93,8 @@ export const AUDIT_ACTIONS = {
   RETURN_AUTHORIZATION_CREATED: 'return_authorization.created',
   RETURN_AUTHORIZATION_CANCELLED: 'return_authorization.cancelled',
   RETURN_AUTHORIZATION_CLOSED: 'return_authorization.closed',
+  /** A return received without an RMA, counted against one afterwards. */
+  RETURN_AUTHORIZATION_RETURN_LINKED: 'return_authorization.return_linked',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

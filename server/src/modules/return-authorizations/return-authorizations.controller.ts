@@ -17,13 +17,14 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateReturnAuthorizationDto } from './dto/create-return-authorization.dto';
+import { LinkReturnDto } from './dto/link-return.dto';
 import { ListReturnAuthorizationsDto } from './dto/list-return-authorizations.dto';
 import { ReturnAuthorizationsService } from './return-authorizations.service';
 
 /**
- * Return authorizations (ADR-047): raised, read, cancelled, closed.
- * Receiving against one is the returns route's; crediting one is the
- * credit notes'.
+ * Return authorizations (ADR-047): raised, read, cancelled, closed, and a
+ * return received without one linked to it afterwards. Receiving against
+ * one is the returns route's; crediting one is the credit notes'.
  *
  * Cancel and close are POSTs to actions, as ship, issue and void are: each
  * is an event with its own refusals, not a status someone edits.
@@ -90,5 +91,26 @@ export class ReturnAuthorizationsController {
     @CurrentUser() user: RequestContext,
   ): Promise<void> {
     await this.rmas.close(id, user.userId);
+  }
+
+  /**
+   * Counts a return already received against this RMA. Customer service's
+   * act, not the dock's: deciding that goods which arrived unannounced were
+   * the ones agreed to.
+   */
+  @Post(':id/returns')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.RETURN_AUTHORIZATIONS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.RETURN_AUTHORIZATION_RETURN_LINKED,
+    resourceType: 'return_authorization',
+    resourceId: (_response, request) => request.params.id,
+    fields: ['returnId'],
+  })
+  async linkReturn(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: LinkReturnDto,
+  ): Promise<void> {
+    await this.rmas.linkReturn(id, dto.returnId);
   }
 }

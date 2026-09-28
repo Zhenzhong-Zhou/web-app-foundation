@@ -16,6 +16,7 @@ import {
   productVariants,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { ReturnAuthorizationsService } from '../return-authorizations/return-authorizations.service';
 import { itemName } from '../stock/item-name';
 import { StockService, type Tx } from '../stock/stock.service';
 import { trackedVariants } from '../stock/tracked-variants';
@@ -76,6 +77,7 @@ export class ReturnsService {
   constructor(
     private readonly tenantDb: TenantDb,
     private readonly stock: StockService,
+    private readonly rmas: ReturnAuthorizationsService,
   ) {}
 
   /**
@@ -150,12 +152,27 @@ export class ReturnsService {
         lines.map((line) => line.variantId),
       );
 
+      /**
+       * Held to the RMA it names, if it names one (ADR-047). Locked before
+       * anything is written, so two boxes received against one RMA at once
+       * queue on it rather than both passing the limit.
+       */
+      const authorization = input.returnAuthorizationId
+        ? await this.rmas.lockForReceipt(
+            tx,
+            organizationId,
+            orderId,
+            input.returnAuthorizationId,
+          )
+        : null;
+
       const [header] = await tx
         .insert(orderReturns)
         .values({
           organizationId,
           orderId,
           toLocationId: input.toLocationId,
+          returnAuthorizationId: authorization?.rma.id ?? null,
           reason: input.reason,
           note: input.note,
           createdBy: actorId,
@@ -187,6 +204,16 @@ export class ReturnsService {
               requested,
             )
           : this.untrackedParts(line, requested);
+
+        if (authorization) {
+          await this.rmas.assertWithinAuthorized(
+            tx,
+            authorization,
+            line.variantId,
+            line.sku,
+            total,
+          );
+        }
 
         for (const part of parts) {
           await this.stock.recordWithin(
@@ -231,7 +258,12 @@ export class ReturnsService {
         summary.push(`${line.sku} ${total}`);
       }
 
-      recordContext({ items: summary.join(', ') });
+      recordContext({
+        items: summary.join(', '),
+        ...(authorization
+          ? { returnAuthorization: authorization.rma.number }
+          : {}),
+      });
 
       this.logger.log(
         `Order ${orderId} received a return of ${input.lines.length} lines as ${header.id}`,

@@ -57,6 +57,15 @@ export class ReturnOrderDto {
   @IsUUID()
   toLocationId!: string;
 
+  /**
+   * The RMA this return is received against, if any (ADR-047). The return
+   * is then held to what it authorized. Optional: goods on the dock are
+   * recorded whether or not anyone agreed to them.
+   */
+  @IsOptional()
+  @IsUUID()
+  returnAuthorizationId?: string;
+
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(200)
