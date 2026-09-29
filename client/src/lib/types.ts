@@ -35,11 +35,6 @@ export interface Movement {
   createdAt: string;
 }
 
-export interface MovementPage {
-  entries: Movement[];
-  nextCursor: string | null;
-}
-
 export interface StockRow {
   variantId: string;
   sku: string;
@@ -123,16 +118,6 @@ export interface OrderSummary {
   /** numeric(18,4) as a string — never parsed into a JS number (ADR-025). */
   quantityOrdered: string;
   quantityFulfilled: string;
-}
-
-export interface OrderPage {
-  entries: OrderSummary[];
-  nextCursor: string | null;
-}
-
-export interface ProductionRunPage {
-  entries: ProductionRun[];
-  nextCursor: string | null;
 }
 
 export interface Lot {

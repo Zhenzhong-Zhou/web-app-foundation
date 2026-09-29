@@ -14,16 +14,16 @@ import {
   TableRow,
   TextField,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, messageFor } from '../lib/api';
 import { formatDate } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { ProductionRun, ProductionRunPage, RunStatus } from '../lib/types';
+import type { ProductionRun, RunStatus } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useKeysetList } from '../lib/use-keyset-list';
 import { CreateRunDialog } from './create-run-dialog';
 import { STATUS_COLOUR, STATUS_LABEL } from './status';
 
@@ -35,89 +35,30 @@ const FILTERS = [
   { value: 'cancelled', label: 'Cancelled' },
 ] as const;
 
+/** The first page for a filter; '' is every status. */
+function query(filter: RunStatus | ''): string {
+  return filter
+    ? `/production-orders?${new URLSearchParams({ status: filter }).toString()}`
+    : '/production-orders';
+}
+
 export function ProductionOrdersPage() {
   const can = useCan();
 
-  const [items, setItems] = useState<ProductionRun[] | null>(null);
   const [filter, setFilter] = useState<RunStatus | ''>('');
-  const [error, setError] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [cursor, setCursor] = useState<string | null>(null);
-
-  /**
-   * Bumped to refetch without changing the filter. After planning a run the
-   * list must reload, and setFilter('') alone does nothing when the filter
-   * is already '' — React skips an update to the same value, the effect never
-   * reruns, and a list cleared to null stays on its skeleton forever.
-   */
-  const [reloads, setReloads] = useState(0);
 
   const canCreate = can('production.create');
-  const loading = items === null && error === null;
+  const {
+    entries: items,
+    error,
+    loading,
+    hasMore,
+    loadingMore,
+    loadMore,
+    reload,
+  } = useKeysetList<ProductionRun>(query(filter));
   const showSkeleton = useDelayedFlag(loading);
-
-  /**
-   * `before` absent loads the first page and replaces; present appends.
-   *
-   * The cursor comes from the server, which fetches one row past the limit to
-   * know whether more exists. Inferring it from a full page is wrong exactly
-   * once — on a final page that happens to be full — and the symptom is a Load
-   * more button that returns nothing.
-   */
-  const load = useCallback(
-    async (nextFilter: RunStatus | '', before?: string) => {
-      const params = new URLSearchParams();
-      if (nextFilter) params.set('status', nextFilter);
-      if (before) params.set('before', before);
-
-      const page = await api<ProductionRunPage>(
-        `/production-orders?${params.toString()}`,
-      );
-
-      setItems((current) =>
-        before ? [...(current ?? []), ...page.entries] : page.entries,
-      );
-      setCursor(page.nextCursor);
-      setError(null);
-    },
-    [],
-  );
-
-  useEffect(() => {
-    let ignore = false;
-
-    const params = new URLSearchParams();
-    if (filter) params.set('status', filter);
-
-    void api<ProductionRunPage>(`/production-orders?${params.toString()}`)
-      .then((page) => {
-        if (ignore) return;
-        setItems(page.entries);
-        setCursor(page.nextCursor);
-        setError(null);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [filter, reloads]);
-
-  async function loadMore() {
-    if (!cursor) return;
-
-    setLoadingMore(true);
-    try {
-      await load(filter, cursor);
-    } catch (caught) {
-      setError(messageFor(caught));
-    } finally {
-      setLoadingMore(false);
-    }
-  }
 
   return (
     <Stack spacing={3}>
@@ -141,11 +82,7 @@ export function ProductionOrdersPage() {
           select
           size="small"
           value={filter}
-          onChange={(event) => {
-            setItems(null);
-            setCursor(null);
-            setFilter(event.target.value as RunStatus | '');
-          }}
+          onChange={(event) => setFilter(event.target.value as RunStatus | '')}
           // '' is "All", and MUI renders an empty value as blank unless told
           // otherwise. The label shrinks so it does not sit over the text.
           slotProps={{
@@ -225,7 +162,7 @@ export function ProductionOrdersPage() {
             </Table>
           </Paper>
 
-          {cursor && (
+          {hasMore && (
             <Button
               variant="text"
               disabled={loadingMore}
@@ -242,11 +179,10 @@ export function ProductionOrdersPage() {
         onClose={() => setCreating(false)}
         onCreated={() => {
           // Back to All so the new run, which is a draft, is certainly in
-          // view. The current rows stay up while the refetch runs rather
-          // than blanking to a skeleton.
-          setCursor(null);
+          // view. Already on All, the rows stay up while the first page is
+          // read again; from another filter it is a new list, read afresh.
           setFilter('');
-          setReloads((count) => count + 1);
+          reload();
         }}
       />
     </Stack>

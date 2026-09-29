@@ -16,15 +16,15 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, messageFor } from '../lib/api';
 import { formatDay } from '../lib/format';
-import type { OrderPage, OrderStatus, OrderSummary } from '../lib/types';
+import type { OrderStatus, OrderSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useKeysetList } from '../lib/use-keyset-list';
 
 /**
  * `status` is the document's lifecycle and says nothing about how much has
@@ -51,78 +51,20 @@ type Filter = (typeof FILTERS)[number]['value'];
 export function OrdersPage() {
   const can = useCan();
 
-  const [items, setItems] = useState<OrderSummary[] | null>(null);
-  const [cursor, setCursor] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>('open');
-  const [error, setError] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
 
   const canCreate = can('orders.create');
-  const loading = items === null && error === null;
+  const {
+    entries: items,
+    error,
+    loading,
+    hasMore,
+    loadingMore,
+    loadMore,
+  } = useKeysetList<OrderSummary>(
+    `/orders?${new URLSearchParams({ status: filter }).toString()}`,
+  );
   const showSkeleton = useDelayedFlag(loading);
-
-  /**
-   * `before` absent loads the first page and replaces; present appends.
-   *
-   * Appending rather than replacing is the whole point of a keyset cursor —
-   * the rows already on screen stay put, so a new order arriving mid-scroll
-   * cannot shift the page under someone's cursor the way offset paging does.
-   */
-  const load = useCallback(async (nextFilter: Filter, before?: string) => {
-    const params = new URLSearchParams({ status: nextFilter });
-    if (before) params.set('before', before);
-
-    const page = await api<OrderPage>(`/orders?${params.toString()}`);
-
-    setItems((current) =>
-      before ? [...(current ?? []), ...page.entries] : page.entries,
-    );
-    setCursor(page.nextCursor);
-    setError(null);
-  }, []);
-
-  useEffect(() => {
-    let ignore = false;
-
-    const params = new URLSearchParams({ status: filter });
-
-    void api<OrderPage>(`/orders?${params.toString()}`)
-      .then((page) => {
-        if (ignore) return;
-        setItems(page.entries);
-        setCursor(page.nextCursor);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [filter]);
-
-  async function loadMore() {
-    if (!cursor) return;
-
-    setLoadingMore(true);
-    try {
-      await load(filter, cursor);
-    } catch (caught: unknown) {
-      setError(messageFor(caught));
-    } finally {
-      setLoadingMore(false);
-    }
-  }
-
-  function changeFilter(next: Filter) {
-    // Cleared rather than kept: a cursor points into the previous filter's
-    // ordering, and carrying it over would page through rows the new filter
-    // never selected.
-    setItems(null);
-    setCursor(null);
-    setError(null);
-    setFilter(next);
-  }
 
   return (
     <Stack spacing={3}>
@@ -149,7 +91,7 @@ export function OrdersPage() {
           size="small"
           label="Show"
           value={filter}
-          onChange={(event) => changeFilter(event.target.value as Filter)}
+          onChange={(event) => setFilter(event.target.value as Filter)}
           sx={{ minWidth: 160 }}
         >
           {FILTERS.map((option) => (
@@ -254,7 +196,7 @@ export function OrdersPage() {
         )}
       </Paper>
 
-      {cursor && (
+      {hasMore && (
         <Button
           variant="text"
           disabled={loadingMore}

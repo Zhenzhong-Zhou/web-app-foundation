@@ -16,17 +16,16 @@ import {
   Tabs,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { api, messageFor } from '../lib/api';
 import { formatDate } from '../lib/format';
 import type {
-  ReturnAuthorizationPage,
   ReturnAuthorizationStatus,
   ReturnAuthorizationSummary,
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useKeysetList } from '../lib/use-keyset-list';
 import { rmaStatus } from './rma-labels';
 
 type Filter = ReturnAuthorizationStatus | 'all';
@@ -38,10 +37,9 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: 'all', label: 'All' },
 ];
 
-function query(filter: Filter, before?: string): string {
+function query(filter: Filter): string {
   const params = new URLSearchParams();
   if (filter !== 'all') params.set('status', filter);
-  if (before) params.set('before', before);
   const text = params.toString();
   return text ? `/return-authorizations?${text}` : '/return-authorizations';
 }
@@ -55,55 +53,15 @@ function query(filter: Filter, before?: string): string {
  */
 export function RmasPage() {
   const [filter, setFilter] = useState<Filter>('open');
-  const [rows, setRows] = useState<ReturnAuthorizationSummary[] | null>(null);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  const loading = rows === null && error === null;
+  const {
+    entries: rows,
+    error,
+    loading,
+    hasMore,
+    loadingMore,
+    loadMore,
+  } = useKeysetList<ReturnAuthorizationSummary>(query(filter));
   const showSkeleton = useDelayedFlag(loading);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<ReturnAuthorizationPage>(query(filter))
-      .then((page) => {
-        if (ignore) return;
-        setRows(page.entries);
-        setNextCursor(page.nextCursor);
-        setError(null);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [filter]);
-
-  function changeFilter(next: Filter) {
-    setRows(null);
-    setNextCursor(null);
-    setFilter(next);
-  }
-
-  async function loadMore() {
-    if (!nextCursor) return;
-    setLoadingMore(true);
-
-    try {
-      const page = await api<ReturnAuthorizationPage>(
-        query(filter, nextCursor),
-      );
-      setRows((current) => [...(current ?? []), ...page.entries]);
-      setNextCursor(page.nextCursor);
-    } catch (caught) {
-      setError(messageFor(caught));
-    } finally {
-      setLoadingMore(false);
-    }
-  }
 
   return (
     <Stack spacing={3}>
@@ -118,7 +76,7 @@ export function RmasPage() {
 
       <Tabs
         value={filter}
-        onChange={(_event, value: Filter) => changeFilter(value)}
+        onChange={(_event, value: Filter) => setFilter(value)}
         aria-label="Return authorization status"
       >
         {FILTERS.map((option) => (
@@ -190,7 +148,7 @@ export function RmasPage() {
         )}
       </Paper>
 
-      {nextCursor && (
+      {hasMore && (
         <Button
           variant="text"
           onClick={() => void loadMore()}

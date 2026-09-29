@@ -19,15 +19,11 @@ import { useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, messageFor } from '../lib/api';
+import { api } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
-import {
-  type AuditPageResponse,
-  type AuditRecord,
-  describe,
-  summarise,
-} from './audit-format';
+import { useKeysetList } from '../lib/use-keyset-list';
+import { type AuditRecord, describe, summarise } from './audit-format';
 
 /**
  * Sent explicitly rather than taking the server's default.
@@ -54,18 +50,12 @@ export function AuditPage() {
   const to = params.get('to') ?? '';
   const resourceId = params.get('resourceId') ?? '';
 
-  const [entries, setEntries] = useState<AuditRecord[] | null>(null);
-  const [cursor, setCursor] = useState<string | null>(null);
   const [actions, setActions] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
 
   const canView = can('audit.view');
-  const loading = entries === null && error === null;
-  const showSkeleton = useDelayedFlag(loading);
 
-  /** The filters as the API wants them, shared by the load and Load more. */
-  function queryFor(before?: string): string {
+  /** The filters as the API wants them. */
+  function queryFor(): string {
     const query = new URLSearchParams({ limit: String(PAGE_SIZE) });
 
     if (action) query.set('action', action);
@@ -73,14 +63,17 @@ export function AuditPage() {
     // The date input gives YYYY-MM-DD; the API takes ISO timestamps.
     if (from) query.set('from', new Date(from).toISOString());
     if (to) query.set('to', new Date(to).toISOString());
-    if (before) query.set('before', before);
 
     return query.toString();
   }
 
+  const { entries, error, loading, hasMore, loadingMore, loadMore } =
+    useKeysetList<AuditRecord>(canView ? `/audit?${queryFor()}` : null);
+  const showSkeleton = useDelayedFlag(loading);
+
   /**
-   * Setting a filter drops the cursor: a `before` from the previous filter
-   * points at a row that may not be in the new result at all.
+   * A new filter is a new list, so the previous one's rows and cursor go
+   * with it (see useKeysetList).
    *
    * replace, so changing a filter four times leaves one entry in the back
    * stack rather than four.
@@ -96,7 +89,6 @@ export function AuditPage() {
       }
     }
 
-    setEntries(null);
     setParams(next, { replace: true });
   }
 
@@ -123,44 +115,6 @@ export function AuditPage() {
       ignore = true;
     };
   }, [canView]);
-
-  useEffect(() => {
-    if (!canView) return;
-
-    let ignore = false;
-
-    void api<AuditPageResponse>(`/audit?${queryFor()}`)
-      .then((page) => {
-        if (ignore) return;
-        setEntries(page.entries);
-        setCursor(page.nextCursor);
-        setError(null);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canView, action, from, to, resourceId]);
-
-  async function loadMore() {
-    if (!cursor) return;
-
-    setLoadingMore(true);
-
-    try {
-      const page = await api<AuditPageResponse>(`/audit?${queryFor(cursor)}`);
-      setEntries((current) => [...(current ?? []), ...page.entries]);
-      setCursor(page.nextCursor);
-    } catch (caught) {
-      setError(messageFor(caught));
-    } finally {
-      setLoadingMore(false);
-    }
-  }
 
   if (!canView) {
     return (
@@ -313,7 +267,7 @@ export function AuditPage() {
             </TableContainer>
           </Paper>
 
-          {cursor && (
+          {hasMore && (
             <Button
               variant="text"
               disabled={loadingMore}

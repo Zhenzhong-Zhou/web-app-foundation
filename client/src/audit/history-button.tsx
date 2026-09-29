@@ -13,20 +13,15 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
-import { api, messageFor } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
-import {
-  type AuditPageResponse,
-  type AuditRecord,
-  describe,
-  summarise,
-} from './audit-format';
+import { useKeysetList } from '../lib/use-keyset-list';
+import { type AuditRecord, describe, summarise } from './audit-format';
 
 /** A drawer's worth. The full log is one link away for anything longer. */
 const PAGE_SIZE = 20;
@@ -90,58 +85,14 @@ function HistoryPanel({
   resourceId: string;
   onClose: () => void;
 }) {
-  const [entries, setEntries] = useState<AuditRecord[] | null>(null);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const query = new URLSearchParams({
+    resourceId,
+    limit: String(PAGE_SIZE),
+  });
 
-  const loading = entries === null && error === null;
+  const { entries, error, loading, hasMore, loadingMore, loadMore } =
+    useKeysetList<AuditRecord>(`/audit?${query.toString()}`);
   const showSkeleton = useDelayedFlag(loading);
-
-  function queryFor(before?: string): string {
-    const query = new URLSearchParams({
-      resourceId,
-      limit: String(PAGE_SIZE),
-    });
-    if (before) query.set('before', before);
-    return query.toString();
-  }
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<AuditPageResponse>(`/audit?${queryFor()}`)
-      .then((page) => {
-        if (ignore) return;
-        setEntries(page.entries);
-        setCursor(page.nextCursor);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-    // queryFor reads only resourceId, which is the dependency.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resourceId]);
-
-  async function loadMore() {
-    if (!cursor) return;
-
-    setLoadingMore(true);
-
-    try {
-      const page = await api<AuditPageResponse>(`/audit?${queryFor(cursor)}`);
-      setEntries((current) => [...(current ?? []), ...page.entries]);
-      setCursor(page.nextCursor);
-    } catch (caught) {
-      setError(messageFor(caught));
-    } finally {
-      setLoadingMore(false);
-    }
-  }
 
   return (
     <Stack sx={{ height: '100%' }}>
@@ -203,7 +154,7 @@ function HistoryPanel({
           </List>
         )}
 
-        {cursor && (
+        {hasMore && (
           <Button
             variant="text"
             disabled={loadingMore}

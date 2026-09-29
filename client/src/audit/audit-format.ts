@@ -32,12 +32,6 @@ export interface AuditRecord {
   createdAt: string;
 }
 
-export interface AuditPageResponse {
-  entries: AuditRecord[];
-  /** Pass as `before` for the next page. Null when the log is exhausted. */
-  nextCursor: string | null;
-}
-
 /**
  * Wording for actions where the derived text reads badly. An override, not a
  * requirement.

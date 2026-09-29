@@ -15,12 +15,11 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
 
 import { FormError } from '../components/form-error';
-import { api, messageFor } from '../lib/api';
 import { relativeTime } from '../lib/format';
-import type { Movement, MovementPage, StockRow } from '../lib/types';
+import type { Movement, StockRow } from '../lib/types';
+import { useKeysetList } from '../lib/use-keyset-list';
 import { describeMovement } from './describe-movement';
 
 const PAGE_SIZE = 25;
@@ -31,14 +30,13 @@ const PAGE_SIZE = 25;
  * the variant is the answer to a different question, and the wrong one to act
  * on during a recall.
  */
-function queryFor(row: StockRow, before?: string): string {
+function queryFor(row: StockRow): string {
   const params = new URLSearchParams({
     variantId: row.variantId,
     limit: String(PAGE_SIZE),
   });
 
   if (row.lotId) params.set('lotId', row.lotId);
-  if (before) params.set('before', before);
 
   return params.toString();
 }
@@ -62,62 +60,13 @@ export function MovementHistoryDialog({
   row: StockRow | null;
   onClose: () => void;
 }) {
-  const [entries, setEntries] = useState<Movement[] | null>(null);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  useEffect(() => {
-    if (!row) return;
-    let ignore = false;
-
-    void api<MovementPage>(`/stock/movements?${queryFor(row)}`)
-      .then((page) => {
-        if (ignore) return;
-        setEntries(page.entries);
-        setCursor(page.nextCursor);
-      })
-      .catch((caught: unknown) => {
-        if (ignore) return;
-        setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [row]);
-
-  async function loadMore() {
-    if (!cursor || !row) return;
-
-    setLoadingMore(true);
-    setError(null);
-
-    try {
-      const page = await api<MovementPage>(
-        `/stock/movements?${queryFor(row, cursor)}`,
-      );
-
-      // Appended, never replaced. A keyset cursor pages forward through a fixed
-      // sequence, and refetching the head would show rows already passed.
-      setEntries((current) => [...(current ?? []), ...page.entries]);
-      setCursor(page.nextCursor);
-    } catch (caught) {
-      setError(messageFor(caught));
-    } finally {
-      setLoadingMore(false);
-    }
-  }
-
-  function close() {
-    setEntries(null);
-    setCursor(null);
-    setError(null);
-    onClose();
-  }
+  // Mounted only while a row is open (see InventoryPage), so each open
+  // starts fresh and closing needs nothing reset.
+  const { entries, error, hasMore, loadingMore, loadMore } =
+    useKeysetList<Movement>(row ? `/stock/movements?${queryFor(row)}` : null);
 
   return (
-    <Dialog open={!!row} onClose={close} fullWidth maxWidth="md">
+    <Dialog open={!!row} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>
         History for {row?.sku}
         {row?.lotCode ? ` · lot ${row.lotCode}` : ''}
@@ -221,7 +170,7 @@ export function MovementHistoryDialog({
           {/* Load more, not page numbers: a keyset cursor has no notion of
               "page 4", and offset paging repeats rows as new movements arrive
               at the head. */}
-          {cursor && (
+          {hasMore && (
             <Button
               variant="text"
               onClick={() => void loadMore()}
@@ -235,7 +184,7 @@ export function MovementHistoryDialog({
       </DialogContent>
 
       <DialogActions>
-        <Button variant="text" onClick={close}>
+        <Button variant="text" onClick={onClose}>
           Close
         </Button>
       </DialogActions>

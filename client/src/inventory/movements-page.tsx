@@ -16,18 +16,14 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { PageHeader } from '../components/page-header';
-import { api, messageFor } from '../lib/api';
+import { api } from '../lib/api';
 import { itemName, relativeTime } from '../lib/format';
-import type {
-  Location,
-  Movement,
-  MovementPage,
-  VariantOption,
-} from '../lib/types';
+import type { Location, Movement, VariantOption } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useKeysetList } from '../lib/use-keyset-list';
 import { leavesOf } from '../locations/tree';
 import { describeMovement } from './describe-movement';
 
@@ -59,33 +55,12 @@ const REASONS = [
  * it.
  */
 export function MovementsPage() {
-  const [entries, setEntries] = useState<Movement[] | null>(null);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-
   const [variants, setVariants] = useState<VariantOption[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
 
   const [variant, setVariant] = useState<VariantOption | null>(null);
   const [locationId, setLocationId] = useState('');
   const [reason, setReason] = useState('');
-
-  const loading = entries === null && error === null;
-  const showSkeleton = useDelayedFlag(loading);
-
-  /**
-   * Clearing on change rather than in the effect: switching filters is an
-   * event, and doing it in the effect body means a render just to throw the
-   * old rows away. Without it the previous filter's rows sit under the new
-   * filter's label until the request lands.
-   */
-  function applyFilter(change: () => void) {
-    setEntries(null);
-    setCursor(null);
-    setError(null);
-    change();
-  }
 
   /**
    * No filter set means recent-everything, rather than an empty screen asking
@@ -99,6 +74,15 @@ export function MovementsPage() {
     if (reason) params.set('reason', reason);
     return params.toString();
   }, [variant, locationId, reason]);
+
+  /**
+   * Refetched when a filter changes rather than filtered in memory. The list
+   * is paged, so an in-memory filter would only ever narrow the page in hand
+   * and quietly hide everything past it.
+   */
+  const { entries, error, loading, hasMore, loadingMore, loadMore } =
+    useKeysetList<Movement>(`/stock/movements?${query}`);
+  const showSkeleton = useDelayedFlag(loading);
 
   useEffect(() => {
     let ignore = false;
@@ -121,50 +105,6 @@ export function MovementsPage() {
     };
   }, []);
 
-  /**
-   * Refetched when a filter changes rather than filtered in memory. The list
-   * is paged, so an in-memory filter would only ever narrow the page in hand
-   * and quietly hide everything past it.
-   */
-  useEffect(() => {
-    let ignore = false;
-
-    void api<MovementPage>(`/stock/movements?${query}`)
-      .then((page) => {
-        if (ignore) return;
-        setEntries(page.entries);
-        setCursor(page.nextCursor);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [query]);
-
-  const loadMore = useCallback(async () => {
-    if (!cursor) return;
-
-    setLoadingMore(true);
-    try {
-      const page = await api<MovementPage>(
-        `/stock/movements?${query}&before=${cursor}`,
-      );
-
-      // Appended, never replaced. A keyset cursor pages forward through a
-      // fixed sequence, and refetching the head would repeat rows already
-      // read — which is the whole reason it is not an offset.
-      setEntries((current) => [...(current ?? []), ...page.entries]);
-      setCursor(page.nextCursor);
-    } catch (caught: unknown) {
-      setError(messageFor(caught));
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [cursor, query]);
-
   // Stock sits only at leaves (ADR-024), so nothing else can appear in a row.
   const leaves = leavesOf(locations);
 
@@ -186,7 +126,7 @@ export function MovementsPage() {
             `${option.sku} — ${itemName(option.productName, option.variantName)}`
           }
           value={variant}
-          onChange={(_event, value) => applyFilter(() => setVariant(value))}
+          onChange={(_event, value) => setVariant(value)}
           renderInput={(params) => <TextField {...params} label="Item" />}
         />
 
@@ -194,9 +134,7 @@ export function MovementsPage() {
           select
           label="Location"
           value={locationId}
-          onChange={(event) =>
-            applyFilter(() => setLocationId(event.target.value))
-          }
+          onChange={(event) => setLocationId(event.target.value)}
           sx={{ minWidth: 200 }}
         >
           <MenuItem value="">Everywhere</MenuItem>
@@ -213,7 +151,7 @@ export function MovementsPage() {
           select
           label="Why"
           value={reason}
-          onChange={(event) => applyFilter(() => setReason(event.target.value))}
+          onChange={(event) => setReason(event.target.value)}
           sx={{ minWidth: 160 }}
         >
           <MenuItem value="">Any reason</MenuItem>
@@ -331,7 +269,7 @@ export function MovementsPage() {
 
       {/* Load more, not page numbers: a keyset cursor has no notion of "page
           4", and this table grows faster than any other in the app. */}
-      {cursor && (
+      {hasMore && (
         <Button
           variant="text"
           disabled={loadingMore}
