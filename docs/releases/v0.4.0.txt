@@ -1,0 +1,94 @@
+v0.4.0 — money
+
+Everything a sale and a purchase are worth: invoices for what shipped,
+authorized returns and partial credits, the cost of every lot and batch,
+and price lists that propose the price of a new line.
+
+Invoicing (ADR-046)
+- An invoice bills exactly one shipment: draft, issued, voided.
+- Issuing takes the next number in a gapless series per organization
+  (INV-, CN-, RMA-), stores every amount, and copies the seller, bill-to
+  and ship-to as they stood.
+- Tax codes with one or more components; "Exempt" is a code with none.
+  Nets round to the currency's minor units, tax once per component.
+- A sale must be priced, in one currency, before it is confirmed. Samples
+  are never invoiced.
+- Void issues a full credit note and frees the shipment. A shipment with
+  a standing invoice cannot be voided.
+- "Mark shipped/received" is now "Close order" (#24).
+- The organization's registered address and tax number, printed as the
+  seller. Printable invoices and credit notes.
+
+Returns and credit (ADR-047)
+- A return authorization (RMA) is its own numbered document, with a
+  resolution per line: credit, replace or none.
+- A return may name an RMA and is held to it; one received without an
+  RMA is still recorded and can be linked later, once.
+- Credit notes credit part of an invoice, at a price that may be lowered
+  but never raised, capped by value, by tax component and by what the RMA
+  authorized.
+- A replacement is a draft sale at zero, linked to its RMA.
+
+Cost (ADR-048)
+- Every stock movement is valued, in a ledger beside the quantities. A
+  lot carries what it cost; stock without lots carries a running average.
+- A purchase is valued at its order line's price, converted at the rate
+  on file for the day it arrived. With no price or no rate it waits in a
+  "needs a cost" list rather than being refused.
+- A production run's material cost is posted to its batch at close; the
+  run page shows the cost per unit and what it used.
+- A cost set or corrected later revalues what is still on hand and
+  records the difference for what has already gone.
+- The organization's base currency, fixed once anything is valued in it,
+  and an exchange-rate page, one rate per currency per day.
+- Stock value page: what is on hand, lot by lot, and what is still waiting
+  for a cost. Costs are visible to the Owner only by default.
+
+Price lists (ADR-049)
+- Sale and purchase lists, one currency each. A customer or supplier names
+  its list; the organization sets a default for customers.
+- An item added to an order without a price takes the list's, and keeps
+  it: changing a list never changes an order already written. The order
+  shows which list a price came from.
+- "Use list price" applies the list again, on request.
+- Samples never take a list price; an item whose list prices it in
+  another currency than the sale is added unpriced, with the reason.
+
+Screens
+- Settings in the account menu: organization, tax codes, exchange rates,
+  price lists, stock value.
+- Cost panels on production runs and lot traces.
+
+Behind the scenes
+- The e2e suite no longer fails at random: requests reach the test app on
+  one fixed socket, and a second test run refuses to start rather than
+  emptying the first one's database (#1).
+- CI runs the demo seed, so a change that breaks it fails the build.
+- msw 3 in the client; minor and patch updates across both sides.
+
+Fixes from the milestone run
+- (Filled in after the walkthrough, the real week by hand and the recall
+  drill, before v0.4.0 is tagged.)
+
+Known limitations
+- Margin is not shown yet. Both an estimate on the order and the actual
+  figure per invoice are derivable; the first real week decides which to
+  build.
+- Price lists have one price per item: no quantity breaks and no prices
+  dated ahead.
+- Cost is material only: no freight, duty, labour or co-packer charges. A
+  corrected cost does not flow on into batches already made from it.
+- Payments, and so gains and losses on exchange, are not recorded. A debt
+  that will not be collected is a full credit without an RMA.
+- The rate for a purchase is chosen by the UTC day of its arrival (#20).
+- The weighted-average method should be confirmed with the accountant
+  before these figures feed financial statements.
+- A top-up at run close can still take stock held for a sale (#28).
+
+Upgrade
+- New migrations through 0035. Run `npm run migrate` in server, then
+  `npm run seed` so existing Owners receive the new cost and price-list
+  permissions.
+- Set the base currency (Settings → Organization) before the first costed
+  receipt. Stock already on hand opens at zero and appears under "needs a
+  cost" until its cost is set.
