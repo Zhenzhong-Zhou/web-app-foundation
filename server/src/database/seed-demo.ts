@@ -13,6 +13,7 @@ import { ReturnsService } from '../modules/orders/returns.service';
 import { ShipmentsService } from '../modules/orders/shipments.service';
 import { PartnerAddressesService } from '../modules/partners/partner-addresses.service';
 import { PartnersService } from '../modules/partners/partners.service';
+import { PriceListsService } from '../modules/price-lists/price-lists.service';
 import { ProductLicencesService } from '../modules/product-licences/product-licences.service';
 import { ProductionOrdersService } from '../modules/production-orders/production-orders.service';
 import { ProductsService } from '../modules/products/products.service';
@@ -21,7 +22,6 @@ import { TaxCodesService } from '../modules/tax-codes/tax-codes.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
 import { lots, memberships, productVariants, users } from './schema';
 import { runInTenantContext } from './tenant-context';
-import {PriceListsService} from "../modules/price-lists/price-lists.service";
 
 /**
  * One product, made once, through the same services the API calls.
