@@ -14,16 +14,10 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatMoney, formatUnitCost } from '../lib/format';
 import type { RunCost } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /**
  * What one batch cost to make (ADR-048): what its run consumed, at the value

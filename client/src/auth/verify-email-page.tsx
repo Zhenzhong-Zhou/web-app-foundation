@@ -2,7 +2,7 @@ import { Alert, CircularProgress, Link, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { looksLikeToken } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
 import { useAuth } from './use-auth';
@@ -42,11 +42,7 @@ export function VerifyEmailPage() {
         setStatus('verified');
       } catch (caught) {
         setStatus('failed');
-        setMessage(
-          caught instanceof ApiError
-            ? caught.message
-            : 'Could not reach the server.',
-        );
+        setMessage(messageFor(caught));
       } finally {
         // Strip the token either way: it ends up in browser history and in
         // the Referer header of any outbound request this page makes.

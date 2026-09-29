@@ -22,7 +22,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDay, itemName } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { Availability, Location, StockRow } from '../lib/types';
@@ -32,12 +32,6 @@ import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { MovementHistoryDialog } from './movement-history-dialog';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { StockActions } from './stock-actions';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /**
  * Leaf-ness is computed rather than stored (ADR-024), so it is derived here the

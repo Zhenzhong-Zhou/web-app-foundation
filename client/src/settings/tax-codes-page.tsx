@@ -17,18 +17,12 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { TaxCode } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { TaxCodeDialog } from './tax-code-dialog';
 import { describeCharges } from './tax-rate';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /**
  * The tax treatments an invoice line can carry (ADR-046).

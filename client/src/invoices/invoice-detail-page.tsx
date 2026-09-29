@@ -24,7 +24,7 @@ import {
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDay, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
@@ -44,12 +44,6 @@ import { Parties } from './invoice-parties';
 import { invoiceStatus } from './invoice-status';
 import { IssueInvoiceDialog } from './issue-invoice-dialog';
 import { VoidInvoiceDialog } from './void-invoice-dialog';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /**
  * One invoice (ADR-046).

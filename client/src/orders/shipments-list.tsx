@@ -11,7 +11,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
-import { api, ApiError } from '../lib/api';
+import { api, ApiError, messageFor } from '../lib/api';
 import { formatDate } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { InvoicePage, InvoiceSummary, Shipment } from '../lib/types';
@@ -121,11 +121,7 @@ export function ShipmentsList({
       });
       navigate(`/invoices/${invoice.id}`);
     } catch (caught) {
-      setInvoiceError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
+      setInvoiceError(messageFor(caught));
       setInvoicing(null);
     }
   }

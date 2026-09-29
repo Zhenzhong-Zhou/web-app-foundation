@@ -18,7 +18,7 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 
 import { FormError } from '../components/form-error';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatMoney } from '../lib/format';
 import type {
   InvoiceDetail,
@@ -149,10 +149,7 @@ export function CreditInvoiceDialog({
             setAnswer({
               request,
               preview: null,
-              refusal:
-                caught instanceof ApiError
-                  ? caught.message
-                  : 'Could not reach the server.',
+              refusal: messageFor(caught),
             });
           }
         });

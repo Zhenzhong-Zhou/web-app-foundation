@@ -23,7 +23,7 @@ import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDay, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
@@ -48,12 +48,6 @@ import { ReturnOrderDialog } from './return-order-dialog';
 import { ReturnsList } from './returns-list';
 import { ShipOrderDialog } from './ship-order-dialog';
 import { ShipmentsList } from './shipments-list';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
   draft: 'default',

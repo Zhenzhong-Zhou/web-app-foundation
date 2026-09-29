@@ -20,7 +20,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type {
   Bom,
@@ -34,12 +34,6 @@ import type { Variant } from '../products/products-page';
 import { AddBomLineDialog } from './add-bom-line-dialog';
 import { CreateBomDialog } from './create-bom-dialog';
 import { EditBomLineDialog } from './edit-bom-line-dialog';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 const STATUS_COLOR = {
   draft: 'default',

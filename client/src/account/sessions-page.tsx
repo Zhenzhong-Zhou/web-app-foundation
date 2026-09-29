@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { RecentActivity } from './recent-activity';
@@ -53,11 +53,7 @@ export function SessionsPage() {
       setSessions(await api<SessionSummary[]>('/account/sessions'));
       setError(null);
     } catch (caught) {
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
+      setError(messageFor(caught));
     }
   }, []);
 
@@ -70,11 +66,7 @@ export function SessionsPage() {
       })
       .catch((caught: unknown) => {
         if (ignore) return;
-        setError(
-          caught instanceof ApiError
-            ? caught.message
-            : 'Could not reach the server.',
-        );
+        setError(messageFor(caught));
       });
 
     return () => {
@@ -93,11 +85,7 @@ export function SessionsPage() {
       // answer is the one that is true.
       await load();
     } catch (caught) {
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
+      setError(messageFor(caught));
     } finally {
       setRevoking(null);
     }

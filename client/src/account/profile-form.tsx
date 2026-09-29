@@ -2,7 +2,7 @@ import { Alert, Button, Stack, TextField, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
 import { useAuth } from '../auth/use-auth';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { NAME_MAX_LENGTH } from '../lib/validation';
 
 export function ProfileForm() {
@@ -30,11 +30,7 @@ export function ProfileForm() {
       await refresh();
       setSaved(true);
     } catch (caught) {
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
+      setError(messageFor(caught));
     } finally {
       setSubmitting(false);
     }

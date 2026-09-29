@@ -13,7 +13,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDay, formatMoney } from '../lib/format';
 import type { CreditNoteDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -41,11 +41,7 @@ export function CreditNotePrintPage() {
       })
       .catch((caught: unknown) => {
         if (!ignore) {
-          setError(
-            caught instanceof ApiError
-              ? caught.message
-              : 'Could not reach the server.',
-          );
+          setError(messageFor(caught));
         }
       });
 

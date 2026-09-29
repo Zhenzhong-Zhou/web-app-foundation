@@ -17,18 +17,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDay } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { ExchangeRate, OrganizationProfile } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { ExchangeRateDialog } from './exchange-rate-dialog';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /**
  * 1.37000000 as 1.37. String work, not arithmetic (ADR-025): the column

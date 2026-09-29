@@ -20,7 +20,7 @@ import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { RecipePanel } from '../boms/recipe-panel';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { AddVariantDialog } from './add-variant-dialog';
@@ -30,12 +30,6 @@ import { VariantRow } from './variant-row';
 
 interface ProductDetail extends Product {
   variants: Variant[];
-}
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
 }
 
 export function ProductDetailPage() {

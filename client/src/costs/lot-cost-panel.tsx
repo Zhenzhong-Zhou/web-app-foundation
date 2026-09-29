@@ -16,16 +16,10 @@ import {
 import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDate, formatMoney, formatUnitCost } from '../lib/format';
 import type { LotCost, LotCostEntry } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /**
  * What a valuation row was, in words. A sign test on the string, not

@@ -1,7 +1,7 @@
 import { Alert, Button, Stack, TextField, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../lib/validation';
 
 const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
@@ -52,11 +52,7 @@ export function ChangePasswordForm() {
       // retype the two they got right.
       setForm(EMPTY);
     } catch (caught) {
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
+      setError(messageFor(caught));
     } finally {
       setSubmitting(false);
     }

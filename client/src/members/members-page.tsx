@@ -19,7 +19,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateMemberDialog } from './create-member-dialog.tsx';
@@ -34,12 +34,6 @@ interface Member {
 interface Role {
   id: string;
   name: string;
-}
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
 }
 
 export function MembersPage() {

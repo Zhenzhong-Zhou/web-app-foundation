@@ -19,19 +19,13 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDate } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { ProductionRun, ProductionRunPage, RunStatus } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateRunDialog } from './create-run-dialog';
 import { STATUS_COLOUR, STATUS_LABEL } from './status';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 const FILTERS = [
   { value: '', label: 'All' },

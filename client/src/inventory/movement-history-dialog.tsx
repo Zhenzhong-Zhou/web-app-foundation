@@ -18,7 +18,7 @@ import {
 import { useEffect, useState } from 'react';
 
 import { FormError } from '../components/form-error';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import type { Movement, MovementPage, StockRow } from '../lib/types';
 import { describeMovement } from './describe-movement';
@@ -79,11 +79,7 @@ export function MovementHistoryDialog({
       })
       .catch((caught: unknown) => {
         if (ignore) return;
-        setError(
-          caught instanceof ApiError
-            ? caught.message
-            : 'Could not reach the server.',
-        );
+        setError(messageFor(caught));
       });
 
     return () => {
@@ -107,11 +103,7 @@ export function MovementHistoryDialog({
       setEntries((current) => [...(current ?? []), ...page.entries]);
       setCursor(page.nextCursor);
     } catch (caught) {
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
+      setError(messageFor(caught));
     } finally {
       setLoadingMore(false);
     }

@@ -19,7 +19,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { itemName, relativeTime } from '../lib/format';
 import type {
   Location,
@@ -44,12 +44,6 @@ const REASONS = [
   'sample',
   'return',
 ] as const;
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /**
  * Everything that has moved, newest first.

@@ -18,7 +18,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateProductDialog } from './create-product-dialog';
@@ -43,12 +43,6 @@ export interface Product {
   name: string;
   description: string | null;
   isActive: boolean;
-}
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
 }
 
 export function ProductsPage() {

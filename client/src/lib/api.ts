@@ -21,6 +21,20 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * What a failed request says to the person who made it: the server's own
+ * message, or one fixed line when no answer came back at all. One definition,
+ * so a dropped connection reads the same on every screen.
+ *
+ * Login and register keep their own, which add the rate-limit wording, and
+ * forgot-password keeps its own, which must not repeat what the server says.
+ */
+export function messageFor(caught: unknown): string {
+  return caught instanceof ApiError
+    ? caught.message
+    : 'Could not reach the server.';
+}
+
 /** Narrower than RequestInit: a Headers instance spreads to nothing below. */
 type ApiInit = Omit<RequestInit, 'headers'> & {
   headers?: Record<string, string>;

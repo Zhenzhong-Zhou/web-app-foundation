@@ -25,7 +25,7 @@ import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDate } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
@@ -37,12 +37,6 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useSubmit } from '../lib/use-submit';
 import { LinkReturnDialog } from './link-return-dialog';
 import { RESOLUTION_LABELS, rmaStatus } from './rma-labels';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /** A numeric(18,4) of nothing always reads '0.0000' (ADR-025). */
 const NOTHING = '0.0000';

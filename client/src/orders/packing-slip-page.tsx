@@ -16,7 +16,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDate, formatDay } from '../lib/format';
 import type { PackingSlip } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -50,11 +50,7 @@ export function PackingSlipPage() {
       })
       .catch((caught: unknown) => {
         if (!ignore) {
-          setError(
-            caught instanceof ApiError
-              ? caught.message
-              : 'Could not reach the server.',
-          );
+          setError(messageFor(caught));
         }
       });
 

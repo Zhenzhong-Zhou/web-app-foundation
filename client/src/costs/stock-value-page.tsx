@@ -18,18 +18,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDate, formatMoney, formatUnitCost } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { NeedsCostEntry, StockValuation } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { SetCostDialog } from './set-cost-dialog';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 interface NeedsCostPage {
   entries: NeedsCostEntry[];

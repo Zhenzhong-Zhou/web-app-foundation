@@ -18,7 +18,7 @@ import { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { PriceList } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -49,11 +49,7 @@ export function PriceListsPage() {
       })
       .catch((caught: unknown) => {
         if (!ignore) {
-          setError(
-            caught instanceof ApiError
-              ? caught.message
-              : 'Could not reach the server.',
-          );
+          setError(messageFor(caught));
         }
       });
 

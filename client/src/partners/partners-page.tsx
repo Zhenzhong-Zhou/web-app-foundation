@@ -19,18 +19,12 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { Partner } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreatePartnerDialog } from './create-partner-dialog';
 import { EditPartnerDialog } from './edit-partner-dialog';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /**
  * The directory of everyone the organization trades with (ADR-026).

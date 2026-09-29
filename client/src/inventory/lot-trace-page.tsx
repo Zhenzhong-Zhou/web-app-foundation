@@ -26,16 +26,10 @@ import {
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { LotCostPanel } from '../costs/lot-cost-panel';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDate, formatDay } from '../lib/format';
 import type { LotMatch, LotTrace } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /**
  * Finding a lot by the start of its code (ADR-044).

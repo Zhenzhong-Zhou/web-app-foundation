@@ -21,16 +21,10 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDay } from '../lib/format';
 import type { OrderPage, OrderStatus, OrderSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /**
  * `status` is the document's lifecycle and says nothing about how much has

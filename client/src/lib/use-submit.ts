@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { useToast } from '../components/use-toast';
-import { ApiError } from './api';
+import { messageFor } from './api';
 
 /**
  * The submit half of a dialog: in-flight state, one error string, and the
@@ -39,11 +39,7 @@ export function useSubmit(
     try {
       await action();
     } catch (caught) {
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
+      setError(messageFor(caught));
       return;
     } finally {
       setSubmitting(false);

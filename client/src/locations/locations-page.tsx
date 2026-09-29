@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { Location } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -19,12 +19,6 @@ import { CreateLocationDialog } from './create-location-dialog';
 import { EditLocationDialog } from './edit-location-dialog';
 import { LocationNode } from './location-node';
 import { childrenOf } from './tree';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 /**
  * Where the layout is set up. Unremarkable on its own, and the thing that

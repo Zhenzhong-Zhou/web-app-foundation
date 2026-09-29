@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatDay } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { ProductLicence } from '../lib/types';
@@ -34,12 +34,6 @@ import { NewLicenceDialog } from './new-licence-dialog';
  * from Products rather than the top nav: a screen visited twice a year does
  * not earn a permanent tab.
  */
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
-
 export function LicencesPage() {
   const can = useCan();
   const [licences, setLicences] = useState<ProductLicence[] | null>(null);

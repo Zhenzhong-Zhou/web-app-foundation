@@ -6,7 +6,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import {
   looksLikeToken,
   PASSWORD_MAX_LENGTH,
@@ -53,11 +53,7 @@ export function ResetPasswordPage() {
       // password just chosen is when a manager reliably captures it.
       navigate('/login', { replace: true });
     } catch (caught) {
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Could not reach the server.',
-      );
+      setError(messageFor(caught));
       setSubmitting(false);
     }
   }

@@ -19,7 +19,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import {
@@ -38,12 +38,6 @@ import {
  * is never exercised.
  */
 const PAGE_SIZE = 25;
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 export function AuditPage() {
   const can = useCan();

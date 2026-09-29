@@ -18,19 +18,13 @@ import { useParams } from 'react-router-dom';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, ApiError } from '../lib/api';
+import { api, messageFor } from '../lib/api';
 import { formatUnitCost } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { PriceListDetail, PriceListItem } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { EditPriceListDialog } from './edit-price-list-dialog';
 import { SetPriceDialog } from './set-price-dialog';
-
-function messageFor(caught: unknown): string {
-  return caught instanceof ApiError
-    ? caught.message
-    : 'Could not reach the server.';
-}
 
 const SIDE = {
   sale: 'What customers pay',
