@@ -161,8 +161,12 @@ export function OrderDetailPage() {
 
   const load = useCallback(async () => {
     if (!id) return;
-    setOrder(await api<OrderDetail>(`/orders/${id}`));
-    setError(null);
+    try {
+      setOrder(await api<OrderDetail>(`/orders/${id}`));
+      setError(null);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
   }, [id]);
 
   useEffect(() => {

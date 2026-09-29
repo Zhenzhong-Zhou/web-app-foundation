@@ -108,15 +108,19 @@ export function InventoryPage() {
   }, [locationId, includeEmpty]);
 
   const loadStock = useCallback(async () => {
-    // Together, because every action that changes a row can change what is
-    // free: a sample taken, a lot moved into retention.
-    const [found, promised] = await Promise.all([
-      api<StockRow[]>(`/stock${stockQuery}`),
-      api<Availability[]>('/stock/availability'),
-    ]);
-    setRows(found);
-    setAvailability(promised);
-    setError(null);
+    try {
+      // Together, because every action that changes a row can change what is
+      // free: a sample taken, a lot moved into retention.
+      const [found, promised] = await Promise.all([
+        api<StockRow[]>(`/stock${stockQuery}`),
+        api<Availability[]>('/stock/availability'),
+      ]);
+      setRows(found);
+      setAvailability(promised);
+      setError(null);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
   }, [stockQuery]);
 
   useEffect(() => {

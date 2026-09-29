@@ -62,8 +62,12 @@ export function ProductsPage() {
   const showSkeleton = useDelayedFlag(loading);
 
   const load = useCallback(async () => {
-    setItems(await api<Product[]>('/products'));
-    setError(null);
+    try {
+      setItems(await api<Product[]>('/products'));
+      setError(null);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
   }, []);
 
   useEffect(() => {

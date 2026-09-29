@@ -59,14 +59,18 @@ export function MembersPage() {
   // name — the id is what PATCH takes and what survives a rename — and the
   // roles list is needed for the dropdown regardless.
   const load = useCallback(async () => {
-    const [nextMembers, nextRoles] = await Promise.all([
-      api<Member[]>('/users'),
-      api<Role[]>('/roles'),
-    ]);
+    try {
+      const [nextMembers, nextRoles] = await Promise.all([
+        api<Member[]>('/users'),
+        api<Role[]>('/roles'),
+      ]);
 
-    setMembers(nextMembers);
-    setRoles(nextRoles);
-    setError(null);
+      setMembers(nextMembers);
+      setRoles(nextRoles);
+      setError(null);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
   }, []);
 
   useEffect(() => {

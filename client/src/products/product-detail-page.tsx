@@ -59,8 +59,12 @@ export function ProductDetailPage() {
   const showSkeleton = useDelayedFlag(loading);
 
   const load = useCallback(async () => {
-    setProduct(await api<ProductDetail>(`/products/${id!}`));
-    setError(null);
+    try {
+      setProduct(await api<ProductDetail>(`/products/${id!}`));
+      setError(null);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
   }, [id]);
 
   useEffect(() => {

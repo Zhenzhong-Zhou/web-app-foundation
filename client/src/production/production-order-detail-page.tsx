@@ -69,8 +69,12 @@ export function ProductionOrderDetailPage() {
   const showSkeleton = useDelayedFlag(loading);
 
   const load = useCallback(async () => {
-    setRun(await api<RunDetail>(`/production-orders/${id!}`));
-    setError(null);
+    try {
+      setRun(await api<RunDetail>(`/production-orders/${id!}`));
+      setError(null);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
   }, [id]);
 
   useEffect(() => {

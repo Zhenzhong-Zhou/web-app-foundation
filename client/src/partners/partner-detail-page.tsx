@@ -70,8 +70,12 @@ export function PartnerDetailPage() {
 
   const load = useCallback(async () => {
     if (!id) return;
-    setPartner(await api<PartnerDetail>(`/partners/${id}`));
-    setError(null);
+    try {
+      setPartner(await api<PartnerDetail>(`/partners/${id}`));
+      setError(null);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
   }, [id]);
 
   useEffect(() => {

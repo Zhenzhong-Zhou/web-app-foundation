@@ -81,19 +81,23 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
     async (preferId?: string) => {
       if (!variantId) return;
 
-      const rows = await api<Bom[]>(`/boms?outputVariantId=${variantId}`);
-      setVersions(rows);
+      try {
+        const rows = await api<Bom[]>(`/boms?outputVariantId=${variantId}`);
+        setVersions(rows);
 
-      // Prefer what the caller just acted on, then the active version, then
-      // the newest — so promoting or duplicating leaves you looking at the
-      // thing you changed rather than jumping elsewhere.
-      const pick =
-        rows.find((row) => row.id === preferId) ??
-        rows.find((row) => row.status === 'active') ??
-        rows[0];
+        // Prefer what the caller just acted on, then the active version, then
+        // the newest — so promoting or duplicating leaves you looking at the
+        // thing you changed rather than jumping elsewhere.
+        const pick =
+          rows.find((row) => row.id === preferId) ??
+          rows.find((row) => row.status === 'active') ??
+          rows[0];
 
-      setSelected(pick ? await api<BomDetail>(`/boms/${pick.id}`) : null);
-      setError(null);
+        setSelected(pick ? await api<BomDetail>(`/boms/${pick.id}`) : null);
+        setError(null);
+      } catch (caught) {
+        setError(messageFor(caught));
+      }
     },
     [variantId],
   );

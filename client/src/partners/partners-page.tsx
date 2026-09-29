@@ -58,8 +58,12 @@ export function PartnersPage() {
   const showSkeleton = useDelayedFlag(loading);
 
   const load = useCallback(async () => {
-    setItems(await api<Partner[]>('/partners'));
-    setError(null);
+    try {
+      setItems(await api<Partner[]>('/partners'));
+      setError(null);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
   }, []);
 
   useEffect(() => {

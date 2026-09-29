@@ -49,8 +49,12 @@ export function LocationsPage() {
   const showSkeleton = useDelayedFlag(loading);
 
   const load = useCallback(async () => {
-    setItems(await api<Location[]>('/locations'));
-    setError(null);
+    try {
+      setItems(await api<Location[]>('/locations'));
+      setError(null);
+    } catch (caught) {
+      setError(messageFor(caught));
+    }
   }, []);
 
   useEffect(() => {
