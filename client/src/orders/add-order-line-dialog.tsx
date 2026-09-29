@@ -7,7 +7,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { type SubmitEvent, useState } from 'react';
+import { type SubmitEvent, useRef, useState } from 'react';
 
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
@@ -37,7 +37,11 @@ export function AddOrderLineDialog({
   open: boolean;
   order: OrderDetail;
   onClose: () => void;
-  onAdded: () => Promise<void> | void;
+  /**
+   * Called after the line is added, with a word on its price when the order's
+   * price list could not supply one (ADR-049), so the page can show it.
+   */
+  onAdded: (priceNotice: string | null) => Promise<void> | void;
 }) {
   const { variants, failed } = useVariants(open);
   const [variantId, setVariantId] = useState('');
@@ -54,10 +58,14 @@ export function AddOrderLineDialog({
     order.lines.find((row) => row.currency)?.currency ?? '',
   );
 
+  // useSubmit's callback takes no result, so the notice waits here.
+  const priceNotice = useRef<string | null>(null);
+
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
+      const notice = priceNotice.current;
       close();
-      await onAdded();
+      await onAdded(notice);
     },
     { success: 'Line added' },
   );
@@ -73,21 +81,28 @@ export function AddOrderLineDialog({
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    void submit(() =>
-      api(`/orders/${order.id}/lines`, {
-        method: 'POST',
-        body: JSON.stringify({
-          variantId,
-          // Strings as typed. Number() here would undo numeric(18,4).
-          quantityOrdered: quantity,
-          // Both or neither: the server refuses half a price, and sending an
-          // empty string would fail the format check rather than read as
-          // absent.
-          unitPrice: price.trim() || undefined,
-          currency: price.trim() ? currency : undefined,
-        }),
-      }),
-    );
+    priceNotice.current = null;
+
+    void submit(async () => {
+      const response = await api<{ line: { priceNotice?: string } }>(
+        `/orders/${order.id}/lines`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            variantId,
+            // Strings as typed. Number() here would undo numeric(18,4).
+            quantityOrdered: quantity,
+            // Both or neither: the server refuses half a price, and sending an
+            // empty string would fail the format check rather than read as
+            // absent.
+            unitPrice: price.trim() || undefined,
+            currency: price.trim() ? currency : undefined,
+          }),
+        },
+      );
+
+      priceNotice.current = response.line.priceNotice ?? null;
+    });
   }
 
   const onOrder = new Set(order.lines.map((line) => line.variantId));
@@ -136,7 +151,7 @@ export function AddOrderLineDialog({
                 label="Unit price"
                 value={price}
                 onChange={(event) => setPrice(event.target.value)}
-                helperText="Optional. Zero is valid for a free line."
+                helperText="Optional. Left blank, the order's price list supplies it when there is one."
                 sx={{ flexGrow: 1 }}
                 slotProps={{
                   htmlInput: { inputMode: 'decimal', maxLength: 19 },

@@ -19,6 +19,7 @@ import { api, ApiError } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { Address, Contact, PartnerDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { PartnerPriceLists } from '../price-lists/partner-price-lists';
 import { AddressDialog } from './address-dialog';
 import { ContactDialog } from './contact-dialog';
 import { EditPartnerDialog } from './edit-partner-dialog';
@@ -266,6 +267,18 @@ export function PartnerDetailPage() {
           </Stack>
         )}
       />
+
+      {/* Needs the lists to name them; saving needs partners.update. */}
+      {can('price_lists.view') && (
+        <PartnerPriceLists
+          key={`${partner.salePriceListId}:${partner.purchasePriceListId}`}
+          partnerId={partner.id}
+          salePriceListId={partner.salePriceListId}
+          purchasePriceListId={partner.purchasePriceListId}
+          readOnly={!canEdit}
+          onSaved={load}
+        />
+      )}
 
       <EditPartnerDialog
         key={editingPartner ? partner.id : 'partner-closed'}

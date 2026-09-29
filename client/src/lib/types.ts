@@ -61,6 +61,9 @@ export interface Partner {
   name: string;
   code: string | null;
   taxId: string | null;
+  /** The lists this partner's orders take default prices from (ADR-049). */
+  salePriceListId: string | null;
+  purchasePriceListId: string | null;
   notes: string | null;
   isActive: boolean;
 }
@@ -164,6 +167,11 @@ export interface OrderLine {
   quantityOutstanding: string;
   unitPrice: string | null;
   currency: string | null;
+  /** Where the price came from (ADR-049): a list, typed, or not yet priced. */
+  priceSource: 'list' | 'manual' | null;
+  priceListId: string | null;
+  /** The list's current name, for "from Wholesale CAD". */
+  priceListName: string | null;
   lineTotal: string | null;
   isComplete: boolean;
   /** No more is coming (ADR-034). The quantities above stay as they were. */
@@ -242,6 +250,8 @@ export interface OrganizationProfile {
   address: OrganizationAddress | null;
   /** ISO 4217; null until set. Stock is valued in it (ADR-048). */
   baseCurrency: string | null;
+  /** The sale list for customers with none of their own (ADR-049). */
+  defaultSalePriceListId: string | null;
 }
 
 export type InvoiceStatus = 'draft' | 'issued' | 'voided';
@@ -857,4 +867,29 @@ export interface LotCost {
   unitCost: string | null;
   provisional: boolean;
   entries: LotCostEntry[];
+}
+
+export type PriceListDirection = 'sale' | 'purchase';
+
+/** A price list, as the list page and the pickers show it (ADR-049). */
+export interface PriceList {
+  id: string;
+  name: string;
+  direction: PriceListDirection;
+  currency: string;
+  isActive: boolean;
+  itemCount: number;
+}
+
+export interface PriceListItem {
+  variantId: string;
+  sku: string;
+  description: string;
+  /** Per unit, net of tax, in the list's currency. */
+  unitPrice: string;
+  updatedAt: string;
+}
+
+export interface PriceListDetail extends Omit<PriceList, 'itemCount'> {
+  items: PriceListItem[];
 }

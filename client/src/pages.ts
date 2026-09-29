@@ -62,6 +62,16 @@ export const ExchangeRatesPage = lazyNamed(
   'ExchangeRatesPage',
 );
 
+export const PriceListsPage = lazyNamed(
+  () => import('./price-lists/price-lists-page'),
+  'PriceListsPage',
+);
+
+export const PriceListDetailPage = lazyNamed(
+  () => import('./price-lists/price-list-detail-page'),
+  'PriceListDetailPage',
+);
+
 export const StockValuePage = lazyNamed(
   () => import('./costs/stock-value-page'),
   'StockValuePage',

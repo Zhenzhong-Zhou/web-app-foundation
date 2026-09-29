@@ -39,6 +39,8 @@ import {
   PackingSlipPage,
   PartnerDetailPage,
   PartnersPage,
+  PriceListDetailPage,
+  PriceListsPage,
   ProductDetailPage,
   ProductionOrderDetailPage,
   ProductionOrdersPage,
@@ -205,6 +207,11 @@ export default function App() {
         <Route
           path="/settings/exchange-rates"
           element={split(ExchangeRatesPage)}
+        />
+        <Route path="/settings/price-lists" element={split(PriceListsPage)} />
+        <Route
+          path="/settings/price-lists/:id"
+          element={split(PriceListDetailPage)}
         />
         <Route path="/costs" element={split(StockValuePage)} />
         <Route path="/products" element={split(ProductsPage)} />

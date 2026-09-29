@@ -40,6 +40,9 @@ function line(over: Partial<OrderLine> = {}): OrderLine {
     quantityReturned: '0.0000',
     unitPrice: null,
     currency: null,
+    priceSource: null,
+    priceListId: null,
+    priceListName: null,
     lineTotal: null,
     isComplete: false,
     isClosedShort: false,
@@ -545,5 +548,79 @@ describe('OrderDetailPage lines', () => {
         screen.queryByRole('button', { name: 'Authorize a return' }),
       ).not.toBeInTheDocument();
     });
+  });
+});
+
+describe('OrderDetailPage prices', () => {
+  /** A list price is a default, and saying where it came from shows that. */
+  it('says which list a price came from', async () => {
+    serve(
+      order({
+        direction: 'sale',
+        lines: [
+          line({
+            unitPrice: '24.9900',
+            currency: 'CAD',
+            lineTotal: '999.6000',
+            priceSource: 'list',
+            priceListId: 'list-1',
+            priceListName: 'Wholesale CAD',
+          }),
+        ],
+      }),
+    );
+    renderPage();
+
+    const row = within(await rowFor('WIDGET-1'));
+    expect(row.getByText('from Wholesale CAD')).toBeInTheDocument();
+  });
+
+  it('says nothing about a typed price', async () => {
+    serve(
+      order({
+        direction: 'sale',
+        lines: [
+          line({
+            unitPrice: '17.0000',
+            currency: 'CAD',
+            lineTotal: '680.0000',
+            priceSource: 'manual',
+          }),
+        ],
+      }),
+    );
+    renderPage();
+
+    const row = within(await rowFor('WIDGET-1'));
+    expect(row.queryByText(/^from /)).not.toBeInTheDocument();
+  });
+
+  /** The server decides whether a list applies, and says why when not. */
+  it('prices a line from its list on request, and shows a refusal', async () => {
+    const user = userEvent.setup();
+    serve(order({ direction: 'sale' }));
+    server.use(
+      http.post('/api/v1/orders/order-1/lines/line-1/list-price', () =>
+        apiError(409, 'No price list applies to this order'),
+      ),
+    );
+    renderPage();
+
+    const row = within(await rowFor('WIDGET-1'));
+    await user.click(row.getByRole('button', { name: 'Use list price' }));
+
+    expect(
+      await screen.findByText('No price list applies to this order'),
+    ).toBeInTheDocument();
+  });
+
+  it('never offers the list price on a sample', async () => {
+    serve(order({ direction: 'sale', isSample: true }));
+    renderPage();
+
+    const row = within(await rowFor('WIDGET-1'));
+    expect(
+      row.queryByRole('button', { name: 'Use list price' }),
+    ).not.toBeInTheDocument();
   });
 });

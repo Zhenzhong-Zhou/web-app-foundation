@@ -119,6 +119,9 @@ export function OrderDetailPage() {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Why an item just added has no price, when its list could not give one
+  // (ADR-049). Dismissed by the person, or replaced by the next notice.
+  const [priceNotice, setPriceNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [receiving, setReceiving] = useState<OrderLine | null>(null);
   const [working, setWorking] = useState(false);
@@ -360,6 +363,12 @@ export function OrderDetailPage() {
 
       {error && <Alert severity="error">{error}</Alert>}
 
+      {priceNotice && (
+        <Alert severity="info" onClose={() => setPriceNotice(null)}>
+          {priceNotice}
+        </Alert>
+      )}
+
       {order.note && (
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -500,6 +509,17 @@ export function OrderDetailPage() {
 
                     <TableCell align="right">
                       {formatMoney(line.unitPrice, line.currency)}
+                      {/* Where a list price came from, so a default is
+                          seen as one that can be changed (ADR-049). */}
+                      {line.priceSource === 'list' && line.priceListName && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          component="div"
+                        >
+                          from {line.priceListName}
+                        </Typography>
+                      )}
                     </TableCell>
                     <TableCell align="right">
                       {formatMoney(line.lineTotal, line.currency)}
@@ -531,6 +551,29 @@ export function OrderDetailPage() {
                               onClick={openDialog(() => setEditingLine(line))}
                             >
                               Edit
+                            </Button>
+                          )}
+
+                        {/* Prices the line from the order's list again —
+                          the explicit act for a list corrected after the
+                          line was added, never done in the background
+                          (ADR-049). The server says why when it cannot. */}
+                        {amendable &&
+                          !order.isSample &&
+                          !line.isClosedShort &&
+                          !line.isComplete && (
+                            <Button
+                              variant="text"
+                              size="small"
+                              disabled={working}
+                              onClick={() =>
+                                void lineAction(
+                                  `/orders/${order.id}/lines/${line.id}/list-price`,
+                                  'POST',
+                                )
+                              }
+                            >
+                              Use list price
                             </Button>
                           )}
 
@@ -743,7 +786,10 @@ export function OrderDetailPage() {
         open={addingLine}
         order={order}
         onClose={() => setAddingLine(false)}
-        onAdded={load}
+        onAdded={async (notice) => {
+          setPriceNotice(notice);
+          await load();
+        }}
       />
 
       <EditOrderLineDialog

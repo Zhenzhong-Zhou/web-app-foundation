@@ -16,6 +16,7 @@ import { api, ApiError } from '../lib/api';
 import type { OrganizationProfile } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useSubmit } from '../lib/use-submit';
+import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
 
 function messageFor(caught: unknown): string {
   return caught instanceof ApiError
@@ -108,6 +109,14 @@ export function OrganizationPage() {
             readOnly={!canUpdate}
             onSaved={load}
           />
+          {can('price_lists.view') && (
+            <DefaultSaleListForm
+              key={organization.defaultSalePriceListId ?? ''}
+              value={organization.defaultSalePriceListId}
+              readOnly={!canUpdate}
+              onSaved={load}
+            />
+          )}
         </>
       ) : showSkeleton ? (
         <Skeleton variant="rounded" height={240} />
