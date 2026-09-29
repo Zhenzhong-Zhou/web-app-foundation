@@ -1,7 +1,6 @@
-import { Button, Paper, Stack, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
-import { FormError } from '../components/form-error';
+import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import { PriceListPicker } from './price-list-picker';
@@ -37,36 +36,24 @@ export function DefaultSaleListForm({
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={2}>
-          <Typography variant="subtitle1" component="h2">
-            Default sale price list
-          </Typography>
-
-          {error && <FormError message={error} />}
-
-          <PriceListPicker
-            id="organization-default-sale-list"
-            label="Default for customers"
-            direction="sale"
-            value={listId}
-            onChange={setListId}
-            disabled={readOnly}
-            helperText="Used when a customer has no list of their own."
-          />
-
-          {!readOnly && (
-            <Button
-              type="submit"
-              disabled={submitting || listId === value}
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              {submitting ? 'Saving…' : 'Save default'}
-            </Button>
-          )}
-        </Stack>
-      </form>
-    </Paper>
+    <SettingsSection
+      title="Default sale price list"
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel="Save default"
+      saveDisabled={listId === value}
+    >
+      <PriceListPicker
+        id="organization-default-sale-list"
+        label="Default for customers"
+        direction="sale"
+        value={listId}
+        onChange={setListId}
+        disabled={readOnly}
+        helperText="Used when a customer has no list of their own."
+      />
+    </SettingsSection>
   );
 }

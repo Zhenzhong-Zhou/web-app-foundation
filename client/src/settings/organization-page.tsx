@@ -1,18 +1,10 @@
-import {
-  Alert,
-  Button,
-  Paper,
-  Skeleton,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Alert, Skeleton, Stack, TextField, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { CurrencyField } from '../components/currency-field';
-import { FormError } from '../components/form-error';
+import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
 import type { OrganizationProfile } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -120,38 +112,25 @@ function TaxNumberForm({
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={2}>
-          <Typography variant="subtitle1" component="h2">
-            Tax registration
-          </Typography>
-
-          {error && <FormError message={error} />}
-
-          <TextField
-            id="organization-tax-number"
-            label="Tax registration number"
-            fullWidth
-            value={taxNumber}
-            onChange={(event) => setTaxNumber(event.target.value)}
-            disabled={readOnly}
-            helperText="GST/HST, VAT, ABN — as issued. Leave blank if not registered."
-            slotProps={{ htmlInput: { maxLength: 50 } }}
-          />
-
-          {!readOnly && (
-            <Button
-              type="submit"
-              disabled={submitting}
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              {submitting ? 'Saving…' : 'Save tax number'}
-            </Button>
-          )}
-        </Stack>
-      </form>
-    </Paper>
+    <SettingsSection
+      title="Tax registration"
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel="Save tax number"
+    >
+      <TextField
+        id="organization-tax-number"
+        label="Tax registration number"
+        fullWidth
+        value={taxNumber}
+        onChange={(event) => setTaxNumber(event.target.value)}
+        disabled={readOnly}
+        helperText="GST/HST, VAT, ABN — as issued. Leave blank if not registered."
+        slotProps={{ htmlInput: { maxLength: 50 } }}
+      />
+    </SettingsSection>
   );
 }
 
@@ -215,98 +194,86 @@ function AddressForm({
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={2}>
-          <Typography variant="subtitle1" component="h2">
-            Registered address
-          </Typography>
+    <SettingsSection
+      title="Registered address"
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel="Save address"
+      notice={
+        !address &&
+        !readOnly && (
+          <Alert severity="info">
+            Not set yet. Invoices print this, so none can be issued until it is.
+          </Alert>
+        )
+      }
+    >
+      <TextField
+        id="organization-line1"
+        label="Address line 1"
+        required
+        fullWidth
+        value={form.line1}
+        onChange={update('line1')}
+        disabled={readOnly}
+        slotProps={{ htmlInput: { maxLength: 200 } }}
+      />
+      <TextField
+        id="organization-line2"
+        label="Address line 2"
+        fullWidth
+        value={form.line2}
+        onChange={update('line2')}
+        disabled={readOnly}
+        slotProps={{ htmlInput: { maxLength: 200 } }}
+      />
 
-          {!address && !readOnly && (
-            <Alert severity="info">
-              Not set yet. Invoices print this, so none can be issued until it
-              is.
-            </Alert>
-          )}
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <TextField
+          id="organization-city"
+          label="City"
+          fullWidth
+          value={form.city}
+          onChange={update('city')}
+          disabled={readOnly}
+          slotProps={{ htmlInput: { maxLength: 100 } }}
+        />
+        <TextField
+          id="organization-region"
+          label="Province or state"
+          fullWidth
+          value={form.region}
+          onChange={update('region')}
+          disabled={readOnly}
+          slotProps={{ htmlInput: { maxLength: 100 } }}
+        />
+      </Stack>
 
-          {error && <FormError message={error} />}
-
-          <TextField
-            id="organization-line1"
-            label="Address line 1"
-            required
-            fullWidth
-            value={form.line1}
-            onChange={update('line1')}
-            disabled={readOnly}
-            slotProps={{ htmlInput: { maxLength: 200 } }}
-          />
-          <TextField
-            id="organization-line2"
-            label="Address line 2"
-            fullWidth
-            value={form.line2}
-            onChange={update('line2')}
-            disabled={readOnly}
-            slotProps={{ htmlInput: { maxLength: 200 } }}
-          />
-
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
-              id="organization-city"
-              label="City"
-              fullWidth
-              value={form.city}
-              onChange={update('city')}
-              disabled={readOnly}
-              slotProps={{ htmlInput: { maxLength: 100 } }}
-            />
-            <TextField
-              id="organization-region"
-              label="Province or state"
-              fullWidth
-              value={form.region}
-              onChange={update('region')}
-              disabled={readOnly}
-              slotProps={{ htmlInput: { maxLength: 100 } }}
-            />
-          </Stack>
-
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
-              id="organization-postal-code"
-              label="Postal code"
-              fullWidth
-              value={form.postalCode}
-              onChange={update('postalCode')}
-              disabled={readOnly}
-              slotProps={{ htmlInput: { maxLength: 32 } }}
-            />
-            <TextField
-              id="organization-country"
-              label="Country"
-              required
-              fullWidth
-              value={form.country}
-              onChange={update('country')}
-              disabled={readOnly}
-              helperText="Two letters: CA, US."
-              slotProps={{ htmlInput: { maxLength: 2 } }}
-            />
-          </Stack>
-
-          {!readOnly && (
-            <Button
-              type="submit"
-              disabled={submitting}
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              {submitting ? 'Saving…' : 'Save address'}
-            </Button>
-          )}
-        </Stack>
-      </form>
-    </Paper>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <TextField
+          id="organization-postal-code"
+          label="Postal code"
+          fullWidth
+          value={form.postalCode}
+          onChange={update('postalCode')}
+          disabled={readOnly}
+          slotProps={{ htmlInput: { maxLength: 32 } }}
+        />
+        <TextField
+          id="organization-country"
+          label="Country"
+          required
+          fullWidth
+          value={form.country}
+          onChange={update('country')}
+          disabled={readOnly}
+          helperText="Two letters: CA, US."
+          slotProps={{ htmlInput: { maxLength: 2 } }}
+        />
+      </Stack>
+    </SettingsSection>
   );
 }
 
@@ -344,42 +311,32 @@ function BaseCurrencyForm({
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={2}>
-          <Typography variant="subtitle1" component="h2">
-            Base currency
-          </Typography>
-
-          {!value && !readOnly && (
-            <Alert severity="info">
-              Not set yet. Stock received before it is set waits for a cost.
-            </Alert>
-          )}
-
-          {error && <FormError message={error} />}
-
-          <CurrencyField
-            id="organization-base-currency"
-            label="Base currency"
-            value={currency}
-            onChange={setCurrency}
-            disabled={readOnly}
-            helperText="What stock is valued in: CAD, USD. It cannot change once stock carries a value in it."
-            sx={{ maxWidth: 240 }}
-          />
-
-          {!readOnly && (
-            <Button
-              type="submit"
-              disabled={submitting || trimmed.length !== 3 || trimmed === value}
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              {submitting ? 'Saving…' : 'Save base currency'}
-            </Button>
-          )}
-        </Stack>
-      </form>
-    </Paper>
+    <SettingsSection
+      title="Base currency"
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel="Save base currency"
+      saveDisabled={trimmed.length !== 3 || trimmed === value}
+      notice={
+        !value &&
+        !readOnly && (
+          <Alert severity="info">
+            Not set yet. Stock received before it is set waits for a cost.
+          </Alert>
+        )
+      }
+    >
+      <CurrencyField
+        id="organization-base-currency"
+        label="Base currency"
+        value={currency}
+        onChange={setCurrency}
+        disabled={readOnly}
+        helperText="What stock is valued in: CAD, USD. It cannot change once stock carries a value in it."
+        sx={{ maxWidth: 240 }}
+      />
+    </SettingsSection>
   );
 }

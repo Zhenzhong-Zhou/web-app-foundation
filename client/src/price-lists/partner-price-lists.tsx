@@ -1,7 +1,7 @@
-import { Button, Paper, Stack, Typography } from '@mui/material';
+import { Stack } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
-import { FormError } from '../components/form-error';
+import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import { PriceListPicker } from './price-list-picker';
@@ -52,47 +52,35 @@ export function PartnerPriceLists({
   }
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={2}>
-          <Typography variant="subtitle1" component="h2">
-            Price lists
-          </Typography>
-
-          {error && <FormError message={error} />}
-
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <PriceListPicker
-              id="partner-sale-price-list"
-              label="Sales to them"
-              direction="sale"
-              value={sale}
-              onChange={setSale}
-              disabled={readOnly}
-              helperText="Prices a sale line added without one."
-            />
-            <PriceListPicker
-              id="partner-purchase-price-list"
-              label="Purchases from them"
-              direction="purchase"
-              value={purchase}
-              onChange={setPurchase}
-              disabled={readOnly}
-              helperText="Prices a purchase line added without one."
-            />
-          </Stack>
-
-          {!readOnly && (
-            <Button
-              type="submit"
-              disabled={submitting || !changed}
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              {submitting ? 'Saving…' : 'Save price lists'}
-            </Button>
-          )}
-        </Stack>
-      </form>
-    </Paper>
+    <SettingsSection
+      title="Price lists"
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel="Save price lists"
+      saveDisabled={!changed}
+    >
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <PriceListPicker
+          id="partner-sale-price-list"
+          label="Sales to them"
+          direction="sale"
+          value={sale}
+          onChange={setSale}
+          disabled={readOnly}
+          helperText="Prices a sale line added without one."
+        />
+        <PriceListPicker
+          id="partner-purchase-price-list"
+          label="Purchases from them"
+          direction="purchase"
+          value={purchase}
+          onChange={setPurchase}
+          disabled={readOnly}
+          helperText="Prices a purchase line added without one."
+        />
+      </Stack>
+    </SettingsSection>
   );
 }
