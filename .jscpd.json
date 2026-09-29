@@ -1,0 +1,7 @@
+{
+  "path": ["client/src", "server/src", "server/test"],
+  "ignore": ["**/database/migrations/**"],
+  "minLines": 8,
+  "reporters": ["console"],
+  "gitignore": true
+}
