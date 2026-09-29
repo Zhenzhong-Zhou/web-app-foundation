@@ -1,7 +1,5 @@
 import {
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
@@ -10,6 +8,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { formatMoney } from '../lib/format';
@@ -103,14 +102,13 @@ export function VoidInvoiceDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" color="error" disabled={submitting}>
-            {submitting ? 'Voiding…' : 'Void invoice'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Void invoice"
+          pendingLabel="Voiding…"
+          destructive
+        />
       </form>
     </Dialog>
   );

@@ -1,8 +1,6 @@
 import {
   Alert,
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   MenuItem,
@@ -18,6 +16,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
 import { formatDay } from '../lib/format';
@@ -444,17 +443,13 @@ export function ReturnOrderDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={submitting || !toLocationId || sending.length === 0}
-          >
-            {submitting ? 'Receiving…' : 'Receive return'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Receive return"
+          pendingLabel="Receiving…"
+          disabled={!toLocationId || sending.length === 0}
+        />
       </form>
     </Dialog>
   );

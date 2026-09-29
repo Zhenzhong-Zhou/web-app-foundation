@@ -1,7 +1,5 @@
 import {
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   MenuItem,
@@ -11,6 +9,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useRef, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import type { Bom, ProductLicence } from '../lib/types';
@@ -187,14 +186,12 @@ export function CreateBomDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Creating…' : 'Create draft'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Create draft"
+          pendingLabel="Creating…"
+        />
       </form>
     </Dialog>
   );

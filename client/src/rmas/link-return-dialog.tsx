@@ -1,8 +1,6 @@
 import {
   Alert,
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
@@ -12,6 +10,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { formatDate } from '../lib/format';
@@ -127,14 +126,13 @@ export function LinkReturnDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting || !returnId}>
-            {submitting ? 'Linking…' : 'Link'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Link"
+          pendingLabel="Linking…"
+          disabled={!returnId}
+        />
       </form>
     </Dialog>
   );

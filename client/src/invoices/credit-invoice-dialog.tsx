@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   Stack,
@@ -17,6 +16,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, messageFor } from '../lib/api';
 import { formatMoney } from '../lib/format';
@@ -360,17 +360,13 @@ export function CreditInvoiceDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={submitting || !showFigures || !reason.trim()}
-          >
-            {submitting ? 'Issuing…' : 'Issue credit note'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Issue credit note"
+          pendingLabel="Issuing…"
+          disabled={!showFigures || !reason.trim()}
+        />
       </form>
     </Dialog>
   );

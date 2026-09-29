@@ -1,8 +1,6 @@
 import {
   Alert,
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   MenuItem,
@@ -12,6 +10,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
@@ -289,14 +288,12 @@ export function CreateRunDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Planning…' : 'Plan run'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Plan run"
+          pendingLabel="Planning…"
+        />
       </form>
     </Dialog>
   );

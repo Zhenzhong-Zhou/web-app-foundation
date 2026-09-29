@@ -1,9 +1,7 @@
 import {
   Alert,
-  Button,
   Checkbox,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   FormControlLabel,
@@ -21,6 +19,7 @@ import {
 import { type SubmitEvent, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import type {
@@ -305,17 +304,13 @@ export function RaiseRmaDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={submitting || sending.length === 0 || !reason.trim()}
-          >
-            {submitting ? 'Authorizing…' : 'Authorize'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Authorize"
+          pendingLabel="Authorizing…"
+          disabled={sending.length === 0 || !reason.trim()}
+        />
       </form>
     </Dialog>
   );

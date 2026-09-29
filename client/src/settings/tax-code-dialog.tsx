@@ -1,7 +1,6 @@
 import {
   Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   FormControlLabel,
@@ -13,6 +12,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import type { TaxCode } from '../lib/types';
@@ -191,14 +191,12 @@ export function TaxCodeDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Saving…' : 'Save'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Save"
+          pendingLabel="Saving…"
+        />
       </form>
     </Dialog>
   );

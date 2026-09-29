@@ -1,7 +1,5 @@
 import {
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   Stack,
@@ -9,6 +7,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useRef, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
@@ -176,14 +175,12 @@ export function AddOrderLineDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Adding…' : 'Add item'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Add item"
+          pendingLabel="Adding…"
+        />
       </form>
     </Dialog>
   );

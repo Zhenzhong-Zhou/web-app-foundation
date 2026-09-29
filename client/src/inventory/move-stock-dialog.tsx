@@ -1,9 +1,7 @@
 import {
   Alert,
   Autocomplete,
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   MenuItem,
@@ -13,6 +11,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { api } from '../lib/api';
 import type { Location, Partner, StockRow } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
@@ -367,14 +366,13 @@ export function MoveStockDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting || heldBack}>
-            {submitting ? 'Saving…' : config.verb}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label={config.verb}
+          pendingLabel="Saving…"
+          disabled={heldBack}
+        />
       </form>
     </Dialog>
   );

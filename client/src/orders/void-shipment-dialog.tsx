@@ -1,8 +1,6 @@
 import {
   Alert,
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   Stack,
@@ -11,6 +9,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { formatDate } from '../lib/format';
@@ -117,14 +116,14 @@ export function VoidShipmentDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Keep it
-          </Button>
-          <Button type="submit" color="error" disabled={submitting}>
-            {submitting ? 'Voiding…' : 'Void shipment'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Void shipment"
+          pendingLabel="Voiding…"
+          destructive
+          cancelLabel="Keep it"
+        />
       </form>
     </Dialog>
   );

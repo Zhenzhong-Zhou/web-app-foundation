@@ -1,8 +1,6 @@
 import {
   Alert,
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
@@ -11,6 +9,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { formatMoney } from '../lib/format';
@@ -104,14 +103,12 @@ export function IssueInvoiceDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Issuing…' : 'Issue'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Issue"
+          pendingLabel="Issuing…"
+        />
       </form>
     </Dialog>
   );

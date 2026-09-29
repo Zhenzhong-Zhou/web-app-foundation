@@ -1,7 +1,5 @@
 import {
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   Stack,
@@ -9,6 +7,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
@@ -112,14 +111,13 @@ export function SetPriceDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting || !variantId}>
-            {submitting ? 'Saving…' : 'Save price'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Save price"
+          pendingLabel="Saving…"
+          disabled={!variantId}
+        />
       </form>
     </Dialog>
   );

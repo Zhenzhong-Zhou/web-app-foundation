@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   MenuItem,
@@ -18,6 +17,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { fromScaled, sumDecimals, toScaled } from '../lib/decimal';
@@ -448,17 +448,13 @@ export function ReleaseRunDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={submitting || (needsRecipe && !chosenBom) || !picksMatch}
-          >
-            {submitting ? 'Releasing…' : 'Release'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Release"
+          pendingLabel="Releasing…"
+          disabled={(needsRecipe && !chosenBom) || !picksMatch}
+        />
       </form>
     </Dialog>
   );
@@ -640,14 +636,12 @@ export function RecordOutputDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Recording…' : 'Record'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Record"
+          pendingLabel="Recording…"
+        />
       </form>
     </Dialog>
   );
@@ -787,14 +781,12 @@ export function CloseRunDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Closing…' : 'Close run'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Close run"
+          pendingLabel="Closing…"
+        />
       </form>
     </Dialog>
   );
@@ -884,14 +876,13 @@ export function CancelRunDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Keep it
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Cancelling…' : 'Cancel run'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Cancel run"
+          pendingLabel="Cancelling…"
+          cancelLabel="Keep it"
+        />
       </form>
     </Dialog>
   );

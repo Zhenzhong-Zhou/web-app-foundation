@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
@@ -17,6 +16,7 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
 import { formatDate } from '../lib/format';
@@ -244,14 +244,13 @@ function LinkToRmaDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting || !rmaId}>
-            {submitting ? 'Linking…' : 'Link'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Link"
+          pendingLabel="Linking…"
+          disabled={!rmaId}
+        />
       </form>
     </Dialog>
   );

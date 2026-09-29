@@ -1,7 +1,5 @@
 import {
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   MenuItem,
@@ -10,6 +8,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useRef, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import type { PriceListDirection } from '../lib/types';
@@ -118,14 +117,12 @@ export function CreatePriceListDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting}>
-            {submitting ? 'Creating…' : 'Create'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Create"
+          pendingLabel="Creating…"
+        />
       </form>
     </Dialog>
   );

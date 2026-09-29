@@ -1,7 +1,5 @@
 import {
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   Stack,
@@ -10,6 +8,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import type { NeedsCostEntry } from '../lib/types';
@@ -129,14 +128,13 @@ export function SetCostDialog({
           </Stack>
         </DialogContent>
 
-        <DialogActions>
-          <Button variant="text" onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={submitting || !entry}>
-            {submitting ? 'Saving…' : 'Set cost'}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={submitting}
+          onCancel={close}
+          label="Set cost"
+          pendingLabel="Saving…"
+          disabled={!entry}
+        />
       </form>
     </Dialog>
   );

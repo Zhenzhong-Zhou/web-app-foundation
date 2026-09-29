@@ -1,12 +1,11 @@
 import {
-  Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
 
+import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
@@ -42,22 +41,16 @@ export function DeleteDraftDialog({
           be invoiced again afterwards.
         </DialogContentText>
       </DialogContent>
-      <DialogActions>
-        <Button variant="text" onClick={close}>
-          Cancel
-        </Button>
-        <Button
-          color="error"
-          disabled={submitting}
-          onClick={() =>
-            void submit(() =>
-              api(`/invoices/${invoiceId}`, { method: 'DELETE' }),
-            )
-          }
-        >
-          {submitting ? 'Deleting…' : 'Delete draft'}
-        </Button>
-      </DialogActions>
+      <DialogFooter
+        submitting={submitting}
+        onCancel={close}
+        label="Delete draft"
+        pendingLabel="Deleting…"
+        destructive
+        onConfirm={() =>
+          void submit(() => api(`/invoices/${invoiceId}`, { method: 'DELETE' }))
+        }
+      />
     </Dialog>
   );
 }
