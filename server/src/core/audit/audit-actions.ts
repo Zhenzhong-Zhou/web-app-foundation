@@ -42,6 +42,7 @@ export const AUDIT_ACTIONS = {
   /** Carries the reason — see ADR-034. */
   ORDER_LINE_CLOSED_SHORT: 'order.line_closed_short',
   ORDER_LINE_REOPENED: 'order.line_reopened',
+  ORDER_LINE_LIST_PRICED: 'order.line_list_priced',
 
   PARTNER_ADDRESS_CREATED: 'partner.address.created',
   PARTNER_ADDRESS_UPDATED: 'partner.address.updated',

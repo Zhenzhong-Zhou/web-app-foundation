@@ -528,6 +528,82 @@ describe('Price lists (e2e)', () => {
     });
   });
 
+  describe('using the list price again', () => {
+    it('prices a line from the list after the list changed', async () => {
+      const s = await setup('alpha');
+      const wholesale = await priceList(s, 'Wholesale CAD', 'sale', 'CAD', {
+        [s.focus]: '18.5',
+      });
+      await assign(s, s.customer, { salePriceListId: wholesale });
+
+      const sale = await order(s, s.customer, 'sale', [
+        {
+          variantId: s.focus,
+          quantityOrdered: '12',
+          unitPrice: '17',
+          currency: 'CAD',
+        },
+      ]);
+
+      await s.agent
+        .put(`/v1/price-lists/${wholesale}/items/${s.focus}`)
+        .send({ unitPrice: '21' })
+        .expect(200);
+
+      await s.agent
+        .post(`/v1/orders/${sale.id}/lines/${sale.lines[0].id}/list-price`)
+        .expect(204);
+
+      expect((await detail(s, sale.id)).lines[0]).toMatchObject({
+        unitPrice: '21.0000',
+        currency: 'CAD',
+        priceSource: 'list',
+        priceListId: wholesale,
+      });
+    });
+
+    it('refuses when no list applies, or the list lacks the item', async () => {
+      const s = await setup('alpha');
+
+      const sale = await order(s, s.customer, 'sale', [
+        { variantId: s.focus, quantityOrdered: '1' },
+      ]);
+      const path = `/v1/orders/${sale.id}/lines/${sale.lines[0].id}/list-price`;
+
+      await s.agent.post(path).expect(409);
+
+      const wholesale = await priceList(s, 'Wholesale CAD', 'sale', 'CAD', {
+        [s.calm]: '14',
+      });
+      await assign(s, s.customer, { salePriceListId: wholesale });
+
+      const refused = await s.agent.post(path).expect(409);
+      expect(body<{ message: string }>(refused).message).toMatch(
+        /Wholesale CAD has no price for FOCUS-60CT/,
+      );
+    });
+
+    it('never prices a sample from a list', async () => {
+      const s = await setup('alpha');
+      const wholesale = await priceList(s, 'Wholesale CAD', 'sale', 'CAD', {
+        [s.focus]: '18.5',
+      });
+      await assign(s, s.customer, { salePriceListId: wholesale });
+
+      const sample = await order(
+        s,
+        s.customer,
+        'sale',
+        [{ variantId: s.focus, quantityOrdered: '2' }],
+        { isSample: true },
+      );
+
+      await s.agent
+        .post(`/v1/orders/${sample.id}/lines/${sample.lines[0].id}/list-price`)
+        .expect(409);
+    });
+  });
+
   describe('permissions', () => {
     it('keeps the lists to the Owner, while an Admin still gets list prices', async () => {
       const s = await setup('alpha');

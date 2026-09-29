@@ -789,6 +789,90 @@ export class OrdersService {
     });
   }
 
+  /**
+   * Prices one line from the order's list again (ADR-049): the explicit act
+   * for a list corrected after the line was added. Never done in the
+   * background — a draft's total does not change under someone who has not
+   * touched it.
+   *
+   * The guards are editing a price's: a draft or confirmed order, nothing
+   * received against the line, and a sale kept in one currency.
+   */
+  async useListPrice(orderId: string, lineId: string): Promise<void> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const order = await this.loadOrder(tx, organizationId, orderId);
+      const line = await this.loadLine(tx, orderId, lineId);
+
+      if (order.status !== 'draft' && order.status !== 'confirmed') {
+        throw new ConflictException(
+          `A ${order.status} order cannot be amended`,
+        );
+      }
+
+      this.assertNothingReceived(line, 'repriced');
+
+      if (order.isSample) {
+        throw new ConflictException('A sample is never priced from a list');
+      }
+
+      const list = await listForOrder(tx, organizationId, order);
+
+      if (!list) {
+        throw new ConflictException('No price list applies to this order');
+      }
+
+      const unitPrice = await priceOnList(
+        tx,
+        organizationId,
+        list.id,
+        line.variantId,
+      );
+
+      if (unitPrice === null) {
+        throw new ConflictException(
+          `${list.name} has no price for ${line.sku}`,
+        );
+      }
+
+      if (order.direction === 'sale') {
+        const [other] = await tx
+          .select({ currency: orderLines.currency })
+          .from(orderLines)
+          .where(
+            and(
+              eq(orderLines.orderId, orderId),
+              ne(orderLines.id, lineId),
+              isNotNull(orderLines.currency),
+              ne(orderLines.currency, list.currency),
+            ),
+          )
+          .limit(1);
+
+        if (other) {
+          throw new ConflictException(
+            `This sale is in ${other.currency} and ${list.name} prices in ${list.currency}`,
+          );
+        }
+      }
+
+      recordPrevious({ unitPrice: line.unitPrice, currency: line.currency });
+
+      await tx
+        .update(orderLines)
+        .set({
+          unitPrice,
+          currency: list.currency,
+          priceSource: 'list',
+          priceListId: list.id,
+        })
+        .where(eq(orderLines.id, lineId));
+
+      this.logger.log(
+        `Order ${orderId} line ${lineId}: priced from ${list.name} at ${unitPrice}`,
+      );
+    });
+  }
+
   async removeLine(orderId: string, lineId: string): Promise<void> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const order = await this.loadOrder(tx, organizationId, orderId);

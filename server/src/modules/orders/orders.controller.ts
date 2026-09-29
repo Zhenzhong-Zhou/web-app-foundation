@@ -144,6 +144,25 @@ export class OrdersController {
   }
 
   /**
+   * Prices one line from the order's list again (ADR-049) — the explicit act
+   * for a list corrected after the line was added.
+   */
+  @Post(':id/lines/:lineId/list-price')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.ORDERS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.ORDER_LINE_LIST_PRICED,
+    resourceType: 'order',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async useListPrice(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('lineId', ParseUUIDPipe) lineId: string,
+  ): Promise<void> {
+    await this.orders.useListPrice(id, lineId);
+  }
+
+  /**
    * A real delete, unlike almost everything else here. A draft line is not a
    * record of anything that happened — what happened is on the movements, and
    * the audit entry is the trail (ADR-033).
