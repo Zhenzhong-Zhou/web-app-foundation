@@ -80,7 +80,12 @@ export function EditPartnerDialog({
    * props at mount and never needs an effect to resync.
    */
   return (
-    <Dialog open={!!partner} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={!!partner}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Edit {partner?.name}</DialogTitle>
 

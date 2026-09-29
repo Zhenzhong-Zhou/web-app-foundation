@@ -79,7 +79,12 @@ export function SetCostDialog({
   }
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="xs">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="xs"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Set cost</DialogTitle>
 

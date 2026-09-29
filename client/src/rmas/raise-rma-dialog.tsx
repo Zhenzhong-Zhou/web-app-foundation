@@ -148,7 +148,12 @@ export function RaiseRmaDialog({
   }
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="md">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="md"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Authorize a return</DialogTitle>
 

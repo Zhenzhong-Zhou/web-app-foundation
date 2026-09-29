@@ -241,7 +241,12 @@ export function ReturnOrderDialog({
   }
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="md">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="md"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Take a return</DialogTitle>
 

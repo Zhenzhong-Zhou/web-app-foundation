@@ -72,7 +72,12 @@ export function ExchangeRateDialog({
   }
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="xs">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="xs"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>{initial ? 'Correct a rate' : 'Set a rate'}</DialogTitle>
 

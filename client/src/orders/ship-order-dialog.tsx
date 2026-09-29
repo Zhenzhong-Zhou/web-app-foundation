@@ -224,7 +224,12 @@ export function ShipOrderDialog({
   }
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="md">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="md"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Ship</DialogTitle>
 

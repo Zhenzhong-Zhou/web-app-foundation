@@ -82,7 +82,12 @@ export function ContactDialog({
   }
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>{contact ? 'Edit contact' : 'Add a contact'}</DialogTitle>
 

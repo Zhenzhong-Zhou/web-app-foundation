@@ -110,7 +110,12 @@ export function AddOrderLineDialog({
   const unit = variants.find((row) => row.id === variantId)?.unitOfMeasure;
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Add an item</DialogTitle>
 

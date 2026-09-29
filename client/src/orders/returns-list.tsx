@@ -209,7 +209,12 @@ function LinkToRmaDialog({
   }
 
   return (
-    <Dialog open={entry !== null} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={entry !== null}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Link this return to an RMA</DialogTitle>
 

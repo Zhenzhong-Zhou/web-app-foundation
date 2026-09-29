@@ -78,7 +78,12 @@ export function EditLicenceDialog({
   }
 
   return (
-    <Dialog open={!!licence} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={!!licence}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Licence {licence?.number}</DialogTitle>
 

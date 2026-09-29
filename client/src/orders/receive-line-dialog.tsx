@@ -101,7 +101,12 @@ export function ReceiveLineDialog({
   }
 
   return (
-    <Dialog open={!!line} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={!!line}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Receive {line?.sku}</DialogTitle>
 

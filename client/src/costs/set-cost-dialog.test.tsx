@@ -31,17 +31,19 @@ const RECEIPT: NeedsCostEntry = {
 };
 
 function open(entry: NeedsCostEntry = RECEIPT, onSaved = vi.fn()) {
+  const onClose = vi.fn();
+
   render(
     <SetCostDialog
       open
       entry={entry}
       baseCurrency="CAD"
-      onClose={vi.fn()}
+      onClose={onClose}
       onSaved={onSaved}
     />,
   );
 
-  return { onSaved };
+  return { onSaved, onClose };
 }
 
 const field = (name: string) => screen.getByRole('textbox', { name });
@@ -100,6 +102,55 @@ describe('SetCostDialog', () => {
       currency: 'USD',
       exchangeRate: '1.37',
     });
+  });
+
+  /**
+   * A request cannot be recalled once sent, so nothing may close the dialog
+   * while it is out: not Cancel, and not Escape or the backdrop either, which
+   * until this was guarded would close it while the cost still landed.
+   */
+  it('cannot be closed while it is saving', async () => {
+    const user = userEvent.setup();
+    let answer: () => void = () => undefined;
+    const answered = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+
+    server.use(
+      http.put('/api/v1/costs/valuations/valuation-1', async () => {
+        await answered;
+        return HttpResponse.json({
+          cost: { value: '25.000000', held: '25.000000', issued: '0.000000' },
+        });
+      }),
+    );
+
+    const { onClose, onSaved } = open({
+      ...RECEIPT,
+      unitPrice: '0.2500',
+      currency: 'CAD',
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Set cost' }));
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+
+    // Focus back inside, where a browser's focus trap would keep it: the
+    // disabled button dropped it to the body, which Escape would not reach.
+    field('Unit price').focus();
+    await user.keyboard('{Escape}');
+    expect(onClose).not.toHaveBeenCalled();
+
+    answer();
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+  });
+
+  it('closes on Escape when nothing is being saved', async () => {
+    const user = userEvent.setup();
+    const { onClose } = open();
+
+    await user.keyboard('{Escape}');
+
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('renders a refusal from the server rather than swallowing it', async () => {

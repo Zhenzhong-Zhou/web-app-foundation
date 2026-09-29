@@ -207,7 +207,7 @@ export function MoveStockDialog({
     <Dialog
       key={`${mode}:${row?.variantId}:${row?.locationId}:${row?.lotId ?? ''}`}
       open={!!row}
-      onClose={close}
+      onClose={submitting ? undefined : close}
       fullWidth
       maxWidth="sm"
     >

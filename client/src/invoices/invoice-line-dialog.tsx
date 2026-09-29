@@ -65,7 +65,12 @@ export function InvoiceLineDialog({
   }
 
   return (
-    <Dialog open={line !== null} onClose={close} fullWidth maxWidth="xs">
+    <Dialog
+      open={line !== null}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="xs"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>{line?.sku}</DialogTitle>
 

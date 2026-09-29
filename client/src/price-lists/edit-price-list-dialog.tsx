@@ -58,7 +58,12 @@ export function EditPriceListDialog({
   }
 
   return (
-    <Dialog open={!!list} onClose={close} fullWidth maxWidth="xs">
+    <Dialog
+      open={!!list}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="xs"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Edit {list?.name}</DialogTitle>
 

@@ -82,7 +82,12 @@ export function EditLotDialog({
   }
 
   return (
-    <Dialog open={!!row} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={!!row}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Lot {row?.lotCode}</DialogTitle>
 

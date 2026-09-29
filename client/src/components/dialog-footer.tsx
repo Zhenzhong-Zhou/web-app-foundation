@@ -9,6 +9,10 @@ import { Button, DialogActions } from '@mui/material';
  * still landed — a cancel that cancels nothing. 37 of the 46 footers this
  * replaced already said so; nine let Cancel through.
  *
+ * The dialog itself holds back the same way, with
+ * `onClose={submitting ? undefined : close}`, so Escape and a click on the
+ * backdrop cannot do what Cancel cannot.
+ *
  * The action submits the dialog's form. `onConfirm` is for a dialog with no
  * form, a confirmation, where the button itself is the whole input.
  *

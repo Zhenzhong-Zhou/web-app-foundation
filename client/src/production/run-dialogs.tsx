@@ -241,7 +241,12 @@ export function ReleaseRunDialog({
   }
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Release this run</DialogTitle>
 
@@ -567,7 +572,12 @@ export function RecordOutputDialog({
   const makingNew = effective === 'new' || !openLot;
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Record output</DialogTitle>
 
@@ -714,7 +724,12 @@ export function CloseRunDialog({
   }
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="md">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="md"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Close this run</DialogTitle>
 
@@ -846,7 +861,12 @@ export function CancelRunDialog({
     );
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Cancel this run</DialogTitle>
 

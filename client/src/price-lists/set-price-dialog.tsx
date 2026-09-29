@@ -73,7 +73,12 @@ export function SetPriceDialog({
   const choices = variants.filter((row) => !excluded.has(row.id));
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>
           {item ? `Price for ${item.sku}` : 'Add a price'}

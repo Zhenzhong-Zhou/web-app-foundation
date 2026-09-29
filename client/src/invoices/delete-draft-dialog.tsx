@@ -32,7 +32,12 @@ export function DeleteDraftDialog({
   }
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="xs">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="xs"
+    >
       <DialogTitle>Delete this draft?</DialogTitle>
       <DialogContent>
         {error && <FormError message={error} />}

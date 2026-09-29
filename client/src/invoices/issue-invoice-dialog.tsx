@@ -65,7 +65,12 @@ export function IssueInvoiceDialog({
   const untaxed = invoice.lines.filter((line) => !line.taxCodeId);
 
   return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="xs">
+    <Dialog
+      open={open}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="xs"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Issue this invoice?</DialogTitle>
 

@@ -337,7 +337,12 @@ function ConfirmDialog({
   }
 
   return (
-    <Dialog open={action !== null} onClose={close} fullWidth maxWidth="xs">
+    <Dialog
+      open={action !== null}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="xs"
+    >
       <DialogTitle>
         {action === 'cancel' ? `Cancel ${rmaNumber}?` : `Close ${rmaNumber}?`}
       </DialogTitle>

@@ -113,7 +113,12 @@ export function EditLocationDialog({
    * through it would reinterpret every movement that referenced it.
    */
   return (
-    <Dialog open={!!location} onClose={close} fullWidth maxWidth="sm">
+    <Dialog
+      open={!!location}
+      onClose={submitting ? undefined : close}
+      fullWidth
+      maxWidth="sm"
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>Edit {location?.name}</DialogTitle>
 
