@@ -11,6 +11,7 @@ import { type SubmitEvent, useState } from 'react';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import { utcMidnight } from '../lib/format';
 import type { StockRow } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -73,9 +74,7 @@ export function EditLotDialog({
         body: JSON.stringify({
           code:
             codeEditable && form.code !== row.lotCode ? form.code : undefined,
-          // Sent as the date typed rather than a Date built here, which would
-          // pin a calendar day to this browser's midnight.
-          expiresAt: form.expiresAt || undefined,
+          expiresAt: form.expiresAt ? utcMidnight(form.expiresAt) : undefined,
         }),
       }),
     );

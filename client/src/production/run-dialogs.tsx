@@ -21,7 +21,7 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { fromScaled, sumDecimals, toScaled } from '../lib/decimal';
-import { formatDay } from '../lib/format';
+import { formatDay, utcMidnight } from '../lib/format';
 import type {
   Bom,
   IssuePlanLine,
@@ -559,9 +559,7 @@ export function RecordOutputDialog({
             effective === 'new' || !openLot
               ? {
                   code: newCode,
-                  expiresAt: expiresAt
-                    ? new Date(expiresAt).toISOString()
-                    : undefined,
+                  expiresAt: expiresAt ? utcMidnight(expiresAt) : undefined,
                 }
               : undefined,
         }),

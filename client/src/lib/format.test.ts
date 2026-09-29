@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDay } from './format';
+import { formatDay, utcMidnight } from './format';
 
 describe('formatDay', () => {
   /**
@@ -15,5 +15,23 @@ describe('formatDay', () => {
     expect(shown).toContain('10');
     expect(shown).not.toContain('9 ');
     expect(shown).toContain('2026');
+  });
+});
+
+describe('utcMidnight', () => {
+  it('writes a picked day as the instant it is stored as', () => {
+    expect(utcMidnight('2026-10-10')).toBe('2026-10-10T00:00:00.000Z');
+  });
+
+  /**
+   * The contract with formatDay: whatever day is picked is the day shown,
+   * which only holds if the write and the read agree on UTC midnight.
+   */
+  it('round-trips through formatDay to the day that was picked', () => {
+    const shown = formatDay(utcMidnight('2026-10-10'));
+
+    expect(shown).toContain('10');
+    expect(shown).toContain('2026');
+    expect(shown).not.toContain('9 ');
   });
 });

@@ -55,9 +55,8 @@ const DAY = new Intl.DateTimeFormat(undefined, {
 /**
  * A calendar day — an expiry, an expected delivery — stored as timestamptz.
  *
- * Every form sends the picked day as UTC midnight ("2026-10-10" parses as
- * 2026-10-10T00:00Z), so the day is recovered exactly by reading it back in
- * UTC. formatDate reads it in the browser's zone instead, and anywhere west
+ * Every form writes the picked day as UTC midnight (utcMidnight, below), so
+ * the day is recovered exactly by reading it back in UTC. formatDate reads it in the browser's zone instead, and anywhere west
  * of Greenwich UTC midnight is still the previous evening: a lot entered as
  * expiring 10 Oct showed as 9 Oct in Vancouver, beside a date field that
  * correctly said 10.
@@ -69,6 +68,25 @@ const DAY = new Intl.DateTimeFormat(undefined, {
  */
 export function formatDay(value: string | Date): string {
   return DAY.format(new Date(value));
+}
+
+/**
+ * The write side of formatDay: a picked day ("2026-10-10", as a date input
+ * gives it) as the instant a calendar-day timestamptz column stores, UTC
+ * midnight.
+ *
+ * Sent as the full instant, never the bare day. Postgres reads a bare day
+ * into timestamptz at midnight in the session's time zone, so the stored
+ * instant — and the day formatDay reads back — would depend on how the
+ * database happens to be configured. Five forms sent the bare day until
+ * this was one function.
+ *
+ * Only for timestamptz columns: an expiry, an expected delivery, a licence's
+ * dates. Invoice, due, credit and rate dates are `date` columns, which take
+ * the bare day exactly, and are sent as typed.
+ */
+export function utcMidnight(day: string): string {
+  return `${day}T00:00:00.000Z`;
 }
 
 /**

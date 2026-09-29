@@ -11,6 +11,7 @@ import { type SubmitEvent, useState } from 'react';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import { utcMidnight } from '../lib/format';
 import type { OrderDetail } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -77,9 +78,7 @@ export function EditOrderDialog({
            */
           reference: reference.trim(),
           note: note.trim(),
-          expectedAt: expectedAt
-            ? new Date(expectedAt).toISOString()
-            : undefined,
+          expectedAt: expectedAt ? utcMidnight(expectedAt) : undefined,
         }),
       }),
     );
