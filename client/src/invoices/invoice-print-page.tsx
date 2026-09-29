@@ -1,27 +1,17 @@
-import {
-  Alert,
-  Box,
-  Skeleton,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Skeleton, Stack, Typography } from '@mui/material';
 import { useParams } from 'react-router-dom';
 
-import { formatDay, formatMoney } from '../lib/format';
-import type { InvoiceDetail, InvoiceLine } from '../lib/types';
-import { useDelayedFlag } from '../lib/use-delayed-flag';
-import { useResource } from '../lib/use-resource';
 import {
   PrintBanner,
+  PrintLines,
   PrintParty,
   PrintSheet,
   PrintTotals,
-} from './print-sheet';
+} from '../components/print-sheet';
+import { formatDay } from '../lib/format';
+import type { InvoiceDetail, InvoiceLine } from '../lib/types';
+import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 
 /**
  * An invoice on paper (ADR-046), laid out as the packing slip is.
@@ -160,34 +150,10 @@ export function InvoicePrintPage() {
         )}
       </Stack>
 
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>SKU</TableCell>
-            <TableCell>Item</TableCell>
-            <TableCell align="right">Quantity</TableCell>
-            <TableCell align="right">Unit price</TableCell>
-            <TableCell>Tax</TableCell>
-            <TableCell align="right">Amount</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {invoice.lines.map((line) => (
-            <TableRow key={line.id}>
-              <TableCell>{line.sku}</TableCell>
-              <TableCell>{line.description}</TableCell>
-              <TableCell align="right">{Number(line.quantity)}</TableCell>
-              <TableCell align="right">
-                {formatMoney(line.unitPrice, invoice.currency)}
-              </TableCell>
-              <TableCell>{line.taxCodeName ?? '—'}</TableCell>
-              <TableCell align="right">
-                {formatMoney(netOf(line), invoice.currency)}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <PrintLines
+        currency={invoice.currency}
+        lines={invoice.lines.map((line) => ({ ...line, amount: netOf(line) }))}
+      />
 
       <PrintTotals
         currency={invoice.currency}

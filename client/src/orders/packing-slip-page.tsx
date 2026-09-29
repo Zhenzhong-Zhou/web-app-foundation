@@ -1,9 +1,6 @@
 import {
   Alert,
   Box,
-  Button,
-  GlobalStyles,
-  Link,
   Skeleton,
   Stack,
   Table,
@@ -13,8 +10,9 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
+import { PrintBanner, PrintSheet } from '../components/print-sheet';
 import { formatDate, formatDay } from '../lib/format';
 import type { PackingSlip } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -52,45 +50,21 @@ export function PackingSlipPage() {
   const voided = slip.voidedAt !== null;
 
   return (
-    <Stack spacing={3} sx={{ maxWidth: 800 }}>
-      {/* Only the slip on paper: the app bar, the nav and the buttons are
-          for the screen. Black on white regardless of the theme, because a
-          dark-mode page printed as-is wastes a cartridge. */}
-      <GlobalStyles
-        styles={{
-          '@media print': {
-            'header, nav, .no-print': { display: 'none !important' },
-            body: { background: '#fff !important', color: '#000 !important' },
-            '@page': { margin: '16mm' },
-          },
-        }}
-      />
-
-      <Stack
-        direction="row"
-        spacing={2}
-        className="no-print"
-        sx={{ alignItems: 'center' }}
-      >
-        <Link component={RouterLink} to={`/orders/${slip.order.id}`}>
-          Back to the order
-        </Link>
-        <Box sx={{ flexGrow: 1 }} />
-        <Button onClick={() => window.print()}>Print</Button>
-      </Stack>
-
-      {/* On paper too, and bordered rather than coloured: a voided slip
-          found in a drawer later must not pass for goods that left, and a
-          coloured background is the first thing a printer drops. */}
+    <PrintSheet
+      backTo={`/orders/${slip.order.id}`}
+      backLabel="Back to the order"
+    >
+      {/* A voided slip found in a drawer later must not pass for goods that
+          left (PrintBanner says why it is bordered, not coloured). */}
       {slip.voidedAt && (
-        <Box sx={{ border: 2, borderColor: 'error.main', p: 2 }}>
-          <Typography variant="h6" component="p" color="error">
-            VOID — nothing on this slip left
-          </Typography>
-          <Typography variant="body2">
-            Voided {formatDate(slip.voidedAt)}: {slip.voidReason}
-          </Typography>
-        </Box>
+        <PrintBanner
+          title="VOID — nothing on this slip left"
+          detail={
+            <>
+              Voided {formatDate(slip.voidedAt)}: {slip.voidReason}
+            </>
+          }
+        />
       )}
 
       <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
@@ -142,6 +116,8 @@ export function PackingSlipPage() {
         </Box>
       </Stack>
 
+      {/* Not LotItemsTable, which links each lot to its trace: on paper a lot
+          is a code to read, and a link only prints as an underline. */}
       <Table size="small">
         <TableHead>
           <TableRow>
@@ -178,6 +154,6 @@ export function PackingSlipPage() {
           Received by: ______________________ Date: ____________
         </Typography>
       )}
-    </Stack>
+    </PrintSheet>
   );
 }

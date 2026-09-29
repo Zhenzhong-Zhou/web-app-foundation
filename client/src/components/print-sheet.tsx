@@ -4,6 +4,11 @@ import {
   GlobalStyles,
   Link,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   Typography,
 } from '@mui/material';
 import type { ReactNode } from 'react';
@@ -14,14 +19,16 @@ import type { InvoiceTax } from '../lib/types';
 import { formatRate } from '../settings/tax-rate';
 
 /**
- * What every printed document shares, taken from the packing slip
- * (ADR-041): the browser's own Print rather than a PDF library, print CSS
- * that hides the app's chrome and forces black on white, and a Back link
- * and Print button that never reach the paper.
+ * What every printed document shares (ADR-041): the browser's own Print
+ * rather than a PDF library, print CSS that hides the app's chrome, and a
+ * Back link and Print button that never reach the paper. Black on white
+ * regardless of the theme, because a dark-mode page printed as-is wastes a
+ * cartridge.
  *
- * Shared by the invoice and the credit note so the two read as one set —
- * a customer holding both should see the same layout reversed, not two
- * designs.
+ * Taken from the packing slip, which now uses it too, and shared with the
+ * invoice and the credit note so the three read as one set — a customer
+ * holding an invoice and its credit note should see the same layout
+ * reversed, not two designs.
  */
 export function PrintSheet({
   backTo,
@@ -113,6 +120,61 @@ export function PrintParty({
       {country && <Typography>{country}</Typography>}
       {extra}
     </Box>
+  );
+}
+
+/** One billed line, as an invoice or a credit note prints it. */
+export type PrintLine = {
+  id: string;
+  sku: string;
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  taxCodeName: string | null;
+  /** Before tax, from wherever each document keeps it; null shows a dash. */
+  amount: string | null;
+};
+
+/**
+ * The lines of an invoice or a credit note: the same columns in the same
+ * order on both, so a credit reads as the invoice it reverses.
+ */
+export function PrintLines({
+  currency,
+  lines,
+}: {
+  currency: string;
+  lines: PrintLine[];
+}) {
+  return (
+    <Table size="small">
+      <TableHead>
+        <TableRow>
+          <TableCell>SKU</TableCell>
+          <TableCell>Item</TableCell>
+          <TableCell align="right">Quantity</TableCell>
+          <TableCell align="right">Unit price</TableCell>
+          <TableCell>Tax</TableCell>
+          <TableCell align="right">Amount</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {lines.map((line) => (
+          <TableRow key={line.id}>
+            <TableCell>{line.sku}</TableCell>
+            <TableCell>{line.description}</TableCell>
+            <TableCell align="right">{Number(line.quantity)}</TableCell>
+            <TableCell align="right">
+              {formatMoney(line.unitPrice, currency)}
+            </TableCell>
+            <TableCell>{line.taxCodeName ?? '—'}</TableCell>
+            <TableCell align="right">
+              {formatMoney(line.amount, currency)}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
 

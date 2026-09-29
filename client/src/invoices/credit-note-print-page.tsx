@@ -1,22 +1,16 @@
-import {
-  Alert,
-  Box,
-  Skeleton,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Skeleton, Stack, Typography } from '@mui/material';
 import { useParams } from 'react-router-dom';
 
-import { formatDay, formatMoney } from '../lib/format';
+import {
+  PrintLines,
+  PrintParty,
+  PrintSheet,
+  PrintTotals,
+} from '../components/print-sheet';
+import { formatDay } from '../lib/format';
 import type { CreditNoteDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
-import { PrintParty, PrintSheet, PrintTotals } from './print-sheet';
 
 /**
  * A credit note on paper (ADR-046): the invoice's layout, stating what is
@@ -99,34 +93,10 @@ export function CreditNotePrintPage() {
 
       <Typography variant="body2">Reason: {note.reason}</Typography>
 
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>SKU</TableCell>
-            <TableCell>Item</TableCell>
-            <TableCell align="right">Quantity</TableCell>
-            <TableCell align="right">Unit price</TableCell>
-            <TableCell>Tax</TableCell>
-            <TableCell align="right">Amount</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {note.lines.map((line) => (
-            <TableRow key={line.id}>
-              <TableCell>{line.sku}</TableCell>
-              <TableCell>{line.description}</TableCell>
-              <TableCell align="right">{Number(line.quantity)}</TableCell>
-              <TableCell align="right">
-                {formatMoney(line.unitPrice, note.currency)}
-              </TableCell>
-              <TableCell>{line.taxCodeName ?? '—'}</TableCell>
-              <TableCell align="right">
-                {formatMoney(line.netAmount, note.currency)}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <PrintLines
+        currency={note.currency}
+        lines={note.lines.map((line) => ({ ...line, amount: line.netAmount }))}
+      />
 
       <PrintTotals
         currency={note.currency}
