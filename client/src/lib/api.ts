@@ -35,6 +35,22 @@ export function messageFor(caught: unknown): string {
     : 'Could not reach the server.';
 }
 
+/**
+ * How long a 429 says to wait, in seconds, from the throttler's Retry-After.
+ *
+ * The throttler sends whole seconds (ADR-011). The header may also carry an
+ * HTTP date by the standard, and nothing here sends one, so anything that is
+ * not a positive number of seconds reads as unknown rather than as a guess.
+ */
+function retryAfter(response: Response): number | undefined {
+  if (response.status !== 429) return undefined;
+
+  const seconds = Number(response.headers.get('Retry-After'));
+  return Number.isFinite(seconds) && seconds > 0
+    ? Math.ceil(seconds)
+    : undefined;
+}
+
 /** Narrower than RequestInit: a Headers instance spreads to nothing below. */
 type ApiInit = Omit<RequestInit, 'headers'> & {
   headers?: Record<string, string>;
@@ -73,7 +89,12 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
       ? body.message.join(', ')
       : (body?.message ?? `Request failed (${response.status})`);
 
-    throw new ApiError(message, response.status, body?.requestId);
+    throw new ApiError(
+      message,
+      response.status,
+      body?.requestId,
+      retryAfter(response),
+    );
   }
 
   // 204 from logout and reset-password: no body to parse (ADR-011, ADR-017).
