@@ -2,7 +2,7 @@ import { Alert, Button, Link, TextField, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
-import { api, ApiError } from '../lib/api';
+import { api } from '../lib/api';
 import {
   EMAIL_MAX_LENGTH,
   NAME_MAX_LENGTH,
@@ -10,19 +10,8 @@ import {
   PASSWORD_MIN_LENGTH,
 } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
+import { authMessageFor } from './auth-message';
 import { useAuth } from './use-auth';
-
-function messageFor(caught: unknown): string {
-  if (!(caught instanceof ApiError)) return 'Could not reach the server.';
-
-  if (caught.status === 429) {
-    return caught.retryAfterSeconds
-      ? `Too many attempts. Try again in ${caught.retryAfterSeconds} seconds.`
-      : 'Too many attempts. Try again later.';
-  }
-
-  return caught.message;
-}
 
 /**
  * Registration creates user, organization, and Owner membership in one
@@ -69,7 +58,7 @@ export function RegisterPage() {
       await refresh();
       navigate('/', { replace: true });
     } catch (caught) {
-      setError(messageFor(caught));
+      setError(authMessageFor(caught));
       setSubmitting(false);
     }
   }

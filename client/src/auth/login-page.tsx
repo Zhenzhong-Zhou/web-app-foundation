@@ -2,29 +2,11 @@ import { Alert, Button, Link, TextField } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
-import { api, ApiError } from '../lib/api';
+import { api } from '../lib/api';
 import { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
+import { authMessageFor } from './auth-message';
 import { useAuth } from './use-auth';
-
-/**
- * The server answers identically for a wrong password and an unknown address
- * (ADR-011), so its message is rendered as-is. Any client-side branch on
- * "user not found" would hand back what login refused to.
- */
-function messageFor(caught: unknown): string {
-  if (!(caught instanceof ApiError)) return 'Could not reach the server.';
-
-  if (caught.status === 429) {
-    // Rate limited on email + IP with a fifteen-minute window, so "shortly"
-    // would be misleading. The header is the honest answer.
-    return caught.retryAfterSeconds
-      ? `Too many attempts. Try again in ${caught.retryAfterSeconds} seconds.`
-      : 'Too many attempts. Try again later.';
-  }
-
-  return caught.message;
-}
 
 export function LoginPage() {
   const { refresh } = useAuth();
@@ -56,7 +38,7 @@ export function LoginPage() {
       navigate(from, { replace: true });
       // No setSubmitting(false): this component unmounts on navigate.
     } catch (caught) {
-      setError(messageFor(caught));
+      setError(authMessageFor(caught));
       setSubmitting(false);
     }
   }

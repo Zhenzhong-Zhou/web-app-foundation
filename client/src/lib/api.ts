@@ -26,7 +26,7 @@ export class ApiError extends Error {
  * message, or one fixed line when no answer came back at all. One definition,
  * so a dropped connection reads the same on every screen.
  *
- * Login and register keep their own, which add the rate-limit wording, and
+ * Login and register add rate-limit wording on top (authMessageFor), and
  * forgot-password keeps its own, which must not repeat what the server says.
  */
 export function messageFor(caught: unknown): string {
