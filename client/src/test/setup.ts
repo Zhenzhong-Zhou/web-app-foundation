@@ -14,7 +14,7 @@ beforeAll(() => {
    * something these handlers do not describe, and letting it through produces
    * a confusing failure somewhere later instead of naming the call.
    */
-  server.listen({ onUnhandledRequest: 'error' });
+  server.listen({ onUnhandledFrame: 'error' });
 });
 
 afterEach(() => {
