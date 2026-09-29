@@ -11,7 +11,9 @@ import {
   INVOICE_STATUSES,
   MOVEMENT_REASONS,
   ORDER_DIRECTIONS,
+  ORDER_LINE_PRICE_SOURCES,
   ORDER_STATUSES,
+  PRICE_LIST_DIRECTIONS,
   RETURN_AUTHORIZATION_STATUSES,
   RETURN_RESOLUTIONS,
   VALUATION_KINDS,
@@ -92,6 +94,8 @@ describe('schema invariants', () => {
     ['return_authorizations_status_check', RETURN_AUTHORIZATION_STATUSES],
     ['return_authorization_lines_resolution_check', RETURN_RESOLUTIONS],
     ['stock_valuations_kind_check', VALUATION_KINDS],
+    ['price_lists_direction_check', PRICE_LIST_DIRECTIONS],
+    ['order_lines_price_source_check', ORDER_LINE_PRICE_SOURCES],
   ])('%s', (constraintName, values) => {
     it('accepts every value the code can write', async () => {
       const result = await db.execute(sql`

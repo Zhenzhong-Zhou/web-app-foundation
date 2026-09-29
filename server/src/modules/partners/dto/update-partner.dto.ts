@@ -2,6 +2,7 @@ import {
   IsBoolean,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -33,6 +34,15 @@ export class UpdatePartnerDto {
   @IsString()
   @MaxLength(64)
   taxId?: string;
+
+  /** ADR-049. Null clears it; the service checks the list's direction. */
+  @IsOptional()
+  @IsUUID()
+  salePriceListId?: string | null;
+
+  @IsOptional()
+  @IsUUID()
+  purchasePriceListId?: string | null;
 
   @IsOptional()
   @trim()

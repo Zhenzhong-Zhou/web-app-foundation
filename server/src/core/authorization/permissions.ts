@@ -76,6 +76,12 @@ export const PERMISSIONS = {
   COSTS_VIEW: 'costs.view',
   COSTS_UPDATE: 'costs.update',
 
+  // Owner-only (ADR-049). Using a list needs none of these: its price
+  // reaches a line through the order routes.
+  PRICE_LISTS_VIEW: 'price_lists.view',
+  PRICE_LISTS_CREATE: 'price_lists.create',
+  PRICE_LISTS_UPDATE: 'price_lists.update',
+
   PARTNERS_VIEW: 'partners.view',
   PARTNERS_CREATE: 'partners.create',
   PARTNERS_UPDATE: 'partners.update',
@@ -142,6 +148,9 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'stock.adjust': 'Correct a count when the system is wrong',
   'costs.view': 'See what stock, lots and batches cost, and exchange rates',
   'costs.update': 'Set and correct costs and exchange rates',
+  'price_lists.view': 'See price lists and the prices on them',
+  'price_lists.create': 'Add a price list',
+  'price_lists.update': 'Change prices on a list, rename it, or retire it',
   'partners.view': 'See customers and suppliers',
   'partners.create': 'Add a customer or supplier',
   // No delete: a partner referenced by an order cannot be removed without

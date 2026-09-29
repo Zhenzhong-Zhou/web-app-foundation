@@ -103,6 +103,10 @@ export const AUDIT_ACTIONS = {
   /** A draft sale at zero for an RMA's replace lines; carries the order. */
   RETURN_AUTHORIZATION_REPLACEMENT_RAISED:
     'return_authorization.replacement_raised',
+  PRICE_LIST_CREATED: 'price_list.created',
+  PRICE_LIST_UPDATED: 'price_list.updated',
+  PRICE_LIST_ITEM_SET: 'price_list.item_set',
+  PRICE_LIST_ITEM_REMOVED: 'price_list.item_removed',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

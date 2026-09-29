@@ -9,6 +9,7 @@ import { asc, eq } from 'drizzle-orm';
 import { isUniqueViolation } from '../../database/errors';
 import { addresses, contacts, partners } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { assertListAssignable } from '../price-lists/list-price';
 import type { CreatePartnerDto } from './dto/create-partner.dto';
 import type { UpdatePartnerDto } from './dto/update-partner.dto';
 
@@ -87,6 +88,29 @@ export class PartnersService {
     );
 
     if (!existing) throw new NotFoundException('No such partner');
+
+    // A named list must be this organization's, price the right side, and
+    // still be in use (ADR-049). null clears, and needs no check.
+    if (input.salePriceListId || input.purchasePriceListId) {
+      await this.tenantDb.transaction(async (tx, organizationId) => {
+        if (input.salePriceListId) {
+          await assertListAssignable(
+            tx,
+            organizationId,
+            input.salePriceListId,
+            'sale',
+          );
+        }
+        if (input.purchasePriceListId) {
+          await assertListAssignable(
+            tx,
+            organizationId,
+            input.purchasePriceListId,
+            'purchase',
+          );
+        }
+      });
+    }
 
     try {
       await this.tenantDb.update(partners, input, eq(partners.id, partnerId));

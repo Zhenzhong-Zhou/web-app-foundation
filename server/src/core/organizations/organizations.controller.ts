@@ -42,7 +42,7 @@ export class OrganizationController {
     resourceType: 'organization',
     resourceId: (_response, request) =>
       getRequestContext(request)?.organizationId ?? undefined,
-    fields: ['taxRegistrationNumber', 'baseCurrency'],
+    fields: ['taxRegistrationNumber', 'baseCurrency', 'defaultSalePriceListId'],
   })
   async update(@Body() dto: UpdateOrganizationDto): Promise<void> {
     await this.organization.update(dto);

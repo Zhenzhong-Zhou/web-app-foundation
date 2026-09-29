@@ -60,6 +60,9 @@ export const PERMISSIONS = [
   'production.create',
   'production.release',
   'production.complete',
+  'price_lists.view',
+  'price_lists.create',
+  'price_lists.update',
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

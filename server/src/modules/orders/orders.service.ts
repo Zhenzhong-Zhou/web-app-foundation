@@ -28,10 +28,12 @@ import {
   orderLines,
   orders,
   partners,
+  priceLists,
   products,
   productVariants,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { listForOrder, priceOnList } from '../price-lists/list-price';
 import { itemName } from '../stock/item-name';
 import { StockService, type Tx } from '../stock/stock.service';
 import { CloseLineDto } from './dto/close-line.dto';
@@ -42,6 +44,26 @@ import type { ReceiveLineDto } from './dto/receive-line.dto';
 import type { UpdateOrderDto } from './dto/update-order.dto';
 
 type OrderLine = typeof orderLines.$inferSelect;
+
+/**
+ * A line as the service inserts it. A price given here is kept as given; a
+ * duplicate also carries where the original's price came from, so copying an
+ * order does not quietly re-price it.
+ */
+interface LineInput {
+  variantId: string;
+  quantityOrdered: string;
+  unitPrice?: string;
+  currency?: string;
+  priceSource?: 'list' | 'manual';
+  priceListId?: string;
+}
+
+/**
+ * A line just added, with a word on its price when the list could not supply
+ * one (ADR-049). Not stored: it explains this response, not the line.
+ */
+type AddedLine = OrderLine & { priceNotice?: string };
 
 /**
  * Which status changes are allowed, and from where.
@@ -256,6 +278,15 @@ export class OrdersService {
           currency: orderLines.currency,
 
           /**
+           * Where the price came from (ADR-049): a list, typed by hand, or
+           * nothing yet. The list's name is read live — renaming a list is a
+           * label change, and the line keeps its own price regardless.
+           */
+          priceSource: orderLines.priceSource,
+          priceListId: orderLines.priceListId,
+          priceListName: priceLists.name,
+
+          /**
            * Unrounded. Rounding to two places is currency-specific — JPY has
            * no minor unit — so the query would be baking one convention into
            * every order. Formatting knows the currency; this does not.
@@ -308,6 +339,7 @@ export class OrdersService {
           eq(productVariants.id, orderLines.variantId),
         )
         .innerJoin(products, eq(products.id, productVariants.productId))
+        .leftJoin(priceLists, eq(priceLists.id, orderLines.priceListId))
         .where(
           and(
             eq(orderLines.orderId, orderId),
@@ -376,7 +408,7 @@ export class OrdersService {
         const lines = await this.insertLines(
           tx,
           organizationId,
-          order.id,
+          order,
           input.lines,
         );
 
@@ -501,12 +533,14 @@ export class OrdersService {
       const lines = await this.insertLines(
         tx,
         organizationId,
-        order.id,
+        order,
         sourceLines.map((line) => ({
           variantId: line.variantId,
           quantityOrdered: line.quantityOrdered,
           unitPrice: line.unitPrice ?? undefined,
           currency: line.currency ?? undefined,
+          priceSource: line.priceSource === 'list' ? 'list' : 'manual',
+          priceListId: line.priceListId ?? undefined,
         })),
       );
 
@@ -650,7 +684,7 @@ export class OrdersService {
       }
 
       try {
-        const [line] = await this.insertLines(tx, organizationId, orderId, [
+        const [line] = await this.insertLines(tx, organizationId, order, [
           input,
         ]);
 
@@ -731,8 +765,14 @@ export class OrdersService {
           quantityOrdered: input.quantityOrdered,
           // Only when supplied: omitting both leaves the existing price alone,
           // which is what an edit that only changes a quantity should do.
+          // A price typed over a list price is the person's own (ADR-049).
           ...(input.unitPrice !== undefined
-            ? { unitPrice: input.unitPrice, currency: input.currency }
+            ? {
+                unitPrice: input.unitPrice,
+                currency: input.currency,
+                priceSource: 'manual',
+                priceListId: null,
+              }
             : {}),
         })
         .where(eq(orderLines.id, lineId));
@@ -1036,10 +1076,43 @@ export class OrdersService {
   private async insertLines(
     tx: Tx,
     organizationId: string,
-    orderId: string,
-    lines: CreateOrderDto['lines'],
-  ): Promise<OrderLine[]> {
-    const inserted: OrderLine[] = [];
+    order: {
+      id: string;
+      direction: string;
+      isSample: boolean;
+      partnerId: string;
+    },
+    lines: LineInput[],
+  ): Promise<AddedLine[]> {
+    const inserted: AddedLine[] = [];
+
+    /**
+     * The list new lines default from (ADR-049), read once for the call. A
+     * line that brings its own price never consults it.
+     */
+    const list = lines.some((line) => line.unitPrice === undefined)
+      ? await listForOrder(tx, organizationId, order)
+      : null;
+
+    /**
+     * A sale is invoiced in one currency (ADR-046). The currencies its lines
+     * are already priced in, so a list price in another is left off rather
+     * than building an order that cannot be confirmed.
+     */
+    const saleCurrencies = new Set<string>();
+
+    if (order.direction === 'sale') {
+      const priced = await tx
+        .selectDistinct({ currency: orderLines.currency })
+        .from(orderLines)
+        .where(
+          and(eq(orderLines.orderId, order.id), isNotNull(orderLines.currency)),
+        );
+
+      for (const row of priced) {
+        if (row.currency) saleCurrencies.add(row.currency);
+      }
+    }
 
     for (const line of lines) {
       const [variant] = await tx
@@ -1054,20 +1127,60 @@ export class OrdersService {
 
       if (!variant) throw new BadRequestException('Unknown variant');
 
+      let unitPrice: string | null = line.unitPrice ?? null;
+      let currency: string | null = line.currency ?? null;
+      let priceSource: 'list' | 'manual' | null =
+        line.unitPrice !== undefined ? (line.priceSource ?? 'manual') : null;
+      let priceListId: string | null =
+        line.unitPrice !== undefined ? (line.priceListId ?? null) : null;
+      let priceNotice: string | undefined;
+
+      if (line.unitPrice === undefined && list) {
+        const listed = await priceOnList(
+          tx,
+          organizationId,
+          list.id,
+          line.variantId,
+        );
+
+        if (listed === null) {
+          priceNotice = `${list.name} has no price for ${variant.sku}`;
+        } else if (
+          order.direction === 'sale' &&
+          saleCurrencies.size > 0 &&
+          !saleCurrencies.has(list.currency)
+        ) {
+          // Unpriced rather than refused: the confirm check names the line,
+          // and the person may not control the list (ADR-049).
+          priceNotice = `This sale is in ${[...saleCurrencies].join(', ')} and ${list.name} prices in ${list.currency}, so ${variant.sku} was added without a price`;
+        } else {
+          unitPrice = listed;
+          currency = list.currency;
+          priceSource = 'list';
+          priceListId = list.id;
+        }
+      }
+
+      if (order.direction === 'sale' && currency !== null) {
+        saleCurrencies.add(currency);
+      }
+
       const [row] = await tx
         .insert(orderLines)
         .values({
           organizationId,
-          orderId,
+          orderId: order.id,
           variantId: line.variantId,
           sku: variant.sku,
           quantityOrdered: line.quantityOrdered,
-          unitPrice: line.unitPrice ?? null,
-          currency: line.currency ?? null,
+          unitPrice,
+          currency,
+          priceSource,
+          priceListId,
         })
         .returning();
 
-      inserted.push(row);
+      inserted.push(priceNotice ? { ...row, priceNotice } : row);
     }
 
     return inserted;

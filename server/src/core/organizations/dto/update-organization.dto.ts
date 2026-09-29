@@ -1,4 +1,10 @@
-import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 
 import { trim } from '../../../common/dto/trim';
 
@@ -30,4 +36,9 @@ export class UpdateOrganizationDto {
     message: 'baseCurrency must be a 3-letter ISO code',
   })
   baseCurrency?: string;
+
+  /** The sale list for customers with none (ADR-049). Null clears it. */
+  @IsOptional()
+  @IsUUID()
+  defaultSalePriceListId?: string | null;
 }

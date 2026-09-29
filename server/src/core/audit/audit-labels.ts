@@ -10,6 +10,7 @@ import {
   orders,
   organizations,
   partners,
+  priceLists,
   productionOrders,
   productLicences,
   products,
@@ -188,6 +189,11 @@ const RESOLVERS: Record<string, Resolver> = {
   exchange_rate: async (db, id) => {
     const [row] = await db.select(exchangeRates, eq(exchangeRates.id, id));
     return row && `${row.currency} ${row.rateDate}`;
+  },
+
+  price_list: async (db, id) => {
+    const [row] = await db.select(priceLists, eq(priceLists.id, id));
+    return row?.name;
   },
 };
 

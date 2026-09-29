@@ -12,6 +12,7 @@ import {
   stockValuations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { assertListAssignable } from '../../modules/price-lists/list-price';
 import { recordPrevious } from '../audit/audit-context';
 import type { OrganizationAddressDto } from './dto/organization-address.dto';
 import type { UpdateOrganizationDto } from './dto/update-organization.dto';
@@ -40,6 +41,7 @@ export class OrganizationsService {
           slug: organizations.slug,
           taxRegistrationNumber: organizations.taxRegistrationNumber,
           baseCurrency: organizations.baseCurrency,
+          defaultSalePriceListId: organizations.defaultSalePriceListId,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
@@ -58,6 +60,7 @@ export class OrganizationsService {
         .select({
           taxRegistrationNumber: organizations.taxRegistrationNumber,
           baseCurrency: organizations.baseCurrency,
+          defaultSalePriceListId: organizations.defaultSalePriceListId,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
@@ -67,7 +70,17 @@ export class OrganizationsService {
       recordPrevious({
         taxRegistrationNumber: existing.taxRegistrationNumber,
         baseCurrency: existing.baseCurrency,
+        defaultSalePriceListId: existing.defaultSalePriceListId,
       });
+
+      if (input.defaultSalePriceListId) {
+        await assertListAssignable(
+          tx,
+          organizationId,
+          input.defaultSalePriceListId,
+          'sale',
+        );
+      }
 
       const changesBase =
         input.baseCurrency !== undefined &&
@@ -107,6 +120,9 @@ export class OrganizationsService {
             }
           : {}),
         ...(changesBase ? { baseCurrency: input.baseCurrency } : {}),
+        ...(input.defaultSalePriceListId !== undefined
+          ? { defaultSalePriceListId: input.defaultSalePriceListId }
+          : {}),
       };
 
       if (Object.keys(changes).length === 0) return;

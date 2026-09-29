@@ -14,7 +14,11 @@ import {
 import { primaryKey, timestamps } from './columns';
 import { orders } from './orders';
 import { organizations } from './organizations';
+import { priceLists } from './price-lists';
 import { productVariants } from './product-variants';
+
+/** Where a line's price came from (ADR-049). Null while it has none. */
+export const ORDER_LINE_PRICE_SOURCES = ['list', 'manual'] as const;
 
 /**
  * What was ordered, and how much of it has arrived.
@@ -112,6 +116,18 @@ export const orderLines = pgTable(
     currency: char('currency', { length: 3 }),
 
     /**
+     * Where the price came from: a list, when the line was added without
+     * one, or typed (ADR-049). Stored, so how a line was priced survives the
+     * list changing afterwards.
+     */
+    priceSource: text('price_source'),
+
+    /** The list, when priceSource is 'list'. */
+    priceListId: uuid('price_list_id').references(() => priceLists.id, {
+      onDelete: 'restrict',
+    }),
+
+    /**
      * No more is coming: treat the shortfall as final (ADR-034).
      *
      * The quantities stay as they are. Reducing quantity_ordered to what
@@ -192,6 +208,18 @@ export const orderLines = pgTable(
     check(
       'order_lines_closed_reason_check',
       sql`${t.isClosedShort} = (${t.closedReason} is not null)`,
+    ),
+
+    check(
+      'order_lines_price_source_check',
+      sql`${t.priceSource} is null or ${t.priceSource} in ('list', 'manual')`,
+    ),
+
+    // A list id exactly when the price came from a list. coalesce, because
+    // a bare comparison with a null source is null, which a check passes.
+    check(
+      'order_lines_price_list_shape_check',
+      sql`coalesce(${t.priceSource} = 'list', false) = (${t.priceListId} is not null)`,
     ),
   ],
 );

@@ -11,6 +11,7 @@ import {
 
 import { primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
+import { priceLists } from './price-lists';
 
 /**
  * Anyone the organization trades with (ADR-026).
@@ -60,6 +61,21 @@ export const partners = pgTable(
      * Same reasoning as products and locations.
      */
     isActive: boolean('is_active').notNull().default(true),
+
+    /**
+     * The lists a sale to this partner, or a purchase from it, takes its
+     * default prices from (ADR-049). A partner is a customer or a supplier by
+     * what it is on an order, not by a flag (ADR-026), so it may have one of
+     * each. Each list's direction is checked by the service.
+     */
+    salePriceListId: uuid('sale_price_list_id').references(
+      () => priceLists.id,
+      { onDelete: 'restrict' },
+    ),
+    purchasePriceListId: uuid('purchase_price_list_id').references(
+      () => priceLists.id,
+      { onDelete: 'restrict' },
+    ),
 
     ...timestamps,
   },

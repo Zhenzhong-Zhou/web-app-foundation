@@ -31,6 +31,8 @@ export * from './orders';
 export * from './organizations';
 export * from './partners';
 export * from './permissions';
+export * from './price-list-items';
+export * from './price-lists';
 export * from './product-licences';
 export * from './product-variants';
 export * from './production-order-lines';

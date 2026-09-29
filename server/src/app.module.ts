@@ -25,6 +25,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PartnersModule } from './modules/partners/partners.module';
+import { PriceListsModule } from './modules/price-lists/price-lists.module';
 import { ProductLicencesModule } from './modules/product-licences/product-licences.module';
 import { ProductionOrdersModule } from './modules/production-orders/production-orders.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -128,6 +129,7 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     LocationsModule,
     StockModule,
     CostsModule,
+    PriceListsModule,
     PartnersModule,
     OrdersModule,
     InvoicesModule,

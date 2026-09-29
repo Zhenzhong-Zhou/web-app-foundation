@@ -1,7 +1,16 @@
 import { sql } from 'drizzle-orm';
-import { char, check, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  AnyPgColumn,
+  char,
+  check,
+  pgTable,
+  text,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { primaryKey, timestamps } from './columns';
+import { priceLists } from './price-lists';
 
 /**
  * The tenant root (ADR-003). Every tenant-scoped table points here.
@@ -34,6 +43,15 @@ export const organizations = pgTable(
      * table.
      */
     baseCurrency: char('base_currency', { length: 3 }),
+
+    /**
+     * The sale list for customers with none of their own (ADR-049). No
+     * purchase default: a supplier's price is specific to the supplier.
+     */
+    defaultSalePriceListId: uuid('default_sale_price_list_id').references(
+      (): AnyPgColumn => priceLists.id,
+      { onDelete: 'restrict' },
+    ),
 
     ...timestamps,
   },
