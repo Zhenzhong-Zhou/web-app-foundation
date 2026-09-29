@@ -154,6 +154,12 @@ jobs:
       - run: npm run seed
         working-directory: server
 
+      # The demo seed drives most services end to end: a purchase, a run, a
+      # sale from a price list, an invoice, a return. Run here, a change that
+      # breaks it fails the build rather than the next walkthrough.
+      - run: npm run seed:demo
+        working-directory: server
+
       - run: npm run test:e2e
         working-directory: server
 
