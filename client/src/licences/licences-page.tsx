@@ -50,13 +50,6 @@ export function LicencesPage() {
   const canCreate = can('product_licences.create');
   const canUpdate = can('product_licences.update');
 
-  /**
-   * Reloading after a dialog saves. The first load runs in the effect below
-   * rather than through this, because a state setter called straight from an
-   * effect body is the pattern the hooks lint rule refuses — and the other
-   * list pages fetch the same way.
-   */
-
   return (
     <Stack spacing={3}>
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
