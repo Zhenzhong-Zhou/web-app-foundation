@@ -13,7 +13,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Link as RouterLink,
   useNavigate,
@@ -24,7 +24,7 @@ import {
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, messageFor } from '../lib/api';
+import { api } from '../lib/api';
 import { formatDay, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
@@ -35,6 +35,7 @@ import type {
   TaxCode,
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { formatRate } from '../settings/tax-rate';
 import { CreditInvoiceDialog } from './credit-invoice-dialog';
 import { DeleteDraftDialog } from './delete-draft-dialog';
@@ -59,9 +60,11 @@ export function InvoiceDetailPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
+  const { data, error, loading, reload } = useResource<{
+    invoice: InvoiceDetail;
+  }>(`/invoices/${id}`);
+  const invoice = data?.invoice ?? null;
   const [taxCodes, setTaxCodes] = useState<TaxCode[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [editingLine, setEditingLine] = useState<InvoiceLine | null>(null);
   const [issuing, setIssuing] = useState(false);
   const [voiding, setVoiding] = useState(false);
@@ -73,31 +76,10 @@ export function InvoiceDetailPage() {
 
   const can = useCan();
 
-  const loading = invoice === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
-
-  const load = useCallback(async () => {
-    if (!id) return;
-    try {
-      setInvoice(
-        (await api<{ invoice: InvoiceDetail }>(`/invoices/${id}`)).invoice,
-      );
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, [id]);
 
   useEffect(() => {
     let ignore = false;
-
-    void api<{ invoice: InvoiceDetail }>(`/invoices/${id}`)
-      .then((response) => {
-        if (!ignore) setInvoice(response.invoice);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
 
     // The codes a draft line can be given. Retired ones are left out of the
     // pickers; a line already carrying one still shows its name.
@@ -262,7 +244,7 @@ export function InvoiceDetailPage() {
           key={`${invoice.dueDate ?? ''}|${invoice.note ?? ''}`}
           invoice={invoice}
           taxCodes={taxCodes}
-          onSaved={load}
+          onSaved={reload}
         />
       )}
 
@@ -392,7 +374,7 @@ export function InvoiceDetailPage() {
         line={editingLine}
         taxCodes={taxCodes}
         onClose={() => setEditingLine(null)}
-        onSaved={load}
+        onSaved={reload}
       />
 
       <IssueInvoiceDialog
@@ -400,7 +382,7 @@ export function InvoiceDetailPage() {
         invoice={invoice}
         open={issuing}
         onClose={() => setIssuing(false)}
-        onIssued={load}
+        onIssued={reload}
       />
 
       <VoidInvoiceDialog
@@ -408,7 +390,7 @@ export function InvoiceDetailPage() {
         invoice={invoice}
         open={voiding}
         onClose={() => setVoiding(false)}
-        onVoided={load}
+        onVoided={reload}
       />
 
       <DeleteDraftDialog
@@ -429,7 +411,7 @@ export function InvoiceDetailPage() {
           // Drop ?credit= so a reload does not reopen it.
           if (creditFrom) setSearchParams({});
         }}
-        onIssued={load}
+        onIssued={reload}
       />
     </Stack>
   );

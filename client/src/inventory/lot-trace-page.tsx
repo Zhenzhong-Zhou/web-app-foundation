@@ -30,6 +30,7 @@ import { api, messageFor } from '../lib/api';
 import { formatDate, formatDay } from '../lib/format';
 import type { LotMatch, LotTrace } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 
 /**
  * Finding a lot by the start of its code (ADR-044).
@@ -158,27 +159,13 @@ export function LotTracePage() {
   const { id } = useParams<{ id: string }>();
   const can = useCan();
 
-  const [trace, setTrace] = useState<LotTrace | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: trace,
+    error,
+    loading,
+  } = useResource<LotTrace>(`/stock/lots/${id!}/trace`);
 
-  const loading = trace === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<LotTrace>(`/stock/lots/${id!}/trace`)
-      .then((result) => {
-        if (!ignore) setTrace(result);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [id]);
 
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!trace) return showSkeleton ? <Skeleton height={320} /> : null;

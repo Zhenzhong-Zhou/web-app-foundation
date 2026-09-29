@@ -12,7 +12,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
@@ -23,6 +23,7 @@ import { formatUnitCost } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { PriceListDetail, PriceListItem } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { EditPriceListDialog } from './edit-price-list-dialog';
 import { SetPriceDialog } from './set-price-dialog';
 
@@ -35,43 +36,17 @@ const SIDE = {
 export function PriceListDetailPage() {
   const { id = '' } = useParams();
   const can = useCan();
-  const [list, setList] = useState<PriceListDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, setError, loading, reload } = useResource<{
+    priceList: PriceListDetail;
+  }>(`/price-lists/${id}`);
+  const list = data?.priceList ?? null;
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [correcting, setCorrecting] = useState<PriceListItem | null>(null);
   const [working, setWorking] = useState(false);
 
-  const showSkeleton = useDelayedFlag(list === null && error === null);
+  const showSkeleton = useDelayedFlag(loading);
   const canUpdate = can('price_lists.update');
-
-  const load = useCallback(async () => {
-    try {
-      const response = await api<{ priceList: PriceListDetail }>(
-        `/price-lists/${id}`,
-      );
-      setList(response.priceList);
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, [id]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<{ priceList: PriceListDetail }>(`/price-lists/${id}`)
-      .then((response) => {
-        if (!ignore) setList(response.priceList);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [id]);
 
   async function remove(item: PriceListItem) {
     setWorking(true);
@@ -81,7 +56,7 @@ export function PriceListDetailPage() {
       await api(`/price-lists/${id}/items/${item.variantId}`, {
         method: 'DELETE',
       });
-      await load();
+      await reload();
     } catch (caught) {
       setError(messageFor(caught));
     } finally {
@@ -194,7 +169,7 @@ export function PriceListDetailPage() {
         key={editing ? list.id : 'closed'}
         list={editing ? list : null}
         onClose={() => setEditing(false)}
-        onSaved={load}
+        onSaved={reload}
       />
 
       <SetPriceDialog
@@ -214,7 +189,7 @@ export function PriceListDetailPage() {
           setAdding(false);
           setCorrecting(null);
         }}
-        onSaved={load}
+        onSaved={reload}
       />
     </Stack>
   );

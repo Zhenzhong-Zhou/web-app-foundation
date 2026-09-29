@@ -7,14 +7,15 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useCallback, useEffect, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
-import { api, messageFor } from '../lib/api';
+import { api } from '../lib/api';
 import type { OrganizationProfile } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
 
@@ -29,41 +30,13 @@ import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
  */
 export function OrganizationPage() {
   const can = useCan();
-  const [organization, setOrganization] = useState<OrganizationProfile | null>(
-    null,
-  );
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, reload } = useResource<{
+    organization: OrganizationProfile;
+  }>('/organization');
+  const organization = data?.organization ?? null;
 
   const showSkeleton = useDelayedFlag(organization === null && !error);
   const canUpdate = can('organizations.update');
-
-  const load = useCallback(async () => {
-    try {
-      setOrganization(
-        (await api<{ organization: OrganizationProfile }>('/organization'))
-          .organization,
-      );
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, []);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<{ organization: OrganizationProfile }>('/organization')
-      .then((response) => {
-        if (!ignore) setOrganization(response.organization);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   return (
     <Stack spacing={3}>
@@ -89,26 +62,26 @@ export function OrganizationPage() {
             key={organization.taxRegistrationNumber ?? ''}
             value={organization.taxRegistrationNumber}
             readOnly={!canUpdate}
-            onSaved={load}
+            onSaved={reload}
           />
           <AddressForm
             key={JSON.stringify(organization.address)}
             address={organization.address}
             readOnly={!canUpdate}
-            onSaved={load}
+            onSaved={reload}
           />
           <BaseCurrencyForm
             key={organization.baseCurrency ?? ''}
             value={organization.baseCurrency}
             readOnly={!canUpdate}
-            onSaved={load}
+            onSaved={reload}
           />
           {can('price_lists.view') && (
             <DefaultSaleListForm
               key={organization.defaultSalePriceListId ?? ''}
               value={organization.defaultSalePriceListId}
               readOnly={!canUpdate}
-              onSaved={load}
+              onSaved={reload}
             />
           )}
         </>

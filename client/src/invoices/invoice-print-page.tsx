@@ -10,13 +10,12 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { api, messageFor } from '../lib/api';
 import { formatDay, formatMoney } from '../lib/format';
 import type { InvoiceDetail, InvoiceLine } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import {
   PrintBanner,
   PrintParty,
@@ -39,28 +38,12 @@ import {
  */
 export function InvoicePrintPage() {
   const { id } = useParams<{ id: string }>();
-  const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, loading } = useResource<{ invoice: InvoiceDetail }>(
+    `/invoices/${id}`,
+  );
+  const invoice = data?.invoice ?? null;
 
-  const showSkeleton = useDelayedFlag(invoice === null && error === null);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<{ invoice: InvoiceDetail }>(`/invoices/${id}`)
-      .then((response) => {
-        if (!ignore) setInvoice(response.invoice);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) {
-          setError(messageFor(caught));
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [id]);
+  const showSkeleton = useDelayedFlag(loading);
 
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!invoice) return showSkeleton ? <Skeleton height={320} /> : null;

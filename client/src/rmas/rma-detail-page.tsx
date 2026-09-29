@@ -18,14 +18,14 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
-import { api, messageFor } from '../lib/api';
+import { api } from '../lib/api';
 import { formatDate } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
@@ -34,6 +34,7 @@ import type {
   ReturnAuthorizationDetail,
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { LinkReturnDialog } from './link-return-dialog';
 import { RESOLUTION_LABELS, rmaStatus } from './rma-labels';
@@ -58,8 +59,10 @@ export function RmaDetailPage() {
   const can = useCan();
   const navigate = useNavigate();
 
-  const [rma, setRma] = useState<ReturnAuthorizationDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, loading, reload } = useResource<{
+    returnAuthorization: ReturnAuthorizationDetail;
+  }>(`/return-authorizations/${id}`);
+  const rma = data?.returnAuthorization ?? null;
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [linking, setLinking] = useState(false);
 
@@ -70,44 +73,10 @@ export function RmaDetailPage() {
    */
   const [creditable, setCreditable] = useState<InvoiceSummary[]>([]);
 
-  const showSkeleton = useDelayedFlag(rma === null && error === null);
+  const showSkeleton = useDelayedFlag(loading);
   const canUpdate = can('return_authorizations.update');
   // Crediting is the finance act, not customer service's (ADR-047).
   const canCredit = can('invoices.issue');
-
-  const load = useCallback(async () => {
-    if (!id) return;
-    try {
-      setRma(
-        (
-          await api<{ returnAuthorization: ReturnAuthorizationDetail }>(
-            `/return-authorizations/${id}`,
-          )
-        ).returnAuthorization,
-      );
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, [id]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<{ returnAuthorization: ReturnAuthorizationDetail }>(
-      `/return-authorizations/${id}`,
-    )
-      .then((response) => {
-        if (!ignore) setRma(response.returnAuthorization);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [id]);
 
   const orderId = rma?.orderId;
   const namedInvoiceId = rma?.invoiceId ?? null;
@@ -323,7 +292,7 @@ export function RmaDetailPage() {
         rmaNumber={rma.number}
         orderId={rma.orderId}
         onClose={() => setLinking(false)}
-        onLinked={load}
+        onLinked={reload}
       />
 
       <ConfirmDialog
@@ -331,7 +300,7 @@ export function RmaDetailPage() {
         rmaNumber={rma.number}
         action={confirming}
         onClose={() => setConfirming(null)}
-        onDone={load}
+        onDone={reload}
       />
     </Stack>
   );

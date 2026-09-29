@@ -13,7 +13,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
@@ -23,6 +23,7 @@ import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { AddVariantDialog } from './add-variant-dialog';
 import { EditVariantDialog } from './edit-variant-dialog';
 import type { Product, Variant } from './products-page';
@@ -36,8 +37,13 @@ export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const can = useCan();
 
-  const [product, setProduct] = useState<ProductDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: product,
+    error,
+    setError,
+    loading,
+    reload,
+  } = useResource<ProductDetail>(`/products/${id!}`);
   const [saving, setSaving] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
 
@@ -49,33 +55,7 @@ export function ProductDetailPage() {
   );
   const [editingVariant, setEditingVariant] = useState<Variant | null>(null);
 
-  const loading = product === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
-
-  const load = useCallback(async () => {
-    try {
-      setProduct(await api<ProductDetail>(`/products/${id!}`));
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, [id]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<ProductDetail>(`/products/${id!}`)
-      .then((row) => {
-        if (!ignore) setProduct(row);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [id]);
 
   const canEdit = can('products.update');
 
@@ -88,7 +68,7 @@ export function ProductDetailPage() {
         method: 'PATCH',
         body: JSON.stringify(body),
       });
-      await load();
+      await reload();
     } catch (caught) {
       setError(messageFor(caught));
     } finally {
@@ -108,7 +88,7 @@ export function ProductDetailPage() {
         method: 'PATCH',
         body: JSON.stringify(body),
       });
-      await load();
+      await reload();
       setEditing(null);
     } catch (caught) {
       // 409 when the new SKU is taken. Not caught before sending: the client
@@ -254,7 +234,7 @@ export function ProductDetailPage() {
         open={adding}
         productId={id!}
         onClose={() => setAdding(false)}
-        onCreated={load}
+        onCreated={reload}
       />
 
       <EditVariantDialog
@@ -262,7 +242,7 @@ export function ProductDetailPage() {
         productId={id!}
         variant={editingVariant}
         onClose={() => setEditingVariant(null)}
-        onSaved={load}
+        onSaved={reload}
       />
     </Stack>
   );

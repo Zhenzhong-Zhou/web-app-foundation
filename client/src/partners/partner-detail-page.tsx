@@ -9,7 +9,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
@@ -19,6 +19,7 @@ import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { Address, Contact, PartnerDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { PartnerPriceLists } from '../price-lists/partner-price-lists';
 import { AddressDialog } from './address-dialog';
 import { ContactDialog } from './contact-dialog';
@@ -50,8 +51,13 @@ export function PartnerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const can = useCan();
 
-  const [partner, setPartner] = useState<PartnerDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: partner,
+    error,
+    setError,
+    loading,
+    reload,
+  } = useResource<PartnerDetail>(`/partners/${id}`);
   const [editingPartner, setEditingPartner] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [addingAddress, setAddingAddress] = useState(false);
@@ -59,41 +65,14 @@ export function PartnerDetailPage() {
   const [addingContact, setAddingContact] = useState(false);
 
   const canEdit = can('partners.update');
-  const loading = partner === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
-
-  const load = useCallback(async () => {
-    if (!id) return;
-    try {
-      setPartner(await api<PartnerDetail>(`/partners/${id}`));
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, [id]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<PartnerDetail>(`/partners/${id}`)
-      .then((row) => {
-        if (!ignore) setPartner(row);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [id]);
 
   async function retireAddress(address: Address) {
     try {
       await api(`/partners/${id}/addresses/${address.id}`, {
         method: 'DELETE',
       });
-      await load();
+      await reload();
     } catch (caught: unknown) {
       // Surfaced at the page, not in a dialog: the refusal for a default
       // address arrives from a button with no form behind it.
@@ -106,7 +85,7 @@ export function PartnerDetailPage() {
       await api(`/partners/${id}/contacts/${contact.id}`, {
         method: 'DELETE',
       });
-      await load();
+      await reload();
     } catch (caught: unknown) {
       setError(messageFor(caught));
     }
@@ -274,7 +253,7 @@ export function PartnerDetailPage() {
           salePriceListId={partner.salePriceListId}
           purchasePriceListId={partner.purchasePriceListId}
           readOnly={!canEdit}
-          onSaved={load}
+          onSaved={reload}
         />
       )}
 
@@ -282,7 +261,7 @@ export function PartnerDetailPage() {
         key={editingPartner ? partner.id : 'partner-closed'}
         partner={editingPartner ? partner : null}
         onClose={() => setEditingPartner(false)}
-        onSaved={load}
+        onSaved={reload}
       />
 
       {/**
@@ -302,7 +281,7 @@ export function PartnerDetailPage() {
           setAddingAddress(false);
           setEditingAddress(null);
         }}
-        onSaved={load}
+        onSaved={reload}
       />
 
       <ContactDialog
@@ -317,7 +296,7 @@ export function PartnerDetailPage() {
           setAddingContact(false);
           setEditingContact(null);
         }}
-        onSaved={load}
+        onSaved={reload}
       />
     </Stack>
   );

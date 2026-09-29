@@ -13,13 +13,12 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
-import { api, messageFor } from '../lib/api';
 import { formatDate, formatDay } from '../lib/format';
 import type { PackingSlip } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 
 /**
  * One shipment on paper (ADR-041).
@@ -35,29 +34,13 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 export function PackingSlipPage() {
   const { id, shipmentId } = useParams<{ id: string; shipmentId: string }>();
 
-  const [slip, setSlip] = useState<PackingSlip | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: slip,
+    error,
+    loading,
+  } = useResource<PackingSlip>(`/orders/${id}/shipments/${shipmentId}`);
 
-  const loading = slip === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<PackingSlip>(`/orders/${id}/shipments/${shipmentId}`)
-      .then((result) => {
-        if (!ignore) setSlip(result);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) {
-          setError(messageFor(caught));
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [id, shipmentId]);
 
   if (error) return <Alert severity="error">{error}</Alert>;
 

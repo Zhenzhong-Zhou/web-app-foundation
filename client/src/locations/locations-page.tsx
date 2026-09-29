@@ -7,14 +7,14 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { Location } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { CreateLocationDialog } from './create-location-dialog';
 import { EditLocationDialog } from './edit-location-dialog';
 import { LocationNode } from './location-node';
@@ -31,41 +31,19 @@ import { childrenOf } from './tree';
 export function LocationsPage() {
   const can = useCan();
 
-  const [items, setItems] = useState<Location[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: items,
+    error,
+    loading,
+    reload,
+  } = useResource<Location[]>('/locations');
   const [creatingUnder, setCreatingUnder] = useState<Location | null>(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Location | null>(null);
 
   const canEdit = can('locations.update');
   const canCreate = can('locations.create');
-  const loading = items === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
-
-  const load = useCallback(async () => {
-    try {
-      setItems(await api<Location[]>('/locations'));
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, []);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<Location[]>('/locations')
-      .then((rows) => {
-        if (!ignore) setItems(rows);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   const roots = items ? childrenOf(items, null) : [];
 
@@ -79,7 +57,7 @@ export function LocationsPage() {
             <Button
               variant="text"
               disabled={loading}
-              onClick={() => void load()}
+              onClick={() => void reload()}
             >
               Refresh
             </Button>
@@ -134,7 +112,7 @@ export function LocationsPage() {
         open={creating}
         parent={creatingUnder}
         onClose={() => setCreating(false)}
-        onCreated={load}
+        onCreated={reload}
       />
 
       {/**
@@ -148,7 +126,7 @@ export function LocationsPage() {
         location={editing}
         locations={items ?? []}
         onClose={() => setEditing(null)}
-        onSaved={load}
+        onSaved={reload}
       />
     </Stack>
   );

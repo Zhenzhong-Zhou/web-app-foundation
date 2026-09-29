@@ -12,13 +12,14 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { RecentActivity } from './recent-activity';
 
 interface SessionSummary {
@@ -41,38 +42,16 @@ function describe(session: SessionSummary): string {
 }
 
 export function SessionsPage() {
-  const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: sessions,
+    error,
+    setError,
+    loading,
+    reload,
+  } = useResource<SessionSummary[]>('/account/sessions');
   const [revoking, setRevoking] = useState<string | null>(null);
 
-  const loading = sessions === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
-
-  const load = useCallback(async () => {
-    try {
-      setSessions(await api<SessionSummary[]>('/account/sessions'));
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, []);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<SessionSummary[]>('/account/sessions')
-      .then((rows) => {
-        if (!ignore) setSessions(rows);
-      })
-      .catch((caught: unknown) => {
-        if (ignore) return;
-        setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   async function revoke(id: string) {
     setRevoking(id);
@@ -83,7 +62,7 @@ export function SessionsPage() {
       // Re-read rather than splicing the row out locally: another device may
       // have signed in or out since this list was drawn, and the server's
       // answer is the one that is true.
-      await load();
+      await reload();
     } catch (caught) {
       setError(messageFor(caught));
     } finally {
@@ -153,7 +132,7 @@ export function SessionsPage() {
           <Button
             variant="text"
             disabled={loading || revoking !== null}
-            onClick={() => void load()}
+            onClick={() => void reload()}
           >
             Refresh
           </Button>

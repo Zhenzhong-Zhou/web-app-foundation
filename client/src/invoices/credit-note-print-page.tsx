@@ -10,13 +10,12 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { api, messageFor } from '../lib/api';
 import { formatDay, formatMoney } from '../lib/format';
 import type { CreditNoteDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { PrintParty, PrintSheet, PrintTotals } from './print-sheet';
 
 /**
@@ -27,28 +26,12 @@ import { PrintParty, PrintSheet, PrintTotals } from './print-sheet';
  */
 export function CreditNotePrintPage() {
   const { id } = useParams<{ id: string }>();
-  const [note, setNote] = useState<CreditNoteDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, loading } = useResource<{
+    creditNote: CreditNoteDetail;
+  }>(`/credit-notes/${id}`);
+  const note = data?.creditNote ?? null;
 
-  const showSkeleton = useDelayedFlag(note === null && error === null);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<{ creditNote: CreditNoteDetail }>(`/credit-notes/${id}`)
-      .then((response) => {
-        if (!ignore) setNote(response.creditNote);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) {
-          setError(messageFor(caught));
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [id]);
+  const showSkeleton = useDelayedFlag(loading);
 
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!note) return showSkeleton ? <Skeleton height={320} /> : null;

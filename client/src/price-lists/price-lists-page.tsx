@@ -14,14 +14,14 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
-import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { PriceList } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { CreatePriceListDialog } from './create-price-list-dialog';
 
 const SIDE = { sale: 'Sale', purchase: 'Purchase' } as const;
@@ -34,29 +34,13 @@ const SIDE = { sale: 'Sale', purchase: 'Purchase' } as const;
 export function PriceListsPage() {
   const can = useCan();
   const navigate = useNavigate();
-  const [lists, setLists] = useState<PriceList[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, loading } = useResource<{ priceLists: PriceList[] }>(
+    '/price-lists',
+  );
+  const lists = data?.priceLists ?? null;
   const [creating, setCreating] = useState(false);
 
-  const showSkeleton = useDelayedFlag(lists === null && error === null);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<{ priceLists: PriceList[] }>('/price-lists')
-      .then((response) => {
-        if (!ignore) setLists(response.priceLists);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) {
-          setError(messageFor(caught));
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const showSkeleton = useDelayedFlag(loading);
 
   return (
     <Stack spacing={3}>

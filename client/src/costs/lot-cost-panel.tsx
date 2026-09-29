@@ -13,13 +13,12 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { api, messageFor } from '../lib/api';
 import { formatDate, formatMoney, formatUnitCost } from '../lib/format';
 import type { LotCost, LotCostEntry } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 
 /**
  * What a valuation row was, in words. A sign test on the string, not
@@ -68,26 +67,12 @@ function describe(entry: LotCostEntry): string {
  * is where the to-do list lives; this links there when the lot is waiting.
  */
 export function LotCostPanel({ lotId }: { lotId: string }) {
-  const [cost, setCost] = useState<LotCost | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, loading } = useResource<{ lotCost: LotCost }>(
+    `/costs/lots/${lotId}`,
+  );
+  const cost = data?.lotCost ?? null;
 
-  const showSkeleton = useDelayedFlag(cost === null && error === null);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<{ lotCost: LotCost }>(`/costs/lots/${lotId}`)
-      .then((response) => {
-        if (!ignore) setCost(response.lotCost);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [lotId]);
+  const showSkeleton = useDelayedFlag(loading);
 
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!cost) return showSkeleton ? <Skeleton height={160} /> : null;

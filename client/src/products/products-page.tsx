@@ -14,13 +14,13 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
-import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { CreateProductDialog } from './create-product-dialog';
 
 export interface Variant {
@@ -48,37 +48,15 @@ export interface Product {
 export function ProductsPage() {
   const can = useCan();
 
-  const [items, setItems] = useState<Product[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: items,
+    error,
+    loading,
+    reload,
+  } = useResource<Product[]>('/products');
   const [creating, setCreating] = useState(false);
 
-  const loading = items === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
-
-  const load = useCallback(async () => {
-    try {
-      setItems(await api<Product[]>('/products'));
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, []);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<Product[]>('/products')
-      .then((rows) => {
-        if (!ignore) setItems(rows);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   return (
     <Stack spacing={3}>
@@ -95,7 +73,7 @@ export function ProductsPage() {
           </Button>
         )}
 
-        <Button variant="text" disabled={loading} onClick={() => void load()}>
+        <Button variant="text" disabled={loading} onClick={() => void reload()}>
           Refresh
         </Button>
 
@@ -168,7 +146,7 @@ export function ProductsPage() {
       <CreateProductDialog
         open={creating}
         onClose={() => setCreating(false)}
-        onCreated={load}
+        onCreated={reload}
       />
     </Stack>
   );

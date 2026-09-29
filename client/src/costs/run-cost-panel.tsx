@@ -12,12 +12,11 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
 
-import { api, messageFor } from '../lib/api';
 import { formatMoney, formatUnitCost } from '../lib/format';
 import type { RunCost } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 
 /**
  * What one batch cost to make (ADR-048): what its run consumed, at the value
@@ -31,26 +30,12 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
  * is for anyone who can see production, and cost is behind costs.view.
  */
 export function RunCostPanel({ runId }: { runId: string }) {
-  const [cost, setCost] = useState<RunCost | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, loading } = useResource<{ runCost: RunCost }>(
+    `/costs/runs/${runId}`,
+  );
+  const cost = data?.runCost ?? null;
 
-  const showSkeleton = useDelayedFlag(cost === null && error === null);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<{ runCost: RunCost }>(`/costs/runs/${runId}`)
-      .then((response) => {
-        if (!ignore) setCost(response.runCost);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [runId]);
+  const showSkeleton = useDelayedFlag(loading);
 
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!cost) return showSkeleton ? <Skeleton height={160} /> : null;

@@ -13,14 +13,14 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
-import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { TaxCode } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { TaxCodeDialog } from './tax-code-dialog';
 import { describeCharges } from './tax-rate';
 
@@ -34,41 +34,17 @@ import { describeCharges } from './tax-rate';
  */
 export function TaxCodesPage() {
   const can = useCan();
-  const [codes, setCodes] = useState<TaxCode[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, loading, reload } = useResource<{ taxCodes: TaxCode[] }>(
+    '/tax-codes',
+  );
+  const codes = data?.taxCodes ?? null;
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<TaxCode | null>(null);
 
-  const loading = codes === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 
   const canCreate = can('tax_codes.create');
   const canUpdate = can('tax_codes.update');
-
-  const load = useCallback(async () => {
-    try {
-      setCodes((await api<{ taxCodes: TaxCode[] }>('/tax-codes')).taxCodes);
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, []);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<{ taxCodes: TaxCode[] }>('/tax-codes')
-      .then((response) => {
-        if (!ignore) setCodes(response.taxCodes);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   return (
     <Stack spacing={3}>
@@ -157,7 +133,7 @@ export function TaxCodesPage() {
         open={creating}
         taxCode={null}
         onClose={() => setCreating(false)}
-        onSaved={load}
+        onSaved={reload}
       />
 
       <TaxCodeDialog
@@ -165,7 +141,7 @@ export function TaxCodesPage() {
         open={editing !== null}
         taxCode={editing}
         onClose={() => setEditing(null)}
-        onSaved={load}
+        onSaved={reload}
       />
     </Stack>
   );

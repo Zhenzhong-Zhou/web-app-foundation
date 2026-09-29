@@ -14,15 +14,15 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
-import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { Partner } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { CreatePartnerDialog } from './create-partner-dialog';
 import { EditPartnerDialog } from './edit-partner-dialog';
 
@@ -41,40 +41,18 @@ import { EditPartnerDialog } from './edit-partner-dialog';
 export function PartnersPage() {
   const can = useCan();
 
-  const [items, setItems] = useState<Partner[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: items,
+    error,
+    loading,
+    reload,
+  } = useResource<Partner[]>('/partners');
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Partner | null>(null);
 
   const canCreate = can('partners.create');
   const canEdit = can('partners.update');
-  const loading = items === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
-
-  const load = useCallback(async () => {
-    try {
-      setItems(await api<Partner[]>('/partners'));
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, []);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<Partner[]>('/partners')
-      .then((rows) => {
-        if (!ignore) setItems(rows);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   return (
     <Stack spacing={3}>
@@ -86,7 +64,7 @@ export function PartnersPage() {
             <Button
               variant="text"
               disabled={loading}
-              onClick={() => void load()}
+              onClick={() => void reload()}
             >
               Refresh
             </Button>
@@ -181,7 +159,7 @@ export function PartnersPage() {
       <CreatePartnerDialog
         open={creating}
         onClose={() => setCreating(false)}
-        onCreated={load}
+        onCreated={reload}
       />
 
       {/**
@@ -194,7 +172,7 @@ export function PartnersPage() {
         key={editing?.id}
         partner={editing}
         onClose={() => setEditing(null)}
-        onSaved={load}
+        onSaved={reload}
       />
     </Stack>
   );

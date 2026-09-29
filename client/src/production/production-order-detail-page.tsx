@@ -15,23 +15,17 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import {
-  Fragment,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import { Fragment, type ReactNode, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { RunCostPanel } from '../costs/run-cost-panel';
-import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { LineVariance, OutputVariance, RunDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import {
   CancelRunDialog,
   CloseRunDialog,
@@ -44,8 +38,12 @@ export function ProductionOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const can = useCan();
 
-  const [run, setRun] = useState<RunDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: run,
+    error,
+    loading,
+    reload,
+  } = useResource<RunDetail>(`/production-orders/${id!}`);
   const [variances, setVariances] = useState<LineVariance[]>([]);
   const [outputVariance, setOutputVariance] = useState<OutputVariance | null>(
     null,
@@ -59,33 +57,7 @@ export function ProductionOrderDetailPage() {
   const canRelease = can('production.release');
   const canComplete = can('production.complete');
 
-  const loading = run === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
-
-  const load = useCallback(async () => {
-    try {
-      setRun(await api<RunDetail>(`/production-orders/${id!}`));
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, [id]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<RunDetail>(`/production-orders/${id!}`)
-      .then((row) => {
-        if (!ignore) setRun(row);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [id]);
 
   if (loading) {
     return (
@@ -335,13 +307,13 @@ export function ProductionOrderDetailPage() {
         open={releasing}
         run={run}
         onClose={() => setReleasing(false)}
-        onReleased={load}
+        onReleased={reload}
       />
       <RecordOutputDialog
         open={recording}
         run={run}
         onClose={() => setRecording(false)}
-        onRecorded={load}
+        onRecorded={reload}
       />
       <CloseRunDialog
         open={closing}
@@ -350,14 +322,14 @@ export function ProductionOrderDetailPage() {
         onClosed={async (result) => {
           setVariances(result.variances);
           setOutputVariance(result.outputVariance);
-          await load();
+          await reload();
         }}
       />
       <CancelRunDialog
         open={cancelling}
         run={run}
         onClose={() => setCancelling(false)}
-        onCancelled={load}
+        onCancelled={reload}
       />
     </Stack>
   );

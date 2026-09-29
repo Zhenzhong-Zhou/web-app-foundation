@@ -13,15 +13,15 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
-import { api, messageFor } from '../lib/api';
 import { formatDay } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { ProductLicence } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useResource } from '../lib/use-resource';
 import { EditLicenceDialog } from './edit-licence-dialog';
 import { licenceStatus } from './licence-status';
 import { NewLicenceDialog } from './new-licence-dialog';
@@ -36,12 +36,15 @@ import { NewLicenceDialog } from './new-licence-dialog';
  */
 export function LicencesPage() {
   const can = useCan();
-  const [licences, setLicences] = useState<ProductLicence[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: licences,
+    error,
+    loading,
+    reload,
+  } = useResource<ProductLicence[]>('/product-licences');
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<ProductLicence | null>(null);
 
-  const loading = licences === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 
   const canCreate = can('product_licences.create');
@@ -53,30 +56,6 @@ export function LicencesPage() {
    * effect body is the pattern the hooks lint rule refuses — and the other
    * list pages fetch the same way.
    */
-  const load = useCallback(async () => {
-    try {
-      setLicences(await api<ProductLicence[]>('/product-licences'));
-      setError(null);
-    } catch (caught) {
-      setError(messageFor(caught));
-    }
-  }, []);
-
-  useEffect(() => {
-    let ignore = false;
-
-    void api<ProductLicence[]>('/product-licences')
-      .then((rows) => {
-        if (!ignore) setLicences(rows);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   return (
     <Stack spacing={3}>
@@ -176,7 +155,7 @@ export function LicencesPage() {
       <NewLicenceDialog
         open={creating}
         onClose={() => setCreating(false)}
-        onCreated={load}
+        onCreated={reload}
       />
 
       {/* Keyed on the row, so opening a second licence starts from its own
@@ -185,7 +164,7 @@ export function LicencesPage() {
         key={editing?.id}
         licence={editing}
         onClose={() => setEditing(null)}
-        onSaved={load}
+        onSaved={reload}
       />
     </Stack>
   );
