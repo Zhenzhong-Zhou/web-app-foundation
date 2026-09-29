@@ -20,6 +20,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
+import { LabelledValue } from '../components/labelled-value';
 import { PageHeader } from '../components/page-header';
 import { RunCostPanel } from '../costs/run-cost-panel';
 import { openDialog } from '../lib/open-dialog';
@@ -200,16 +201,16 @@ export function ProductionOrderDetailPage() {
       )}
 
       <Stack direction="row" spacing={4}>
-        <Detail label="Produced so far" value={run.quantityProduced} />
-        <Detail
+        <LabelledValue label="Produced so far" value={run.quantityProduced} />
+        <LabelledValue
           label="Made by"
           value={run.partnerId ? 'Contract manufacturer' : 'In house'}
         />
-        <Detail
+        <LabelledValue
           label="Batches"
           value={run.outputLots.length ? String(run.outputLots.length) : '—'}
         />
-        <Detail
+        <LabelledValue
           label="Made under"
           value={
             run.licenceNumber
@@ -331,17 +332,6 @@ export function ProductionOrderDetailPage() {
         onClose={() => setCancelling(false)}
         onCancelled={reload}
       />
-    </Stack>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <Stack spacing={0.5}>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body1">{value}</Typography>
     </Stack>
   );
 }

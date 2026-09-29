@@ -13,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 
+import { LabelledValue } from '../components/labelled-value';
 import { formatMoney, formatUnitCost } from '../lib/format';
 import type { RunCost } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -63,11 +64,11 @@ export function RunCostPanel({ runId }: { runId: string }) {
 
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Stack direction="row" spacing={4}>
-          <Figure
+          <LabelledValue
             label="Material cost"
             value={formatMoney(cost.materialCost, currency)}
           />
-          <Figure
+          <LabelledValue
             label="Per unit"
             value={
               cost.unitCost === null
@@ -75,7 +76,7 @@ export function RunCostPanel({ runId }: { runId: string }) {
                 : formatUnitCost(cost.unitCost, currency)
             }
           />
-          <Figure label="Made" value={cost.quantityProduced} />
+          <LabelledValue label="Made" value={cost.quantityProduced} />
         </Stack>
 
         <Typography
@@ -144,17 +145,6 @@ export function RunCostPanel({ runId }: { runId: string }) {
           </TableContainer>
         </Paper>
       )}
-    </Stack>
-  );
-}
-
-function Figure({ label, value }: { label: string; value: string }) {
-  return (
-    <Stack spacing={0.5}>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body1">{value}</Typography>
     </Stack>
   );
 }

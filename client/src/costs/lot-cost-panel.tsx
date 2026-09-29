@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { LabelledValue } from '../components/labelled-value';
 import { formatDate, formatMoney, formatUnitCost } from '../lib/format';
 import type { LotCost, LotCostEntry } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -102,7 +103,7 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
 
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Stack direction="row" spacing={4}>
-          <Figure
+          <LabelledValue
             label="Unit cost"
             value={
               cost.unitCost === null
@@ -110,8 +111,11 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
                 : formatUnitCost(cost.unitCost, currency)
             }
           />
-          <Figure label="On hand" value={cost.quantity} />
-          <Figure label="Value" value={formatMoney(cost.value, currency)} />
+          <LabelledValue label="On hand" value={cost.quantity} />
+          <LabelledValue
+            label="Value"
+            value={formatMoney(cost.value, currency)}
+          />
         </Stack>
       </Paper>
 
@@ -168,17 +172,6 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
           </TableContainer>
         </Paper>
       )}
-    </Stack>
-  );
-}
-
-function Figure({ label, value }: { label: string; value: string }) {
-  return (
-    <Stack spacing={0.5}>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body1">{value}</Typography>
     </Stack>
   );
 }
