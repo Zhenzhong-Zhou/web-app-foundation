@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.4 features done, milestone ritual next
+# web-app-foundation — handoff, v0.4.0-rc.1 tagged, v0.5 starting
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -11,8 +11,11 @@ under a licence → sell → ship → invoice → return and credit, with lot
 traceability both ways, stock held for confirmed sales, every movement valued,
 and price lists proposing the price of a new line.
 
-- Tagged **v0.4.0-rc.1**. The walkthrough, a real week by hand and the
-  BF-2609 recall drill run against it; then v0.4.0 (or rc.2 with fixes).
+- Tagged **v0.4.0-rc.1** (pre-release), deployed on Render. The final
+  v0.4.0 waits for the walkthrough, a real week by hand and the BF-2609
+  recall drill, run against rc.1 when Bob has time. Fixes they find go on
+  `release/v0.4` (branched from rc.1), v0.4.0 is tagged there, and the
+  fixes are cherry-picked into `main`.
 - Migrations: through **0035** (`price_lists`). Next is **0036**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-049**. Next is **ADR-050**.
@@ -48,10 +51,11 @@ it:
 
 Then tag v0.4.0.
 
-## Next: v0.5, maintainability and languages (proposed)
+## Now: v0.5, maintainability and languages
 
-1. **Maintainability** — shared client hooks, then split the largest files.
-   No behaviour change; each extraction its own commit. See below.
+1. **Maintainability** — the plan below: find duplicates with jscpd, extract
+   shared client code, shared server code and test helpers, then split the
+   largest files. No behaviour change; each extraction its own commit.
 2. **ADR-050, languages** — before any code. French (Quebec) and Chinese
    for the app, and French on printed documents.
 
