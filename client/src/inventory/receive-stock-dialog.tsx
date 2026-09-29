@@ -1,24 +1,22 @@
 import {
   Alert,
-  Autocomplete,
   Dialog,
   DialogContent,
   DialogTitle,
   MenuItem,
   Stack,
   TextField,
-  Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
-import { formatDay } from '../lib/format';
-import type { Location, Lot } from '../lib/types';
+import type { Location } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
+import { LotFields } from './lot-fields';
 
 const EMPTY = {
   variantId: '',
@@ -49,7 +47,6 @@ export function ReceiveStockDialog({
 }) {
   const [form, setForm] = useState({ ...EMPTY, locationId: defaultLocationId });
   const { variants, failed: variantsError } = useVariants(open);
-  const [knownLots, setKnownLots] = useState<Lot[]>([]);
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
@@ -60,29 +57,6 @@ export function ReceiveStockDialog({
   );
 
   const variant = variants.find((item) => item.id === form.variantId);
-
-  /**
-   * The codes already on this variant, so a typo shows the real one sitting
-   * beside it. Refetched when the item changes, since lots belong to one
-   * variant — and when tracksLots resolves, because the catalogue may not have
-   * arrived when the variant was chosen, and without that this never runs.
-   */
-  useEffect(() => {
-    if (!variant?.tracksLots || !form.variantId) return;
-    let ignore = false;
-
-    void api<Lot[]>(`/stock/lots?variantId=${form.variantId}`)
-      .then((rows) => {
-        if (!ignore) setKnownLots(rows);
-      })
-      // Silent: the field still works typed, and an error here would be a
-      // warning about an autocomplete nobody asked for.
-      .catch(() => undefined);
-
-    return () => {
-      ignore = true;
-    };
-  }, [form.variantId, variant?.tracksLots]);
 
   function close() {
     setForm({ ...EMPTY, locationId: defaultLocationId });
@@ -199,68 +173,18 @@ export function ReceiveStockDialog({
                 one that is (ADR-023). The form follows the same rule rather
                 than letting someone fill in a field that will be rejected. */}
             {variant?.tracksLots && (
-              <>
-                <Autocomplete
-                  freeSolo
-                  options={knownLots}
-                  getOptionLabel={(option) =>
-                    typeof option === 'string' ? option : option.code
-                  }
-                  renderOption={(props, option) =>
-                    typeof option === 'string' ? null : (
-                      <li {...props} key={option.id}>
-                        <Stack>
-                          <Typography variant="body2">{option.code}</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {option.expiresAt
-                              ? `Expires ${formatDay(option.expiresAt)}`
-                              : 'No expiry'}
-                            {option.isAssigned ? ' · code assigned here' : ''}
-                          </Typography>
-                        </Stack>
-                      </li>
-                    )
-                  }
-                  inputValue={form.lotCode}
-                  onInputChange={(_event, value) =>
-                    setForm((current) => ({ ...current, lotCode: value }))
-                  }
-                  onChange={(_event, value) => {
-                    if (typeof value === 'string' || !value) return;
-
-                    // The server ignores a supplied expiry when the lot
-                    // already exists, so showing the stored one stops someone
-                    // typing a value that silently does nothing.
-                    setForm((current) => ({
-                      ...current,
-                      lotCode: value.code,
-                      expiresAt: value.expiresAt
-                        ? value.expiresAt.slice(0, 10)
-                        : '',
-                    }));
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      id="receive-lot-code"
-                      label="Lot number"
-                      required
-                      helperText="As printed on the box. Receiving the same lot again adds to it."
-                    />
-                  )}
-                />
-
-                <TextField
-                  id="receive-expires-at"
-                  label="Expires"
-                  type="date"
-                  fullWidth
-                  value={form.expiresAt}
-                  onChange={update('expiresAt')}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  helperText="Leave blank if it does not expire. Ignored if this lot already exists."
-                />
-              </>
+              <LotFields
+                idPrefix="receive"
+                variantId={variant.id}
+                value={{ code: form.lotCode, expiresAt: form.expiresAt }}
+                onChange={(lot) =>
+                  setForm((current) => ({
+                    ...current,
+                    lotCode: lot.code,
+                    expiresAt: lot.expiresAt,
+                  }))
+                }
+              />
             )}
           </Stack>
         </DialogContent>

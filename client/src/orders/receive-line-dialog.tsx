@@ -1,5 +1,4 @@
 import {
-  Autocomplete,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -8,13 +7,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useEffect, useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { LotFields } from '../inventory/lot-fields';
 import { api } from '../lib/api';
-import { formatDay } from '../lib/format';
-import type { Location, Lot, OrderLine } from '../lib/types';
+import type { Location, OrderLine } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 
@@ -22,11 +21,12 @@ import { useVariants } from '../lib/use-variants';
  * Receiving against one line: a movement and a fulfilment in one transaction
  * (ADR-027).
  *
- * Deliberately close to ReceiveStockDialog and not shared with it. That one
+ * Deliberately close to ReceiveStockDialog and not merged with it. That one
  * picks a variant because nothing has been ordered; here the line already
  * names it, and the quantity is bounded by what was ordered. Merging them
  * would mean a component with two modes and a variant field that is sometimes
- * a choice and sometimes a label.
+ * a choice and sometimes a label. The lot fields are the part that is the
+ * same, and those are shared (LotFields).
  */
 export function ReceiveLineDialog({
   orderId,
@@ -48,7 +48,6 @@ export function ReceiveLineDialog({
     lotExpiresAt: '',
     note: '',
   });
-  const [knownLots, setKnownLots] = useState<Lot[]>([]);
 
   /**
    * Fetched on open for the same reason as AddOrderLineDialog, and it matters
@@ -66,28 +65,6 @@ export function ReceiveLineDialog({
     },
     { success: 'Received' },
   );
-
-  /**
-   * The codes already on this variant, so a typo shows the real one sitting
-   * beside it. freeSolo, because a genuinely new lot has to be typeable —
-   * this is a prompt, not a constraint.
-   */
-  useEffect(() => {
-    if (!variant?.tracksLots || !line) return;
-    let ignore = false;
-
-    void api<Lot[]>(`/stock/lots?variantId=${line.variantId}`)
-      .then((rows) => {
-        if (!ignore) setKnownLots(rows);
-      })
-      // Silent: the field still works typed, and an error here would be a
-      // warning about an autocomplete nobody asked for.
-      .catch(() => undefined);
-
-    return () => {
-      ignore = true;
-    };
-  }, [line, variant?.tracksLots]);
 
   function close() {
     reset();
@@ -185,72 +162,18 @@ export function ReceiveLineDialog({
                 refuses a lot on one that is not — and refuses a movement
                 without one on a variant that is. */}
             {variant?.tracksLots && (
-              <>
-                <Autocomplete
-                  freeSolo
-                  options={knownLots}
-                  getOptionLabel={(option) =>
-                    typeof option === 'string' ? option : option.code
-                  }
-                  renderOption={(props, option) => (
-                    <li {...props} key={option.id}>
-                      <Stack>
-                        <Typography variant="body2">{option.code}</Typography>
-                        {/* The expiry is how someone spots the other mistake:
-                            a code that exists but belongs to another run. */}
-                        <Typography variant="caption" color="text.secondary">
-                          {option.expiresAt
-                            ? `Expires ${formatDay(option.expiresAt)}`
-                            : 'No expiry'}
-                          {option.isAssigned ? ' · code assigned here' : ''}
-                        </Typography>
-                      </Stack>
-                    </li>
-                  )}
-                  inputValue={form.lotCode}
-                  onInputChange={(_event, value) =>
-                    setForm((current) => ({ ...current, lotCode: value }))
-                  }
-                  onChange={(_event, value) => {
-                    if (typeof value === 'string' || !value) return;
-
-                    /**
-                     * Filled from the lot that was picked, because the server
-                     * ignores a supplied expiry when the lot already exists —
-                     * a second delivery does not rewrite the expiry of units
-                     * already on the shelf. Leaving the field blank here
-                     * would let someone type one that silently does nothing.
-                     */
-                    setForm((current) => ({
-                      ...current,
-                      lotCode: value.code,
-                      lotExpiresAt: value.expiresAt
-                        ? value.expiresAt.slice(0, 10)
-                        : '',
-                    }));
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      id="receive-line-lot-code"
-                      label="Lot"
-                      required
-                      helperText="As printed on the box. Receiving the same lot again adds to it."
-                    />
-                  )}
-                />
-
-                <TextField
-                  id="receive-line-lot-expires"
-                  label="Expires"
-                  type="date"
-                  fullWidth
-                  value={form.lotExpiresAt}
-                  onChange={update('lotExpiresAt')}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  helperText="Leave blank if it does not expire. Ignored if this lot already exists."
-                />
-              </>
+              <LotFields
+                idPrefix="receive-line"
+                variantId={variant.id}
+                value={{ code: form.lotCode, expiresAt: form.lotExpiresAt }}
+                onChange={(lot) =>
+                  setForm((current) => ({
+                    ...current,
+                    lotCode: lot.code,
+                    lotExpiresAt: lot.expiresAt,
+                  }))
+                }
+              />
             )}
 
             <TextField
