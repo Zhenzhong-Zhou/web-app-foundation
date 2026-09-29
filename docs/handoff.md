@@ -36,9 +36,11 @@ and price lists proposing the price of a new line.
 1. **Invoices for shipments** — done (ADR-046).
 2. **Credit notes for returns, with RMA (#22)** — done (ADR-047).
 3. **Cost on lots and batches** — done (ADR-048, server and client).
-4. **Price lists** — done (ADR-049, server and client), **except margin on
-   sale orders**: the ADR shows it to `costs.view` holders, and it was not
-   built. Build it before tagging, or amend ADR-049 to defer it.
+4. **Price lists** — done (ADR-049, server and client). Margin deferred by
+   amendment: both an estimated margin (price against current pool cost) and
+   an actual one (invoice revenue against the shipped lots' valuation rows)
+   are derivable without a migration; the first real week decides which to
+   build.
 
 Then the end-of-milestone ritual, **required this time** since v0.3 skipped
 it:
@@ -187,7 +189,6 @@ Rules:
 
 ## Left over, small
 
-- **Margin on sale orders** (ADR-049) — see the milestone above.
 - **Pro forma invoices** — deferred in ADR-046; remind Bob. Bring forward if
   the business needs them for customs, prepayment or sample values.
 - `issue()` in `invoices.service.ts` sets `taxCodeName` with a correlated

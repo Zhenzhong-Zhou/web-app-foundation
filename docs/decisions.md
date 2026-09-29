@@ -3656,6 +3656,23 @@ existing keyset pattern if it grows past that.
   Needs ADR-048's open decision on period close first.
 - **Importing a list from a spreadsheet**, and a supplier's price file.
 
+**Amendment — margin deferred, and derivable either way.** Showing margin to
+`costs.view` holders is not built in v0.4. Production systems show two
+figures, and both are already derivable here without storing anything new:
+
+- **Estimated margin** on a sale line — its price against the item's current
+  pool cost. A decision aid while pricing; it moves as costs move.
+- **Actual margin** per shipment or invoice — invoice net revenue against the
+  value of the outbound valuation rows for the lots that shipped (ADR-048),
+  less credits and plus returns. Exact, and fixed once written, because the
+  ledger is append-only; no snapshot is needed.
+
+Both are computed on read, so landed cost, conversion cost or another costing
+method (all deferred in ADR-048) reach margin with no change here. Revenue in
+another currency converts at the invoice date's rate; with none on file the
+margin shows as unconverted rather than guessed. Which to build first is
+what the first real week will show.
+
 ---
 
 # Open decisions
@@ -4125,6 +4142,12 @@ they exist so the reasoning is not rediscovered from scratch.
   price to the audit log. A `valid_from` on list items, with the latest
   on or before the order's date winning, is the likely shape. Trigger: the
   first price change that must be entered ahead of time.
+- **Which margin to show first.** Estimated margin on sale order lines (price
+  against current pool cost, while pricing) or actual margin per invoice
+  (revenue against the shipped lots' valuation rows, after the fact). Both
+  are derivable from existing data (ADR-049 amendment); neither needs a
+  migration. Trigger: the first pricing decision or margin question someone
+  actually asks, which says which of the two.
 
 ---
 
