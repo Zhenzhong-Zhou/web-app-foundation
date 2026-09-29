@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
+import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
@@ -79,17 +80,13 @@ export function ExchangeRateDialog({
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
 
-            <TextField
+            <CurrencyField
               id="exchange-rate-currency"
-              label="Currency"
               required
               value={currency}
-              onChange={(event) =>
-                setCurrency(event.target.value.toUpperCase())
-              }
+              onChange={setCurrency}
               disabled={initial !== null}
               helperText={`Converted into ${baseCurrency}.`}
-              slotProps={{ htmlInput: { maxLength: 3 } }}
             />
 
             <TextField

@@ -11,6 +11,7 @@ import { type SubmitEvent, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
+import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import type { OrganizationProfile } from '../lib/types';
@@ -358,14 +359,13 @@ function BaseCurrencyForm({
 
           {error && <FormError message={error} />}
 
-          <TextField
+          <CurrencyField
             id="organization-base-currency"
             label="Base currency"
             value={currency}
-            onChange={(event) => setCurrency(event.target.value.toUpperCase())}
+            onChange={setCurrency}
             disabled={readOnly}
             helperText="What stock is valued in: CAD, USD. It cannot change once stock carries a value in it."
-            slotProps={{ htmlInput: { maxLength: 3 } }}
             sx={{ maxWidth: 240 }}
           />
 

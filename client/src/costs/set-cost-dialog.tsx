@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
+import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
@@ -104,15 +105,11 @@ export function SetCostDialog({
               slotProps={{ htmlInput: { inputMode: 'decimal' } }}
             />
 
-            <TextField
+            <CurrencyField
               id="set-cost-currency"
-              label="Currency"
               required
               value={currency}
-              onChange={(event) =>
-                setCurrency(event.target.value.toUpperCase())
-              }
-              slotProps={{ htmlInput: { maxLength: 3 } }}
+              onChange={setCurrency}
             />
 
             {foreign && (

@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useRef, useState } from 'react';
 
+import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
@@ -103,16 +104,12 @@ export function CreatePriceListDialog({
               <MenuItem value="purchase">What a supplier charges</MenuItem>
             </TextField>
 
-            <TextField
+            <CurrencyField
               id="price-list-currency"
-              label="Currency"
               required
               value={currency}
-              onChange={(event) =>
-                setCurrency(event.target.value.toUpperCase())
-              }
+              onChange={setCurrency}
               helperText="Every price on the list is in it. Neither this nor the side above can change later."
-              slotProps={{ htmlInput: { maxLength: 3 } }}
             />
           </Stack>
         </DialogContent>

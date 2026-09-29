@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
+import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
@@ -127,16 +128,12 @@ export function EditOrderLineDialog({
                 }}
               />
 
-              <TextField
+              <CurrencyField
                 id="edit-line-currency"
-                label="Currency"
                 required={price.trim() !== ''}
                 value={currency}
-                onChange={(event) =>
-                  setCurrency(event.target.value.toUpperCase())
-                }
+                onChange={setCurrency}
                 sx={{ width: 120 }}
-                slotProps={{ htmlInput: { maxLength: 3 } }}
               />
             </Stack>
           </Stack>

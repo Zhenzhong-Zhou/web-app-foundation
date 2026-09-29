@@ -17,6 +17,7 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import type { OrderDirection, Partner, VariantOption } from '../lib/types';
@@ -261,16 +262,12 @@ export function CreateOrderPage() {
                 slotProps={{ inputLabel: { shrink: true } }}
               />
 
-              <TextField
+              <CurrencyField
                 id="order-currency"
-                label="Currency"
                 value={currency}
-                onChange={(event) =>
-                  setCurrency(event.target.value.toUpperCase())
-                }
+                onChange={setCurrency}
                 helperText="For any prices below"
                 sx={{ width: 160, flexShrink: 0 }}
-                slotProps={{ htmlInput: { maxLength: 3 } }}
               />
             </Stack>
 

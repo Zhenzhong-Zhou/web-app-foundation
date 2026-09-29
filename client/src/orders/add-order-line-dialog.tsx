@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { type SubmitEvent, useRef, useState } from 'react';
 
+import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
@@ -157,19 +158,12 @@ export function AddOrderLineDialog({
                 }}
               />
 
-              <TextField
+              <CurrencyField
                 id="add-line-currency"
-                label="Currency"
                 required={price.trim() !== ''}
                 value={currency}
-                // Uppercased on the way in rather than validated on the way
-                // out: the server takes ISO 4217 and "cad" is a typo nobody
-                // means.
-                onChange={(event) =>
-                  setCurrency(event.target.value.toUpperCase())
-                }
+                onChange={setCurrency}
                 sx={{ width: 120 }}
-                slotProps={{ htmlInput: { maxLength: 3 } }}
               />
             </Stack>
           </Stack>
