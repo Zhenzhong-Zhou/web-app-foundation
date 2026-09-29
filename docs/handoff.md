@@ -11,8 +11,8 @@ under a licence → sell → ship → invoice → return and credit, with lot
 traceability both ways, stock held for confirmed sales, every movement valued,
 and price lists proposing the price of a new line.
 
-- Last tag: **v0.3.0**. v0.4's features are built; the milestone ritual is
-  left, then tag v0.4.0.
+- Tagged **v0.4.0-rc.1**. The walkthrough, a real week by hand and the
+  BF-2609 recall drill run against it; then v0.4.0 (or rc.2 with fixes).
 - Migrations: through **0035** (`price_lists`). Next is **0036**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-049**. Next is **ADR-050**.
@@ -22,14 +22,8 @@ and price lists proposing the price of a new line.
 - `npm run seed:demo`: BF-2609 valued at 1900.00 CAD, run FOC-2609-01 costed
   at 1292.00 over 980 bottles (1.318367 each), SO-DEMO-2 priced from the
   Wholesale CAD list (the organization default).
-- **Render is down.** The free Postgres expired: Render suspends a free
-  database after 30 days, and it cannot be reactivated, only upgraded or
-  replaced. The web service's last deploy failed before that, so read its log
-  first. Then: a new database in Oregon, its internal URL into
-  `DATABASE_URL`, redeploy (migrations build 0000–0035 from empty). A free
-  database expires again in 30 days; use a paid instance, or a provider
-  whose free Postgres does not expire (PG 18 for `uuidv7()`), for the week by
-  hand.
+- **Render is up** (new database; migrations 0000–0035 applied). If it is
+  a free instance it expires 30 days after creation — note the date here.
 
 ## v0.4 milestone — money
 
