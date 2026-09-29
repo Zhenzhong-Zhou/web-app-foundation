@@ -21,6 +21,7 @@ import { TaxCodesService } from '../modules/tax-codes/tax-codes.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
 import { lots, memberships, productVariants, users } from './schema';
 import { runInTenantContext } from './tenant-context';
+import {PriceListsService} from "../modules/price-lists/price-lists.service";
 
 /**
  * One product, made once, through the same services the API calls.
@@ -124,6 +125,7 @@ async function seedDemo(): Promise<void> {
     const partnerAddresses = app.get(PartnerAddressesService);
     const taxCodes = app.get(TaxCodesService);
     const invoices = app.get(InvoicesService);
+    const priceLists = app.get(PriceListsService);
 
     // Every service below resolves its tenant from here, the same way a
     // request does through the auth guard (ADR-003).
@@ -484,6 +486,24 @@ async function seedDemo(): Promise<void> {
         );
 
         /**
+         * A wholesale list, as the organization's default for customers with
+         * none of their own (ADR-049). The second sale below is added without
+         * a price and takes it from here, so the order page shows a line
+         * "from Wholesale CAD" beside the first sale's typed prices.
+         */
+        const wholesale = await priceLists.create({
+          name: 'Wholesale CAD',
+          direction: 'sale',
+          currency: 'CAD',
+        });
+
+        await priceLists.setItem(wholesale.id, finished.variants[0].id, {
+          unitPrice: '24.9900',
+        });
+
+        await organization.update({ defaultSalePriceListId: wholesale.id });
+
+        /**
          * A second customer wants more than is free. Confirmed anyway: it
          * holds what exists after the first order's claim, and the rest shows
          * as a backorder (ADR-045) — so Inventory's "Promised to customers"
@@ -503,8 +523,6 @@ async function seedDemo(): Promise<void> {
               {
                 variantId: finished.variants[0].id,
                 quantityOrdered: '500',
-                unitPrice: '24.9900',
-                currency: 'CAD',
               },
             ],
           },
