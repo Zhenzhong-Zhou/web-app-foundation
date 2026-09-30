@@ -29,6 +29,7 @@ import { StockService, type Tx } from '../stock/stock.service';
 import { trackedVariants } from '../stock/tracked-variants';
 import type { PreviewShipmentDto, ShipOrderDto } from './dto/ship-order.dto';
 import type { VoidShipmentDto } from './dto/void-shipment.dto';
+import { loadOrder } from './load-order';
 import { lineFor, type OrderLine, requestedLines } from './order-line-lookup';
 
 /** One SKU and lot within a shipment, as the ledger records it. */
@@ -322,17 +323,7 @@ export class ShipmentsService {
     actorId: string,
   ): Promise<void> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [order] = await tx
-        .select()
-        .from(orders)
-        .where(
-          and(
-            eq(orders.id, orderId),
-            eq(orders.organizationId, organizationId),
-          ),
-        );
-
-      if (!order) throw new NotFoundException('No such order');
+      const order = await loadOrder(tx, organizationId, orderId);
 
       /**
        * Locked, so two people voiding the same shipment at once cannot both
@@ -764,14 +755,7 @@ export class ShipmentsService {
   // ---------------------------------------------------------------------------
 
   private async loadShippable(tx: Tx, organizationId: string, orderId: string) {
-    const [order] = await tx
-      .select()
-      .from(orders)
-      .where(
-        and(eq(orders.id, orderId), eq(orders.organizationId, organizationId)),
-      );
-
-    if (!order) throw new NotFoundException('No such order');
+    const order = await loadOrder(tx, organizationId, orderId);
 
     if (order.direction !== 'sale') {
       throw new BadRequestException(

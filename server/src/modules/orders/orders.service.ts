@@ -43,6 +43,7 @@ import { ListOrdersDto } from './dto/list-orders.dto';
 import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
 import type { ReceiveLineDto } from './dto/receive-line.dto';
 import type { UpdateOrderDto } from './dto/update-order.dto';
+import { loadOrder } from './load-order';
 
 type OrderLine = typeof orderLines.$inferSelect;
 
@@ -438,17 +439,7 @@ export class OrdersService {
    */
   async duplicate(orderId: string, actorId: string) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [source] = await tx
-        .select()
-        .from(orders)
-        .where(
-          and(
-            eq(orders.organizationId, organizationId),
-            eq(orders.id, orderId),
-          ),
-        );
-
-      if (!source) throw new NotFoundException('No such order');
+      const source = await loadOrder(tx, organizationId, orderId);
 
       const [partner] = await tx
         .select()
@@ -665,7 +656,7 @@ export class OrdersService {
     this.assertPriceAndCurrency(input);
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const order = await this.loadOrder(tx, organizationId, orderId);
+      const order = await loadOrder(tx, organizationId, orderId);
 
       /**
        * Draft only. Adding an item to an order the supplier has already been
@@ -711,7 +702,7 @@ export class OrdersService {
     this.assertPriceAndCurrency(input);
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const order = await this.loadOrder(tx, organizationId, orderId);
+      const order = await loadOrder(tx, organizationId, orderId);
       const line = await this.loadLine(tx, orderId, lineId);
 
       if (order.status !== 'draft' && order.status !== 'confirmed') {
@@ -795,7 +786,7 @@ export class OrdersService {
    */
   async useListPrice(orderId: string, lineId: string): Promise<void> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const order = await this.loadOrder(tx, organizationId, orderId);
+      const order = await loadOrder(tx, organizationId, orderId);
       const line = await this.loadLine(tx, orderId, lineId);
 
       if (order.status !== 'draft' && order.status !== 'confirmed') {
@@ -870,7 +861,7 @@ export class OrdersService {
 
   async removeLine(orderId: string, lineId: string): Promise<void> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const order = await this.loadOrder(tx, organizationId, orderId);
+      const order = await loadOrder(tx, organizationId, orderId);
       const line = await this.loadLine(tx, orderId, lineId);
 
       /**
@@ -921,7 +912,7 @@ export class OrdersService {
   ): Promise<void> {
     const { organizationId, sku, fulfilled, ordered } =
       await this.tenantDb.transaction(async (tx, organizationId) => {
-        const order = await this.loadOrder(tx, organizationId, orderId);
+        const order = await loadOrder(tx, organizationId, orderId);
         const line = await this.loadLine(tx, orderId, lineId);
 
         /**
@@ -992,7 +983,7 @@ export class OrdersService {
    */
   async reopenLine(orderId: string, lineId: string): Promise<void> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const order = await this.loadOrder(tx, organizationId, orderId);
+      const order = await loadOrder(tx, organizationId, orderId);
       const line = await this.loadLine(tx, orderId, lineId);
 
       if (order.status !== 'confirmed') {
@@ -1034,17 +1025,7 @@ export class OrdersService {
     actorId: string,
   ) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [order] = await tx
-        .select()
-        .from(orders)
-        .where(
-          and(
-            eq(orders.id, orderId),
-            eq(orders.organizationId, organizationId),
-          ),
-        );
-
-      if (!order) throw new NotFoundException('No such order');
+      const order = await loadOrder(tx, organizationId, orderId);
 
       if (order.direction !== 'purchase') {
         throw new BadRequestException(
@@ -1263,19 +1244,6 @@ export class OrdersService {
     }
 
     return inserted;
-  }
-
-  private async loadOrder(tx: Tx, organizationId: string, orderId: string) {
-    const [order] = await tx
-      .select()
-      .from(orders)
-      .where(
-        and(eq(orders.id, orderId), eq(orders.organizationId, organizationId)),
-      );
-
-    if (!order) throw new NotFoundException('No such order');
-
-    return order;
   }
 
   /**

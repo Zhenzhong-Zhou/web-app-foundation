@@ -3,7 +3,6 @@ import {
   ConflictException,
   Injectable,
   Logger,
-  NotFoundException,
 } from '@nestjs/common';
 import { and, desc, eq, sql } from 'drizzle-orm';
 
@@ -12,7 +11,6 @@ import { isCheckViolation } from '../../database/errors';
 import {
   orderLines,
   orderReturns,
-  orders,
   productVariants,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -21,6 +19,7 @@ import { itemName } from '../stock/item-name';
 import { StockService, type Tx } from '../stock/stock.service';
 import { trackedVariants } from '../stock/tracked-variants';
 import type { ReturnOrderDto } from './dto/return-order.dto';
+import { loadOrder } from './load-order';
 import { lineFor, type OrderLine, requestedLines } from './order-line-lookup';
 
 type ReturnLine = ReturnOrderDto['lines'][number];
@@ -322,14 +321,7 @@ export class ReturnsService {
     organizationId: string,
     orderId: string,
   ) {
-    const [order] = await tx
-      .select()
-      .from(orders)
-      .where(
-        and(eq(orders.id, orderId), eq(orders.organizationId, organizationId)),
-      );
-
-    if (!order) throw new NotFoundException('No such order');
+    const order = await loadOrder(tx, organizationId, orderId);
 
     if (order.direction !== 'sale') {
       throw new BadRequestException(

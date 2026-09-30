@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
-import { orderLines, orders } from '../../database/schema';
+import { orderLines } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { loadOrder } from '../orders/load-order';
 import { availability, holdsFor, type LineHold } from './availability';
 
 /** Reads over what open orders hold (ADR-045). Nothing here writes. */
@@ -23,17 +24,8 @@ export class AvailabilityService {
    */
   async forOrder(orderId: string) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [order] = await tx
-        .select()
-        .from(orders)
-        .where(
-          and(
-            eq(orders.id, orderId),
-            eq(orders.organizationId, organizationId),
-          ),
-        );
-
-      if (!order) throw new NotFoundException('No such order');
+      // A 404 for an order that is not this organization's, before anything else.
+      await loadOrder(tx, organizationId, orderId);
 
       const lines = await tx
         .select({ variantId: orderLines.variantId })

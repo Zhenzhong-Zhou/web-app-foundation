@@ -22,6 +22,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { takeNumber } from '../invoices/document-numbers';
+import { loadOrder } from '../orders/load-order';
 import { requestedLines } from '../orders/order-line-lookup';
 import type { CreateReturnAuthorizationDto } from './dto/create-return-authorization.dto';
 import type { ListReturnAuthorizationsDto } from './dto/list-return-authorizations.dto';
@@ -144,17 +145,7 @@ export class ReturnAuthorizationsService {
   async create(input: CreateReturnAuthorizationDto, actorId: string) {
     const created = await this.tenantDb.transaction(
       async (tx, organizationId) => {
-        const [order] = await tx
-          .select()
-          .from(orders)
-          .where(
-            and(
-              eq(orders.organizationId, organizationId),
-              eq(orders.id, input.orderId),
-            ),
-          );
-
-        if (!order) throw new NotFoundException('No such order');
+        const order = await loadOrder(tx, organizationId, input.orderId);
 
         if (order.direction !== 'sale') {
           throw new ConflictException(
