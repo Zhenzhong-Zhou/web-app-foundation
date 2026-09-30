@@ -44,28 +44,9 @@ import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
 import type { ReceiveLineDto } from './dto/receive-line.dto';
 import type { UpdateOrderDto } from './dto/update-order.dto';
 import { loadOrder } from './load-order';
+import { assertPriceAndCurrency, insertLines } from './order-line-pricing';
 
 type OrderLine = typeof orderLines.$inferSelect;
-
-/**
- * A line as the service inserts it. A price given here is kept as given; a
- * duplicate also carries where the original's price came from, so copying an
- * order does not quietly re-price it.
- */
-interface LineInput {
-  variantId: string;
-  quantityOrdered: string;
-  unitPrice?: string;
-  currency?: string;
-  priceSource?: 'list' | 'manual';
-  priceListId?: string;
-}
-
-/**
- * A line just added, with a word on its price when the list could not supply
- * one (ADR-049). Not stored: it explains this response, not the line.
- */
-type AddedLine = OrderLine & { priceNotice?: string };
 
 /**
  * Which status changes are allowed, and from where.
@@ -401,12 +382,7 @@ export class OrdersService {
           })
           .returning();
 
-        const lines = await this.insertLines(
-          tx,
-          organizationId,
-          order,
-          input.lines,
-        );
+        const lines = await insertLines(tx, organizationId, order, input.lines);
 
         this.logger.log(
           `Order ${order.id} created: ${input.direction}, ${lines.length} lines`,
@@ -516,7 +492,7 @@ export class OrdersService {
        * picks up a renamed SKU for free — and refuses a variant that has since
        * moved organizations, which a blind copy of the old line would not.
        */
-      const lines = await this.insertLines(
+      const lines = await insertLines(
         tx,
         organizationId,
         order,
@@ -653,7 +629,7 @@ export class OrdersService {
   }
 
   async addLine(orderId: string, input: AddOrderLineDto) {
-    this.assertPriceAndCurrency(input);
+    assertPriceAndCurrency(input);
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const order = await loadOrder(tx, organizationId, orderId);
@@ -670,9 +646,7 @@ export class OrdersService {
       }
 
       try {
-        const [line] = await this.insertLines(tx, organizationId, order, [
-          input,
-        ]);
+        const [line] = await insertLines(tx, organizationId, order, [input]);
 
         this.logger.log(`Order ${orderId} gained line ${line.id}`);
         return line;
@@ -699,7 +673,7 @@ export class OrdersService {
     lineId: string,
     input: UpdateOrderLineDto,
   ): Promise<void> {
-    this.assertPriceAndCurrency(input);
+    assertPriceAndCurrency(input);
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const order = await loadOrder(tx, organizationId, orderId);
@@ -1125,128 +1099,6 @@ export class OrdersService {
   }
 
   /**
-   * Each line snapshots the SKU the way movements do (ADR-023), so an order
-   * printed last March keeps showing what was on the label at the time while
-   * variant_id still resolves to the current row.
-   *
-   * One at a time rather than a single multi-row insert: each needs its
-   * variant loaded to read that SKU, and a line naming a variant from another
-   * organization has to fail the whole order rather than be skipped.
-   */
-  private async insertLines(
-    tx: Tx,
-    organizationId: string,
-    order: {
-      id: string;
-      direction: string;
-      isSample: boolean;
-      partnerId: string;
-    },
-    lines: LineInput[],
-  ): Promise<AddedLine[]> {
-    const inserted: AddedLine[] = [];
-
-    /**
-     * The list new lines default from (ADR-049), read once for the call. A
-     * line that brings its own price never consults it.
-     */
-    const list = lines.some((line) => line.unitPrice === undefined)
-      ? await listForOrder(tx, organizationId, order)
-      : null;
-
-    /**
-     * A sale is invoiced in one currency (ADR-046). The currencies its lines
-     * are already priced in, so a list price in another is left off rather
-     * than building an order that cannot be confirmed.
-     */
-    const saleCurrencies = new Set<string>();
-
-    if (order.direction === 'sale') {
-      const priced = await tx
-        .selectDistinct({ currency: orderLines.currency })
-        .from(orderLines)
-        .where(
-          and(eq(orderLines.orderId, order.id), isNotNull(orderLines.currency)),
-        );
-
-      for (const row of priced) {
-        if (row.currency) saleCurrencies.add(row.currency);
-      }
-    }
-
-    for (const line of lines) {
-      const [variant] = await tx
-        .select()
-        .from(productVariants)
-        .where(
-          and(
-            eq(productVariants.id, line.variantId),
-            eq(productVariants.organizationId, organizationId),
-          ),
-        );
-
-      if (!variant) throw new BadRequestException('Unknown variant');
-
-      let unitPrice: string | null = line.unitPrice ?? null;
-      let currency: string | null = line.currency ?? null;
-      let priceSource: 'list' | 'manual' | null =
-        line.unitPrice !== undefined ? (line.priceSource ?? 'manual') : null;
-      let priceListId: string | null =
-        line.unitPrice !== undefined ? (line.priceListId ?? null) : null;
-      let priceNotice: string | undefined;
-
-      if (line.unitPrice === undefined && list) {
-        const listed = await priceOnList(
-          tx,
-          organizationId,
-          list.id,
-          line.variantId,
-        );
-
-        if (listed === null) {
-          priceNotice = `${list.name} has no price for ${variant.sku}`;
-        } else if (
-          order.direction === 'sale' &&
-          saleCurrencies.size > 0 &&
-          !saleCurrencies.has(list.currency)
-        ) {
-          // Unpriced rather than refused: the confirm check names the line,
-          // and the person may not control the list (ADR-049).
-          priceNotice = `This sale is in ${[...saleCurrencies].join(', ')} and ${list.name} prices in ${list.currency}, so ${variant.sku} was added without a price`;
-        } else {
-          unitPrice = listed;
-          currency = list.currency;
-          priceSource = 'list';
-          priceListId = list.id;
-        }
-      }
-
-      if (order.direction === 'sale' && currency !== null) {
-        saleCurrencies.add(currency);
-      }
-
-      const [row] = await tx
-        .insert(orderLines)
-        .values({
-          organizationId,
-          orderId: order.id,
-          variantId: line.variantId,
-          sku: variant.sku,
-          quantityOrdered: line.quantityOrdered,
-          unitPrice,
-          currency,
-          priceSource,
-          priceListId,
-        })
-        .returning();
-
-      inserted.push(priceNotice ? { ...row, priceNotice } : row);
-    }
-
-    return inserted;
-  }
-
-  /**
    * Both ids together, as the receipt path does: without the second condition
    * any line in the organization could be reached through any order's URL.
    */
@@ -1269,22 +1121,6 @@ export class OrdersService {
     if (Number(line.quantityFulfilled) > 0) {
       throw new ConflictException(
         `${line.quantityFulfilled} has already been received against this item, so it cannot be ${verb}`,
-      );
-    }
-  }
-
-  /**
-   * The check constraint refuses a half-priced line, but as a constraint
-   * violation rather than an explanation. This says which half is missing
-   * (ADR-035).
-   */
-  private assertPriceAndCurrency(input: {
-    unitPrice?: string;
-    currency?: string;
-  }): void {
-    if ((input.unitPrice === undefined) !== (input.currency === undefined)) {
-      throw new BadRequestException(
-        'A price needs a currency, and a currency needs a price',
       );
     }
   }
