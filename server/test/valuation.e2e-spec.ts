@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import {
   type Database,
@@ -7,26 +7,26 @@ import {
 } from '../src/database/database.module';
 import {
   exchangeRates,
-  lots,
   stockMovements,
   stockValuations,
-  valuationPools,
 } from '../src/database/schema';
 import { body, createE2eApp, registerOrganization } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import {
+  buy,
+  cad,
+  expectBooksToReconcile,
+  lotIdOf,
+  move,
+  poolOf,
+  usd,
+  valuationOf,
+} from './utils/valuation';
 
 interface OrderResponse {
   id: string;
   lines: { id: string; variantId: string }[];
 }
-
-interface Price {
-  unitPrice: string;
-  currency: string;
-}
-
-const cad = (unitPrice: string): Price => ({ unitPrice, currency: 'CAD' });
-const usd = (unitPrice: string): Price => ({ unitPrice, currency: 'USD' });
 
 /**
  * Value is a ledger beside the quantity ledger (ADR-048). Values are
@@ -59,48 +59,7 @@ describe('Stock valuation (e2e)', () => {
    * the code under test agrees with itself while both are wrong.
    */
   afterEach(async () => {
-    const drift = await db.execute(sql`
-      select p.id, p.quantity, p.value,
-             v.quantity as valued_quantity, v.value as valued_value,
-             l.quantity as level_quantity
-      from valuation_pools p
-      cross join lateral (
-        select coalesce(sum(sv.quantity), 0) as quantity,
-               coalesce(sum(sv.value), 0) as value
-        from stock_valuations sv
-        where sv.organization_id = p.organization_id
-          and sv.variant_id = p.variant_id
-          and sv.lot_id is not distinct from p.lot_id
-          and sv.kind <> 'issued'
-      ) v
-      cross join lateral (
-        select coalesce(sum(sl.quantity), 0) as quantity
-        from stock_levels sl
-        where sl.organization_id = p.organization_id
-          and sl.variant_id = p.variant_id
-          and sl.lot_id is not distinct from p.lot_id
-      ) l
-      where p.quantity <> v.quantity
-         or p.value <> v.value
-         or p.quantity <> l.quantity
-    `);
-
-    expect(drift.rows).toEqual([]);
-
-    const unpooled = await db.execute(sql`
-      select sl.variant_id, sl.lot_id
-      from stock_levels sl
-      where not exists (
-        select 1 from valuation_pools p
-        where p.organization_id = sl.organization_id
-          and p.variant_id = sl.variant_id
-          and p.lot_id is not distinct from sl.lot_id
-      )
-      group by sl.variant_id, sl.lot_id
-      having sum(sl.quantity) > 0
-    `);
-
-    expect(unpooled.rows).toEqual([]);
+    await expectBooksToReconcile(db);
   });
 
   async function setup(slugish: string, base: string | null = 'CAD') {
@@ -147,48 +106,6 @@ describe('Stock valuation (e2e)', () => {
     ).product.variants[0].id;
   }
 
-  /** A purchase order for one item, confirmed and received in full. */
-  async function buy(
-    s: Setup,
-    variantId: string,
-    quantity: string,
-    price?: Price,
-    lot?: { code: string },
-  ) {
-    const order = body<{ order: OrderResponse }>(
-      await s.agent
-        .post('/v1/orders')
-        .send({
-          partnerId: s.supplier,
-          direction: 'purchase',
-          lines: [{ variantId, quantityOrdered: quantity, ...price }],
-        })
-        .expect(201),
-    ).order;
-
-    await s.agent
-      .patch(`/v1/orders/${order.id}`)
-      .send({ status: 'confirmed' })
-      .expect(204);
-
-    const res = await s.agent
-      .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
-      .send({ toLocationId: s.shelf, quantity, lot })
-      .expect(201);
-
-    return body<{ movement: { id: string } }>(res).movement.id;
-  }
-
-  /** A movement through the stock endpoint, by hand. */
-  async function move(s: Setup, payload: Record<string, unknown>) {
-    const res = await s.agent
-      .post('/v1/stock/movements')
-      .send(payload)
-      .expect(201);
-
-    return body<{ movement: { id: string } }>(res).movement.id;
-  }
-
   /** A sale for one untracked item, confirmed and shipped from the shelf. */
   async function sellAndShip(s: Setup, variantId: string, quantity: string) {
     const order = body<{ order: OrderResponse }>(
@@ -220,34 +137,6 @@ describe('Stock valuation (e2e)', () => {
     return { order, shipmentId: shipment.id };
   }
 
-  async function valuationOf(movementId: string) {
-    const [row] = await db
-      .select()
-      .from(stockValuations)
-      .where(eq(stockValuations.movementId, movementId));
-    return row;
-  }
-
-  async function poolOf(variantId: string, lotId: string | null = null) {
-    const [row] = await db
-      .select()
-      .from(valuationPools)
-      .where(
-        and(
-          eq(valuationPools.variantId, variantId),
-          lotId
-            ? eq(valuationPools.lotId, lotId)
-            : isNull(valuationPools.lotId),
-        ),
-      );
-    return row;
-  }
-
-  async function lotIdOf(code: string) {
-    const [row] = await db.select().from(lots).where(eq(lots.code, code));
-    return row.id;
-  }
-
   async function movementWith(reason: string) {
     const [row] = await db
       .select()
@@ -263,7 +152,7 @@ describe('Stock valuation (e2e)', () => {
 
       const receipt = await buy(s, blend, '50', cad('38'), { code: 'BF-2609' });
 
-      const row = await valuationOf(receipt);
+      const row = await valuationOf(db, receipt);
       expect(row).toMatchObject({
         kind: 'movement',
         quantity: '50.0000',
@@ -274,7 +163,7 @@ describe('Stock valuation (e2e)', () => {
         needsCost: false,
       });
 
-      const pool = await poolOf(blend, await lotIdOf('BF-2609'));
+      const pool = await poolOf(db, blend, await lotIdOf(db, 'BF-2609'));
       expect(pool.quantity).toBe('50.0000');
       expect(pool.value).toBe('1900.000000');
     });
@@ -292,7 +181,7 @@ describe('Stock valuation (e2e)', () => {
       const unpriced = await buy(s, scoop, '5');
 
       for (const id of [byHand, unpriced]) {
-        expect(await valuationOf(id)).toMatchObject({
+        expect(await valuationOf(db, id)).toMatchObject({
           value: '0.000000',
           unitPrice: null,
           needsCost: true,
@@ -307,7 +196,7 @@ describe('Stock valuation (e2e)', () => {
       const early = await buy(s, extract, '100', usd('0.25'));
 
       // Kept as paid, so setting a rate later has something to convert.
-      expect(await valuationOf(early)).toMatchObject({
+      expect(await valuationOf(db, early)).toMatchObject({
         value: '0.000000',
         unitPrice: '0.2500',
         currency: 'USD',
@@ -333,7 +222,7 @@ describe('Stock valuation (e2e)', () => {
 
       const later = await buy(s, extract, '100', usd('0.25'));
 
-      expect(await valuationOf(later)).toMatchObject({
+      expect(await valuationOf(db, later)).toMatchObject({
         value: '34.250000',
         exchangeRate: '1.37000000',
         needsCost: false,
@@ -369,7 +258,7 @@ describe('Stock valuation (e2e)', () => {
 
       const received = await buy(s, extract, '100', usd('0.25'));
 
-      expect(await valuationOf(received)).toMatchObject({
+      expect(await valuationOf(db, received)).toMatchObject({
         value: '35.000000',
         exchangeRate: '1.40000000',
         needsCost: false,
@@ -382,7 +271,7 @@ describe('Stock valuation (e2e)', () => {
 
       const receipt = await buy(s, scoop, '10', cad('2'));
 
-      expect(await valuationOf(receipt)).toMatchObject({
+      expect(await valuationOf(db, receipt)).toMatchObject({
         value: '0.000000',
         unitPrice: '2.0000',
         currency: 'CAD',
@@ -415,8 +304,8 @@ describe('Stock valuation (e2e)', () => {
       await buy(s, blend, '10', cad('2'), { code: 'L2024-A' });
       await buy(s, blend, '10', cad('3'), { code: 'L2024-A' });
 
-      const lotId = await lotIdOf('L2024-A');
-      const pool = await poolOf(blend, lotId);
+      const lotId = await lotIdOf(db, 'L2024-A');
+      const pool = await poolOf(db, blend, lotId);
       expect(pool.quantity).toBe('20.0000');
       expect(pool.value).toBe('50.000000');
 
@@ -428,7 +317,7 @@ describe('Stock valuation (e2e)', () => {
         reason: 'shipment',
       });
 
-      expect((await valuationOf(out)).value).toBe('-12.500000');
+      expect((await valuationOf(db, out)).value).toBe('-12.500000');
     });
 
     it('keeps a moving average without lots, and the last unit out takes what is left', async () => {
@@ -446,7 +335,7 @@ describe('Stock valuation (e2e)', () => {
       });
 
       // 10 × 50 ÷ 30, rounded to six places.
-      expect((await valuationOf(first)).value).toBe('-16.666667');
+      expect((await valuationOf(db, first)).value).toBe('-16.666667');
 
       const last = await move(s, {
         variantId: bottle,
@@ -456,9 +345,9 @@ describe('Stock valuation (e2e)', () => {
       });
 
       // What was left, exactly, rather than 20 × 1.666667.
-      expect((await valuationOf(last)).value).toBe('-33.333333');
+      expect((await valuationOf(db, last)).value).toBe('-33.333333');
 
-      const pool = await poolOf(bottle);
+      const pool = await poolOf(db, bottle);
       expect(pool.quantity).toBe('0.0000');
       expect(pool.value).toBe('0.000000');
     });
@@ -483,7 +372,7 @@ describe('Stock valuation (e2e)', () => {
         .where(eq(stockValuations.variantId, scoop));
       expect(rows).toHaveLength(1);
 
-      const pool = await poolOf(scoop);
+      const pool = await poolOf(db, scoop);
       expect(pool.quantity).toBe('10.0000');
       expect(pool.value).toBe('20.000000');
     });
@@ -503,7 +392,7 @@ describe('Stock valuation (e2e)', () => {
         note: 'Found behind the rack',
       });
 
-      expect(await valuationOf(found)).toMatchObject({
+      expect(await valuationOf(db, found)).toMatchObject({
         value: '10.000000',
         needsCost: false,
       });
@@ -516,7 +405,7 @@ describe('Stock valuation (e2e)', () => {
         note: 'Opening count',
       });
 
-      expect(await valuationOf(opening)).toMatchObject({
+      expect(await valuationOf(db, opening)).toMatchObject({
         value: '0.000000',
         needsCost: true,
       });
@@ -537,7 +426,7 @@ describe('Stock valuation (e2e)', () => {
       const sale = await sellAndShip(s, scoop, '4');
 
       const shipped = await movementWith('shipment');
-      expect((await valuationOf(shipped.id)).value).toBe('-10.000000');
+      expect((await valuationOf(db, shipped.id)).value).toBe('-10.000000');
 
       await buy(s, scoop, '10', cad('4'));
 
@@ -558,7 +447,7 @@ describe('Stock valuation (e2e)', () => {
         .expect(201);
 
       const returned = await movementWith('return');
-      expect((await valuationOf(returned.id)).value).toBe('2.500000');
+      expect((await valuationOf(db, returned.id)).value).toBe('2.500000');
     });
 
     it('reverses a voided shipment at the cost it left at', async () => {
@@ -571,7 +460,7 @@ describe('Stock valuation (e2e)', () => {
         .expect(204);
 
       const reversal = await movementWith('adjustment');
-      expect((await valuationOf(reversal.id)).value).toBe('10.000000');
+      expect((await valuationOf(db, reversal.id)).value).toBe('10.000000');
     });
   });
 
