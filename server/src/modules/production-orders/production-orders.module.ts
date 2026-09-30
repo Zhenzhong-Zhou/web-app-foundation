@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { NotificationsModule } from '../../core/notifications/notifications.module';
 import { StockModule } from '../stock/stock.module';
+import { ProductionExecutionService } from './production-execution.service';
 import { ProductionOrdersController } from './production-orders.controller';
 import { ProductionOrdersService } from './production-orders.service';
 
@@ -19,7 +20,7 @@ import { ProductionOrdersService } from './production-orders.service';
 @Module({
   imports: [StockModule, NotificationsModule],
   controllers: [ProductionOrdersController],
-  providers: [ProductionOrdersService],
+  providers: [ProductionOrdersService, ProductionExecutionService],
   exports: [ProductionOrdersService],
 })
 export class ProductionOrdersModule {}

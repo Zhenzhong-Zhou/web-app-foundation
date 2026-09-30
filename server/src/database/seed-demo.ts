@@ -17,6 +17,7 @@ import { PartnerAddressesService } from '../modules/partners/partner-addresses.s
 import { PartnersService } from '../modules/partners/partners.service';
 import { PriceListsService } from '../modules/price-lists/price-lists.service';
 import { ProductLicencesService } from '../modules/product-licences/product-licences.service';
+import { ProductionExecutionService } from '../modules/production-orders/production-execution.service';
 import { ProductionOrdersService } from '../modules/production-orders/production-orders.service';
 import { ProductsService } from '../modules/products/products.service';
 import { StockService } from '../modules/stock/stock.service';
@@ -121,6 +122,7 @@ async function seedDemo(): Promise<void> {
     const receipts = app.get(OrderReceiptsService);
     const boms = app.get(BomsService);
     const runs = app.get(ProductionOrdersService);
+    const execution = app.get(ProductionExecutionService);
     const shipments = app.get(ShipmentsService);
     const returns = app.get(ReturnsService);
     const stock = app.get(StockService);
@@ -289,9 +291,9 @@ async function seedDemo(): Promise<void> {
         });
 
         // Earliest expiry first picks BF-2609 — the only lot there (ADR-039).
-        await runs.release(run.id, { sourceLocationId: shelf.id }, actor);
+        await execution.release(run.id, { sourceLocationId: shelf.id }, actor);
 
-        await runs.recordOutput(
+        await execution.recordOutput(
           run.id,
           {
             quantity: '980',

@@ -29,11 +29,15 @@ import {
   RecordOutputDto,
   ReleaseProductionOrderDto,
 } from './dto/transitions.dto';
+import { ProductionExecutionService } from './production-execution.service';
 import { ProductionOrdersService } from './production-orders.service';
 
 @Controller({ path: 'production-orders', version: '1' })
 export class ProductionOrdersController {
-  constructor(private readonly runs: ProductionOrdersService) {}
+  constructor(
+    private readonly runs: ProductionOrdersService,
+    private readonly execution: ProductionExecutionService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.PRODUCTION_VIEW)
@@ -110,7 +114,7 @@ export class ProductionOrdersController {
     @Body() dto: ReleaseProductionOrderDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return { lines: await this.runs.release(id, dto, user.userId) };
+    return { lines: await this.execution.release(id, dto, user.userId) };
   }
 
   /** Repeatable: a batch spanning days posts here more than once. */
@@ -127,7 +131,9 @@ export class ProductionOrdersController {
     @Body() dto: RecordOutputDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return { movement: await this.runs.recordOutput(id, dto, user.userId) };
+    return {
+      movement: await this.execution.recordOutput(id, dto, user.userId),
+    };
   }
 
   /**
