@@ -1,5 +1,5 @@
 import { Box, Container, Paper, Stack, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
+import type { ReactNode, SubmitEvent } from 'react';
 
 /**
  * The frame every unauthenticated screen shares. Extracted at five, not two —
@@ -15,7 +15,7 @@ export function AuthLayout({
   children,
 }: {
   title: string;
-  onSubmit?: (event: React.SubmitEvent) => void;
+  onSubmit?: (event: SubmitEvent) => void;
   children: ReactNode;
 }) {
   return (

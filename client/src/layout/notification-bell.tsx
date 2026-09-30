@@ -10,7 +10,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { type MouseEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { api } from '../lib/api';
@@ -95,7 +95,7 @@ export function NotificationBell() {
     };
   }, []);
 
-  async function open(event: React.MouseEvent<HTMLElement>) {
+  async function open(event: MouseEvent<HTMLElement>) {
     setAnchor(event.currentTarget);
     setEntries(null);
 

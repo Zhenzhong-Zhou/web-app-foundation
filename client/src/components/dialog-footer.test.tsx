@@ -1,12 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { SubmitEvent } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { DialogFooter } from './dialog-footer';
 
 /** Inside a form, as 45 of the 46 dialogs render it. */
 function renderInForm(props: Partial<Parameters<typeof DialogFooter>[0]> = {}) {
-  const onSubmit = vi.fn((event: React.FormEvent) => event.preventDefault());
+  const onSubmit = vi.fn((event: SubmitEvent) => event.preventDefault());
   const onCancel = vi.fn();
 
   render(

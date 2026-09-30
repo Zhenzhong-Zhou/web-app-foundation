@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { SubmitEvent } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { SettingsSection } from './settings-section';
@@ -7,7 +8,7 @@ import { SettingsSection } from './settings-section';
 function renderSection(
   props: Partial<Parameters<typeof SettingsSection>[0]> = {},
 ) {
-  const onSubmit = vi.fn((event: React.FormEvent) => event.preventDefault());
+  const onSubmit = vi.fn((event: SubmitEvent) => event.preventDefault());
 
   render(
     <SettingsSection

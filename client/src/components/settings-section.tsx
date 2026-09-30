@@ -1,5 +1,5 @@
 import { Button, Paper, Stack, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
+import type { ReactNode, SubmitEvent } from 'react';
 
 import { FormError } from './form-error';
 
@@ -31,7 +31,7 @@ export function SettingsSection({
   children,
 }: {
   title: string;
-  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
   error: string | null;
   submitting: boolean;
   readOnly: boolean;
