@@ -16,13 +16,13 @@ import {
 import {
   body,
   createE2eApp,
-  createLocation,
   createVariant,
   PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
+import { shippedSale } from './utils/sales';
 
 interface RmaResponse {
   id: string;
@@ -101,88 +101,9 @@ describe('Return authorizations (e2e)', () => {
     });
   }
 
-  /**
-   * A confirmed sale that shipped 6 of 10 capsules and all 5 scoops, both
-   * untracked, from one shelf. A sample carries no prices.
-   */
+  /** The usual shipped sale (utils/sales.ts); a sample carries no prices. */
   async function shipped(org: Org, options: { isSample?: boolean } = {}) {
-    const partner = body<{ partner: { id: string } }>(
-      await org.agent
-        .post('/v1/partners')
-        .send({ name: 'Northside Pharmacy', code: 'NORTH' })
-        .expect(201),
-    ).partner;
-
-    const shelf = await createLocation(org.agent, {
-      type: 'site',
-      name: 'Shelf',
-    });
-
-    const capsules = await variant(org, 'FOCUS-60CT');
-    const scoop = await variant(org, 'SCOOP');
-
-    for (const variantId of [capsules, scoop]) {
-      await org.agent
-        .post('/v1/stock/movements')
-        .send({
-          variantId,
-          toLocationId: shelf,
-          quantity: '100',
-          reason: 'receipt',
-        })
-        .expect(201);
-    }
-
-    const price = options.isSample
-      ? {}
-      : { unitPrice: '12.5', currency: 'CAD' };
-
-    const order = body<{
-      order: { id: string; lines: { id: string; variantId: string }[] };
-    }>(
-      await org.agent
-        .post('/v1/orders')
-        .send({
-          partnerId: partner.id,
-          direction: 'sale',
-          isSample: options.isSample ?? false,
-          lines: [
-            { variantId: capsules, quantityOrdered: '10', ...price },
-            { variantId: scoop, quantityOrdered: '5', ...price },
-          ],
-        })
-        .expect(201),
-    ).order;
-
-    await org.agent
-      .patch(`/v1/orders/${order.id}`)
-      .send({ status: 'confirmed' })
-      .expect(204);
-
-    const lineOf = (variantId: string) =>
-      order.lines.find((line) => line.variantId === variantId)!.id;
-
-    const shipment = body<{ shipment: { id: string } }>(
-      await org.agent
-        .post(`/v1/orders/${order.id}/shipments`)
-        .send({
-          fromLocationId: shelf,
-          lines: [
-            { lineId: lineOf(capsules), quantity: '6' },
-            { lineId: lineOf(scoop), quantity: '5' },
-          ],
-        })
-        .expect(201),
-    ).shipment;
-
-    return {
-      orderId: order.id,
-      partnerId: partner.id,
-      shipmentId: shipment.id,
-      shelf,
-      capsulesLine: lineOf(capsules),
-      scoopLine: lineOf(scoop),
-    };
+    return shippedSale(org.agent, options);
   }
 
   type Shipped = Awaited<ReturnType<typeof shipped>>;

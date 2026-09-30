@@ -15,13 +15,12 @@ import {
 import {
   body,
   createE2eApp,
-  createLocation,
-  createVariant,
   PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
+import { shippedSale } from './utils/sales';
 
 interface InvoiceResponse {
   id: string;
@@ -92,95 +91,15 @@ describe('Invoices (e2e)', () => {
     return member;
   }
 
-  async function variant(org: Org, sku: string, name: string) {
-    return await createVariant(org.agent, {
-      type: 'good',
-      name,
-      variant: { sku },
-    });
-  }
-
   /**
-   * Two untracked items on one shelf, a confirmed sale priced in CAD, and
-   * one shipment carrying part of it: 6 of 10 capsules, all 5 scoops.
+   * The usual shipped sale, with the product names this spec's invoice
+   * lines are checked against.
    */
   async function shipped(org: Org, options: { isSample?: boolean } = {}) {
-    const partner = body<{ partner: { id: string } }>(
-      await org.agent
-        .post('/v1/partners')
-        .send({ name: 'Northside Pharmacy', code: 'NORTH' })
-        .expect(201),
-    ).partner;
-
-    const shelf = await createLocation(org.agent, {
-      type: 'site',
-      name: 'Shelf',
+    return shippedSale(org.agent, {
+      ...options,
+      names: { capsules: 'Focus', scoop: 'Scoop' },
     });
-
-    const capsules = await variant(org, 'FOCUS-60CT', 'Focus');
-    const scoop = await variant(org, 'SCOOP', 'Scoop');
-
-    for (const variantId of [capsules, scoop]) {
-      await org.agent
-        .post('/v1/stock/movements')
-        .send({
-          variantId,
-          toLocationId: shelf,
-          quantity: '100',
-          reason: 'receipt',
-        })
-        .expect(201);
-    }
-
-    const price = options.isSample
-      ? {}
-      : { unitPrice: '12.5', currency: 'CAD' };
-
-    const order = body<{
-      order: { id: string; lines: { id: string; variantId: string }[] };
-    }>(
-      await org.agent
-        .post('/v1/orders')
-        .send({
-          partnerId: partner.id,
-          direction: 'sale',
-          isSample: options.isSample ?? false,
-          lines: [
-            { variantId: capsules, quantityOrdered: '10', ...price },
-            { variantId: scoop, quantityOrdered: '5', ...price },
-          ],
-        })
-        .expect(201),
-    ).order;
-
-    await org.agent
-      .patch(`/v1/orders/${order.id}`)
-      .send({ status: 'confirmed' })
-      .expect(204);
-
-    const lineOf = (variantId: string) =>
-      order.lines.find((line) => line.variantId === variantId)!.id;
-
-    const shipment = body<{ shipment: { id: string } }>(
-      await org.agent
-        .post(`/v1/orders/${order.id}/shipments`)
-        .send({
-          fromLocationId: shelf,
-          lines: [
-            { lineId: lineOf(capsules), quantity: '6' },
-            { lineId: lineOf(scoop), quantity: '5' },
-          ],
-        })
-        .expect(201),
-    ).shipment;
-
-    return {
-      orderId: order.id,
-      shipmentId: shipment.id,
-      partnerId: partner.id,
-      shelf,
-      capsulesLine: lineOf(capsules),
-    };
   }
 
   async function taxCode(org: Org, name = 'GST', rate = '5') {

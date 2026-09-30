@@ -9,13 +9,12 @@ import { auditLog, invoices, roles } from '../src/database/schema';
 import {
   body,
   createE2eApp,
-  createLocation,
-  createVariant,
   PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
+import { shippedSale } from './utils/sales';
 
 interface Credit {
   subtotal: string;
@@ -84,14 +83,6 @@ describe('Credit notes (e2e)', () => {
     return member;
   }
 
-  async function variant(org: Org, sku: string) {
-    return await createVariant(org.agent, {
-      type: 'good',
-      name: sku,
-      variant: { sku },
-    });
-  }
-
   /** The issued invoice every case starts from, and what it came from. */
   async function invoiced(org: Org) {
     await org.agent
@@ -116,72 +107,8 @@ describe('Credit notes (e2e)', () => {
       })
       .expect(201);
 
-    const shelf = await createLocation(org.agent, {
-      type: 'site',
-      name: 'Shelf',
-    });
-
-    const capsules = await variant(org, 'FOCUS-60CT');
-    const scoop = await variant(org, 'SCOOP');
-
-    for (const variantId of [capsules, scoop]) {
-      await org.agent
-        .post('/v1/stock/movements')
-        .send({
-          variantId,
-          toLocationId: shelf,
-          quantity: '100',
-          reason: 'receipt',
-        })
-        .expect(201);
-    }
-
-    const order = body<{
-      order: { id: string; lines: { id: string; variantId: string }[] };
-    }>(
-      await org.agent
-        .post('/v1/orders')
-        .send({
-          partnerId: partner.id,
-          direction: 'sale',
-          lines: [
-            {
-              variantId: capsules,
-              quantityOrdered: '10',
-              unitPrice: '12.5',
-              currency: 'CAD',
-            },
-            {
-              variantId: scoop,
-              quantityOrdered: '5',
-              unitPrice: '12.5',
-              currency: 'CAD',
-            },
-          ],
-        })
-        .expect(201),
-    ).order;
-
-    await org.agent
-      .patch(`/v1/orders/${order.id}`)
-      .send({ status: 'confirmed' })
-      .expect(204);
-
-    const lineOf = (variantId: string) =>
-      order.lines.find((line) => line.variantId === variantId)!.id;
-
-    const shipment = body<{ shipment: { id: string } }>(
-      await org.agent
-        .post(`/v1/orders/${order.id}/shipments`)
-        .send({
-          fromLocationId: shelf,
-          lines: [
-            { lineId: lineOf(capsules), quantity: '6' },
-            { lineId: lineOf(scoop), quantity: '5' },
-          ],
-        })
-        .expect(201),
-    ).shipment;
+    // The partner has its billing address before the sale exists.
+    const sale = await shippedSale(org.agent, { partnerId: partner.id });
 
     const gst = body<{ taxCode: { id: string } }>(
       await org.agent
@@ -195,7 +122,7 @@ describe('Credit notes (e2e)', () => {
     }>(
       await org.agent
         .post('/v1/invoices')
-        .send({ shipmentId: shipment.id, taxCodeId: gst })
+        .send({ shipmentId: sale.shipmentId, taxCodeId: gst })
         .expect(201),
     ).invoice;
 
@@ -209,12 +136,12 @@ describe('Credit notes (e2e)', () => {
 
     return {
       invoiceId: draft.id,
-      orderId: order.id,
-      shelf,
+      orderId: sale.orderId,
+      shelf: sale.shelf,
       capsules: invoiceLine('FOCUS-60CT'),
       scoop: invoiceLine('SCOOP'),
-      capsulesOrderLine: lineOf(capsules),
-      scoopOrderLine: lineOf(scoop),
+      capsulesOrderLine: sale.capsulesLine,
+      scoopOrderLine: sale.scoopLine,
     };
   }
 
