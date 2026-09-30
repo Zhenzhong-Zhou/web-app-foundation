@@ -9,6 +9,9 @@ import { roles, stockMovements, stockValuations } from '../src/database/schema';
 import {
   body,
   createE2eApp,
+  createLocation,
+  createPartner,
+  createVariant,
   PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
@@ -88,19 +91,16 @@ describe('Costs (e2e)', () => {
     }
 
     const location = async (name: string) =>
-      body<{ location: { id: string } }>(
-        await agent
-          .post('/v1/locations')
-          .send({ type: 'site', name, code: name.toUpperCase() })
-          .expect(201),
-      ).location.id;
+      await createLocation(agent, {
+        type: 'site',
+        name,
+        code: name.toUpperCase(),
+      });
 
-    const supplier = body<{ partner: { id: string } }>(
-      await agent
-        .post('/v1/partners')
-        .send({ name: 'Cascade Botanicals', code: 'CASC' })
-        .expect(201),
-    ).partner.id;
+    const supplier = await createPartner(agent, {
+      name: 'Cascade Botanicals',
+      code: 'CASC',
+    });
 
     return {
       agent,
@@ -119,12 +119,11 @@ describe('Costs (e2e)', () => {
     type: 'good' | 'material' | 'packaging' = 'material',
     tracksLots = false,
   ) {
-    return body<{ product: { variants: { id: string }[] } }>(
-      await s.agent
-        .post('/v1/products')
-        .send({ type, name: sku, variant: { sku, tracksLots } })
-        .expect(201),
-    ).product.variants[0].id;
+    return await createVariant(s.agent, {
+      type,
+      name: sku,
+      variant: { sku, tracksLots },
+    });
   }
 
   async function needsCost(s: Setup) {

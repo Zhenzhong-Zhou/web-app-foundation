@@ -17,6 +17,7 @@ import {
 import {
   body,
   createE2eApp,
+  createVariant,
   PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
@@ -471,12 +472,11 @@ describe('Orders (e2e)', () => {
 
     /** A second item, for a sale with two lines. */
     async function gadget(ctx: Awaited<ReturnType<typeof setup>>) {
-      return body<{ product: { variants: { id: string }[] } }>(
-        await ctx.agent
-          .post('/v1/products')
-          .send({ type: 'good', name: 'Gadget', variant: { sku: 'GADGET-1' } })
-          .expect(201),
-      ).product.variants[0].id;
+      return await createVariant(ctx.agent, {
+        type: 'good',
+        name: 'Gadget',
+        variant: { sku: 'GADGET-1' },
+      });
     }
 
     async function draftSale(

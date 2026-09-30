@@ -9,6 +9,7 @@ import { bomLines, boms, roles } from '../src/database/schema';
 import {
   body,
   createE2eApp,
+  createVariant,
   PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
@@ -39,10 +40,6 @@ interface CreatedBom {
 
 interface CreatedLine {
   line: { id: string };
-}
-
-interface ProductResponse {
-  product: { id: string; variants: { id: string; sku: string }[] };
 }
 
 /**
@@ -87,16 +84,11 @@ describe('BOMs (e2e)', () => {
     sku: string,
     type: 'good' | 'material' | 'packaging' = 'good',
   ) {
-    const res = await owner.agent
-      .post('/v1/products')
-      .send({
-        type,
-        name: sku,
-        variant: { sku, unitOfMeasure: 'each' },
-      })
-      .expect(201);
-
-    return body<ProductResponse>(res).product.variants[0].id;
+    return createVariant(owner.agent, {
+      type,
+      name: sku,
+      variant: { sku, unitOfMeasure: 'each' },
+    });
   }
 
   /** Output, plus two components — the shape most of these tests need. */

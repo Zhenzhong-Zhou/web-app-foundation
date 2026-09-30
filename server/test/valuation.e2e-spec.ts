@@ -10,7 +10,14 @@ import {
   stockMovements,
   stockValuations,
 } from '../src/database/schema';
-import { body, createE2eApp, registerOrganization } from './utils/fixtures';
+import {
+  body,
+  createE2eApp,
+  createLocation,
+  createPartner,
+  createVariant,
+  registerOrganization,
+} from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 import {
   buy,
@@ -73,17 +80,10 @@ describe('Stock valuation (e2e)', () => {
     }
 
     const location = async (name: string) =>
-      body<{ location: { id: string } }>(
-        await agent
-          .post('/v1/locations')
-          .send({ type: 'site', name })
-          .expect(201),
-      ).location.id;
+      await createLocation(agent, { type: 'site', name });
 
     const partner = async (name: string, code: string) =>
-      body<{ partner: { id: string } }>(
-        await agent.post('/v1/partners').send({ name, code }).expect(201),
-      ).partner.id;
+      await createPartner(agent, { name, code });
 
     return {
       agent,
@@ -98,12 +98,11 @@ describe('Stock valuation (e2e)', () => {
   type Setup = Awaited<ReturnType<typeof setup>>;
 
   async function variant(s: Setup, sku: string, tracksLots = false) {
-    return body<{ product: { variants: { id: string }[] } }>(
-      await s.agent
-        .post('/v1/products')
-        .send({ type: 'material', name: sku, variant: { sku, tracksLots } })
-        .expect(201),
-    ).product.variants[0].id;
+    return await createVariant(s.agent, {
+      type: 'material',
+      name: sku,
+      variant: { sku, tracksLots },
+    });
   }
 
   /** A sale for one untracked item, confirmed and shipped from the shelf. */

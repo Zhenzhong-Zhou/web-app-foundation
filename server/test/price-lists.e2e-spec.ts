@@ -9,6 +9,8 @@ import { roles } from '../src/database/schema';
 import {
   body,
   createE2eApp,
+  createPartner,
+  createVariant,
   PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
@@ -56,17 +58,10 @@ describe('Price lists (e2e)', () => {
     const { agent, organizationId } = await registerOrganization(app, slugish);
 
     const partner = async (name: string, code: string) =>
-      body<{ partner: { id: string } }>(
-        await agent.post('/v1/partners').send({ name, code }).expect(201),
-      ).partner.id;
+      await createPartner(agent, { name, code });
 
     const variant = async (sku: string) =>
-      body<{ product: { variants: { id: string }[] } }>(
-        await agent
-          .post('/v1/products')
-          .send({ type: 'good', name: sku, variant: { sku } })
-          .expect(201),
-      ).product.variants[0].id;
+      await createVariant(agent, { type: 'good', name: sku, variant: { sku } });
 
     return {
       agent,

@@ -13,7 +13,13 @@ import {
   stockLevels,
   stockMovements,
 } from '../src/database/schema';
-import { body, createE2eApp, registerOrganization } from './utils/fixtures';
+import {
+  body,
+  createE2eApp,
+  createLocation,
+  createVariant,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -53,14 +59,6 @@ interface CloseResponse {
 
 interface CancelResponse {
   strandedLines: { id: string }[];
-}
-
-interface ProductResponse {
-  product: { id: string; variants: { id: string }[] };
-}
-
-interface LocationResponse {
-  location: { id: string };
 }
 
 interface CreatedBom {
@@ -105,25 +103,20 @@ describe('Production orders (e2e)', () => {
     type: 'good' | 'material' | 'packaging' = 'good',
     tracksLots = false,
   ) {
-    const res = await org.agent
-      .post('/v1/products')
-      .send({
-        type,
-        name: sku,
-        variant: { sku, unitOfMeasure: 'each', tracksLots },
-      })
-      .expect(201);
-
-    return body<ProductResponse>(res).product.variants[0].id;
+    return createVariant(org.agent, {
+      type,
+      name: sku,
+      variant: { sku, unitOfMeasure: 'each', tracksLots },
+    });
   }
 
   async function makeLocation(org: Org, name: string, parentId?: string) {
-    const res = await org.agent
-      .post('/v1/locations')
-      .send({ name, code: name, type: parentId ? 'bin' : 'site', parentId })
-      .expect(201);
-
-    return body<LocationResponse>(res).location.id;
+    return createLocation(org.agent, {
+      name,
+      code: name,
+      type: parentId ? 'bin' : 'site',
+      parentId,
+    });
   }
 
   /**

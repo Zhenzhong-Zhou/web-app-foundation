@@ -80,3 +80,40 @@ export async function registerOrganization(
 
   return { agent, email, userId: user.id, organizationId: user.organizationId };
 }
+
+type Agent = ReturnType<typeof authedAgent>;
+
+/**
+ * Catalogue records a test needs as setting, not as subject: post exactly
+ * the payload given and hand back the new id. The payload stays with the
+ * spec, because it is the spec's test data — a material or a good, lot
+ * tracked or not — and a default chosen here would quietly change what a
+ * test is about. What was repeated is the ceremony of posting and reading
+ * the id back.
+ */
+export async function createPartner(
+  agent: Agent,
+  payload: Record<string, unknown>,
+): Promise<string> {
+  const res = await agent.post('/v1/partners').send(payload).expect(201);
+  return body<{ partner: { id: string } }>(res).partner.id;
+}
+
+/** A location, as `createPartner`. */
+export async function createLocation(
+  agent: Agent,
+  payload: Record<string, unknown>,
+): Promise<string> {
+  const res = await agent.post('/v1/locations').send(payload).expect(201);
+  return body<{ location: { id: string } }>(res).location.id;
+}
+
+/** A product with its one variant, returning the variant's id. */
+export async function createVariant(
+  agent: Agent,
+  payload: Record<string, unknown>,
+): Promise<string> {
+  const res = await agent.post('/v1/products').send(payload).expect(201);
+  return body<{ product: { variants: { id: string }[] } }>(res).product
+    .variants[0].id;
+}

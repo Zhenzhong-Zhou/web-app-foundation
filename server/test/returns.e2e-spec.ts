@@ -11,7 +11,14 @@ import {
   stockLevels,
   stockMovements,
 } from '../src/database/schema';
-import { body, createE2eApp, registerOrganization } from './utils/fixtures';
+import {
+  body,
+  createE2eApp,
+  createLocation,
+  createPartner,
+  createVariant,
+  registerOrganization,
+} from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface OrderResponse {
@@ -50,21 +57,15 @@ describe('Returns (e2e)', () => {
   type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   async function location(org: Org, name: string) {
-    return body<{ location: { id: string } }>(
-      await org.agent
-        .post('/v1/locations')
-        .send({ type: 'site', name })
-        .expect(201),
-    ).location.id;
+    return await createLocation(org.agent, { type: 'site', name });
   }
 
   async function variant(org: Org, sku: string, tracksLots: boolean) {
-    return body<{ product: { variants: { id: string }[] } }>(
-      await org.agent
-        .post('/v1/products')
-        .send({ type: 'good', name: sku, variant: { sku, tracksLots } })
-        .expect(201),
-    ).product.variants[0].id;
+    return await createVariant(org.agent, {
+      type: 'good',
+      name: sku,
+      variant: { sku, tracksLots },
+    });
   }
 
   async function receive(
@@ -100,12 +101,10 @@ describe('Returns (e2e)', () => {
       .send({ isAvailable: false })
       .expect(204);
 
-    const partner = body<{ partner: { id: string } }>(
-      await org.agent
-        .post('/v1/partners')
-        .send({ name: 'Northside Pharmacy', code: 'NORTH' })
-        .expect(201),
-    ).partner.id;
+    const partner = await createPartner(org.agent, {
+      name: 'Northside Pharmacy',
+      code: 'NORTH',
+    });
 
     const focus = await variant(org, 'FOCUS-60CT', true);
     const scoop = await variant(org, 'SCOOP', false);

@@ -6,7 +6,14 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { stockLevels } from '../src/database/schema';
-import { body, createE2eApp, registerOrganization } from './utils/fixtures';
+import {
+  body,
+  createE2eApp,
+  createLocation,
+  createPartner,
+  createVariant,
+  registerOrganization,
+} from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface MovementResponse {
@@ -48,19 +55,16 @@ describe('Samples (e2e)', () => {
 
   /** A product with 50 on a shelf, and a prospect to send some to. */
   async function scenario(org: Org) {
-    const shelf = body<{ location: { id: string } }>(
-      await org.agent
-        .post('/v1/locations')
-        .send({ type: 'site', name: 'Shelf' })
-        .expect(201),
-    ).location.id;
+    const shelf = await createLocation(org.agent, {
+      type: 'site',
+      name: 'Shelf',
+    });
 
-    const variant = body<{ product: { variants: { id: string }[] } }>(
-      await org.agent
-        .post('/v1/products')
-        .send({ type: 'good', name: 'Focus', variant: { sku: 'FOCUS' } })
-        .expect(201),
-    ).product.variants[0].id;
+    const variant = await createVariant(org.agent, {
+      type: 'good',
+      name: 'Focus',
+      variant: { sku: 'FOCUS' },
+    });
 
     await org.agent
       .post('/v1/stock/movements')
@@ -72,12 +76,10 @@ describe('Samples (e2e)', () => {
       })
       .expect(201);
 
-    const prospect = body<{ partner: { id: string } }>(
-      await org.agent
-        .post('/v1/partners')
-        .send({ name: 'Prospect Pharmacy', code: 'PROS' })
-        .expect(201),
-    ).partner.id;
+    const prospect = await createPartner(org.agent, {
+      name: 'Prospect Pharmacy',
+      code: 'PROS',
+    });
 
     return { shelf, variant, prospect };
   }
@@ -234,12 +236,10 @@ describe('Samples (e2e)', () => {
       const s = await scenario(alpha);
       await retain(alpha, s.shelf);
 
-      const back = body<{ location: { id: string } }>(
-        await alpha.agent
-          .post('/v1/locations')
-          .send({ type: 'site', name: 'Back shelf' })
-          .expect(201),
-      ).location.id;
+      const back = await createLocation(alpha.agent, {
+        type: 'site',
+        name: 'Back shelf',
+      });
 
       await alpha.agent
         .post('/v1/stock/movements')

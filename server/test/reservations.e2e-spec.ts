@@ -1,6 +1,13 @@
 import type { INestApplication } from '@nestjs/common';
 
-import { body, createE2eApp, registerOrganization } from './utils/fixtures';
+import {
+  body,
+  createE2eApp,
+  createLocation,
+  createPartner,
+  createVariant,
+  registerOrganization,
+} from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface OrderResponse {
@@ -54,19 +61,13 @@ describe('Reservations (e2e)', () => {
   async function scenario(org: Org) {
     const { agent } = org;
 
-    const shelf = body<{ location: { id: string } }>(
-      await agent
-        .post('/v1/locations')
-        .send({ type: 'site', name: 'Shelf' })
-        .expect(201),
-    ).location.id;
+    const shelf = await createLocation(agent, { type: 'site', name: 'Shelf' });
 
-    const focus = body<{ product: { variants: { id: string }[] } }>(
-      await agent
-        .post('/v1/products')
-        .send({ type: 'good', name: 'Focus', variant: { sku: 'FOCUS' } })
-        .expect(201),
-    ).product.variants[0].id;
+    const focus = await createVariant(agent, {
+      type: 'good',
+      name: 'Focus',
+      variant: { sku: 'FOCUS' },
+    });
 
     await agent
       .post('/v1/stock/movements')
@@ -79,9 +80,7 @@ describe('Reservations (e2e)', () => {
       .expect(201);
 
     const sale = async (name: string, quantity: string) => {
-      const partner = body<{ partner: { id: string } }>(
-        await agent.post('/v1/partners').send({ name }).expect(201),
-      ).partner.id;
+      const partner = await createPartner(agent, { name });
 
       const order = body<{ order: OrderResponse }>(
         await agent
@@ -152,12 +151,7 @@ describe('Reservations (e2e)', () => {
       const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
-      const partner = body<{ partner: { id: string } }>(
-        await alpha.agent
-          .post('/v1/partners')
-          .send({ name: 'Third' })
-          .expect(201),
-      ).partner.id;
+      const partner = await createPartner(alpha.agent, { name: 'Third' });
 
       const third = body<{ order: OrderResponse }>(
         await alpha.agent
@@ -208,12 +202,10 @@ describe('Reservations (e2e)', () => {
       const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
-      const retention = body<{ location: { id: string } }>(
-        await alpha.agent
-          .post('/v1/locations')
-          .send({ type: 'site', name: 'Retention' })
-          .expect(201),
-      ).location.id;
+      const retention = await createLocation(alpha.agent, {
+        type: 'site',
+        name: 'Retention',
+      });
       await alpha.agent
         .patch(`/v1/locations/${retention}`)
         .send({ isAvailable: false })

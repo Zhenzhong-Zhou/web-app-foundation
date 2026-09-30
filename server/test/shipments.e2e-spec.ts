@@ -13,7 +13,13 @@ import {
   stockLevels,
   stockMovements,
 } from '../src/database/schema';
-import { body, createE2eApp, registerOrganization } from './utils/fixtures';
+import {
+  body,
+  createE2eApp,
+  createLocation,
+  createVariant,
+  registerOrganization,
+} from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface OrderResponse {
@@ -72,13 +78,11 @@ describe('Shipments (e2e)', () => {
   type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   async function variant(org: Org, sku: string, tracksLots: boolean) {
-    const res = await org.agent
-      .post('/v1/products')
-      .send({ type: 'good', name: sku, variant: { sku, tracksLots } })
-      .expect(201);
-
-    return body<{ product: { variants: { id: string }[] } }>(res).product
-      .variants[0].id;
+    return createVariant(org.agent, {
+      type: 'good',
+      name: sku,
+      variant: { sku, tracksLots },
+    });
   }
 
   async function receive(
@@ -116,12 +120,10 @@ describe('Shipments (e2e)', () => {
         .expect(201),
     ).partner;
 
-    const shelf = body<{ location: { id: string } }>(
-      await org.agent
-        .post('/v1/locations')
-        .send({ type: 'site', name: 'Shelf' })
-        .expect(201),
-    ).location.id;
+    const shelf = await createLocation(org.agent, {
+      type: 'site',
+      name: 'Shelf',
+    });
 
     const focus = await variant(org, 'FOCUS-60CT', true);
     const bottle = await variant(org, 'SCOOP', false);
@@ -259,12 +261,10 @@ describe('Shipments (e2e)', () => {
           .send({ name: 'Northside', code: 'N' })
           .expect(201),
       ).partner;
-      const shelf = body<{ location: { id: string } }>(
-        await alpha.agent
-          .post('/v1/locations')
-          .send({ type: 'site', name: 'Shelf' })
-          .expect(201),
-      ).location.id;
+      const shelf = await createLocation(alpha.agent, {
+        type: 'site',
+        name: 'Shelf',
+      });
       const bolts = await variant(alpha, 'BOLT', true);
 
       await receive(alpha, bolts, shelf, '10', { code: 'FIRST' });

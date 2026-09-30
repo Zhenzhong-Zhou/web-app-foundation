@@ -6,7 +6,12 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { auditLog, boms } from '../src/database/schema';
-import { body, createE2eApp, registerOrganization } from './utils/fixtures';
+import {
+  body,
+  createE2eApp,
+  createVariant,
+  registerOrganization,
+} from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface LicenceResponse {
@@ -21,10 +26,6 @@ interface LicenceResponse {
 
 interface CreatedLicence {
   licence: LicenceResponse;
-}
-
-interface ProductResponse {
-  product: { variants: { id: string }[] };
 }
 
 interface CreatedBom {
@@ -65,16 +66,11 @@ describe('Product licences (e2e)', () => {
   }
 
   async function makeVariant(org: Org, sku: string) {
-    const res = await org.agent
-      .post('/v1/products')
-      .send({
-        type: 'good',
-        name: sku,
-        variant: { sku, unitOfMeasure: 'each' },
-      })
-      .expect(201);
-
-    return body<ProductResponse>(res).product.variants[0].id;
+    return createVariant(org.agent, {
+      type: 'good',
+      name: sku,
+      variant: { sku, unitOfMeasure: 'each' },
+    });
   }
 
   describe('the registry', () => {

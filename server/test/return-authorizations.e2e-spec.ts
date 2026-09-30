@@ -16,6 +16,8 @@ import {
 import {
   body,
   createE2eApp,
+  createLocation,
+  createVariant,
   PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
@@ -92,12 +94,11 @@ describe('Return authorizations (e2e)', () => {
   }
 
   async function variant(org: Org, sku: string) {
-    return body<{ product: { variants: { id: string }[] } }>(
-      await org.agent
-        .post('/v1/products')
-        .send({ type: 'good', name: sku, variant: { sku } })
-        .expect(201),
-    ).product.variants[0].id;
+    return await createVariant(org.agent, {
+      type: 'good',
+      name: sku,
+      variant: { sku },
+    });
   }
 
   /**
@@ -112,12 +113,10 @@ describe('Return authorizations (e2e)', () => {
         .expect(201),
     ).partner;
 
-    const shelf = body<{ location: { id: string } }>(
-      await org.agent
-        .post('/v1/locations')
-        .send({ type: 'site', name: 'Shelf' })
-        .expect(201),
-    ).location.id;
+    const shelf = await createLocation(org.agent, {
+      type: 'site',
+      name: 'Shelf',
+    });
 
     const capsules = await variant(org, 'FOCUS-60CT');
     const scoop = await variant(org, 'SCOOP');
