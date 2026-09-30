@@ -7,7 +7,7 @@ import { AuthService } from '../core/auth/auth.service';
 import { OrganizationsService } from '../core/organizations/organizations.service';
 import { BomsService } from '../modules/boms/boms.service';
 import { InvoiceDraftsService } from '../modules/invoices/invoice-drafts.service';
-import { InvoicesService } from '../modules/invoices/invoices.service';
+import { InvoiceIssuingService } from '../modules/invoices/invoice-issuing.service';
 import { LocationsService } from '../modules/locations/locations.service';
 import { OrderReceiptsService } from '../modules/orders/order-receipts.service';
 import { OrdersService } from '../modules/orders/orders.service';
@@ -127,8 +127,8 @@ async function seedDemo(): Promise<void> {
     const organization = app.get(OrganizationsService);
     const partnerAddresses = app.get(PartnerAddressesService);
     const taxCodes = app.get(TaxCodesService);
-    const invoices = app.get(InvoicesService);
     const invoiceDrafts = app.get(InvoiceDraftsService);
+    const invoiceIssuing = app.get(InvoiceIssuingService);
     const priceLists = app.get(PriceListsService);
 
     // Every service below resolves its tenant from here, the same way a
@@ -422,7 +422,7 @@ async function seedDemo(): Promise<void> {
 
         // The UTC day, which is fine for demo data; the app itself sends
         // the person's own calendar day.
-        const invoice = await invoices.issue(
+        const invoice = await invoiceIssuing.issue(
           draft.id,
           { invoiceDate: daysFromNow(0) },
           actor,

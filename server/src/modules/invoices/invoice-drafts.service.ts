@@ -30,8 +30,8 @@ import { lockDraft } from './lock-draft';
 
 /**
  * A draft invoice while it is still a draft (ADR-046): made from a shipment,
- * edited, deleted. InvoicesService reads, issues and voids invoices;
- * nothing here touches one that has been issued.
+ * edited, deleted. InvoicesService reads invoices and InvoiceIssuingService
+ * issues and voids them; nothing here touches one that has been issued.
  */
 @Injectable()
 export class InvoiceDraftsService {

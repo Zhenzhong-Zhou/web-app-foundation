@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -24,6 +23,7 @@ import type {
   PreviewCreditDto,
 } from './dto/credit-invoice.dto';
 import { minorUnits } from './invoice-amounts';
+import { partiesOf, stored } from './issued-invoice';
 
 type Invoice = typeof invoices.$inferSelect;
 
@@ -603,36 +603,4 @@ export class CreditNotesService {
       }
     }
   }
-}
-
-/** Both parties, copied from the invoice rather than re-read (ADR-046). */
-export function partiesOf(invoice: Invoice) {
-  return {
-    sellerName: invoice.sellerName,
-    sellerTaxNumber: invoice.sellerTaxNumber,
-    sellerLine1: invoice.sellerLine1,
-    sellerLine2: invoice.sellerLine2,
-    sellerCity: invoice.sellerCity,
-    sellerRegion: invoice.sellerRegion,
-    sellerPostalCode: invoice.sellerPostalCode,
-    sellerCountry: invoice.sellerCountry,
-    billToAddressId: invoice.billToAddressId,
-    billToName: invoice.billToName,
-    billToLine1: invoice.billToLine1,
-    billToLine2: invoice.billToLine2,
-    billToCity: invoice.billToCity,
-    billToRegion: invoice.billToRegion,
-    billToPostalCode: invoice.billToPostalCode,
-    billToCountry: invoice.billToCountry,
-  };
-}
-
-/** A value an issued invoice always has, read from a nullable column. */
-function stored<T>(value: T | null, what: string): T {
-  if (value === null) {
-    throw new InternalServerErrorException(
-      `An issued invoice is missing its ${what}`,
-    );
-  }
-  return value;
 }

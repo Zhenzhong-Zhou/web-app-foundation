@@ -27,6 +27,7 @@ import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { UpdateInvoiceLineDto } from './dto/update-invoice-line.dto';
 import { VoidInvoiceDto } from './dto/void-invoice.dto';
 import { InvoiceDraftsService } from './invoice-drafts.service';
+import { InvoiceIssuingService } from './invoice-issuing.service';
 import { InvoicesService } from './invoices.service';
 
 /**
@@ -39,6 +40,7 @@ export class InvoicesController {
     private readonly invoices: InvoicesService,
     private readonly creditNotes: CreditNotesService,
     private readonly drafts: InvoiceDraftsService,
+    private readonly issuing: InvoiceIssuingService,
   ) {}
 
   @Get()
@@ -125,7 +127,7 @@ export class InvoicesController {
     @Body() dto: IssueInvoiceDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return { invoice: await this.invoices.issue(id, dto, user.userId) };
+    return { invoice: await this.issuing.issue(id, dto, user.userId) };
   }
 
   /**
@@ -150,7 +152,7 @@ export class InvoicesController {
     @Body() dto: VoidInvoiceDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return this.invoices.void(id, dto, user.userId);
+    return this.issuing.void(id, dto, user.userId);
   }
 
   /**
