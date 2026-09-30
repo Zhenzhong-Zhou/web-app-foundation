@@ -29,6 +29,7 @@ import {
   RecordOutputDto,
   ReleaseProductionOrderDto,
 } from './dto/transitions.dto';
+import { ProductionCloseService } from './production-close.service';
 import { ProductionExecutionService } from './production-execution.service';
 import { ProductionOrdersService } from './production-orders.service';
 
@@ -37,6 +38,7 @@ export class ProductionOrdersController {
   constructor(
     private readonly runs: ProductionOrdersService,
     private readonly execution: ProductionExecutionService,
+    private readonly closing: ProductionCloseService,
   ) {}
 
   @Get()
@@ -155,7 +157,7 @@ export class ProductionOrdersController {
     @Body() dto: CloseProductionOrderDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return this.runs.close(id, dto, user.userId);
+    return this.closing.close(id, dto, user.userId);
   }
 
   /**

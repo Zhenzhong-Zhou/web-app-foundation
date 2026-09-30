@@ -17,6 +17,7 @@ import { PartnerAddressesService } from '../modules/partners/partner-addresses.s
 import { PartnersService } from '../modules/partners/partners.service';
 import { PriceListsService } from '../modules/price-lists/price-lists.service';
 import { ProductLicencesService } from '../modules/product-licences/product-licences.service';
+import { ProductionCloseService } from '../modules/production-orders/production-close.service';
 import { ProductionExecutionService } from '../modules/production-orders/production-execution.service';
 import { ProductionOrdersService } from '../modules/production-orders/production-orders.service';
 import { ProductsService } from '../modules/products/products.service';
@@ -123,6 +124,7 @@ async function seedDemo(): Promise<void> {
     const boms = app.get(BomsService);
     const runs = app.get(ProductionOrdersService);
     const execution = app.get(ProductionExecutionService);
+    const closing = app.get(ProductionCloseService);
     const shipments = app.get(ShipmentsService);
     const returns = app.get(ReturnsService);
     const stock = app.get(StockService);
@@ -311,7 +313,7 @@ async function seedDemo(): Promise<void> {
 
         // Over plan on purpose: tops up 4 kg from the shelf and trips the
         // variance flag, so the notification path is exercised too.
-        const closed = await runs.close(
+        const closed = await closing.close(
           run.id,
           { lines: [{ lineId: blendLine.id, quantityConsumed: '34' }] },
           actor,

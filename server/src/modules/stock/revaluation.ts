@@ -112,7 +112,7 @@ async function post(tx: Tx, posting: Posting, shares: Split): Promise<void> {
 /**
  * A batch's material cost, posted to its output at close (ADR-048).
  *
- * Called by `ProductionOrdersService.close` after the consumption movements
+ * Called by `ProductionCloseService.close` after the consumption movements
  * are written, in the same transaction, so what the run consumed is already
  * valued at its pools' averages. The material cost is minus their sum; each
  * output lot takes its share by quantity, the last taking whatever rounding
