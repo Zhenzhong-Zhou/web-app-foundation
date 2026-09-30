@@ -4,7 +4,8 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import type { OrderDetail, OrderLine } from '../lib/types';
+import type { OrderDetail } from '../lib/types';
+import { orderLine } from '../test/factories';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -24,33 +25,6 @@ import { OrderDetailPage } from './order-detail-page';
 
 const ALL = ['orders.view', 'orders.create', 'orders.update', 'orders.receive'];
 
-function line(over: Partial<OrderLine> = {}): OrderLine {
-  const id = over.id ?? 'line-1';
-
-  return {
-    id,
-    variantId: 'variant-plain',
-    // Derived, so two lines in one fixture cannot silently share a SKU and
-    // make every row query ambiguous.
-    sku: `WIDGET-${id.slice(-1)}`,
-    description: `Widget ${id.slice(-1)}`,
-    quantityOrdered: '40.0000',
-    quantityFulfilled: '0.0000',
-    quantityOutstanding: '40.0000',
-    quantityReturned: '0.0000',
-    unitPrice: null,
-    currency: null,
-    priceSource: null,
-    priceListId: null,
-    priceListName: null,
-    lineTotal: null,
-    isComplete: false,
-    isClosedShort: false,
-    closedReason: null,
-    ...over,
-  };
-}
-
 function order(over: Partial<OrderDetail> = {}): OrderDetail {
   return {
     id: 'order-1',
@@ -66,7 +40,7 @@ function order(over: Partial<OrderDetail> = {}): OrderDetail {
     isSample: false,
     totals: [],
     totalsComplete: false,
-    lines: [line()],
+    lines: [orderLine()],
     ...over,
   };
 }
@@ -102,7 +76,7 @@ describe('OrderDetailPage lines', () => {
    * as the packing slip shows them.
    */
   it('names the item beside its SKU', async () => {
-    serve(order({ lines: [line({ description: 'Focus (60ct)' })] }));
+    serve(order({ lines: [orderLine({ description: 'Focus (60ct)' })] }));
     renderPage();
 
     const row = within(await rowFor('WIDGET-1'));
@@ -112,7 +86,9 @@ describe('OrderDetailPage lines', () => {
   describe('on a draft', () => {
     it('offers add, edit and remove, but not receive or close', async () => {
       serve(
-        order({ lines: [line(), line({ id: 'line-2', sku: 'WIDGET-2' })] }),
+        order({
+          lines: [orderLine(), orderLine({ id: 'line-2', sku: 'WIDGET-2' })],
+        }),
       );
       renderPage();
 
@@ -170,7 +146,7 @@ describe('OrderDetailPage lines', () => {
       serve(
         order({
           ...confirmed,
-          lines: [line(), line({ id: 'line-2', sku: 'WIDGET-2' })],
+          lines: [orderLine(), orderLine({ id: 'line-2', sku: 'WIDGET-2' })],
         }),
       );
       renderPage();
@@ -195,7 +171,7 @@ describe('OrderDetailPage lines', () => {
         order({
           ...confirmed,
           lines: [
-            line({
+            orderLine({
               quantityFulfilled: '40.0000',
               quantityOutstanding: '0.0000',
               quantityReturned: '0.0000',
@@ -221,7 +197,7 @@ describe('OrderDetailPage lines', () => {
       status: 'confirmed',
       fullyFulfilled: true,
       lines: [
-        line({
+        orderLine({
           quantityFulfilled: '10.0000',
           quantityOutstanding: '0.0000',
           quantityReturned: '0.0000',
@@ -274,7 +250,7 @@ describe('OrderDetailPage lines', () => {
         order({
           status: 'confirmed',
           lines: [
-            line({
+            orderLine({
               quantityFulfilled: '5.0000',
               quantityOutstanding: '35.0000',
               quantityReturned: '0.0000',
@@ -311,7 +287,9 @@ describe('OrderDetailPage lines', () => {
       serve(
         order({
           status: 'confirmed',
-          lines: [line({ isClosedShort: true, closedReason: 'Discontinued' })],
+          lines: [
+            orderLine({ isClosedShort: true, closedReason: 'Discontinued' }),
+          ],
         }),
       );
       server.use(
@@ -336,7 +314,7 @@ describe('OrderDetailPage lines', () => {
           totals: [{ currency: 'CAD', amount: '50.00000000' }],
           totalsComplete: true,
           lines: [
-            line({
+            orderLine({
               unitPrice: '1.2500',
               currency: 'CAD',
               lineTotal: '50.00000000',
@@ -360,12 +338,12 @@ describe('OrderDetailPage lines', () => {
           totals: [{ currency: 'CAD', amount: '20.00000000' }],
           totalsComplete: false,
           lines: [
-            line({
+            orderLine({
               unitPrice: '2.0000',
               currency: 'CAD',
               lineTotal: '20.00000000',
             }),
-            line({ id: 'line-2' }),
+            orderLine({ id: 'line-2' }),
           ],
         }),
       );
@@ -511,7 +489,10 @@ describe('OrderDetailPage lines', () => {
     it('offers Authorize a return on a sale that shipped', async () => {
       serveSale([], {
         lines: [
-          line({ quantityFulfilled: '6.0000', quantityOutstanding: '34.0000' }),
+          orderLine({
+            quantityFulfilled: '6.0000',
+            quantityOutstanding: '34.0000',
+          }),
         ],
       });
       renderPage([...SALE_PERMISSIONS, 'return_authorizations.create']);
@@ -538,7 +519,10 @@ describe('OrderDetailPage lines', () => {
       // Shipped, but the member cannot raise RMAs.
       serveSale([], {
         lines: [
-          line({ quantityFulfilled: '6.0000', quantityOutstanding: '34.0000' }),
+          orderLine({
+            quantityFulfilled: '6.0000',
+            quantityOutstanding: '34.0000',
+          }),
         ],
       });
       renderPage(SALE_PERMISSIONS);
@@ -558,7 +542,7 @@ describe('OrderDetailPage prices', () => {
       order({
         direction: 'sale',
         lines: [
-          line({
+          orderLine({
             unitPrice: '24.9900',
             currency: 'CAD',
             lineTotal: '999.6000',
@@ -580,7 +564,7 @@ describe('OrderDetailPage prices', () => {
       order({
         direction: 'sale',
         lines: [
-          line({
+          orderLine({
             unitPrice: '17.0000',
             currency: 'CAD',
             lineTotal: '680.0000',

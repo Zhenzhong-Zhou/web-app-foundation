@@ -4,30 +4,20 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import type { Location, OrderDetail, OrderLine } from '../lib/types';
+import { orderLine } from '../test/factories';
 import { server } from '../test/setup';
 import { ShipOrderDialog } from './ship-order-dialog';
 
+/** A line with only what shipping reads: its SKU and what is left to send. */
 function line(id: string, sku: string, outstanding: string): OrderLine {
-  return {
+  return orderLine({
     id,
     variantId: `variant-${id}`,
     sku,
-    // Named after the SKU so each line in a fixture stays distinct.
     description: `Item ${sku}`,
     quantityOrdered: outstanding,
-    quantityFulfilled: '0.0000',
     quantityOutstanding: outstanding,
-    quantityReturned: '0.0000',
-    unitPrice: null,
-    currency: null,
-    priceSource: null,
-    priceListId: null,
-    priceListName: null,
-    lineTotal: null,
-    isComplete: false,
-    isClosedShort: false,
-    closedReason: null,
-  };
+  });
 }
 
 const ORDER = {

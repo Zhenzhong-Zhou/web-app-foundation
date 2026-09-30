@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import type { OrderDetail, OrderLine } from '../lib/types';
+import { orderLine } from '../test/factories';
 import { VARIANTS } from '../test/handlers';
 import { server } from '../test/setup';
 import { AddOrderLineDialog } from './add-order-line-dialog';
@@ -61,7 +62,7 @@ describe('AddOrderLineDialog', () => {
   it('leaves out items already on the order', async () => {
     const onOrder = {
       ...ORDER,
-      lines: [{ id: 'line-1', variantId: 'variant-plain' } as OrderLine],
+      lines: [orderLine({ id: 'line-1', variantId: 'variant-plain' })],
     };
 
     render(dialog(true, onOrder));
