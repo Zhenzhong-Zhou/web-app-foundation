@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.4.0-rc.1 tagged, v0.5 starting
+# web-app-foundation — handoff, v0.4.0-rc.1 tagged, v0.5 step 1 done
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -19,9 +19,9 @@ and price lists proposing the price of a new line.
 - Migrations: through **0035** (`price_lists`). Next is **0036**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-049**. Next is **ADR-050**.
-- Tests at the last run: server e2e about 590 in 32 suites
-  (`npm run test:e2e`); client vitest 97 in 21 files; Playwright 61.
-  CI also runs `seed:demo`.
+- Tests at the last run: server e2e 591 in 32 suites
+  (`npm run test:e2e`); server unit 17 in 3 files (`npm test`); client
+  vitest 148 in 33 files; Playwright 61. CI also runs `seed:demo`.
 - `npm run seed:demo`: BF-2609 valued at 1900.00 CAD, run FOC-2609-01 costed
   at 1292.00 over 980 bottles (1.318367 each), SO-DEMO-2 priced from the
   Wholesale CAD list (the organization default).
@@ -53,10 +53,12 @@ Then tag v0.4.0.
 
 ## Now: v0.5, maintainability and languages
 
-1. **Maintainability** — the plan below: find duplicates with jscpd, extract
-   shared client code, shared server code and test helpers, then split the
-   largest files. No behaviour change; each extraction its own commit.
-2. **ADR-050, languages** — before any code. French (Quebec) and Chinese
+1. **Maintainability, step 1 — done** (the commits after `v0.4.0-rc.1` on
+   `main`, one extraction or fix each). What moved where, the behaviour
+   settled on the way, and the test gaps found are in the section below.
+2. **Maintainability, next round** — the ordered list at the end of that
+   section. Optional; nothing from step 1 is half-done.
+3. **ADR-050, languages** — before any code. French (Quebec) and Chinese
    for the app, and French on printed documents.
 
 ## What v0.4 built
@@ -127,50 +129,123 @@ Then tag v0.4.0.
 `npm update`. The client is on msw 3: `onUnhandledFrame: 'error'` in
 `src/test/setup.ts`.
 
-## Maintainability plan (v0.5, step 1)
+## Maintainability, step 1 — done
 
-Keep the feature-first layout (`orders/`, `invoices/`, `price-lists/`,
-`costs/` …). Do not regroup into `pages/`, `components/`, `utils/` by type;
-that scatters a feature across the tree.
+Found with jscpd, fixed in the plan's order: shared client code, shared
+server code, test helpers, then the largest files. Code-only clones went
+from 186 to 92 (tsx) and 312 to 261 (typescript); what is left is mostly
+kept on purpose (schema column declarations, create/update DTO pairs,
+repeats inside one spec) or form plumbing. `.jscpd.json` holds the paths and
+ignores the migration snapshots, so a plain `npx jscpd` gives the report.
 
-**Find duplicates with a tool, not by memory:**
-`npx jscpd client/src server/src server/test --min-lines 8 --reporters console`
-lists every copied block of 8+ lines. Fix what it finds in this order,
-because each later split reuses the earlier extractions:
+**Reviewed and kept — jscpd still reports these; each was read and left on
+purpose.** Do not re-review them unless the code around them changes:
+- Create and update DTO pairs (address, contact, partner, variant, licence,
+  location): required against optional; each DTO states its own shape.
+- Controller import headers and schema column blocks: declarations, not
+  rules.
+- `lib/types.ts` against `costs.e2e-spec.ts`, and `audit/audit-format.ts`
+  against `audit.e2e-spec.ts`: separate packages; #19 replaces the types.
+- Login, register and reset: their form-state and submit blocks skip
+  `useSubmit` because they navigate away on success. Forgot-password keeps
+  its own message: it must not repeat the server's words.
+- The login and forgot-password email field, the two order-line price
+  fields, and the "Into" location select in the receive dialogs: two
+  copies each, with different help text.
+- List pages' loading and empty frames: they vary in skeleton rows and
+  wording; a component would need a prop for each difference.
+- Dialog plumbing (imports, `useSubmit`, `close`, `handleSubmit`, the
+  `update(field)` helper): sharing it would mean a form framework.
+- `products/variant-row.tsx` keeps its own `Detail` (label beside value, a
+  spec sheet); `LabelledValue` is caption above value.
+- The cost panels' top (the `useResource` guard and a six-line heading) and
+  the run cost panel's two tables (different columns).
+- The packing slip's lot table: `LotItemsTable` links each lot, and on
+  paper a link only prints as an underline.
+- Stock value's needs-cost list stays off `useKeysetList`: it is read with
+  the valuation under one banner. The multi-read pages (order detail,
+  members, inventory, exchange rates) stay off `useResource` for the same
+  reason.
+- Two order lookups stay outside `loadOrder`: one joins the partner for its
+  columns, one runs outside a transaction through `TenantDb`.
+- Repeats inside a single spec: each test should read on its own.
+- `stock.e2e-spec.ts` keeps its own `createLocation` (its own defaults; the
+  name also clashes with the fixture).
 
-1. **Client, shared code:**
-    - `messageFor(caught)` is repeated in most pages; it moves to `lib/api`;
-    - the fetch-with-`ignore` effect becomes one `useResource` hook;
-    - the keyset "Load more" becomes one hook (eight or more pages);
-    - `Figure` is duplicated in the cost panels.
-2. **Server, shared code:**
-    - the ISO currency check (`/^[A-Z]{3}$/`, in DTOs and checks) becomes one
-      validator and one SQL fragment;
-    - `lockPool` and the "latest rate on or before a day" lookup are repeated
-      across valuation and correction code; they move to one place;
-    - the base-currency read is repeated in several services; it becomes one
-      helper.
-3. **Tests:**
-    - each e2e spec has its own register / partner / variant / buy helpers;
-      they move to `server/test/utils/fixtures.ts`;
-    - the pool reconciliation query is in two specs;
-    - the client specs each build their own `OrderLine`; one factory in
-      `client/src/test/`.
-4. **Then split the largest files**, found with
-   `find client/src server/src -name '*.ts*' | xargs wc -l | sort -n | tail -20`.
-   Likely candidates:
-    - `order-detail-page.tsx` (lines table, actions, totals);
-    - `orders.service.ts` (lines, pricing, receiving);
-    - `production-orders.service.ts`;
-    - `invoices.service.ts`.
+The layout stays feature-first. Do not regroup into `pages/`, `components/`,
+`utils/` by type; `components/` holds only what two or more features share.
 
-Rules:
-- no behaviour change;
+**Shared pieces — use these rather than writing the thing again:**
+- Client `lib/`: `messageFor` and `ApiError` (reads `Retry-After`) in
+  `api.ts`; `useResource` (one GET with reload); `useKeysetList` (paged
+  lists); `formatDay` and `utcMidnight` in `format.ts`.
+- Client `components/`: `DialogFooter`, `LabelledValue`, `CurrencyField`,
+  `SettingsSection`, `LoadMoreButton`, and `print-sheet.tsx` (`PrintSheet`,
+  `PrintBanner`, `PrintParty`, `PrintLines`, `PrintTotals`).
+- Client, per feature: `inventory/lot-fields.tsx`, `auth/auth-message.ts`,
+  `orders/status.ts`, `orders/order-lines-section.tsx`,
+  `orders/order-status-actions.tsx`; test factory `test/factories.ts`.
+- Server `common/`: `dto/currency.ts` (`IsCurrencyCode`, with
+  `isCurrencyCode` in `database/schema/columns.ts` for checks),
+  `dto/keyset-query.dto.ts` and `keyset.ts` (`pageOf`).
+- Server lookups every action starts from, each scoped to the organization
+  in its where clause: `orders/load-order.ts`, `invoices/lock-draft.ts`,
+  `production-orders/run-guards.ts`. Also `stock/rates.ts` (`baseCurrency`,
+  `rateOnOrBefore`), `orders/order-line-pricing.ts`,
+  `invoices/issued-invoice.ts` (`partiesOf`, `stored`).
+- Server services split by job, like shipments and returns already were:
+  orders → `OrdersService`, `OrderLinesService`, `OrderReceiptsService`;
+  invoices → `InvoicesService` (reads), `InvoiceDraftsService`,
+  `InvoiceIssuingService`; production → `ProductionOrdersService`,
+  `ProductionExecutionService`, `ProductionCloseService`.
+- Server tests `test/utils/`: `fixtures.ts` (`createE2eApp`, `body`,
+  `PASSWORD`, `registerOrganization`, `createPartner`, `createLocation`,
+  `createVariant`), `sales.ts` (`shippedSale`), `valuation.ts` (buy, move,
+  pool reads, `expectBooksToReconcile`), `routes.ts` (the coverage walk).
+
+**Behaviour settled on the way (fix commits, not refactors):**
+- A failed reload shows its error; it used to escape as an unhandled
+  rejection.
+- A rate limit says how long to wait: `api()` reads `Retry-After`.
+- A dialog cannot be closed while it saves — not Cancel, Escape or the
+  backdrop (`onClose={submitting ? undefined : close}`).
+- A calendar day stored as `timestamptz` (expiry, expected delivery,
+  licence dates) is written as UTC midnight with `utcMidnight`; `date`
+  columns take the bare day. #20 would make this unnecessary.
+- Paged lists: a successful read clears the error, a page answering after
+  the filter changed is dropped, the cursor is URL-encoded, and Load more
+  sits centred under the list.
+- `issue()`'s tax-code subquery is aliased plain SQL (the handoff item). The
+  installed Drizzle already rendered it qualified; it no longer depends on
+  that.
+
+**Test gaps found while refactoring:**
+- Server unit tests are thin (3 files). Pure logic with none:
+  `invoices/invoice-amounts.ts`, `invoices/document-numbers.ts`,
+  `stock/availability.ts`.
+- Cross-tenant tests: only two guard `loadOrder` (duplicate, reservations);
+  none guard `lockDraft` or the run guards. One per shared lookup would
+  cover every action behind it.
+- Unchecked: whether an expired licence stops a run being released.
+- No performance tests, and no end-to-end journey (buy → receive → make →
+  ship → invoice → credit) in Playwright.
+
+**Next round, in this order:**
+1. The returns/shipments pairs jscpd still reports
+   (`returns.service.ts` ~175 and ~287 against `shipments.service.ts`);
+   merge only if they are the same rule.
+2. Split `shipments.service.ts` (841), `return-authorizations.service.ts`
+   (838) and `stock.service.ts` (776), the way commits 48–54 did.
+3. The test gaps above, starting with the cross-tenant ones.
+4. #20, `date` columns for calendar days: ADR, migration 0036,
+   `npm run migrate:all`.
+
+Rules, still in force:
+- no behaviour change in a refactor; a fix is its own commit, first;
 - tests stay green between commits;
 - one extraction per commit, with the reason in the message;
-- a duplicate that differs on purpose — two similar checks with different
-  rules — stays, with a comment saying why. The goal is one definition per
-  rule, not the fewest lines.
+- a duplicate that differs on purpose stays, with a comment saying why. The
+  goal is one definition per rule, not the fewest lines.
 
 ## Open GitHub issues
 
@@ -190,6 +265,11 @@ Rules:
 - **Pro forma invoices** — deferred in ADR-046; remind Bob. Bring forward if
   the business needs them for customs, prepayment or sample values.
 - Check ADR-047's audit list names `return_authorization.replacement_raised`.
+- `npm audit` on both sides has not been run in a while.
+- CSV/Excel export and import: raised, not decided. Export is low-risk
+  (read-only, reuses the lists' permissions and tenant scoping); import and
+  bulk insert need an ADR first (validation, partial failure, audit,
+  duplicates, tenant checks). Decide from what users actually need.
 - ADR-048 deferrals worth remembering:
     - propagating corrections through closed runs;
     - period close;
@@ -246,8 +326,20 @@ Rules:
 - To reorder unpushed commits: `git reset --soft <base>`, restage per commit,
   and `git commit -C <old-hash>` to reuse each message.
 - Before pushing, run what CI runs: `npm run lint:ci` and
-  `npm run format:check` (both sides), `npx tsc --noEmit` (client), build,
+  `npm run format:check` (both sides), `npx tsc -b` (client), build,
   tests. Editor auto-imports in the wrong quote style fail CI.
+  (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
+  holds project references.)
+
+**Moving code** (what step 1 learned)
+- Find every caller before moving a method, including
+  `server/src/database/seed-demo.ts`, and calls split over two lines
+  (`this.taxCodes` then `.findById`). After a server move, run
+  `npm run seed:demo`: no test runs it.
+- Prove a move lost nothing: every non-import line of the old file should
+  appear, as often, across the new ones.
+- Check a new comment's claims against the code it describes before
+  keeping it.
 
 **Server**
 - Server e2e: always `npm run test:e2e`. Never run two at once — the second
