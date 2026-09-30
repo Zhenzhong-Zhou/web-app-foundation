@@ -24,11 +24,15 @@ import { ListOrdersDto } from './dto/list-orders.dto';
 import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
 import { ReceiveLineDto } from './dto/receive-line.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { OrderLinesService } from './order-lines.service';
 import { OrdersService } from './orders.service';
 
 @Controller({ path: 'orders', version: '1' })
 export class OrdersController {
-  constructor(private readonly orders: OrdersService) {}
+  constructor(
+    private readonly orders: OrdersService,
+    private readonly lines: OrderLinesService,
+  ) {}
 
   /**
    * Query rather than body, so a filtered list is a URL someone can bookmark
@@ -123,7 +127,7 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddOrderLineDto,
   ) {
-    return { line: await this.orders.addLine(id, dto) };
+    return { line: await this.lines.addLine(id, dto) };
   }
 
   @Patch(':id/lines/:lineId')
@@ -140,7 +144,7 @@ export class OrdersController {
     @Param('lineId', ParseUUIDPipe) lineId: string,
     @Body() dto: UpdateOrderLineDto,
   ): Promise<void> {
-    await this.orders.updateLine(id, lineId, dto);
+    await this.lines.updateLine(id, lineId, dto);
   }
 
   /**
@@ -159,7 +163,7 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Param('lineId', ParseUUIDPipe) lineId: string,
   ): Promise<void> {
-    await this.orders.useListPrice(id, lineId);
+    await this.lines.useListPrice(id, lineId);
   }
 
   /**
@@ -179,7 +183,7 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Param('lineId', ParseUUIDPipe) lineId: string,
   ): Promise<void> {
-    await this.orders.removeLine(id, lineId);
+    await this.lines.removeLine(id, lineId);
   }
 
   @Post(':id/lines/:lineId/close')
@@ -195,7 +199,7 @@ export class OrdersController {
     @Param('lineId', ParseUUIDPipe) lineId: string,
     @Body() dto: CloseLineDto,
   ): Promise<void> {
-    await this.orders.closeLineShort(id, lineId, dto);
+    await this.lines.closeLineShort(id, lineId, dto);
   }
 
   @Post(':id/lines/:lineId/reopen')
@@ -210,7 +214,7 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Param('lineId', ParseUUIDPipe) lineId: string,
   ): Promise<void> {
-    await this.orders.reopenLine(id, lineId);
+    await this.lines.reopenLine(id, lineId);
   }
 
   /**

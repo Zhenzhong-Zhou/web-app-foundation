@@ -4,6 +4,7 @@ import { NotificationsModule } from '../../core/notifications/notifications.modu
 import { PartnersModule } from '../partners/partners.module';
 import { ReturnAuthorizationsModule } from '../return-authorizations/return-authorizations.module';
 import { StockModule } from '../stock/stock.module';
+import { OrderLinesService } from './order-lines.service';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { ReturnsController } from './returns.controller';
@@ -29,7 +30,12 @@ import { ShipmentsService } from './shipments.service';
     ReturnAuthorizationsModule,
   ],
   controllers: [OrdersController, ShipmentsController, ReturnsController],
-  providers: [OrdersService, ShipmentsService, ReturnsService],
+  providers: [
+    OrdersService,
+    OrderLinesService,
+    ShipmentsService,
+    ReturnsService,
+  ],
   exports: [OrdersService],
 })
 export class OrdersModule {}
