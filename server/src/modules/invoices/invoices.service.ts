@@ -519,7 +519,10 @@ export class InvoicesService {
               .update(invoiceLines)
               .set({
                 netAmount: line.netAmount,
-                taxCodeName: sql`(select ${taxCodes.name} from ${taxCodes} where ${taxCodes.id} = ${invoiceLines.taxCodeId})`,
+                // Aliased plain SQL, as the other correlated subqueries are:
+                // which table each column belongs to is written here, not
+                // left to how Drizzle renders columns inside an update.
+                taxCodeName: sql`(select tc.name from tax_codes tc where tc.id = ${invoiceLines.taxCodeId})`,
               })
               .where(
                 and(

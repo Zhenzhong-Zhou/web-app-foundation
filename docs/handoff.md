@@ -189,9 +189,6 @@ Rules:
 
 - **Pro forma invoices** — deferred in ADR-046; remind Bob. Bring forward if
   the business needs them for customs, prepayment or sample values.
-- `issue()` in `invoices.service.ts` sets `taxCodeName` with a correlated
-  subquery written through Drizzle; qualify it in plain SQL when that file is
-  next touched.
 - Check ADR-047's audit list names `return_authorization.replacement_raised`.
 - ADR-048 deferrals worth remembering:
     - propagating corrections through closed runs;
