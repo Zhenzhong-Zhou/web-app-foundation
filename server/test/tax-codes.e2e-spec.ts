@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -7,13 +6,12 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { auditLog, roles, taxCodeComponents } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -22,14 +20,6 @@ interface TaxCodeResponse {
   name: string;
   isActive: boolean;
   components: { name: string; rate: string }[];
-}
-
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
 }
 
 /**
@@ -42,8 +32,6 @@ describe('Tax codes (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   const GST_PST = {
     name: 'GST + PST (BC)',
     components: [
@@ -53,16 +41,8 @@ describe('Tax codes (e2e)', () => {
   };
 
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -73,27 +53,8 @@ describe('Tax codes (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
   async function addMember(
-    owner: Awaited<ReturnType<typeof registerOrg>>,
+    owner: Awaited<ReturnType<typeof registerOrganization>>,
     email: string,
     roleName: 'Admin' | 'Viewer',
   ) {
@@ -133,7 +94,7 @@ describe('Tax codes (e2e)', () => {
   }
 
   it('creates a code with its components and lists them together', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
     const code = await created(org.agent);
 
     expect(code.components.map((c) => [c.name, c.rate])).toEqual([
@@ -148,7 +109,7 @@ describe('Tax codes (e2e)', () => {
 
   // Exempt is a code with no components, not a blank on the line.
   it('creates an exempt code with no components', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
 
     await org.agent
       .post('/v1/tax-codes')
@@ -157,14 +118,14 @@ describe('Tax codes (e2e)', () => {
   });
 
   it('refuses a second code with the same name', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
     await created(org.agent);
 
     await org.agent.post('/v1/tax-codes').send(GST_PST).expect(409);
   });
 
   it('refuses one tax listed twice, and writes nothing', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
 
     await org.agent
       .post('/v1/tax-codes')
@@ -186,7 +147,7 @@ describe('Tax codes (e2e)', () => {
    * rollback: no code is left without its components.
    */
   it('refuses a rate over 100%, and leaves no code behind', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
 
     await org.agent
       .post('/v1/tax-codes')
@@ -197,7 +158,7 @@ describe('Tax codes (e2e)', () => {
   });
 
   it('replaces the components as a set', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
     const code = await created(org.agent);
 
     await org.agent
@@ -216,7 +177,7 @@ describe('Tax codes (e2e)', () => {
   });
 
   it('retires a code, and lists active codes first', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
     const old = await created(org.agent);
 
     await org.agent
@@ -238,7 +199,7 @@ describe('Tax codes (e2e)', () => {
 
   // "Who set PST to 8%" is the question the log exists to answer.
   it('records the new components in the audit log', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
     const code = await created(org.agent);
 
     await org.agent
@@ -271,7 +232,7 @@ describe('Tax codes (e2e)', () => {
    * anyone drafting an invoice picks one.
    */
   it('lets Admin and Viewer read but not change codes', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
     const code = await created(org.agent);
 
     for (const [email, role] of [
@@ -290,8 +251,8 @@ describe('Tax codes (e2e)', () => {
   });
 
   it('keeps each organization to its own codes', async () => {
-    const alpha = await registerOrg('alpha');
-    const beta = await registerOrg('beta');
+    const alpha = await registerOrganization(app, 'alpha');
+    const beta = await registerOrganization(app, 'beta');
     const theirs = await created(beta.agent);
 
     expect(await listed(alpha.agent)).toHaveLength(0);

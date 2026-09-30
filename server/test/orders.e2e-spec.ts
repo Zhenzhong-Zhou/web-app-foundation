@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -15,13 +14,12 @@ import {
   stockLevels,
   stockMovements,
 } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -42,10 +40,6 @@ interface OrderPage {
   nextCursor: string | null;
 }
 
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
-
 interface OrderResponse {
   id: string;
   partnerId: string;
@@ -62,10 +56,6 @@ interface OrderResponse {
   }[];
 }
 
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * The receipt path is what this module exists to prove: a movement with a
  * reference and a fulfilment increment, in one transaction (ADR-027). Most of
@@ -75,19 +65,9 @@ describe('Orders (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -109,27 +89,8 @@ describe('Orders (e2e)', () => {
     return role.id;
   }
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
   async function addViewer(
-    owner: Awaited<ReturnType<typeof registerOrg>>,
+    owner: Awaited<ReturnType<typeof registerOrganization>>,
     email: string,
   ) {
     await owner.agent
@@ -155,7 +116,7 @@ describe('Orders (e2e)', () => {
     slugish: string,
     options: { tracksLots?: boolean } = {},
   ) {
-    const org = await registerOrg(slugish);
+    const org = await registerOrganization(app, slugish);
 
     const partner = body<{ partner: { id: string } }>(
       await org.agent
@@ -393,7 +354,7 @@ describe('Orders (e2e)', () => {
     });
 
     it('does not duplicate another organization order', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const beta = await setup('beta');
       const theirs = await confirmed(beta);
 
@@ -1377,7 +1338,7 @@ describe('Orders (e2e)', () => {
 
   describe('GET /v1/orders', () => {
     it('does not show another organization orders', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const beta = await setup('beta');
 
       await beta.agent

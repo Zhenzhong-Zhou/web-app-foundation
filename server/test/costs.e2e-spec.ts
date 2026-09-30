@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 
 import {
@@ -13,19 +12,14 @@ import {
   stockValuations,
   valuationPools,
 } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
-
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
 
 interface OrderResponse {
   id: string;
@@ -58,10 +52,6 @@ interface CorrectedCost {
   issued: string;
 }
 
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 const cad = (unitPrice: string): Price => ({ unitPrice, currency: 'CAD' });
 const usd = (unitPrice: string): Price => ({ unitPrice, currency: 'USD' });
 
@@ -74,19 +64,9 @@ describe('Costs (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -130,17 +110,7 @@ describe('Costs (e2e)', () => {
   });
 
   async function setup(slugish: string, base: string | null = 'CAD') {
-    const agent = authedAgent(app);
-
-    const registered = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
+    const { agent, organizationId } = await registerOrganization(app, slugish);
 
     if (base) {
       await agent
@@ -166,7 +136,7 @@ describe('Costs (e2e)', () => {
 
     return {
       agent,
-      organizationId: body<RegisterResponse>(registered).user.organizationId,
+      organizationId,
       shelf: await location('Shelf'),
       wip: await location('Blending'),
       supplier,

@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -7,13 +6,12 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { addresses, contacts, partners, roles } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -25,14 +23,6 @@ interface PartnerResponse {
   isActive: boolean;
 }
 
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * One table for customers and suppliers (ADR-026), so most of what is worth
  * asserting here is about what the table does *not* enforce: names collide
@@ -42,8 +32,6 @@ describe('Partners (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   const partner = {
     name: 'Acme Supplies',
     code: 'ACME-01',
@@ -51,16 +39,8 @@ describe('Partners (e2e)', () => {
   };
 
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -82,27 +62,8 @@ describe('Partners (e2e)', () => {
     return role.id;
   }
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
   async function addViewer(
-    owner: Awaited<ReturnType<typeof registerOrg>>,
+    owner: Awaited<ReturnType<typeof registerOrganization>>,
     email: string,
   ) {
     await owner.agent
@@ -125,7 +86,7 @@ describe('Partners (e2e)', () => {
 
   describe('POST /v1/partners', () => {
     it('creates a partner with no kind attached to it', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const res = await alpha.agent
         .post('/v1/partners')
@@ -149,7 +110,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('creates a partner with no code at all', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       await alpha.agent
         .post('/v1/partners')
@@ -167,7 +128,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('allows two partners to share a name', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       await alpha.agent
         .post('/v1/partners')
@@ -188,7 +149,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('rejects a duplicate code and names it', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       await alpha.agent.post('/v1/partners').send(partner).expect(201);
 
       const res = await alpha.agent
@@ -203,8 +164,8 @@ describe('Partners (e2e)', () => {
     });
 
     it('allows the same code in another organization', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
 
       await alpha.agent.post('/v1/partners').send(partner).expect(201);
 
@@ -216,13 +177,13 @@ describe('Partners (e2e)', () => {
     });
 
     it('rejects a blank name', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       await alpha.agent.post('/v1/partners').send({ name: '   ' }).expect(400);
     });
 
     it('refuses a Viewer, which lacks partners.create', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
 
       await viewer.post('/v1/partners').send(partner).expect(403);
@@ -236,8 +197,8 @@ describe('Partners (e2e)', () => {
 
   describe('GET /v1/partners', () => {
     it('does not show another organization partners', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
 
       await beta.agent.post('/v1/partners').send(partner).expect(201);
 
@@ -247,7 +208,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('includes retired partners', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const created = body<{ partner: PartnerResponse }>(
         await alpha.agent.post('/v1/partners').send(partner).expect(201),
@@ -271,7 +232,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('is readable by a Viewer, which holds partners.view', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       await alpha.agent.post('/v1/partners').send(partner).expect(201);
       const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
 
@@ -282,7 +243,7 @@ describe('Partners (e2e)', () => {
 
   describe('PATCH /v1/partners/:id', () => {
     it('retires without deleting', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const created = body<{ partner: PartnerResponse }>(
         await alpha.agent.post('/v1/partners').send(partner).expect(201),
@@ -301,8 +262,8 @@ describe('Partners (e2e)', () => {
     });
 
     it('refuses a partner in another organization', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
 
       const created = body<{ partner: PartnerResponse }>(
         await beta.agent.post('/v1/partners').send(partner).expect(201),
@@ -317,7 +278,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('refuses a code already used by another partner', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       await alpha.agent.post('/v1/partners').send(partner).expect(201);
 
@@ -335,7 +296,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('refuses a Viewer, which lacks partners.update', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const created = body<{ partner: PartnerResponse }>(
         await alpha.agent.post('/v1/partners').send(partner).expect(201),
@@ -368,7 +329,7 @@ describe('Partners (e2e)', () => {
     };
 
     async function createPartnerIn(
-      org: Awaited<ReturnType<typeof registerOrg>>,
+      org: Awaited<ReturnType<typeof registerOrganization>>,
     ) {
       return body<{ partner: PartnerResponse }>(
         await org.agent.post('/v1/partners').send(partner).expect(201),
@@ -376,7 +337,7 @@ describe('Partners (e2e)', () => {
     }
 
     it('stores the country uppercased', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const created = await createPartnerIn(alpha);
 
       await alpha.agent
@@ -395,7 +356,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('demotes the previous default when a second one is set', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const created = await createPartnerIn(alpha);
 
       const first = body<{ address: { id: string } }>(
@@ -422,7 +383,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('retires rather than deletes, and clears the default flag', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const created = await createPartnerIn(alpha);
 
       const first = body<{ address: { id: string } }>(
@@ -458,7 +419,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('refuses to retire the default while it is the only one', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const created = await createPartnerIn(alpha);
 
       const only = body<{ address: { id: string } }>(
@@ -480,7 +441,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('refuses an address reached through the wrong partner', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const owner = await createPartnerIn(alpha);
 
       const other = body<{ partner: PartnerResponse }>(
@@ -509,8 +470,8 @@ describe('Partners (e2e)', () => {
     });
 
     it('does not reach a partner in another organization', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
 
       const theirs = body<{ partner: PartnerResponse }>(
         await beta.agent.post('/v1/partners').send(partner).expect(201),
@@ -525,7 +486,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('embeds addresses and contacts in the partner detail', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const created = await createPartnerIn(alpha);
 
       await alpha.agent
@@ -554,7 +515,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('refuses a Viewer, which lacks partners.update', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const created = await createPartnerIn(alpha);
       const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
 
@@ -573,7 +534,7 @@ describe('Partners (e2e)', () => {
     const contact = { name: 'Dana Reed', email: 'dana@example.com' };
 
     async function createPartnerIn(
-      org: Awaited<ReturnType<typeof registerOrg>>,
+      org: Awaited<ReturnType<typeof registerOrganization>>,
     ) {
       return body<{ partner: PartnerResponse }>(
         await org.agent.post('/v1/partners').send(partner).expect(201),
@@ -581,7 +542,7 @@ describe('Partners (e2e)', () => {
     }
 
     it('requires an email or a phone', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const created = await createPartnerIn(alpha);
 
       /**
@@ -598,7 +559,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('allows one person at two partners', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const first = await createPartnerIn(alpha);
 
       const second = body<{ partner: PartnerResponse }>(
@@ -624,7 +585,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('demotes the previous primary when a second one is set', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const created = await createPartnerIn(alpha);
 
       const first = body<{ contact: { id: string } }>(
@@ -645,7 +606,7 @@ describe('Partners (e2e)', () => {
     });
 
     it('retires rather than deletes', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const created = await createPartnerIn(alpha);
 
       const only = body<{ contact: { id: string } }>(

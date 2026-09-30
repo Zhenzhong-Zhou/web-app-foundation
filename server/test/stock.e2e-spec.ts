@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq, inArray } from 'drizzle-orm';
 
 import {
@@ -14,19 +13,14 @@ import {
   stockLevels,
   stockMovements,
 } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
-
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
 
 interface ProductResponse {
   product: { id: string; variants: { id: string; sku: string }[] };
@@ -48,10 +42,6 @@ interface StockRow {
   quantity: string;
 }
 
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * The ledger is the point of this module, so most of these tests are about
  * what must *not* happen: stock at a branch, a lotted variant with a lotless
@@ -65,19 +55,9 @@ describe('Stock (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -99,27 +79,8 @@ describe('Stock (e2e)', () => {
     return role.id;
   }
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
   async function addViewer(
-    owner: Awaited<ReturnType<typeof registerOrg>>,
+    owner: Awaited<ReturnType<typeof registerOrganization>>,
     email: string,
   ) {
     await owner.agent
@@ -140,7 +101,7 @@ describe('Stock (e2e)', () => {
     return viewer;
   }
 
-  type Agent = Awaited<ReturnType<typeof registerOrg>>['agent'];
+  type Agent = Awaited<ReturnType<typeof registerOrganization>>['agent'];
 
   async function createVariant(
     agent: Agent,
@@ -182,7 +143,7 @@ describe('Stock (e2e)', () => {
     slugish: string,
     options: { tracksLots?: boolean } = {},
   ) {
-    const org = await registerOrg(slugish);
+    const org = await registerOrganization(app, slugish);
     const variant = await createVariant(org.agent, options);
     const locationId = await createLocation(org.agent);
     return { ...org, variant, locationId };
@@ -550,7 +511,7 @@ describe('Stock (e2e)', () => {
 
   describe('GET /v1/stock', () => {
     it('does not show another organization stock', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const beta = await setup('beta');
 
       await beta.agent
@@ -712,7 +673,7 @@ describe('Stock (e2e)', () => {
     });
 
     it('does not show another organization movements', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const beta = await setup('beta');
 
       await beta.agent

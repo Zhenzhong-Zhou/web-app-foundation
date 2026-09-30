@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { eq, isNull } from 'drizzle-orm';
 
 import { ALL_PERMISSIONS } from '../src/core/authorization/permissions';
@@ -14,12 +13,7 @@ import {
   sessions,
   users,
 } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
-import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
+import { createE2eApp, PASSWORD } from './utils/fixtures';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -34,7 +28,6 @@ describe('Auth (e2e)', () => {
   let mail: RecordingMailService;
 
   const EMAIL = 'e2e@example.com';
-  const PASSWORD = 'correct-horse-battery';
 
   const registration = {
     email: EMAIL,
@@ -48,16 +41,8 @@ describe('Auth (e2e)', () => {
 
     // Registration is limited to 5/minute and both suites register on every
     // test. The limit keeps its own coverage in security.e2e-spec.ts.
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(mail),
-    );
-
+    app = await createE2eApp(mail);
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {

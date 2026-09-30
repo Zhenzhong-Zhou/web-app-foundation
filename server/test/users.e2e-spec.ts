@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -7,12 +6,12 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { auditLog, memberships, roles, users } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -24,18 +23,11 @@ interface MemberResponse {
   roleId: string;
 }
 
-interface RegisterResponse {
-  user: { id: string; email: string; name: string; organizationId: string };
-}
-
 /**
  * supertest types res.body as `any`. Asserting the shape here keeps the unsafe
  * access in one place instead of on every read, and a wrong guess fails at the
  * assertion rather than as an undefined three lines later.
  */
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
 
 /**
  * The step-4 claim: a role that lacks a permission is refused, and the refusal
@@ -51,23 +43,13 @@ describe('Users (e2e)', () => {
   let db: Database;
   let mail: RecordingMailService;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
     mail = new RecordingMailService();
 
     // Registration is limited to 5/minute and this suite registers on every
     // test. The limit has its own coverage in security.e2e-spec.ts.
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(mail),
-    );
-
+    app = await createE2eApp(mail);
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -100,19 +82,11 @@ describe('Users (e2e)', () => {
    * session, plus the ids the tests need.
    */
   async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    const { id: ownerId, organizationId } = body<RegisterResponse>(res).user;
+    const {
+      agent,
+      userId: ownerId,
+      organizationId,
+    } = await registerOrganization(app, slugish);
 
     return {
       agent,

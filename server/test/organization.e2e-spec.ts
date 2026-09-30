@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -7,13 +6,12 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { addresses, auditLog, roles } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -29,14 +27,6 @@ interface OrganizationResponse {
   } | null;
 }
 
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * The organization's own details, which every invoice prints (ADR-046).
  * One registered address, updated in place; a tax number that can be
@@ -45,8 +35,6 @@ function body<T>(res: { body: unknown }): T {
 describe('Organization (e2e)', () => {
   let app: INestApplication;
   let db: Database;
-
-  const PASSWORD = 'correct-horse-battery';
 
   const HEAD_OFFICE = {
     line1: '100 Main St',
@@ -57,16 +45,8 @@ describe('Organization (e2e)', () => {
   };
 
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -77,27 +57,8 @@ describe('Organization (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
   async function addMember(
-    owner: Awaited<ReturnType<typeof registerOrg>>,
+    owner: Awaited<ReturnType<typeof registerOrganization>>,
     email: string,
     roleName: 'Admin' | 'Viewer',
   ) {
@@ -131,7 +92,7 @@ describe('Organization (e2e)', () => {
   }
 
   it('starts with no tax number and no address', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
     const organization = await current(org.agent);
 
     expect(organization.id).toBe(org.organizationId);
@@ -141,7 +102,7 @@ describe('Organization (e2e)', () => {
   });
 
   it('sets the tax number, and clears it with an empty string', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
 
     await org.agent
       .patch('/v1/organization')
@@ -165,7 +126,7 @@ describe('Organization (e2e)', () => {
    * answers. Sent whole, so a field left out the second time is cleared.
    */
   it('sets the registered address, then replaces it in place', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
 
     await org.agent
       .put('/v1/organization/address')
@@ -197,7 +158,7 @@ describe('Organization (e2e)', () => {
   });
 
   it('records a tax number change with what it replaced', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
 
     await org.agent
       .patch('/v1/organization')
@@ -218,7 +179,7 @@ describe('Organization (e2e)', () => {
 
   // What the organization prints is the Owner's, as it always was.
   it('lets Admin and Viewer read but not change it', async () => {
-    const org = await registerOrg('alpha');
+    const org = await registerOrganization(app, 'alpha');
 
     for (const [email, role] of [
       ['admin@alpha.example.com', 'Admin'],
@@ -239,8 +200,8 @@ describe('Organization (e2e)', () => {
   });
 
   it('only ever shows the signed-in organization', async () => {
-    const alpha = await registerOrg('alpha');
-    const beta = await registerOrg('beta');
+    const alpha = await registerOrganization(app, 'alpha');
+    const beta = await registerOrganization(app, 'beta');
 
     await beta.agent
       .put('/v1/organization/address')

@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -14,14 +13,7 @@ import {
   stockLevels,
   stockMovements,
 } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
-import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
-import { authedAgent } from './utils/request';
+import { body, createE2eApp, registerOrganization } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface OrderResponse {
@@ -53,10 +45,6 @@ interface PlanResponse {
   }[];
 }
 
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * Shipping against sales orders (ADR-041). A shipment is a document: several
  * lines, several lots, one transaction. The assertions are about the ledger —
@@ -68,19 +56,9 @@ describe('Shipments (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -91,23 +69,7 @@ describe('Shipments (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return { agent };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   async function variant(org: Org, sku: string, tracksLots: boolean) {
     const res = await org.agent
@@ -250,7 +212,7 @@ describe('Shipments (e2e)', () => {
 
   describe('shipping', () => {
     it('ships several lines together, splitting a line across lots earliest expiry first', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const shipment = body<{ shipment: ShipmentResponse }>(
@@ -289,7 +251,7 @@ describe('Shipments (e2e)', () => {
      * so non-perishable stock rotates without a setting.
      */
     it('takes lots without an expiry oldest first', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const partner = body<{ partner: { id: string } }>(
         await alpha.agent
@@ -345,7 +307,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('ships a line in parts, and a second shipment continues it', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       for (const quantity of ['5', '5']) {
@@ -376,7 +338,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('takes hand-picked lots instead of the default', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const [never] = await db
@@ -402,7 +364,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('returns everything a packing slip prints', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const shipment = body<{ shipment: ShipmentResponse }>(
@@ -445,8 +407,8 @@ describe('Shipments (e2e)', () => {
     });
 
     it('does not print another organization shipment', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
       const s = await scenario(beta);
 
       const shipment = body<{ shipment: ShipmentResponse }>(
@@ -471,7 +433,7 @@ describe('Shipments (e2e)', () => {
      * so neither moves, and nothing is recorded as sent.
      */
     it('moves nothing when any line cannot be covered', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha, { focus: '500', bottle: '10' });
 
       const res = await alpha.agent
@@ -491,7 +453,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('refuses more than was ordered', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       await alpha.agent
@@ -504,7 +466,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('refuses hand-picked lots that do not add up', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const [never] = await db
@@ -528,7 +490,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('refuses a line sent twice in one shipment', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       await alpha.agent
@@ -544,7 +506,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('refuses to ship against a purchase', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const purchase = body<{ order: OrderResponse }>(
@@ -568,8 +530,8 @@ describe('Shipments (e2e)', () => {
     });
 
     it('does not find another organization order', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
       const s = await scenario(beta);
 
       await alpha.agent
@@ -584,7 +546,7 @@ describe('Shipments (e2e)', () => {
 
   describe('preview', () => {
     it('shows the same pick without moving anything', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const plan = body<PlanResponse>(
@@ -611,7 +573,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('flags a quantity beyond what is outstanding', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const plan = body<PlanResponse>(
@@ -670,7 +632,7 @@ describe('Shipments (e2e)', () => {
     }
 
     it('puts every lot back where it left and reopens the lines', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
 
@@ -715,7 +677,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('still lists what the voided shipment carried, once', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
 
@@ -744,7 +706,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('lets the order ship again', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
 
@@ -765,7 +727,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('drops the customer from the lot trace', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
 
@@ -791,7 +753,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('no longer counts as shipped for returns', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
 
@@ -819,7 +781,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('refuses to void the same shipment twice', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
 
@@ -840,7 +802,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('requires a reason', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
 
@@ -855,7 +817,7 @@ describe('Shipments (e2e)', () => {
      * more was returned than shipped.
      */
     it('refuses once a lot from it has been returned, and moves nothing', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
 
@@ -887,7 +849,7 @@ describe('Shipments (e2e)', () => {
     });
 
     it('refuses once an untracked item from it has been returned', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
 
@@ -914,7 +876,7 @@ describe('Shipments (e2e)', () => {
      * v0.3 workaround — a return marked "never left" — is no longer needed.
      */
     it('reopens a closed order', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
 
@@ -938,8 +900,8 @@ describe('Shipments (e2e)', () => {
     });
 
     it('does not find another organization shipment', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
       const s = await scenario(alpha);
       const shipment = await shipSome(alpha, s);
 

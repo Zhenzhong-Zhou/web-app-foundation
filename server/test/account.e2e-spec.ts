@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { eq } from 'drizzle-orm';
 
 import {
@@ -12,12 +11,7 @@ import {
   sessions,
   users,
 } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
-import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
+import { body, createE2eApp, PASSWORD } from './utils/fixtures';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -30,10 +24,6 @@ interface SessionSummary {
   os: string | null;
 }
 
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * Self-service account actions. The claims here are about rows and about who
  * may touch them — a black-box status code cannot make either.
@@ -44,7 +34,6 @@ describe('Account (e2e)', () => {
   let mail: RecordingMailService;
 
   const EMAIL = 'account@example.com';
-  const PASSWORD = 'correct-horse-battery';
   const NEW_PASSWORD = 'a-completely-different-one';
 
   const registration = {
@@ -57,16 +46,8 @@ describe('Account (e2e)', () => {
   beforeAll(async () => {
     mail = new RecordingMailService();
 
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(mail),
-    );
-
+    app = await createE2eApp(mail);
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {

@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -13,13 +12,12 @@ import {
   invoices,
   roles,
 } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -44,14 +42,6 @@ interface InvoiceResponse {
   }[];
 }
 
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * Invoice drafts (ADR-046). The claim this suite exists to prove: a draft
  * bills exactly what one shipment carried, at the order's prices, and only
@@ -61,19 +51,9 @@ describe('Invoices (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -84,26 +64,7 @@ describe('Invoices (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   async function addMember(org: Org, email: string, roleName: string) {
     const [role] = await db
@@ -249,7 +210,7 @@ describe('Invoices (e2e)', () => {
 
   describe('creating a draft', () => {
     it('bills exactly what the shipment carried, at the order price', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       const invoice = await draft(org, s.shipmentId);
@@ -276,7 +237,7 @@ describe('Invoices (e2e)', () => {
     });
 
     it('applies the chosen tax code to every line', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const gst = await taxCode(org);
 
@@ -290,7 +251,7 @@ describe('Invoices (e2e)', () => {
     });
 
     it('refuses a second invoice for the same shipment', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       await draft(org, s.shipmentId);
 
@@ -302,7 +263,7 @@ describe('Invoices (e2e)', () => {
     });
 
     it('refuses a voided shipment', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       await org.agent
@@ -318,7 +279,7 @@ describe('Invoices (e2e)', () => {
 
     // Samples ship and trace like sales, but are never invoiced (ADR-042).
     it('refuses a sample', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org, { isSample: true });
 
       await org.agent
@@ -330,8 +291,8 @@ describe('Invoices (e2e)', () => {
     });
 
     it('refuses a retired tax code, and another organization’s', async () => {
-      const org = await registerOrg('alpha');
-      const other = await registerOrg('beta');
+      const org = await registerOrganization(app, 'alpha');
+      const other = await registerOrganization(app, 'beta');
       const s = await shipped(org);
 
       const retired = await taxCode(org, 'Old PST', '7');
@@ -354,8 +315,8 @@ describe('Invoices (e2e)', () => {
     });
 
     it('does not invoice another organization’s shipment', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
       const theirs = await shipped(beta);
 
       await alpha.agent
@@ -367,7 +328,7 @@ describe('Invoices (e2e)', () => {
 
   describe('editing a draft', () => {
     it('changes the due date, note, a price and a tax code', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const gst = await taxCode(org);
       const exempt = body<{ taxCode: { id: string } }>(
@@ -406,7 +367,7 @@ describe('Invoices (e2e)', () => {
     // The invoice bills what left; a different quantity is a different
     // shipment. Refused by the whitelist, since the field does not exist.
     it('refuses a quantity change', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const invoice = await draft(org, s.shipmentId);
 
@@ -417,7 +378,7 @@ describe('Invoices (e2e)', () => {
     });
 
     it('refuses a day that does not exist', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const invoice = await draft(org, s.shipmentId);
 
@@ -428,7 +389,7 @@ describe('Invoices (e2e)', () => {
     });
 
     it('clears the due date and note with empty values', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const invoice = await draft(org, s.shipmentId);
 
@@ -448,10 +409,10 @@ describe('Invoices (e2e)', () => {
     });
 
     it('refuses a line from another invoice', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const first = await draft(org, (await shipped(org)).shipmentId);
 
-      const other = await registerOrg('beta');
+      const other = await registerOrganization(app, 'beta');
       const theirs = await draft(other, (await shipped(other)).shipmentId);
 
       await org.agent
@@ -461,7 +422,7 @@ describe('Invoices (e2e)', () => {
     });
 
     it('records a price change with what it replaced', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const invoice = await draft(org, s.shipmentId);
 
@@ -484,7 +445,7 @@ describe('Invoices (e2e)', () => {
 
   describe('deleting a draft', () => {
     it('removes it, and the shipment can be invoiced again', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const invoice = await draft(org, s.shipmentId);
 
@@ -497,7 +458,7 @@ describe('Invoices (e2e)', () => {
 
   describe('listing', () => {
     it('lists an order’s invoices, newest first', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const invoice = await draft(org, s.shipmentId);
 
@@ -512,8 +473,8 @@ describe('Invoices (e2e)', () => {
     });
 
     it('does not show another organization’s invoices', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
       const theirs = await draft(beta, (await shipped(beta)).shipmentId);
 
       const page = body<{ entries: unknown[] }>(
@@ -532,7 +493,7 @@ describe('Invoices (e2e)', () => {
      * act and stays with the Owner (next step). A Viewer reads.
      */
     it('lets Admin draft and a Viewer only read', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
@@ -643,7 +604,7 @@ describe('Invoices (e2e)', () => {
     }
 
     it('numbers the invoice, stores its amounts and copies both parties', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
 
       const issued = body<{ invoice: IssuedInvoice }>(
@@ -692,7 +653,7 @@ describe('Invoices (e2e)', () => {
 
     // What the draft showed is what issuing stored: one calculation.
     it('previews on the draft exactly what issuing stores', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
 
       const before = await readIssued(org, r.invoice.id);
@@ -721,7 +682,7 @@ describe('Invoices (e2e)', () => {
      * is the one that must win (ADR-046).
      */
     it('rounds tax once per invoice, not per line', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
 
       for (const line of r.invoice.lines) {
@@ -741,7 +702,7 @@ describe('Invoices (e2e)', () => {
 
     // Two codes that both charge GST print one GST line, not two.
     it('sums a shared component across codes into one tax line', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
 
       const gstPst = body<{ taxCode: { id: string } }>(
@@ -791,7 +752,7 @@ describe('Invoices (e2e)', () => {
      * counts from one.
      */
     it('numbers in sequence, per organization, with no gap for a refusal', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const first = await ready(alpha);
       await issue(alpha, first.invoice.id).expect(200);
 
@@ -819,7 +780,7 @@ describe('Invoices (e2e)', () => {
       ).invoice;
       expect(issued.number).toBe('INV-000002');
 
-      const beta = await registerOrg('beta');
+      const beta = await registerOrganization(app, 'beta');
       const theirs = await ready(beta);
       const betaIssued = body<{ invoice: IssuedInvoice }>(
         await issue(beta, theirs.invoice.id).expect(200),
@@ -828,7 +789,7 @@ describe('Invoices (e2e)', () => {
     });
 
     it('refuses a line with no tax code, and leaves the draft as it was', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
       const untaxed = r.invoice.lines[0];
 
@@ -845,7 +806,7 @@ describe('Invoices (e2e)', () => {
     });
 
     it('refuses without the organization’s registered address', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       await org.agent
         .post(`/v1/partners/${s.partnerId}/addresses`)
@@ -857,7 +818,7 @@ describe('Invoices (e2e)', () => {
     });
 
     it('refuses when the customer has no billing address', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       await org.agent
         .put('/v1/organization/address')
@@ -869,7 +830,7 @@ describe('Invoices (e2e)', () => {
     });
 
     it('refuses a due date before the invoice date', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
 
       await org.agent
@@ -882,7 +843,7 @@ describe('Invoices (e2e)', () => {
 
     // After issue, a mistake is a credit note and a new invoice, never an edit.
     it('freezes the invoice once issued', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
       await issue(org, r.invoice.id).expect(200);
 
@@ -900,7 +861,7 @@ describe('Invoices (e2e)', () => {
 
     // A rate that changes by law changes what is charged from now on.
     it('keeps an issued invoice’s tax when the code’s rate changes', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
       await issue(org, r.invoice.id).expect(200);
 
@@ -919,7 +880,7 @@ describe('Invoices (e2e)', () => {
      * so a partial credit later uses them rather than today's (ADR-047).
      */
     it('records each line’s tax components at issue', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
       await issue(org, r.invoice.id).expect(200);
 
@@ -945,7 +906,7 @@ describe('Invoices (e2e)', () => {
      * (ADR-046). Admin drafts; neither Admin nor Viewer issues.
      */
     it('lets only the Owner issue', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
 
       const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
@@ -964,7 +925,7 @@ describe('Invoices (e2e)', () => {
     });
 
     it('records who issued it and on what date', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
       await issue(org, r.invoice.id).expect(200);
 
@@ -1020,7 +981,7 @@ describe('Invoices (e2e)', () => {
        * amounts and tax lines copied, never recomputed (ADR-046).
        */
       it('issues a credit note for the whole invoice', async () => {
-        const org = await registerOrg('alpha');
+        const org = await registerOrganization(app, 'alpha');
         const r = await issued(org);
 
         const result = body<{
@@ -1061,7 +1022,7 @@ describe('Invoices (e2e)', () => {
       });
 
       it('lists the credit note on the invoice', async () => {
-        const org = await registerOrg('alpha');
+        const org = await registerOrganization(app, 'alpha');
         const r = await issued(org);
         await voidInvoice(org, r.invoice.id).expect(200);
 
@@ -1084,7 +1045,7 @@ describe('Invoices (e2e)', () => {
 
       // A wrong price: void, then bill the same shipment again.
       it('frees the shipment to be invoiced again', async () => {
-        const org = await registerOrg('alpha');
+        const org = await registerOrganization(app, 'alpha');
         const r = await issued(org);
         await voidInvoice(org, r.invoice.id).expect(200);
 
@@ -1096,7 +1057,7 @@ describe('Invoices (e2e)', () => {
       });
 
       it('refuses a draft, a second void, and a date before the invoice', async () => {
-        const org = await registerOrg('alpha');
+        const org = await registerOrganization(app, 'alpha');
         const r = await ready(org);
 
         // A draft is deleted, not voided: nobody outside has seen it.
@@ -1110,7 +1071,7 @@ describe('Invoices (e2e)', () => {
       });
 
       it('lets only the Owner void', async () => {
-        const org = await registerOrg('alpha');
+        const org = await registerOrganization(app, 'alpha');
         const r = await issued(org);
         const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
 
@@ -1121,7 +1082,7 @@ describe('Invoices (e2e)', () => {
       });
 
       it('records the credit note’s number, not the reason', async () => {
-        const org = await registerOrg('alpha');
+        const org = await registerOrganization(app, 'alpha');
         const r = await issued(org);
         await voidInvoice(org, r.invoice.id).expect(200);
 
@@ -1144,7 +1105,7 @@ describe('Invoices (e2e)', () => {
        */
       describe('and Void shipment', () => {
         it('is refused while a draft stands, and allowed once it is deleted', async () => {
-          const org = await registerOrg('alpha');
+          const org = await registerOrganization(app, 'alpha');
           const r = await ready(org);
 
           await voidShipment(org, r.orderId, r.shipmentId).expect(409);
@@ -1154,7 +1115,7 @@ describe('Invoices (e2e)', () => {
         });
 
         it('is refused while an issued invoice stands, and allowed once it is voided', async () => {
-          const org = await registerOrg('alpha');
+          const org = await registerOrganization(app, 'alpha');
           const r = await issued(org);
 
           await voidShipment(org, r.orderId, r.shipmentId).expect(409);

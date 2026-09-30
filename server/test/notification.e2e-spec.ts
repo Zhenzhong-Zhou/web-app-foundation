@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { eq, sql } from 'drizzle-orm';
 
 import {
@@ -7,12 +6,12 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { notifications } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -42,20 +41,12 @@ interface AccountEvent {
   createdAt: string;
 }
 
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
-
 /**
  * supertest sends no User-Agent, and recognition is by user agent — without
  * one every sign-in looks unfamiliar and the bell fires on all of them.
  */
 const BROWSER = 'KnownBrowser/1.0';
 const OTHER_BROWSER = 'SomeOtherBrowser/1.0';
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
 
 /**
  * The bell (ADR-036).
@@ -78,19 +69,9 @@ describe('Notifications (e2e)', () => {
   // asserted on, not just absorbed.
   const mail = new RecordingMailService();
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(mail),
-    );
-
+    app = await createE2eApp(mail);
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -102,29 +83,7 @@ describe('Notifications (e2e)', () => {
     mail.reset();
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .set('User-Agent', BROWSER)
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      email: `owner@${slugish}.example.com`,
-      userId: body<RegisterResponse>(res).user.id,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   /**
    * A sign-in from a browser this account has not used, which is the only
@@ -158,7 +117,9 @@ describe('Notifications (e2e)', () => {
      * against yet (ADR-022).
      */
     it('stays quiet on the sign-in that comes with registering', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
 
       expect(await unreadCount(alpha)).toBe(0);
     });
@@ -169,7 +130,9 @@ describe('Notifications (e2e)', () => {
      * familiar.
      */
     it('stays quiet on a later sign-in from the same browser', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
 
       await alpha.agent
         .post('/v1/auth/login')
@@ -187,7 +150,9 @@ describe('Notifications (e2e)', () => {
      * missed alert about a genuine intrusion.
      */
     it('tells you about a sign-in from a browser it has not seen', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
       await signInFromNewBrowser(alpha);
 
       const { entries } = await list(alpha);
@@ -203,7 +168,9 @@ describe('Notifications (e2e)', () => {
     });
 
     it('tells you when your password changes', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
 
       await alpha.agent
         .post('/v1/account/password')
@@ -229,7 +196,9 @@ describe('Notifications (e2e)', () => {
     }
 
     it('emails a sign-in from a browser it has not seen', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
       await signInFromNewBrowser(alpha);
 
       const [message] = sentWith(SIGN_IN_SUBJECT);
@@ -238,7 +207,9 @@ describe('Notifications (e2e)', () => {
 
     // Same rule as the bell, or the inbox becomes the thing people filter.
     it('does not email a sign-in from a familiar browser', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
 
       await alpha.agent
         .post('/v1/auth/login')
@@ -250,7 +221,9 @@ describe('Notifications (e2e)', () => {
     });
 
     it('emails a password change', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
 
       await alpha.agent
         .post('/v1/account/password')
@@ -266,7 +239,9 @@ describe('Notifications (e2e)', () => {
      * reputation on it.
      */
     it('escapes the name in the HTML', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
 
       await alpha.agent
         .patch('/v1/account/profile')
@@ -282,7 +257,9 @@ describe('Notifications (e2e)', () => {
 
     // Nothing in a security email should do anything when clicked.
     it('carries no token', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
       await signInFromNewBrowser(alpha);
 
       const [message] = sentWith(SIGN_IN_SUBJECT);
@@ -321,7 +298,9 @@ describe('Notifications (e2e)', () => {
     }
 
     it('drops old read rows and very old unread ones on the next emit', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
 
       await seed(alpha.userId, 'old read', 100, true);
       await seed(alpha.userId, 'recent read', 10, true);
@@ -340,8 +319,12 @@ describe('Notifications (e2e)', () => {
     });
 
     it('sweeps only the recipient', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
+      const beta = await registerOrganization(app, 'beta', {
+        userAgent: BROWSER,
+      });
 
       await seed(beta.userId, 'old read', 100, true);
 
@@ -353,8 +336,12 @@ describe('Notifications (e2e)', () => {
 
   describe('scoping', () => {
     it('does not reach somebody in another organization', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
+      const beta = await registerOrganization(app, 'beta', {
+        userAgent: BROWSER,
+      });
 
       await signInFromNewBrowser(alpha);
       await signInFromNewBrowser(beta);
@@ -382,7 +369,9 @@ describe('Notifications (e2e)', () => {
 
   describe('reading', () => {
     it('counts unread, and stops counting one that is read', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
       await signInFromNewBrowser(alpha);
 
       expect(await unreadCount(alpha)).toBe(1);
@@ -400,7 +389,9 @@ describe('Notifications (e2e)', () => {
     });
 
     it('clears everything in one request', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
       await signInFromNewBrowser(alpha);
 
       await alpha.agent
@@ -424,8 +415,12 @@ describe('Notifications (e2e)', () => {
      * itself not their business.
      */
     it('will not let one person read another person notification', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
+      const beta = await registerOrganization(app, 'beta', {
+        userAgent: BROWSER,
+      });
 
       await signInFromNewBrowser(beta);
 
@@ -441,7 +436,9 @@ describe('Notifications (e2e)', () => {
     });
 
     it('marking read twice is harmless', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
       await signInFromNewBrowser(alpha);
 
       const { entries } = await list(alpha);
@@ -461,7 +458,9 @@ describe('Notifications (e2e)', () => {
    */
   describe('GET /v1/account/events', () => {
     it('lists this account history', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
 
       const events = body<AccountEvent[]>(
         await alpha.agent.get('/v1/account/events').expect(200),
@@ -480,8 +479,12 @@ describe('Notifications (e2e)', () => {
     });
 
     it('does not show one account history to another', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
+      const beta = await registerOrganization(app, 'beta', {
+        userAgent: BROWSER,
+      });
 
       await signInFromNewBrowser(beta);
 
@@ -495,7 +498,9 @@ describe('Notifications (e2e)', () => {
     });
 
     it('records a resent verification email', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
 
       await alpha.agent.post('/v1/auth/verify-email/resend').expect(202);
 

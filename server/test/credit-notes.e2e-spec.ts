@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -7,13 +6,12 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { auditLog, invoices, roles } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -30,14 +28,6 @@ interface Credit {
   }[];
 }
 
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * Credit notes against part of an invoice (ADR-047). The claims: a credit
  * is at the invoice's price or less, never more value than a line billed,
@@ -51,20 +41,11 @@ describe('Credit notes (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
   const TODAY = '2026-09-25';
 
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -75,26 +56,7 @@ describe('Credit notes (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   async function addMember(org: Org, email: string, roleName: string) {
     const [role] = await db
@@ -287,7 +249,7 @@ describe('Credit notes (e2e)', () => {
 
   describe('crediting part of an invoice', () => {
     it('credits two units at the invoice price, and leaves the invoice issued', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
 
       const issued = body<{ creditNote: { id: string; number: string } }>(
@@ -316,7 +278,7 @@ describe('Credit notes (e2e)', () => {
     });
 
     it('previews exactly what issuing stores', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
       const lines = [{ invoiceLineId: inv.capsules, quantity: '2' }];
 
@@ -342,7 +304,7 @@ describe('Credit notes (e2e)', () => {
      * difference.
      */
     it('credits at a lowered price: a restocking fee and a price correction', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
 
       // 2 at 85% of 12.50 = 2 × 10.625 = 21.25, GST 1.0625 → 1.06.
@@ -363,7 +325,7 @@ describe('Credit notes (e2e)', () => {
     });
 
     it('refuses a price above the invoice’s, and a quantity above what was billed', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
 
       await preview(org, inv, [
@@ -382,7 +344,7 @@ describe('Credit notes (e2e)', () => {
      * than the line billed.
      */
     it('caps every credit on a line at the value it billed', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
 
       await credit(org, inv, [
@@ -406,7 +368,7 @@ describe('Credit notes (e2e)', () => {
      * than the 6.88 the invoice charged. The cap holds the total to 6.88.
      */
     it('never credits more tax than the invoice charged', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
 
       let taxTotal = 0;
@@ -431,7 +393,7 @@ describe('Credit notes (e2e)', () => {
     });
 
     it('refuses a line twice, and a line from another invoice', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
 
       await preview(org, inv, [
@@ -439,7 +401,7 @@ describe('Credit notes (e2e)', () => {
         { invoiceLineId: inv.capsules, quantity: '1' },
       ]).expect(400);
 
-      const other = await registerOrg('beta');
+      const other = await registerOrganization(app, 'beta');
       const theirs = await invoiced(other);
 
       await preview(org, inv, [
@@ -448,7 +410,7 @@ describe('Credit notes (e2e)', () => {
     });
 
     it('refuses a date before the invoice, and a missing reason', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
       const lines = [{ invoiceLineId: inv.capsules, quantity: '1' }];
 
@@ -492,7 +454,7 @@ describe('Credit notes (e2e)', () => {
     }
 
     it('settles the RMA line, and shows it as credited', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
       const r = await rma(org, inv);
 
@@ -515,7 +477,7 @@ describe('Credit notes (e2e)', () => {
 
     // Two authorized: a third unit credited under it is refused.
     it('refuses more than the RMA line authorized', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
       const r = await rma(org, inv);
 
@@ -537,7 +499,7 @@ describe('Credit notes (e2e)', () => {
     });
 
     it('refuses a line resolved as replace, a closed RMA, and another item', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
 
       const replace = await rma(org, inv, { resolution: 'replace' });
@@ -579,7 +541,7 @@ describe('Credit notes (e2e)', () => {
      * void would credit that part twice. The rest is credited instead.
      */
     it('refuses a void once part of the invoice is credited', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
 
       await credit(org, inv, [
@@ -593,7 +555,7 @@ describe('Credit notes (e2e)', () => {
     });
 
     it('refuses a credit on a voided invoice', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
 
       await org.agent
@@ -610,7 +572,7 @@ describe('Credit notes (e2e)', () => {
   describe('permissions and audit', () => {
     // Money going back is the finance act, as issuing and voiding are.
     it('lets only the Owner credit', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
       const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
 
@@ -630,7 +592,7 @@ describe('Credit notes (e2e)', () => {
     });
 
     it('records the credit note against its invoice, and writes nothing on preview', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
       const lines = [{ invoiceLineId: inv.capsules, quantity: '2' }];
 

@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -7,13 +6,12 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { auditLog, roles } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -35,14 +33,6 @@ interface AuditPage {
   nextCursor: string | null;
 }
 
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * Reading the log (ADR-012, ADR-018).
  *
@@ -55,19 +45,9 @@ describe('Audit (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -78,26 +58,7 @@ describe('Audit (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   /** A product, which records product.created and gives us a resource id. */
   async function makeProduct(org: Org, sku: string) {
@@ -118,7 +79,7 @@ describe('Audit (e2e)', () => {
 
   describe('GET /v1/audit', () => {
     it('records who did what, newest first', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       await makeProduct(alpha, 'WIDGET-1');
       await makeProduct(alpha, 'WIDGET-2');
 
@@ -133,8 +94,8 @@ describe('Audit (e2e)', () => {
     });
 
     it('does not show another organization log', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
       await makeProduct(beta, 'THEIRS-1');
 
       expect((await page(alpha)).entries).toHaveLength(0);
@@ -142,7 +103,7 @@ describe('Audit (e2e)', () => {
     });
 
     it('filters by action', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const product = await makeProduct(alpha, 'WIDGET-1');
 
       await alpha.agent
@@ -161,7 +122,7 @@ describe('Audit (e2e)', () => {
      * UUID, but "what happened to this one" is the question people ask.
      */
     it('filters by resource', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const first = await makeProduct(alpha, 'WIDGET-1');
       await makeProduct(alpha, 'WIDGET-2');
 
@@ -177,7 +138,7 @@ describe('Audit (e2e)', () => {
      * claim something was created under a name it never had.
      */
     it('names the resource as it was at the time', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const product = await makeProduct(alpha, 'WIDGET-1');
 
       await alpha.agent
@@ -198,7 +159,7 @@ describe('Audit (e2e)', () => {
      * their user row (ADR-012). Member events are left unlabelled.
      */
     it('does not snapshot a member name', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const [viewerRole] = await db
         .select({ id: roles.id })
@@ -225,7 +186,7 @@ describe('Audit (e2e)', () => {
     });
 
     it('filters by date range', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       await makeProduct(alpha, 'WIDGET-1');
 
       const tomorrow = new Date(Date.now() + 86_400_000).toISOString();
@@ -237,7 +198,7 @@ describe('Audit (e2e)', () => {
     });
 
     it('pages with a cursor and stops when there is nothing left', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       for (const sku of ['W-1', 'W-2', 'W-3']) {
         await makeProduct(alpha, sku);
@@ -258,7 +219,7 @@ describe('Audit (e2e)', () => {
      * nobody deciding it should be.
      */
     it('records only the fields a route named', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const product = await makeProduct(alpha, 'WIDGET-1');
 
       await alpha.agent
@@ -277,7 +238,7 @@ describe('Audit (e2e)', () => {
     });
 
     it('records no payload for a route that names no fields', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       await makeProduct(alpha, 'WIDGET-1');
 
       // null rather than {}: no payload says "this route does not record
@@ -286,7 +247,7 @@ describe('Audit (e2e)', () => {
     });
 
     it('refuses a Viewer, which lacks audit.view', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const [viewerRole] = await db
         .select({ id: roles.id })
@@ -324,7 +285,7 @@ describe('Audit (e2e)', () => {
 
   describe('GET /v1/audit/actions', () => {
     it('lists only the actions that have occurred', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       await makeProduct(alpha, 'WIDGET-1');
       await makeProduct(alpha, 'WIDGET-2');
 
@@ -343,8 +304,8 @@ describe('Audit (e2e)', () => {
      * scoping is by hand. Worth asserting for exactly that reason.
      */
     it('does not leak another organization vocabulary', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
       await makeProduct(beta, 'THEIRS-1');
 
       expect(
@@ -357,7 +318,7 @@ describe('Audit (e2e)', () => {
     });
 
     it('refuses a malformed date', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       await alpha.agent.get('/v1/audit?from=not-a-date').expect(400);
     });

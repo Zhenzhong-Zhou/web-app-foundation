@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -7,19 +6,14 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { roles } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
-
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
 
 interface Line {
   id: string;
@@ -36,10 +30,6 @@ interface OrderDetail {
   lines: (Line & { priceListName: string | null })[];
 }
 
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * A list proposes; the line decides (ADR-049). The list's price is copied
  * onto a line added without one, and nothing reads the list again. Money
@@ -49,19 +39,9 @@ describe('Price lists (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -73,17 +53,7 @@ describe('Price lists (e2e)', () => {
   });
 
   async function setup(slugish: string) {
-    const agent = authedAgent(app);
-
-    const registered = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
+    const { agent, organizationId } = await registerOrganization(app, slugish);
 
     const partner = async (name: string, code: string) =>
       body<{ partner: { id: string } }>(
@@ -100,7 +70,7 @@ describe('Price lists (e2e)', () => {
 
     return {
       agent,
-      organizationId: body<RegisterResponse>(registered).user.organizationId,
+      organizationId,
       customer: await partner('Northside Pharmacy', 'NORTH'),
       supplier: await partner('Cascade Botanicals', 'CASC'),
       focus: await variant('FOCUS-60CT'),

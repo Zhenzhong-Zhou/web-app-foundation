@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -7,13 +6,12 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { locations, roles } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -27,14 +25,6 @@ interface LocationResponse {
   isActive: boolean;
 }
 
-interface RegisterResponse {
-  user: { organizationId: string };
-}
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * The tree is what makes this module different from products: two of its rules
  * — no cycles, and a depth bound — cannot be expressed as constraints, because
@@ -44,19 +34,9 @@ describe('Locations (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -67,27 +47,8 @@ describe('Locations (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
   async function addViewer(
-    owner: Awaited<ReturnType<typeof registerOrg>>,
+    owner: Awaited<ReturnType<typeof registerOrganization>>,
     email: string,
   ) {
     const [role] = await db
@@ -115,7 +76,7 @@ describe('Locations (e2e)', () => {
 
   /** Creates a location and returns it. */
   async function create(
-    agent: Awaited<ReturnType<typeof registerOrg>>['agent'],
+    agent: Awaited<ReturnType<typeof registerOrganization>>['agent'],
     payload: Record<string, unknown>,
   ) {
     const res = await agent.post('/v1/locations').send(payload).expect(201);
@@ -124,7 +85,7 @@ describe('Locations (e2e)', () => {
 
   describe('POST /v1/locations', () => {
     it('creates a top-level location with no parent', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const warehouse = await create(alpha.agent, {
         type: 'site',
@@ -138,7 +99,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('nests a bin under a warehouse', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const warehouse = await create(alpha.agent, {
         type: 'site',
@@ -157,7 +118,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('does not enforce depth by type', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const outer = await create(alpha.agent, { type: 'bin', name: 'Outer' });
 
@@ -173,8 +134,8 @@ describe('Locations (e2e)', () => {
     });
 
     it('rejects a parent in another organization', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
 
       const theirs = await create(beta.agent, {
         type: 'site',
@@ -190,7 +151,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('rejects an unknown type', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       await alpha.agent
         .post('/v1/locations')
@@ -199,7 +160,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('refuses a Viewer, which lacks locations.create', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
 
       await viewer
@@ -213,7 +174,7 @@ describe('Locations (e2e)', () => {
 
   describe('codes', () => {
     it('allows the same code under different parents', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const first = await create(alpha.agent, {
         type: 'aisle',
@@ -244,7 +205,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('rejects a duplicate code under the same parent', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const aisle = await create(alpha.agent, {
         type: 'aisle',
@@ -265,7 +226,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('allows several locations with no code', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const warehouse = await create(alpha.agent, {
         type: 'site',
@@ -292,7 +253,7 @@ describe('Locations (e2e)', () => {
 
   describe('PATCH /v1/locations/:id', () => {
     it('reparents a location', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const first = await create(alpha.agent, { type: 'site', name: 'A' });
       const second = await create(alpha.agent, {
@@ -319,7 +280,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('refuses to move a location under its own descendant', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const warehouse = await create(alpha.agent, {
         type: 'site',
@@ -349,7 +310,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('refuses to make a location its own parent', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const warehouse = await create(alpha.agent, {
         type: 'site',
@@ -363,7 +324,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('caps nesting depth', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       let parentId: string | undefined;
 
@@ -385,7 +346,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('retires rather than deletes', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const warehouse = await create(alpha.agent, {
         type: 'site',
@@ -403,7 +364,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('marks a location unavailable without hiding it', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
 
       const quarantine = await create(alpha.agent, {
         type: 'zone',
@@ -424,8 +385,8 @@ describe('Locations (e2e)', () => {
     });
 
     it('refuses a location in another organization', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
 
       const theirs = await create(beta.agent, {
         type: 'site',
@@ -441,8 +402,8 @@ describe('Locations (e2e)', () => {
 
   describe('GET /v1/locations', () => {
     it('does not show another organization tree', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
 
       await create(beta.agent, { type: 'site', name: 'Warehouse B' });
 
@@ -452,7 +413,7 @@ describe('Locations (e2e)', () => {
     });
 
     it('is readable by a Viewer', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       await create(alpha.agent, { type: 'site', name: 'Warehouse A' });
       const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
 

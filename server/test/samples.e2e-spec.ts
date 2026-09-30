@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -7,14 +6,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { stockLevels } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
-import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
-import { authedAgent } from './utils/request';
+import { body, createE2eApp, registerOrganization } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface MovementResponse {
@@ -24,10 +16,6 @@ interface MovementResponse {
     referenceType: string | null;
     referenceId: string | null;
   };
-}
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
 }
 
 /**
@@ -43,19 +31,9 @@ describe('Samples (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -66,23 +44,7 @@ describe('Samples (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return { agent };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   /** A product with 50 on a shelf, and a prospect to send some to. */
   async function scenario(org: Org) {
@@ -136,7 +98,7 @@ describe('Samples (e2e)', () => {
   describe('hand-outs', () => {
     /** The recipient is what a recall finds: free stock still left the door. */
     it('records who a sample went to', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const { movement } = body<MovementResponse>(
@@ -159,7 +121,7 @@ describe('Samples (e2e)', () => {
     });
 
     it('sends a sample with no recipient', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const { movement } = body<MovementResponse>(
@@ -180,8 +142,8 @@ describe('Samples (e2e)', () => {
     // Another tenant's partner would put a stranger in this organization's
     // recall trail.
     it('refuses a recipient from another organization', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
       const s = await scenario(alpha);
       const theirs = await scenario(beta);
 
@@ -200,7 +162,7 @@ describe('Samples (e2e)', () => {
     });
 
     it('refuses a recipient on anything but a sample', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       await alpha.agent
@@ -221,7 +183,7 @@ describe('Samples (e2e)', () => {
      * or another tenant's — and poison the trail every recall reads.
      */
     it('refuses a reference set by the client', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       await alpha.agent
@@ -247,7 +209,7 @@ describe('Samples (e2e)', () => {
     }
 
     it('refuses to sample or ship from a location marked unavailable', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       await retain(alpha, s.shelf);
 
@@ -268,7 +230,7 @@ describe('Samples (e2e)', () => {
 
     // Retained stock is still ours: moving it back to a shelf is allowed.
     it('still allows moving stock out of it', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       await retain(alpha, s.shelf);
 
@@ -294,7 +256,7 @@ describe('Samples (e2e)', () => {
 
   describe('posted samples', () => {
     it('flags a sale as a sample', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const order = body<{ order: { id: string; isSample: boolean } }>(
@@ -321,7 +283,7 @@ describe('Samples (e2e)', () => {
 
     // Nobody sends a supplier a sample by buying from them.
     it('refuses a sample flag on a purchase', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       await alpha.agent

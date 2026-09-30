@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { eq } from 'drizzle-orm';
 
 import {
@@ -7,14 +6,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { lots } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
-import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
-import { authedAgent } from './utils/request';
+import { body, createE2eApp, registerOrganization } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface Trace {
@@ -41,10 +33,6 @@ interface OrderResponse {
   lines: { id: string }[];
 }
 
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * The recall question, end to end (ADR-044). An ingredient lot is bought from
  * a supplier, blended into a batch, and the batch goes to a customer, a
@@ -56,19 +44,9 @@ describe('Lot trace (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -79,23 +57,7 @@ describe('Lot trace (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return { agent };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   async function created<T>(
     request: ReturnType<Org['agent']['post']>,
@@ -272,7 +234,7 @@ describe('Lot trace (e2e)', () => {
   }
 
   it('follows an ingredient through the batch to everyone who received it', async () => {
-    const alpha = await registerOrg('alpha');
+    const alpha = await registerOrganization(app, 'alpha');
     await story(alpha);
 
     const found = await trace(alpha, 'BF-1');
@@ -300,7 +262,7 @@ describe('Lot trace (e2e)', () => {
   });
 
   it('follows a batch back to the supplier of what went into it', async () => {
-    const alpha = await registerOrg('alpha');
+    const alpha = await registerOrganization(app, 'alpha');
     await story(alpha);
 
     const found = await trace(alpha, 'FOC-1');
@@ -319,7 +281,7 @@ describe('Lot trace (e2e)', () => {
 
   // A recall arrives as a code off a label; the start of it is enough.
   it('finds a lot by the start of its code', async () => {
-    const alpha = await registerOrg('alpha');
+    const alpha = await registerOrganization(app, 'alpha');
     await story(alpha);
 
     const found = body<{ code: string; sku: string }[]>(
@@ -333,7 +295,7 @@ describe('Lot trace (e2e)', () => {
 
   // What people remember is often the middle: a batch number, a date.
   it('finds a lot by any part of its code', async () => {
-    const alpha = await registerOrg('alpha');
+    const alpha = await registerOrganization(app, 'alpha');
     await story(alpha);
 
     const found = body<{ code: string }[]>(
@@ -344,8 +306,8 @@ describe('Lot trace (e2e)', () => {
   });
 
   it('does not trace another organization lot', async () => {
-    const alpha = await registerOrg('alpha');
-    const beta = await registerOrg('beta');
+    const alpha = await registerOrganization(app, 'alpha');
+    const beta = await registerOrganization(app, 'beta');
     await story(beta);
 
     await alpha.agent

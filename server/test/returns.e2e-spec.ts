@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -12,14 +11,7 @@ import {
   stockLevels,
   stockMovements,
 } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
-import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
-import { authedAgent } from './utils/request';
+import { body, createE2eApp, registerOrganization } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface OrderResponse {
@@ -33,10 +25,6 @@ interface ReturnableResponse {
   lots: { code: string; shipped: string; returned: string }[];
 }
 
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * Customer returns (ADR-043). The rules worth pinning: a lot can come back
  * only if it shipped on this order, never more of it than went, and "shipped"
@@ -46,19 +34,9 @@ describe('Returns (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -69,23 +47,7 @@ describe('Returns (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return { agent };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   async function location(org: Org, name: string) {
     return body<{ location: { id: string } }>(
@@ -245,7 +207,7 @@ describe('Returns (e2e)', () => {
 
   describe('receiving a return', () => {
     it('takes back shipped lots and untracked stock, into an unavailable bin', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await shipped(alpha);
 
       await alpha.agent
@@ -286,7 +248,7 @@ describe('Returns (e2e)', () => {
     });
 
     it('offers only the lots that shipped on this order', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await shipped(alpha);
 
       const lines = body<ReturnableResponse[]>(
@@ -304,7 +266,7 @@ describe('Returns (e2e)', () => {
 
     // A return most often arrives after the order is done.
     it('accepts a return against a fulfilled order', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await shipped(alpha);
 
       await alpha.agent
@@ -324,7 +286,7 @@ describe('Returns (e2e)', () => {
 
   describe('refusals', () => {
     it('refuses a lot that never shipped on this order', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await shipped(alpha);
 
       await alpha.agent
@@ -344,7 +306,7 @@ describe('Returns (e2e)', () => {
     });
 
     it('refuses more of a lot than shipped, counting earlier returns', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await shipped(alpha);
       const late = await s.lotId('LATE');
 
@@ -371,7 +333,7 @@ describe('Returns (e2e)', () => {
     });
 
     it('refuses more untracked stock than shipped', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await shipped(alpha);
 
       await alpha.agent
@@ -386,7 +348,7 @@ describe('Returns (e2e)', () => {
     });
 
     it('asks for lots on a tracked line, and a quantity on an untracked one', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await shipped(alpha);
 
       await alpha.agent
@@ -412,7 +374,7 @@ describe('Returns (e2e)', () => {
     });
 
     it('refuses a return against a purchase', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await shipped(alpha, 'purchase');
 
       await alpha.agent
@@ -425,8 +387,8 @@ describe('Returns (e2e)', () => {
     });
 
     it('does not find another organization order', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
       const s = await shipped(beta);
 
       await alpha.agent

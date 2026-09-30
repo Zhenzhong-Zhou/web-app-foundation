@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -7,13 +6,12 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { bomLines, boms, roles } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -47,14 +45,6 @@ interface ProductResponse {
   product: { id: string; variants: { id: string; sku: string }[] };
 }
 
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * Recipes (ADR-029).
  *
@@ -67,19 +57,9 @@ describe('BOMs (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -101,28 +81,9 @@ describe('BOMs (e2e)', () => {
     return role.id;
   }
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
   /** A product with one variant, returning the variant id the BOM points at. */
   async function makeVariant(
-    owner: Awaited<ReturnType<typeof registerOrg>>,
+    owner: Awaited<ReturnType<typeof registerOrganization>>,
     sku: string,
     type: 'good' | 'material' | 'packaging' = 'good',
   ) {
@@ -139,7 +100,9 @@ describe('BOMs (e2e)', () => {
   }
 
   /** Output, plus two components — the shape most of these tests need. */
-  async function fixtures(owner: Awaited<ReturnType<typeof registerOrg>>) {
+  async function fixtures(
+    owner: Awaited<ReturnType<typeof registerOrganization>>,
+  ) {
     const [output, blend, bottle] = await Promise.all([
       makeVariant(owner, 'D3-60CT'),
       makeVariant(owner, 'BLEND-D3', 'material'),
@@ -150,7 +113,7 @@ describe('BOMs (e2e)', () => {
   }
 
   async function createBom(
-    owner: Awaited<ReturnType<typeof registerOrg>>,
+    owner: Awaited<ReturnType<typeof registerOrganization>>,
     payload: Record<string, unknown>,
   ) {
     const res = await owner.agent.post('/v1/boms').send(payload).expect(201);
@@ -159,7 +122,7 @@ describe('BOMs (e2e)', () => {
 
   describe('POST /v1/boms', () => {
     it('creates a draft at version 1 with its lines in one call', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend, bottle } = await fixtures(alpha);
 
       const bom = await createBom(alpha, {
@@ -180,7 +143,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('defaults a line to stocked', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       const bom = await createBom(alpha, {
@@ -194,7 +157,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('records a component the manufacturer provides without it entering stock', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend, bottle } = await fixtures(alpha);
 
       const bom = await createBom(alpha, {
@@ -219,7 +182,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('assigns the next version per output variant', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       const lines = [{ componentVariantId: blend, quantity: '2400' }];
@@ -240,7 +203,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('refuses an unknown component', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output } = await fixtures(alpha);
 
       await alpha.agent
@@ -262,7 +225,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('refuses a quantity that arrives as a number rather than a string', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       await alpha.agent
@@ -276,7 +239,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('refuses a zero quantity', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       await alpha.agent
@@ -292,7 +255,7 @@ describe('BOMs (e2e)', () => {
 
   describe('cycles', () => {
     it('refuses a line whose component is the output itself', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output } = await fixtures(alpha);
 
       await alpha.agent
@@ -312,7 +275,7 @@ describe('BOMs (e2e)', () => {
      * tree recurses until it dies.
      */
     it('refuses a cycle reached through another recipe', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend, bottle } = await fixtures(alpha);
 
       await createBom(alpha, {
@@ -340,7 +303,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('allows a sub-assembly that does not close the loop', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend, bottle } = await fixtures(alpha);
 
       await createBom(alpha, {
@@ -367,7 +330,7 @@ describe('BOMs (e2e)', () => {
 
   describe('lines on an existing BOM', () => {
     it('refuses the same component twice', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       const bom = await createBom(alpha, {
@@ -383,7 +346,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('adds, edits, and removes a line', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend, bottle } = await fixtures(alpha);
 
       const bom = await createBom(alpha, {
@@ -418,7 +381,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('does not find a line belonging to a different BOM', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       const first = await createBom(alpha, {
@@ -446,7 +409,7 @@ describe('BOMs (e2e)', () => {
 
   describe('promotion', () => {
     it('archives the outgoing version, leaving exactly one active', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       const lines = [{ componentVariantId: blend, quantity: '2400' }];
@@ -486,7 +449,7 @@ describe('BOMs (e2e)', () => {
      * which is what the ledger exists to prevent.
      */
     it('refuses to promote a BOM with no lines', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output } = await fixtures(alpha);
 
       const bom = await createBom(alpha, {
@@ -498,7 +461,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('refuses to promote anything that is not a draft', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       const bom = await createBom(alpha, {
@@ -512,7 +475,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('refuses to edit a promoted recipe', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend, bottle } = await fixtures(alpha);
 
       const bom = await createBom(alpha, {
@@ -541,7 +504,7 @@ describe('BOMs (e2e)', () => {
      * about a finished batch (ADR-029).
      */
     it('attaches a licence to a promoted recipe nothing was made against', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       const licence = body<{ licence: { id: string } }>(
@@ -572,7 +535,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('fixes the licence once a run has been made against the recipe', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       const licence = body<{ licence: { id: string } }>(
@@ -621,7 +584,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('archives, and refuses to archive twice', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       const bom = await createBom(alpha, {
@@ -638,7 +601,7 @@ describe('BOMs (e2e)', () => {
 
   describe('POST /v1/boms/:id/duplicate', () => {
     it('copies the lines into a new draft at the next version', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend, bottle } = await fixtures(alpha);
 
       const original = await createBom(alpha, {
@@ -684,8 +647,8 @@ describe('BOMs (e2e)', () => {
 
   describe('scoping and permissions', () => {
     it('does not show another organization recipes', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
 
       const { output, blend } = await fixtures(beta);
       await createBom(beta, {
@@ -700,8 +663,8 @@ describe('BOMs (e2e)', () => {
     });
 
     it('does not find another organization recipe by id', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
 
       const { output, blend } = await fixtures(beta);
       const bom = await createBom(beta, {
@@ -714,7 +677,7 @@ describe('BOMs (e2e)', () => {
     });
 
     it('is readable by a Viewer, which holds boms.view', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const { output, blend } = await fixtures(alpha);
 
       await createBom(alpha, {

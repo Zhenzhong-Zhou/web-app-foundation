@@ -1,14 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 
-import { MailService } from '../src/shared/mail/mail.service';
-import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
-import { authedAgent } from './utils/request';
+import { body, createE2eApp, registerOrganization } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface OrderResponse {
@@ -31,10 +23,6 @@ interface Availability {
   backordered: string;
 }
 
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * Reservations (ADR-045). Holds are computed from open confirmed sale lines,
  * earliest confirmed first, against stock at available locations. What is
@@ -45,18 +33,8 @@ function body<T>(res: { body: unknown }): T {
 describe('Reservations (e2e)', () => {
   let app: INestApplication;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
-    await seedPermissions(app);
+    app = await createE2eApp();
   });
 
   afterAll(async () => {
@@ -67,23 +45,7 @@ describe('Reservations (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return { agent };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   /**
    * 100 on a shelf; two customers each confirm 60. The first confirmed holds
@@ -161,7 +123,7 @@ describe('Reservations (e2e)', () => {
 
   describe('holds', () => {
     it('holds for the earliest confirmed first, and backorders the rest', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       expect(await holds(alpha, s.first.id)).toMatchObject({
@@ -187,7 +149,7 @@ describe('Reservations (e2e)', () => {
 
     // Confirming never refuses for lack of stock: a real order is real.
     it('confirms an order there is no stock for', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const partner = body<{ partner: { id: string } }>(
@@ -227,7 +189,7 @@ describe('Reservations (e2e)', () => {
     });
 
     it('releases a hold when its order is cancelled', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       await alpha.agent
@@ -243,7 +205,7 @@ describe('Reservations (e2e)', () => {
 
     // Retained or quarantined stock cannot be promised (ADR-042).
     it('does not count stock at an unavailable location', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const retention = body<{ location: { id: string } }>(
@@ -277,7 +239,7 @@ describe('Reservations (e2e)', () => {
 
   describe('taking stock', () => {
     it('lets an order ship its own hold, but not another order', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       // The second order holds 40; 50 would take 10 of the first's.
@@ -308,7 +270,7 @@ describe('Reservations (e2e)', () => {
 
     // A hand-out or a one-off shipment may take only what nobody holds.
     it('refuses a sample or one-off shipment of held stock', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       for (const reason of ['sample', 'shipment']) {
@@ -330,7 +292,7 @@ describe('Reservations (e2e)', () => {
      * step with the shelf.
      */
     it('still allows transfers and corrections of held stock', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       await alpha.agent
@@ -347,7 +309,7 @@ describe('Reservations (e2e)', () => {
     });
 
     it('frees stock for others once an order ships', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       await alpha.agent
@@ -388,8 +350,8 @@ describe('Reservations (e2e)', () => {
   });
 
   it('does not show another organization order holds', async () => {
-    const alpha = await registerOrg('alpha');
-    const beta = await registerOrg('beta');
+    const alpha = await registerOrganization(app, 'alpha');
+    const beta = await registerOrganization(app, 'beta');
     const s = await scenario(beta);
 
     await alpha.agent.get(`/v1/orders/${s.first.id}/holds`).expect(404);

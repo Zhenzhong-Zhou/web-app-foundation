@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -14,13 +13,12 @@ import {
   returnAuthorizations,
   roles,
 } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
 import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+  body,
+  createE2eApp,
+  PASSWORD,
+  registerOrganization,
+} from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -42,14 +40,6 @@ interface RmaResponse {
   }[];
 }
 
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * Return authorizations (ADR-047): raised authorized, per-line resolutions,
  * held to what the customer holds, cancelled only while nothing has
@@ -60,20 +50,11 @@ describe('Return authorizations (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
   const REASON = 'Two bottles arrived cracked';
 
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -84,26 +65,7 @@ describe('Return authorizations (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   async function addMember(org: Org, email: string, roleName: string) {
     const [role] = await db
@@ -292,7 +254,7 @@ describe('Return authorizations (e2e)', () => {
 
   describe('raising', () => {
     it('numbers it and records a resolution per line', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       const rma = await raised(org, s, {
@@ -327,7 +289,7 @@ describe('Return authorizations (e2e)', () => {
      * capsules went and 2 came back, so 4 can be authorized, not 5.
      */
     it('refuses more than the customer holds', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       await org.agent
@@ -356,7 +318,7 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('refuses a line twice, and a line from another order', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       await raise(org, s, {
@@ -366,7 +328,7 @@ describe('Return authorizations (e2e)', () => {
         ],
       }).expect(400);
 
-      const other = await registerOrg('beta');
+      const other = await registerOrganization(app, 'beta');
       const theirs = await shipped(other);
 
       await raise(org, s, {
@@ -377,7 +339,7 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('refuses a draft sale, which has shipped nothing', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       const draft = body<{ order: { id: string; lines: { id: string }[] } }>(
@@ -412,7 +374,7 @@ describe('Return authorizations (e2e)', () => {
 
     // Nothing on a sample was billed, so nothing on it can be credited.
     it('refuses credit on a sample, and allows a replacement', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org, { isSample: true });
 
       await raise(org, s).expect(409);
@@ -427,7 +389,7 @@ describe('Return authorizations (e2e)', () => {
 
   describe('the quoted invoice', () => {
     it('records an issued invoice for this order', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const invoiceId = await issuedInvoice(org, s);
 
@@ -439,14 +401,14 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('refuses a draft invoice, and another organization’s', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const draftId = await issuedInvoice(org, s, false);
 
       // A draft is owed nothing yet, so nothing on it can be credited.
       await raise(org, s, { invoiceId: draftId }).expect(409);
 
-      const other = await registerOrg('beta');
+      const other = await registerOrganization(app, 'beta');
       const theirs = await issuedInvoice(other, await shipped(other));
 
       // An id from a body: 400, as a partner from elsewhere is.
@@ -456,7 +418,7 @@ describe('Return authorizations (e2e)', () => {
 
   describe('cancelling and closing', () => {
     it('cancels one nothing has happened under', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const rma = await raised(org, await shipped(org));
 
       await org.agent
@@ -475,7 +437,7 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('closes an open one', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const rma = await raised(org, await shipped(org));
 
       await org.agent
@@ -517,7 +479,7 @@ describe('Return authorizations (e2e)', () => {
     }
 
     it('counts a return that names it, across more than one box', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const rma = await raised(org, s);
 
@@ -533,7 +495,7 @@ describe('Return authorizations (e2e)', () => {
      * for another item. Each figure is this line's alone.
      */
     it('counts only its own returns, for its own item', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       const first = await raised(org, s);
@@ -562,7 +524,7 @@ describe('Return authorizations (e2e)', () => {
      * and the movement are one transaction.
      */
     it('refuses more than it authorized, and moves nothing', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const rma = await raised(org, s);
 
@@ -573,7 +535,7 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('refuses an item not on it', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const rma = await raised(org, s);
 
@@ -588,7 +550,7 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('refuses one that is closed, or told the customer to keep the goods', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       const closed = await raised(org, s);
@@ -603,7 +565,7 @@ describe('Return authorizations (e2e)', () => {
 
     // Goods on the dock are a fact: a return with no RMA is still recorded.
     it('still receives a return that names no RMA', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       await returnCapsules(org, s, '1').expect(201);
@@ -611,7 +573,7 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('is no longer cancelled once goods are back', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const rma = await raised(org, s);
 
@@ -646,7 +608,7 @@ describe('Return authorizations (e2e)', () => {
     }
 
     it('counts it, once', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const returnId = await unannounced(org, s, '2');
       const rma = await raised(org, s);
@@ -663,7 +625,7 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('refuses a return that brought more than it has left', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const returnId = await unannounced(org, s, '3');
       const rma = await raised(org, s);
@@ -678,7 +640,7 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('refuses a return that brought an item not on it', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       const returnId = body<{ orderReturn: { id: string } }>(
@@ -696,7 +658,7 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('records the link on the RMA', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const returnId = await unannounced(org, s, '1');
       const rma = await raised(org, s);
@@ -726,7 +688,7 @@ describe('Return authorizations (e2e)', () => {
      * back — and confirm accepts it as it stands, since zero is a price.
      */
     it('raises a draft sale at zero for the replace lines only', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const rma = await raised(org, s, {
         lines: [
@@ -768,7 +730,7 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('refuses an RMA with nothing to replace', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const rma = await raised(org, await shipped(org));
 
       await replace(org, rma.id).expect(409);
@@ -776,7 +738,7 @@ describe('Return authorizations (e2e)', () => {
 
     // One standing replacement: the same goods are not sent twice.
     it('raises one at a time, and another once the first is cancelled', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const rma = await raised(org, s, {
         lines: [{ lineId: s.scoopLine, quantity: '1', resolution: 'replace' }],
@@ -796,7 +758,7 @@ describe('Return authorizations (e2e)', () => {
 
     // A sample's replacement is a sample: unpriced, and still confirmable.
     it('replaces a sample with a sample', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org, { isSample: true });
       const rma = await raised(org, s, {
         lines: [
@@ -823,7 +785,7 @@ describe('Return authorizations (e2e)', () => {
 
   describe('listing', () => {
     it('lists an order’s RMAs, filtered by status', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       const first = await raised(org, s);
       const second = await raised(org, s);
@@ -843,8 +805,8 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('keeps each organization to its own', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
       const theirs = await raised(beta, await shipped(beta));
 
       const page = body<{ entries: unknown[] }>(
@@ -867,7 +829,7 @@ describe('Return authorizations (e2e)', () => {
      * Viewer reads them.
      */
     it('lets Admin raise and a Viewer only read', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
       const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
@@ -904,7 +866,7 @@ describe('Return authorizations (e2e)', () => {
     });
 
     it('records who raised it, and names it by customer and number', async () => {
-      const org = await registerOrg('alpha');
+      const org = await registerOrganization(app, 'alpha');
       const rma = await raised(org, await shipped(org));
 
       const [entry] = await db

@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { eq } from 'drizzle-orm';
 
 import {
@@ -7,14 +6,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { auditLog, boms } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
-import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
-import { authedAgent } from './utils/request';
+import { body, createE2eApp, registerOrganization } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 interface LicenceResponse {
@@ -39,10 +31,6 @@ interface CreatedBom {
   bom: { id: string; licenceId: string | null };
 }
 
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
-}
-
 /**
  * The registry a recipe points at (ADR-029). What matters here is that the
  * number is identity rather than history — correcting it corrects every recipe
@@ -52,19 +40,9 @@ describe('Product licences (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -75,23 +53,7 @@ describe('Product licences (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return { agent };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   async function makeLicence(org: Org, number = '80012345') {
     const res = await org.agent
@@ -117,7 +79,7 @@ describe('Product licences (e2e)', () => {
 
   describe('the registry', () => {
     it('records a number with the authority that issued it', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const licence = await makeLicence(alpha);
 
       expect(licence).toMatchObject({
@@ -135,7 +97,7 @@ describe('Product licences (e2e)', () => {
     // The pair is the identity: the same digits could be issued by two
     // regulators, but not twice by one.
     it('refuses the same number from the same authority twice', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       await makeLicence(alpha);
 
       await alpha.agent
@@ -155,7 +117,7 @@ describe('Product licences (e2e)', () => {
      * which is why a licence is a table and not a column.
      */
     it('corrects a number, and audits the change', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const licence = await makeLicence(alpha, '80012344');
 
       await alpha.agent
@@ -181,7 +143,7 @@ describe('Product licences (e2e)', () => {
      * to remember to flip.
      */
     it('stores an expiry when the scheme has one', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const licence = await makeLicence(alpha);
 
       expect(licence.expiresAt).toBeNull();
@@ -212,7 +174,7 @@ describe('Product licences (e2e)', () => {
     // Meaningless in that order, and a row saying so would make every
     // derived status wrong at once, so the database refuses it too.
     it('refuses an expiry before the issue date', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const licence = await makeLicence(alpha);
 
       await alpha.agent
@@ -227,7 +189,7 @@ describe('Product licences (e2e)', () => {
     });
 
     it('withdraws rather than deletes', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const licence = await makeLicence(alpha);
 
       await alpha.agent
@@ -246,7 +208,7 @@ describe('Product licences (e2e)', () => {
 
   describe('on a recipe', () => {
     it('attaches a licence to a recipe', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const licence = await makeLicence(alpha);
       const variant = await makeVariant(alpha, 'FOCUS-60CT');
 
@@ -270,8 +232,8 @@ describe('Product licences (e2e)', () => {
      * trail would point outside the organization (ADR-003).
      */
     it('refuses another organization\u2019s licence', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
 
       const theirs = await makeLicence(beta);
       const variant = await makeVariant(alpha, 'FOCUS-60CT');
@@ -289,8 +251,8 @@ describe('Product licences (e2e)', () => {
     });
 
     it('does not list another organization\u2019s licences', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
       await makeLicence(beta);
 
       expect(

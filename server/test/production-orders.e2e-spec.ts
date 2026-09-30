@@ -1,5 +1,4 @@
 import type { INestApplication } from '@nestjs/common';
-import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -14,13 +13,7 @@ import {
   stockLevels,
   stockMovements,
 } from '../src/database/schema';
-import { MailService } from '../src/shared/mail/mail.service';
-import {
-  createTestApp,
-  seedPermissions,
-  unlimitedThrottler,
-} from './utils/create-test-app';
-import { RecordingMailService } from './utils/recording-mail';
+import { body, createE2eApp, registerOrganization } from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
@@ -74,17 +67,9 @@ interface CreatedBom {
   bom: { id: string };
 }
 
-interface RegisterResponse {
-  user: { id: string; organizationId: string };
-}
-
 interface RunPage {
   entries: RunResponse[];
   nextCursor: string | null;
-}
-
-function body<T>(res: { body: unknown }): T {
-  return res.body as T;
 }
 
 /**
@@ -99,19 +84,9 @@ describe('Production orders (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
-  const PASSWORD = 'correct-horse-battery';
-
   beforeAll(async () => {
-    app = await createTestApp((builder) =>
-      builder
-        .overrideProvider(ThrottlerStorage)
-        .useValue(unlimitedThrottler)
-        .overrideProvider(MailService)
-        .useValue(new RecordingMailService()),
-    );
-
+    app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
-    await seedPermissions(app);
   });
 
   afterAll(async () => {
@@ -122,26 +97,7 @@ describe('Production orders (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function registerOrg(slugish: string) {
-    const agent = authedAgent(app);
-
-    const res = await agent
-      .post('/v1/auth/register')
-      .send({
-        email: `owner@${slugish}.example.com`,
-        password: PASSWORD,
-        name: 'Owner',
-        organizationName: `${slugish} Co`,
-      })
-      .expect(201);
-
-    return {
-      agent,
-      organizationId: body<RegisterResponse>(res).user.organizationId,
-    };
-  }
-
-  type Org = Awaited<ReturnType<typeof registerOrg>>;
+  type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
   async function makeVariant(
     org: Org,
@@ -247,7 +203,7 @@ describe('Production orders (e2e)', () => {
 
   describe('creation', () => {
     it('creates a draft', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const run = await createRun(alpha, {
@@ -262,7 +218,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('refuses a BOM that makes a different variant', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const other = await makeVariant(alpha, 'OTHER');
 
@@ -280,7 +236,7 @@ describe('Production orders (e2e)', () => {
     // The DTO accepted a reference while create() never wrote it, and only a
     // browser test noticed. Pinned here, where it belongs.
     it('keeps the reference a run is planned with', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const run = await createRun(alpha, {
@@ -297,7 +253,7 @@ describe('Production orders (e2e)', () => {
 
   describe('release', () => {
     it('scales the recipe, issues stocked lines, and consumes nothing', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const run = await createRun(alpha, {
@@ -345,7 +301,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('honours a per-line source override', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
       const coldRoom = await makeLocation(alpha, 'COLD', s.site);
 
@@ -381,7 +337,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('refuses to release a run with no BOM', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const run = await createRun(alpha, {
@@ -397,7 +353,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('refuses to release twice', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const run = await createRun(alpha, {
@@ -419,7 +375,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('refuses to edit a released run', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const run = await createRun(alpha, {
@@ -445,7 +401,7 @@ describe('Production orders (e2e)', () => {
      * row afterwards changes the registry, not the history (ADR-040).
      */
     it('snapshots the licence at release', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const licence = body<{ licence: { id: string } }>(
@@ -589,7 +545,7 @@ describe('Production orders (e2e)', () => {
     }
 
     it('issues earliest expiry first, splitting across lots', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await trackedScenario(alpha);
 
       await alpha.agent
@@ -622,7 +578,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('previews the same pick without moving anything', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await trackedScenario(alpha);
 
       const plan = body<IssuePlan>(
@@ -647,7 +603,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('takes hand-picked lots instead of the default', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await trackedScenario(alpha);
 
       await alpha.agent
@@ -667,7 +623,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('refuses hand-picked lots that do not add up', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await trackedScenario(alpha);
 
       const res = await alpha.agent
@@ -688,7 +644,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('refuses a release the lots cannot cover, naming the component', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await trackedScenario(alpha);
 
       // 5000 needs 12000; the shelf holds 8000.
@@ -709,7 +665,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('consumes the lots the run was given, and shows them', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await trackedScenario(alpha);
 
       await alpha.agent
@@ -746,7 +702,7 @@ describe('Production orders (e2e)', () => {
      * event that did not happen — and close consumes straight off the shelf.
      */
     it('issues nothing when the source is the run location, and still consumes', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await trackedScenario(alpha);
 
       const inPlace = await createRun(alpha, {
@@ -786,7 +742,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('tops up over plan from the next lot to expire', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await trackedScenario(alpha);
 
       await alpha.agent
@@ -842,7 +798,7 @@ describe('Production orders (e2e)', () => {
      * (ADR-032).
      */
     it('accumulates across several output events and stays released', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       await alpha.agent
@@ -871,7 +827,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('offers the run own lots so a second day can join the first', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       await alpha.agent
@@ -897,7 +853,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('creates a second lot when the batch genuinely divides', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       await alpha.agent
@@ -917,7 +873,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('refuses output against a draft', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const run = await createRun(alpha, {
@@ -961,7 +917,7 @@ describe('Production orders (e2e)', () => {
     }
 
     it('consumes what was planned when a line is left out', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       await alpha.agent
@@ -986,7 +942,7 @@ describe('Production orders (e2e)', () => {
      * mistake.
      */
     it('tops up from the source when consumption runs over plan', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       const blendLine = s.lines.find(
@@ -1009,7 +965,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('records the variance without refusing a large one', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       const blendLine = s.lines.find(
@@ -1036,7 +992,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('leaves the remainder at the run location when consumption is under plan', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       const blendLine = s.lines.find(
@@ -1056,7 +1012,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('writes no consumption movement for an external line', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       await alpha.agent
@@ -1074,7 +1030,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('refuses a line belonging to another run', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       await alpha.agent
@@ -1091,7 +1047,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('refuses to close twice', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       await alpha.agent
@@ -1111,7 +1067,7 @@ describe('Production orders (e2e)', () => {
      * nothing, which is the case somebody most wants to hear about.
      */
     it('flags output that came out far off plan', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       await alpha.agent
@@ -1142,7 +1098,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('tells everyone who can close a run about a variance', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       const blendLine = s.lines.find(
@@ -1173,7 +1129,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('says nothing when everything went to plan', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await released(alpha);
 
       // The whole plan, so the yield is on target too.
@@ -1198,7 +1154,7 @@ describe('Production orders (e2e)', () => {
 
   describe('cancel', () => {
     it('cancels a draft with nothing stranded', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const run = await createRun(alpha, {
@@ -1222,7 +1178,7 @@ describe('Production orders (e2e)', () => {
      * back (ADR-032).
      */
     it('leaves issued material where it is and says what is stranded', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const run = await createRun(alpha, {
@@ -1247,7 +1203,7 @@ describe('Production orders (e2e)', () => {
     });
 
     it('refuses to cancel a completed run', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       const run = await createRun(alpha, {
@@ -1275,8 +1231,8 @@ describe('Production orders (e2e)', () => {
 
   describe('scoping', () => {
     it('does not find another organization run', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
 
       const s = await scenario(beta);
       const run = await createRun(beta, {
@@ -1301,7 +1257,7 @@ describe('Production orders (e2e)', () => {
 
   describe('paging', () => {
     it('pages with a cursor and stops when there is nothing left', async () => {
-      const alpha = await registerOrg('alpha');
+      const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
 
       for (let i = 0; i < 3; i += 1) {
