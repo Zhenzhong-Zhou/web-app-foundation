@@ -34,12 +34,13 @@ import { DuplicateOrderDialog } from './duplicate-order-dialog';
 import { EditOrderDialog } from './edit-order-dialog';
 import { EditOrderLineDialog } from './edit-order-line-dialog';
 import { OrderLinesSection } from './order-lines-section';
+import { OrderStatusActions } from './order-status-actions';
 import { ReceiveLineDialog } from './receive-line-dialog';
 import { ReturnOrderDialog } from './return-order-dialog';
 import { ReturnsList } from './returns-list';
 import { ShipOrderDialog } from './ship-order-dialog';
 import { ShipmentsList } from './shipments-list';
-import { DONE } from './status';
+import { DONE, NEXT_STATUSES } from './status';
 
 const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
   draft: 'default',
@@ -47,37 +48,6 @@ const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
   fulfilled: 'success',
   cancelled: 'default',
 };
-
-/**
- * Mirrors ALLOWED_FROM in OrdersService, and is not the enforcement.
- *
- * The server refuses an illegal transition with a 409 whatever this says —
- * offering a button that always fails is the thing being avoided, not the
- * rule being implemented. Fulfilled and cancelled are terminal by hand: an
- * order that turns out wrong is corrected by an adjustment movement, not by
- * reopening the document (ADR-023). The one way back is voiding a shipment
- * that never left, which reopens the order (ADR-046).
- */
-const NEXT_STATUSES: Record<OrderStatus, OrderStatus[]> = {
-  draft: ['confirmed', 'cancelled'],
-  confirmed: ['fulfilled', 'cancelled'],
-  fulfilled: [],
-  cancelled: [],
-};
-
-/**
- * Button labels. What clicking does, not what the order is.
- *
- * Closing is "Close order" in both directions (#24). It was "Mark shipped"
- * and "Mark received", which read as the act of shipping or receiving —
- * those have their own buttons, and closing says only that nothing more
- * is coming.
- */
-function transitionLabel(next: OrderStatus): string {
-  if (next === 'fulfilled') return 'Close order';
-  if (next === 'confirmed') return 'Confirm';
-  return 'Cancel order';
-}
 
 /** Chip labels. What the order is, rather than relying on CSS capitalisation. */
 function statusLabel(status: OrderStatus, direction: OrderDirection): string {
@@ -401,51 +371,13 @@ export function OrderDetailPage() {
         <ReturnsList orderId={order.id} refreshKey={returns} />
       )}
 
-      {canUpdate && NEXT_STATUSES[order.status].length > 0 && (
-        <Stack direction="row" spacing={2} sx={{ justifyContent: 'flex-end' }}>
-          {/* Cancel first, Confirm last: the rightmost position is where
-              "proceed" lives, and the destructive one should not be where a
-              thumb lands by default. */}
-          {NEXT_STATUSES[order.status]
-            .filter(
-              (next) =>
-                next === 'cancelled' &&
-                !order.lines.some((line) => Number(line.quantityFulfilled) > 0),
-            )
-            .map((next) => (
-              <Button
-                key={next}
-                variant="text"
-                color="error"
-                disabled={working}
-                onClick={() => void moveTo(next)}
-              >
-                {transitionLabel(next)}
-              </Button>
-            ))}
-
-          {NEXT_STATUSES[order.status]
-            .filter((next) => next !== 'cancelled')
-            .map((next) => (
-              <Button
-                key={next}
-                variant="contained"
-                disabled={working}
-                onClick={(event) => {
-                  // Only this branch opens a dialog, so only it needs the
-                  // blur openDialog does — the direct transition keeps focus
-                  // on the button, which is right when nothing covers it.
-                  if (next === 'fulfilled' && !order.fullyFulfilled) {
-                    openDialog(() => setClosing(true))(event);
-                    return;
-                  }
-                  void moveTo(next);
-                }}
-              >
-                {transitionLabel(next)}
-              </Button>
-            ))}
-        </Stack>
+      {canUpdate && (
+        <OrderStatusActions
+          order={order}
+          working={working}
+          onMove={moveTo}
+          onCloseOrder={() => setClosing(true)}
+        />
       )}
 
       {/* Keyed on the line, so the form is seeded at mount and never needs an
