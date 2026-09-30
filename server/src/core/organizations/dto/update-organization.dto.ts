@@ -1,11 +1,6 @@
-import {
-  IsOptional,
-  IsString,
-  IsUUID,
-  Matches,
-  MaxLength,
-} from 'class-validator';
+import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
+import { IsCurrencyCode } from '../../../common/dto/currency';
 import { trim } from '../../../common/dto/trim';
 
 /**
@@ -32,9 +27,7 @@ export class UpdateOrganizationDto {
   @IsOptional()
   @trim()
   @IsString()
-  @Matches(/^[A-Z]{3}$/, {
-    message: 'baseCurrency must be a 3-letter ISO code',
-  })
+  @IsCurrencyCode()
   baseCurrency?: string;
 
   /** The sale list for customers with none (ADR-049). Null clears it. */

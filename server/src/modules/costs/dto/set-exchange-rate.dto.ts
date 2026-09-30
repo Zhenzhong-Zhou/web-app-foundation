@@ -1,5 +1,6 @@
 import { IsISO8601, IsString, Matches } from 'class-validator';
 
+import { IsCurrencyCode } from '../../../common/dto/currency';
 import { trim } from '../../../common/dto/trim';
 
 /**
@@ -12,7 +13,7 @@ export const EXCHANGE_RATE = /^(?=.*[1-9])\d{1,10}(\.\d{1,8})?$/;
 export class SetExchangeRateDto {
   @trim()
   @IsString()
-  @Matches(/^[A-Z]{3}$/, { message: 'currency must be a 3-letter ISO code' })
+  @IsCurrencyCode()
   currency!: string;
 
   /**

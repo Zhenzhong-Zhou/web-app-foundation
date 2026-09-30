@@ -9,7 +9,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey, timestamps } from './columns';
+import { isCurrencyCode, primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
 
 /**
@@ -55,7 +55,7 @@ export const exchangeRates = pgTable(
 
     check(
       'exchange_rates_currency_format_check',
-      sql`${t.currency} ~ '^[A-Z]{3}$'`,
+      sql`${isCurrencyCode(t.currency)}`,
     ),
   ],
 );

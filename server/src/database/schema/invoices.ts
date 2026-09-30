@@ -12,7 +12,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey, timestamps } from './columns';
+import { isCurrencyCode, primaryKey, timestamps } from './columns';
 import { orders } from './orders';
 import { organizations } from './organizations';
 import { partners } from './partners';
@@ -141,7 +141,7 @@ export const invoices = pgTable(
       sql`${t.status} in ('draft', 'issued', 'voided')`,
     ),
 
-    check('invoices_currency_format_check', sql`${t.currency} ~ '^[A-Z]{3}$'`),
+    check('invoices_currency_format_check', sql`${isCurrencyCode(t.currency)}`),
 
     /**
      * A draft has none of what issuing writes. A number on a draft would be

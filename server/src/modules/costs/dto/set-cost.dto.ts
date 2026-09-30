@@ -1,5 +1,6 @@
 import { IsOptional, IsString, Matches } from 'class-validator';
 
+import { IsCurrencyCode } from '../../../common/dto/currency';
 import { NON_NEGATIVE_DECIMAL } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 import { EXCHANGE_RATE } from './set-exchange-rate.dto';
@@ -24,7 +25,7 @@ export class SetCostDto {
 
   @trim()
   @IsString()
-  @Matches(/^[A-Z]{3}$/, { message: 'currency must be a 3-letter ISO code' })
+  @IsCurrencyCode()
   currency!: string;
 
   @IsOptional()

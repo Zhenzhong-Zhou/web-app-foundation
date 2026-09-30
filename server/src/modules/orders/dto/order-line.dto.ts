@@ -1,5 +1,6 @@
 import { IsOptional, IsString, IsUUID, Matches } from 'class-validator';
 
+import { IsCurrencyCode } from '../../../common/dto/currency';
 import {
   NON_NEGATIVE_DECIMAL,
   POSITIVE_DECIMAL,
@@ -34,7 +35,7 @@ export class OrderLineTermsDto {
   @IsOptional()
   @trim()
   @IsString()
-  @Matches(/^[A-Z]{3}$/, { message: 'currency must be a 3-letter ISO code' })
+  @IsCurrencyCode()
   currency?: string;
 }
 

@@ -1,5 +1,6 @@
-import { IsIn, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsIn, IsString, MaxLength, MinLength } from 'class-validator';
 
+import { IsCurrencyCode } from '../../../common/dto/currency';
 import { trim } from '../../../common/dto/trim';
 import {
   PRICE_LIST_DIRECTIONS,
@@ -22,6 +23,6 @@ export class CreatePriceListDto {
 
   @trim()
   @IsString()
-  @Matches(/^[A-Z]{3}$/, { message: 'currency must be a 3-letter ISO code' })
+  @IsCurrencyCode()
   currency!: string;
 }

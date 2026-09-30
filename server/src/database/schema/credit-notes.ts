@@ -13,7 +13,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey } from './columns';
+import { isCurrencyCode, primaryKey } from './columns';
 import { invoices } from './invoices';
 import { organizations } from './organizations';
 import { partners } from './partners';
@@ -93,7 +93,7 @@ export const creditNotes = pgTable(
   (t) => [
     check(
       'credit_notes_currency_format_check',
-      sql`${t.currency} ~ '^[A-Z]{3}$'`,
+      sql`${isCurrencyCode(t.currency)}`,
     ),
     check(
       'credit_notes_reason_not_blank_check',

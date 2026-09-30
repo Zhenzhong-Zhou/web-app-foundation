@@ -11,7 +11,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey, timestamps } from './columns';
+import { isCurrencyCode, primaryKey, timestamps } from './columns';
 import { orders } from './orders';
 import { organizations } from './organizations';
 import { priceLists } from './price-lists';
@@ -193,7 +193,7 @@ export const orderLines = pgTable(
 
     check(
       'order_lines_currency_format_check',
-      sql`${t.currency} is null or ${t.currency} ~ '^[A-Z]{3}$'`,
+      sql`${t.currency} is null or ${isCurrencyCode(t.currency)}`,
     ),
 
     /**

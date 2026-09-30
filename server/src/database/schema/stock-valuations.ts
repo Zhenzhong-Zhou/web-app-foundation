@@ -12,7 +12,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey } from './columns';
+import { isCurrencyCode, primaryKey } from './columns';
 import { lots } from './lots';
 import { organizations } from './organizations';
 import { productVariants } from './product-variants';
@@ -189,7 +189,7 @@ export const stockValuations = pgTable(
 
     check(
       'stock_valuations_currency_format_check',
-      sql`${t.currency} is null or ${t.currency} ~ '^[A-Z]{3}$'`,
+      sql`${t.currency} is null or ${isCurrencyCode(t.currency)}`,
     ),
 
     check(

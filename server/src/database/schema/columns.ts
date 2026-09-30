@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { timestamp, uuid } from 'drizzle-orm/pg-core';
 
 /**
@@ -32,3 +33,14 @@ export const timestamps = {
     .notNull()
     .defaultNow(),
 };
+
+/**
+ * The ISO 4217 shape for a check constraint: the database half of
+ * IsCurrencyCode (common/dto/currency.ts), which must say the same thing.
+ *
+ * The bare condition, so a nullable column composes it:
+ * sql`${t.currency} is null or ${isCurrencyCode(t.currency)}`. It renders
+ * the same SQL the checks always had, so it changes no migration.
+ */
+export const isCurrencyCode = (column: AnyPgColumn) =>
+  sql`${column} ~ '^[A-Z]{3}$'`;

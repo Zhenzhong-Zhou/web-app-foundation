@@ -10,7 +10,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey, timestamps } from './columns';
+import { isCurrencyCode, primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
 
 /**
@@ -68,7 +68,7 @@ export const priceLists = pgTable(
 
     check(
       'price_lists_currency_format_check',
-      sql`${t.currency} ~ '^[A-Z]{3}$'`,
+      sql`${isCurrencyCode(t.currency)}`,
     ),
 
     check('price_lists_name_not_blank_check', sql`btrim(${t.name}) <> ''`),
