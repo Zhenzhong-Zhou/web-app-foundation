@@ -1,12 +1,9 @@
 import type { INestApplication } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common';
-import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
-import { DiscoveryModule, DiscoveryService } from '@nestjs/core';
-import type { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { Test } from '@nestjs/testing';
+import { METHOD_METADATA } from '@nestjs/common/constants';
 
-import { AppModule } from '../src/app.module';
 import { AUDITED } from '../src/core/audit/audited.decorator';
+import { createRouteReadingApp, routesOf } from './utils/routes';
 
 /**
  * Every route that changes something is audited.
@@ -74,68 +71,11 @@ const NOT_AUDITED = new Map<string, string>([
   ],
 ]);
 
-interface Controller {
-  name: string;
-  prototype: object;
-  instance: Record<string, unknown>;
-}
-
-/**
- * DiscoveryService returns InstanceWrapper<any>, so destructuring the instance
- * hands back `any` and every Reflect call on it is unchecked. Narrowed once
- * here rather than cast at each use.
- *
- * `metatype` is typed as `Type<unknown> | Function | null` — `.name` exists on
- * both branches and TypeScript will not narrow to it, hence the cast.
- */
-function controllerOf(wrapper: InstanceWrapper): Controller | null {
-  const instance = wrapper.instance as Record<string, unknown> | undefined;
-  const metatype = wrapper.metatype as { name: string } | undefined;
-
-  if (!instance || !metatype) return null;
-
-  return {
-    name: metatype.name,
-    prototype: Object.getPrototypeOf(instance) as object,
-    instance,
-  };
-}
-
-/** A method carrying path metadata is a route; anything else is a helper. */
-function routeHandlersOf(controller: Controller) {
-  return Object.getOwnPropertyNames(controller.prototype)
-    .filter((name) => name !== 'constructor')
-    .flatMap((name) => {
-      const handler = controller.instance[name];
-      if (typeof handler !== 'function') return [];
-      if (Reflect.getMetadata(PATH_METADATA, handler) === undefined) return [];
-
-      return [{ key: `${controller.name}.${name}`, handler }];
-    });
-}
-
 describe('audit coverage', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    /**
-     * Built here rather than through createTestApp, because DiscoveryModule is
-     * deliberately not in AppModule — the application has no runtime need to
-     * enumerate its own routes, and importing it there would put test
-     * scaffolding into production wiring.
-     *
-     * No configureApp either: this reads route metadata and never sends a
-     * request, so versioning and pipes are irrelevant. Shutdown hooks are not
-     * — DatabaseModule closes the pg pool in onApplicationShutdown, and
-     * without them app.close() leaves the sockets open and Jest never exits.
-     */
-    const moduleRef = await Test.createTestingModule({
-      imports: [DiscoveryModule, AppModule],
-    }).compile();
-
-    app = moduleRef.createNestApplication();
-    app.enableShutdownHooks();
-    await app.init();
+    app = await createRouteReadingApp();
   });
 
   afterAll(async () => {
@@ -143,25 +83,19 @@ describe('audit coverage', () => {
   });
 
   it('audits every write route, or says why not', () => {
-    const discovery = app.get(DiscoveryService);
     const unaudited: string[] = [];
 
-    for (const wrapper of discovery.getControllers()) {
-      const controller = controllerOf(wrapper);
-      if (!controller) continue;
+    for (const { key, handler } of routesOf(app)) {
+      const method = Reflect.getMetadata(
+        METHOD_METADATA,
+        handler,
+      ) as RequestMethod;
 
-      for (const { key, handler } of routeHandlersOf(controller)) {
-        const method = Reflect.getMetadata(
-          METHOD_METADATA,
-          handler,
-        ) as RequestMethod;
+      if (!WRITE_METHODS.has(method)) continue;
+      if (Reflect.getMetadata(AUDITED, handler)) continue;
+      if (NOT_AUDITED.has(key)) continue;
 
-        if (!WRITE_METHODS.has(method)) continue;
-        if (Reflect.getMetadata(AUDITED, handler)) continue;
-        if (NOT_AUDITED.has(key)) continue;
-
-        unaudited.push(key);
-      }
+      unaudited.push(key);
     }
 
     // Named rather than counted: a failure should say which route to fix.
@@ -174,17 +108,11 @@ describe('audit coverage', () => {
    * a hole nobody notices.
    */
   it('has no stale exceptions', () => {
-    const discovery = app.get(DiscoveryService);
     const unauditedRoutes = new Set<string>();
 
-    for (const wrapper of discovery.getControllers()) {
-      const controller = controllerOf(wrapper);
-      if (!controller) continue;
-
-      for (const { key, handler } of routeHandlersOf(controller)) {
-        if (Reflect.getMetadata(AUDITED, handler)) continue;
-        unauditedRoutes.add(key);
-      }
+    for (const { key, handler } of routesOf(app)) {
+      if (Reflect.getMetadata(AUDITED, handler)) continue;
+      unauditedRoutes.add(key);
     }
 
     const stale = [...NOT_AUDITED.keys()].filter(

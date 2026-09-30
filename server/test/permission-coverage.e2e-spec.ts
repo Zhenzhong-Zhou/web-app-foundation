@@ -1,12 +1,12 @@
 import type { INestApplication } from '@nestjs/common';
-import { PATH_METADATA } from '@nestjs/common/constants';
-import { DiscoveryModule, DiscoveryService } from '@nestjs/core';
-import type { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { Test } from '@nestjs/testing';
 
-import { AppModule } from '../src/app.module';
 import { IS_PUBLIC } from '../src/core/auth/public.decorator';
 import { REQUIRED_PERMISSIONS } from '../src/core/authorization/require-permissions.decorator';
+import {
+  type Controller,
+  createRouteReadingApp,
+  routesOf,
+} from './utils/routes';
 
 /**
  * Every route either declares the permission it needs, is public, or is on
@@ -48,39 +48,6 @@ const SELF_SERVICE = new Map<string, string>([
   ['NotificationsController.markAllRead', 'As above'],
 ]);
 
-interface Controller {
-  name: string;
-  metatype: object;
-  prototype: object;
-  instance: Record<string, unknown>;
-}
-
-function controllerOf(wrapper: InstanceWrapper): Controller | null {
-  const instance = wrapper.instance as Record<string, unknown> | undefined;
-  const metatype = wrapper.metatype as { name: string } | undefined;
-
-  if (!instance || !metatype) return null;
-
-  return {
-    name: metatype.name,
-    metatype,
-    prototype: Object.getPrototypeOf(instance) as object,
-    instance,
-  };
-}
-
-function routeHandlersOf(controller: Controller) {
-  return Object.getOwnPropertyNames(controller.prototype)
-    .filter((name) => name !== 'constructor')
-    .flatMap((name) => {
-      const handler = controller.instance[name];
-      if (typeof handler !== 'function') return [];
-      if (Reflect.getMetadata(PATH_METADATA, handler) === undefined) return [];
-
-      return [{ key: `${controller.name}.${name}`, handler }];
-    });
-}
-
 /**
  * The guard reads the handler first and falls back to the class, so a
  * controller marked `@Public()` once covers every route in it. This reads
@@ -104,15 +71,7 @@ describe('permission coverage', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    // Built like the audit-coverage test, for the same reasons: it reads
-    // route metadata and never sends a request.
-    const moduleRef = await Test.createTestingModule({
-      imports: [DiscoveryModule, AppModule],
-    }).compile();
-
-    app = moduleRef.createNestApplication();
-    app.enableShutdownHooks();
-    await app.init();
+    app = await createRouteReadingApp();
   });
 
   afterAll(async () => {
@@ -120,17 +79,10 @@ describe('permission coverage', () => {
   });
 
   function routes() {
-    const discovery = app.get(DiscoveryService);
-
-    return discovery.getControllers().flatMap((wrapper) => {
-      const controller = controllerOf(wrapper);
-      if (!controller) return [];
-
-      return routeHandlersOf(controller).map((route) => ({
-        ...route,
-        guarded: isGuarded(route.handler, controller),
-      }));
-    });
+    return routesOf(app).map((route) => ({
+      ...route,
+      guarded: isGuarded(route.handler, route.controller),
+    }));
   }
 
   it('guards every route, or says why it is self-service', () => {
