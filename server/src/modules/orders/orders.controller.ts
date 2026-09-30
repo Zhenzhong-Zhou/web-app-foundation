@@ -25,6 +25,7 @@ import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
 import { ReceiveLineDto } from './dto/receive-line.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderLinesService } from './order-lines.service';
+import { OrderReceiptsService } from './order-receipts.service';
 import { OrdersService } from './orders.service';
 
 @Controller({ path: 'orders', version: '1' })
@@ -32,6 +33,7 @@ export class OrdersController {
   constructor(
     private readonly orders: OrdersService,
     private readonly lines: OrderLinesService,
+    private readonly receipts: OrderReceiptsService,
   ) {}
 
   /**
@@ -246,7 +248,7 @@ export class OrdersController {
     @CurrentUser() user: RequestContext,
   ) {
     return {
-      movement: await this.orders.receive(id, lineId, dto, user.userId),
+      movement: await this.receipts.receive(id, lineId, dto, user.userId),
     };
   }
 }

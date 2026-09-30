@@ -5,6 +5,7 @@ import { PartnersModule } from '../partners/partners.module';
 import { ReturnAuthorizationsModule } from '../return-authorizations/return-authorizations.module';
 import { StockModule } from '../stock/stock.module';
 import { OrderLinesService } from './order-lines.service';
+import { OrderReceiptsService } from './order-receipts.service';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { ReturnsController } from './returns.controller';
@@ -33,6 +34,7 @@ import { ShipmentsService } from './shipments.service';
   providers: [
     OrdersService,
     OrderLinesService,
+    OrderReceiptsService,
     ShipmentsService,
     ReturnsService,
   ],

@@ -8,6 +8,7 @@ import { OrganizationsService } from '../core/organizations/organizations.servic
 import { BomsService } from '../modules/boms/boms.service';
 import { InvoicesService } from '../modules/invoices/invoices.service';
 import { LocationsService } from '../modules/locations/locations.service';
+import { OrderReceiptsService } from '../modules/orders/order-receipts.service';
 import { OrdersService } from '../modules/orders/orders.service';
 import { ReturnsService } from '../modules/orders/returns.service';
 import { ShipmentsService } from '../modules/orders/shipments.service';
@@ -116,6 +117,7 @@ async function seedDemo(): Promise<void> {
     const licences = app.get(ProductLicencesService);
     const partners = app.get(PartnersService);
     const orders = app.get(OrdersService);
+    const receipts = app.get(OrderReceiptsService);
     const boms = app.get(BomsService);
     const runs = app.get(ProductionOrdersService);
     const shipments = app.get(ShipmentsService);
@@ -249,7 +251,7 @@ async function seedDemo(): Promise<void> {
 
         await orders.update(order.id, { status: 'confirmed' });
 
-        await orders.receive(
+        await receipts.receive(
           order.id,
           order.lines[0].id,
           {
