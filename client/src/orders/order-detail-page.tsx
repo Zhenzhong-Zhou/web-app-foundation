@@ -1,20 +1,10 @@
 import {
   Alert,
-  Box,
   Button,
-  Chip,
-  IconButton,
   Link,
   Paper,
   Skeleton,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
@@ -24,7 +14,7 @@ import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
-import { formatDay, formatMoney } from '../lib/format';
+import { formatDay } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
   LineHold,
@@ -43,11 +33,13 @@ import { CloseOrderDialog } from './close-order-dialog';
 import { DuplicateOrderDialog } from './duplicate-order-dialog';
 import { EditOrderDialog } from './edit-order-dialog';
 import { EditOrderLineDialog } from './edit-order-line-dialog';
+import { OrderLinesSection } from './order-lines-section';
 import { ReceiveLineDialog } from './receive-line-dialog';
 import { ReturnOrderDialog } from './return-order-dialog';
 import { ReturnsList } from './returns-list';
 import { ShipOrderDialog } from './ship-order-dialog';
 import { ShipmentsList } from './shipments-list';
+import { DONE } from './status';
 
 const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
   draft: 'default',
@@ -71,16 +63,6 @@ const NEXT_STATUSES: Record<OrderStatus, OrderStatus[]> = {
   confirmed: ['fulfilled', 'cancelled'],
   fulfilled: [],
   cancelled: [],
-};
-
-/**
- * The word for "done" depends on which way the goods went. The server stores
- * one status, `fulfilled`, so one rule governs both directions (ADR-041);
- * only what a person reads differs.
- */
-const DONE: Record<OrderDirection, string> = {
-  purchase: 'Received',
-  sale: 'Shipped',
 };
 
 /**
@@ -375,303 +357,25 @@ export function OrderDetailPage() {
         </Paper>
       )}
 
-      <Box>
-        <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 1 }}>
-          <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
-            Items
-          </Typography>
-
-          {/* Draft only: adding to an order the supplier has already been sent
-              is a new agreement, not a correction (ADR-033). */}
-          {canUpdate && isDraft && (
-            <Button
-              variant="text"
-              disabled={working}
-              onClick={openDialog(() => setAddingLine(true))}
-            >
-              Add item
-            </Button>
-          )}
-
-          {authorizable && (
-            <Button
-              variant="text"
-              disabled={working}
-              onClick={openDialog(() => setAuthorizing(true))}
-            >
-              Authorize a return
-            </Button>
-          )}
-
-          {returnable && (
-            <Button
-              variant="text"
-              disabled={working}
-              onClick={openDialog(() => setReturning(true))}
-            >
-              Take a return
-            </Button>
-          )}
-
-          {shippable && (
-            <Button
-              disabled={working}
-              onClick={openDialog(() => setShipping(true))}
-            >
-              Ship
-            </Button>
-          )}
-        </Stack>
-
-        <Paper variant="outlined">
-          {/* The table scrolls inside its own frame; the page never does.
-              Seven columns do not fit a narrow window, and letting them push
-              past the Paper is what put "Close short" over the border.
-              nowrap on the numbers and the actions, so a squeeze becomes a
-              scroll rather than "Close" above "short". */}
-          <TableContainer>
-            <Table
-              size="small"
-              sx={{
-                '& th, & td': { whiteSpace: 'nowrap' },
-              }}
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell>SKU</TableCell>
-                  <TableCell>Item</TableCell>
-                  {/* Right-aligned like the money: quantities are compared
-                    down a column, and digits only line up on the right. */}
-                  <TableCell align="right">Ordered</TableCell>
-                  <TableCell align="right">{DONE[order.direction]}</TableCell>
-                  {/* Beside shipped, never subtracted from it: that it
-                      shipped is the history a recall reads (ADR-043). */}
-                  {order.direction === 'sale' && (
-                    <TableCell align="right">Returned</TableCell>
-                  )}
-                  <TableCell align="right">Outstanding</TableCell>
-                  <TableCell align="right">Unit price</TableCell>
-                  <TableCell align="right">Total</TableCell>
-                  {/* No visible title — the buttons explain themselves —
-                      but a screen reader announces the column by name. */}
-                  <TableCell align="right" aria-label="Actions" />
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {order.lines.map((line) => (
-                  <TableRow key={line.id} hover>
-                    <TableCell>{line.sku}</TableCell>
-                    <TableCell>{line.description}</TableCell>
-                    <TableCell align="right">{line.quantityOrdered}</TableCell>
-                    <TableCell align="right">
-                      {line.quantityFulfilled}
-                    </TableCell>
-                    {order.direction === 'sale' && (
-                      <TableCell align="right">
-                        {line.quantityReturned}
-                      </TableCell>
-                    )}
-
-                    <TableCell align="right">
-                      {line.isClosedShort ? (
-                        /* The reason in place of the number: outstanding is
-                         zero, and why it is zero is the useful part. */
-                        <Tooltip title={line.closedReason ?? ''}>
-                          <Chip label="Closed short" size="small" />
-                        </Tooltip>
-                      ) : (
-                        <>
-                          {line.quantityOutstanding}
-                          {/* The backorder: needed, and not held because
-                              earlier-confirmed orders came first (ADR-045).
-                              '0.0000' is nothing, compared as text. */}
-                          {order.status === 'confirmed' &&
-                            holds[line.id] &&
-                            holds[line.id].short !== '0.0000' && (
-                              <Tooltip
-                                title={`${holds[line.id].held} held for this order; the rest waits for stock`}
-                              >
-                                <Chip
-                                  label={`${holds[line.id].short} short`}
-                                  size="small"
-                                  color="warning"
-                                  variant="outlined"
-                                  sx={{ ml: 1 }}
-                                />
-                              </Tooltip>
-                            )}
-                        </>
-                      )}
-                    </TableCell>
-
-                    <TableCell align="right">
-                      {formatMoney(line.unitPrice, line.currency)}
-                      {/* Where a list price came from, so a default is
-                          seen as one that can be changed (ADR-049). */}
-                      {line.priceSource === 'list' && line.priceListName && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          component="div"
-                        >
-                          from {line.priceListName}
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell align="right">
-                      {formatMoney(line.lineTotal, line.currency)}
-                    </TableCell>
-
-                    <TableCell align="right">
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{ justifyContent: 'flex-end' }}
-                      >
-                        {receivable && !line.isComplete && (
-                          <Button
-                            variant="text"
-                            size="small"
-                            onClick={openDialog(() => setReceiving(line))}
-                          >
-                            Receive
-                          </Button>
-                        )}
-
-                        {amendable &&
-                          !line.isClosedShort &&
-                          !line.isComplete && (
-                            <Button
-                              variant="text"
-                              size="small"
-                              disabled={working}
-                              onClick={openDialog(() => setEditingLine(line))}
-                            >
-                              Edit
-                            </Button>
-                          )}
-
-                        {/* Prices the line from the order's list again —
-                          the explicit act for a list corrected after the
-                          line was added, never done in the background
-                          (ADR-049). The server says why when it cannot. */}
-                        {amendable &&
-                          !order.isSample &&
-                          !line.isClosedShort &&
-                          !line.isComplete && (
-                            <Button
-                              variant="text"
-                              size="small"
-                              disabled={working}
-                              onClick={() =>
-                                void lineAction(
-                                  `/orders/${order.id}/lines/${line.id}/list-price`,
-                                  'POST',
-                                )
-                              }
-                            >
-                              Use list price
-                            </Button>
-                          )}
-
-                        {/* Confirmed only, and only while something is still
-                          outstanding — a draft has promised nothing, so
-                          removing the line is the right act there. */}
-                        {canUpdate &&
-                          order.status === 'confirmed' &&
-                          !line.isComplete && (
-                            <Button
-                              variant="text"
-                              size="small"
-                              disabled={working}
-                              onClick={openDialog(() => setClosingLine(line))}
-                            >
-                              Close short
-                            </Button>
-                          )}
-
-                        {canUpdate && line.isClosedShort && (
-                          <Button
-                            variant="text"
-                            size="small"
-                            disabled={working}
-                            onClick={() =>
-                              void lineAction(
-                                `/orders/${order.id}/lines/${line.id}/reopen`,
-                                'POST',
-                              )
-                            }
-                          >
-                            Reopen
-                          </Button>
-                        )}
-
-                        {/* Draft only, and never the last one — an order with no
-                          lines orders nothing (ADR-033). The server refuses
-                          both and those 409s render, but a control that always
-                          fails is worth not offering. */}
-                        {canUpdate && isDraft && order.lines.length > 1 && (
-                          <IconButton
-                            size="small"
-                            aria-label={`Remove ${line.sku}`}
-                            disabled={working}
-                            onClick={() =>
-                              void lineAction(
-                                `/orders/${order.id}/lines/${line.id}`,
-                                'DELETE',
-                              )
-                            }
-                          >
-                            ×
-                          </IconButton>
-                        )}
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {/* Padded to the cells' own inset, so the grand total lines up
-              under the Total column rather than touching the frame. */}
-          <Stack sx={{ alignItems: 'flex-end', px: 2, py: 1.5 }} spacing={0.5}>
-            {order.totals.map((total) => (
-              <Typography key={total.currency} variant="body2">
-                {formatMoney(total.amount, total.currency)}
-              </Typography>
-            ))}
-
-            {/* Said rather than shown as a smaller number: a subtotal that
-              silently excludes a line is what somebody reconciles against
-              (ADR-035). */}
-            {!order.totalsComplete && (
-              <Typography variant="caption" color="text.secondary">
-                {order.totals.length
-                  ? 'Some lines have no price — this is not the full total'
-                  : 'No prices recorded on this order'}
-              </Typography>
-            )}
-          </Stack>
-        </Paper>
-
-        {/* Returns sit beside shipped rather than reducing what is
-            outstanding (ADR-043), which reads as a mismatch until said. */}
-        {order.lines.some((line) => Number(line.quantityReturned) > 0) && (
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-            Returns don't reopen an item. To send replacements, raise a new
-            sale.
-          </Typography>
-        )}
-
-        {order.status === 'draft' && (
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-            Nothing can be {DONE[order.direction].toLowerCase()} against a
-            draft. Confirming is what says this order is real.
-          </Typography>
-        )}
-      </Box>
+      <OrderLinesSection
+        order={order}
+        holds={holds}
+        working={working}
+        canUpdate={canUpdate}
+        receivable={receivable}
+        amendable={amendable}
+        shippable={shippable}
+        returnable={returnable}
+        authorizable={authorizable}
+        onAddLine={() => setAddingLine(true)}
+        onAuthorize={() => setAuthorizing(true)}
+        onTakeReturn={() => setReturning(true)}
+        onShip={() => setShipping(true)}
+        onReceive={setReceiving}
+        onEditLine={setEditingLine}
+        onCloseLine={setClosingLine}
+        onLineAction={lineAction}
+      />
 
       {order.direction === 'sale' && (
         <ShipmentsList
