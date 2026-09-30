@@ -27,12 +27,10 @@ import { openDialog } from '../lib/open-dialog';
 import type { LineVariance, OutputVariance, RunDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
-import {
-  CancelRunDialog,
-  CloseRunDialog,
-  RecordOutputDialog,
-  ReleaseRunDialog,
-} from './run-dialogs';
+import { CancelRunDialog } from './cancel-run-dialog';
+import { CloseRunDialog } from './close-run-dialog';
+import { RecordOutputDialog } from './record-output-dialog';
+import { ReleaseRunDialog } from './release-run-dialog';
 import { STATUS_COLOUR, STATUS_LABEL } from './status';
 
 export function ProductionOrderDetailPage() {
