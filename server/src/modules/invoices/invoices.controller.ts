@@ -26,6 +26,7 @@ import { ListInvoicesDto } from './dto/list-invoices.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { UpdateInvoiceLineDto } from './dto/update-invoice-line.dto';
 import { VoidInvoiceDto } from './dto/void-invoice.dto';
+import { InvoiceDraftsService } from './invoice-drafts.service';
 import { InvoicesService } from './invoices.service';
 
 /**
@@ -37,6 +38,7 @@ export class InvoicesController {
   constructor(
     private readonly invoices: InvoicesService,
     private readonly creditNotes: CreditNotesService,
+    private readonly drafts: InvoiceDraftsService,
   ) {}
 
   @Get()
@@ -64,7 +66,7 @@ export class InvoicesController {
     @Body() dto: CreateInvoiceDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return { invoice: await this.invoices.createDraft(dto, user.userId) };
+    return { invoice: await this.drafts.createDraft(dto, user.userId) };
   }
 
   @Patch(':id')
@@ -82,7 +84,7 @@ export class InvoicesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateInvoiceDto,
   ): Promise<void> {
-    await this.invoices.update(id, dto);
+    await this.drafts.update(id, dto);
   }
 
   @Patch(':id/lines/:lineId')
@@ -99,7 +101,7 @@ export class InvoicesController {
     @Param('lineId', ParseUUIDPipe) lineId: string,
     @Body() dto: UpdateInvoiceLineDto,
   ): Promise<void> {
-    await this.invoices.updateLine(id, lineId, dto);
+    await this.drafts.updateLine(id, lineId, dto);
   }
 
   /**
@@ -207,6 +209,6 @@ export class InvoicesController {
     resourceId: (_response, request) => request.params.id,
   })
   async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    await this.invoices.delete(id);
+    await this.drafts.delete(id);
   }
 }

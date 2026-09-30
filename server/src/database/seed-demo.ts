@@ -6,6 +6,7 @@ import { AppModule } from '../app.module';
 import { AuthService } from '../core/auth/auth.service';
 import { OrganizationsService } from '../core/organizations/organizations.service';
 import { BomsService } from '../modules/boms/boms.service';
+import { InvoiceDraftsService } from '../modules/invoices/invoice-drafts.service';
 import { InvoicesService } from '../modules/invoices/invoices.service';
 import { LocationsService } from '../modules/locations/locations.service';
 import { OrderReceiptsService } from '../modules/orders/order-receipts.service';
@@ -127,6 +128,7 @@ async function seedDemo(): Promise<void> {
     const partnerAddresses = app.get(PartnerAddressesService);
     const taxCodes = app.get(TaxCodesService);
     const invoices = app.get(InvoicesService);
+    const invoiceDrafts = app.get(InvoiceDraftsService);
     const priceLists = app.get(PriceListsService);
 
     // Every service below resolves its tenant from here, the same way a
@@ -411,12 +413,12 @@ async function seedDemo(): Promise<void> {
         ]);
         await taxCode('Exempt', []);
 
-        const draft = await invoices.createDraft(
+        const draft = await invoiceDrafts.createDraft(
           { shipmentId: shipment.id, taxCodeId: gst.id },
           actor,
         );
 
-        await invoices.update(draft.id, { dueDate: daysFromNow(30) });
+        await invoiceDrafts.update(draft.id, { dueDate: daysFromNow(30) });
 
         // The UTC day, which is fine for demo data; the app itself sends
         // the person's own calendar day.
