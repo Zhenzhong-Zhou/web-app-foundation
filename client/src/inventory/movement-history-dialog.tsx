@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 
 import { FormError } from '../components/form-error';
+import { LoadMoreButton } from '../components/load-more-button';
 import { relativeTime } from '../lib/format';
 import type { Movement, StockRow } from '../lib/types';
 import { useKeysetList } from '../lib/use-keyset-list';
@@ -167,19 +168,11 @@ export function MovementHistoryDialog({
             </Typography>
           )}
 
-          {/* Load more, not page numbers: a keyset cursor has no notion of
-              "page 4", and offset paging repeats rows as new movements arrive
-              at the head. */}
-          {hasMore && (
-            <Button
-              variant="text"
-              onClick={() => void loadMore()}
-              disabled={loadingMore}
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              {loadingMore ? 'Loading…' : 'Load more'}
-            </Button>
-          )}
+          <LoadMoreButton
+            hasMore={hasMore}
+            loading={loadingMore}
+            onLoadMore={loadMore}
+          />
         </Stack>
       </DialogContent>
 

@@ -18,6 +18,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { LoadMoreButton } from '../components/load-more-button';
 import { api, messageFor } from '../lib/api';
 import { formatDate, formatMoney, formatUnitCost } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -238,17 +239,12 @@ export function StockValuePage() {
               </TableContainer>
             )}
 
-            {waiting?.nextCursor && (
-              <Stack sx={{ p: 2, alignItems: 'center' }}>
-                <Button
-                  variant="text"
-                  onClick={() => void loadMore()}
-                  disabled={loadingMore}
-                >
-                  {loadingMore ? 'Loading…' : 'Load more'}
-                </Button>
-              </Stack>
-            )}
+            <LoadMoreButton
+              hasMore={Boolean(waiting?.nextCursor)}
+              loading={loadingMore}
+              onLoadMore={loadMore}
+              sx={{ p: 2 }}
+            />
           </Paper>
 
           <Paper variant="outlined">

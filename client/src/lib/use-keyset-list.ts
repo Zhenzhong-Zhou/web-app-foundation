@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { api, messageFor } from './api';
 
-/** What every keyset endpoint returns (ADR-022). */
+/** What every keyset endpoint returns (ADR-018). */
 export type KeysetPage<T> = { entries: T[]; nextCursor: string | null };
 
 type Read<T> = {

@@ -1,6 +1,5 @@
 import {
   Alert,
-  Button,
   Chip,
   Link,
   Paper,
@@ -19,6 +18,7 @@ import {
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { LoadMoreButton } from '../components/load-more-button';
 import { formatDay, formatMoney } from '../lib/format';
 import type { InvoiceStatus, InvoiceSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -152,16 +152,11 @@ export function InvoicesPage() {
         )}
       </Paper>
 
-      {hasMore && (
-        <Button
-          variant="text"
-          onClick={() => void loadMore()}
-          disabled={loadingMore}
-          sx={{ alignSelf: 'center' }}
-        >
-          {loadingMore ? 'Loading…' : 'Load more'}
-        </Button>
-      )}
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onLoadMore={loadMore}
+      />
     </Stack>
   );
 }

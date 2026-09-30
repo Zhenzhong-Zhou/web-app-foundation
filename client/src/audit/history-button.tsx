@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { LoadMoreButton } from '../components/load-more-button';
 import { relativeTime } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -154,16 +155,12 @@ function HistoryPanel({
           </List>
         )}
 
-        {hasMore && (
-          <Button
-            variant="text"
-            disabled={loadingMore}
-            onClick={() => void loadMore()}
-            sx={{ mt: 1 }}
-          >
-            {loadingMore ? 'Loading…' : 'Load more'}
-          </Button>
-        )}
+        <LoadMoreButton
+          hasMore={hasMore}
+          loading={loadingMore}
+          onLoadMore={loadMore}
+          sx={{ mt: 1 }}
+        />
       </Box>
 
       <Divider />

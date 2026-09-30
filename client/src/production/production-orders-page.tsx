@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { formatDate } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -162,15 +163,11 @@ export function ProductionOrdersPage() {
             </Table>
           </Paper>
 
-          {hasMore && (
-            <Button
-              variant="text"
-              disabled={loadingMore}
-              onClick={() => void loadMore()}
-            >
-              {loadingMore ? 'Loading…' : 'Load more'}
-            </Button>
-          )}
+          <LoadMoreButton
+            hasMore={hasMore}
+            loading={loadingMore}
+            onLoadMore={loadMore}
+          />
         </>
       )}
 

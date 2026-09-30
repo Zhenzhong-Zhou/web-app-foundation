@@ -1,6 +1,5 @@
 import {
   Alert,
-  Button,
   Chip,
   Link,
   Paper,
@@ -19,6 +18,7 @@ import {
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { LoadMoreButton } from '../components/load-more-button';
 import { formatDate } from '../lib/format';
 import type {
   ReturnAuthorizationStatus,
@@ -148,16 +148,11 @@ export function RmasPage() {
         )}
       </Paper>
 
-      {hasMore && (
-        <Button
-          variant="text"
-          onClick={() => void loadMore()}
-          disabled={loadingMore}
-          sx={{ alignSelf: 'center' }}
-        >
-          {loadingMore ? 'Loading…' : 'Load more'}
-        </Button>
-      )}
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onLoadMore={loadMore}
+      />
     </Stack>
   );
 }

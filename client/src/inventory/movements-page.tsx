@@ -1,7 +1,6 @@
 import {
   Alert,
   Autocomplete,
-  Button,
   Chip,
   MenuItem,
   Paper,
@@ -18,6 +17,7 @@ import {
 } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 
+import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { api } from '../lib/api';
 import { itemName, relativeTime } from '../lib/format';
@@ -267,18 +267,11 @@ export function MovementsPage() {
         )}
       </Paper>
 
-      {/* Load more, not page numbers: a keyset cursor has no notion of "page
-          4", and this table grows faster than any other in the app. */}
-      {hasMore && (
-        <Button
-          variant="text"
-          disabled={loadingMore}
-          onClick={() => void loadMore()}
-          sx={{ alignSelf: 'flex-start' }}
-        >
-          {loadingMore ? 'Loading…' : 'Load more'}
-        </Button>
-      )}
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onLoadMore={loadMore}
+      />
     </Stack>
   );
 }

@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { api } from '../lib/api';
 import { relativeTime } from '../lib/format';
@@ -267,15 +268,11 @@ export function AuditPage() {
             </TableContainer>
           </Paper>
 
-          {hasMore && (
-            <Button
-              variant="text"
-              disabled={loadingMore}
-              onClick={() => void loadMore()}
-            >
-              {loadingMore ? 'Loading…' : 'Load more'}
-            </Button>
-          )}
+          <LoadMoreButton
+            hasMore={hasMore}
+            loading={loadingMore}
+            onLoadMore={loadMore}
+          />
         </>
       )}
     </Stack>

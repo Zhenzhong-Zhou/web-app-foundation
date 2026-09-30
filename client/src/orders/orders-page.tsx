@@ -20,6 +20,7 @@ import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { formatDay } from '../lib/format';
 import type { OrderStatus, OrderSummary } from '../lib/types';
@@ -196,15 +197,11 @@ export function OrdersPage() {
         )}
       </Paper>
 
-      {hasMore && (
-        <Button
-          variant="text"
-          disabled={loadingMore}
-          onClick={() => void loadMore()}
-        >
-          {loadingMore ? 'Loading…' : 'Load more'}
-        </Button>
-      )}
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onLoadMore={loadMore}
+      />
     </Stack>
   );
 }
