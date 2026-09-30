@@ -1,22 +1,10 @@
-import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsIn, IsOptional, IsUUID } from 'class-validator';
 
+import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
 import { INVOICE_STATUSES, type InvoiceStatus } from '../../../database/schema';
 
-/** The keyset shape of ListOrdersDto, for the same reasons. */
-export class ListInvoicesDto {
-  /** The id of the last row already seen; rows come newest first. */
-  @IsOptional()
-  @IsUUID()
-  before?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-
+/** Paged like every list, by KeysetQueryDto; these are the invoice filters. */
+export class ListInvoicesDto extends KeysetQueryDto {
   /**
    * Absent means every status. Unlike orders, there is no "open" default:
    * a voided invoice is still a document someone asks about, and issued

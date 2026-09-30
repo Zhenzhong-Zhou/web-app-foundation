@@ -11,6 +11,7 @@ import {
   sql,
 } from 'drizzle-orm';
 
+import { pageOf } from '../../common/keyset';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -205,13 +206,7 @@ export class NotificationsService {
       .orderBy(desc(notifications.id))
       .limit(limit + 1);
 
-    const hasMore = rows.length > limit;
-    const entries = hasMore ? rows.slice(0, limit) : rows;
-
-    return {
-      entries,
-      nextCursor: hasMore ? entries[entries.length - 1].id : null,
-    };
+    return pageOf(rows, limit);
   }
 
   /**

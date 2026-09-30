@@ -18,6 +18,7 @@ import {
   sql,
 } from 'drizzle-orm';
 
+import { pageOf } from '../../common/keyset';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
@@ -169,13 +170,7 @@ export class OrdersService {
         // counting the table.
         .limit(limit + 1);
 
-      const hasMore = rows.length > limit;
-      const entries = hasMore ? rows.slice(0, limit) : rows;
-
-      return {
-        entries,
-        nextCursor: hasMore ? entries[entries.length - 1].id : null,
-      };
+      return pageOf(rows, limit);
     });
   }
 

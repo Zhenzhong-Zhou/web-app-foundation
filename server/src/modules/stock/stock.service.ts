@@ -8,6 +8,7 @@ import {
 import { and, asc, desc, eq, gt, lt, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
+import { pageOf } from '../../common/keyset';
 import { isCheckViolation, isUniqueViolation } from '../../database/errors';
 import { MovementReason, products } from '../../database/schema';
 import {
@@ -667,12 +668,7 @@ export class StockService {
         .orderBy(desc(stockMovements.id))
         .limit(limit + 1);
 
-      const entries = rows.slice(0, limit);
-
-      return {
-        entries,
-        nextCursor: rows.length > limit ? entries[entries.length - 1].id : null,
-      };
+      return pageOf(rows, limit);
     });
   }
 

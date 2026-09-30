@@ -1,38 +1,10 @@
-import { Transform, Type } from 'class-transformer';
-import {
-  IsDate,
-  IsIn,
-  IsInt,
-  IsOptional,
-  IsUUID,
-  Max,
-  Min,
-} from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsDate, IsIn, IsOptional, IsUUID } from 'class-validator';
 
+import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
 import { ALL_AUDIT_ACTIONS, type AuditAction } from '../audit-actions';
 
-export class ListAuditDto {
-  /**
-   * Keyset cursor: the id of the last row already seen. Rows are returned
-   * newest first and ids are UUIDv7, so "older than this id" (ADR-010) is
-   * one index scan at any depth.
-   *
-   * Offset paging would be simpler and wrong here: audit_log is append-only,
-   * so new rows arriving mid-scroll shift every page down, and the reader
-   * silently misses rows.
-   */
-  @IsOptional()
-  @IsUUID()
-  before?: string;
-
-  // Capped, or ?limit=999999 pulls the table in one query.
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-
+export class ListAuditDto extends KeysetQueryDto {
   @IsOptional()
   @IsUUID()
   actorId?: string;

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, desc, eq, lt, ne, sql } from 'drizzle-orm';
 
+import { pageOf } from '../../common/keyset';
 import { recordContext } from '../../core/audit/audit-context';
 import type { Transaction } from '../../database/database.module';
 import {
@@ -77,13 +78,7 @@ export class ReturnAuthorizationsService {
         .orderBy(desc(returnAuthorizations.id))
         .limit(limit + 1);
 
-      const hasMore = rows.length > limit;
-      const entries = hasMore ? rows.slice(0, limit) : rows;
-
-      return {
-        entries,
-        nextCursor: hasMore ? entries[entries.length - 1].id : null,
-      };
+      return pageOf(rows, limit);
     });
   }
 

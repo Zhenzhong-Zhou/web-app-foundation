@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 
+import { pageOf } from '../../common/keyset';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
 import { NotificationsService } from '../../core/notifications/notifications.service';
@@ -151,13 +152,7 @@ export class ProductionOrdersService {
       { orderBy: [desc(productionOrders.id)], limit: limit + 1 },
     );
 
-    const hasMore = rows.length > limit;
-    const entries = hasMore ? rows.slice(0, limit) : rows;
-
-    return {
-      entries,
-      nextCursor: hasMore ? entries[entries.length - 1].id : null,
-    };
+    return pageOf(rows, limit);
   }
 
   async findById(runId: string) {

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, gte, lt, lte, SQL } from 'drizzle-orm';
 
+import { pageOf } from '../../common/keyset';
 import { auditLog, users } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { AuditAction } from './audit-actions';
@@ -112,15 +113,9 @@ export class AuditService {
       { orderBy: desc(auditLog.id), limit: limit + 1 },
     );
 
-    const hasMore = rows.length > limit;
-    const entries = hasMore ? rows.slice(0, limit) : rows;
-
-    return {
-      // The driving table's columns are never actually null; LeftJoinedRow
-      // cannot express that, so the narrowing happens once, here.
-      entries: entries as unknown as AuditRecord[],
-      nextCursor: hasMore ? entries[entries.length - 1].id : null,
-    };
+    // The driving table's columns are never actually null; LeftJoinedRow
+    // cannot express that, so the narrowing happens once, here.
+    return pageOf(rows as unknown as AuditRecord[], limit);
   }
 
   /**

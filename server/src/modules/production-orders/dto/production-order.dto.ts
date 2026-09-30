@@ -1,17 +1,14 @@
-import { Type } from 'class-transformer';
 import {
   IsIn,
-  IsInt,
   IsOptional,
   IsString,
   IsUUID,
   Matches,
-  Max,
   MaxLength,
-  Min,
 } from 'class-validator';
 
 import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
+import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
 import { trim } from '../../../common/dto/trim';
 
 export class CreateProductionOrderDto {
@@ -101,7 +98,7 @@ export class UpdateProductionOrderDto {
   notes?: string;
 }
 
-export class ListProductionOrdersDto {
+export class ListProductionOrdersDto extends KeysetQueryDto {
   @IsOptional()
   @IsIn(['draft', 'released', 'completed', 'cancelled'])
   status?: 'draft' | 'released' | 'completed' | 'cancelled';
@@ -113,17 +110,4 @@ export class ListProductionOrdersDto {
   @IsOptional()
   @IsUUID()
   partnerId?: string;
-
-  /** Keyset cursor, as ADR-018 established for every list. */
-  @IsOptional()
-  @IsUUID()
-  before?: string;
-
-  // Capped, or ?limit=999999 pulls the table in one query.
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
 }

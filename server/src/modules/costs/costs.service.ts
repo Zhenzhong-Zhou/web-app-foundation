@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { type SQL, sql } from 'drizzle-orm';
 
+import { pageOf } from '../../common/keyset';
 import { TenantDb } from '../../database/tenant-db.service';
 import { baseCurrency } from '../stock/rates';
 import {
@@ -359,7 +360,7 @@ export class CostsService {
         limit ${limit + 1}
       `);
 
-      const entries = (rows.rows as Row[]).slice(0, limit).map((row) => ({
+      const entries = (rows.rows as Row[]).map((row) => ({
         id: row.id as string,
         kind: row.kind,
         reason: row.reason,
@@ -375,11 +376,7 @@ export class CostsService {
         createdAt: row.created_at,
       }));
 
-      return {
-        entries,
-        nextCursor:
-          rows.rows.length > limit ? entries[entries.length - 1].id : null,
-      };
+      return pageOf(entries, limit);
     });
   }
 }
