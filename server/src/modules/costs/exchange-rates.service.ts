@@ -7,8 +7,9 @@ import {
 import { and, asc, desc, eq, type SQL } from 'drizzle-orm';
 
 import { recordPrevious } from '../../core/audit/audit-context';
-import { exchangeRates, organizations } from '../../database/schema';
+import { exchangeRates } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { baseCurrency } from '../stock/rates';
 import type { ListExchangeRatesDto } from './dto/list-exchange-rates.dto';
 import type { SetExchangeRateDto } from './dto/set-exchange-rate.dto';
 
@@ -57,18 +58,15 @@ export class ExchangeRatesService {
    */
   async set(input: SetExchangeRateDto) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [organization] = await tx
-        .select({ baseCurrency: organizations.baseCurrency })
-        .from(organizations)
-        .where(eq(organizations.id, organizationId));
+      const base = await baseCurrency(tx, organizationId);
 
-      if (!organization?.baseCurrency) {
+      if (!base) {
         throw new ConflictException(
           'Set a base currency for the organization before entering rates',
         );
       }
 
-      if (input.currency === organization.baseCurrency) {
+      if (input.currency === base) {
         throw new BadRequestException(
           `${input.currency} is the base currency. A rate converts other currencies into it.`,
         );

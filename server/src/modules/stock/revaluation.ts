@@ -6,6 +6,7 @@ import {
 import { sql } from 'drizzle-orm';
 
 import { recordPrevious } from '../../core/audit/audit-context';
+import { baseCurrency, rateOnOrBefore } from './rates';
 import type { Tx } from './stock.service';
 import { lockPool } from './valuation';
 
@@ -294,13 +295,7 @@ export async function correctCost(
 
   assertAcquisition(target);
 
-  const organization = await tx.execute(sql`
-    select o.base_currency as base
-    from organizations o
-    where o.id = ${organizationId}::uuid
-  `);
-
-  const { base } = organization.rows[0] as { base: string | null };
+  const base = await baseCurrency(tx, organizationId);
 
   if (!base) {
     throw new ConflictException(
@@ -319,25 +314,20 @@ export async function correctCost(
   } else if (input.exchangeRate !== undefined) {
     rate = input.exchangeRate;
   } else {
-    const onFile = await tx.execute(sql`
-      select r.rate
-      from exchange_rates r
-      where r.organization_id = ${organizationId}::uuid
-        and r.currency = ${input.currency}
-        and r.rate_date <= ${target.day}::date
-      order by r.rate_date desc
-      limit 1
-    `);
+    const onFile = await rateOnOrBefore(
+      tx,
+      organizationId,
+      input.currency,
+      sql`${target.day}::date`,
+    );
 
-    const [row] = onFile.rows as { rate: string }[];
-
-    if (!row) {
+    if (!onFile) {
       throw new ConflictException(
         `No ${input.currency} rate on or before ${target.day}. Enter one, or give the rate with the cost.`,
       );
     }
 
-    rate = row.rate;
+    rate = onFile;
   }
 
   // What it cost before this, for the audit row: the latest correction, or

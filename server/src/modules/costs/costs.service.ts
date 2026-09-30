@@ -2,12 +2,12 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { type SQL, sql } from 'drizzle-orm';
 
 import { TenantDb } from '../../database/tenant-db.service';
+import { baseCurrency } from '../stock/rates';
 import {
   correctCost,
   type CorrectedCost,
   type CostInput,
 } from '../stock/revaluation';
-import type { Tx } from '../stock/stock.service';
 import type { ListNeedsCostDto } from './dto/list-needs-cost.dto';
 
 /**
@@ -80,7 +80,7 @@ export class CostsService {
   /** Everything on hand, pool by pool, and what it is worth together. */
   stockValuation() {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const base = await this.baseCurrency(tx, organizationId);
+      const base = await baseCurrency(tx, organizationId);
 
       const pools = await tx.execute(sql`
         with open as (${openNeedsCost(organizationId)})
@@ -141,7 +141,7 @@ export class CostsService {
       const [lot] = found.rows as Row[];
       if (!lot) throw new NotFoundException('No such lot');
 
-      const base = await this.baseCurrency(tx, organizationId);
+      const base = await baseCurrency(tx, organizationId);
 
       const pool = await tx.execute(sql`
         with open as (${openNeedsCost(organizationId)})
@@ -225,7 +225,7 @@ export class CostsService {
       const [run] = found.rows as Row[];
       if (!run) throw new NotFoundException('No such production order');
 
-      const base = await this.baseCurrency(tx, organizationId);
+      const base = await baseCurrency(tx, organizationId);
       const closed = run.status === 'completed';
 
       const consumed = await tx.execute(sql`
@@ -381,18 +381,5 @@ export class CostsService {
           rows.rows.length > limit ? entries[entries.length - 1].id : null,
       };
     });
-  }
-
-  private async baseCurrency(
-    tx: Tx,
-    organizationId: string,
-  ): Promise<string | null> {
-    const result = await tx.execute(sql`
-      select o.base_currency as base
-      from organizations o
-      where o.id = ${organizationId}::uuid
-    `);
-
-    return (result.rows[0] as { base: string | null }).base;
   }
 }

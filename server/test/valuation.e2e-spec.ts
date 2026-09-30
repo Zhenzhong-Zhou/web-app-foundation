@@ -376,6 +376,42 @@ describe('Stock valuation (e2e)', () => {
       });
     });
 
+    /**
+     * "On or before" includes the day itself: a rate entered this morning is
+     * the rate for a receipt this afternoon. The database's own calendar day,
+     * because that is the day valuation reads (current_date).
+     */
+    it('uses a rate entered for the day of the receipt', async () => {
+      const s = await setup('alpha');
+      const extract = await variant(s, 'EXTRACT');
+
+      const today = await db.execute(sql`select current_date::text as day`);
+      const { day } = today.rows[0] as { day: string };
+
+      await db.insert(exchangeRates).values([
+        {
+          organizationId: s.organizationId,
+          currency: 'USD',
+          rateDate: '2000-01-01',
+          rate: '1.37',
+        },
+        {
+          organizationId: s.organizationId,
+          currency: 'USD',
+          rateDate: day,
+          rate: '1.40',
+        },
+      ]);
+
+      const received = await buy(s, extract, '100', usd('0.25'));
+
+      expect(await valuationOf(received)).toMatchObject({
+        value: '35.000000',
+        exchangeRate: '1.40000000',
+        needsCost: false,
+      });
+    });
+
     it('values nothing until the organization has a base currency', async () => {
       const s = await setup('alpha', null);
       const scoop = await variant(s, 'SCOOP');

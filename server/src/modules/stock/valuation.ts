@@ -1,6 +1,7 @@
 import { type SQL, sql } from 'drizzle-orm';
 
 import type { stockMovements } from '../../database/schema';
+import { baseCurrency, rateOnOrBefore } from './rates';
 import type { Tx } from './stock.service';
 
 type Movement = typeof stockMovements.$inferSelect;
@@ -240,29 +241,19 @@ async function purchased(
   quantity: string,
   cost: PurchaseCost,
 ): Promise<Valued> {
-  // Plain SQL with every table aliased, so the correlated subquery cannot
-  // bind a bare column to the wrong table.
-  const found = await tx.execute(sql`
-    select o.base_currency as base,
-           (select r.rate
-              from exchange_rates r
-             where r.organization_id = o.id
-               and r.currency = ${cost.currency}
-               and r.rate_date <= current_date
-             order by r.rate_date desc
-             limit 1) as rate
-    from organizations o
-    where o.id = ${organizationId}::uuid
-  `);
-
-  const { base, rate } = found.rows[0] as {
-    base: string | null;
-    rate: string | null;
-  };
+  const base = await baseCurrency(tx, organizationId);
 
   if (!base) return unvalued(cost);
 
-  const applied = cost.currency === base ? null : rate;
+  const applied =
+    cost.currency === base
+      ? null
+      : await rateOnOrBefore(
+          tx,
+          organizationId,
+          cost.currency,
+          sql`current_date`,
+        );
 
   if (cost.currency !== base && !applied) return unvalued(cost);
 
