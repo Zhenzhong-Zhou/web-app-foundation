@@ -78,6 +78,29 @@ export class TenantDb {
     return context.organizationId;
   }
 
+
+  /**
+   * The caller's ordering and limit, applied after the organization scope,
+   * for every select here. Untyped going in and coming out: Drizzle drops
+   * methods from the chain as they are consumed, TypeScript cannot follow
+   * that through a generic table, and each select states the rows it returns.
+   */
+  private ordered(query: unknown, options?: SelectOptions): unknown {
+    const chain = query as {
+      orderBy: (...by: SQL[]) => { limit: (n: number) => unknown };
+      limit: (n: number) => unknown;
+    };
+
+    const ordered = options?.orderBy
+      ? chain.orderBy(
+          ...(Array.isArray(options.orderBy)
+            ? options.orderBy
+            : [options.orderBy]),
+        )
+      : chain;
+
+    return options?.limit ? ordered.limit(options.limit) : ordered;
+  }
   private scope<T extends TenantTable>(table: T, where?: SQL): SQL {
     const tenant = eq(table.organizationId, this.organizationId);
     return where ? and(tenant, where)! : tenant;
@@ -93,22 +116,7 @@ export class TenantDb {
       .from(table as never)
       .where(this.scope(table, where));
 
-    // Applied in order, and narrowed back at the end: Drizzle drops methods
-    // from the chain as they are consumed, and TypeScript cannot follow that
-    // through a generic table. Same cast the rest of this file makes.
-    const ordered = options?.orderBy
-      ? (query as never as { orderBy: (...by: SQL[]) => unknown }).orderBy(
-          ...(Array.isArray(options.orderBy)
-            ? options.orderBy
-            : [options.orderBy]),
-        )
-      : query;
-
-    const limited = options?.limit
-      ? (ordered as { limit: (n: number) => unknown }).limit(options.limit)
-      : ordered;
-
-    return limited as Promise<T['$inferSelect'][]>;
+    return this.ordered(query, options) as Promise<T['$inferSelect'][]>;
   }
 
   /**
@@ -157,10 +165,7 @@ export class TenantDb {
             table: PgTable,
             on: SQL,
           ) => {
-            where: (where: SQL) => {
-              orderBy: (...by: SQL[]) => { limit: (n: number) => unknown };
-              limit: (n: number) => unknown;
-            };
+            where: (where: SQL) => unknown;
           };
         };
       };
@@ -172,17 +177,7 @@ export class TenantDb {
       .innerJoin(join, on)
       .where(this.scope(table, where));
 
-    const ordered = options?.orderBy
-      ? query.orderBy(
-          ...(Array.isArray(options.orderBy)
-            ? options.orderBy
-            : [options.orderBy]),
-        )
-      : query;
-
-    const limited = options?.limit ? ordered.limit(options.limit) : ordered;
-
-    return limited as Promise<JoinedRow<C>[]>;
+    return this.ordered(query, options) as Promise<JoinedRow<C>[]>;
   }
 
   /**
@@ -212,10 +207,7 @@ export class TenantDb {
             table: PgTable,
             on: SQL,
           ) => {
-            where: (where: SQL) => {
-              orderBy: (...by: SQL[]) => { limit: (n: number) => unknown };
-              limit: (n: number) => unknown;
-            };
+            where: (where: SQL) => unknown;
           };
         };
       };
@@ -227,17 +219,7 @@ export class TenantDb {
       .leftJoin(join, on)
       .where(this.scope(table, where));
 
-    const ordered = options?.orderBy
-      ? query.orderBy(
-          ...(Array.isArray(options.orderBy)
-            ? options.orderBy
-            : [options.orderBy]),
-        )
-      : query;
-
-    const limited = options?.limit ? ordered.limit(options.limit) : ordered;
-
-    return limited as Promise<LeftJoinedRow<C>[]>;
+    return this.ordered(query, options) as Promise<LeftJoinedRow<C>[]>;
   }
 
   insert<T extends TenantTable>(
