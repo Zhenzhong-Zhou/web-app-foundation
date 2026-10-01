@@ -20,6 +20,7 @@ import { CreateReturnAuthorizationDto } from './dto/create-return-authorization.
 import { LinkReturnDto } from './dto/link-return.dto';
 import { ListReturnAuthorizationsDto } from './dto/list-return-authorizations.dto';
 import { ReturnAuthorizationReceiptsService } from './return-authorization-receipts.service';
+import { ReturnAuthorizationReplacementsService } from './return-authorization-replacements.service';
 import { ReturnAuthorizationsService } from './return-authorizations.service';
 
 /**
@@ -35,6 +36,7 @@ export class ReturnAuthorizationsController {
   constructor(
     private readonly rmas: ReturnAuthorizationsService,
     private readonly receipts: ReturnAuthorizationReceiptsService,
+    private readonly replacements: ReturnAuthorizationReplacementsService,
   ) {}
 
   @Get()
@@ -135,6 +137,6 @@ export class ReturnAuthorizationsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: RequestContext,
   ) {
-    return { order: await this.rmas.raiseReplacement(id, user.userId) };
+    return { order: await this.replacements.raiseReplacement(id, user.userId) };
   }
 }
