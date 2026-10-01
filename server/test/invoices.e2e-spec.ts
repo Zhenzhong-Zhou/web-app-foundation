@@ -374,6 +374,37 @@ describe('Invoices (e2e)', () => {
     });
   });
 
+  describe('another organization’s draft', () => {
+    it('is not found by any write, and is left as it was', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const theirs = await draft(beta, (await shipped(beta)).shipmentId);
+
+      // Each of these starts from lockDraft, which has the organization in
+      // its where clause: another tenant's draft reads as one that does not
+      // exist, whichever route reaches it.
+      await alpha.agent
+        .patch(`/v1/invoices/${theirs.id}`)
+        .send({ note: 'Not yours' })
+        .expect(404);
+      await alpha.agent
+        .patch(`/v1/invoices/${theirs.id}/lines/${theirs.lines[0].id}`)
+        .send({ unitPrice: '0' })
+        .expect(404);
+      await alpha.agent
+        .post(`/v1/invoices/${theirs.id}/issue`)
+        .send({ invoiceDate: '2026-09-25' })
+        .expect(404);
+      await alpha.agent.delete(`/v1/invoices/${theirs.id}`).expect(404);
+
+      const kept = await read(beta, theirs.id);
+      expect(kept.status).toBe('draft');
+      expect(kept.note).toBeNull();
+      const line = kept.lines.find((row) => row.id === theirs.lines[0].id);
+      expect(line?.unitPrice).toBe(theirs.lines[0].unitPrice);
+    });
+  });
+
   describe('listing', () => {
     it('lists an order’s invoices, newest first', async () => {
       const org = await registerOrganization(app, 'alpha');
