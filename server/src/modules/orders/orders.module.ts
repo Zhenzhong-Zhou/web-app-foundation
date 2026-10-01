@@ -13,6 +13,7 @@ import { ReturnsService } from './returns.service';
 import { ShipmentVoidsService } from './shipment-voids.service';
 import { ShipmentsController } from './shipments.controller';
 import { ShipmentsService } from './shipments.service';
+import { ShippingService } from './shipping.service';
 
 /**
  * Imports StockModule because receiving against a line writes a movement, and
@@ -37,6 +38,7 @@ import { ShipmentsService } from './shipments.service';
     OrderLinesService,
     OrderReceiptsService,
     ShipmentsService,
+    ShippingService,
     ShipmentVoidsService,
     ReturnsService,
   ],

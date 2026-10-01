@@ -12,7 +12,7 @@ import { LocationsService } from '../modules/locations/locations.service';
 import { OrderReceiptsService } from '../modules/orders/order-receipts.service';
 import { OrdersService } from '../modules/orders/orders.service';
 import { ReturnsService } from '../modules/orders/returns.service';
-import { ShipmentsService } from '../modules/orders/shipments.service';
+import { ShippingService } from '../modules/orders/shipping.service';
 import { PartnerAddressesService } from '../modules/partners/partner-addresses.service';
 import { PartnersService } from '../modules/partners/partners.service';
 import { PriceListsService } from '../modules/price-lists/price-lists.service';
@@ -125,7 +125,7 @@ async function seedDemo(): Promise<void> {
     const runs = app.get(ProductionOrdersService);
     const execution = app.get(ProductionExecutionService);
     const closing = app.get(ProductionCloseService);
-    const shipments = app.get(ShipmentsService);
+    const shipping = app.get(ShippingService);
     const returns = app.get(ReturnsService);
     const stock = app.get(StockService);
     const organization = app.get(OrganizationsService);
@@ -348,7 +348,7 @@ async function seedDemo(): Promise<void> {
 
         // Part of it, on purpose: 400 of 600 leaves the rest outstanding, so
         // the order page shows a partial shipment and the Ship button stays.
-        const shipment = await shipments.ship(
+        const shipment = await shipping.ship(
           sale.id,
           {
             fromLocationId: blending.id,

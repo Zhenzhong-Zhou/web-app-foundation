@@ -19,6 +19,7 @@ import { PreviewShipmentDto, ShipOrderDto } from './dto/ship-order.dto';
 import { VoidShipmentDto } from './dto/void-shipment.dto';
 import { ShipmentVoidsService } from './shipment-voids.service';
 import { ShipmentsService } from './shipments.service';
+import { ShippingService } from './shipping.service';
 
 /**
  * Shipments against a sales order (ADR-041). Its own controller because a
@@ -29,6 +30,7 @@ import { ShipmentsService } from './shipments.service';
 export class ShipmentsController {
   constructor(
     private readonly shipments: ShipmentsService,
+    private readonly shipping: ShippingService,
     private readonly voids: ShipmentVoidsService,
   ) {}
 
@@ -63,7 +65,7 @@ export class ShipmentsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: PreviewShipmentDto,
   ) {
-    return this.shipments.preview(id, dto);
+    return this.shipping.preview(id, dto);
   }
 
   /**
@@ -84,7 +86,7 @@ export class ShipmentsController {
     @Body() dto: ShipOrderDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return { shipment: await this.shipments.ship(id, dto, user.userId) };
+    return { shipment: await this.shipping.ship(id, dto, user.userId) };
   }
 
   /**
