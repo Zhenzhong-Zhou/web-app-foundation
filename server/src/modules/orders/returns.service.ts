@@ -14,7 +14,7 @@ import {
   productVariants,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
-import { ReturnAuthorizationsService } from '../return-authorizations/return-authorizations.service';
+import { ReturnAuthorizationReceiptsService } from '../return-authorizations/return-authorization-receipts.service';
 import { inVariantOrder } from '../stock/availability';
 import { StockService, type Tx } from '../stock/stock.service';
 import { trackedVariants } from '../stock/tracked-variants';
@@ -66,7 +66,7 @@ export class ReturnsService {
   constructor(
     private readonly tenantDb: TenantDb,
     private readonly stock: StockService,
-    private readonly rmas: ReturnAuthorizationsService,
+    private readonly rmas: ReturnAuthorizationReceiptsService,
   ) {}
 
   /**

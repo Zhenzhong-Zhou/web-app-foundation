@@ -19,6 +19,7 @@ import { RequirePermissions } from '../../core/authorization/require-permissions
 import { CreateReturnAuthorizationDto } from './dto/create-return-authorization.dto';
 import { LinkReturnDto } from './dto/link-return.dto';
 import { ListReturnAuthorizationsDto } from './dto/list-return-authorizations.dto';
+import { ReturnAuthorizationReceiptsService } from './return-authorization-receipts.service';
 import { ReturnAuthorizationsService } from './return-authorizations.service';
 
 /**
@@ -31,7 +32,10 @@ import { ReturnAuthorizationsService } from './return-authorizations.service';
  */
 @Controller({ path: 'return-authorizations', version: '1' })
 export class ReturnAuthorizationsController {
-  constructor(private readonly rmas: ReturnAuthorizationsService) {}
+  constructor(
+    private readonly rmas: ReturnAuthorizationsService,
+    private readonly receipts: ReturnAuthorizationReceiptsService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.RETURN_AUTHORIZATIONS_VIEW)
@@ -111,7 +115,7 @@ export class ReturnAuthorizationsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: LinkReturnDto,
   ): Promise<void> {
-    await this.rmas.linkReturn(id, dto.returnId);
+    await this.receipts.linkReturn(id, dto.returnId);
   }
 
   /**
