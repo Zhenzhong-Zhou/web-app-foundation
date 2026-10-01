@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import {
   type Database,
@@ -10,18 +10,16 @@ import {
   notifications,
   orderLines,
   orders,
-  roles,
   stockLevels,
   stockMovements,
 } from '../src/database/schema';
 import {
+  addViewer,
   body,
   createE2eApp,
   createVariant,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
-import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
 interface OrderResponse {
@@ -79,38 +77,7 @@ describe('Orders (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function roleIdNamed(organizationId: string, name: string) {
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(eq(roles.organizationId, organizationId), eq(roles.name, name)),
-      );
 
-    return role.id;
-  }
-
-  async function addViewer(
-    owner: Awaited<ReturnType<typeof registerOrganization>>,
-    email: string,
-  ) {
-    await owner.agent
-      .post('/v1/users')
-      .send({
-        email,
-        name: 'Viewer',
-        password: PASSWORD,
-        roleId: await roleIdNamed(owner.organizationId, 'Viewer'),
-      })
-      .expect(201);
-
-    const viewer = authedAgent(app);
-    await viewer
-      .post('/v1/auth/login')
-      .send({ email, password: PASSWORD })
-      .expect(200);
-    return viewer;
-  }
 
   /** A partner, a variant, and a leaf location — everything an order needs. */
   async function setup(
@@ -259,7 +226,7 @@ describe('Orders (e2e)', () => {
 
     it('refuses a Viewer, which lacks orders.create', async () => {
       const ctx = await setup('alpha');
-      const viewer = await addViewer(ctx, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, ctx, 'viewer@alpha.example.com');
 
       await viewer
         .post('/v1/orders')
@@ -365,7 +332,7 @@ describe('Orders (e2e)', () => {
     it('refuses a Viewer, which lacks orders.create', async () => {
       const ctx = await setup('alpha');
       const original = await confirmed(ctx);
-      const viewer = await addViewer(ctx, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, ctx, 'viewer@alpha.example.com');
 
       await viewer.post(`/v1/orders/${original.id}/duplicate`).expect(403);
     });
@@ -815,7 +782,7 @@ describe('Orders (e2e)', () => {
           .expect(201),
       ).order;
 
-      const viewer = await addViewer(ctx, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, ctx, 'viewer@alpha.example.com');
 
       await viewer
         .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
@@ -1383,7 +1350,7 @@ describe('Orders (e2e)', () => {
     it('refuses a Viewer, which lacks orders.receive', async () => {
       const ctx = await setup('alpha');
       const order = await confirmed(ctx);
-      const viewer = await addViewer(ctx, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, ctx, 'viewer@alpha.example.com');
 
       await viewer
         .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
@@ -1413,7 +1380,7 @@ describe('Orders (e2e)', () => {
         .send(purchase(ctx.partnerId, ctx.variant.id))
         .expect(201);
 
-      const viewer = await addViewer(ctx, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, ctx, 'viewer@alpha.example.com');
       const res = await viewer.get('/v1/orders').expect(200);
 
       expect(body<OrderPage>(res).entries).toHaveLength(1);
