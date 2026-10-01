@@ -1,18 +1,17 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { auditLog, invoices, roles } from '../src/database/schema';
+import { auditLog, invoices } from '../src/database/schema';
 import {
+  addMember,
   body,
   createE2eApp,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
-import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 import { shippedSale } from './utils/sales';
 
@@ -58,30 +57,6 @@ describe('Credit notes (e2e)', () => {
   });
 
   type Org = Awaited<ReturnType<typeof registerOrganization>>;
-
-  async function addMember(org: Org, email: string, roleName: string) {
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(
-          eq(roles.organizationId, org.organizationId),
-          eq(roles.name, roleName),
-        ),
-      );
-
-    await org.agent
-      .post('/v1/users')
-      .send({ email, name: roleName, password: PASSWORD, roleId: role.id })
-      .expect(201);
-
-    const member = authedAgent(app);
-    await member
-      .post('/v1/auth/login')
-      .send({ email, password: PASSWORD })
-      .expect(200);
-    return member;
-  }
 
   /** The issued invoice every case starts from, and what it came from. */
   async function invoiced(org: Org) {
@@ -500,7 +475,12 @@ describe('Credit notes (e2e)', () => {
     it('lets only the Owner credit', async () => {
       const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);
-      const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
+      const admin = await addMember(
+        app,
+        org,
+        'admin@alpha.example.com',
+        'Admin',
+      );
 
       await admin
         .post(`/v1/invoices/${inv.invoiceId}/credit-notes/preview`)

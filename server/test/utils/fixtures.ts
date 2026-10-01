@@ -140,28 +140,38 @@ export async function roleIdNamed(
 }
 
 /**
- * A Viewer the Owner has added, signed in: the member a spec acts as to show
- * that reading is allowed and writing is not.
+ * A member the Owner has added with one of the system roles, signed in: who a
+ * spec acts as to show what that role may and may not do.
  */
-export async function addViewer(
+export async function addMember(
   app: INestApplication,
   owner: Awaited<ReturnType<typeof registerOrganization>>,
   email: string,
+  roleName: string,
 ) {
   await owner.agent
     .post('/v1/users')
     .send({
       email,
-      name: 'Viewer',
+      name: roleName,
       password: PASSWORD,
-      roleId: await roleIdNamed(app, owner.organizationId, 'Viewer'),
+      roleId: await roleIdNamed(app, owner.organizationId, roleName),
     })
     .expect(201);
 
-  const viewer = authedAgent(app);
-  await viewer
+  const member = authedAgent(app);
+  await member
     .post('/v1/auth/login')
     .send({ email, password: PASSWORD })
     .expect(200);
-  return viewer;
+  return member;
+}
+
+/** The member most permission tests act as: reads allowed, writes refused. */
+export function addViewer(
+  app: INestApplication,
+  owner: Awaited<ReturnType<typeof registerOrganization>>,
+  email: string,
+) {
+  return addMember(app, owner, email, 'Viewer');
 }
