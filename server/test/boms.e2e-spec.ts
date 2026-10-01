@@ -68,7 +68,6 @@ describe('BOMs (e2e)', () => {
     await resetDatabase(app);
   });
 
-
   /** A product with one variant, returning the variant id the BOM points at. */
   async function makeVariant(
     owner: Awaited<ReturnType<typeof registerOrganization>>,

@@ -191,13 +191,7 @@ async function checkLines(
     }
   }
 
-  await assertWithinAuthorizations(
-    tx,
-    organizationId,
-    invoice,
-    checked,
-    lock,
-  );
+  await assertWithinAuthorizations(tx, organizationId, invoice, checked, lock);
 
   const lines: CheckedLine[] = checked.map((row) => ({
     invoiceLineId: row.invoice_line_id,
@@ -226,8 +220,7 @@ async function taxesOn(
 ): Promise<CreditAmounts['taxes']> {
   const nets = sql.join(
     lines.map(
-      (line) =>
-        sql`(${line.invoiceLineId}::uuid, ${line.netAmount}::numeric)`,
+      (line) => sql`(${line.invoiceLineId}::uuid, ${line.netAmount}::numeric)`,
     ),
     sql`, `,
   );

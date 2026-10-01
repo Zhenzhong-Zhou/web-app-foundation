@@ -50,8 +50,6 @@ describe('Partners (e2e)', () => {
     await resetDatabase(app);
   });
 
-
-
   describe('POST /v1/partners', () => {
     it('creates a partner with no kind attached to it', async () => {
       const alpha = await registerOrganization(app, 'alpha');

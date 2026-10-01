@@ -78,7 +78,6 @@ export class TenantDb {
     return context.organizationId;
   }
 
-
   /**
    * The caller's ordering and limit, applied after the organization scope,
    * for every select here. Untyped going in and coming out: Drizzle drops

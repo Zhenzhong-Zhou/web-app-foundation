@@ -46,7 +46,6 @@ describe('Locations (e2e)', () => {
     await resetDatabase(app);
   });
 
-
   /** Creates a location and returns it. */
   async function create(
     agent: Awaited<ReturnType<typeof registerOrganization>>['agent'],
