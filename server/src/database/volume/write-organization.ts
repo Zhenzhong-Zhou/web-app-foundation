@@ -1,4 +1,4 @@
-import type { Logger } from '@nestjs/common';
+import type { LoggerService } from '@nestjs/common';
 
 import type { Random } from './random';
 import { inWeek, type Volume, WEEKS } from './scale';
@@ -105,7 +105,7 @@ export class OrganizationWriter {
     private readonly volume: Volume,
     private readonly random: Random,
     private readonly actorId: string,
-    private readonly logger: Logger,
+    private readonly logger: LoggerService,
   ) {}
 
   async write(): Promise<Anchors> {
@@ -231,15 +231,29 @@ export class OrganizationWriter {
       this.suppliers.push(partner.id);
     }
 
+    // Every customer gets a billing address: issuing an invoice refuses a
+    // customer without one (ADR-046), as it would in real use.
     for (let i = 1; i <= this.volume.customers; i++) {
       const partner = await this.services.partners.create({
         name: this.partnerName(i),
         code: `C${pad(i, 4)}`,
       });
+
+      await this.services.partnerAddresses.create(partner.id, {
+        label: 'Accounts payable',
+        line1: `${i} Commerce Street`,
+        city: 'Vancouver',
+        region: 'BC',
+        postalCode: 'V6B 1A1',
+        country: 'CA',
+        isBilling: true,
+        isDefault: true,
+      });
+
       this.customers.push(partner.id);
     }
 
-    this.calls += this.volume.suppliers + this.volume.customers;
+    this.calls += this.volume.suppliers + this.volume.customers * 2;
   }
 
   private async setUpCatalogue() {

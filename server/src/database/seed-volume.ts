@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
-import { Logger } from '@nestjs/common';
+import { ConsoleLogger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { sql } from 'drizzle-orm';
 
@@ -74,7 +74,7 @@ export interface VolumeManifest {
 }
 
 async function seedVolume(): Promise<void> {
-  const logger = new Logger('SeedVolume');
+  const logger = new ConsoleLogger('SeedVolume');
 
   if (process.env.NODE_ENV === 'production') {
     logger.error('Refusing to write volume data to a production database');
@@ -90,8 +90,14 @@ async function seedVolume(): Promise<void> {
     return;
   }
 
+  /**
+   * Warnings and errors only from the app. Every service logs each write
+   * at log level, which is tens of thousands of lines here, and printing
+   * them costs more than some of the writes. The seed's own progress goes
+   * through ConsoleLogger instances, which the app's level does not mute.
+   */
   const app = await NestFactory.createApplicationContext(AppModule, {
-    logger: ['log', 'warn', 'error'],
+    logger: ['warn', 'error'],
   });
 
   try {
@@ -152,7 +158,7 @@ async function seedVolume(): Promise<void> {
               volume,
               new Random(options.seed + index),
               account.userId,
-              new Logger(`SeedVolume ${index + 1}`),
+              new ConsoleLogger(`SeedVolume ${index + 1}`),
             ).write(),
         ),
       ),
