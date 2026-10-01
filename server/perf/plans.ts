@@ -422,7 +422,10 @@ function summary(
   }
 
   for (const entry of ALLOWED) {
-    lines.push('', `Allowed: ${entry.probe} on ${entry.table}. ${entry.reason}`);
+    lines.push(
+      '',
+      `Allowed: ${entry.probe} on ${entry.table}. ${entry.reason}`,
+    );
   }
 
   return lines.join('\n');

@@ -32,10 +32,13 @@ export class QueryCapture {
     const record = (config: unknown, values: unknown) =>
       this.record(config, values);
 
+    // strictBindCallApply is off in this repo, so apply() returns any;
+    // holding it as unknown keeps that any from leaking out of the wrapper.
     Client.prototype.query = function (this: Client, ...args: unknown[]) {
       record(args[0], args[1]);
-      return original.apply(this, args);
-    } as unknown as typeof Client.prototype.query;
+      const result: unknown = original.apply(this, args);
+      return result;
+    };
   }
 
   /** Records what `fn` sends, under the probe's name. */
