@@ -59,6 +59,31 @@ export async function computeCredit(
 ): Promise<CreditAmounts> {
   const places = minorUnits(invoice.currency);
 
+  const lines = await checkLines(
+    tx,
+    organizationId,
+    invoice,
+    requested,
+    places,
+    lock,
+  );
+  const taxes = await taxesOn(tx, organizationId, invoice, lines, places);
+
+  return { lines, taxes, ...(await totalsOf(tx, lines, taxes)) };
+}
+
+/**
+ * The requested lines, checked against the invoice and priced: each line's
+ * refusals in the order computeCredit's comment gives, then the RMA lines'.
+ */
+async function checkLines(
+  tx: Transaction,
+  organizationId: string,
+  invoice: Invoice,
+  requested: CreditLineDto[],
+  places: number,
+  lock: boolean,
+): Promise<CheckedLine[]> {
   const values = sql.join(
     requested.map(
       (line, index) =>
@@ -185,6 +210,20 @@ export async function computeCredit(
     netAmount: row.net_amount as string,
   }));
 
+  return lines;
+}
+
+/**
+ * Tax on the credited nets, per component of the invoice, never more than
+ * the invoice charged for it less what earlier credits took.
+ */
+async function taxesOn(
+  tx: Transaction,
+  organizationId: string,
+  invoice: Invoice,
+  lines: CheckedLine[],
+  places: number,
+): Promise<CreditAmounts['taxes']> {
   const nets = sql.join(
     lines.map(
       (line) =>
@@ -247,6 +286,15 @@ export async function computeCredit(
     amount: row.amount,
   }));
 
+  return taxes;
+}
+
+/** Subtotal, tax total and total, summed in SQL from the rounded figures. */
+async function totalsOf(
+  tx: Transaction,
+  lines: CheckedLine[],
+  taxes: CreditAmounts['taxes'],
+): Promise<Pick<CreditAmounts, 'subtotal' | 'taxTotal' | 'total'>> {
   const taxAmounts =
     taxes.length > 0
       ? sql.join(
@@ -277,8 +325,6 @@ export async function computeCredit(
   ).rows;
 
   return {
-    lines,
-    taxes,
     subtotal: totals.subtotal,
     taxTotal: totals.tax_total,
     total: totals.total,
