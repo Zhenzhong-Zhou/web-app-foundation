@@ -1,7 +1,7 @@
 import { IsOptional, IsString, Matches } from 'class-validator';
 
 import { IsCurrencyCode } from '../../../common/dto/currency';
-import { NON_NEGATIVE_DECIMAL } from '../../../common/dto/decimal';
+import { IsNonNegativeDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 import { EXCHANGE_RATE } from './set-exchange-rate.dto';
 
@@ -17,10 +17,7 @@ import { EXCHANGE_RATE } from './set-exchange-rate.dto';
 export class SetCostDto {
   /** Zero is a price: a free replacement is real (ADR-035). */
   @IsString()
-  @Matches(NON_NEGATIVE_DECIMAL, {
-    message:
-      'unitPrice must be zero or more with at most 4 decimal places, sent as a string',
-  })
+  @IsNonNegativeDecimal()
   unitPrice!: string;
 
   @trim()

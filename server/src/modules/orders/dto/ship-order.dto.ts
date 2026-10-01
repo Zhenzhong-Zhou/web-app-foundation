@@ -7,23 +7,19 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  Matches,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
 
-import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
+import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
-
-const DECIMAL_MESSAGE =
-  'quantity must be a positive number with at most 4 decimal places, sent as a string';
 
 class ShipLotDto {
   @IsUUID()
   lotId!: string;
 
   @IsString()
-  @Matches(POSITIVE_DECIMAL, { message: DECIMAL_MESSAGE })
+  @IsPositiveDecimal()
   quantity!: string;
 }
 
@@ -36,7 +32,7 @@ class ShipLineDto {
   lineId!: string;
 
   @IsString()
-  @Matches(POSITIVE_DECIMAL, { message: DECIMAL_MESSAGE })
+  @IsPositiveDecimal()
   quantity!: string;
 
   /**
@@ -58,7 +54,7 @@ class PreviewLineDto {
   lineId!: string;
 
   @IsString()
-  @Matches(POSITIVE_DECIMAL, { message: DECIMAL_MESSAGE })
+  @IsPositiveDecimal()
   quantity!: string;
 }
 
