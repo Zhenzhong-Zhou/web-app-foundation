@@ -6,6 +6,7 @@ import { AvailabilityController } from './availability.controller';
 import { AvailabilityService } from './availability.service';
 import { LotTraceController } from './lot-trace.controller';
 import { LotTraceService } from './lot-trace.service';
+import { LotsService } from './lots.service';
 import { StockController } from './stock.controller';
 import { StockService } from './stock.service';
 
@@ -23,6 +24,7 @@ import { StockService } from './stock.service';
   controllers: [StockController, LotTraceController, AvailabilityController],
   providers: [
     StockService,
+    LotsService,
     AdjustmentGuard,
     LotTraceService,
     AvailabilityService,
