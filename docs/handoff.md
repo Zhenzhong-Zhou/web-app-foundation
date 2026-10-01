@@ -191,6 +191,12 @@ purpose.** Do not re-review them unless the code around them changes:
   issuing and in `InvoicesService`: different columns.
 - `users.e2e-spec.ts` keeps its own `addMember` (it returns more than an
   agent).
+- `boms/boms.service.ts` stays one service: a separate lines service would
+  first need `insertLines`, `assertNoCycle`, `assertDraft` and `loadWithin`
+  shared across two files. Revisit if it gains a second job, such as
+  costing a recipe.
+- The recipe panel's version header stays in the panel (about eight props
+  and handlers to pull it out).
 
 The layout stays feature-first. Do not regroup into `pages/`, `components/`,
 `utils/` by type; `components/` holds only what two or more features share.
@@ -215,6 +221,19 @@ it was first checked; Bob ran e2e and `seed:demo` locally after round 2.
   ordering and limit; then the decimal and calendar-day decorators; then
   `roleIdNamed`, `addMember` and `addViewer` into the fixtures.
 
+**Size review (the four largest files left, judged by jobs, not lines):**
+- `orders/orders.service.ts` (700): split. `OrdersService` keeps the reads;
+  `OrderLifecycleService` has create, duplicate and update.
+- `invoices/credit-notes.service.ts` (599): one job, kept; its 360-line
+  calculation moved to `credit-amounts.ts` (`computeCredit`, beside
+  `invoice-amounts.ts`) and reads as three steps.
+- `client/src/boms/recipe-panel.tsx` (601, now 480): `useRecipe()` reads a
+  variant's recipe in one place and `RecipeLinesTable` is the lines table.
+  The rest is the selected version's header; a component for it would take
+  about eight props and handlers, more wiring than it saves, so it stays.
+- `boms/boms.service.ts` (587): one job in about twenty short methods,
+  kept (see reviewed and kept).
+
 **Behaviour settled in rounds 2 and 3 (fix commits):**
 - A request against the wrong kind of order is a 400 everywhere: an RMA or
   an invoice draft from a purchase used to be 409. An order's direction
@@ -225,6 +244,8 @@ it was first checked; Bob ran e2e and `seed:demo` locally after round 2.
   however the price arrives (ADR-046 amendment). A conflicting list price
   on an added line is still left off rather than refused (ADR-049).
   Purchases keep a currency per line (ADR-035).
+- The recipe panel's reload after an action drops an answer that arrives
+  after a variant switch, as the switch itself already did.
 - Message wording only: non-negative prices say "zero or more"; every
   calendar day says "must be a calendar day, YYYY-MM-DD" and, for a day
   that does not exist, "must be a real date".
@@ -237,10 +258,6 @@ it was first checked; Bob ran e2e and `seed:demo` locally after round 2.
   shared by the ship, return and release dialogs, a third copy of the price
   fields in the invoice-line dialog, and the lines table on credit-note and
   invoice detail.
-- A size review of `orders/orders.service.ts` (700),
-  `invoices/credit-notes.service.ts`, `client/src/boms/recipe-panel.tsx`
-  and `boms/boms.service.ts`: split only a file that holds more than one
-  job. `stock.service.ts` stays whole on purpose.
 
 **Shared pieces — use these rather than writing the thing again:**
 - Client `lib/`: `messageFor` and `ApiError` (reads `Retry-After`) in
@@ -249,7 +266,8 @@ it was first checked; Bob ran e2e and `seed:demo` locally after round 2.
 - Client `components/`: `DialogFooter`, `LabelledValue`, `CurrencyField`,
   `SettingsSection`, `LoadMoreButton`, and `print-sheet.tsx` (`PrintSheet`,
   `PrintBanner`, `PrintParty`, `PrintLines`, `PrintTotals`).
-- Client, per feature: `inventory/lot-fields.tsx`, `auth/auth-message.ts`,
+- Client, per feature: `boms/use-recipe.ts`, `boms/recipe-lines-table.tsx`,
+  `inventory/lot-fields.tsx`, `auth/auth-message.ts`,
   `orders/status.ts`, `orders/order-lines-section.tsx`,
   `orders/order-status-actions.tsx`; test factory `test/factories.ts`.
 - Server `common/`: `dto/currency.ts` (`IsCurrencyCode`, with
@@ -266,9 +284,11 @@ it was first checked; Bob ran e2e and `seed:demo` locally after round 2.
   are taken in), `orders/order-line-pricing.ts` (`pricedCurrencies`,
   `assertOneSaleCurrency`), `orders/lot-items.ts` (what a shipment or
   return moved), `return-authorizations/lines-with-progress.ts`,
-  `invoices/issued-invoice.ts` (`partiesOf`, `stored`).
+  `invoices/issued-invoice.ts` (`partiesOf`, `stored`),
+  `invoices/credit-amounts.ts` (`computeCredit`).
 - Server services split by job, like shipments and returns already were:
-  orders → `OrdersService`, `OrderLinesService`, `OrderReceiptsService`;
+  orders → `OrdersService` (reads), `OrderLifecycleService`,
+  `OrderLinesService`, `OrderReceiptsService`;
   invoices → `InvoicesService` (reads), `InvoiceDraftsService`,
   `InvoiceIssuingService`; production → `ProductionOrdersService`,
   `ProductionExecutionService`, `ProductionCloseService`; shipments →
@@ -312,9 +332,8 @@ first three):
    e2e tests, then the client.
 2. #20, `date` columns for calendar days: ADR, migration (0037 if ADR-050
    goes first), `npm run migrate:all`.
-3. The size review above, as a proposal before any code.
-4. The Playwright journey, written with Bob at a computer.
-5. ADR-051, languages.
+3. The Playwright journey, written with Bob at a computer.
+4. ADR-051, languages.
 
 Rules, still in force:
 - no behaviour change in a refactor; a fix is its own commit, first;
