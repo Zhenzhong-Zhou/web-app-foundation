@@ -268,16 +268,7 @@ export class BomsService {
   }
 
   async updateLine(bomId: string, lineId: string, input: UpdateBomLineDto) {
-    const bom = await this.findById(bomId);
-
-    this.assertDraft(bom.status, 'edited');
-
-    const [line] = await this.tenantDb.select(
-      bomLines,
-      and(eq(bomLines.id, lineId), eq(bomLines.bomId, bomId)),
-    );
-
-    if (!line) throw new NotFoundException('No such line on this BOM');
+    await this.loadDraftLine(bomId, lineId);
 
     /**
      * No cycle check. componentVariantId is not editable (see
@@ -289,16 +280,7 @@ export class BomsService {
   }
 
   async removeLine(bomId: string, lineId: string) {
-    const bom = await this.findById(bomId);
-
-    this.assertDraft(bom.status, 'edited');
-
-    const [line] = await this.tenantDb.select(
-      bomLines,
-      and(eq(bomLines.id, lineId), eq(bomLines.bomId, bomId)),
-    );
-
-    if (!line) throw new NotFoundException('No such line on this BOM');
+    await this.loadDraftLine(bomId, lineId);
 
     await this.tenantDb.delete(bomLines, eq(bomLines.id, lineId));
 
@@ -501,6 +483,25 @@ export class BomsService {
       );
 
     return Number(row?.highest ?? 0) + 1;
+  }
+
+  /**
+   * A line of a draft BOM, found by both ids so a line cannot be reached
+   * through another BOM's URL. Only a draft's lines change.
+   */
+  private async loadDraftLine(bomId: string, lineId: string) {
+    const bom = await this.findById(bomId);
+
+    this.assertDraft(bom.status, 'edited');
+
+    const [line] = await this.tenantDb.select(
+      bomLines,
+      and(eq(bomLines.id, lineId), eq(bomLines.bomId, bomId)),
+    );
+
+    if (!line) throw new NotFoundException('No such line on this BOM');
+
+    return line;
   }
 
   private async insertLines(
