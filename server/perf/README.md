@@ -6,7 +6,10 @@ Three commands, run against a database of their own:
 - `npm run perf` measures a running server against the budgets;
 - `npm run perf:plans` runs `EXPLAIN` on the main list and ledger queries.
 
-None of them is part of `npm test` or of CI on a pull request.
+None of them is part of `npm test` or of CI on a pull request. The
+**Performance** workflow runs all three on demand (Actions → Performance →
+Run workflow) on a fresh database at the scale chosen, and keeps the
+reports as an artifact for 30 days.
 
 ## Running it locally
 
@@ -101,3 +104,7 @@ summary. When a report of the other scale exists, the summary adds the p95
 at that scale and the growth from small to large. Over 3× is flagged: the
 endpoint reads in proportion to the data rather than to a page, which is
 fine today and a problem by the time a customer reaches that size.
+
+A CI run starts with an empty reports folder, so its summary has no growth
+column. Compare scales locally, or download both artifacts into
+`perf/reports/` and rerun `npm run perf` at either scale.
