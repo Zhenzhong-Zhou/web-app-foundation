@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.4.0-rc.1 tagged, v0.5 maintainability done
+# web-app-foundation — handoff, v0.5.0-alpha.1 tagged, ADR-051 next
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -18,9 +18,10 @@ and price lists proposing the price of a new line.
   fixes are cherry-picked into `main`.
 - Migrations: through **0035** (`price_lists`). Next is **0036**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
-- ADRs: through **ADR-050** (licence status at release, not yet built);
-  ADR-046 carries an amendment (one currency per sale from the first priced
-  line). Next is **ADR-051**.
+- ADRs: through **ADR-051**. ADR-050 (licence status at release) and
+  ADR-051 (performance testing) are written, not built. ADR-046 carries an
+  amendment (one currency per sale from the first priced line). Next is
+  **ADR-052**.
 - Tests at the last local run: server e2e 598 in 32 suites
   (`npm run test:e2e`); server unit 23 in 5 files (`npm test`); client
   vitest 148 in 33 files; Playwright 61. CI also runs `seed:demo`.
@@ -60,14 +61,17 @@ Then tag v0.4.0.
 1. **Maintainability, step 1 — done** (the commits after `v0.4.0-rc.1` on
    `main`, one extraction or fix each). What moved where, the behaviour
    settled on the way, and the test gaps found are in the section below.
-2. **Maintainability, rounds 2 and 3 — done** (PR `v0.5-round-2`): the
-   section after step 1's. What is left is listed at its end; none of it is
-   half-done.
+2. **Maintainability, rounds 2 and 3 — done** (PR #36, merged; tagged
+   `v0.5.0-alpha.1`): the section after step 1's. What is left is listed
+   at its end; none of it is half-done.
 3. **ADR-050, licence status at release** — written, not built: migration
    0036, server with e2e tests, then the client.
-4. **ADR-051, languages** — before any code. French (Quebec) and Chinese
-   for the app, and French on printed documents. (Planned as ADR-050; that
-   number went to licence status.)
+4. **ADR-051, performance testing** — written, not built: `seed:volume`,
+   `npm run perf` with budgets per endpoint, query-plan checks, a manual CI
+   job. Its own PR, from branch `v0.5-performance`, which holds the ADR.
+5. **ADR-052, languages** — before any code. French (Quebec) and Chinese
+   for the app, and French on printed documents. (Planned as ADR-050, then
+   ADR-051; those numbers went to licence status and performance.)
 
 ## What v0.4 built
 
@@ -336,8 +340,10 @@ first three):
    e2e tests, then the client.
 2. #20, `date` columns for calendar days: ADR, migration (0037 if ADR-050
    goes first), `npm run migrate:all`.
-3. The Playwright journey, written with Bob at a computer.
-4. ADR-051, languages.
+3. ADR-051, performance testing: the volume seed, the load runner and its
+   budgets, the plan checks, then the CI job.
+4. The Playwright journey, written with Bob at a computer.
+5. ADR-052, languages.
 
 Rules, still in force:
 - no behaviour change in a refactor; a fix is its own commit, first;

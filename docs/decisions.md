@@ -3788,6 +3788,74 @@ release's audit row records that an override happened.
 
 ---
 
+## ADR-051 — Performance: a volume seed, response-time budgets, plan checks
+
+**Context.** Nothing measures how the app behaves with a year of data.
+Every test and both seeds work on a handful of rows, where any query is
+fast. The places that will slow down are known in kind but not in size:
+list pages that sum per row, the ledger reads behind stock and valuation,
+choosing lots earliest-expiry first across many lots, and the tenant
+filter on every table of a shared database. Optimizing before measuring
+trades readability for guesses.
+
+**Decision — a volume seed, separate from the demo.** `npm run
+seed:volume -- --scale small|large` writes several organizations of
+similar size. Small, minutes to run: about 500 products, 5,000 orders,
+50,000 stock movements, 2,000 lots and 2,000 invoices per organization.
+Large: about ten times that, for a local overnight run. Through the same
+services the API calls, as `seed:demo` is, so stock levels, valuations and
+the ledger always agree; a bulk-SQL path is added only if the services
+prove too slow to seed with. It refuses a production database, as
+`seed:demo` does, and is never part of `seed`.
+
+**Decision — budgets per endpoint, measured over HTTP.** `npm run perf`
+drives a running server with a small load runner written on Node's own
+`fetch`: no new dependency, and the numbers it reports (median, 95th and
+99th percentile, errors) are the ones the budgets need. Budgets, at 10
+connections, against the small scale:
+
+- Reads under 300 ms at the 95th percentile: the order, inventory,
+  movement and invoice lists, an order's detail, lot trace.
+- Writes under 500 ms at the 95th percentile: shipping (lots chosen
+  earliest-expiry first), receiving, issuing an invoice, issuing a credit.
+- Concurrency: shipments of one product from several connections at once
+  finish without a deadlock, and stock adds up afterwards.
+
+**Decision — a stress run that reports, not fails.** The same endpoints
+at 100 connections, to find where response time starts climbing. Ten
+connections with no pause between requests is already more load than
+dozens of people clicking; 100 shows the headroom. Its result is a number
+to watch between runs, not a gate.
+
+**Decision — query plans checked.** A script runs `EXPLAIN` on the main
+list and ledger queries against the volume seed and fails on a sequential
+scan of a large table: a missing index shows up here before anyone feels
+it.
+
+**Decision — where it runs.** Locally, and in CI as a manually triggered
+job, never on every PR: it needs minutes of seeding, and timing on shared
+runners is too noisy to block a merge. Each run writes a short report, so
+runs can be compared.
+
+**Consequences.**
+
+- Three commits after this one: the volume seed, the load runner with its
+  budgets, the plan check. Then a CI job to run them on demand.
+- Budgets and volumes are starting points. They follow the customers the
+  app is sold to; a manufacturer with a few hundred orders a month sits
+  well inside the small scale.
+
+**Deferred.**
+
+- **A dedicated load tool** (k6, autocannon) for scripted user journeys,
+  ramps and soak tests. Trigger: a scenario the small runner cannot
+  express.
+- **Production monitoring** of response times. Trigger: the first
+  customer in production.
+- **Optimizations themselves.** Only where a budget or a plan check fails.
+
+---
+
 # Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -4307,3 +4375,4 @@ they exist so the reasoning is not rediscovered from scratch.
 | Cost of a batch                        | Its consumption values, posted to output at close     | ADR-048          |
 | Base currency and exchange rates       | On the organization; a dated rate table               | ADR-048          |
 | Licence status at release              | An organization policy; overrides kept on the run     | ADR-050          |
+| Performance testing                    | A volume seed, budgets per endpoint, plan checks      | ADR-051          |

@@ -1,0 +1,137 @@
+name: Performance
+
+# ADR-051: run on demand, never on a pull request. Seeding takes minutes and
+# timing on shared runners is too noisy to block a merge, so this produces
+# numbers to compare between runs, not a gate. Actions → Performance → Run
+# workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      scale:
+        description: Volume to seed (large takes hours)
+        type: choice
+        options: [small, large]
+        default: small
+      organizations:
+        description: Organizations to seed
+        type: number
+        default: 5
+
+# One at a time: two runs on one account's runners would measure each other.
+concurrency:
+  group: performance
+  cancel-in-progress: false
+
+jobs:
+  perf:
+    name: Volume seed, budgets, query plans
+    # Pinned, unlike ci.yml: these numbers are compared across runs, and a
+    # runner image changing underneath (ubuntu-latest moves to 26 on
+    # 19 October 2026) would make two runs incomparable.
+    runs-on: ubuntu-24.04
+    timeout-minutes: ${{ inputs.scale == 'large' && 350 || 90 }}
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: foundation
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d foundation"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      # NODE_ENV=test for silent logs, as perf/README.md explains; in test
+      # mode the server and scripts read DATABASE_URL_TEST, so every URL
+      # points at the one database. The rate limit is raised so the numbers
+      # measure the app, not the limiter.
+      - name: Write .env
+        working-directory: .
+        run: |
+          cat > .env <<'ENVFILE'
+          NODE_ENV=test
+          PORT=3000
+          APP_URL=http://localhost:3000
+          CLIENT_URL=http://localhost:5173
+          POSTGRES_USER=app
+          POSTGRES_PASSWORD=ci_password
+          POSTGRES_DB=foundation
+          DATABASE_URL=postgresql://app:ci_password@localhost:5432/foundation
+          DATABASE_URL_TEST=postgresql://app:ci_password@localhost:5432/foundation
+          DATABASE_URL_E2E=postgresql://app:ci_password@localhost:5432/foundation
+          SESSION_MAX_AGE_MS=2592000000
+          SESSION_IDLE_MS=604800000
+          VERIFICATION_TOKEN_TTL_MS=86400000
+          PASSWORD_RESET_TOKEN_TTL_MS=3600000
+          MAIL_HOST=localhost
+          MAIL_PORT=1025
+          MAIL_SECURE=false
+          MAIL_FROM="Foundation <no-reply@localhost>"
+          RATE_LIMIT_TTL_SECONDS=60
+          RATE_LIMIT_MAX=1000000
+          RATE_LIMIT_AUTH_MAX=1000
+          THROTTLE_FACTOR=100
+          ENVFILE
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - run: npm run migrate
+
+      - run: npm run seed
+
+      # Inputs through env, not pasted into the script, so a value is never
+      # read as shell.
+      - name: Seed volume
+        env:
+          SCALE: ${{ inputs.scale }}
+          ORGANIZATIONS: ${{ inputs.organizations }}
+        run: npm run seed:volume -- --scale "$SCALE" --organizations "$ORGANIZATIONS"
+
+      # The built server, as production runs it, in the background.
+      - name: Start the server
+        run: |
+          node dist/main > server.log 2>&1 &
+          for _ in $(seq 1 60); do
+            curl -sf http://localhost:3000/health/ready > /dev/null && exit 0
+            sleep 1
+          done
+          cat server.log
+          exit 1
+
+      - name: Budgets, concurrency, stress
+        id: perf
+        run: npm run perf
+
+      # Runs even when a budget failed: the plans are often why.
+      - name: Query plans
+        if: success() || steps.perf.outcome == 'failure'
+        run: npm run perf:plans
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: perf-${{ inputs.scale }}-${{ github.run_number }}
+          path: |
+            server/perf/reports/
+            server/server.log
+          retention-days: 30
