@@ -1,0 +1,6 @@
+# Written by seed:volume: sign-ins for a throwaway local database, new on
+# every run.
+volume.json
+
+# Written by perf and perf:plans on every run. CI keeps them as an artifact.
+reports/
