@@ -29,9 +29,9 @@ type OrderLine = typeof orderLines.$inferSelect;
 
 /**
  * What happens to one line of an order after the order exists: adding one,
- * repricing it, taking it off, closing it short, reopening it. OrdersService
- * keeps the order as a whole; the line rules (nothing received yet, still a
- * draft, the price and currency together) live here.
+ * repricing it, taking it off, closing it short, reopening it.
+ * OrderLifecycleService keeps the order as a whole; the line rules (nothing
+ * received yet, still a draft, the price and currency together) live here.
  */
 @Injectable()
 export class OrderLinesService {
