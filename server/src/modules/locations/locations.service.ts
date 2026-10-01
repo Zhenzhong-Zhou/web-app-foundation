@@ -37,15 +37,7 @@ export class LocationsService {
 
   async create(input: CreateLocationDto) {
     if (input.parentId) {
-      // Scoped, so a parent in another organization is simply not found.
-      const [parent] = await this.tenantDb.select(
-        locations,
-        eq(locations.id, input.parentId),
-      );
-
-      if (!parent) throw new BadRequestException('Unknown parent location');
-
-      await this.assertHoldsNoStock(input.parentId);
+      await this.assertCanBeParent(input.parentId);
 
       // Checked on create as well as on reparent: a chain built downward can
       // exceed the limit without any single step looking wrong.
@@ -86,14 +78,7 @@ export class LocationsService {
 
     if (input.parentId !== undefined && input.parentId !== existing.parentId) {
       if (input.parentId !== null) {
-        const [parent] = await this.tenantDb.select(
-          locations,
-          eq(locations.id, input.parentId),
-        );
-
-        if (!parent) throw new BadRequestException('Unknown parent location');
-
-        await this.assertHoldsNoStock(input.parentId);
+        await this.assertCanBeParent(input.parentId);
 
         // The database's check constraint catches a location parented to
         // itself. A → B → A needs walking the chain, which no constraint can
@@ -119,6 +104,22 @@ export class LocationsService {
     }
 
     this.logger.log(`Location ${locationId} updated`);
+  }
+
+  /**
+   * A location that can take children: this organization's — scoped, so a
+   * parent in another organization is simply not found (400, as any id in a
+   * body) — and holding no stock, since stock sits only at leaves (ADR-024).
+   */
+  private async assertCanBeParent(parentId: string): Promise<void> {
+    const [parent] = await this.tenantDb.select(
+      locations,
+      eq(locations.id, parentId),
+    );
+
+    if (!parent) throw new BadRequestException('Unknown parent location');
+
+    await this.assertHoldsNoStock(parentId);
   }
 
   /**
