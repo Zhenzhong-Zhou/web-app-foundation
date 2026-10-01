@@ -2542,8 +2542,6 @@ or a partner, not a recipe — and amendment history.
 
 ---
 
----
-
 ## ADR-041 — Shipping: a shipment is a document, and stock leaves by lot
 
 **Context.** A sale could be raised and confirmed, but nothing fulfilled it:
@@ -2603,13 +2601,13 @@ minimum-remaining-shelf-life rule per customer, idempotency keys on the ship
 endpoint, reservations, a samples screen for the existing `sample` reason,
 and a returns flow for the existing `return` reason.
 
-**Amendment (v0.3) — voiding a shipment recorded too early.** A shipment 
-can be voided while its order is still confirmed and nothing from it 
-has come back. Nothing is deleted: each shipment movement gets an adjustment 
-back into the bin it left, referencing the same shipment and carrying the reason; 
-the lines' fulfilled quantities drop, which returns the order's holds; 
-and the shipment is marked voided and kept. Lot trace and returns ignore 
-voided shipments, because nothing left. A shipment that has had anything 
+**Amendment (v0.3) — voiding a shipment recorded too early.** A shipment
+can be voided while its order is still confirmed and nothing from it
+has come back. Nothing is deleted: each shipment movement gets an adjustment
+back into the bin it left, referencing the same shipment and carrying the reason;
+the lines' fulfilled quantities drop, which returns the order's holds;
+and the shipment is marked voided and kept. Lot trace and returns ignore
+voided shipments, because nothing left. A shipment that has had anything
 returned did leave, and is corrected with a return instead.
 
 ---
@@ -3224,7 +3222,7 @@ RMA, stays `invoices.issue`, the finance permission voiding already uses —
 whoever may send an invoice is who may take money back on it. Audited as
 `return_authorization.created`, `.cancelled`, `.closed`,
 `return_authorization.return_linked`, `return_authorization.replacement_raised`
-and `credit_note.issued`, the last being the action ADR-046 held back until 
+and `credit_note.issued`, the last being the action ADR-046 held back until
 a route recorded it.
 
 **Consequences.** New tables `return_authorizations` and
