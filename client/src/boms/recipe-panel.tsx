@@ -16,24 +16,19 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
-import type {
-  Bom,
-  BomDetail,
-  BomLine,
-  ProductLicence,
-  VariantOption,
-} from '../lib/types';
+import type { Bom, BomLine, ProductLicence, VariantOption } from '../lib/types';
 import { licenceStatus } from '../licences/licence-status';
 import type { Variant } from '../products/products-page';
 import { AddBomLineDialog } from './add-bom-line-dialog';
 import { CreateBomDialog } from './create-bom-dialog';
 import { EditBomLineDialog } from './edit-bom-line-dialog';
+import { useRecipe } from './use-recipe';
 
 const STATUS_COLOR = {
   draft: 'default',
@@ -56,9 +51,6 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
   const can = useCan();
 
   const [variantId, setVariantId] = useState(variants[0]?.id ?? '');
-  const [versions, setVersions] = useState<Bom[]>([]);
-  const [selected, setSelected] = useState<BomDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const [catalogue, setCatalogue] = useState<VariantOption[]>([]);
@@ -71,43 +63,9 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
   const canCreate = can('boms.create');
   const canUpdate = can('boms.update');
 
-  /**
-   * The variant on screen, for load(): a reload that answers after the
-   * person has switched variant is dropped, as the effect below drops one.
-   */
-  const shown = useRef(variantId);
-
-  useEffect(() => {
-    shown.current = variantId;
-  }, [variantId]);
-
-  const load = useCallback(
-    async (preferId?: string) => {
-      if (!variantId) return;
-
-      try {
-        const rows = await api<Bom[]>(`/boms?outputVariantId=${variantId}`);
-
-        // Prefer what the caller just acted on, then the active version, then
-        // the newest — so promoting or duplicating leaves you looking at the
-        // thing you changed rather than jumping elsewhere.
-        const pick =
-          rows.find((row) => row.id === preferId) ??
-          rows.find((row) => row.status === 'active') ??
-          rows[0];
-
-        const detail = pick ? await api<BomDetail>(`/boms/${pick.id}`) : null;
-
-        if (shown.current !== variantId) return;
-
-        setVersions(rows);
-        setSelected(detail);
-        setError(null);
-      } catch (caught) {
-        if (shown.current === variantId) setError(messageFor(caught));
-      }
-    },
-    [variantId],
+  const { versions, selected, error, setError, load } = useRecipe(
+    variantId,
+    canView,
   );
 
   /**
@@ -160,41 +118,6 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
       ignore = true;
     };
   }, [canView, addingLine]);
-
-  /**
-   * Fetched inline rather than through `load`, which stays for the refresh
-   * after an action. Two reasons, and the second is the real one: setState
-   * reached synchronously from an effect body triggers cascading renders, and
-   * `load` writes state without knowing whether its variant is still the
-   * selected one — switching variants mid-flight could land the previous
-   * recipe. Everything here is guarded by `ignore` after the last await.
-   */
-  useEffect(() => {
-    if (!canView || !variantId) return;
-
-    let ignore = false;
-
-    void (async () => {
-      try {
-        const rows = await api<Bom[]>(`/boms?outputVariantId=${variantId}`);
-        const pick =
-          rows.find((row) => row.status === 'active') ?? rows[0] ?? null;
-        const detail = pick ? await api<BomDetail>(`/boms/${pick.id}`) : null;
-
-        if (ignore) return;
-
-        setVersions(rows);
-        setSelected(detail);
-        setError(null);
-      } catch (caught) {
-        if (!ignore) setError(messageFor(caught));
-      }
-    })();
-
-    return () => {
-      ignore = true;
-    };
-  }, [canView, variantId]);
 
   async function act(
     path: string,
