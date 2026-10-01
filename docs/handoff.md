@@ -21,14 +21,14 @@ and price lists proposing the price of a new line.
 - ADRs: through **ADR-050** (licence status at release, not yet built);
   ADR-046 carries an amendment (one currency per sale from the first priced
   line). Next is **ADR-051**.
-- Tests at the last local run: server e2e 593 in 32 suites
-  (`npm run test:e2e`), before the five added with the round-3 fixes;
-  server unit 17 in 3 files (`npm test`), before the 6 added in round 2;
-  client vitest 148 in 33 files; Playwright 61. CI also runs `seed:demo`.
-  Update these from the next run.
+- Tests at the last local run: server e2e 598 in 32 suites
+  (`npm run test:e2e`); server unit 23 in 5 files (`npm test`); client
+  vitest 148 in 33 files; Playwright 61. CI also runs `seed:demo`.
 - `npm run seed:demo`: BF-2609 valued at 1900.00 CAD, run FOC-2609-01 costed
   at 1292.00 over 980 bottles (1.318367 each), SO-DEMO-2 priced from the
-  Wholesale CAD list (the organization default).
+  Wholesale CAD list (the organization default). It also leaves an RMA
+  received and credited on SO-DEMO-1, a voided shipment, and PO-DEMO-2
+  bought in USD at a rate of 1.37.
 - **Render is up** (new database; migrations 0000–0035 applied). If it is
   a free instance it expires 30 days after creation — note the date here.
 
@@ -204,8 +204,9 @@ The layout stays feature-first. Do not regroup into `pages/`, `components/`,
 ## Maintainability, rounds 2 and 3 — done
 
 On PR `v0.5-round-2`, one extraction or fix per commit. Most of it was
-written from the repo without running anything, so CI on the PR is where
-it was first checked; Bob ran e2e and `seed:demo` locally after round 2.
+written from the repo without running anything. Bob ran every suite
+locally after round 3, all green, and `lint --fix` applied Prettier where
+code had been formatted by hand.
 
 - **Round 2.** The returns/shipments pairs: the lock order became
   `inVariantOrder` (production's release uses it too) and what a document
@@ -251,6 +252,9 @@ it was first checked; Bob ran e2e and `seed:demo` locally after round 2.
   that does not exist, "must be a real date".
 
 **Left from these rounds, none started:**
+- Two fixes without a test: the recipe panel's reload answering late
+  (its tests would need a response held back) and invoice drafting's
+  refusal of a purchase shipment (no route can make one).
 - Test setups jscpd still reports across specs: costs against valuation,
   returns against shipments, and the bootstrap blocks every spec repeats.
 - Not read yet: the organization address DTO against the partner address
