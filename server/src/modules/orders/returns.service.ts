@@ -15,6 +15,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { ReturnAuthorizationsService } from '../return-authorizations/return-authorizations.service';
+import { inVariantOrder } from '../stock/availability';
 import { itemName } from '../stock/item-name';
 import { StockService, type Tx } from '../stock/stock.service';
 import { trackedVariants } from '../stock/tracked-variants';
@@ -183,11 +184,10 @@ export class ReturnsService {
        * products take their row locks in one global order and cannot
        * deadlock (ADR-023).
        */
-      const ordered = [...input.lines].sort((a, b) => {
-        const left = lineFor(lines, a.lineId).variantId;
-        const right = lineFor(lines, b.lineId).variantId;
-        return left < right ? -1 : left > right ? 1 : 0;
-      });
+      const ordered = inVariantOrder(
+        input.lines,
+        (requested) => lineFor(lines, requested.lineId).variantId,
+      );
 
       const summary: string[] = [];
 

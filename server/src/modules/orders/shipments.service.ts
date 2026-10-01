@@ -17,7 +17,7 @@ import {
   stockMovements,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
-import { assertTakeable } from '../stock/availability';
+import { assertTakeable, inVariantOrder } from '../stock/availability';
 import { itemName } from '../stock/item-name';
 import {
   allocateFefo,
@@ -212,11 +212,10 @@ export class ShipmentsService {
        * and wait for the other; taking locks in one global order is the same
        * rule transfers follow (ADR-023).
        */
-      const ordered = [...input.lines].sort((a, b) => {
-        const left = lineFor(lines, a.lineId).variantId;
-        const right = lineFor(lines, b.lineId).variantId;
-        return left < right ? -1 : left > right ? 1 : 0;
-      });
+      const ordered = inVariantOrder(
+        input.lines,
+        (requested) => lineFor(lines, requested.lineId).variantId,
+      );
 
       for (const requested of ordered) {
         const line = lineFor(lines, requested.lineId);

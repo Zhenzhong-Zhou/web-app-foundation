@@ -198,7 +198,8 @@ export async function availability(tx: Tx, organizationId: string) {
  * Transaction-scoped, released at commit or rollback. Without it two
  * transactions could each see the same fifty unheld units and both take them.
  * Callers touching several products take these in product-id order — the same
- * rule every row lock here follows — so they cannot deadlock.
+ * rule every row lock here follows — so they cannot deadlock. inVariantOrder
+ * below is that order.
  */
 export async function lockProduct(
   tx: Tx,
@@ -208,6 +209,24 @@ export async function lockProduct(
   await tx.execute(
     sql`select pg_advisory_xact_lock(hashtextextended(${`${organizationId}:${variantId}`}, 0))`,
   );
+}
+
+/**
+ * Items sorted by product id: the one order in which anything touching several
+ * products takes its locks — the product locks above, and the rows each
+ * movement writes. Two transactions over the same products then take them in
+ * the same sequence, and one waits for the other instead of each holding what
+ * the other needs. Returns a sorted copy; the input is left as it was.
+ */
+export function inVariantOrder<T>(
+  items: readonly T[],
+  variantOf: (item: T) => string,
+): T[] {
+  return [...items].sort((a, b) => {
+    const left = variantOf(a);
+    const right = variantOf(b);
+    return left < right ? -1 : left > right ? 1 : 0;
+  });
 }
 
 /**
