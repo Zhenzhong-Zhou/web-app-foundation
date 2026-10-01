@@ -17,6 +17,7 @@ import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { PreviewShipmentDto, ShipOrderDto } from './dto/ship-order.dto';
 import { VoidShipmentDto } from './dto/void-shipment.dto';
+import { ShipmentVoidsService } from './shipment-voids.service';
 import { ShipmentsService } from './shipments.service';
 
 /**
@@ -26,7 +27,10 @@ import { ShipmentsService } from './shipments.service';
  */
 @Controller({ path: 'orders/:id/shipments', version: '1' })
 export class ShipmentsController {
-  constructor(private readonly shipments: ShipmentsService) {}
+  constructor(
+    private readonly shipments: ShipmentsService,
+    private readonly voids: ShipmentVoidsService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
@@ -103,6 +107,6 @@ export class ShipmentsController {
     @Body() dto: VoidShipmentDto,
     @CurrentUser() user: RequestContext,
   ): Promise<void> {
-    await this.shipments.void(id, shipmentId, dto, user.userId);
+    await this.voids.void(id, shipmentId, dto, user.userId);
   }
 }

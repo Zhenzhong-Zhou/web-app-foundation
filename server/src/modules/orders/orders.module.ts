@@ -10,6 +10,7 @@ import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { ReturnsController } from './returns.controller';
 import { ReturnsService } from './returns.service';
+import { ShipmentVoidsService } from './shipment-voids.service';
 import { ShipmentsController } from './shipments.controller';
 import { ShipmentsService } from './shipments.service';
 
@@ -36,6 +37,7 @@ import { ShipmentsService } from './shipments.service';
     OrderLinesService,
     OrderReceiptsService,
     ShipmentsService,
+    ShipmentVoidsService,
     ReturnsService,
   ],
   exports: [OrdersService],
