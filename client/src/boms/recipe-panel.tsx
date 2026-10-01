@@ -16,7 +16,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
@@ -71,13 +71,22 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
   const canCreate = can('boms.create');
   const canUpdate = can('boms.update');
 
+  /**
+   * The variant on screen, for load(): a reload that answers after the
+   * person has switched variant is dropped, as the effect below drops one.
+   */
+  const shown = useRef(variantId);
+
+  useEffect(() => {
+    shown.current = variantId;
+  }, [variantId]);
+
   const load = useCallback(
     async (preferId?: string) => {
       if (!variantId) return;
 
       try {
         const rows = await api<Bom[]>(`/boms?outputVariantId=${variantId}`);
-        setVersions(rows);
 
         // Prefer what the caller just acted on, then the active version, then
         // the newest — so promoting or duplicating leaves you looking at the
@@ -87,10 +96,15 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
           rows.find((row) => row.status === 'active') ??
           rows[0];
 
-        setSelected(pick ? await api<BomDetail>(`/boms/${pick.id}`) : null);
+        const detail = pick ? await api<BomDetail>(`/boms/${pick.id}`) : null;
+
+        if (shown.current !== variantId) return;
+
+        setVersions(rows);
+        setSelected(detail);
         setError(null);
       } catch (caught) {
-        setError(messageFor(caught));
+        if (shown.current === variantId) setError(messageFor(caught));
       }
     },
     [variantId],
