@@ -69,8 +69,6 @@ describe('Stock (e2e)', () => {
     await resetDatabase(app);
   });
 
-
-
   type Agent = Awaited<ReturnType<typeof registerOrganization>>['agent'];
 
   async function createVariant(

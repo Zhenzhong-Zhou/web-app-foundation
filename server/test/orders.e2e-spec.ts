@@ -77,8 +77,6 @@ describe('Orders (e2e)', () => {
     await resetDatabase(app);
   });
 
-
-
   /** A partner, a variant, and a leaf location — everything an order needs. */
   async function setup(
     slugish: string,

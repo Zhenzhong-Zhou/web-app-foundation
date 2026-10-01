@@ -68,8 +68,6 @@ describe('Products (e2e)', () => {
     await resetDatabase(app);
   });
 
-
-
   describe('POST /v1/products', () => {
     it('creates the product and its first variant together', async () => {
       const alpha = await registerOrganization(app, 'alpha');
