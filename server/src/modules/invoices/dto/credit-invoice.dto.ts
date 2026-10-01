@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  ArrayUnique,
   IsArray,
   IsISO8601,
   IsOptional,
@@ -57,6 +58,10 @@ export class PreviewCreditDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(200)
+  @ArrayUnique((line?: CreditLineDto) => line?.invoiceLineId, {
+    message:
+      'An invoice line appears twice on one credit — send its total once',
+  })
   @ValidateNested({ each: true })
   @Type(() => CreditLineDto)
   lines!: CreditLineDto[];

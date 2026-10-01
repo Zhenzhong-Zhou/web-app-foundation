@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
+  ArrayUnique,
   IsArray,
   IsBoolean,
   IsIn,
@@ -73,6 +74,9 @@ export class CreateReturnAuthorizationDto {
 
   @IsArray()
   @ArrayMinSize(1)
+  @ArrayUnique((line?: ReturnAuthorizationLineDto) => line?.lineId, {
+    message: 'A line appears twice on one RMA — send its total once',
+  })
   @ValidateNested({ each: true })
   @Type(() => ReturnAuthorizationLineDto)
   lines!: ReturnAuthorizationLineDto[];

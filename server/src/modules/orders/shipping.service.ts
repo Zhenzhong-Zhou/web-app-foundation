@@ -137,12 +137,6 @@ export class ShippingService {
 
       const ids = input.lines.map((line) => line.lineId);
 
-      if (new Set(ids).size !== ids.length) {
-        throw new BadRequestException(
-          'A line appears twice in one shipment — send its total once',
-        );
-      }
-
       const lines = await requestedLines(tx, organizationId, orderId, ids);
 
       for (const line of lines) {

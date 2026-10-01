@@ -230,11 +230,12 @@ export class CreditNotesService {
 
   /**
    * Checks every requested line and computes the credit, all in SQL
-   * (ADR-025). Refusals, in order: a line twice (400); a line not on this
-   * invoice (404); a price above the invoice's, a quantity above what the
-   * line billed, or more value than the line has left to credit (409); and
-   * for an RMA line, one that is not this order's, not open, not resolved
-   * as credit, not for this item, or authorizes less than asked (400/409).
+   * (ADR-025). A line sent twice never gets here: the DTO refuses it (400).
+   * Refusals, in order: a line not on this invoice (404); a price above the
+   * invoice's, a quantity above what the line billed, or more value than
+   * the line has left to credit (409); and for an RMA line, one that is not
+   * this order's, not open, not resolved as credit, not for this item, or
+   * authorizes less than asked (400/409).
    */
   private async calculate(
     tx: Transaction,
@@ -243,14 +244,6 @@ export class CreditNotesService {
     requested: CreditLineDto[],
     lock = false,
   ): Promise<CreditAmounts> {
-    const ids = requested.map((line) => line.invoiceLineId);
-
-    if (new Set(ids).size !== ids.length) {
-      throw new BadRequestException(
-        'An invoice line appears twice on one credit — send its total once',
-      );
-    }
-
     const places = minorUnits(invoice.currency);
 
     const values = sql.join(

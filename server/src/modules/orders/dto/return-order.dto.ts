@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  ArrayUnique,
   IsArray,
   IsOptional,
   IsString,
@@ -69,6 +70,9 @@ export class ReturnOrderDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(200)
+  @ArrayUnique((line?: ReturnLineDto) => line?.lineId, {
+    message: 'A line appears twice in one return — send its total once',
+  })
   @ValidateNested({ each: true })
   @Type(() => ReturnLineDto)
   lines!: ReturnLineDto[];

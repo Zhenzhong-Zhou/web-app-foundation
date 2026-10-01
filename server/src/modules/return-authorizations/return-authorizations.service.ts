@@ -129,12 +129,13 @@ export class ReturnAuthorizationsService {
   /**
    * Raises an RMA, authorized, with its number (ADR-047).
    *
-   * Refusals come before any write, in order: the order must exist (404),
-   * be a sale (400) and be confirmed or closed — the orders that can have
-   * shipped anything (409); every line must be on it (404) and appear once
-   * (400); no line may authorize more than the customer holds, shipped less
-   * returned (409); a sample may not be credited, since nothing was billed
-   * (409); and a quoted invoice must be this order's and issued (400/409).
+   * Refusals come before any write, in order: a line sent twice (400, by
+   * the DTO); the order must exist (404), be a sale (400) and be confirmed
+   * or closed — the orders that can have shipped anything (409); every line
+   * must be on it (404); no line may authorize more than the customer
+   * holds, shipped less returned (409); a sample may not be credited, since
+   * nothing was billed (409); and a quoted invoice must be this order's and
+   * issued (400/409).
    *
    * The ceiling is what the customer holds, not that less what other open
    * RMAs expect. Two RMAs for the same goods cannot both be received — the
@@ -160,12 +161,6 @@ export class ReturnAuthorizationsService {
         }
 
         const ids = input.lines.map((line) => line.lineId);
-
-        if (new Set(ids).size !== ids.length) {
-          throw new BadRequestException(
-            'A line appears twice on one RMA — send its total once',
-          );
-        }
 
         const lines = await requestedLines(tx, organizationId, order.id, ids);
 

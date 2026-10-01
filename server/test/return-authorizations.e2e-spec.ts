@@ -323,6 +323,18 @@ describe('Return authorizations (e2e)', () => {
         .expect(400);
     });
 
+    it('refuses a line sent twice', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const s = await shipped(org);
+      const line = {
+        lineId: s.capsulesLine,
+        quantity: '1',
+        resolution: 'credit',
+      };
+
+      await raise(org, s, { lines: [line, line] }).expect(400);
+    });
+
     // Nothing on a sample was billed, so nothing on it can be credited.
     it('refuses credit on a sample, and allows a replacement', async () => {
       const org = await registerOrganization(app, 'alpha');

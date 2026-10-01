@@ -304,6 +304,25 @@ describe('Returns (e2e)', () => {
       expect(await atBin(s.focus, s.bin)).toHaveLength(0);
     });
 
+    it('refuses a line sent twice, and receives nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const s = await shipped(alpha);
+      const late = await s.lotId('LATE');
+
+      await alpha.agent
+        .post(`/v1/orders/${s.order.id}/returns`)
+        .send({
+          toLocationId: s.bin,
+          lines: [
+            { lineId: s.focusLine, lots: [{ lotId: late, quantity: '1' }] },
+            { lineId: s.focusLine, lots: [{ lotId: late, quantity: '1' }] },
+          ],
+        })
+        .expect(400);
+
+      expect(await atBin(s.focus, s.bin)).toHaveLength(0);
+    });
+
     it('refuses more of a lot than shipped, counting earlier returns', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const s = await shipped(alpha);

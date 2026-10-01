@@ -128,12 +128,6 @@ export class ReturnsService {
 
       const ids = input.lines.map((line) => line.lineId);
 
-      if (new Set(ids).size !== ids.length) {
-        throw new BadRequestException(
-          'A line appears twice in one return — send its total once',
-        );
-      }
-
       const lines = await requestedLines(tx, organizationId, orderId, ids);
       const tracked = await trackedVariants(
         tx,

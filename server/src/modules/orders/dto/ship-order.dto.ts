@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  ArrayUnique,
   IsArray,
   IsOptional,
   IsString,
@@ -68,6 +69,9 @@ export class ShipOrderDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(200)
+  @ArrayUnique((line?: ShipLineDto) => line?.lineId, {
+    message: 'A line appears twice in one shipment — send its total once',
+  })
   @ValidateNested({ each: true })
   @Type(() => ShipLineDto)
   lines!: ShipLineDto[];
