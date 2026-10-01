@@ -72,10 +72,14 @@ export class QueryCapture {
     if (!query?.text || !/^\s*(select|with)\b/i.test(query.text)) return;
     if (/pg_advisory/i.test(query.text)) return;
 
+    // Drizzle passes the parameters as query()'s second argument, beside a
+    // config object that carries only the text, so both places are read.
+    const params = Array.isArray(query.values) ? query.values : values;
+
     this.statements.push({
       probe: this.probe,
       text: query.text,
-      values: Array.isArray(query.values) ? (query.values as unknown[]) : [],
+      values: Array.isArray(params) ? (params as unknown[]) : [],
     });
   }
 }
