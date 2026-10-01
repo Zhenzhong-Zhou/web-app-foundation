@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.4.0-rc.1 tagged, v0.5 step 1 done
+# web-app-foundation — handoff, v0.4.0-rc.1 tagged, v0.5 maintainability done
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -18,10 +18,14 @@ and price lists proposing the price of a new line.
   fixes are cherry-picked into `main`.
 - Migrations: through **0035** (`price_lists`). Next is **0036**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
-- ADRs: through **ADR-049**. Next is **ADR-050**.
-- Tests at the last run: server e2e 591 in 32 suites
-  (`npm run test:e2e`); server unit 17 in 3 files (`npm test`); client
-  vitest 148 in 33 files; Playwright 61. CI also runs `seed:demo`.
+- ADRs: through **ADR-050** (licence status at release, not yet built);
+  ADR-046 carries an amendment (one currency per sale from the first priced
+  line). Next is **ADR-051**.
+- Tests at the last local run: server e2e 593 in 32 suites
+  (`npm run test:e2e`), before the five added with the round-3 fixes;
+  server unit 17 in 3 files (`npm test`), before the 6 added in round 2;
+  client vitest 148 in 33 files; Playwright 61. CI also runs `seed:demo`.
+  Update these from the next run.
 - `npm run seed:demo`: BF-2609 valued at 1900.00 CAD, run FOC-2609-01 costed
   at 1292.00 over 980 bottles (1.318367 each), SO-DEMO-2 priced from the
   Wholesale CAD list (the organization default).
@@ -56,10 +60,14 @@ Then tag v0.4.0.
 1. **Maintainability, step 1 — done** (the commits after `v0.4.0-rc.1` on
    `main`, one extraction or fix each). What moved where, the behaviour
    settled on the way, and the test gaps found are in the section below.
-2. **Maintainability, next round** — the ordered list at the end of that
-   section. Optional; nothing from step 1 is half-done.
-3. **ADR-050, languages** — before any code. French (Quebec) and Chinese
-   for the app, and French on printed documents.
+2. **Maintainability, rounds 2 and 3 — done** (PR `v0.5-round-2`): the
+   section after step 1's. What is left is listed at its end; none of it is
+   half-done.
+3. **ADR-050, licence status at release** — written, not built: migration
+   0036, server with e2e tests, then the client.
+4. **ADR-051, languages** — before any code. French (Quebec) and Chinese
+   for the app, and French on printed documents. (Planned as ADR-050; that
+   number went to licence status.)
 
 ## What v0.4 built
 
@@ -171,9 +179,68 @@ purpose.** Do not re-review them unless the code around them changes:
 - Repeats inside a single spec: each test should read on its own.
 - `stock.e2e-spec.ts` keeps its own `createLocation` (its own defaults; the
   name also clashes with the fixture).
+- `lockOpen` against `lockForReceipt`, and `lockDraft` against void's lock:
+  the same lock query, different rules. A path id answers 404, a body id
+  400; the allowed statuses differ; the receipt adds order and goods
+  checks.
+- Ship's and receive's counter updates on the order line: two limits and
+  two constraints (ordered against shipped). Each says so in a comment.
+- Closing and reopening a line: the same "confirmed only" skeleton, each
+  with its own message.
+- The order list against order detail, and the two invoice-line reads in
+  issuing and in `InvoicesService`: different columns.
+- `users.e2e-spec.ts` keeps its own `addMember` (it returns more than an
+  agent).
 
 The layout stays feature-first. Do not regroup into `pages/`, `components/`,
 `utils/` by type; `components/` holds only what two or more features share.
+
+## Maintainability, rounds 2 and 3 — done
+
+On PR `v0.5-round-2`, one extraction or fix per commit. Most of it was
+written from the repo without running anything, so CI on the PR is where
+it was first checked; Bob ran e2e and `seed:demo` locally after round 2.
+
+- **Round 2.** The returns/shipments pairs: the lock order became
+  `inVariantOrder` (production's release uses it too) and what a document
+  moved became `lot-items.ts`; the counter updates stayed apart, with a
+  comment. Shipments, RMAs and stock split into the services listed under
+  shared pieces. Test gaps: every shared lookup has a cross-tenant test;
+  `minorUnits` and `inVariantOrder` have unit tests (the rest of those
+  files runs in SQL, covered by e2e). Whether an expired licence stops a
+  release became ADR-050.
+- **Round 3, from jscpd.** Fixes first, then extractions: the Owner rules
+  in `users.service.ts`, a draft BOM's line, a location that can take
+  children, a partner's default address and primary contact, TenantDb's
+  ordering and limit; then the decimal and calendar-day decorators; then
+  `roleIdNamed`, `addMember` and `addViewer` into the fixtures.
+
+**Behaviour settled in rounds 2 and 3 (fix commits):**
+- A request against the wrong kind of order is a 400 everywhere: an RMA or
+  an invoice draft from a purchase used to be 409. An order's direction
+  never changes, so the request can never succeed.
+- A line sent twice is refused by the DTO (`@ArrayUnique`) on ship, return,
+  RMA and credit, so it is a 400 before the document's state is read.
+- A sale is in one currency from its first priced line, on a draft too,
+  however the price arrives (ADR-046 amendment). A conflicting list price
+  on an added line is still left off rather than refused (ADR-049).
+  Purchases keep a currency per line (ADR-035).
+- Message wording only: non-negative prices say "zero or more"; every
+  calendar day says "must be a calendar day, YYYY-MM-DD" and, for a day
+  that does not exist, "must be a real date".
+
+**Left from these rounds, none started:**
+- Test setups jscpd still reports across specs: costs against valuation,
+  returns against shipments, and the bootstrap blocks every spec repeats.
+- Not read yet: the organization address DTO against the partner address
+  DTOs (possibly one address rule); on the client, the lot-picking blocks
+  shared by the ship, return and release dialogs, a third copy of the price
+  fields in the invoice-line dialog, and the lines table on credit-note and
+  invoice detail.
+- A size review of `orders/orders.service.ts` (700),
+  `invoices/credit-notes.service.ts`, `client/src/boms/recipe-panel.tsx`
+  and `boms/boms.service.ts`: split only a file that holds more than one
+  job. `stock.service.ts` stays whole on purpose.
 
 **Shared pieces — use these rather than writing the thing again:**
 - Client `lib/`: `messageFor` and `ApiError` (reads `Retry-After`) in
@@ -187,21 +254,34 @@ The layout stays feature-first. Do not regroup into `pages/`, `components/`,
   `orders/order-status-actions.tsx`; test factory `test/factories.ts`.
 - Server `common/`: `dto/currency.ts` (`IsCurrencyCode`, with
   `isCurrencyCode` in `database/schema/columns.ts` for checks),
-  `dto/keyset-query.dto.ts` and `keyset.ts` (`pageOf`).
+  `dto/decimal.ts` (`IsPositiveDecimal`, `IsNonNegativeDecimal`),
+  `dto/calendar-day.ts` (`IsCalendarDay`), `dto/keyset-query.dto.ts` and
+  `keyset.ts` (`pageOf`). A DTO never restates a rule's message; `$property`
+  names the field.
 - Server lookups every action starts from, each scoped to the organization
   in its where clause: `orders/load-order.ts`, `invoices/lock-draft.ts`,
-  `production-orders/run-guards.ts`. Also `stock/rates.ts` (`baseCurrency`,
-  `rateOnOrBefore`), `orders/order-line-pricing.ts`,
+  `production-orders/run-guards.ts`, `return-authorizations/lock-open.ts`.
+  Also `stock/rates.ts` (`baseCurrency`, `rateOnOrBefore`),
+  `stock/availability.ts` (`inVariantOrder`, the one order product locks
+  are taken in), `orders/order-line-pricing.ts` (`pricedCurrencies`,
+  `assertOneSaleCurrency`), `orders/lot-items.ts` (what a shipment or
+  return moved), `return-authorizations/lines-with-progress.ts`,
   `invoices/issued-invoice.ts` (`partiesOf`, `stored`).
 - Server services split by job, like shipments and returns already were:
   orders → `OrdersService`, `OrderLinesService`, `OrderReceiptsService`;
   invoices → `InvoicesService` (reads), `InvoiceDraftsService`,
   `InvoiceIssuingService`; production → `ProductionOrdersService`,
-  `ProductionExecutionService`, `ProductionCloseService`.
+  `ProductionExecutionService`, `ProductionCloseService`; shipments →
+  `ShipmentsService` (reads), `ShippingService`, `ShipmentVoidsService`;
+  RMAs → `ReturnAuthorizationsService`, `ReturnAuthorizationReceiptsService`
+  (the only one exported), `ReturnAuthorizationReplacementsService`; stock →
+  `StockService` (the one write path, kept whole), `StockReadsService`,
+  `LotsService`.
 - Server tests `test/utils/`: `fixtures.ts` (`createE2eApp`, `body`,
   `PASSWORD`, `registerOrganization`, `createPartner`, `createLocation`,
-  `createVariant`), `sales.ts` (`shippedSale`), `valuation.ts` (buy, move,
-  pool reads, `expectBooksToReconcile`), `routes.ts` (the coverage walk).
+  `createVariant`, `roleIdNamed`, `addMember`, `addViewer`), `sales.ts`
+  (`shippedSale`), `valuation.ts` (buy, move, pool reads,
+  `expectBooksToReconcile`), `routes.ts` (the coverage walk).
 
 **Behaviour settled on the way (fix commits, not refactors):**
 - A failed reload shows its error; it used to escape as an unhandled
@@ -219,26 +299,22 @@ The layout stays feature-first. Do not regroup into `pages/`, `components/`,
   installed Drizzle already rendered it qualified; it no longer depends on
   that.
 
-**Test gaps found while refactoring:**
-- Server unit tests are thin (3 files). Pure logic with none:
-  `invoices/invoice-amounts.ts`, `invoices/document-numbers.ts`,
-  `stock/availability.ts`.
-- Cross-tenant tests: only two guard `loadOrder` (duplicate, reservations);
-  none guard `lockDraft` or the run guards. One per shared lookup would
-  cover every action behind it.
-- Unchecked: whether an expired licence stops a run being released.
-- No performance tests, and no end-to-end journey (buy → receive → make →
-  ship → invoice → credit) in Playwright.
+**Test gaps found while refactoring** (step 1; rounds 2 and 3 closed the
+first three):
+- ~~Server unit tests for the pure logic~~ — done where it is pure.
+- ~~Cross-tenant tests per shared lookup~~ — done.
+- ~~Whether an expired licence stops a release~~ — it does not; ADR-050.
+- Still open: no performance tests, and no end-to-end journey (buy →
+  receive → make → ship → invoice → credit) in Playwright.
 
-**Next round, in this order:**
-1. The returns/shipments pairs jscpd still reports
-   (`returns.service.ts` ~175 and ~287 against `shipments.service.ts`);
-   merge only if they are the same rule.
-2. Split `shipments.service.ts` (841), `return-authorizations.service.ts`
-   (838) and `stock.service.ts` (776), the way commits 48–54 did.
-3. The test gaps above, starting with the cross-tenant ones.
-4. #20, `date` columns for calendar days: ADR, migration 0036,
-   `npm run migrate:all`.
+**Next, in this order:**
+1. Build ADR-050: migration 0036, `npm run migrate:all`, the server with
+   e2e tests, then the client.
+2. #20, `date` columns for calendar days: ADR, migration (0037 if ADR-050
+   goes first), `npm run migrate:all`.
+3. The size review above, as a proposal before any code.
+4. The Playwright journey, written with Bob at a computer.
+5. ADR-051, languages.
 
 Rules, still in force:
 - no behaviour change in a refactor; a fix is its own commit, first;
