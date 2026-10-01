@@ -29,6 +29,7 @@
     "seed:demo": "ts-node src/database/seed-demo.ts",
     "seed:volume": "ts-node src/database/seed-volume.ts",
     "perf": "ts-node perf/run.ts",
+    "perf:plans": "ts-node perf/plans.ts",
     "smoke:auth": "bash scripts/smoke-auth.sh",
     "test": "jest",
     "test:watch": "jest --watch",

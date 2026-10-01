@@ -1,11 +1,12 @@
 # Performance runs (ADR-051)
 
-Two commands, run against a database of their own:
+Three commands, run against a database of their own:
 
 - `npm run seed:volume` writes a year of data for several organizations;
-- `npm run perf` measures a running server against the budgets.
+- `npm run perf` measures a running server against the budgets;
+- `npm run perf:plans` runs `EXPLAIN` on the main list and ledger queries.
 
-Neither is part of `npm test` or of CI on a pull request.
+None of them is part of `npm test` or of CI on a pull request.
 
 ## Running it locally
 
@@ -30,6 +31,7 @@ NODE_ENV=test DATABASE_URL_TEST=$PERF_DB RATE_LIMIT_MAX=1000000 node dist/main
 
 # Back in the first terminal.
 npm run perf
+NODE_ENV=test DATABASE_URL_TEST=$PERF_DB npm run perf:plans
 ```
 
 Why each setting is there:
@@ -48,7 +50,7 @@ Why each setting is there:
 `seed:volume` takes `--scale small|large`, `--organizations n` (default 5)
 and `--seed n` (default 51; the same seed writes the same data). Small takes
 minutes; large is for an overnight run. It writes `perf/volume.json`, which
-`perf` reads to sign in and find its way.
+`perf` and `perf:plans` read to sign in and find their way.
 
 `npm run perf` takes `--url` (default `PERF_URL`, then
 `http://localhost:3000`) and `--skip-stress` for a quicker run.
@@ -80,6 +82,17 @@ The **stress run** repeats everything at 100 connections. It never fails:
 it shows where response time starts to climb. The server's database pool
 holds 10 connections, so at 100 the queue for those is part of what it
 shows.
+
+## The plan check
+
+`npm run perf:plans` calls the real list and ledger services in the first
+seeded organization, records the SQL they send, and runs
+`EXPLAIN (ANALYZE, BUFFERS)` on each statement in a transaction it rolls
+back. It fails on a sequential scan of a table the planner estimates at
+10,000 rows or more (`--min-rows` to change). A scan that is the decision
+rather than an accident goes in the allow-list in `perf/plans.ts`, with
+the reason; lot search is the one there today. Every plan goes to
+`perf/reports/<time>-<scale>-plans.json`.
 
 ## Reports
 
