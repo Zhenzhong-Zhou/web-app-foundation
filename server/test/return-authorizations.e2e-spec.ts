@@ -292,6 +292,37 @@ describe('Return authorizations (e2e)', () => {
         .expect(409);
     });
 
+    // A purchase can never be returned against, whatever its status, so this
+    // is a malformed request (400) rather than one the order's state refuses.
+    it('refuses a purchase, which is never returned against', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const s = await shipped(org);
+
+      const bought = body<{ order: { id: string; lines: { id: string }[] } }>(
+        await org.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: s.partnerId,
+            direction: 'purchase',
+            lines: [
+              { variantId: await variant(org, 'BOUGHT'), quantityOrdered: '3' },
+            ],
+          })
+          .expect(201),
+      ).order;
+
+      await org.agent
+        .post('/v1/return-authorizations')
+        .send({
+          orderId: bought.id,
+          reason: REASON,
+          lines: [
+            { lineId: bought.lines[0].id, quantity: '1', resolution: 'none' },
+          ],
+        })
+        .expect(400);
+    });
+
     // Nothing on a sample was billed, so nothing on it can be credited.
     it('refuses credit on a sample, and allows a replacement', async () => {
       const org = await registerOrganization(app, 'alpha');

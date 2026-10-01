@@ -129,10 +129,10 @@ export class ReturnAuthorizationsService {
   /**
    * Raises an RMA, authorized, with its number (ADR-047).
    *
-   * Refusals come before any write, in order: the order must exist (404) and
-   * be a confirmed or closed sale — the orders that can have shipped
-   * anything (409); every line must be on it (404) and appear once (400);
-   * no line may authorize more than the customer holds, shipped less
+   * Refusals come before any write, in order: the order must exist (404),
+   * be a sale (400) and be confirmed or closed — the orders that can have
+   * shipped anything (409); every line must be on it (404) and appear once
+   * (400); no line may authorize more than the customer holds, shipped less
    * returned (409); a sample may not be credited, since nothing was billed
    * (409); and a quoted invoice must be this order's and issued (400/409).
    *
@@ -148,7 +148,7 @@ export class ReturnAuthorizationsService {
         const order = await loadOrder(tx, organizationId, input.orderId);
 
         if (order.direction !== 'sale') {
-          throw new ConflictException(
+          throw new BadRequestException(
             'Only a sale is returned against. Goods sent back to a supplier are an adjustment.',
           );
         }
