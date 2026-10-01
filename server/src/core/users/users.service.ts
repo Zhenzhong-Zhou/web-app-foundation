@@ -135,16 +135,9 @@ export class UsersService {
     const [role] = await this.tenantDb.select(roles, eq(roles.id, roleId));
     if (!role) throw new NotFoundException('Unknown role');
 
-    const [membership] = await this.tenantDb.select(
-      memberships,
-      eq(memberships.userId, userId),
-    );
-
-    if (!membership) throw new NotFoundException('No such member');
-
-    const [callerRole] = await this.tenantDb.select(
-      roles,
-      eq(roles.id, context.roleId!),
+    const { membership, callerRole, targetRole } = await this.loadMember(
+      context,
+      userId,
     );
 
     // ADR-016's gap, closed here. An Admin promoting someone to Owner would
@@ -156,39 +149,13 @@ export class UsersService {
       throw new ForbiddenException('Only an Owner can assign the Owner role');
     }
 
-    const [currentRole] = await this.tenantDb.select(
-      roles,
-      eq(roles.id, membership.roleId),
-    );
-
-    // Removing Owner is as much a privilege change as granting it. Without
-    // this an Admin can strip an Owner whenever a second Owner exists — the
-    // 409 below only fires for the last one, so the gap is invisible in a
-    // single-Owner organization.
-    if (
-      currentRole?.name === SYSTEM_ROLES.OWNER &&
-      callerRole?.name !== SYSTEM_ROLES.OWNER
-    ) {
-      throw new ForbiddenException("Only an Owner can change an Owner's role");
-    }
-
-    // A separate rule, and it binds an Owner too: same shape as ADR-012's
-    // sole-Owner deletion block, since an organization with no Owner has
-    // nobody who can appoint one.
-    if (
-      currentRole?.name === SYSTEM_ROLES.OWNER &&
-      role.name !== SYSTEM_ROLES.OWNER
-    ) {
-      const owners = await this.tenantDb.select(
-        memberships,
-        eq(memberships.roleId, membership.roleId),
-      );
-
-      if (owners.length <= 1) {
-        throw new ConflictException(
-          'Transfer ownership before changing this role',
-        );
-      }
+    // Owner to Owner takes nothing away; an Admin trying it was refused
+    // just above.
+    if (role.name !== SYSTEM_ROLES.OWNER) {
+      await this.assertMayTakeOwner(callerRole, targetRole, membership, {
+        notOwner: "Only an Owner can change an Owner's role",
+        lastOwner: 'Transfer ownership before changing this role',
+      });
     }
 
     await this.tenantDb.update(
@@ -222,6 +189,26 @@ export class UsersService {
       );
     }
 
+    const { membership, callerRole, targetRole } = await this.loadMember(
+      context,
+      userId,
+    );
+
+    await this.assertMayTakeOwner(callerRole, targetRole, membership, {
+      notOwner: 'Only an Owner can remove an Owner',
+      lastOwner: 'Transfer ownership before removing this member',
+    });
+
+    await this.tenantDb.delete(memberships, eq(memberships.id, membership.id));
+
+    this.logger.log(`Membership of ${userId} removed`);
+  }
+
+  /**
+   * A member of the caller's organization, with their role and the caller's.
+   * Scoped, so a member of another organization is simply not found.
+   */
+  private async loadMember(context: RequestContext, userId: string) {
     const [membership] = await this.tenantDb.select(
       memberships,
       eq(memberships.userId, userId),
@@ -239,32 +226,37 @@ export class UsersService {
       eq(roles.id, membership.roleId),
     );
 
-    // Same rule as updateRole: removing an Owner is a privilege change, and
-    // an Admin does not hold the authority they would be taking away.
-    if (
-      targetRole?.name === SYSTEM_ROLES.OWNER &&
-      callerRole?.name !== SYSTEM_ROLES.OWNER
-    ) {
-      throw new ForbiddenException('Only an Owner can remove an Owner');
+    return { membership, callerRole, targetRole };
+  }
+
+  /**
+   * Taking Owner away from a member, by changing their role or by removing
+   * them. Two rules, in this order:
+   *
+   * - Only an Owner may. Taking Owner away is as much a privilege change as
+   *   granting it (ADR-016's gap). Without this an Admin could strip an
+   *   Owner whenever a second one exists — a gap a single-Owner
+   *   organization never shows, because the rule below refuses there.
+   * - Never from the last Owner, and that binds an Owner too (ADR-012): an
+   *   organization with no Owner has nobody who can appoint one.
+   */
+  private async assertMayTakeOwner(
+    callerRole: { name: string } | undefined,
+    targetRole: { name: string } | undefined,
+    membership: { roleId: string },
+    refusals: { notOwner: string; lastOwner: string },
+  ): Promise<void> {
+    if (targetRole?.name !== SYSTEM_ROLES.OWNER) return;
+
+    if (callerRole?.name !== SYSTEM_ROLES.OWNER) {
+      throw new ForbiddenException(refusals.notOwner);
     }
 
-    // ADR-012's sole-Owner block, in its original form: an organization with
-    // no Owner has nobody who can appoint one.
-    if (targetRole?.name === SYSTEM_ROLES.OWNER) {
-      const owners = await this.tenantDb.select(
-        memberships,
-        eq(memberships.roleId, membership.roleId),
-      );
+    const owners = await this.tenantDb.select(
+      memberships,
+      eq(memberships.roleId, membership.roleId),
+    );
 
-      if (owners.length <= 1) {
-        throw new ConflictException(
-          'Transfer ownership before removing this member',
-        );
-      }
-    }
-
-    await this.tenantDb.delete(memberships, eq(memberships.id, membership.id));
-
-    this.logger.log(`Membership of ${userId} removed`);
+    if (owners.length <= 1) throw new ConflictException(refusals.lastOwner);
   }
 }
