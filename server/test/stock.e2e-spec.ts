@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 import {
   type Database,
@@ -14,6 +14,7 @@ import {
   stockMovements,
 } from '../src/database/schema';
 import {
+  addViewer,
   body,
   createE2eApp,
   PASSWORD,
@@ -68,38 +69,7 @@ describe('Stock (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function roleIdNamed(organizationId: string, name: string) {
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(eq(roles.organizationId, organizationId), eq(roles.name, name)),
-      );
 
-    return role.id;
-  }
-
-  async function addViewer(
-    owner: Awaited<ReturnType<typeof registerOrganization>>,
-    email: string,
-  ) {
-    await owner.agent
-      .post('/v1/users')
-      .send({
-        email,
-        name: 'Viewer',
-        password: PASSWORD,
-        roleId: await roleIdNamed(owner.organizationId, 'Viewer'),
-      })
-      .expect(201);
-
-    const viewer = authedAgent(app);
-    await viewer
-      .post('/v1/auth/login')
-      .send({ email, password: PASSWORD })
-      .expect(200);
-    return viewer;
-  }
 
   type Agent = Awaited<ReturnType<typeof registerOrganization>>['agent'];
 
@@ -546,7 +516,7 @@ describe('Stock (e2e)', () => {
         .send(receipt(alpha.variant.id, alpha.locationId, '40'))
         .expect(201);
 
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
       const rows = body<StockRow[]>(await viewer.get('/v1/stock').expect(200));
 
       expect(rows).toHaveLength(1);
@@ -554,7 +524,7 @@ describe('Stock (e2e)', () => {
 
     it('refuses a Viewer recording a movement, which needs stock.move', async () => {
       const alpha = await setup('alpha');
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       await viewer
         .post('/v1/stock/movements')
@@ -912,7 +882,7 @@ describe('Stock (e2e)', () => {
         code: 'L2026-A',
         isAssigned: true,
       });
-      const viewer = await addViewer(ctx, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, ctx, 'viewer@alpha.example.com');
 
       await viewer
         .patch(`/v1/stock/lots/${lot.id}`)

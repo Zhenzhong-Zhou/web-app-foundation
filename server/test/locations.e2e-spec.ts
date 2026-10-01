@@ -1,18 +1,17 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { locations, roles } from '../src/database/schema';
+import { locations } from '../src/database/schema';
 import {
+  addViewer,
   body,
   createE2eApp,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
-import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
 interface LocationResponse {
@@ -47,32 +46,6 @@ describe('Locations (e2e)', () => {
     await resetDatabase(app);
   });
 
-  async function addViewer(
-    owner: Awaited<ReturnType<typeof registerOrganization>>,
-    email: string,
-  ) {
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(
-          eq(roles.organizationId, owner.organizationId),
-          eq(roles.name, 'Viewer'),
-        ),
-      );
-
-    await owner.agent
-      .post('/v1/users')
-      .send({ email, name: 'Viewer', password: PASSWORD, roleId: role.id })
-      .expect(201);
-
-    const viewer = authedAgent(app);
-    await viewer
-      .post('/v1/auth/login')
-      .send({ email, password: PASSWORD })
-      .expect(200);
-    return viewer;
-  }
 
   /** Creates a location and returns it. */
   async function create(
@@ -161,7 +134,7 @@ describe('Locations (e2e)', () => {
 
     it('refuses a Viewer, which lacks locations.create', async () => {
       const alpha = await registerOrganization(app, 'alpha');
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       await viewer
         .post('/v1/locations')
@@ -415,7 +388,7 @@ describe('Locations (e2e)', () => {
     it('is readable by a Viewer', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await create(alpha.agent, { type: 'site', name: 'Warehouse A' });
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       const res = await viewer.get('/v1/locations').expect(200);
       expect(body<LocationResponse[]>(res)).toHaveLength(1);
