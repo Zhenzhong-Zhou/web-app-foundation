@@ -1,13 +1,6 @@
-import {
-  IsIn,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Matches,
-  MaxLength,
-} from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
-import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
+import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 
 export class CreateBomLineDto {
@@ -23,10 +16,7 @@ export class CreateBomLineDto {
    * invites grams typed against stock kept in kilograms.
    */
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'quantity must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   quantity!: string;
 
   /**

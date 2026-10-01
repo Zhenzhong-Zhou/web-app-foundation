@@ -15,8 +15,8 @@ import {
 } from 'class-validator';
 
 import {
-  NON_NEGATIVE_DECIMAL,
-  POSITIVE_DECIMAL,
+  IsNonNegativeDecimal,
+  IsPositiveDecimal,
 } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 
@@ -29,10 +29,7 @@ export class CreditLineDto {
   invoiceLineId!: string;
 
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'quantity must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   quantity!: string;
 
   /**
@@ -41,10 +38,7 @@ export class CreditLineDto {
    */
   @IsOptional()
   @IsString()
-  @Matches(NON_NEGATIVE_DECIMAL, {
-    message:
-      'unitPrice must be a number with at most 4 decimal places, sent as a string',
-  })
+  @IsNonNegativeDecimal()
   unitPrice?: string;
 
   /** For returned goods: the RMA line this credit settles. */

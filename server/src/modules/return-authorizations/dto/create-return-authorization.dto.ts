@@ -8,13 +8,12 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  Matches,
   MaxLength,
   MinLength,
   ValidateNested,
 } from 'class-validator';
 
-import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
+import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 import {
   RETURN_RESOLUTIONS,
@@ -27,10 +26,7 @@ export class ReturnAuthorizationLineDto {
   lineId!: string;
 
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'quantity must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   quantity!: string;
 
   /** credit, replace or none — per line, since one box often holds both. */

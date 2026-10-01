@@ -7,13 +7,12 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  Matches,
   MaxLength,
   MinLength,
   ValidateNested,
 } from 'class-validator';
 
-import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
+import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 
 class LineSourceDto {
@@ -37,10 +36,7 @@ class LotAllocationDto {
   lotId!: string;
 
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'quantity must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   quantity!: string;
 }
 
@@ -113,10 +109,7 @@ class OutputLotDto {
  */
 export class RecordOutputDto {
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'quantity must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   quantity!: string;
 
   @IsOptional()
@@ -140,10 +133,7 @@ class ConsumedLineDto {
   lineId!: string;
 
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'quantityConsumed must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   quantityConsumed!: string;
 }
 

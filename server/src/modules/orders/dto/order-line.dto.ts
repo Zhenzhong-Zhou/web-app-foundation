@@ -1,9 +1,9 @@
-import { IsOptional, IsString, IsUUID, Matches } from 'class-validator';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 import { IsCurrencyCode } from '../../../common/dto/currency';
 import {
-  NON_NEGATIVE_DECIMAL,
-  POSITIVE_DECIMAL,
+  IsNonNegativeDecimal,
+  IsPositiveDecimal,
 } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 
@@ -17,18 +17,12 @@ import { trim } from '../../../common/dto/trim';
  */
 export class OrderLineTermsDto {
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'quantityOrdered must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   quantityOrdered!: string;
 
   @IsOptional()
   @IsString()
-  @Matches(NON_NEGATIVE_DECIMAL, {
-    message:
-      'unitPrice must be a number with at most 4 decimal places, sent as a string',
-  })
+  @IsNonNegativeDecimal()
   unitPrice?: string;
 
   /** Required whenever a price is given — the service enforces the pairing. */
