@@ -26,6 +26,7 @@ import { loadOrder } from '../orders/load-order';
 import { requestedLines } from '../orders/order-line-lookup';
 import type { CreateReturnAuthorizationDto } from './dto/create-return-authorization.dto';
 import type { ListReturnAuthorizationsDto } from './dto/list-return-authorizations.dto';
+import { lockOpen } from './lock-open';
 
 const DEFAULT_LIMIT = 50;
 
@@ -247,11 +248,7 @@ export class ReturnAuthorizationsService {
    */
   async cancel(returnAuthorizationId: string, actorId: string) {
     await this.tenantDb.transaction(async (tx, organizationId) => {
-      const rma = await this.lockOpen(
-        tx,
-        organizationId,
-        returnAuthorizationId,
-      );
+      const rma = await lockOpen(tx, organizationId, returnAuthorizationId);
 
       const [received] = await tx
         .select({ id: orderReturns.id })
@@ -313,11 +310,7 @@ export class ReturnAuthorizationsService {
    */
   async close(returnAuthorizationId: string, actorId: string) {
     await this.tenantDb.transaction(async (tx, organizationId) => {
-      const rma = await this.lockOpen(
-        tx,
-        organizationId,
-        returnAuthorizationId,
-      );
+      const rma = await lockOpen(tx, organizationId, returnAuthorizationId);
 
       await tx
         .update(returnAuthorizations)
@@ -345,11 +338,7 @@ export class ReturnAuthorizationsService {
   async raiseReplacement(returnAuthorizationId: string, actorId: string) {
     const raised = await this.tenantDb.transaction(
       async (tx, organizationId) => {
-        const rma = await this.lockOpen(
-          tx,
-          organizationId,
-          returnAuthorizationId,
-        );
+        const rma = await lockOpen(tx, organizationId, returnAuthorizationId);
 
         const [standing] = await tx
           .select({ id: orders.id })
@@ -570,11 +559,7 @@ export class ReturnAuthorizationsService {
    */
   async linkReturn(returnAuthorizationId: string, returnId: string) {
     await this.tenantDb.transaction(async (tx, organizationId) => {
-      const rma = await this.lockOpen(
-        tx,
-        organizationId,
-        returnAuthorizationId,
-      );
+      const rma = await lockOpen(tx, organizationId, returnAuthorizationId);
 
       const [received] = await tx
         .select()
@@ -794,31 +779,5 @@ export class ReturnAuthorizationsService {
           : `${invoice.number} was voided — it was credited in full already`,
       );
     }
-  }
-
-  /** The RMA, locked, and only if it is still open. */
-  private async lockOpen(
-    tx: Transaction,
-    organizationId: string,
-    returnAuthorizationId: string,
-  ) {
-    const [rma] = await tx
-      .select()
-      .from(returnAuthorizations)
-      .where(
-        and(
-          eq(returnAuthorizations.organizationId, organizationId),
-          eq(returnAuthorizations.id, returnAuthorizationId),
-        ),
-      )
-      .for('update');
-
-    if (!rma) throw new NotFoundException('No such return authorization');
-
-    if (rma.status !== 'open') {
-      throw new ConflictException(`${rma.number} is already ${rma.status}`);
-    }
-
-    return rma;
   }
 }
