@@ -18,7 +18,6 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { assertTakeable, inVariantOrder } from '../stock/availability';
-import { itemName } from '../stock/item-name';
 import {
   allocateFefo,
   assertPickedTotal,
@@ -30,32 +29,8 @@ import { trackedVariants } from '../stock/tracked-variants';
 import type { PreviewShipmentDto, ShipOrderDto } from './dto/ship-order.dto';
 import type { VoidShipmentDto } from './dto/void-shipment.dto';
 import { loadOrder } from './load-order';
+import { lotItemsOf, withLotItems } from './lot-items';
 import { lineFor, type OrderLine, requestedLines } from './order-line-lookup';
-
-/** One SKU and lot within a shipment, as the ledger records it. */
-interface ShipmentItem {
-  shipmentId: string;
-  sku: string;
-  /** From the catalogue: for the person unpacking, beside the snapshot SKU. */
-  description: string;
-  unitOfMeasure: string;
-  /** Null for untracked stock, which ships without a lot. */
-  lotCode: string | null;
-  expiresAt: Date | null;
-  quantity: string;
-}
-
-/** An item as the API returns it: which shipment it belongs to is implied. */
-function publicItem(item: ShipmentItem) {
-  return {
-    sku: item.sku,
-    description: item.description,
-    unitOfMeasure: item.unitOfMeasure,
-    lotCode: item.lotCode,
-    expiresAt: item.expiresAt,
-    quantity: item.quantity,
-  };
-}
 
 /** One line as a shipment would send it, lots included (ADR-041). */
 export interface ShipmentPlanLine {
@@ -568,20 +543,10 @@ export class ShipmentsService {
         )
         .orderBy(desc(shipments.createdAt));
 
-      if (headers.length === 0) return [];
-
-      const items = await this.itemsOf(
-        tx,
-        organizationId,
-        headers.map((header) => header.id),
-      );
-
-      return headers.map((header) => ({
-        ...header,
-        items: items
-          .filter((item) => item.shipmentId === header.id)
-          .map(publicItem),
-      }));
+      return withLotItems(tx, organizationId, headers, {
+        referenceType: 'shipment',
+        reason: 'shipment',
+      });
     });
   }
 
@@ -653,7 +618,11 @@ export class ShipmentsService {
 
       if (!row) throw new NotFoundException('No such shipment on this order');
 
-      const items = await this.itemsOf(tx, organizationId, [shipmentId]);
+      const items = await lotItemsOf(tx, organizationId, {
+        referenceType: 'shipment',
+        reason: 'shipment',
+        ids: [shipmentId],
+      });
 
       return {
         id: row.id,
@@ -685,70 +654,9 @@ export class ShipmentsService {
               country: row.ship_to_country,
             }
           : null,
-        items: items.map(publicItem),
+        items: items.get(shipmentId) ?? [],
       };
     });
-  }
-
-  /**
-   * What some shipments carried, one row per SKU and lot. Shared by the list
-   * and the slip so the two cannot disagree about a shipment's contents. A
-   * voided shipment still lists what it carried: that is what was on the slip
-   * that was voided.
-   */
-  private async itemsOf(
-    tx: Tx,
-    organizationId: string,
-    shipmentIds: string[],
-  ): Promise<ShipmentItem[]> {
-    const moved = await tx.execute(sql`
-      select
-        sm.reference_id as shipment_id,
-        sm.sku,
-        pr.name as product_name,
-        pv.name as variant_name,
-        pv.unit_of_measure,
-        l.code as lot_code,
-        l.expires_at,
-        sum(sm.quantity)::text as quantity
-      from stock_movements sm
-      join product_variants pv on pv.id = sm.variant_id
-      join products pr on pr.id = pv.product_id
-      left join lots l on l.id = sm.lot_id
-      where sm.organization_id = ${organizationId}::uuid
-        and sm.reference_type = 'shipment'
-        -- The shipment's own movements. A void's adjustments reference the
-        -- same shipment, and counting them would double what it carried.
-        and sm.reason = 'shipment'
-        and sm.reference_id in (${sql.join(
-          shipmentIds.map((id) => sql`${id}::uuid`),
-          sql`, `,
-        )})
-      group by sm.reference_id, sm.sku, pr.name, pv.name, pv.unit_of_measure,
-        l.code, l.expires_at
-      order by sm.sku, l.expires_at asc nulls last, l.code
-    `);
-
-    return (
-      moved.rows as {
-        shipment_id: string;
-        sku: string;
-        product_name: string;
-        variant_name: string | null;
-        unit_of_measure: string;
-        lot_code: string | null;
-        expires_at: Date | null;
-        quantity: string;
-      }[]
-    ).map((row) => ({
-      shipmentId: row.shipment_id,
-      sku: row.sku,
-      description: itemName(row.product_name, row.variant_name),
-      unitOfMeasure: row.unit_of_measure,
-      lotCode: row.lot_code,
-      expiresAt: row.expires_at,
-      quantity: row.quantity,
-    }));
   }
 
   // ---------------------------------------------------------------------------
