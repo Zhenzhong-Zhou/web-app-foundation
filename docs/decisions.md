@@ -3033,6 +3033,19 @@ rule changes and gains a reopen. The close button is renamed.
 - **Sending** an invoice by email or e-invoicing network; creating a draft
   automatically on ship.
 
+**Amendment — one currency from the first priced line, not only at
+confirm.** Enforcing it only at confirm let a draft sale be built that
+confirm must refuse, and the ways a line gets its price disagreed: a list
+price in another currency was left off (ADR-049) and "Use list price"
+refused one, while a typed price was accepted. Every write now holds a
+sale to the currencies its priced lines already use, on a draft as much as
+once confirmed; a conflicting list price on an added line is still left
+off rather than refused. Purchases keep a currency per line (ADR-035). The
+check accepts any currency the sale already uses, so a draft priced in two
+before this change can still be brought back to one; confirm keeps its own
+check for those. This is how sales documents work elsewhere: one document
+currency, chosen per order.
+
 ---
 
 ## ADR-047 — Return authorizations, and credit notes for what comes back
