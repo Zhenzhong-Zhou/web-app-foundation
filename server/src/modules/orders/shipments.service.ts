@@ -229,6 +229,12 @@ export class ShipmentsService {
           );
         }
 
+        /**
+         * Shaped like a return's counter update, and kept apart on purpose:
+         * the two are held to different limits by different constraints —
+         * this one to what was ordered, a return's to what shipped — and
+         * each refusal names its own limit.
+         */
         try {
           await tx
             .update(orderLines)

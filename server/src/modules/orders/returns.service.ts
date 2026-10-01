@@ -222,6 +222,12 @@ export class ReturnsService {
           );
         }
 
+        /**
+         * Shaped like ship()'s counter update, and kept apart on purpose:
+         * the two are held to different limits by different constraints —
+         * this one to what shipped, shipping's to what was ordered — and
+         * each refusal names its own limit.
+         */
         try {
           await tx
             .update(orderLines)
