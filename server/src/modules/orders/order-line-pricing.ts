@@ -1,5 +1,5 @@
-import { BadRequestException } from '@nestjs/common';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { BadRequestException, ConflictException } from '@nestjs/common';
+import { and, eq, isNotNull, ne } from 'drizzle-orm';
 
 import { orderLines, productVariants } from '../../database/schema';
 import { listForOrder, priceOnList } from '../price-lists/list-price';
@@ -67,22 +67,13 @@ export async function insertLines(
   /**
    * A sale is invoiced in one currency (ADR-046). The currencies its lines
    * are already priced in, so a list price in another is left off rather
-   * than building an order that cannot be confirmed.
+   * than building an order that cannot be confirmed, and a price given in
+   * another is refused.
    */
-  const saleCurrencies = new Set<string>();
-
-  if (order.direction === 'sale') {
-    const priced = await tx
-      .selectDistinct({ currency: orderLines.currency })
-      .from(orderLines)
-      .where(
-        and(eq(orderLines.orderId, order.id), isNotNull(orderLines.currency)),
-      );
-
-    for (const row of priced) {
-      if (row.currency) saleCurrencies.add(row.currency);
-    }
-  }
+  const saleCurrencies =
+    order.direction === 'sale'
+      ? await pricedCurrencies(tx, order.id)
+      : new Set<string>();
 
   for (const line of lines) {
     const [variant] = await tx
@@ -104,6 +95,14 @@ export async function insertLines(
     let priceListId: string | null =
       line.unitPrice !== undefined ? (line.priceListId ?? null) : null;
     let priceNotice: string | undefined;
+
+    if (
+      line.currency !== undefined &&
+      order.direction === 'sale' &&
+      !order.isSample
+    ) {
+      assertOneSaleCurrency(saleCurrencies, variant.sku, line.currency);
+    }
 
     if (line.unitPrice === undefined && list) {
       const listed = await priceOnList(
@@ -168,6 +167,51 @@ export function assertPriceAndCurrency(input: {
   if ((input.unitPrice === undefined) !== (input.currency === undefined)) {
     throw new BadRequestException(
       'A price needs a currency, and a currency needs a price',
+    );
+  }
+}
+
+/**
+ * The currencies a sale's priced lines are in, leaving out the line being
+ * repriced when there is one.
+ */
+export async function pricedCurrencies(
+  tx: Tx,
+  orderId: string,
+  exceptLineId?: string,
+): Promise<Set<string>> {
+  const rows = await tx
+    .selectDistinct({ currency: orderLines.currency })
+    .from(orderLines)
+    .where(
+      and(
+        eq(orderLines.orderId, orderId),
+        isNotNull(orderLines.currency),
+        exceptLineId ? ne(orderLines.id, exceptLineId) : undefined,
+      ),
+    );
+
+  return new Set(rows.flatMap((row) => (row.currency ? [row.currency] : [])));
+}
+
+/**
+ * A sale is in one currency from its first priced line (ADR-046, as
+ * amended): on a draft as much as once confirmed, and whichever way the
+ * price arrives — typed, from a list, or copied by a duplicate. A purchase
+ * may mix (ADR-035); a sample is never priced.
+ *
+ * Allowed when the currency is one the sale already uses, rather than only
+ * when every other line matches, so a draft priced in two currencies before
+ * this rule can still be brought back to one.
+ */
+export function assertOneSaleCurrency(
+  currencies: Set<string>,
+  sku: string,
+  currency: string,
+): void {
+  if (currencies.size > 0 && !currencies.has(currency)) {
+    throw new ConflictException(
+      `This sale is in ${[...currencies].sort().join(', ')}, so ${sku} cannot be priced in ${currency}`,
     );
   }
 }

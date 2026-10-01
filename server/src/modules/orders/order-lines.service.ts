@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, isNotNull, ne, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { recordPrevious } from '../../core/audit/audit-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
@@ -18,7 +18,12 @@ import { type Tx } from '../stock/stock.service';
 import { CloseLineDto } from './dto/close-line.dto';
 import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
 import { loadOrder } from './load-order';
-import { assertPriceAndCurrency, insertLines } from './order-line-pricing';
+import {
+  assertOneSaleCurrency,
+  assertPriceAndCurrency,
+  insertLines,
+  pricedCurrencies,
+} from './order-line-pricing';
 
 type OrderLine = typeof orderLines.$inferSelect;
 
@@ -97,35 +102,20 @@ export class OrderLinesService {
       this.assertNothingReceived(line, 'amended');
 
       /**
-       * A confirmed sale stays in one currency (ADR-046). Repricing one line
-       * in another would undo what confirm checked and leave the sale with
-       * no invoice it could be billed on. A draft may be mixed while it is
-       * put together; confirm decides.
+       * A sale stays in one currency, on a draft as much as once confirmed
+       * (ADR-046, as amended): repricing a line in another would build an
+       * order that confirm must refuse and no invoice could bill.
        */
       if (
-        order.status === 'confirmed' &&
         order.direction === 'sale' &&
         !order.isSample &&
         input.currency !== undefined
       ) {
-        const [other] = await tx
-          .select({ currency: orderLines.currency })
-          .from(orderLines)
-          .where(
-            and(
-              eq(orderLines.orderId, orderId),
-              ne(orderLines.id, lineId),
-              isNotNull(orderLines.currency),
-              ne(orderLines.currency, input.currency),
-            ),
-          )
-          .limit(1);
-
-        if (other) {
-          throw new ConflictException(
-            `This sale is in ${other.currency}, so an item on it cannot be priced in ${input.currency}`,
-          );
-        }
+        assertOneSaleCurrency(
+          await pricedCurrencies(tx, orderId, lineId),
+          line.sku,
+          input.currency,
+        );
       }
 
       await tx
@@ -204,24 +194,11 @@ export class OrderLinesService {
       }
 
       if (order.direction === 'sale') {
-        const [other] = await tx
-          .select({ currency: orderLines.currency })
-          .from(orderLines)
-          .where(
-            and(
-              eq(orderLines.orderId, orderId),
-              ne(orderLines.id, lineId),
-              isNotNull(orderLines.currency),
-              ne(orderLines.currency, list.currency),
-            ),
-          )
-          .limit(1);
-
-        if (other) {
-          throw new ConflictException(
-            `This sale is in ${other.currency} and ${list.name} prices in ${list.currency}`,
-          );
-        }
+        assertOneSaleCurrency(
+          await pricedCurrencies(tx, orderId, lineId),
+          line.sku,
+          list.currency,
+        );
       }
 
       recordPrevious({ unitPrice: line.unitPrice, currency: line.currency });
