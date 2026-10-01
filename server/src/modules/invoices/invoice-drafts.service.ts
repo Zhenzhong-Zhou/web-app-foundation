@@ -45,8 +45,8 @@ export class InvoiceDraftsService {
   /**
    * A draft for exactly what the shipment carried, priced from its order.
    *
-   * Refusals, in order: the shipment must exist here (404), still stand,
-   * belong to a sale that is not a sample, and have carried something
+   * Refusals, in order: the shipment must exist here (404) and be a sale's
+   * (400); it must still stand, not be a sample, and have carried something
    * priced in one currency (409). Confirm already guarantees the last two
    * for any sale confirmed since ADR-046; they are checked again because an
    * invoice cannot bill an undecided amount whatever came before.
@@ -84,14 +84,14 @@ export class InvoiceDraftsService {
 
           if (!shipment) throw new NotFoundException('No such shipment');
 
+          if (shipment.direction !== 'sale') {
+            throw new BadRequestException('Only a sale is invoiced');
+          }
+
           if (shipment.voidedAt) {
             throw new ConflictException(
               'That shipment was voided — nothing left, so there is nothing to bill',
             );
-          }
-
-          if (shipment.direction !== 'sale') {
-            throw new ConflictException('Only a sale is invoiced');
           }
 
           if (shipment.isSample) {

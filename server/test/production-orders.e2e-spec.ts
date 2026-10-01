@@ -1243,6 +1243,37 @@ describe('Production orders (e2e)', () => {
       ).toHaveLength(0);
     });
 
+    it('does not act on another organization run', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+
+      const s = await scenario(beta);
+      const run = await createRun(beta, {
+        outputVariantId: s.output,
+        bomId: s.bomId,
+        locationId: s.wip,
+        quantityPlanned: '500',
+      });
+
+      // Release starts from loadForIssue and cancel from loadWithin; both
+      // have the organization in their where clause, so another tenant's
+      // run reads as one that does not exist, before any check on it.
+      await alpha.agent
+        .post(`/v1/production-orders/${run.id}/release`)
+        .send({ sourceLocationId: s.shelf })
+        .expect(404);
+      await alpha.agent
+        .post(`/v1/production-orders/${run.id}/cancel`)
+        .send({ reason: 'Not yours' })
+        .expect(404);
+
+      const detail = body<RunDetailResponse>(
+        await beta.agent.get(`/v1/production-orders/${run.id}`).expect(200),
+      );
+      expect(detail.status).toBe('draft');
+      expect(await onHand(s.blend, s.shelf)).toBe('10000.0000');
+    });
+
     it('requires a session', async () => {
       await authedAgent(app).get('/v1/production-orders').expect(401);
     });

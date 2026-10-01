@@ -2,38 +2,26 @@ import {
   Alert,
   Button,
   Chip,
-  IconButton,
   MenuItem,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
-import type {
-  Bom,
-  BomDetail,
-  BomLine,
-  ProductLicence,
-  VariantOption,
-} from '../lib/types';
+import type { Bom, BomLine, ProductLicence, VariantOption } from '../lib/types';
 import { licenceStatus } from '../licences/licence-status';
 import type { Variant } from '../products/products-page';
 import { AddBomLineDialog } from './add-bom-line-dialog';
 import { CreateBomDialog } from './create-bom-dialog';
 import { EditBomLineDialog } from './edit-bom-line-dialog';
+import { RecipeLinesTable } from './recipe-lines-table';
+import { useRecipe } from './use-recipe';
 
 const STATUS_COLOR = {
   draft: 'default',
@@ -56,9 +44,6 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
   const can = useCan();
 
   const [variantId, setVariantId] = useState(variants[0]?.id ?? '');
-  const [versions, setVersions] = useState<Bom[]>([]);
-  const [selected, setSelected] = useState<BomDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const [catalogue, setCatalogue] = useState<VariantOption[]>([]);
@@ -71,29 +56,9 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
   const canCreate = can('boms.create');
   const canUpdate = can('boms.update');
 
-  const load = useCallback(
-    async (preferId?: string) => {
-      if (!variantId) return;
-
-      try {
-        const rows = await api<Bom[]>(`/boms?outputVariantId=${variantId}`);
-        setVersions(rows);
-
-        // Prefer what the caller just acted on, then the active version, then
-        // the newest — so promoting or duplicating leaves you looking at the
-        // thing you changed rather than jumping elsewhere.
-        const pick =
-          rows.find((row) => row.id === preferId) ??
-          rows.find((row) => row.status === 'active') ??
-          rows[0];
-
-        setSelected(pick ? await api<BomDetail>(`/boms/${pick.id}`) : null);
-        setError(null);
-      } catch (caught) {
-        setError(messageFor(caught));
-      }
-    },
-    [variantId],
+  const { versions, selected, error, setError, load } = useRecipe(
+    variantId,
+    canView,
   );
 
   /**
@@ -146,41 +111,6 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
       ignore = true;
     };
   }, [canView, addingLine]);
-
-  /**
-   * Fetched inline rather than through `load`, which stays for the refresh
-   * after an action. Two reasons, and the second is the real one: setState
-   * reached synchronously from an effect body triggers cascading renders, and
-   * `load` writes state without knowing whether its variant is still the
-   * selected one — switching variants mid-flight could land the previous
-   * recipe. Everything here is guarded by `ignore` after the last await.
-   */
-  useEffect(() => {
-    if (!canView || !variantId) return;
-
-    let ignore = false;
-
-    void (async () => {
-      try {
-        const rows = await api<Bom[]>(`/boms?outputVariantId=${variantId}`);
-        const pick =
-          rows.find((row) => row.status === 'active') ?? rows[0] ?? null;
-        const detail = pick ? await api<BomDetail>(`/boms/${pick.id}`) : null;
-
-        if (ignore) return;
-
-        setVersions(rows);
-        setSelected(detail);
-        setError(null);
-      } catch (caught) {
-        if (!ignore) setError(messageFor(caught));
-      }
-    })();
-
-    return () => {
-      ignore = true;
-    };
-  }, [canView, variantId]);
 
   async function act(
     path: string,
@@ -504,66 +434,15 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
             </Alert>
           )}
 
-          <Paper variant="outlined">
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Component</TableCell>
-                    <TableCell align="right">Per batch</TableCell>
-                    <TableCell>Supplied by</TableCell>
-                    <TableCell />
-                  </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {selected.lines.map((line) => (
-                    <TableRow key={line.id}>
-                      <TableCell>{labelFor(line.componentVariantId)}</TableCell>
-                      <TableCell align="right">
-                        {line.quantity} {unitFor(line.componentVariantId)}
-                      </TableCell>
-                      <TableCell>
-                        {line.supplyType === 'external' ? (
-                          <Tooltip title="Provided by whoever manufactures — never enters our stock">
-                            <Chip label="Manufacturer" size="small" />
-                          </Tooltip>
-                        ) : (
-                          <Chip label="Us" size="small" variant="outlined" />
-                        )}
-                      </TableCell>
-                      <TableCell align="right">
-                        {canUpdate && isDraft && (
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{ justifyContent: 'flex-end' }}
-                          >
-                            <Button
-                              size="small"
-                              variant="text"
-                              disabled={busy}
-                              onClick={openDialog(() => setEditingLine(line))}
-                            >
-                              Edit
-                            </Button>
-                            <IconButton
-                              size="small"
-                              aria-label={`Remove ${labelFor(line.componentVariantId)}`}
-                              disabled={busy}
-                              onClick={() => void removeLine(line.id)}
-                            >
-                              ×
-                            </IconButton>
-                          </Stack>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
+          <RecipeLinesTable
+            lines={selected.lines}
+            labelFor={labelFor}
+            unitFor={unitFor}
+            editable={canUpdate && isDraft}
+            busy={busy}
+            onEdit={setEditingLine}
+            onRemove={(lineId) => void removeLine(lineId)}
+          />
         </>
       )}
 

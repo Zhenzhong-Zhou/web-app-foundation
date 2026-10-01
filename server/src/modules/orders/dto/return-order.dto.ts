@@ -2,27 +2,24 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  ArrayUnique,
   IsArray,
   IsOptional,
   IsString,
   IsUUID,
-  Matches,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
 
-import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
+import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
-
-const DECIMAL_MESSAGE =
-  'quantity must be a positive number with at most 4 decimal places, sent as a string';
 
 class ReturnLotDto {
   @IsUUID()
   lotId!: string;
 
   @IsString()
-  @Matches(POSITIVE_DECIMAL, { message: DECIMAL_MESSAGE })
+  @IsPositiveDecimal()
   quantity!: string;
 }
 
@@ -37,7 +34,7 @@ class ReturnLineDto {
 
   @IsOptional()
   @IsString()
-  @Matches(POSITIVE_DECIMAL, { message: DECIMAL_MESSAGE })
+  @IsPositiveDecimal()
   quantity?: string;
 
   @IsOptional()
@@ -69,6 +66,9 @@ export class ReturnOrderDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(200)
+  @ArrayUnique((line?: ReturnLineDto) => line?.lineId, {
+    message: 'A line appears twice in one return — send its total once',
+  })
   @ValidateNested({ each: true })
   @Type(() => ReturnLineDto)
   lines!: ReturnLineDto[];

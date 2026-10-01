@@ -2476,6 +2476,9 @@ lots at close, or reservations that hold a preview's allocation until release.
 
 ## ADR-040 — Product licences: a table, dated, and fixed once a run relies on one
 
+> **Amended by [ADR-050](#adr-050--licence-status-at-release-amends-adr-040).**
+> Release now checks a licence's status against an organization policy and records it on the run. Everything else stands.
+
 **Context.** `product_licences` and `boms.licence_id` were in the schema from
 ADR-029 with nothing able to write them, so a recipe could not carry the
 registration it is made under — for a natural health product in Canada, its
@@ -2539,8 +2542,6 @@ or a partner, not a recipe — and amendment history.
 
 ---
 
----
-
 ## ADR-041 — Shipping: a shipment is a document, and stock leaves by lot
 
 **Context.** A sale could be raised and confirmed, but nothing fulfilled it:
@@ -2600,13 +2601,13 @@ minimum-remaining-shelf-life rule per customer, idempotency keys on the ship
 endpoint, reservations, a samples screen for the existing `sample` reason,
 and a returns flow for the existing `return` reason.
 
-**Amendment (v0.3) — voiding a shipment recorded too early.** A shipment 
-can be voided while its order is still confirmed and nothing from it 
-has come back. Nothing is deleted: each shipment movement gets an adjustment 
-back into the bin it left, referencing the same shipment and carrying the reason; 
-the lines' fulfilled quantities drop, which returns the order's holds; 
-and the shipment is marked voided and kept. Lot trace and returns ignore 
-voided shipments, because nothing left. A shipment that has had anything 
+**Amendment (v0.3) — voiding a shipment recorded too early.** A shipment
+can be voided while its order is still confirmed and nothing from it
+has come back. Nothing is deleted: each shipment movement gets an adjustment
+back into the bin it left, referencing the same shipment and carrying the reason;
+the lines' fulfilled quantities drop, which returns the order's holds;
+and the shipment is marked voided and kept. Lot trace and returns ignore
+voided shipments, because nothing left. A shipment that has had anything
 returned did leave, and is corrected with a return instead.
 
 ---
@@ -3032,6 +3033,19 @@ rule changes and gains a reopen. The close button is renamed.
 - **Sending** an invoice by email or e-invoicing network; creating a draft
   automatically on ship.
 
+**Amendment — one currency from the first priced line, not only at
+confirm.** Enforcing it only at confirm let a draft sale be built that
+confirm must refuse, and the ways a line gets its price disagreed: a list
+price in another currency was left off (ADR-049) and "Use list price"
+refused one, while a typed price was accepted. Every write now holds a
+sale to the currencies its priced lines already use, on a draft as much as
+once confirmed; a conflicting list price on an added line is still left
+off rather than refused. Purchases keep a currency per line (ADR-035). The
+check accepts any currency the sale already uses, so a draft priced in two
+before this change can still be brought back to one; confirm keeps its own
+check for those. This is how sales documents work elsewhere: one document
+currency, chosen per order.
+
 ---
 
 ## ADR-047 — Return authorizations, and credit notes for what comes back
@@ -3221,7 +3235,7 @@ RMA, stays `invoices.issue`, the finance permission voiding already uses —
 whoever may send an invoice is who may take money back on it. Audited as
 `return_authorization.created`, `.cancelled`, `.closed`,
 `return_authorization.return_linked`, `return_authorization.replacement_raised`
-and `credit_note.issued`, the last being the action ADR-046 held back until 
+and `credit_note.issued`, the last being the action ADR-046 held back until
 a route recorded it.
 
 **Consequences.** New tables `return_authorizations` and
@@ -3672,6 +3686,105 @@ method (all deferred in ADR-048) reach margin with no change here. Revenue in
 another currency converts at the invoice date's rate; with none on file the
 margin shows as unconverted rather than guessed. Which to build first is
 what the first real week will show.
+
+---
+
+## ADR-050 — Licence status at release (amends ADR-040)
+
+**Context.** ADR-040 made a licence's status derived — in force from a later
+day, current, expiring, expired, withdrawn — and the client uses it to keep
+unusable licences out of pickers. Nothing on the server reads it. Release
+copies whatever licence the recipe carries, so a run can be released under a
+licence that expired last month or was withdrawn last week, and nothing on
+the run says so. The status is shown only on the Licences page: the recipe,
+the release dialog, the run and the lot trace show the number alone.
+
+What should happen is not the same for everyone. An NPN does not expire; an
+export certificate or a registration does, and whether work may continue
+while a renewal is pending depends on the regime. A business making nothing
+regulated has no licence at all. Any one fixed rule is wrong for somebody.
+
+ADR-032 says a real event is recorded, never blocked. Release is not one: it
+is the decision to commit material, taken before anything happens, which is
+where a check belongs.
+
+**Decision — the server derives the status, by the client's rules.** One
+function on the server, agreeing with `licence-status.ts`: withdrawn when
+`is_active` is false; not yet in force when `issued_at` is after today;
+expired when `expires_at` is before today; otherwise current. Days compare in
+UTC, as ADR-040 requires. "Expires in N days" stays a display state; to the
+server it is current.
+
+**Decision — a policy per organization, with three outcomes.** For each
+state the organization chooses *block* (409), *override* (409 unless an
+authorised person confirms with a reason) or *allow*:
+
+- **Withdrawn** — always block, not configurable. Withdrawal is a decision
+  somebody made, and an override would undo it without saying so.
+- **Not yet in force** — block by default.
+- **Expired** — override by default.
+- **No licence on the recipe** — allowed, unless the organization turns on
+  *licence required*. Off by default, so a business making nothing
+  regulated never sees any of this.
+
+Two policy columns and one boolean on `organizations`, changed under
+`organizations.update`.
+
+**Decision — checked at release, with the licence row locked.** Release
+reads the licence `FOR SHARE` inside its own transaction, after the run
+guards and before anything moves. A withdrawal saved at the same moment
+either waits for the release or is seen by it, never half of each. The issue
+plan returns the licence and its status, so the release dialog can show it
+before Release is pressed.
+
+**Decision — an override is a permission, a reason and a record.**
+`production.override_licence`, Owner-only by default like every new
+permission. The release body may carry `licenceOverride: { reason }`, and a
+guard requires the permission only when it is present, as AdjustmentGuard
+does for adjustments. Sent when no override is needed — the licence was
+renewed between opening the dialog and pressing Release — it is ignored and
+nothing is recorded. The run stores:
+
+- `licence_status_at_release` — current, expired, not in force, or none;
+- `licence_overridden_by` and `licence_override_reason`.
+
+The reason stays on the run, not in the audit payload (ADR-018). The
+release's audit row records that an override happened.
+
+**Decision — the status is shown where it is acted on.**
+
+- **Recipe panel**: a status chip beside the licence, so a lapse is seen
+  before a run is planned.
+- **Release dialog**: the licence and its status, with either the refusal or
+  a reason field for whoever holds the override permission.
+- **Run detail and lot trace**: the number as now, plus its status at
+  release and any override — *Made under NPN 80012345 (Health Canada),
+  expired at release, released by Bob: renewal filed 3 Sept*. The number
+  links to the licence.
+- **Licences page**: unchanged — the register.
+
+**Consequences.**
+
+- A migration: three columns on `organizations`, three on
+  `production_orders`. Runs released before it have no recorded status, and
+  read as *not recorded* rather than as current.
+- One permission, with its description, in the server's and the client's
+  lists in the same commit.
+- Server first, with e2e tests for each state under each setting and for an
+  override with and without the permission; then the client.
+- The server function and `licence-status.ts` must agree. A test on each
+  side pins the same dates either side of today.
+
+**Deferred.**
+
+- **A policy per licence type or authority** — an NPN that never expires
+  beside an export certificate that does. Trigger: an organization holding
+  both kinds.
+- **Grace days after expiry.** Trigger: a regime that allows work during a
+  renewal, confirmed by whoever owns compliance.
+- **The same check at shipment**, for licences that govern sale or export
+  rather than manufacture.
+- The status enum of #16 and the sixty-day notification of #17.
 
 ---
 
@@ -4193,3 +4306,4 @@ they exist so the reasoning is not rediscovered from scratch.
 | Valuation method                       | Weighted average per pool; the pool is the lot        | ADR-048          |
 | Cost of a batch                        | Its consumption values, posted to output at close     | ADR-048          |
 | Base currency and exchange rates       | On the organization; a dated rate table               | ADR-048          |
+| Licence status at release              | An organization policy; overrides kept on the run     | ADR-050          |

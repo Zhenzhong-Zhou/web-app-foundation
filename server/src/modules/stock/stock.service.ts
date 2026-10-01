@@ -5,12 +5,10 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, desc, eq, gt, lt, or, type SQL, sql } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
+import { and, eq, sql } from 'drizzle-orm';
 
-import { pageOf } from '../../common/keyset';
-import { isCheckViolation, isUniqueViolation } from '../../database/errors';
-import { MovementReason, products } from '../../database/schema';
+import { isCheckViolation } from '../../database/errors';
+import { MovementReason } from '../../database/schema';
 import {
   locations,
   lots,
@@ -18,13 +16,9 @@ import {
   productVariants,
   stockLevels,
   stockMovements,
-  users,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { assertTakeable } from './availability';
-import { ListLotsDto } from './dto/list-lots.dto';
-import { ListMovementsDto } from './dto/list-movements.dto';
-import { UpdateLotDto } from './dto/update-lot.dto';
 import { PurchaseCost, valueMovement } from './valuation';
 
 /**
@@ -92,85 +86,11 @@ export interface RecordMovementInput {
   cost?: PurchaseCost | null;
 }
 
-export interface ListStockFilters {
-  locationId?: string;
-  variantId?: string;
-  includeEmpty?: string;
-}
-
 @Injectable()
 export class StockService {
   private readonly logger = new Logger(StockService.name);
 
   constructor(private readonly tenantDb: TenantDb) {}
-
-  /**
-   * Current stock, optionally narrowed to one location or one variant.
-   *
-   * Reads the cache and never aggregates the ledger (ADR-025). The join is
-   * three tables deep — variant for the SKU, location for the name, lot for the
-   * code — which `TenantDb.selectJoined` does not express, so this drops to a
-   * raw handle. The scope is applied by hand as a result; that is the cost of
-   * the escape hatch and the reason it is one query rather than the default.
-   */
-  list(filters: ListStockFilters = {}) {
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      const scope = [eq(stockLevels.organizationId, organizationId)];
-
-      if (filters.locationId) {
-        scope.push(eq(stockLevels.locationId, filters.locationId));
-      }
-
-      if (filters.variantId) {
-        scope.push(eq(stockLevels.variantId, filters.variantId));
-      }
-
-      /**
-       * Zero rows are kept, not deleted — a shelf that emptied yesterday is a
-       * fact worth having, and `LocationsService` depends on the row surviving
-       * so an emptied leaf can still gain children. But "what is on this shelf"
-       * means what is there, so they are hidden unless asked for.
-       */
-      if (filters.includeEmpty !== 'true') {
-        scope.push(gt(stockLevels.quantity, '0'));
-      }
-
-      return (
-        tx
-          .select({
-            variantId: stockLevels.variantId,
-            sku: productVariants.sku,
-            productName: products.name,
-            variantName: productVariants.name,
-            unitOfMeasure: productVariants.unitOfMeasure,
-            locationId: stockLevels.locationId,
-            locationName: locations.name,
-            locationCode: locations.code,
-            lotId: stockLevels.lotId,
-            lotCode: lots.code,
-            lotExpiresAt: lots.expiresAt,
-            // Whether the code was ours to invent, and so whether it can be
-            // corrected rather than reclassified (MovementLotDto).
-            lotIsAssigned: lots.isAssigned,
-            quantity: stockLevels.quantity,
-          })
-          .from(stockLevels)
-          .innerJoin(
-            productVariants,
-            eq(productVariants.id, stockLevels.variantId),
-          )
-          // Inner: every variant belongs to a product, and the product name
-          // is what people recognise — most variants have no name of their own.
-          .innerJoin(products, eq(products.id, productVariants.productId))
-          .innerJoin(locations, eq(locations.id, stockLevels.locationId))
-          // Left, because lot_id is null for every untracked variant and an
-          // inner join would silently drop most of the warehouse.
-          .leftJoin(lots, eq(lots.id, stockLevels.lotId))
-          .where(and(...scope))
-          .orderBy(asc(locations.name), asc(productVariants.sku))
-      );
-    });
-  }
 
   /**
    * The one path that changes a quantity, for callers with no transaction of
@@ -603,135 +523,6 @@ export class StockService {
       }
       throw error;
     }
-  }
-
-  /**
-   * The ledger, read. Newest first, keyset cursor on the UUIDv7 id — the same
-   * shape as the audit log, for the same reason: the table is append-only, so
-   * offset paging would shift every page down as rows arrive at the head.
-   *
-   * Four left joins, so this drops to a raw handle like list() does. Two are
-   * the same table aliased, because a transfer names both a source and a
-   * destination. Left throughout: a movement with no source is inbound, a lot
-   * is null for untracked variants, and an actor may be a tombstone (ADR-012)
-   * — an inner join would drop exactly the rows the RESTRICT constraints exist
-   * to preserve.
-   *
-   * The SKU is not joined. It is snapshotted on the row (ADR-023) so a rename
-   * does not rewrite history.
-   */
-  listMovements(query: ListMovementsDto) {
-    const limit = query.limit ?? 50;
-
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      const from = alias(locations, 'from_location');
-      const to = alias(locations, 'to_location');
-
-      const filters = [
-        eq(stockMovements.organizationId, organizationId),
-        query.before ? lt(stockMovements.id, query.before) : undefined,
-        query.variantId
-          ? eq(stockMovements.variantId, query.variantId)
-          : undefined,
-        query.lotId ? eq(stockMovements.lotId, query.lotId) : undefined,
-        query.locationId
-          ? or(
-              eq(stockMovements.fromLocationId, query.locationId),
-              eq(stockMovements.toLocationId, query.locationId),
-            )
-          : undefined,
-        query.reason ? eq(stockMovements.reason, query.reason) : undefined,
-      ].filter((f): f is SQL => f !== undefined);
-
-      // One more than asked for, so the presence of a next page is known
-      // without a second count query.
-      const rows = await tx
-        .select({
-          id: stockMovements.id,
-          sku: stockMovements.sku,
-          quantity: stockMovements.quantity,
-          reason: stockMovements.reason,
-          reasonDetail: stockMovements.reasonDetail,
-          note: stockMovements.note,
-          fromLocationName: from.name,
-          toLocationName: to.name,
-          lotCode: lots.code,
-          actorEmail: users.email,
-          createdAt: stockMovements.createdAt,
-        })
-        .from(stockMovements)
-        .leftJoin(from, eq(from.id, stockMovements.fromLocationId))
-        .leftJoin(to, eq(to.id, stockMovements.toLocationId))
-        .leftJoin(lots, eq(lots.id, stockMovements.lotId))
-        .leftJoin(users, eq(users.id, stockMovements.actorId))
-        .where(and(...filters))
-        .orderBy(desc(stockMovements.id))
-        .limit(limit + 1);
-
-      return pageOf(rows, limit);
-    });
-  }
-
-  /**
-   * The lot codes already known for one variant.
-   *
-   * Exists for the receive dialogs. A free-text lot field turns a typo into a
-   * second lot row for one physical run — a recall for L2024-A then returns
-   * the wrong units, and nothing about the split looks wrong on screen.
-   * Showing what already exists is what makes the typo visible.
-   *
-   * Expiry comes along because it is how someone spots the other mistake:
-   * typing a code that exists but belongs to a different run.
-   */
-  listLots(query: ListLotsDto) {
-    return this.tenantDb.select(lots, eq(lots.variantId, query.variantId), {
-      orderBy: desc(lots.createdAt),
-    });
-  }
-
-  /**
-   * Corrects a lot's expiry, and its code when the code was ours to invent.
-   *
-   * `isAssigned` is the discriminator. A supplier-printed code is authoritative
-   * — renaming the row makes the record disagree with the boxes, and the
-   * honest correction is adjustment movements between two lots. A code this
-   * organization invented has no external truth behind it, so a typo is a
-   * typo.
-   */
-  async updateLot(lotId: string, input: UpdateLotDto) {
-    const [lot] = await this.tenantDb.select(lots, eq(lots.id, lotId));
-
-    if (!lot) throw new NotFoundException('No such lot');
-
-    if (input.code && input.code !== lot.code && !lot.isAssigned) {
-      throw new ConflictException(
-        `${lot.code} came from the supplier, so it cannot be renamed. Move the stock to the correct lot instead.`,
-      );
-    }
-
-    try {
-      await this.tenantDb.update(
-        lots,
-        {
-          code: input.code,
-          ...(input.expiresAt !== undefined
-            ? { expiresAt: new Date(input.expiresAt) }
-            : {}),
-        },
-        eq(lots.id, lotId),
-      );
-    } catch (error) {
-      // The unique index on (organization_id, variant_id, code). Merging two
-      // lots is a different operation with its own rules, not a rename.
-      if (isUniqueViolation(error)) {
-        throw new ConflictException(
-          `${input.code} already exists for this item`,
-        );
-      }
-      throw error;
-    }
-
-    this.logger.log(`Lot ${lotId} updated`);
   }
 
   /**

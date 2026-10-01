@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import {
   type Database,
@@ -11,16 +11,14 @@ import {
   orderReturns,
   orders,
   returnAuthorizations,
-  roles,
 } from '../src/database/schema';
 import {
+  addMember,
   body,
   createE2eApp,
   createVariant,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
-import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 import { shippedSale } from './utils/sales';
 
@@ -68,30 +66,6 @@ describe('Return authorizations (e2e)', () => {
   });
 
   type Org = Awaited<ReturnType<typeof registerOrganization>>;
-
-  async function addMember(org: Org, email: string, roleName: string) {
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(
-          eq(roles.organizationId, org.organizationId),
-          eq(roles.name, roleName),
-        ),
-      );
-
-    await org.agent
-      .post('/v1/users')
-      .send({ email, name: roleName, password: PASSWORD, roleId: role.id })
-      .expect(201);
-
-    const member = authedAgent(app);
-    await member
-      .post('/v1/auth/login')
-      .send({ email, password: PASSWORD })
-      .expect(200);
-    return member;
-  }
 
   async function variant(org: Org, sku: string) {
     return await createVariant(org.agent, {
@@ -290,6 +264,49 @@ describe('Return authorizations (e2e)', () => {
           ],
         })
         .expect(409);
+    });
+
+    // A purchase can never be returned against, whatever its status, so this
+    // is a malformed request (400) rather than one the order's state refuses.
+    it('refuses a purchase, which is never returned against', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const s = await shipped(org);
+
+      const bought = body<{ order: { id: string; lines: { id: string }[] } }>(
+        await org.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: s.partnerId,
+            direction: 'purchase',
+            lines: [
+              { variantId: await variant(org, 'BOUGHT'), quantityOrdered: '3' },
+            ],
+          })
+          .expect(201),
+      ).order;
+
+      await org.agent
+        .post('/v1/return-authorizations')
+        .send({
+          orderId: bought.id,
+          reason: REASON,
+          lines: [
+            { lineId: bought.lines[0].id, quantity: '1', resolution: 'none' },
+          ],
+        })
+        .expect(400);
+    });
+
+    it('refuses a line sent twice', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const s = await shipped(org);
+      const line = {
+        lineId: s.capsulesLine,
+        quantity: '1',
+        resolution: 'credit',
+      };
+
+      await raise(org, s, { lines: [line, line] }).expect(400);
     });
 
     // Nothing on a sample was billed, so nothing on it can be credited.
@@ -752,8 +769,18 @@ describe('Return authorizations (e2e)', () => {
       const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
-      const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
-      const viewer = await addMember(org, 'viewer@alpha.example.com', 'Viewer');
+      const admin = await addMember(
+        app,
+        org,
+        'admin@alpha.example.com',
+        'Admin',
+      );
+      const viewer = await addMember(
+        app,
+        org,
+        'viewer@alpha.example.com',
+        'Viewer',
+      );
 
       await viewer
         .post('/v1/return-authorizations')

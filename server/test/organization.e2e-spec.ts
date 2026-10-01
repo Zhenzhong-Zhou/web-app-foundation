@@ -1,15 +1,15 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { addresses, auditLog, roles } from '../src/database/schema';
+import { addresses, auditLog } from '../src/database/schema';
 import {
+  addMember,
   body,
   createE2eApp,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
@@ -56,34 +56,6 @@ describe('Organization (e2e)', () => {
   beforeEach(async () => {
     await resetDatabase(app);
   });
-
-  async function addMember(
-    owner: Awaited<ReturnType<typeof registerOrganization>>,
-    email: string,
-    roleName: 'Admin' | 'Viewer',
-  ) {
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(
-          eq(roles.organizationId, owner.organizationId),
-          eq(roles.name, roleName),
-        ),
-      );
-
-    await owner.agent
-      .post('/v1/users')
-      .send({ email, name: roleName, password: PASSWORD, roleId: role.id })
-      .expect(201);
-
-    const member = authedAgent(app);
-    await member
-      .post('/v1/auth/login')
-      .send({ email, password: PASSWORD })
-      .expect(200);
-    return member;
-  }
 
   async function current(agent: ReturnType<typeof authedAgent>) {
     return body<{ organization: OrganizationResponse }>(
@@ -185,7 +157,7 @@ describe('Organization (e2e)', () => {
       ['admin@alpha.example.com', 'Admin'],
       ['viewer@alpha.example.com', 'Viewer'],
     ] as const) {
-      const member = await addMember(org, email, role);
+      const member = await addMember(app, org, email, role);
 
       await member.get('/v1/organization').expect(200);
       await member

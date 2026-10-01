@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
 
+import type { Transaction } from '../../database/database.module';
 import { addresses } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { CreateAddressDto } from './dto/create-address.dto';
@@ -63,16 +64,7 @@ export class PartnerAddressesService {
      * a failure between them would leave the partner with none.
      */
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await tx
-        .update(addresses)
-        .set({ isDefault: false })
-        .where(
-          and(
-            eq(addresses.organizationId, organizationId),
-            eq(addresses.partnerId, partnerId),
-            eq(addresses.isDefault, true),
-          ),
-        );
+      await this.clearDefault(tx, organizationId, partnerId);
 
       const [created] = await tx
         .insert(addresses)
@@ -96,16 +88,7 @@ export class PartnerAddressesService {
     }
 
     await this.tenantDb.transaction(async (tx, organizationId) => {
-      await tx
-        .update(addresses)
-        .set({ isDefault: false })
-        .where(
-          and(
-            eq(addresses.organizationId, organizationId),
-            eq(addresses.partnerId, partnerId),
-            eq(addresses.isDefault, true),
-          ),
-        );
+      await this.clearDefault(tx, organizationId, partnerId);
 
       await tx
         .update(addresses)
@@ -164,5 +147,28 @@ export class PartnerAddressesService {
     if (!address) throw new NotFoundException('No such address');
 
     return address;
+  }
+
+  /**
+   * The partner's current default address stops being the default. Run in
+   * the caller's transaction, before the new default is written: a partial
+   * unique index allows one per partner, so the order matters, and both
+   * statements land or neither does.
+   */
+  private async clearDefault(
+    tx: Transaction,
+    organizationId: string,
+    partnerId: string,
+  ): Promise<void> {
+    await tx
+      .update(addresses)
+      .set({ isDefault: false })
+      .where(
+        and(
+          eq(addresses.organizationId, organizationId),
+          eq(addresses.partnerId, partnerId),
+          eq(addresses.isDefault, true),
+        ),
+      );
   }
 }

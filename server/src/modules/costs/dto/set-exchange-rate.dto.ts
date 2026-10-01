@@ -1,5 +1,6 @@
-import { IsISO8601, IsString, Matches } from 'class-validator';
+import { IsString, Matches } from 'class-validator';
 
+import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import { IsCurrencyCode } from '../../../common/dto/currency';
 import { trim } from '../../../common/dto/trim';
 
@@ -20,9 +21,7 @@ export class SetExchangeRateDto {
    * A calendar day, YYYY-MM-DD, as invoices take one (ADR-046). Checked as a
    * real date too: the pattern alone accepts 2026-02-31.
    */
-  @IsString()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'rateDate must be YYYY-MM-DD' })
-  @IsISO8601({ strict: true }, { message: 'rateDate must be a real date' })
+  @IsCalendarDay()
   rateDate!: string;
 
   @IsString()

@@ -1,4 +1,4 @@
-import { IsISO8601, IsString, Matches } from 'class-validator';
+import { IsCalendarDay } from '../../../common/dto/calendar-day';
 
 /**
  * The invoice date, sent by whoever issues it.
@@ -9,11 +9,6 @@ import { IsISO8601, IsString, Matches } from 'class-validator';
  * sends it; the date column stores it as it arrives.
  */
 export class IssueInvoiceDto {
-  @IsString()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    message: 'invoiceDate must be a calendar day, YYYY-MM-DD',
-  })
-  // Strict, so 2026-02-30 is refused here rather than by Postgres as a 500.
-  @IsISO8601({ strict: true })
+  @IsCalendarDay()
   invoiceDate!: string;
 }

@@ -5,12 +5,11 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  Matches,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
 
-import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
+import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 import { CreateBomLineDto } from './create-bom-line.dto';
 
@@ -31,10 +30,7 @@ export class CreateBomDto {
    * rounds, and the rounding comes back as stock drift.
    */
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'outputQuantity must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   outputQuantity!: string;
 
   /** The registration this formulation is made under, if any (ADR-029). */

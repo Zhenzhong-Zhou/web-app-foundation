@@ -14,12 +14,13 @@ import {
   productVariants,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
-import { ReturnAuthorizationsService } from '../return-authorizations/return-authorizations.service';
-import { itemName } from '../stock/item-name';
+import { ReturnAuthorizationReceiptsService } from '../return-authorizations/return-authorization-receipts.service';
+import { inVariantOrder } from '../stock/availability';
 import { StockService, type Tx } from '../stock/stock.service';
 import { trackedVariants } from '../stock/tracked-variants';
 import type { ReturnOrderDto } from './dto/return-order.dto';
 import { loadOrder } from './load-order';
+import { withLotItems } from './lot-items';
 import { lineFor, type OrderLine, requestedLines } from './order-line-lookup';
 
 type ReturnLine = ReturnOrderDto['lines'][number];
@@ -45,17 +46,6 @@ export interface ReturnableLine {
   lots: ReturnableLot[];
 }
 
-/** An item as a return's list shows it. */
-interface ReturnItem {
-  returnId: string;
-  sku: string;
-  description: string;
-  unitOfMeasure: string;
-  lotCode: string | null;
-  expiresAt: Date | null;
-  quantity: string;
-}
-
 /**
  * Customer returns against sales orders (ADR-043).
  *
@@ -76,7 +66,7 @@ export class ReturnsService {
   constructor(
     private readonly tenantDb: TenantDb,
     private readonly stock: StockService,
-    private readonly rmas: ReturnAuthorizationsService,
+    private readonly rmas: ReturnAuthorizationReceiptsService,
   ) {}
 
   /**
@@ -138,12 +128,6 @@ export class ReturnsService {
 
       const ids = input.lines.map((line) => line.lineId);
 
-      if (new Set(ids).size !== ids.length) {
-        throw new BadRequestException(
-          'A line appears twice in one return — send its total once',
-        );
-      }
-
       const lines = await requestedLines(tx, organizationId, orderId, ids);
       const tracked = await trackedVariants(
         tx,
@@ -183,11 +167,10 @@ export class ReturnsService {
        * products take their row locks in one global order and cannot
        * deadlock (ADR-023).
        */
-      const ordered = [...input.lines].sort((a, b) => {
-        const left = lineFor(lines, a.lineId).variantId;
-        const right = lineFor(lines, b.lineId).variantId;
-        return left < right ? -1 : left > right ? 1 : 0;
-      });
+      const ordered = inVariantOrder(
+        input.lines,
+        (requested) => lineFor(lines, requested.lineId).variantId,
+      );
 
       const summary: string[] = [];
 
@@ -233,6 +216,12 @@ export class ReturnsService {
           );
         }
 
+        /**
+         * Shaped like ship()'s counter update, and kept apart on purpose:
+         * the two are held to different limits by different constraints —
+         * this one to what shipped, shipping's to what was ordered — and
+         * each refusal names its own limit.
+         */
         try {
           await tx
             .update(orderLines)
@@ -286,27 +275,10 @@ export class ReturnsService {
         )
         .orderBy(desc(orderReturns.createdAt));
 
-      if (headers.length === 0) return [];
-
-      const items = await this.itemsOf(
-        tx,
-        organizationId,
-        headers.map((header) => header.id),
-      );
-
-      return headers.map((header) => ({
-        ...header,
-        items: items
-          .filter((item) => item.returnId === header.id)
-          .map((item) => ({
-            sku: item.sku,
-            description: item.description,
-            unitOfMeasure: item.unitOfMeasure,
-            lotCode: item.lotCode,
-            expiresAt: item.expiresAt,
-            quantity: item.quantity,
-          })),
-      }));
+      return withLotItems(tx, organizationId, headers, {
+        referenceType: 'order_return',
+        reason: 'return',
+      });
     });
   }
 
@@ -508,58 +480,6 @@ export class ReturnsService {
       expiresAt: row.expires_at,
       shipped: row.shipped,
       returned: row.returned,
-    }));
-  }
-
-  private async itemsOf(
-    tx: Tx,
-    organizationId: string,
-    returnIds: string[],
-  ): Promise<ReturnItem[]> {
-    const rows = (
-      await tx.execute(sql`
-        select
-          sm.reference_id as return_id,
-          sm.sku,
-          pr.name as product_name,
-          pv.name as variant_name,
-          pv.unit_of_measure,
-          l.code as lot_code,
-          l.expires_at,
-          sum(sm.quantity)::text as quantity
-        from stock_movements sm
-        join product_variants pv on pv.id = sm.variant_id
-        join products pr on pr.id = pv.product_id
-        left join lots l on l.id = sm.lot_id
-        where sm.organization_id = ${organizationId}::uuid
-          and sm.reference_type = 'order_return'
-          and sm.reference_id in (${sql.join(
-            returnIds.map((id) => sql`${id}::uuid`),
-            sql`, `,
-          )})
-        group by sm.reference_id, sm.sku, pr.name, pv.name, pv.unit_of_measure,
-          l.code, l.expires_at
-        order by sm.sku, l.expires_at asc nulls last, l.code
-      `)
-    ).rows as {
-      return_id: string;
-      sku: string;
-      product_name: string;
-      variant_name: string | null;
-      unit_of_measure: string;
-      lot_code: string | null;
-      expires_at: Date | null;
-      quantity: string;
-    }[];
-
-    return rows.map((row) => ({
-      returnId: row.return_id,
-      sku: row.sku,
-      description: itemName(row.product_name, row.variant_name),
-      unitOfMeasure: row.unit_of_measure,
-      lotCode: row.lot_code,
-      expiresAt: row.expires_at,
-      quantity: row.quantity,
     }));
   }
 }

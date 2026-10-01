@@ -24,6 +24,7 @@ import { ListOrdersDto } from './dto/list-orders.dto';
 import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
 import { ReceiveLineDto } from './dto/receive-line.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { OrderLifecycleService } from './order-lifecycle.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderReceiptsService } from './order-receipts.service';
 import { OrdersService } from './orders.service';
@@ -32,6 +33,7 @@ import { OrdersService } from './orders.service';
 export class OrdersController {
   constructor(
     private readonly orders: OrdersService,
+    private readonly lifecycle: OrderLifecycleService,
     private readonly lines: OrderLinesService,
     private readonly receipts: OrderReceiptsService,
   ) {}
@@ -64,7 +66,7 @@ export class OrdersController {
     @Body() dto: CreateOrderDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return { order: await this.orders.create(dto, user.userId) };
+    return { order: await this.lifecycle.create(dto, user.userId) };
   }
 
   /**
@@ -87,7 +89,7 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: RequestContext,
   ) {
-    return { order: await this.orders.duplicate(id, user.userId) };
+    return { order: await this.lifecycle.duplicate(id, user.userId) };
   }
 
   /**
@@ -114,7 +116,7 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateOrderDto,
   ): Promise<void> {
-    await this.orders.update(id, dto);
+    await this.lifecycle.update(id, dto);
   }
 
   @Post(':id/lines')

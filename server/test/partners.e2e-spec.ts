@@ -1,15 +1,14 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { addresses, contacts, partners, roles } from '../src/database/schema';
+import { addresses, contacts, partners } from '../src/database/schema';
 import {
+  addViewer,
   body,
   createE2eApp,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
@@ -50,39 +49,6 @@ describe('Partners (e2e)', () => {
   beforeEach(async () => {
     await resetDatabase(app);
   });
-
-  async function roleIdNamed(organizationId: string, name: string) {
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(eq(roles.organizationId, organizationId), eq(roles.name, name)),
-      );
-
-    return role.id;
-  }
-
-  async function addViewer(
-    owner: Awaited<ReturnType<typeof registerOrganization>>,
-    email: string,
-  ) {
-    await owner.agent
-      .post('/v1/users')
-      .send({
-        email,
-        name: 'Viewer',
-        password: PASSWORD,
-        roleId: await roleIdNamed(owner.organizationId, 'Viewer'),
-      })
-      .expect(201);
-
-    const viewer = authedAgent(app);
-    await viewer
-      .post('/v1/auth/login')
-      .send({ email, password: PASSWORD })
-      .expect(200);
-    return viewer;
-  }
 
   describe('POST /v1/partners', () => {
     it('creates a partner with no kind attached to it', async () => {
@@ -184,7 +150,7 @@ describe('Partners (e2e)', () => {
 
     it('refuses a Viewer, which lacks partners.create', async () => {
       const alpha = await registerOrganization(app, 'alpha');
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       await viewer.post('/v1/partners').send(partner).expect(403);
       expect(await db.select().from(partners)).toHaveLength(0);
@@ -234,7 +200,7 @@ describe('Partners (e2e)', () => {
     it('is readable by a Viewer, which holds partners.view', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await alpha.agent.post('/v1/partners').send(partner).expect(201);
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       const res = await viewer.get('/v1/partners').expect(200);
       expect(body<PartnerResponse[]>(res)).toHaveLength(1);
@@ -302,7 +268,7 @@ describe('Partners (e2e)', () => {
         await alpha.agent.post('/v1/partners').send(partner).expect(201),
       ).partner;
 
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       await viewer
         .patch(`/v1/partners/${created.id}`)
@@ -517,7 +483,7 @@ describe('Partners (e2e)', () => {
     it('refuses a Viewer, which lacks partners.update', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const created = await createPartnerIn(alpha);
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       // No partners.addresses.* keys exist: an address is part of the partner
       // record, so the partner's own permissions govern it.

@@ -1,13 +1,6 @@
-import {
-  IsIn,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Matches,
-  MaxLength,
-} from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
-import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
+import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
 import { trim } from '../../../common/dto/trim';
 
@@ -38,10 +31,7 @@ export class CreateProductionOrderDto {
   partnerId?: string;
 
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'quantityPlanned must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   quantityPlanned!: string;
 
   @IsOptional()
@@ -79,10 +69,7 @@ export class UpdateProductionOrderDto {
 
   @IsOptional()
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'quantityPlanned must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   quantityPlanned?: string;
 
   @IsOptional()

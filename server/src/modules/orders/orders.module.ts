@@ -4,14 +4,17 @@ import { NotificationsModule } from '../../core/notifications/notifications.modu
 import { PartnersModule } from '../partners/partners.module';
 import { ReturnAuthorizationsModule } from '../return-authorizations/return-authorizations.module';
 import { StockModule } from '../stock/stock.module';
+import { OrderLifecycleService } from './order-lifecycle.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderReceiptsService } from './order-receipts.service';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { ReturnsController } from './returns.controller';
 import { ReturnsService } from './returns.service';
+import { ShipmentVoidsService } from './shipment-voids.service';
 import { ShipmentsController } from './shipments.controller';
 import { ShipmentsService } from './shipments.service';
+import { ShippingService } from './shipping.service';
 
 /**
  * Imports StockModule because receiving against a line writes a movement, and
@@ -33,9 +36,12 @@ import { ShipmentsService } from './shipments.service';
   controllers: [OrdersController, ShipmentsController, ReturnsController],
   providers: [
     OrdersService,
+    OrderLifecycleService,
     OrderLinesService,
     OrderReceiptsService,
     ShipmentsService,
+    ShippingService,
+    ShipmentVoidsService,
     ReturnsService,
   ],
   exports: [OrdersService],

@@ -1,17 +1,18 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { bomLines, boms, roles } from '../src/database/schema';
+import { bomLines, boms } from '../src/database/schema';
 import {
   body,
   createE2eApp,
   createVariant,
   PASSWORD,
   registerOrganization,
+  roleIdNamed,
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -66,17 +67,6 @@ describe('BOMs (e2e)', () => {
   beforeEach(async () => {
     await resetDatabase(app);
   });
-
-  async function roleIdNamed(organizationId: string, name: string) {
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(eq(roles.organizationId, organizationId), eq(roles.name, name)),
-      );
-
-    return role.id;
-  }
 
   /** A product with one variant, returning the variant id the BOM points at. */
   async function makeVariant(
@@ -684,7 +674,7 @@ describe('BOMs (e2e)', () => {
           email: 'viewer@alpha.example.com',
           name: 'Viewer',
           password: PASSWORD,
-          roleId: await roleIdNamed(alpha.organizationId, 'Viewer'),
+          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
         })
         .expect(201);
 

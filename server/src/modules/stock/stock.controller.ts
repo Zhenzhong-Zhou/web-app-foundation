@@ -24,7 +24,9 @@ import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
 import { RecordMovementDto } from './dto/record-movement.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
+import { LotsService } from './lots.service';
 import { StockService } from './stock.service';
+import { StockReadsService } from './stock-reads.service';
 
 /**
  * One endpoint for every kind of movement, not one per reason.
@@ -41,12 +43,16 @@ import { StockService } from './stock.service';
  */
 @Controller({ path: 'stock', version: '1' })
 export class StockController {
-  constructor(private readonly stock: StockService) {}
+  constructor(
+    private readonly stock: StockService,
+    private readonly reads: StockReadsService,
+    private readonly lots: LotsService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
   list(@Query() query: ListStockDto) {
-    return this.stock.list(query);
+    return this.reads.list(query);
   }
 
   @Post('movements')
@@ -75,13 +81,13 @@ export class StockController {
   @Get('movements')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
   listMovements(@Query() query: ListMovementsDto) {
-    return this.stock.listMovements(query);
+    return this.reads.listMovements(query);
   }
 
   @Get('lots')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
   listLots(@Query() query: ListLotsDto) {
-    return this.stock.listLots(query);
+    return this.lots.listLots(query);
   }
 
   @Patch('lots/:id')
@@ -96,6 +102,6 @@ export class StockController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateLotDto,
   ): Promise<void> {
-    await this.stock.updateLot(id, dto);
+    await this.lots.updateLot(id, dto);
   }
 }

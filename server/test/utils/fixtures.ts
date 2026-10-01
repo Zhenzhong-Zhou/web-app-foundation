@@ -1,6 +1,12 @@
 import type { INestApplication } from '@nestjs/common';
 import { ThrottlerStorage } from '@nestjs/throttler';
+import { and, eq } from 'drizzle-orm';
 
+import {
+  type Database,
+  UNSAFE_GLOBAL_DB,
+} from '../../src/database/database.module';
+import { roles } from '../../src/database/schema';
 import { MailService } from '../../src/shared/mail/mail.service';
 import {
   createTestApp,
@@ -116,4 +122,56 @@ export async function createVariant(
   const res = await agent.post('/v1/products').send(payload).expect(201);
   return body<{ product: { variants: { id: string }[] } }>(res).product
     .variants[0].id;
+}
+
+/** A system role's id in one organization, by name: Owner, Admin, Viewer. */
+export async function roleIdNamed(
+  app: INestApplication,
+  organizationId: string,
+  name: string,
+): Promise<string> {
+  const db = app.get<Database>(UNSAFE_GLOBAL_DB);
+  const [role] = await db
+    .select({ id: roles.id })
+    .from(roles)
+    .where(and(eq(roles.organizationId, organizationId), eq(roles.name, name)));
+
+  return role.id;
+}
+
+/**
+ * A member the Owner has added with one of the system roles, signed in: who a
+ * spec acts as to show what that role may and may not do.
+ */
+export async function addMember(
+  app: INestApplication,
+  owner: Awaited<ReturnType<typeof registerOrganization>>,
+  email: string,
+  roleName: string,
+) {
+  await owner.agent
+    .post('/v1/users')
+    .send({
+      email,
+      name: roleName,
+      password: PASSWORD,
+      roleId: await roleIdNamed(app, owner.organizationId, roleName),
+    })
+    .expect(201);
+
+  const member = authedAgent(app);
+  await member
+    .post('/v1/auth/login')
+    .send({ email, password: PASSWORD })
+    .expect(200);
+  return member;
+}
+
+/** The member most permission tests act as: reads allowed, writes refused. */
+export function addViewer(
+  app: INestApplication,
+  owner: Awaited<ReturnType<typeof registerOrganization>>,
+  email: string,
+) {
+  return addMember(app, owner, email, 'Viewer');
 }

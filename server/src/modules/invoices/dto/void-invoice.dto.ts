@@ -1,11 +1,6 @@
-import {
-  IsISO8601,
-  IsString,
-  Matches,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { IsString, MaxLength, MinLength } from 'class-validator';
 
+import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import { trim } from '../../../common/dto/trim';
 
 /**
@@ -27,10 +22,6 @@ export class VoidInvoiceDto {
    * The credit note's date, sent by the client for the reason the invoice
    * date is: the server does not know the person's calendar day.
    */
-  @IsString()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    message: 'creditDate must be a calendar day, YYYY-MM-DD',
-  })
-  @IsISO8601({ strict: true })
+  @IsCalendarDay()
   creditDate!: string;
 }

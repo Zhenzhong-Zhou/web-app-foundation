@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
 
+import type { Transaction } from '../../database/database.module';
 import { contacts } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { CreateContactDto } from './dto/create-contact.dto';
@@ -47,16 +48,7 @@ export class PartnerContactsService {
     }
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await tx
-        .update(contacts)
-        .set({ isPrimary: false })
-        .where(
-          and(
-            eq(contacts.organizationId, organizationId),
-            eq(contacts.partnerId, partnerId),
-            eq(contacts.isPrimary, true),
-          ),
-        );
+      await this.clearPrimary(tx, organizationId, partnerId);
 
       const [created] = await tx
         .insert(contacts)
@@ -80,16 +72,7 @@ export class PartnerContactsService {
     }
 
     await this.tenantDb.transaction(async (tx, organizationId) => {
-      await tx
-        .update(contacts)
-        .set({ isPrimary: false })
-        .where(
-          and(
-            eq(contacts.organizationId, organizationId),
-            eq(contacts.partnerId, partnerId),
-            eq(contacts.isPrimary, true),
-          ),
-        );
+      await this.clearPrimary(tx, organizationId, partnerId);
 
       await tx
         .update(contacts)
@@ -133,5 +116,28 @@ export class PartnerContactsService {
     if (!contact) throw new NotFoundException('No such contact');
 
     return contact;
+  }
+
+  /**
+   * The partner's current primary contact stops being primary. Run in the
+   * caller's transaction, before the new primary is written: a partial
+   * unique index allows one per partner, so the order matters, and both
+   * statements land or neither does.
+   */
+  private async clearPrimary(
+    tx: Transaction,
+    organizationId: string,
+    partnerId: string,
+  ): Promise<void> {
+    await tx
+      .update(contacts)
+      .set({ isPrimary: false })
+      .where(
+        and(
+          eq(contacts.organizationId, organizationId),
+          eq(contacts.partnerId, partnerId),
+          eq(contacts.isPrimary, true),
+        ),
+      );
   }
 }

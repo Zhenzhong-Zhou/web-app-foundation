@@ -2,20 +2,20 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  ArrayUnique,
   IsArray,
-  IsISO8601,
   IsOptional,
   IsString,
   IsUUID,
-  Matches,
   MaxLength,
   MinLength,
   ValidateNested,
 } from 'class-validator';
 
+import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import {
-  NON_NEGATIVE_DECIMAL,
-  POSITIVE_DECIMAL,
+  IsNonNegativeDecimal,
+  IsPositiveDecimal,
 } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 
@@ -28,10 +28,7 @@ export class CreditLineDto {
   invoiceLineId!: string;
 
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'quantity must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   quantity!: string;
 
   /**
@@ -40,10 +37,7 @@ export class CreditLineDto {
    */
   @IsOptional()
   @IsString()
-  @Matches(NON_NEGATIVE_DECIMAL, {
-    message:
-      'unitPrice must be a number with at most 4 decimal places, sent as a string',
-  })
+  @IsNonNegativeDecimal()
   unitPrice?: string;
 
   /** For returned goods: the RMA line this credit settles. */
@@ -57,6 +51,10 @@ export class PreviewCreditDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(200)
+  @ArrayUnique((line?: CreditLineDto) => line?.invoiceLineId, {
+    message:
+      'An invoice line appears twice on one credit — send its total once',
+  })
   @ValidateNested({ each: true })
   @Type(() => CreditLineDto)
   lines!: CreditLineDto[];
@@ -75,10 +73,6 @@ export class CreditInvoiceDto extends PreviewCreditDto {
   reason!: string;
 
   /** A calendar day, sent by the client, as the invoice date is. */
-  @IsString()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
-    message: 'creditDate must be a calendar day, YYYY-MM-DD',
-  })
-  @IsISO8601({ strict: true })
+  @IsCalendarDay()
   creditDate!: string;
 }

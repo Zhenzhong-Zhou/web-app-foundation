@@ -1,12 +1,6 @@
-import {
-  IsOptional,
-  IsString,
-  IsUUID,
-  Matches,
-  MaxLength,
-} from 'class-validator';
+import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
-import { POSITIVE_DECIMAL } from '../../../common/dto/decimal';
+import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 
 /**
@@ -20,10 +14,7 @@ import { trim } from '../../../common/dto/trim';
 export class UpdateBomDto {
   @IsOptional()
   @IsString()
-  @Matches(POSITIVE_DECIMAL, {
-    message:
-      'outputQuantity must be a positive number with at most 4 decimal places, sent as a string',
-  })
+  @IsPositiveDecimal()
   outputQuantity?: string;
 
   @IsOptional()

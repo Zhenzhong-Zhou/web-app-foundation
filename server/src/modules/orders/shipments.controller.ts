@@ -17,7 +17,9 @@ import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { PreviewShipmentDto, ShipOrderDto } from './dto/ship-order.dto';
 import { VoidShipmentDto } from './dto/void-shipment.dto';
+import { ShipmentVoidsService } from './shipment-voids.service';
 import { ShipmentsService } from './shipments.service';
+import { ShippingService } from './shipping.service';
 
 /**
  * Shipments against a sales order (ADR-041). Its own controller because a
@@ -26,7 +28,11 @@ import { ShipmentsService } from './shipments.service';
  */
 @Controller({ path: 'orders/:id/shipments', version: '1' })
 export class ShipmentsController {
-  constructor(private readonly shipments: ShipmentsService) {}
+  constructor(
+    private readonly shipments: ShipmentsService,
+    private readonly shipping: ShippingService,
+    private readonly voids: ShipmentVoidsService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
@@ -59,7 +65,7 @@ export class ShipmentsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: PreviewShipmentDto,
   ) {
-    return this.shipments.preview(id, dto);
+    return this.shipping.preview(id, dto);
   }
 
   /**
@@ -80,7 +86,7 @@ export class ShipmentsController {
     @Body() dto: ShipOrderDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return { shipment: await this.shipments.ship(id, dto, user.userId) };
+    return { shipment: await this.shipping.ship(id, dto, user.userId) };
   }
 
   /**
@@ -103,6 +109,6 @@ export class ShipmentsController {
     @Body() dto: VoidShipmentDto,
     @CurrentUser() user: RequestContext,
   ): Promise<void> {
-    await this.shipments.void(id, shipmentId, dto, user.userId);
+    await this.voids.void(id, shipmentId, dto, user.userId);
   }
 }

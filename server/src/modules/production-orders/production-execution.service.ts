@@ -13,7 +13,7 @@ import {
   productLicences,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
-import { assertTakeable } from '../stock/availability';
+import { assertTakeable, inVariantOrder } from '../stock/availability';
 import { allocateFefo } from '../stock/lot-allocation';
 import { StockService } from '../stock/stock.service';
 import { trackedVariants } from '../stock/tracked-variants';
@@ -177,15 +177,10 @@ export class ProductionExecutionService {
        * (ADR-045). Checked in product order, so the product locks cannot
        * deadlock with a shipment taking the same ones.
        */
-      const committed = issued
-        .filter((line) => line.supplyType === 'stocked')
-        .sort((a, b) =>
-          a.componentVariantId < b.componentVariantId
-            ? -1
-            : a.componentVariantId > b.componentVariantId
-              ? 1
-              : 0,
-        );
+      const committed = inVariantOrder(
+        issued.filter((line) => line.supplyType === 'stocked'),
+        (line) => line.componentVariantId,
+      );
 
       for (const line of committed) {
         await assertTakeable(tx, {

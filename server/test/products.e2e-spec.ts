@@ -1,15 +1,14 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { products, productVariants, roles } from '../src/database/schema';
+import { products, productVariants } from '../src/database/schema';
 import {
+  addViewer,
   body,
   createE2eApp,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
@@ -68,39 +67,6 @@ describe('Products (e2e)', () => {
   beforeEach(async () => {
     await resetDatabase(app);
   });
-
-  async function roleIdNamed(organizationId: string, name: string) {
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(eq(roles.organizationId, organizationId), eq(roles.name, name)),
-      );
-
-    return role.id;
-  }
-
-  async function addViewer(
-    owner: Awaited<ReturnType<typeof registerOrganization>>,
-    email: string,
-  ) {
-    await owner.agent
-      .post('/v1/users')
-      .send({
-        email,
-        name: 'Viewer',
-        password: PASSWORD,
-        roleId: await roleIdNamed(owner.organizationId, 'Viewer'),
-      })
-      .expect(201);
-
-    const viewer = authedAgent(app);
-    await viewer
-      .post('/v1/auth/login')
-      .send({ email, password: PASSWORD })
-      .expect(200);
-    return viewer;
-  }
 
   describe('POST /v1/products', () => {
     it('creates the product and its first variant together', async () => {
@@ -194,7 +160,7 @@ describe('Products (e2e)', () => {
 
     it('refuses a Viewer, which lacks products.create', async () => {
       const alpha = await registerOrganization(app, 'alpha');
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       await viewer.post('/v1/products').send(product).expect(403);
       expect(await db.select().from(products)).toHaveLength(0);
@@ -220,7 +186,7 @@ describe('Products (e2e)', () => {
     it('is readable by a Viewer, which holds products.view', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await alpha.agent.post('/v1/products').send(product).expect(201);
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       const res = await viewer.get('/v1/products').expect(200);
       expect(body<ProductResponse[]>(res)).toHaveLength(1);
@@ -307,7 +273,7 @@ describe('Products (e2e)', () => {
     it('is readable by a Viewer, which holds products.view', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await alpha.agent.post('/v1/products').send(product).expect(201);
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       const res = await viewer.get('/v1/products/variants').expect(200);
       expect(body<VariantPickerResponse[]>(res)).toHaveLength(1);
@@ -378,7 +344,7 @@ describe('Products (e2e)', () => {
         await alpha.agent.post('/v1/products').send(product).expect(201),
       ).product;
 
-      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
 
       await viewer
         .patch(`/v1/products/${created.id}`)

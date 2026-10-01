@@ -6,13 +6,16 @@ import { AppModule } from '../app.module';
 import { AuthService } from '../core/auth/auth.service';
 import { OrganizationsService } from '../core/organizations/organizations.service';
 import { BomsService } from '../modules/boms/boms.service';
+import { ExchangeRatesService } from '../modules/costs/exchange-rates.service';
+import { CreditNotesService } from '../modules/invoices/credit-notes.service';
 import { InvoiceDraftsService } from '../modules/invoices/invoice-drafts.service';
 import { InvoiceIssuingService } from '../modules/invoices/invoice-issuing.service';
 import { LocationsService } from '../modules/locations/locations.service';
+import { OrderLifecycleService } from '../modules/orders/order-lifecycle.service';
 import { OrderReceiptsService } from '../modules/orders/order-receipts.service';
-import { OrdersService } from '../modules/orders/orders.service';
 import { ReturnsService } from '../modules/orders/returns.service';
-import { ShipmentsService } from '../modules/orders/shipments.service';
+import { ShipmentVoidsService } from '../modules/orders/shipment-voids.service';
+import { ShippingService } from '../modules/orders/shipping.service';
 import { PartnerAddressesService } from '../modules/partners/partner-addresses.service';
 import { PartnersService } from '../modules/partners/partners.service';
 import { PriceListsService } from '../modules/price-lists/price-lists.service';
@@ -21,6 +24,7 @@ import { ProductionCloseService } from '../modules/production-orders/production-
 import { ProductionExecutionService } from '../modules/production-orders/production-execution.service';
 import { ProductionOrdersService } from '../modules/production-orders/production-orders.service';
 import { ProductsService } from '../modules/products/products.service';
+import { ReturnAuthorizationsService } from '../modules/return-authorizations/return-authorizations.service';
 import { StockService } from '../modules/stock/stock.service';
 import { TaxCodesService } from '../modules/tax-codes/tax-codes.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
@@ -119,13 +123,13 @@ async function seedDemo(): Promise<void> {
     const locations = app.get(LocationsService);
     const licences = app.get(ProductLicencesService);
     const partners = app.get(PartnersService);
-    const orders = app.get(OrdersService);
+    const orders = app.get(OrderLifecycleService);
     const receipts = app.get(OrderReceiptsService);
     const boms = app.get(BomsService);
     const runs = app.get(ProductionOrdersService);
     const execution = app.get(ProductionExecutionService);
     const closing = app.get(ProductionCloseService);
-    const shipments = app.get(ShipmentsService);
+    const shipping = app.get(ShippingService);
     const returns = app.get(ReturnsService);
     const stock = app.get(StockService);
     const organization = app.get(OrganizationsService);
@@ -134,6 +138,10 @@ async function seedDemo(): Promise<void> {
     const invoiceDrafts = app.get(InvoiceDraftsService);
     const invoiceIssuing = app.get(InvoiceIssuingService);
     const priceLists = app.get(PriceListsService);
+    const rmas = app.get(ReturnAuthorizationsService);
+    const creditNotes = app.get(CreditNotesService);
+    const voids = app.get(ShipmentVoidsService);
+    const exchangeRates = app.get(ExchangeRatesService);
 
     // Every service below resolves its tenant from here, the same way a
     // request does through the auth guard (ADR-003).
@@ -348,7 +356,7 @@ async function seedDemo(): Promise<void> {
 
         // Part of it, on purpose: 400 of 600 leaves the rest outstanding, so
         // the order page shows a partial shipment and the Ship button stays.
-        const shipment = await shipments.ship(
+        const shipment = await shipping.ship(
           sale.id,
           {
             fromLocationId: blending.id,
@@ -494,6 +502,120 @@ async function seedDemo(): Promise<void> {
         );
 
         /**
+         * Two more bottles turned up cracked, and this time the customer
+         * called first: an RMA resolved as credit (ADR-047), the goods
+         * received against it, and a credit note off the invoice for them.
+         */
+        const rma = await rmas.create(
+          {
+            orderId: sale.id,
+            invoiceId: invoice.id,
+            reason: 'Cracked bottles',
+            lines: [
+              { lineId: sale.lines[0].id, quantity: '2', resolution: 'credit' },
+            ],
+          },
+          actor,
+        );
+
+        await returns.receive(
+          sale.id,
+          {
+            toLocationId: returnsBin.id,
+            returnAuthorizationId: rma.id,
+            reason: 'damaged',
+            lines: [
+              {
+                lineId: sale.lines[0].id,
+                lots: [{ lotId: batch.id, quantity: '2' }],
+              },
+            ],
+          },
+          actor,
+        );
+
+        const creditNote = await creditNotes.issue(
+          invoice.id,
+          {
+            reason: `Cracked bottles, returned under ${rma.number}`,
+            creditDate: daysFromNow(0),
+            lines: [
+              {
+                invoiceLineId: draft.lines[0].id,
+                quantity: '2',
+                returnAuthorizationLineId: rma.lines[0].id,
+              },
+            ],
+          },
+          actor,
+        );
+
+        // Picked against the wrong order and voided before the van left
+        // (ADR-041): it stays on the record as voided, and the stock is back.
+        const mistaken = await shipping.ship(
+          sale.id,
+          {
+            fromLocationId: blending.id,
+            lines: [{ lineId: sale.lines[0].id, quantity: '100' }],
+          },
+          actor,
+        );
+
+        await voids.void(
+          sale.id,
+          mistaken.id,
+          { reason: 'Picked against the wrong order' },
+          actor,
+        );
+
+        /**
+         * A second supplier who prices in US dollars. The purchase keeps the
+         * supplier's currency on its line (ADR-035); receiving it values the
+         * lot in the base currency at the day's rate (ADR-048), so the rate
+         * is set first.
+         */
+        await exchangeRates.set({
+          currency: 'USD',
+          rateDate: daysFromNow(0),
+          rate: '1.3700',
+        });
+
+        const usSupplier = await partners.create({
+          name: 'Pacific Extracts',
+          code: 'PACX',
+        });
+
+        const usPurchase = await orders.create(
+          {
+            partnerId: usSupplier.id,
+            direction: 'purchase',
+            reference: 'PO-DEMO-2',
+            lines: [
+              {
+                variantId: blend.variants[0].id,
+                quantityOrdered: '20',
+                unitPrice: '27.5000',
+                currency: 'USD',
+              },
+            ],
+          },
+          actor,
+        );
+
+        await orders.update(usPurchase.id, { status: 'confirmed' });
+
+        await receipts.receive(
+          usPurchase.id,
+          usPurchase.lines[0].id,
+          {
+            toLocationId: shelf.id,
+            quantity: '20',
+            lot: { code: 'BF-2610', expiresAt: daysFromNow(400) },
+          },
+          actor,
+        );
+
+        /**
          * A wholesale list, as the organization's default for customers with
          * none of their own (ADR-049). The second sale below is added without
          * a price and takes it from here, so the order page shows a line
@@ -540,7 +662,7 @@ async function seedDemo(): Promise<void> {
         await orders.update(second.id, { status: 'confirmed' });
 
         logger.log(
-          `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s); SO-DEMO-1 shipped 400 of 600, invoiced as ${invoice.number}, with 5 returned; 4 retained, 2 sampled; SO-DEMO-2 confirmed for 500 and partly backordered`,
+          `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s); SO-DEMO-1 shipped 400 of 600, invoiced as ${invoice.number}, with 5 returned, ${rma.number} received and credited as ${creditNote.number}, and a shipment of 100 voided; 4 retained, 2 sampled; PO-DEMO-2 bought in USD at 1.37; SO-DEMO-2 confirmed for 500 and partly backordered`,
         );
       },
     );

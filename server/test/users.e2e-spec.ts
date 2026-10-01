@@ -1,16 +1,17 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { auditLog, memberships, roles, users } from '../src/database/schema';
+import { auditLog, memberships, users } from '../src/database/schema';
 import {
   body,
   createE2eApp,
   PASSWORD,
   registerOrganization,
+  roleIdNamed,
 } from './utils/fixtures';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
@@ -66,16 +67,6 @@ describe('Users (e2e)', () => {
    * role name is only meaningful relative to one org and the id has to be
    * read rather than guessed.
    */
-  async function roleIdNamed(organizationId: string, name: string) {
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(eq(roles.organizationId, organizationId), eq(roles.name, name)),
-      );
-
-    return role.id;
-  }
 
   /**
    * Registers an organization and returns an agent already holding its Owner
@@ -92,7 +83,7 @@ describe('Users (e2e)', () => {
       agent,
       ownerId,
       organizationId,
-      viewerRoleId: await roleIdNamed(organizationId, 'Viewer'),
+      viewerRoleId: await roleIdNamed(app, organizationId, 'Viewer'),
     };
   }
 
@@ -108,7 +99,7 @@ describe('Users (e2e)', () => {
         email,
         name: roleName,
         password: PASSWORD,
-        roleId: await roleIdNamed(owner.organizationId, roleName),
+        roleId: await roleIdNamed(app, owner.organizationId, roleName),
       })
       .expect(201);
 
@@ -416,7 +407,7 @@ describe('Users (e2e)', () => {
         'member@alpha.example.com',
         'Viewer',
       );
-      const adminRoleId = await roleIdNamed(alpha.organizationId, 'Admin');
+      const adminRoleId = await roleIdNamed(app, alpha.organizationId, 'Admin');
 
       await alpha.agent
         .patch(`/v1/users/${member.id}`)
@@ -439,7 +430,7 @@ describe('Users (e2e)', () => {
         'member@alpha.example.com',
         'Viewer',
       );
-      const ownerRoleId = await roleIdNamed(alpha.organizationId, 'Owner');
+      const ownerRoleId = await roleIdNamed(app, alpha.organizationId, 'Owner');
 
       // ADR-016's gap, closed in the service. An Admin holds users.update, so
       // the guard passes — no permission string can express "not above your
@@ -478,7 +469,7 @@ describe('Users (e2e)', () => {
         'member@alpha.example.com',
         'Viewer',
       );
-      const adminRoleId = await roleIdNamed(alpha.organizationId, 'Admin');
+      const adminRoleId = await roleIdNamed(app, alpha.organizationId, 'Admin');
 
       await viewer
         .patch(`/v1/users/${member.id}`)
@@ -542,7 +533,7 @@ describe('Users (e2e)', () => {
     it('refuses a member of another organization', async () => {
       const alpha = await registerOrg('alpha');
       const beta = await registerOrg('beta');
-      const adminRoleId = await roleIdNamed(alpha.organizationId, 'Admin');
+      const adminRoleId = await roleIdNamed(app, alpha.organizationId, 'Admin');
 
       await alpha.agent
         .patch(`/v1/users/${beta.ownerId}`)
@@ -557,7 +548,7 @@ describe('Users (e2e)', () => {
         'member@alpha.example.com',
         'Viewer',
       );
-      const adminRoleId = await roleIdNamed(alpha.organizationId, 'Admin');
+      const adminRoleId = await roleIdNamed(app, alpha.organizationId, 'Admin');
 
       await alpha.agent
         .patch(`/v1/users/${member.id}`)

@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import {
   type Database,
@@ -10,15 +10,13 @@ import {
   invoiceLines,
   invoiceLineTaxes,
   invoices,
-  roles,
 } from '../src/database/schema';
 import {
+  addMember,
   body,
   createE2eApp,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
-import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 import { shippedSale } from './utils/sales';
 
@@ -66,30 +64,6 @@ describe('Invoices (e2e)', () => {
   });
 
   type Org = Awaited<ReturnType<typeof registerOrganization>>;
-
-  async function addMember(org: Org, email: string, roleName: string) {
-    const [role] = await db
-      .select({ id: roles.id })
-      .from(roles)
-      .where(
-        and(
-          eq(roles.organizationId, org.organizationId),
-          eq(roles.name, roleName),
-        ),
-      );
-
-    await org.agent
-      .post('/v1/users')
-      .send({ email, name: roleName, password: PASSWORD, roleId: role.id })
-      .expect(201);
-
-    const member = authedAgent(app);
-    await member
-      .post('/v1/auth/login')
-      .send({ email, password: PASSWORD })
-      .expect(200);
-    return member;
-  }
 
   /**
    * The usual shipped sale, with the product names this spec's invoice
@@ -374,6 +348,37 @@ describe('Invoices (e2e)', () => {
     });
   });
 
+  describe('another organization’s draft', () => {
+    it('is not found by any write, and is left as it was', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const theirs = await draft(beta, (await shipped(beta)).shipmentId);
+
+      // Each of these starts from lockDraft, which has the organization in
+      // its where clause: another tenant's draft reads as one that does not
+      // exist, whichever route reaches it.
+      await alpha.agent
+        .patch(`/v1/invoices/${theirs.id}`)
+        .send({ note: 'Not yours' })
+        .expect(404);
+      await alpha.agent
+        .patch(`/v1/invoices/${theirs.id}/lines/${theirs.lines[0].id}`)
+        .send({ unitPrice: '0' })
+        .expect(404);
+      await alpha.agent
+        .post(`/v1/invoices/${theirs.id}/issue`)
+        .send({ invoiceDate: '2026-09-25' })
+        .expect(404);
+      await alpha.agent.delete(`/v1/invoices/${theirs.id}`).expect(404);
+
+      const kept = await read(beta, theirs.id);
+      expect(kept.status).toBe('draft');
+      expect(kept.note).toBeNull();
+      const line = kept.lines.find((row) => row.id === theirs.lines[0].id);
+      expect(line?.unitPrice).toBe(theirs.lines[0].unitPrice);
+    });
+  });
+
   describe('listing', () => {
     it('lists an order’s invoices, newest first', async () => {
       const org = await registerOrganization(app, 'alpha');
@@ -414,8 +419,18 @@ describe('Invoices (e2e)', () => {
       const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
 
-      const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
-      const viewer = await addMember(org, 'viewer@alpha.example.com', 'Viewer');
+      const admin = await addMember(
+        app,
+        org,
+        'admin@alpha.example.com',
+        'Admin',
+      );
+      const viewer = await addMember(
+        app,
+        org,
+        'viewer@alpha.example.com',
+        'Viewer',
+      );
 
       await viewer
         .post('/v1/invoices')
@@ -827,8 +842,18 @@ describe('Invoices (e2e)', () => {
       const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
 
-      const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
-      const viewer = await addMember(org, 'viewer@alpha.example.com', 'Viewer');
+      const admin = await addMember(
+        app,
+        org,
+        'admin@alpha.example.com',
+        'Admin',
+      );
+      const viewer = await addMember(
+        app,
+        org,
+        'viewer@alpha.example.com',
+        'Viewer',
+      );
 
       await admin
         .post(`/v1/invoices/${r.invoice.id}/issue`)
@@ -991,7 +1016,12 @@ describe('Invoices (e2e)', () => {
       it('lets only the Owner void', async () => {
         const org = await registerOrganization(app, 'alpha');
         const r = await issued(org);
-        const admin = await addMember(org, 'admin@alpha.example.com', 'Admin');
+        const admin = await addMember(
+          app,
+          org,
+          'admin@alpha.example.com',
+          'Admin',
+        );
 
         await admin
           .post(`/v1/invoices/${r.invoice.id}/void`)

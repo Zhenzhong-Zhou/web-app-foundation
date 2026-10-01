@@ -465,6 +465,26 @@ describe('Shipments (e2e)', () => {
         .expect(409);
     });
 
+    // Refused by the DTO, before the order is even read: malformed first.
+    it('refuses a line sent twice, and moves nothing', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const s = await scenario(alpha);
+
+      await alpha.agent
+        .post(`/v1/orders/${s.order.id}/shipments`)
+        .send({
+          fromLocationId: s.shelf,
+          lines: [
+            { lineId: s.bottleLine, quantity: '5' },
+            { lineId: s.bottleLine, quantity: '5' },
+          ],
+        })
+        .expect(400);
+
+      expect(await shipmentMovements()).toHaveLength(0);
+      expect(await fulfilled(s.bottleLine)).toBe('0.0000');
+    });
+
     it('refuses hand-picked lots that do not add up', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);
