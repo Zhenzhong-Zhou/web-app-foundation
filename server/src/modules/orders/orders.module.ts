@@ -4,6 +4,7 @@ import { NotificationsModule } from '../../core/notifications/notifications.modu
 import { PartnersModule } from '../partners/partners.module';
 import { ReturnAuthorizationsModule } from '../return-authorizations/return-authorizations.module';
 import { StockModule } from '../stock/stock.module';
+import { OrderLifecycleService } from './order-lifecycle.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderReceiptsService } from './order-receipts.service';
 import { OrdersController } from './orders.controller';
@@ -35,6 +36,7 @@ import { ShippingService } from './shipping.service';
   controllers: [OrdersController, ShipmentsController, ReturnsController],
   providers: [
     OrdersService,
+    OrderLifecycleService,
     OrderLinesService,
     OrderReceiptsService,
     ShipmentsService,

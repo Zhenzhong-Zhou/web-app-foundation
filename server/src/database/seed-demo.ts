@@ -9,8 +9,8 @@ import { BomsService } from '../modules/boms/boms.service';
 import { InvoiceDraftsService } from '../modules/invoices/invoice-drafts.service';
 import { InvoiceIssuingService } from '../modules/invoices/invoice-issuing.service';
 import { LocationsService } from '../modules/locations/locations.service';
+import { OrderLifecycleService } from '../modules/orders/order-lifecycle.service';
 import { OrderReceiptsService } from '../modules/orders/order-receipts.service';
-import { OrdersService } from '../modules/orders/orders.service';
 import { ReturnsService } from '../modules/orders/returns.service';
 import { ShippingService } from '../modules/orders/shipping.service';
 import { PartnerAddressesService } from '../modules/partners/partner-addresses.service';
@@ -119,7 +119,7 @@ async function seedDemo(): Promise<void> {
     const locations = app.get(LocationsService);
     const licences = app.get(ProductLicencesService);
     const partners = app.get(PartnersService);
-    const orders = app.get(OrdersService);
+    const orders = app.get(OrderLifecycleService);
     const receipts = app.get(OrderReceiptsService);
     const boms = app.get(BomsService);
     const runs = app.get(ProductionOrdersService);
