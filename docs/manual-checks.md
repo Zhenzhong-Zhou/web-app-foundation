@@ -92,8 +92,15 @@ second organization.
 
 ## 3. Stock
 
-- **MC-301** Inventory shows every place and lot with stock, and the
-  availability beside it: on hand, held, free, backordered.
+- **MC-301** Inventory shows stock 50 rows at a time, by location, then SKU,
+  then lot. Load more continues with no row repeated or skipped, and the
+  location filter, "Show emptied" and the search apply to the whole list,
+  not only the rows on screen (ADR-051).
+- **MC-308** Inventory search finds a row by any part of its SKU, its product
+  name or its lot code; a search with no match says so.
+- **MC-309** "Promised to customers" lists only products something is held or
+  backordered for, with on hand, held, free and backordered, and it updates
+  after a receipt or a sample.
 - **MC-302** Move stock: a transfer between bins, an adjustment in, an
   adjustment out (a note is required), and a sample to a customer. Each one
   appears under Movements with who, when and why.

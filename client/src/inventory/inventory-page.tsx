@@ -21,17 +21,22 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
 import { formatDay, itemName } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { Availability, Location, StockRow } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useKeysetList } from '../lib/use-keyset-list';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { MovementHistoryDialog } from './movement-history-dialog';
 import { ReceiveStockDialog } from './receive-stock-dialog';
 import { StockActions } from './stock-actions';
+
+/** A page of the stock list (ADR-051). */
+const PAGE_SIZE = 50;
 
 /**
  * Leaf-ness is computed rather than stored (ADR-024), so it is derived here the
@@ -65,8 +70,9 @@ export function InventoryPage() {
 
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [locationId, setLocationId] = useState('');
-  const [rows, setRows] = useState<StockRow[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState('');
+  const [search, setSearch] = useState('');
+  const [setupError, setSetupError] = useState<string | null>(null);
   const [receiving, setReceiving] = useState(false);
   const [moving, setMoving] = useState<{
     mode: MoveMode;
@@ -80,49 +86,74 @@ export function InventoryPage() {
    * Per product across available locations: what is held for confirmed sales,
    * what is free to promise, and what is backordered (ADR-045). Not per row,
    * because a hold is not on a shelf — a sale has no location until it ships.
+   *
+   * Only products something is promised from (`promised=true`): the table
+   * below shows nothing else, and the full list was every product in the
+   * catalogue, 5,000 rows at ADR-051's large scale.
    */
   const [availability, setAvailability] = useState<Availability[] | null>(null);
 
-  const loading = rows === null && error === null;
+  // Applied a moment after typing stops, so each keystroke is not a request.
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchText.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
+  /**
+   * A page at a time since ADR-051: the whole list was 520 ms at the large
+   * scale. Filters go to the server, never applied in memory, which would
+   * only ever narrow the page in hand and hide everything past it.
+   */
+  const stockPath = useMemo(() => {
+    const params = new URLSearchParams({ limit: String(PAGE_SIZE) });
+    if (locationId) params.set('locationId', locationId);
+    if (includeEmpty) params.set('includeEmpty', 'true');
+    if (search) params.set('search', search);
+    return `/stock?${params.toString()}`;
+  }, [locationId, includeEmpty, search]);
+
+  const {
+    entries: rows,
+    error: listError,
+    loading,
+    hasMore,
+    loadingMore,
+    loadMore,
+    reload,
+  } = useKeysetList<StockRow>(stockPath);
+
+  const error = listError ?? setupError;
   const showSkeleton = useDelayedFlag(loading);
   const leaves = locations ? leavesOf(locations) : [];
 
   const canAdjust = can('stock.adjust');
 
-  /**
-   * Both the callback and the effect need this, and URLSearchParams rather
-   * than string concatenation now that there are two optional params — the
-   * ?/& bookkeeping is where hand-built query strings go wrong.
-   */
-  const stockQuery = useMemo(() => {
-    const params = new URLSearchParams();
-    if (locationId) params.set('locationId', locationId);
-    if (includeEmpty) params.set('includeEmpty', 'true');
-    return params.size ? `?${params.toString()}` : '';
-  }, [locationId, includeEmpty]);
-
-  const loadStock = useCallback(async () => {
+  const loadAvailability = useCallback(async () => {
     try {
-      // Together, because every action that changes a row can change what is
-      // free: a sample taken, a lot moved into retention.
-      const [found, promised] = await Promise.all([
-        api<StockRow[]>(`/stock${stockQuery}`),
-        api<Availability[]>('/stock/availability'),
-      ]);
-      setRows(found);
-      setAvailability(promised);
-      setError(null);
+      setAvailability(
+        await api<Availability[]>('/stock/availability?promised=true'),
+      );
     } catch (caught) {
-      setError(messageFor(caught));
+      setSetupError(messageFor(caught));
     }
-  }, [stockQuery]);
+  }, []);
+
+  /**
+   * After anything that changes a row: the list from its first page, and
+   * what is promised, because a sample taken or a lot moved into retention
+   * changes what is free. A promise, because the dialogs wait on it.
+   */
+  const refresh = useCallback(async () => {
+    reload();
+    await loadAvailability();
+  }, [reload, loadAvailability]);
 
   useEffect(() => {
     let ignore = false;
 
     void Promise.all([
       api<Location[]>('/locations'),
-      api<Availability[]>('/stock/availability'),
+      api<Availability[]>('/stock/availability?promised=true'),
     ])
       .then(([all, promised]) => {
         if (ignore) return;
@@ -130,32 +161,13 @@ export function InventoryPage() {
         setAvailability(promised);
       })
       .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
+        if (!ignore) setSetupError(messageFor(caught));
       });
 
     return () => {
       ignore = true;
     };
   }, []);
-
-  // Refetches when the filter changes rather than filtering in memory: the
-  // list is scoped and indexed server-side, and a client filter would quietly
-  // become wrong the moment pagination arrives.
-  useEffect(() => {
-    let ignore = false;
-
-    void api<StockRow[]>(`/stock${stockQuery}`)
-      .then((found) => {
-        if (!ignore) setRows(found);
-      })
-      .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [stockQuery]);
 
   return (
     <Stack spacing={3}>
@@ -172,7 +184,7 @@ export function InventoryPage() {
             <Button
               variant="text"
               disabled={loading}
-              onClick={() => void loadStock()}
+              onClick={() => void refresh()}
             >
               Refresh
             </Button>
@@ -224,6 +236,15 @@ export function InventoryPage() {
           a fact, and its movements are the only record of where the stock
           went. Hidden by default because "what is on this shelf" means what is
           there, but reachable, or that history has no route. */}
+      <TextField
+        id="stock-search"
+        label="Search"
+        fullWidth
+        value={searchText}
+        onChange={(event) => setSearchText(event.target.value)}
+        helperText="Anywhere in the SKU, the product name or the lot code."
+      />
+
       <FormControlLabel
         control={
           <Switch
@@ -263,10 +284,7 @@ export function InventoryPage() {
 
               <TableBody>
                 {rows.map((row) => (
-                  <TableRow
-                    key={`${row.variantId}:${row.locationId}:${row.lotId ?? ''}`}
-                    hover
-                  >
+                  <TableRow key={row.id} hover>
                     <TableCell>{row.sku}</TableCell>
                     {/* The product, with the variant when it has a name of
                       its own — "Focus (60ct)" — as the packing slip and the
@@ -312,10 +330,16 @@ export function InventoryPage() {
           </TableContainer>
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
-            Nothing here yet.
+            {search ? 'Nothing matches that search.' : 'Nothing here yet.'}
           </Typography>
         )}
       </Paper>
+
+      <LoadMoreButton
+        hasMore={hasMore}
+        loading={loadingMore}
+        onLoadMore={loadMore}
+      />
 
       {/* Only products something is promised from. A product nobody has
           ordered is free in full, which the table above already says. A
@@ -384,7 +408,7 @@ export function InventoryPage() {
         locations={leaves}
         defaultLocationId={locationId}
         onClose={() => setReceiving(false)}
-        onReceived={loadStock}
+        onReceived={refresh}
       />
 
       {moving && (
@@ -393,7 +417,7 @@ export function InventoryPage() {
           row={moving.row}
           locations={leaves}
           onClose={() => setMoving(null)}
-          onMoved={loadStock}
+          onMoved={refresh}
         />
       )}
 
@@ -405,7 +429,7 @@ export function InventoryPage() {
         key={editingLot?.lotId ?? 'closed'}
         row={editingLot}
         onClose={() => setEditingLot(null)}
-        onSaved={loadStock}
+        onSaved={refresh}
       />
     </Stack>
   );

@@ -36,6 +36,8 @@ export interface Movement {
 }
 
 export interface StockRow {
+  /** The stock row itself; also the list's cursor (ADR-051). */
+  id: string;
   variantId: string;
   sku: string;
   productName: string;
