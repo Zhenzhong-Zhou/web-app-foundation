@@ -33,8 +33,13 @@ const BASE: RunDetail = {
   quantityProduced: '0.0000',
   status: 'draft',
   reference: null,
+  licenceId: null,
   licenceNumber: null,
   licenceAuthority: null,
+  licenceStatusAtRelease: null,
+  licenceOverriddenBy: null,
+  licenceOverriddenByName: null,
+  licenceOverrideReason: null,
   notes: null,
   createdAt: '2026-09-15T10:00:00.000Z',
   lines: [],
@@ -180,6 +185,61 @@ describe('ProductionOrderDetailPage', () => {
     expect(
       screen.queryByRole('button', { name: 'Cancel' }),
     ).not.toBeInTheDocument();
+  });
+
+  /**
+   * What the batch was made under, and how that licence stood at release
+   * (ADR-050). The override is said where the batch is read, not only in the
+   * audit log.
+   */
+  it('says the licence was expired at release, and who overrode it and why', async () => {
+    serve({
+      ...RELEASED,
+      licenceId: 'licence-1',
+      licenceNumber: '80012345',
+      licenceAuthority: 'Health Canada',
+      licenceStatusAtRelease: 'expired',
+      licenceOverriddenBy: 'user-1',
+      licenceOverriddenByName: 'Bob',
+      licenceOverrideReason: 'renewal filed 3 Sept',
+    });
+    renderPage();
+
+    expect(
+      await screen.findByText(
+        /expired at release, released by Bob: renewal filed 3 Sept/,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  // A run released before the state was recorded must not pass for current.
+  it('says the state was not recorded for an older run', async () => {
+    serve({
+      ...RELEASED,
+      licenceId: 'licence-1',
+      licenceNumber: '80012345',
+      licenceAuthority: 'Health Canada',
+    });
+    renderPage();
+
+    expect(
+      await screen.findByText(/state at release not recorded/),
+    ).toBeInTheDocument();
+  });
+
+  it('links the licence for whoever can read the register', async () => {
+    serve({
+      ...RELEASED,
+      licenceId: 'licence-1',
+      licenceNumber: '80012345',
+      licenceAuthority: 'Health Canada',
+      licenceStatusAtRelease: 'current',
+    });
+    renderPage([...ALL, 'product_licences.view']);
+
+    expect(
+      await screen.findByRole('link', { name: '80012345 (Health Canada)' }),
+    ).toHaveAttribute('href', '/licences');
   });
 
   it('surfaces a refusal from the server', async () => {

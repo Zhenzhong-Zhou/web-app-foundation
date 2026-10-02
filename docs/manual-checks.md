@@ -140,17 +140,30 @@ second organization.
   variance is flagged and notified.
 - **MC-505** The run's cost panel shows the material cost posted to the
   batch, and its unit cost.
-- **MC-506** A licence on the recipe shows on the run.
-- **MC-508** Licences → Edit the licence on a recipe: set *Valid until* to
-  yesterday. Plan a run from that recipe and Release: it is refused, and
-  the message names the licence, the day it expired, and that someone with
-  `production.override_licence` can release it with a reason. Nothing
-  moves, and the run stays planned (ADR-050).
-- **MC-509** Switch the same licence's *Current* off (withdrawn). Release is
-  refused, saying it was withdrawn, whatever the organization's licence
-  policy.
+- **MC-506** A licence on the recipe shows on the run as it stood at
+  release: *Made under 80012345 (Health Canada), current at release*, the
+  number linking to Licences. A run released before migration 0037 reads
+  *state at release not recorded*, never current.
 - **MC-507** Products → a variant → Recipe: duplicate the active version to a
   draft, then add, edit and remove a line. The active version is untouched.
+- **MC-508** Licences → Edit the licence on a recipe: set *Valid until* to
+  yesterday. Plan a run from that recipe and open Release, then pick a
+  source. The dialog says the licence expired and on which day, and asks
+  for a reason; Release stays disabled until one is typed. Release: the run
+  page and the batch's lot trace both read *expired at release, released
+  by* you, with the reason. Signed in as an Admin instead, the dialog says
+  an override is needed and Release stays disabled (ADR-050).
+- **MC-509** Switch the same licence's *Current* off (withdrawn). The release
+  dialog refuses it, with no reason field, whatever the organization's
+  licence policy.
+- **MC-510** Settings → Organization → *Licences at release*: set *Expired*
+  to Refuse and save. The release dialog now refuses the expired licence
+  outright. Turn on *A recipe must carry a licence*: a run whose recipe has
+  none is refused at release. An Admin or a Viewer sees the section without
+  a Save button.
+- **MC-511** Products → a variant → Recipe: the licence the recipe is made
+  under carries its status (Current, Expires in N days, Expired, Withdrawn),
+  so a lapse is seen before a run is planned.
 
 ## 6. Selling
 
@@ -291,3 +304,5 @@ first.
   MC-307, MC-507, MC-611 to MC-613, MC-709, MC-710, MC-R02, MC-R03; MC-204
   and MC-610 made explicit.
 - 2026-10-02: ADR-050, the check at release: MC-508 and MC-509 added.
+- 2026-10-02: ADR-050 screens: MC-506, MC-508 and MC-509 rewritten for the
+  release dialog and the run page; MC-510 and MC-511 added.

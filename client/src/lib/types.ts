@@ -239,6 +239,57 @@ export interface OrganizationProfile {
   baseCurrency: string | null;
   /** The sale list for customers with none of their own (ADR-049). */
   defaultSalePriceListId: string | null;
+  /** What release does with a licence not yet in force (ADR-050). */
+  licenceNotInForcePolicy: LicencePolicy;
+  /** What release does with an expired licence (ADR-050). */
+  licenceExpiredPolicy: LicencePolicy;
+  /** Whether a recipe with no licence is refused at release. */
+  licenceRequired: boolean;
+}
+
+/**
+ * What release does with a licence in a given state (ADR-050): refuse,
+ * refuse unless someone with production.override_licence gives a reason, or
+ * let it through.
+ */
+export type LicencePolicy = 'block' | 'override' | 'allow';
+
+/**
+ * A licence's state as a run records it at release. Withdrawn never
+ * appears: release always refuses it. Null on a run released before this
+ * was recorded, which reads as "not recorded", never as current.
+ */
+export type LicenceStatusAtRelease =
+  'current' | 'expired' | 'not_in_force' | 'none';
+
+/**
+ * What release would do with a run's licence, as the issue plan previews it
+ * (ADR-050). The server's reading, not the client's: release acts on this
+ * one, so the dialog shows it rather than deriving its own.
+ */
+export interface LicenceCheck {
+  licence: {
+    id: string;
+    number: string;
+    authority: string;
+    issuedAt: string | null;
+    expiresAt: string | null;
+  } | null;
+  status: LicenceStatusAtRelease | 'withdrawn';
+  outcome: 'allow' | 'override' | 'block';
+}
+
+/**
+ * What a run was made under, and how it stood at release — the fields the
+ * run page and the lot trace both show the same way.
+ */
+export interface LicenceAtReleaseFields {
+  licenceId: string | null;
+  licenceNumber: string | null;
+  licenceAuthority: string | null;
+  licenceStatusAtRelease: LicenceStatusAtRelease | null;
+  licenceOverriddenByName: string | null;
+  licenceOverrideReason: string | null;
 }
 
 export type InvoiceStatus = 'draft' | 'issued' | 'voided';
@@ -429,8 +480,13 @@ export interface ProductionRun {
   /** What people call this run: a batch number, a co-packer's works order. */
   reference: string | null;
   /** Copied at release, so it says what the batch was made under then. */
+  licenceId: string | null;
   licenceNumber: string | null;
   licenceAuthority: string | null;
+  /** Its state at release, and any override (ADR-050). */
+  licenceStatusAtRelease: LicenceStatusAtRelease | null;
+  licenceOverriddenBy: string | null;
+  licenceOverrideReason: string | null;
   notes: string | null;
   createdAt: string;
 }
@@ -462,6 +518,8 @@ export interface ComponentLot {
 }
 
 export interface RunDetail extends ProductionRun {
+  /** Who overrode the licence policy at release, by name. */
+  licenceOverriddenByName: string | null;
   lines: RunLine[];
   componentLots: ComponentLot[];
   /** Lot ids, read from the run's production movements (ADR-032). */
@@ -489,6 +547,12 @@ export interface IssuePlanLine {
   lots: IssuePlanLot[];
   /** How much the source is missing, or null when it can cover the line. */
   shortBy: string | null;
+}
+
+/** What GET /production-orders/:id/issue-plan returns. */
+export interface IssuePlan {
+  lines: IssuePlanLine[];
+  licenceCheck: LicenceCheck;
 }
 
 /** The batch against its own plan, when it is far enough off to say so. */
@@ -641,7 +705,7 @@ export interface LotTrace {
     isAvailable: boolean;
     quantity: string;
   }[];
-  sources: {
+  sources: ({
     kind: 'receipt' | 'production';
     at: string;
     quantity: string;
@@ -650,9 +714,7 @@ export interface LotTrace {
     supplierName: string | null;
     runId: string | null;
     runReference: string | null;
-    licenceNumber: string | null;
-    licenceAuthority: string | null;
-  }[];
+  } & LicenceAtReleaseFields)[];
   madeFrom: RelatedLot[];
   wentInto: RelatedLot[];
   /** Everyone who received it or anything made from it. */

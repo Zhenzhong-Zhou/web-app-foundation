@@ -27,6 +27,7 @@ import { openDialog } from '../lib/open-dialog';
 import type { LineVariance, OutputVariance, RunDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
+import { LicenceAtRelease } from '../licences/licence-at-release';
 import { CancelRunDialog } from './cancel-run-dialog';
 import { CloseRunDialog } from './close-run-dialog';
 import { RecordOutputDialog } from './record-output-dialog';
@@ -55,6 +56,7 @@ export function ProductionOrderDetailPage() {
 
   const canRelease = can('production.release');
   const canComplete = can('production.complete');
+  const canOverrideLicence = can('production.override_licence');
 
   const showSkeleton = useDelayedFlag(loading);
 
@@ -198,7 +200,14 @@ export function ProductionOrderDetailPage() {
         <Alert severity="info">{run.notes}</Alert>
       )}
 
-      <Stack direction="row" spacing={4}>
+      {/* Wraps, because "Made under" can be a sentence once an override is
+          on it, and four facts in a row do not fit a phone. */}
+      <Stack
+        direction="row"
+        spacing={4}
+        useFlexGap
+        sx={{ flexWrap: 'wrap', rowGap: 2 }}
+      >
         <LabelledValue label="Produced so far" value={run.quantityProduced} />
         <LabelledValue
           label="Made by"
@@ -208,12 +217,20 @@ export function ProductionOrderDetailPage() {
           label="Batches"
           value={run.outputLots.length ? String(run.outputLots.length) : '—'}
         />
+        {/* What the batch was made under, and how that licence stood at
+            release (ADR-050). Nothing is copied before release, so a draft
+            shows a dash rather than the recipe's licence of today. */}
         <LabelledValue
           label="Made under"
           value={
-            run.licenceNumber
-              ? `${run.licenceNumber} (${run.licenceAuthority})`
-              : '—'
+            isDraft ? (
+              '—'
+            ) : (
+              <LicenceAtRelease
+                run={run}
+                linkToLicences={can('product_licences.view')}
+              />
+            )
           }
         />
       </Stack>
@@ -305,6 +322,7 @@ export function ProductionOrderDetailPage() {
       <ReleaseRunDialog
         open={releasing}
         run={run}
+        canOverrideLicence={canOverrideLicence}
         onClose={() => setReleasing(false)}
         onReleased={reload}
       />

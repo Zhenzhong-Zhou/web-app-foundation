@@ -1,4 +1,13 @@
-import { Alert, Skeleton, Stack, TextField, Typography } from '@mui/material';
+import {
+  Alert,
+  FormControlLabel,
+  MenuItem,
+  Skeleton,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 
 import { HistoryButton } from '../audit/history-button';
@@ -6,7 +15,7 @@ import { useCan } from '../auth/permissions';
 import { CurrencyField } from '../components/currency-field';
 import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
-import type { OrganizationProfile } from '../lib/types';
+import type { LicencePolicy, OrganizationProfile } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
@@ -77,6 +86,16 @@ export function OrganizationPage() {
               onSaved={reload}
             />
           )}
+          <LicencePolicyForm
+            key={[
+              organization.licenceNotInForcePolicy,
+              organization.licenceExpiredPolicy,
+              organization.licenceRequired,
+            ].join()}
+            organization={organization}
+            readOnly={!canUpdate}
+            onSaved={reload}
+          />
         </>
       ) : showSkeleton ? (
         <Skeleton variant="rounded" height={240} />
@@ -336,6 +355,128 @@ function BaseCurrencyForm({
         disabled={readOnly}
         helperText="What stock is valued in: CAD, USD. It cannot change once stock carries a value in it."
         sx={{ maxWidth: 240 }}
+      />
+    </SettingsSection>
+  );
+}
+
+const POLICY_LABEL: Record<LicencePolicy, string> = {
+  block: 'Refuse',
+  override: 'Refuse unless overridden, with a reason',
+  allow: 'Allow, and record it',
+};
+
+/**
+ * What release does with the licence on a run's recipe (ADR-050). One rule
+ * cannot fit every regime — an NPN never expires, an export certificate
+ * does, and whether work may go on during a renewal depends on who issued
+ * it — so the organization chooses.
+ *
+ * Withdrawn has no setting: it is always refused, because withdrawal is a
+ * decision somebody made. Overriding needs production.override_licence,
+ * which only the Owner holds unless a role is given it.
+ */
+function LicencePolicyForm({
+  organization,
+  readOnly,
+  onSaved,
+}: {
+  organization: OrganizationProfile;
+  readOnly: boolean;
+  onSaved: () => Promise<void>;
+}) {
+  const [notInForce, setNotInForce] = useState(
+    organization.licenceNotInForcePolicy,
+  );
+  const [expired, setExpired] = useState(organization.licenceExpiredPolicy);
+  const [required, setRequired] = useState(organization.licenceRequired);
+
+  const { submitting, error, submit } = useSubmit(onSaved, {
+    success: 'Licence policy saved',
+  });
+
+  const unchanged =
+    notInForce === organization.licenceNotInForcePolicy &&
+    expired === organization.licenceExpiredPolicy &&
+    required === organization.licenceRequired;
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+
+    void submit(() =>
+      api('/organization', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          licenceNotInForcePolicy: notInForce,
+          licenceExpiredPolicy: expired,
+          licenceRequired: required,
+        }),
+      }),
+    );
+  }
+
+  return (
+    <SettingsSection
+      title="Licences at release"
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel="Save licence policy"
+      saveDisabled={unchanged}
+    >
+      <Typography variant="body2" color="text.secondary">
+        Checked when a run is released, against the licence on its recipe. A
+        withdrawn licence is always refused.
+      </Typography>
+
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <TextField
+          id="organization-licence-not-in-force"
+          label="Not yet in force"
+          select
+          fullWidth
+          value={notInForce}
+          onChange={(event) =>
+            setNotInForce(event.target.value as LicencePolicy)
+          }
+          disabled={readOnly}
+          helperText="Issued from a date still to come."
+        >
+          {(Object.keys(POLICY_LABEL) as LicencePolicy[]).map((policy) => (
+            <MenuItem key={policy} value={policy}>
+              {POLICY_LABEL[policy]}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          id="organization-licence-expired"
+          label="Expired"
+          select
+          fullWidth
+          value={expired}
+          onChange={(event) => setExpired(event.target.value as LicencePolicy)}
+          disabled={readOnly}
+          helperText="Past its expiry date, such as a renewal still pending."
+        >
+          {(Object.keys(POLICY_LABEL) as LicencePolicy[]).map((policy) => (
+            <MenuItem key={policy} value={policy}>
+              {POLICY_LABEL[policy]}
+            </MenuItem>
+          ))}
+        </TextField>
+      </Stack>
+
+      <FormControlLabel
+        control={
+          <Switch
+            checked={required}
+            onChange={(event) => setRequired(event.target.checked)}
+            disabled={readOnly}
+          />
+        }
+        label="A recipe must carry a licence to be released"
       />
     </SettingsSection>
   );
