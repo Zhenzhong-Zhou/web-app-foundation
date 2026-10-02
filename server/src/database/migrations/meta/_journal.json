@@ -260,6 +260,13 @@
       "when": 1790921016982,
       "tag": "0036_order_lines_open_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790964315590,
+      "tag": "0037_licence_status_at_release",
+      "breakpoints": true
     }
   ]
 }

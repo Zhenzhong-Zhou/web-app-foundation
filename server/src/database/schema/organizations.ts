@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   AnyPgColumn,
+  boolean,
   char,
   check,
   pgTable,
@@ -53,6 +54,36 @@ export const organizations = pgTable(
       { onDelete: 'restrict' },
     ),
 
+    /**
+     * What release does with the licence on a run's recipe (ADR-050). A
+     * policy per organization because no one rule fits: an NPN never
+     * expires, an export certificate does, and whether work may go on while
+     * a renewal is pending depends on the regime.
+     *
+     * Each is block (refused), override (refused unless someone holding
+     * production.override_licence gives a reason) or allow. Withdrawn has no
+     * column: it is always refused, because withdrawal is a decision
+     * somebody made and an override would undo it without saying so.
+     *
+     * The defaults are the cautious reading of a regime nobody has
+     * configured: a licence not yet in force is not a licence yet, and an
+     * expired one usually means a renewal filed but not yet granted.
+     */
+    licenceNotInForcePolicy: text('licence_not_in_force_policy')
+      .notNull()
+      .default('block'),
+    licenceExpiredPolicy: text('licence_expired_policy')
+      .notNull()
+      .default('override'),
+
+    /**
+     * Whether a recipe must carry a licence to be released. Off by default,
+     * so a business making nothing regulated never meets any of this. When
+     * on, a recipe with none is refused outright, with no override: making
+     * an unregistered product is not a lapse someone can sign off.
+     */
+    licenceRequired: boolean('licence_required').notNull().default(false),
+
     ...timestamps,
   },
   (t) => [
@@ -69,6 +100,14 @@ export const organizations = pgTable(
     check(
       'organizations_base_currency_format_check',
       sql`${t.baseCurrency} is null or ${isCurrencyCode(t.baseCurrency)}`,
+    ),
+    check(
+      'organizations_licence_not_in_force_policy_check',
+      sql`${t.licenceNotInForcePolicy} in ('block', 'override', 'allow')`,
+    ),
+    check(
+      'organizations_licence_expired_policy_check',
+      sql`${t.licenceExpiredPolicy} in ('block', 'override', 'allow')`,
     ),
   ],
 );
