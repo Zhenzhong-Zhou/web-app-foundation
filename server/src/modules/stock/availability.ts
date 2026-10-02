@@ -64,6 +64,11 @@ function holdsSql(organizationId: string, variantId?: string): SQL {
       from order_lines ol
       join orders o on o.id = ol.order_id
       where ol.organization_id = ${organizationId}::uuid
+        -- Redundant for correctness, since a line's order is in its
+        -- organization, but without it Postgres cannot use
+        -- orders_org_status_idx and reads every tenant's confirmed sales
+        -- to join them (ADR-051's plan check found it).
+        and o.organization_id = ${organizationId}::uuid
         and o.direction = 'sale'
         and o.status = 'confirmed'
         and not ol.is_closed_short
