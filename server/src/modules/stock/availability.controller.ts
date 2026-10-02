@@ -1,8 +1,9 @@
-import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { AvailabilityService } from './availability.service';
+import { ListAvailabilityDto } from './dto/list-availability.dto';
 
 /**
  * What can be promised, and what each order holds (ADR-045). Reads only;
@@ -14,8 +15,8 @@ export class AvailabilityController {
 
   @Get('stock/availability')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  list() {
-    return this.availability.list();
+  list(@Query() query: ListAvailabilityDto) {
+    return this.availability.list(query.promised === 'true');
   }
 
   @Get('orders/:id/holds')

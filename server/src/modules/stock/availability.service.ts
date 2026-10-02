@@ -12,9 +12,9 @@ export class AvailabilityService {
   constructor(private readonly tenantDb: TenantDb) {}
 
   /** Per product: on hand where promisable, held, free, backordered. */
-  async list() {
+  async list(promisedOnly = false) {
     return this.tenantDb.transaction((tx, organizationId) =>
-      availability(tx, organizationId),
+      availability(tx, organizationId, promisedOnly),
     );
   }
 

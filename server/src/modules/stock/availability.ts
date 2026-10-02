@@ -140,9 +140,20 @@ export async function holdsFor(
 
 /**
  * Per product: on hand where it can be promised, held, free, and backordered.
- * Only products with stock or open demand are listed.
+ * Only products with stock or open demand are listed; with `promisedOnly`,
+ * only those with open demand: what the Inventory page's "Promised to
+ * customers" table shows. That list grows with open orders, not with the
+ * catalogue, where the full one was 5,000 rows at ADR-051's large scale.
  */
-export async function availability(tx: Tx, organizationId: string) {
+export async function availability(
+  tx: Tx,
+  organizationId: string,
+  promisedOnly = false,
+) {
+  const listed = promisedOnly
+    ? sql`h.variant_id is not null`
+    : sql`(s.variant_id is not null or h.variant_id is not null)`;
+
   const rows = (
     await tx.execute(sql`
       with supply as (
@@ -173,7 +184,7 @@ export async function availability(tx: Tx, organizationId: string) {
       left join supply s on s.variant_id = pv.id
       left join holds h on h.variant_id = pv.id
       where pv.organization_id = ${organizationId}::uuid
-        and (s.variant_id is not null or h.variant_id is not null)
+        and ${listed}
       order by pv.sku
     `)
   ).rows as {
