@@ -16,7 +16,8 @@ and price lists proposing the price of a new line.
   recall drill, run against rc.1 when Bob has time. Fixes they find go on
   `release/v0.4` (branched from rc.1), v0.4.0 is tagged there, and the
   fixes are cherry-picked into `main`.
-- Migrations: through **0035** (`price_lists`). Next is **0036**.
+- Migrations: through **0036** (`order_lines_open_idx`, ADR-051). Next is
+  **0037**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-051**. ADR-050 (licence status at release) and
   ADR-051 (performance testing) are written, not built. ADR-046 carries an
@@ -65,7 +66,7 @@ Then tag v0.4.0.
    `v0.5.0-alpha.1`): the section after step 1's. What is left is listed
    at its end; none of it is half-done.
 3. **ADR-050, licence status at release** — written, not built: migration
-   0036, server with e2e tests, then the client.
+   0037, server with e2e tests, then the client.
 4. **ADR-051, performance testing** — written, not built: `seed:volume`,
    `npm run perf` with budgets per endpoint, query-plan checks, a manual CI
    job. Its own PR, from branch `v0.5-performance`, which holds the ADR.
@@ -336,9 +337,9 @@ first three):
   receive → make → ship → invoice → credit) in Playwright.
 
 **Next, in this order:**
-1. Build ADR-050: migration 0036, `npm run migrate:all`, the server with
+1. Build ADR-050: migration 0037, `npm run migrate:all`, the server with
    e2e tests, then the client.
-2. #20, `date` columns for calendar days: ADR, migration (0037 if ADR-050
+2. #20, `date` columns for calendar days: ADR, migration (0038 if ADR-050
    goes first), `npm run migrate:all`.
 3. ADR-051, performance testing: the volume seed, the load runner and its
    budgets, the plan checks, then the CI job.

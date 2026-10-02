@@ -71,6 +71,8 @@ function holdsSql(organizationId: string, variantId?: string): SQL {
         and o.organization_id = ${organizationId}::uuid
         and o.direction = 'sale'
         and o.status = 'confirmed'
+        -- order_lines_open_idx is built on exactly these two conditions;
+        -- change them together or the index stops being used.
         and not ol.is_closed_short
         and ol.quantity_ordered > ol.quantity_fulfilled
         ${onlyDemand}
