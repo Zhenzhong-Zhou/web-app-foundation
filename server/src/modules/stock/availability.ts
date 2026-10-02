@@ -64,8 +64,15 @@ function holdsSql(organizationId: string, variantId?: string): SQL {
       from order_lines ol
       join orders o on o.id = ol.order_id
       where ol.organization_id = ${organizationId}::uuid
+        -- Redundant for correctness, since a line's order is in its
+        -- organization, but without it Postgres cannot use
+        -- orders_org_status_idx and reads every tenant's confirmed sales
+        -- to join them (ADR-051's plan check found it).
+        and o.organization_id = ${organizationId}::uuid
         and o.direction = 'sale'
         and o.status = 'confirmed'
+        -- order_lines_open_idx is built on exactly these two conditions;
+        -- change them together or the index stops being used.
         and not ol.is_closed_short
         and ol.quantity_ordered > ol.quantity_fulfilled
         ${onlyDemand}
@@ -135,9 +142,20 @@ export async function holdsFor(
 
 /**
  * Per product: on hand where it can be promised, held, free, and backordered.
- * Only products with stock or open demand are listed.
+ * Only products with stock or open demand are listed; with `promisedOnly`,
+ * only those with open demand: what the Inventory page's "Promised to
+ * customers" table shows. That list grows with open orders, not with the
+ * catalogue, where the full one was 5,000 rows at ADR-051's large scale.
  */
-export async function availability(tx: Tx, organizationId: string) {
+export async function availability(
+  tx: Tx,
+  organizationId: string,
+  promisedOnly = false,
+) {
+  const listed = promisedOnly
+    ? sql`h.variant_id is not null`
+    : sql`(s.variant_id is not null or h.variant_id is not null)`;
+
   const rows = (
     await tx.execute(sql`
       with supply as (
@@ -168,7 +186,7 @@ export async function availability(tx: Tx, organizationId: string) {
       left join supply s on s.variant_id = pv.id
       left join holds h on h.variant_id = pv.id
       where pv.organization_id = ${organizationId}::uuid
-        and (s.variant_id is not null or h.variant_id is not null)
+        and ${listed}
       order by pv.sku
     `)
   ).rows as {

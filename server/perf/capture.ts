@@ -34,11 +34,21 @@ export class QueryCapture {
 
     // strictBindCallApply is off in this repo, so apply() returns any;
     // holding it as unknown keeps that any from leaking out of the wrapper.
-    Client.prototype.query = function (this: Client, ...args: unknown[]) {
+    function query(this: Client, ...args: unknown[]): unknown {
       record(args[0], args[1]);
       const result: unknown = original.apply(this, args);
       return result;
-    };
+    }
+
+    // Defined rather than assigned: pg types query() as a dozen overloads,
+    // which no plain wrapper matches, and casting to them is either flagged
+    // as unnecessary or rejected depending on the return type. The runtime
+    // only needs the method replaced.
+    Object.defineProperty(Client.prototype, 'query', {
+      value: query,
+      writable: true,
+      configurable: true,
+    });
   }
 
   /** Records what `fn` sends, under the probe's name. */
@@ -62,10 +72,14 @@ export class QueryCapture {
     if (!query?.text || !/^\s*(select|with)\b/i.test(query.text)) return;
     if (/pg_advisory/i.test(query.text)) return;
 
+    // Drizzle passes the parameters as query()'s second argument, beside a
+    // config object that carries only the text, so both places are read.
+    const params = Array.isArray(query.values) ? query.values : values;
+
     this.statements.push({
       probe: this.probe,
       text: query.text,
-      values: Array.isArray(query.values) ? (query.values as unknown[]) : [],
+      values: Array.isArray(params) ? (params as unknown[]) : [],
     });
   }
 }

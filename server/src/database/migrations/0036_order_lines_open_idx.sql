@@ -1,0 +1,1 @@
+CREATE INDEX "order_lines_open_idx" ON "order_lines" USING btree ("organization_id","variant_id") WHERE not "order_lines"."is_closed_short" and "order_lines"."quantity_ordered" > "order_lines"."quantity_fulfilled";

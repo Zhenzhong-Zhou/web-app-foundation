@@ -1,6 +1,6 @@
 # Written by seed:volume: sign-ins for a throwaway local database, new on
-# every run.
-volume.json
+# every run. volume-small.json and the like are copies kept aside per scale.
+volume*.json
 
 # Written by perf and perf:plans on every run. CI keeps them as an artifact.
 reports/

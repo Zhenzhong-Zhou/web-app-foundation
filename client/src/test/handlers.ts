@@ -50,7 +50,9 @@ export const LOCATIONS = [
 export const handlers = [
   http.get(`${BASE}/products/variants`, () => HttpResponse.json(VARIANTS)),
   http.get(`${BASE}/locations`, () => HttpResponse.json(LOCATIONS)),
-  http.get(`${BASE}/stock`, () => HttpResponse.json([])),
+  http.get(`${BASE}/stock`, () =>
+    HttpResponse.json({ entries: [], nextCursor: null }),
+  ),
   http.post(`${BASE}/stock/movements`, () =>
     HttpResponse.json({ movement: { id: 'movement-1' } }, { status: 201 }),
   ),

@@ -3854,6 +3854,84 @@ runs can be compared.
   customer in production.
 - **Optimizations themselves.** Only where a budget or a plan check fails.
 
+**Results (2 October 2026).** Measured locally: a MacBook (ARM64), Postgres
+18 in Docker, the server built and run with `NODE_ENV=test`. Five
+organizations, seed 51. Per organization, small is 5,000 orders, 2,051 lots
+and 40,471 stock movements; large is 49,999, 20,410 and 410,277. Figures
+are p95 at 10 connections unless marked.
+
+| | Small before | Small after | Large before | Large after |
+|---|---|---|---|---|
+| `GET /stock` | 67 ms | 17 ms | **520 ms** | 79 ms |
+| `GET /stock` at 100 connections | 515 ms | 149 ms | 4.5 s | 581 ms |
+| `GET /stock/availability` | 27 ms | 26 ms | 293 ms | 200 ms |
+| `GET /stock/availability?promised=true` | — | 25 ms | — | 196 ms |
+| Valuation query (plan check) | 57 ms | 5 ms | 497 ms | 40 ms |
+| Plan check | 3 failures | passed | 7 failures | passed |
+
+Orders, an order, the movement lists, invoices, lot trace and the four
+writes were flat from small to large (about 1×) before any change: they
+read a page through an index. The concurrency check passed every run.
+
+What was changed, each because a budget, a plan or the growth column said
+so:
+
+- **Holds carry the organization on the join to orders.** Without it the
+  hold calculation read every tenant's confirmed sales (250,223 orders at
+  large) to join one tenant's open lines.
+- **The stock list is a keyset page** of 50, ordered by location name, SKU,
+  lot code and id, with a search on SKU, product name and lot code, and the
+  organization on every joined table. The Inventory page loads more.
+- **Availability can be asked for promised products only**, which is all
+  the Inventory page shows.
+- **A valuation marks provisional pools in one join** instead of a subquery
+  per pool. Its whole-organization reads are allowed in the plan check,
+  with that reason.
+- **Open order lines have their own partial index** (`order_lines_open_idx`,
+  migration 0036), on the same predicate the hold calculation filters on.
+  The plan check passed without it, since reading all of history through
+  an index is not a sequential scan; the growth column caught it. Keep the
+  two predicates identical, or Postgres stops using the index.
+
+**Watch, each with its trigger.**
+
+- **`GET /stock` sorts by names**, which no single index serves, so each
+  page sorts the organization's matching rows: 4.6× from small to large, a
+  36 ms query at large. Trigger: p95 over budget at small scale, or the
+  plan check flags it. Then order by an indexed key and lead with the
+  location filter.
+- **Availability** still grows 7.9×: a 66 ms query at large, now bounded by
+  stock on hand and open demand rather than history. Trigger: p95 over
+  budget at small scale. First step then: in the promised list, sum supply
+  only for products with open demand.
+- **Movements for one shelf** went from 2 ms to 21 ms. No screen in the
+  budgets reads it yet. Trigger: it joins the budgets, or passes 100 ms.
+  Then indexes on the source and destination location with the id.
+- **Lot search** reads the organization's lots, as recorded at ADR-044.
+  Trigger: lots in the millions. Then pg_trgm.
+- **Valuation** reads every pool by definition. Trigger: an organization
+  whose valuation no longer fits a screen. Then an export.
+- **Migrations on large live tables.** 0036 builds its index inside the
+  migration's transaction, which blocks writes to `order_lines` briefly:
+  fine at today's sizes. On a production table with millions of rows and
+  traffic, use `CREATE INDEX CONCURRENTLY`, outside a transaction.
+
+**Production, beyond these measurements.** Not done; each waits for its
+trigger.
+
+| What | When | Cost |
+|---|---|---|
+| Response compression | **Done, by Render.** Its edge (Cloudflare) answers API responses with `content-encoding: br`, checked on 2 October 2026 in the browser's Network tab. Nothing to add to the app; check again if the hosting changes. | None. |
+| Measure where it runs | The Performance workflow once this merges; a staging copy on Render before the first paying customer or v1.0. | CI is free; staging is a second service and database. |
+| `pg_stat_statements` | From the first day real people use Render: it records only from when it is on. Check the Render plan allows it. | Near zero. |
+| Configurable pool, then PgBouncer | Configurable with a second server instance, or when production shows requests waiting for a connection. PgBouncer when instances × pool size nears the database's connection limit. | Small, then a service to run. |
+| Caching | Only when a read is still over budget once bounded and indexed, or the same answer goes to many users. | Ongoing: stale data is its own class of bug. |
+
+**When to run perf.** The Performance workflow once after this merges;
+before every release (MC-1201 to MC-1204 in `docs/manual-checks.md`); and
+after any change to a list, a ledger query or an index. Small and large
+each in a database of their own, as `server/perf/README.md` describes.
+
 ---
 
 # Open decisions

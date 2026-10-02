@@ -11,6 +11,7 @@ import { OrderLifecycleService } from '../../modules/orders/order-lifecycle.serv
 import { OrderReceiptsService } from '../../modules/orders/order-receipts.service';
 import { ReturnsService } from '../../modules/orders/returns.service';
 import { ShippingService } from '../../modules/orders/shipping.service';
+import { PartnerAddressesService } from '../../modules/partners/partner-addresses.service';
 import { PartnersService } from '../../modules/partners/partners.service';
 import { PriceListsService } from '../../modules/price-lists/price-lists.service';
 import { ProductionCloseService } from '../../modules/production-orders/production-close.service';
@@ -33,6 +34,7 @@ export interface Services {
   products: ProductsService;
   locations: LocationsService;
   partners: PartnersService;
+  partnerAddresses: PartnerAddressesService;
   taxCodes: TaxCodesService;
   exchangeRates: ExchangeRatesService;
   priceLists: PriceListsService;
@@ -57,6 +59,7 @@ export function servicesOf(app: INestApplicationContext): Services {
     products: app.get(ProductsService),
     locations: app.get(LocationsService),
     partners: app.get(PartnersService),
+    partnerAddresses: app.get(PartnerAddressesService),
     taxCodes: app.get(TaxCodesService),
     exchangeRates: app.get(ExchangeRatesService),
     priceLists: app.get(PriceListsService),

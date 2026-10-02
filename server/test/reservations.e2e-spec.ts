@@ -146,6 +146,39 @@ describe('Reservations (e2e)', () => {
       });
     });
 
+    // The Inventory page's "Promised to customers" table asks for only these:
+    // at ADR-051's large scale the full list was 5,000 rows a call.
+    it('lists only what something is promised from, when asked', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const s = await scenario(alpha);
+
+      const calm = await createVariant(alpha.agent, {
+        type: 'good',
+        name: 'Calm',
+        variant: { sku: 'CALM' },
+      });
+
+      await alpha.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: calm,
+          toLocationId: s.shelf,
+          quantity: '10',
+          reason: 'receipt',
+        })
+        .expect(201);
+
+      const skus = async (query: string) => {
+        const res = await alpha.agent
+          .get(`/v1/stock/availability${query}`)
+          .expect(200);
+        return body<Availability[]>(res).map((row) => row.sku);
+      };
+
+      expect(await skus('')).toEqual(['CALM', 'FOCUS']);
+      expect(await skus('?promised=true')).toEqual(['FOCUS']);
+    });
+
     // Confirming never refuses for lack of stock: a real order is real.
     it('confirms an order there is no stock for', async () => {
       const alpha = await registerOrganization(app, 'alpha');

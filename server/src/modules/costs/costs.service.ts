@@ -83,19 +83,40 @@ export class CostsService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const base = await baseCurrency(tx, organizationId);
 
+      /**
+       * Which pools are provisional is worked out once, as a set, and
+       * joined. As a subquery per pool it ran once for every pool: half a
+       * second at ADR-051's large scale, 23,000 pools. MATERIALIZED keeps
+       * Postgres from folding it back into a per-row lookup; the open set is
+       * small and read through stock_valuations_org_needs_cost_idx.
+       *
+       * The nil uuid stands in for "no lot" so the match is a plain
+       * equality, which a hash join can use; IS NOT DISTINCT FROM cannot.
+       * Every joined table carries the organization, so the join never
+       * reads another tenant's variants or lots.
+       */
       const pools = await tx.execute(sql`
-        with open as (${openNeedsCost(organizationId)})
+        with open as materialized (${openNeedsCost(organizationId)}),
+        open_pools as (
+          select distinct
+            o.variant_id,
+            coalesce(o.lot_id, '00000000-0000-0000-0000-000000000000'::uuid) as lot_key
+          from open o
+        )
         select p.variant_id, pv.sku, p.lot_id, l.code as lot_code,
                p.quantity, p.value,
                round(p.value / p.quantity, 6) as unit_cost,
-               exists (
-                 select 1 from open o
-                 where o.variant_id = p.variant_id
-                   and o.lot_id is not distinct from p.lot_id
-               ) as provisional
+               (op.variant_id is not null) as provisional
         from valuation_pools p
-        join product_variants pv on pv.id = p.variant_id
-        left join lots l on l.id = p.lot_id
+        join product_variants pv
+          on pv.id = p.variant_id
+         and pv.organization_id = ${organizationId}::uuid
+        left join lots l
+          on l.id = p.lot_id
+         and l.organization_id = ${organizationId}::uuid
+        left join open_pools op
+          on op.variant_id = p.variant_id
+         and op.lot_key = coalesce(p.lot_id, '00000000-0000-0000-0000-000000000000'::uuid)
         where p.organization_id = ${organizationId}::uuid
           and p.quantity > 0
         order by pv.sku, l.code nulls first

@@ -174,6 +174,10 @@ and silently goes stale.
 - Every integration test calls `await app.close()` in `afterAll`, or the `pg` pool stays
   open and Jest hangs without explaining why.
 - One integration test per feature as it's built (ADR-008).
+- **`docs/manual-checks.md` moves with the code.** A commit that changes what a
+  person sees, or a rule they work under, updates its checks in the same
+  commit. A fixed bug that a person could have noticed adds a check under
+  *Regressions*. The walkthrough before each release runs that list.
 - `scripts/smoke-auth.sh` checks a **running dev server** over HTTP. No database
   access, no setup — if it needs `psql`, it is an e2e test wearing a shell script.
   Localhost only: it registers real accounts, and pointed at a deployment it

@@ -32,6 +32,7 @@ interface LocationResponse {
 }
 
 interface StockRow {
+  id: string;
   variantId: string;
   sku: string;
   productName: string;
@@ -41,6 +42,11 @@ interface StockRow {
   lotId: string | null;
   lotCode: string | null;
   quantity: string;
+}
+
+interface StockPage {
+  entries: StockRow[];
+  nextCursor: string | null;
 }
 
 /**
@@ -106,6 +112,12 @@ describe('Stock (e2e)', () => {
     return body<LocationResponse>(res).location.id;
   }
 
+  /** The stock list's first page, which in these tests is all of it. */
+  async function stockRows(agent: Pick<Agent, 'get'>, query = '') {
+    const res = await agent.get(`/v1/stock${query}`).expect(200);
+    return body<StockPage>(res).entries;
+  }
+
   /** A variant and a leaf location in one organization — the usual starting point. */
   async function setup(
     slugish: string,
@@ -163,7 +175,7 @@ describe('Stock (e2e)', () => {
         .send(receipt(variant.id, locationId, '40'))
         .expect(201);
 
-      const rows = body<StockRow[]>(await agent.get('/v1/stock').expect(200));
+      const rows = await stockRows(agent);
 
       expect(rows).toHaveLength(1);
       expect(rows[0].quantity).toBe('40.0000');
@@ -183,7 +195,7 @@ describe('Stock (e2e)', () => {
         .send(receipt(variant.id, locationId, '2.5'))
         .expect(201);
 
-      const rows = body<StockRow[]>(await agent.get('/v1/stock').expect(200));
+      const rows = await stockRows(agent);
 
       // One cache row, two ledger rows. A second cache row would mean the
       // NULLS NOT DISTINCT constraint is not doing its job (ADR-025).
@@ -308,7 +320,7 @@ describe('Stock (e2e)', () => {
         })
         .expect(201);
 
-      const rows = body<StockRow[]>(await agent.get('/v1/stock').expect(200));
+      const rows = await stockRows(agent);
       const byLocation = Object.fromEntries(
         rows.map((row) => [row.locationName, row.quantity]),
       );
@@ -487,9 +499,7 @@ describe('Stock (e2e)', () => {
         .send(receipt(beta.variant.id, beta.locationId, '40'))
         .expect(201);
 
-      const rows = body<StockRow[]>(
-        await alpha.agent.get('/v1/stock').expect(200),
-      );
+      const rows = await stockRows(alpha.agent);
 
       expect(rows).toHaveLength(0);
     });
@@ -515,7 +525,7 @@ describe('Stock (e2e)', () => {
         .expect(201);
 
       const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');
-      const rows = body<StockRow[]>(await viewer.get('/v1/stock').expect(200));
+      const rows = await stockRows(viewer);
 
       expect(rows).toHaveLength(1);
     });
@@ -583,6 +593,104 @@ describe('Stock (e2e)', () => {
       expect(await db.select().from(stockMovements)).toHaveLength(1);
     });
 
+    // ADR-051: the list read a whole organization per call, 520 ms at scale.
+    it('pages by location, SKU and lot, without repeating or skipping a row', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const aisleB = await createLocation(org.agent, { name: 'Aisle B' });
+      const aisleA = await createLocation(org.agent, { name: 'Aisle A' });
+      const zeta = await createVariant(org.agent, { sku: 'ZETA' });
+      const alpha = await createVariant(org.agent, {
+        sku: 'ALPHA',
+        tracksLots: true,
+      });
+
+      // Received out of order, so the order on the page is the list's own.
+      for (const shelf of [aisleB, aisleA]) {
+        for (const code of ['L2', 'L1']) {
+          await org.agent
+            .post('/v1/stock/movements')
+            .send({ ...receipt(alpha.id, shelf, '3'), lot: { code } })
+            .expect(201);
+        }
+        await org.agent
+          .post('/v1/stock/movements')
+          .send(receipt(zeta.id, shelf, '5'))
+          .expect(201);
+      }
+
+      const seen: string[] = [];
+      let cursor: string | null = null;
+
+      do {
+        const after: string = cursor ? `&before=${cursor}` : '';
+        const page = body<StockPage>(
+          await org.agent.get(`/v1/stock?limit=2${after}`).expect(200),
+        );
+
+        expect(page.entries.length).toBeLessThanOrEqual(2);
+        seen.push(
+          ...page.entries.map(
+            (row) => `${row.locationName} ${row.sku} ${row.lotCode ?? '-'}`,
+          ),
+        );
+        cursor = page.nextCursor;
+      } while (cursor);
+
+      expect(seen).toEqual([
+        'Aisle A ALPHA L1',
+        'Aisle A ALPHA L2',
+        'Aisle A ZETA -',
+        'Aisle B ALPHA L1',
+        'Aisle B ALPHA L2',
+        'Aisle B ZETA -',
+      ]);
+    });
+
+    it('refuses a cursor from another organization', async () => {
+      const alpha = await setup('alpha');
+      const beta = await setup('beta');
+
+      await beta.agent
+        .post('/v1/stock/movements')
+        .send(receipt(beta.variant.id, beta.locationId, '40'))
+        .expect(201);
+
+      const [theirs] = await stockRows(beta.agent);
+
+      // A 400, not a 404: the answer must not confirm the row exists.
+      await alpha.agent.get(`/v1/stock?before=${theirs.id}`).expect(400);
+    });
+
+    it('searches the SKU, the product name and the lot code', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const shelf = await createLocation(org.agent);
+      const focus = await createVariant(org.agent, { sku: 'FOCUS-60' });
+      const calm = await createVariant(org.agent, {
+        sku: 'CALM-30',
+        tracksLots: true,
+      });
+
+      await org.agent
+        .post('/v1/stock/movements')
+        .send(receipt(focus.id, shelf, '10'))
+        .expect(201);
+      await org.agent
+        .post('/v1/stock/movements')
+        .send({ ...receipt(calm.id, shelf, '10'), lot: { code: 'BF-2609' } })
+        .expect(201);
+
+      const skus = async (search: string) => {
+        const rows = await stockRows(org.agent, `?search=${search}`);
+        return rows.map((row) => row.sku);
+      };
+
+      expect(await skus('cus')).toEqual(['FOCUS-60']);
+      expect(await skus('Product%20CALM')).toEqual(['CALM-30']);
+      expect(await skus('2609')).toEqual(['CALM-30']);
+      // % matches itself, not everything.
+      expect(await skus('%25')).toEqual([]);
+    });
+
     it('names the product, since most variants have no name of their own', async () => {
       const ctx = await setup('alpha');
 
@@ -591,9 +699,7 @@ describe('Stock (e2e)', () => {
         .send(receipt(ctx.variant.id, ctx.locationId, '40'))
         .expect(201);
 
-      const [row] = body<StockRow[]>(
-        await ctx.agent.get('/v1/stock').expect(200),
-      );
+      const [row] = await stockRows(ctx.agent);
 
       expect(row.productName).toBe('Product WIDGET');
       expect(row.variantName).toBeNull();

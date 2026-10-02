@@ -157,6 +157,21 @@ export const orderLines = pgTable(
 
     index('order_lines_org_variant_idx').on(t.organizationId, t.variantId),
 
+    /**
+     * Open lines only: what holds stock (ADR-045). The hold calculation
+     * filters on exactly this predicate, so it reads the lines still open
+     * instead of every line the organization ever had and discarding the
+     * finished ones, which ADR-051 measured growing with order history:
+     * 19,953 lines read for 1,874 open at the small scale. History only
+     * grows; open demand does not. Keep the predicate identical to
+     * holdsSql's, or Postgres cannot use this index.
+     */
+    index('order_lines_open_idx')
+      .on(t.organizationId, t.variantId)
+      .where(
+        sql`not ${t.isClosedShort} and ${t.quantityOrdered} > ${t.quantityFulfilled}`,
+      ),
+
     check(
       'order_lines_quantity_ordered_positive_check',
       sql`${t.quantityOrdered} > 0`,

@@ -16,7 +16,8 @@ and price lists proposing the price of a new line.
   recall drill, run against rc.1 when Bob has time. Fixes they find go on
   `release/v0.4` (branched from rc.1), v0.4.0 is tagged there, and the
   fixes are cherry-picked into `main`.
-- Migrations: through **0035** (`price_lists`). Next is **0036**.
+- Migrations: through **0036** (`order_lines_open_idx`, ADR-051). Next is
+  **0037**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-051**. ADR-050 (licence status at release) and
   ADR-051 (performance testing) are written, not built. ADR-046 carries an
@@ -65,10 +66,12 @@ Then tag v0.4.0.
    `v0.5.0-alpha.1`): the section after step 1's. What is left is listed
    at its end; none of it is half-done.
 3. **ADR-050, licence status at release** — written, not built: migration
-   0036, server with e2e tests, then the client.
-4. **ADR-051, performance testing** — written, not built: `seed:volume`,
-   `npm run perf` with budgets per endpoint, query-plan checks, a manual CI
-   job. Its own PR, from branch `v0.5-performance`, which holds the ADR.
+   0037, server with e2e tests, then the client.
+4. **ADR-051, performance testing** — built, on `v0.5-performance` (its
+   own PR): `seed:volume`, `npm run perf`, `npm run perf:plans`, the
+   Performance workflow, and the fixes the first runs asked for. Results,
+   what to watch and the production items, each with a trigger, are in
+   ADR-051's **Results**.
 5. **ADR-052, languages** — before any code. French (Quebec) and Chinese
    for the app, and French on printed documents. (Planned as ADR-050, then
    ADR-051; those numbers went to licence status and performance.)
@@ -336,12 +339,12 @@ first three):
   receive → make → ship → invoice → credit) in Playwright.
 
 **Next, in this order:**
-1. Build ADR-050: migration 0036, `npm run migrate:all`, the server with
+1. Build ADR-050: migration 0037, `npm run migrate:all`, the server with
    e2e tests, then the client.
-2. #20, `date` columns for calendar days: ADR, migration (0037 if ADR-050
+2. #20, `date` columns for calendar days: ADR, migration (0038 if ADR-050
    goes first), `npm run migrate:all`.
-3. ADR-051, performance testing: the volume seed, the load runner and its
-   budgets, the plan checks, then the CI job.
+3. ADR-051 — done. Merge `v0.5-performance`, then run the Performance
+   workflow once (Actions → Performance → Run workflow).
 4. The Playwright journey, written with Bob at a computer.
 5. ADR-052, languages.
 
@@ -371,6 +374,28 @@ Rules, still in force:
   the business needs them for customs, prepayment or sample values.
 - Check ADR-047's audit list names `return_authorization.replacement_raised`.
 - `npm audit` on both sides has not been run in a while.
+- ADR-051 tooling, small follow-ups:
+    - **perf/ is never compiled in CI.** ESLint does not report type errors
+      and the build excludes the folder, so a type error there shows only
+      when someone runs it (it happened twice on the first run). Fix: a
+      `perf/tsconfig.json` and `npx tsc --noEmit -p perf/tsconfig.json` in
+      ci.yml's server job.
+    - **One manifest per scale.** seed:volume writes `perf/volume.json`, so
+      seeding the other scale overwrites it and it has to be copied aside by
+      hand (once it was lost and rebuilt from the database). Fix: write
+      `volume-<scale>.json`, and `npm run perf -- --scale small` reads it.
+- `docs/manual-checks.md` coverage pass: map every ADR and every client page
+  to at least one check. The list covers the main flows and round 2, not yet
+  licences, tax codes and organization settings, closing a line short,
+  cancelling or re-raising a run, the price-list screens, printed documents
+  other than the invoice, session timeout, dark mode or narrow screens.
+- The test counts under *Where things stand* predate ADR-051, which added
+  e2e tests for the stock list's paging, cursor and search and the promised
+  availability list. Refresh them from the next full local run.
+- Production performance (ADR-051, **Results**): turn on
+  `pg_stat_statements` from the first day of real use. Compression is
+  already done by Render's edge (Brotli). The rest wait for their
+  triggers.
 - CSV/Excel export and import: raised, not decided. Export is low-risk
   (read-only, reuses the lists' permissions and tenant scoping); import and
   bulk insert need an ADR first (validation, partial failure, audit,
@@ -418,8 +443,17 @@ Rules, still in force:
   Check the generated SQL keeps `NULLS NOT DISTINCT`.
 - A type change on the client means fixing the test fixtures that build that
   type, in the same commit. Vitest does not type-check; `tsc` and CI do.
+- A commit that changes what a person sees, or a rule they work under,
+  updates `docs/manual-checks.md` in the same commit (`docs/conventions.md`,
+  Tests).
 
 **Commits**
+- **Authored as Bob:** `Zhenzhong Zhou <bob0823.zhou@gmail.com>`, the
+  identity on the repo's history (`git log --format='%an <%ae>' | sort |
+  uniq -c` shows it). Every mbox or patch Claude prepares uses it, never a
+  placeholder such as `Claude (draft) <draft@example.invalid>`: removing
+  those took a history rewrite. A local `.git/hooks/pre-push` refuses a push
+  that carries one.
 - Explicit `git add` per concern, never `-A`.
 - Run `git status` before every commit. Files staged earlier — even new or
   empty ones — ride into whichever commit runs first. Unstage with
