@@ -183,8 +183,7 @@ async function buildProbes(
   if (!shelf) throw new Error('No lot-tracked stock: was this volume-seeded?');
 
   // An open sale to preview: what earliest expiry first reads before a ship.
-  const confirmed = await orders.list({ status: 'confirmed' });
-  const sale = await firstSale(orders, stock, confirmed.entries);
+  const sale = await firstSale(orders, stock);
 
   const probes: Probe[] = [
     { name: 'orders: open', run: () => orders.list({}) },
@@ -246,16 +245,20 @@ async function buildProbes(
     probes.push({ name: 'lot trace', run: () => traces.trace(lotId) });
   }
 
-  if (sale) {
-    probes.push({
-      name: 'shipping preview (FEFO)',
-      run: () =>
-        shipping.preview(sale.orderId, {
-          fromLocationId: sale.locationId,
-          lines: [{ lineId: sale.lineId, quantity: '1' }],
-        }),
-    });
+  // Missing it would drop the earliest-expiry-first read from the check
+  // without a word, so its absence is a failure, not a skipped row.
+  if (!sale) {
+    throw new Error('No confirmed sale with anything left to ship to preview');
   }
+
+  probes.push({
+    name: 'shipping preview (FEFO)',
+    run: () =>
+      shipping.preview(sale.orderId, {
+        fromLocationId: sale.locationId,
+        lines: [{ lineId: sale.lineId, quantity: '1' }],
+      }),
+  });
 
   return probes;
 }
@@ -276,30 +279,48 @@ async function cursorAfter(
   return cursor;
 }
 
-/** A confirmed sale with something left to ship, and its shelf. */
-async function firstSale(
-  orders: OrdersService,
-  stock: StockReadsService,
-  candidates: { id: string; direction: string }[],
-) {
-  for (const candidate of candidates) {
-    if (candidate.direction !== 'sale') continue;
+/**
+ * A confirmed sale with something left to ship, and its shelf.
+ *
+ * Paged rather than read from the first page: after a perf run, the newest
+ * confirmed orders are perf's own purchases, and a first page with no sale
+ * on it left the preview probe out of the check without a word.
+ */
+async function firstSale(orders: OrdersService, stock: StockReadsService) {
+  let before: string | undefined;
 
-    const order = await orders.findById(candidate.id);
-    const line = order.lines.find(
-      (entry) => entry.quantityFulfilled !== entry.quantityOrdered,
-    );
-    if (!line) continue;
+  for (let page = 0; page < 40; page++) {
+    const { entries, nextCursor } = await orders.list({
+      status: 'confirmed',
+      before,
+    });
 
-    // The shelf holding most of it: the volume seed keeps each product on
-    // one shelf, and ships from there.
-    const rows = await stock.list({ variantId: line.variantId });
-    const shelf = rows.sort((a, b) =>
-      toUnits(b.quantity) > toUnits(a.quantity) ? 1 : -1,
-    )[0];
-    if (!shelf) continue;
+    for (const candidate of entries) {
+      if (candidate.direction !== 'sale') continue;
 
-    return { orderId: order.id, lineId: line.id, locationId: shelf.locationId };
+      const order = await orders.findById(candidate.id);
+      const line = order.lines.find(
+        (entry) => entry.quantityFulfilled !== entry.quantityOrdered,
+      );
+      if (!line) continue;
+
+      // The shelf holding most of it: the volume seed keeps each product on
+      // one shelf, and ships from there.
+      const rows = await stock.list({ variantId: line.variantId });
+      const shelf = rows.sort((a, b) =>
+        toUnits(b.quantity) > toUnits(a.quantity) ? 1 : -1,
+      )[0];
+      if (!shelf) continue;
+
+      return {
+        orderId: order.id,
+        lineId: line.id,
+        locationId: shelf.locationId,
+      };
+    }
+
+    if (!nextCursor) break;
+    before = nextCursor;
   }
 
   return undefined;
