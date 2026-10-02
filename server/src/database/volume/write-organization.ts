@@ -109,12 +109,16 @@ export class OrganizationWriter {
   ) {}
 
   async write(): Promise<Anchors> {
-    const started = Date.now();
-
     await this.setUp();
     this.logger.log(
       `Catalogue ready: ${this.items.length} products, ${this.recipes.length} recipes`,
     );
+
+    // Speed since the last progress line, not since the start: an average
+    // over the whole run counts the cheap catalogue inserts, and any time
+    // the machine slept, as if they were the current pace.
+    let lastAt = Date.now();
+    let lastCalls = this.calls;
 
     for (let week = 0; week < WEEKS; week++) {
       await this.shipPending();
@@ -125,10 +129,16 @@ export class OrganizationWriter {
       await this.handOut(inWeek(this.volume.samples, week));
 
       if ((week + 1) % 4 === 0 || week === WEEKS - 1) {
-        const seconds = (Date.now() - started) / 1000;
+        const now = Date.now();
+        const seconds = Math.max((now - lastAt) / 1000, 0.001);
+        const rate = Math.round((this.calls - lastCalls) / seconds);
+
         this.logger.log(
-          `Week ${week + 1}/${WEEKS}: ${this.calls} service calls, ${Math.round(this.calls / seconds)}/s`,
+          `Week ${week + 1}/${WEEKS}: ${this.calls} service calls, ${rate}/s since the last line`,
         );
+
+        lastAt = now;
+        lastCalls = this.calls;
       }
     }
 
