@@ -3921,7 +3921,7 @@ trigger.
 
 | What | When | Cost |
 |---|---|---|
-| Response compression | Check before the first real customer: `curl -sI -H 'Accept-Encoding: gzip' <render-url>/health` should show `content-encoding: gzip`. Add it if not. | One middleware, or a setting on Render. |
+| Response compression | **Done, by Render.** Its edge (Cloudflare) answers API responses with `content-encoding: br`, checked on 2 October 2026 in the browser's Network tab. Nothing to add to the app; check again if the hosting changes. | None. |
 | Measure where it runs | The Performance workflow once this merges; a staging copy on Render before the first paying customer or v1.0. | CI is free; staging is a second service and database. |
 | `pg_stat_statements` | From the first day real people use Render: it records only from when it is on. Check the Render plan allows it. | Near zero. |
 | Configurable pool, then PgBouncer | Configurable with a second server instance, or when production shows requests waiting for a connection. PgBouncer when instances × pool size nears the database's connection limit. | Small, then a service to run. |

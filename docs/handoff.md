@@ -374,10 +374,10 @@ Rules, still in force:
   the business needs them for customs, prepayment or sample values.
 - Check ADR-047's audit list names `return_authorization.replacement_raised`.
 - `npm audit` on both sides has not been run in a while.
-- Production performance (ADR-051, **Results**): check response
-  compression on Render before the first real customer, and turn on
-  `pg_stat_statements` from the first day of real use. The rest wait for
-  their triggers.
+- Production performance (ADR-051, **Results**): turn on
+  `pg_stat_statements` from the first day of real use. Compression is
+  already done by Render's edge (Brotli). The rest wait for their
+  triggers.
 - CSV/Excel export and import: raised, not decided. Export is low-risk
   (read-only, reuses the lists' permissions and tenant scoping); import and
   bulk insert need an ADR first (validation, partial failure, audit,
