@@ -66,6 +66,8 @@ second organization.
   stock and orders, but has no buttons for what it may not do, and a direct
   URL to a settings page shows "not allowed" rather than an empty page.
 - **MC-107** The last Owner cannot be removed or demoted; the app says why.
+- **MC-109** Add an Admin and sign in as them. They can manage members, but
+  changing or removing the Owner is refused.
 - **MC-108** A second organization, in the second profile, sees none of the
   first's products, partners, orders, lots or audit entries, even by pasting
   a URL from the first.
@@ -79,7 +81,8 @@ second organization.
 - **MC-203** Turning lot tracking on is offered only while the variant has no
   stock.
 - **MC-204** Locations: a site with bins under it. Stock goes only into a
-  place with nothing under it; a place holding stock cannot take children.
+  place with nothing under it; a place holding stock cannot take children,
+  so moving a location under one that holds stock is refused.
 - **MC-205** Mark a bin unavailable (returns, retention). Its stock still
   shows on Inventory, but it is not counted as available and nothing ships
   or is picked for production from it.
@@ -98,6 +101,10 @@ second organization.
 - **MC-304** An adjustment out cannot take more than is on the shelf.
 - **MC-305** A movement's history dialog reads in the direction it happened
   (in, out, between).
+- **MC-306** Movements pages back through the history: the next page follows
+  on with no gap and no repeat.
+- **MC-307** Editing a lot's expiry saves, and the new date shows on
+  Inventory and in earliest-expiry-first order.
 
 ## 4. Buying
 
@@ -127,6 +134,8 @@ second organization.
 - **MC-505** The run's cost panel shows the material cost posted to the
   batch, and its unit cost.
 - **MC-506** A licence on the recipe shows on the run.
+- **MC-507** Products → a variant → Recipe: duplicate the active version to a
+  draft, then add, edit and remove a line. The active version is untouched.
 
 ## 6. Selling
 
@@ -147,8 +156,15 @@ second organization.
 - **MC-608** Ship part of a sale without choosing lots: earliest expiry goes
   first. Ship the rest choosing a lot by hand.
 - **MC-609** Shipping cannot take stock held for an earlier order.
-- **MC-610** Void a shipment: its stock returns to the shelf and the order's
-  shipped quantity goes back down.
+- **MC-610** Void a shipment: its stock returns to the shelf, the order's
+  shipped quantity goes back down, and the shipment shows as voided.
+- **MC-611** The shipment dialog previews the lots before anything moves,
+  earliest expiry first. The shipments list and the packing slip name each
+  SKU and lot (demo: SO-DEMO-1).
+- **MC-612** Returns on a sale list each returned unit with its lot (demo: the
+  5 units back on SO-DEMO-1).
+- **MC-613** Duplicate a sale: a new draft with the same lines and the same
+  prices, whatever the price list says now (ADR-049).
 
 ## 7. Invoicing, returns and credit
 
@@ -168,6 +184,11 @@ second organization.
 - **MC-707** A partial credit with no goods back (a price adjustment). A
   second credit cannot take the total past the invoice.
 - **MC-708** Samples never appear on an invoice.
+- **MC-709** A credit's preview shows each tax component (GST and PST in the
+  demo, on INV-000001), and the issued credit note's totals equal the
+  preview exactly.
+- **MC-710** Crediting more than is left on an invoice, or on an RMA line, is
+  refused with a message that says what is left, not a server error.
 
 ## 8. Cost
 
@@ -235,9 +256,17 @@ first.
 - **MC-R01** *(seed:volume)* Issuing an invoice to a customer created
   without a billing address is refused with the reason, not a server error.
   See MC-702.
+- **MC-R02** *(v0.5 round 2)* On a variant's Recipe panel, switching variant
+  right after an action keeps the right recipe on screen: a reload that
+  answers late never shows the previous variant's recipe.
+- **MC-R03** *(v0.5 round 2)* The credit calculation was moved into
+  `credit-amounts.ts`: MC-709 and MC-710 are its check.
 
 ---
 
 ## Changes to this list
 
 - 2026-10-01: first version, covering v0.4 (money) and ADR-051 (performance).
+- 2026-10-01: the v0.5 round-2 walkthrough folded in: MC-109, MC-306,
+  MC-307, MC-507, MC-611 to MC-613, MC-709, MC-710, MC-R02, MC-R03; MC-204
+  and MC-610 made explicit.
