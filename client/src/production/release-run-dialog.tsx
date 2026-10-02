@@ -22,7 +22,13 @@ import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { fromScaled, sumDecimals, toScaled } from '../lib/decimal';
 import { formatDay } from '../lib/format';
-import type { Bom, IssuePlanLine, ProductionRun } from '../lib/types';
+import type {
+  Bom,
+  IssuePlan,
+  IssuePlanLine,
+  LicenceCheck,
+  ProductionRun,
+} from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
 interface LocationSummary {
@@ -41,11 +47,14 @@ interface LocationSummary {
 export function ReleaseRunDialog({
   open,
   run,
+  canOverrideLicence,
   onClose,
   onReleased,
 }: {
   open: boolean;
   run: ProductionRun;
+  /** production.override_licence, from the page (ADR-050). */
+  canOverrideLicence: boolean;
   onClose: () => void;
   onReleased: () => Promise<void> | void;
 }) {
@@ -74,6 +83,20 @@ export function ReleaseRunDialog({
   const [plan, setPlan] = useState<IssuePlanLine[] | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
 
+  /**
+   * What release will do with the recipe's licence, from the same check
+   * release runs (ADR-050), so a refusal is seen before Release is pressed
+   * and an override can be given with its reason. Kept across a change of
+   * source: the licence belongs to the recipe, not the shelf.
+   */
+  const [licenceCheck, setLicenceCheck] = useState<LicenceCheck | null>(null);
+  const [overrideReason, setOverrideReason] = useState('');
+
+  const needsOverride = licenceCheck?.outcome === 'override';
+  const licenceStops =
+    licenceCheck?.outcome === 'block' ||
+    (needsOverride && (!canOverrideLicence || !overrideReason.trim()));
+
   /** Hand-picked quantities per component, keyed by lot id. */
   const [picks, setPicks] = useState<Record<string, Record<string, string>>>(
     {},
@@ -84,11 +107,14 @@ export function ReleaseRunDialog({
 
     let ignore = false;
 
-    void api<{ lines: IssuePlanLine[] }>(
+    void api<IssuePlan>(
       `/production-orders/${run.id}/issue-plan?sourceLocationId=${sourceLocationId}`,
     )
       .then((result) => {
-        if (!ignore) setPlan(result.lines);
+        if (!ignore) {
+          setPlan(result.lines);
+          setLicenceCheck(result.licenceCheck);
+        }
       })
       .catch((caught: unknown) => {
         if (!ignore) {
@@ -192,6 +218,8 @@ export function ReleaseRunDialog({
     setPlan(null);
     setPlanError(null);
     setPicks({});
+    setLicenceCheck(null);
+    setOverrideReason('');
     reset();
     onClose();
   }
@@ -227,6 +255,11 @@ export function ReleaseRunDialog({
         body: JSON.stringify({
           sourceLocationId,
           lots: lots.length > 0 ? lots : undefined,
+          // Only when the check asks for one: sent otherwise, the server
+          // would still require the permission (ADR-050).
+          licenceOverride: needsOverride
+            ? { reason: overrideReason.trim() }
+            : undefined,
         }),
       });
     });
@@ -296,6 +329,15 @@ export function ReleaseRunDialog({
             </TextField>
 
             {planError && <Alert severity="error">{planError}</Alert>}
+
+            {licenceCheck && (
+              <LicencePanel
+                check={licenceCheck}
+                canOverride={canOverrideLicence}
+                reason={overrideReason}
+                onReason={setOverrideReason}
+              />
+            )}
 
             {trackedLines.map((line) => {
               const picking = picks[line.componentVariantId];
@@ -450,9 +492,109 @@ export function ReleaseRunDialog({
           onCancel={close}
           label="Release"
           pendingLabel="Releasing…"
-          disabled={(needsRecipe && !chosenBom) || !picksMatch}
+          disabled={(needsRecipe && !chosenBom) || !picksMatch || licenceStops}
         />
       </form>
     </Dialog>
+  );
+}
+
+/**
+ * The recipe's licence and what release will do with it (ADR-050).
+ *
+ * Nothing at all for a recipe with no licence that the organization lets
+ * through: a business making nothing regulated should never meet this. A
+ * current licence is one quiet line. Anything else says what is wrong, and
+ * either that it cannot be released, that it can with a reason, or that
+ * the organization allows it and the run will record it.
+ */
+function LicencePanel({
+  check,
+  canOverride,
+  reason,
+  onReason,
+}: {
+  check: LicenceCheck;
+  canOverride: boolean;
+  reason: string;
+  onReason: (reason: string) => void;
+}) {
+  const { licence, status, outcome } = check;
+
+  if (!licence) {
+    return outcome === 'block' ? (
+      <Alert severity="error">
+        This recipe carries no licence, and your organization requires one
+        before a run is released. Attach one to the recipe first.
+      </Alert>
+    ) : null;
+  }
+
+  const name = `${licence.number} (${licence.authority})`;
+
+  if (status === 'current') {
+    return (
+      <Typography variant="body2" color="text.secondary">
+        Made under {name}, current.
+      </Typography>
+    );
+  }
+
+  const problem =
+    status === 'withdrawn'
+      ? `${name} has been withdrawn.`
+      : status === 'expired'
+        ? `${name} expired on ${licence.expiresAt ? formatDay(licence.expiresAt) : 'an unknown date'}.`
+        : `${name} is not in force until ${licence.issuedAt ? formatDay(licence.issuedAt) : 'a later date'}.`;
+
+  if (outcome === 'block') {
+    return (
+      <Alert severity="error">
+        {problem}{' '}
+        {status === 'withdrawn'
+          ? 'Nothing can be made under it.'
+          : 'Your organization does not release runs under it.'}
+      </Alert>
+    );
+  }
+
+  if (outcome === 'allow') {
+    return (
+      <Alert severity="info">
+        {problem} Your organization allows releasing under it; the run will
+        record that it was{' '}
+        {status === 'expired' ? 'expired' : 'not yet in force'}.
+      </Alert>
+    );
+  }
+
+  if (!canOverride) {
+    return (
+      <Alert severity="error">
+        {problem} Releasing under it needs an override from someone allowed to
+        give one, with a reason.
+      </Alert>
+    );
+  }
+
+  return (
+    <Stack spacing={1}>
+      <Alert severity="warning">
+        {problem} You can release under it with a reason, which is kept on the
+        run and shown wherever the batch is traced.
+      </Alert>
+      <TextField
+        id="release-licence-reason"
+        label="Reason for releasing anyway"
+        required
+        fullWidth
+        multiline
+        minRows={2}
+        value={reason}
+        onChange={(event) => onReason(event.target.value)}
+        helperText="For example: renewal filed 3 Sept, confirmed by the regulator."
+        slotProps={{ htmlInput: { maxLength: 500 } }}
+      />
+    </Stack>
   );
 }

@@ -60,6 +60,7 @@ export const PERMISSIONS = [
   'production.create',
   'production.release',
   'production.complete',
+  'production.override_licence',
   'price_lists.view',
   'price_lists.create',
   'price_lists.update',

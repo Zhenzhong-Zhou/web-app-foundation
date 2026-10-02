@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
+import { recordContext } from '../../core/audit/audit-context';
 import {
   locations,
   productionOrderLines,
   productionOrders,
-  productLicences,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { assertTakeable, inVariantOrder } from '../stock/availability';
@@ -22,6 +22,7 @@ import type {
   ReleaseProductionOrderDto,
 } from './dto/transitions.dto';
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
+import { checkLicence, settleLicence } from './licence-check';
 import type { ProductionOrderLine } from './production-orders.service';
 import { assertStatus, loadForIssue, loadWithin } from './run-guards';
 
@@ -50,6 +51,8 @@ export class ProductionExecutionService {
    * over numeric(18,4) values is exactly the arithmetic ADR-025 chose numeric
    * for, and pulling three decimals through a JS double to multiply them is
    * how a recipe for 2.4 kg becomes 2.4000000000000004.
+   *
+   * The licence is checked first, before anything is written (ADR-050).
    */
   async release(
     runId: string,
@@ -58,6 +61,26 @@ export class ProductionExecutionService {
   ): Promise<ProductionOrderLine[]> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const { run, bom } = await loadForIssue(tx, organizationId, runId);
+
+      /**
+       * The recipe's licence against the organization's policy (ADR-050),
+       * right after the run guards and before the first write. Its row is
+       * locked FOR SHARE for the rest of this transaction, so a withdrawal
+       * saved at the same moment cannot land halfway through a release. The
+       * recipe's licence itself cannot change underneath: it locked when
+       * this run was planned against it (ADR-040).
+       */
+      const licenceCheck = await checkLicence(
+        tx,
+        organizationId,
+        bom.licenceId,
+        { lock: true },
+      );
+      const licenceAtRelease = settleLicence(
+        licenceCheck,
+        input.licenceOverride,
+        actorId,
+      );
 
       /**
        * Retained or quarantined stock is not raw material. A retention bin is
@@ -244,22 +267,13 @@ export class ProductionExecutionService {
       }
 
       /**
-       * The licence, snapshotted alongside the lines (ADR-040). Read through
-       * the organization, like every lookup here, and copied as text as
-       * well as by id: a finished batch keeps what it was made under even if
-       * the licence row is later corrected.
+       * The licence, snapshotted alongside the lines (ADR-040): by id, and
+       * as text, so a finished batch keeps what it was made under even if
+       * the licence row is later corrected. With it, its state at this
+       * moment and any override (ADR-050) — a fact about the release that
+       * has to read the same next year, so stored rather than derived.
        */
-      const [licence] = bom.licenceId
-        ? await tx
-            .select()
-            .from(productLicences)
-            .where(
-              and(
-                eq(productLicences.organizationId, organizationId),
-                eq(productLicences.id, bom.licenceId),
-              ),
-            )
-        : [];
+      const licence = licenceCheck.licence;
 
       await tx
         .update(productionOrders)
@@ -268,8 +282,21 @@ export class ProductionExecutionService {
           licenceId: licence?.id ?? null,
           licenceNumber: licence?.number ?? null,
           licenceAuthority: licence?.authority ?? null,
+          ...licenceAtRelease,
         })
         .where(eq(productionOrders.id, runId));
+
+      /**
+       * That an override happened, and against what — not why. The reason
+       * stays on the run (ADR-018): free text has no place in a payload
+       * kept for two years.
+       */
+      if (licenceAtRelease.licenceOverriddenBy) {
+        recordContext({
+          licenceStatus: licenceAtRelease.licenceStatusAtRelease,
+          licenceOverridden: true,
+        });
+      }
 
       this.logger.log(
         `Production order ${runId} released with ${issued.length} lines`,

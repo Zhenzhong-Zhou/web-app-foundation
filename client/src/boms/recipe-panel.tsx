@@ -16,6 +16,7 @@ import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { Bom, BomLine, ProductLicence, VariantOption } from '../lib/types';
 import { licenceStatus } from '../licences/licence-status';
+import { LicenceStatusChip } from '../licences/licence-status-chip';
 import type { Variant } from '../products/products-page';
 import { AddBomLineDialog } from './add-bom-line-dialog';
 import { CreateBomDialog } from './create-bom-dialog';
@@ -182,6 +183,11 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
       : match.sku;
   }
 
+  /** The licence the selected version is made under, for its status chip. */
+  const selectedLicence = selected?.licenceId
+    ? licences.find((row) => row.id === selected.licenceId)
+    : undefined;
+
   /** "NPN 80012345 (Health Canada)", or null when the recipe carries none. */
   function licenceFor(licenceId: string | null): string | null {
     if (!licenceId) return null;
@@ -308,6 +314,12 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
                 {licenceFor(selected.licenceId) &&
                   ` · made under ${licenceFor(selected.licenceId)}`}
               </Typography>
+
+              {/* Seen here, before a run is planned, rather than first at
+                  release, which refuses or asks for an override (ADR-050). */}
+              {selectedLicence && (
+                <LicenceStatusChip licence={selectedLicence} />
+              )}
             </Stack>
 
             {/* Least to most committal, left to right, so the one filled

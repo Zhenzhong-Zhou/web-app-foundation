@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.5.0-alpha.1 tagged, ADR-051 next
+# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-050 built, #20 next
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -16,16 +16,22 @@ and price lists proposing the price of a new line.
   recall drill, run against rc.1 when Bob has time. Fixes they find go on
   `release/v0.4` (branched from rc.1), v0.4.0 is tagged there, and the
   fixes are cherry-picked into `main`.
-- Migrations: through **0036** (`order_lines_open_idx`, ADR-051). Next is
-  **0037**.
+- Tagged **v0.5.0-rc.1** (pre-release) on `main` after PR #38 (ADR-051
+  part 2). The Performance workflow ran on `main` on 2 October 2026 at small
+  scale and passed. Its notes are a GitHub pre-release only;
+  `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
+- Migrations: through **0037** (`licence_status_at_release`, ADR-050). Next
+  is **0038**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
-- ADRs: through **ADR-051**. ADR-050 (licence status at release) and
-  ADR-051 (performance testing) are written, not built. ADR-046 carries an
-  amendment (one currency per sale from the first priced line). Next is
+- ADRs: through **ADR-051**, both built. ADR-050 (licence status at
+  release) is on `v0.5-licence-status` and carries an amendment for what was
+  settled while building; ADR-051 (performance) is merged. ADR-046 carries
+  an amendment (one currency per sale from the first priced line). Next is
   **ADR-052**.
-- Tests at the last local run: server e2e 598 in 32 suites
-  (`npm run test:e2e`); server unit 23 in 5 files (`npm test`); client
-  vitest 148 in 33 files; Playwright 61. CI also runs `seed:demo`.
+- Tests at the last local run (ADR-050 branch, 2 October 2026): server e2e
+  627 in 33 suites (`npm run test:e2e`); server unit 36 in 6 files
+  (`npm test`); client vitest 160 in 35 files; Playwright 63. CI also runs
+  `seed:demo`.
 - `npm run seed:demo`: BF-2609 valued at 1900.00 CAD, run FOC-2609-01 costed
   at 1292.00 over 980 bottles (1.318367 each), SO-DEMO-2 priced from the
   Wholesale CAD list (the organization default). It also leaves an RMA
@@ -65,10 +71,15 @@ Then tag v0.4.0.
 2. **Maintainability, rounds 2 and 3 — done** (PR #36, merged; tagged
    `v0.5.0-alpha.1`): the section after step 1's. What is left is listed
    at its end; none of it is half-done.
-3. **ADR-050, licence status at release** — written, not built: migration
-   0037, server with e2e tests, then the client.
-4. **ADR-051, performance testing** — built, on `v0.5-performance` (its
-   own PR): `seed:volume`, `npm run perf`, `npm run perf:plans`, the
+3. **ADR-050, licence status at release** — built, on `v0.5-licence-status`
+   (its own PR): migration 0037; release checks the recipe's licence
+   against the organization's policy (Settings → Organization → Licences at
+   release); an expired or not-yet-in-force licence can be overridden with a
+   reason by whoever holds `production.override_licence` (Owner-only); the
+   run records the state, the overrider and the reason, shown on the run
+   page and in the lot trace. Manual checks MC-506 and MC-508 to MC-511.
+4. **ADR-051, performance testing** — built and merged (PR #38), tagged
+   `v0.5.0-rc.1`: `seed:volume`, `npm run perf`, `npm run perf:plans`, the
    Performance workflow, and the fixes the first runs asked for. Results,
    what to watch and the production items, each with a trigger, are in
    ADR-051's **Results**.
@@ -335,18 +346,18 @@ first three):
 - ~~Server unit tests for the pure logic~~ — done where it is pure.
 - ~~Cross-tenant tests per shared lookup~~ — done.
 - ~~Whether an expired licence stops a release~~ — it does not; ADR-050.
-- Still open: no performance tests, and no end-to-end journey (buy →
-  receive → make → ship → invoice → credit) in Playwright.
+- ~~No performance tests~~ — ADR-051.
+- Still open: no end-to-end journey (buy → receive → make → ship → invoice
+  → credit) in Playwright.
 
 **Next, in this order:**
-1. Build ADR-050: migration 0037, `npm run migrate:all`, the server with
-   e2e tests, then the client.
-2. #20, `date` columns for calendar days: ADR, migration (0038 if ADR-050
-   goes first), `npm run migrate:all`.
-3. ADR-051 — done. Merge `v0.5-performance`, then run the Performance
-   workflow once (Actions → Performance → Run workflow).
-4. The Playwright journey, written with Bob at a computer.
-5. ADR-052, languages.
+1. Merge `v0.5-licence-status` (ADR-050). Deploying it runs migration 0037
+   and the seed, which grants `production.override_licence` to every
+   existing Owner.
+2. #20, `date` columns for calendar days: ADR, migration 0038,
+   `npm run migrate:all`.
+3. The Playwright journey, written with Bob at a computer.
+4. ADR-052, languages.
 
 Rules, still in force:
 - no behaviour change in a refactor; a fix is its own commit, first;
@@ -359,7 +370,10 @@ Rules, still in force:
 
 - #16 licence status for suspended, cancelled, superseded
 - #17 licence expiry notification (60 days)
-- #18 site licences on the organization or a partner
+- #18 site licences on the organization or a partner. ADR-050's amendment
+  sketches where it is heading: one register of credentials with a type
+  and what it applies to — site licences gating making at a site,
+  wholesale licences gating shipment, business licences only reminded.
 - #19 generated client types from OpenAPI (would also replace the client's
   copied permission list)
 - #20 `date` column for calendar days — the rate lookup at receipt reads the
@@ -385,13 +399,11 @@ Rules, still in force:
       hand (once it was lost and rebuilt from the database). Fix: write
       `volume-<scale>.json`, and `npm run perf -- --scale small` reads it.
 - `docs/manual-checks.md` coverage pass: map every ADR and every client page
-  to at least one check. The list covers the main flows and round 2, not yet
-  licences, tax codes and organization settings, closing a line short,
+  to at least one check. The list covers the main flows, round 2 and
+  licences at release (MC-506, MC-508 to MC-511), not yet tax codes and
+  the rest of organization settings, closing a line short,
   cancelling or re-raising a run, the price-list screens, printed documents
   other than the invoice, session timeout, dark mode or narrow screens.
-- The test counts under *Where things stand* predate ADR-051, which added
-  e2e tests for the stock list's paging, cursor and search and the promised
-  availability list. Refresh them from the next full local run.
 - Production performance (ADR-051, **Results**): turn on
   `pg_stat_statements` from the first day of real use. Compression is
   already done by Render's edge (Brotli). The rest wait for their

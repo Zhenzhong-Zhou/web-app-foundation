@@ -57,6 +57,19 @@ class LineLotsDto {
   lots!: LotAllocationDto[];
 }
 
+/**
+ * Why a run is released under a licence the organization's policy would
+ * otherwise refuse (ADR-050). Kept on the run, not in the audit payload
+ * (ADR-018), so it reads beside the batch it explains.
+ */
+class LicenceOverrideDto {
+  @trim()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
+  reason!: string;
+}
+
 export class ReleaseProductionOrderDto {
   @IsUUID()
   sourceLocationId!: string;
@@ -78,6 +91,17 @@ export class ReleaseProductionOrderDto {
   @ValidateNested({ each: true })
   @Type(() => LineLotsDto)
   lots?: LineLotsDto[];
+
+  /**
+   * Present only when the release dialog says an override is needed. The
+   * route then also requires production.override_licence
+   * (LicenceOverrideGuard); when the licence turns out not to need one, it is
+   * ignored and nothing is recorded.
+   */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LicenceOverrideDto)
+  licenceOverride?: LicenceOverrideDto | null;
 }
 
 /** What release would issue from a source, before anything moves. */

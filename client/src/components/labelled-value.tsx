@@ -1,4 +1,5 @@
 import { Stack, Typography } from '@mui/material';
+import type { ReactNode } from 'react';
 
 /**
  * A small caption above its value: the summary figures of a cost panel, the
@@ -8,13 +9,16 @@ import { Stack, Typography } from '@mui/material';
  * run page, which were the same markup under two names. The dense variant
  * row keeps its own: label beside value at a fixed width is a different
  * layout for a different job, a spec sheet read down a column.
+ *
+ * The value is usually a figure, but can carry a link: what a run was made
+ * under links to the licence register (ADR-050).
  */
 export function LabelledValue({
   label,
   value,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
 }) {
   return (
     <Stack spacing={0.5}>

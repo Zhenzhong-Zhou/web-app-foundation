@@ -3786,6 +3786,33 @@ release's audit row records that an override happened.
   rather than manufacture.
 - The status enum of #16 and the sixty-day notification of #17.
 
+**Amendment — settled while building.** Four points the decision left
+open:
+
+- **A recipe with no licence, when one is required, is refused outright.**
+  No override: the two policies cover a licence in a state, and a missing
+  licence is not a lapse someone can sign off. An organization that wants
+  leniency leaves *licence required* off.
+- **The guard asks for the permission whenever `licenceOverride` is sent**,
+  before the service knows whether one is needed. Someone without it is
+  refused (403) even for a current licence. The client sends an override
+  only when the issue plan asks for one and the person holds the
+  permission, so "ignored when not needed" applies to those who do.
+- **The issue plan's `licenceCheck`** is `{ licence, status, outcome }`: the
+  licence or null, its state today (withdrawn included, though never
+  stored), and what release would do — `allow`, `override` or `block`. One
+  function computes it for the plan and, locked, for release.
+- **The audit row** of an overridden release carries
+  `{ licenceStatus, licenceOverridden: true }`; a release with no override
+  carries nothing new.
+
+Other kinds of licence stay out of this table: site licences (#18) gate
+making at a site, wholesale and distribution licences gate shipment (the
+check deferred above), and business licences gate nothing and only need a
+reminder. One register with a type and what it applies to is the likely
+shape when the first of them is built; the status function and the
+block / override / allow policy here carry over unchanged.
+
 ---
 
 ## ADR-051 — Performance: a volume seed, response-time budgets, plan checks
@@ -3860,14 +3887,14 @@ organizations, seed 51. Per organization, small is 5,000 orders, 2,051 lots
 and 40,471 stock movements; large is 49,999, 20,410 and 410,277. Figures
 are p95 at 10 connections unless marked.
 
-| | Small before | Small after | Large before | Large after |
-|---|---|---|---|---|
-| `GET /stock` | 67 ms | 17 ms | **520 ms** | 79 ms |
-| `GET /stock` at 100 connections | 515 ms | 149 ms | 4.5 s | 581 ms |
-| `GET /stock/availability` | 27 ms | 26 ms | 293 ms | 200 ms |
-| `GET /stock/availability?promised=true` | — | 25 ms | — | 196 ms |
-| Valuation query (plan check) | 57 ms | 5 ms | 497 ms | 40 ms |
-| Plan check | 3 failures | passed | 7 failures | passed |
+|                                         | Small before | Small after | Large before | Large after |
+|-----------------------------------------|--------------|-------------|--------------|-------------|
+| `GET /stock`                            | 67 ms        | 17 ms       | **520 ms**   | 79 ms       |
+| `GET /stock` at 100 connections         | 515 ms       | 149 ms      | 4.5 s        | 581 ms      |
+| `GET /stock/availability`               | 27 ms        | 26 ms       | 293 ms       | 200 ms      |
+| `GET /stock/availability?promised=true` | —            | 25 ms       | —            | 196 ms      |
+| Valuation query (plan check)            | 57 ms        | 5 ms        | 497 ms       | 40 ms       |
+| Plan check                              | 3 failures   | passed      | 7 failures   | passed      |
 
 Orders, an order, the movement lists, invoices, lot trace and the four
 writes were flat from small to large (about 1×) before any change: they
@@ -3919,13 +3946,13 @@ so:
 **Production, beyond these measurements.** Not done; each waits for its
 trigger.
 
-| What | When | Cost |
-|---|---|---|
-| Response compression | **Done, by Render.** Its edge (Cloudflare) answers API responses with `content-encoding: br`, checked on 2 October 2026 in the browser's Network tab. Nothing to add to the app; check again if the hosting changes. | None. |
-| Measure where it runs | The Performance workflow once this merges; a staging copy on Render before the first paying customer or v1.0. | CI is free; staging is a second service and database. |
-| `pg_stat_statements` | From the first day real people use Render: it records only from when it is on. Check the Render plan allows it. | Near zero. |
-| Configurable pool, then PgBouncer | Configurable with a second server instance, or when production shows requests waiting for a connection. PgBouncer when instances × pool size nears the database's connection limit. | Small, then a service to run. |
-| Caching | Only when a read is still over budget once bounded and indexed, or the same answer goes to many users. | Ongoing: stale data is its own class of bug. |
+| What                              | When                                                                                                                                                                                                                          | Cost                                                  |
+|-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| Response compression              | **Done, by Render.** Its edge (Cloudflare) answers API responses with `content-encoding: br`, checked on 2 October 2026 in the browser's Network tab. Nothing to add to the app; check again if the hosting changes.          | None.                                                 |
+| Measure where it runs             | The Performance workflow ran on main on 2 October 2026 at small scale and passed; its plan check matched the local run within a few milliseconds. A staging copy on Render still waits for the first paying customer or v1.0. | CI is free; staging is a second service and database. |
+| `pg_stat_statements`              | From the first day real people use Render: it records only from when it is on. Check the Render plan allows it.                                                                                                               | Near zero.                                            |
+| Configurable pool, then PgBouncer | Configurable with a second server instance, or when production shows requests waiting for a connection. PgBouncer when instances × pool size nears the database's connection limit.                                           | Small, then a service to run.                         |
+| Caching                           | Only when a read is still over budget once bounded and indexed, or the same answer goes to many users.                                                                                                                        | Ongoing: stale data is its own class of bug.          |
 
 **When to run perf.** The Performance workflow once after this merges;
 before every release (MC-1201 to MC-1204 in `docs/manual-checks.md`); and

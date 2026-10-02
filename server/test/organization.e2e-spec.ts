@@ -19,6 +19,9 @@ interface OrganizationResponse {
   id: string;
   name: string;
   taxRegistrationNumber: string | null;
+  licenceNotInForcePolicy: string;
+  licenceExpiredPolicy: string;
+  licenceRequired: boolean;
   address: {
     line1: string;
     line2: string | null;
@@ -30,7 +33,8 @@ interface OrganizationResponse {
 /**
  * The organization's own details, which every invoice prints (ADR-046).
  * One registered address, updated in place; a tax number that can be
- * cleared; both the Owner's to change.
+ * cleared; both the Owner's to change. And its licence policy at release
+ * (ADR-050), which nothing reads until release checks it.
  */
 describe('Organization (e2e)', () => {
   let app: INestApplication;
@@ -149,6 +153,111 @@ describe('Organization (e2e)', () => {
     });
   });
 
+  /**
+   * The cautious reading of a regime nobody has configured: a licence not
+   * yet in force is refused, an expired one needs an override, and a recipe
+   * with none is fine — so a business making nothing regulated never meets
+   * any of this.
+   */
+  it('starts with the default licence policy', async () => {
+    const org = await registerOrganization(app, 'alpha');
+    const organization = await current(org.agent);
+
+    expect(organization.licenceNotInForcePolicy).toBe('block');
+    expect(organization.licenceExpiredPolicy).toBe('override');
+    expect(organization.licenceRequired).toBe(false);
+  });
+
+  it('sets the licence policy and records what it replaced', async () => {
+    const org = await registerOrganization(app, 'alpha');
+
+    await org.agent
+      .patch('/v1/organization')
+      .send({
+        licenceNotInForcePolicy: 'override',
+        licenceExpiredPolicy: 'block',
+        licenceRequired: true,
+      })
+      .expect(204);
+
+    const organization = await current(org.agent);
+    expect(organization.licenceNotInForcePolicy).toBe('override');
+    expect(organization.licenceExpiredPolicy).toBe('block');
+    expect(organization.licenceRequired).toBe(true);
+
+    // When the policy was loosened or tightened, and from what, is the
+    // question an audit of a batch starts from.
+    const [entry] = await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'organization.updated'));
+
+    expect(entry.payload).toEqual({
+      licenceNotInForcePolicy: { from: 'block', to: 'override' },
+      licenceExpiredPolicy: { from: 'override', to: 'block' },
+      licenceRequired: { from: false, to: true },
+    });
+  });
+
+  it('changes one licence setting without touching the others', async () => {
+    const org = await registerOrganization(app, 'alpha');
+
+    await org.agent
+      .patch('/v1/organization')
+      .send({ licenceExpiredPolicy: 'allow' })
+      .expect(204);
+
+    const organization = await current(org.agent);
+    expect(organization.licenceExpiredPolicy).toBe('allow');
+    expect(organization.licenceNotInForcePolicy).toBe('block');
+    expect(organization.licenceRequired).toBe(false);
+  });
+
+  /**
+   * Every state needs an answer, so null is refused rather than cleared —
+   * it would otherwise reach the NOT NULL column as a server error. A
+   * string "true" is refused too: the pipe does no implicit conversion.
+   */
+  it('refuses an unknown or empty licence policy', async () => {
+    const org = await registerOrganization(app, 'alpha');
+
+    for (const change of [
+      { licenceExpiredPolicy: 'warn' },
+      { licenceExpiredPolicy: null },
+      { licenceNotInForcePolicy: null },
+      { licenceRequired: 'true' },
+      { licenceRequired: null },
+    ]) {
+      await org.agent.patch('/v1/organization').send(change).expect(400);
+    }
+
+    const organization = await current(org.agent);
+    expect(organization.licenceNotInForcePolicy).toBe('block');
+    expect(organization.licenceExpiredPolicy).toBe('override');
+    expect(organization.licenceRequired).toBe(false);
+  });
+
+  // Saving the form as it stands is not a change worth a history line.
+  it('records nothing when the licence policy is saved unchanged', async () => {
+    const org = await registerOrganization(app, 'alpha');
+
+    await org.agent
+      .patch('/v1/organization')
+      .send({
+        licenceNotInForcePolicy: 'block',
+        licenceExpiredPolicy: 'override',
+        licenceRequired: false,
+      })
+      .expect(204);
+
+    const entries = await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'organization.updated'));
+
+    expect(entries).toHaveLength(0);
+  });
+
   // What the organization prints is the Owner's, as it always was.
   it('lets Admin and Viewer read but not change it', async () => {
     const org = await registerOrganization(app, 'alpha');
@@ -167,6 +276,11 @@ describe('Organization (e2e)', () => {
       await member
         .put('/v1/organization/address')
         .send(HEAD_OFFICE)
+        .expect(403);
+      // Loosening the licence policy is the same route, and the same rule.
+      await member
+        .patch('/v1/organization')
+        .send({ licenceExpiredPolicy: 'allow' })
         .expect(403);
     }
   });

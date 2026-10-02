@@ -14,6 +14,7 @@ import {
   productionOrderLines,
   productionOrders,
   stockMovements,
+  users,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { type LotCandidate, lotCandidates } from '../stock/lot-allocation';
@@ -26,6 +27,7 @@ import type {
   CancelProductionOrderDto,
   IssuePlanQueryDto,
 } from './dto/transitions.dto';
+import { checkLicence } from './licence-check';
 import { assertStatus, loadForIssue, loadWithin } from './run-guards';
 
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
@@ -168,6 +170,9 @@ export class ProductionOrdersService {
 
     return {
       ...run,
+      licenceOverriddenByName: run.licenceOverriddenBy
+        ? await this.nameOf(run.licenceOverriddenBy)
+        : null,
       lines,
       componentLots: await this.componentLots(run),
       outputLots: [
@@ -178,6 +183,24 @@ export class ProductionOrdersService {
         ),
       ],
     };
+  }
+
+  /**
+   * Who overrode the licence policy at release, by name, for the run page's
+   * "released by" (ADR-050). Reached through the run, which is already this
+   * organization's, so the id cannot lead to another tenant's member. The
+   * name is whatever the row holds now: someone since removed reads as
+   * ADR-012 anonymised them, not as who they were.
+   */
+  private async nameOf(userId: string): Promise<string | null> {
+    return this.tenantDb.transaction(async (tx) => {
+      const [user] = await tx
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      return user?.name ?? null;
+    });
   }
 
   /**
@@ -235,6 +258,10 @@ export class ProductionOrdersService {
    * move between the preview and the release, and release recomputes rather
    * than trusting what the dialog saw. Scaling is the same SQL expression
    * release uses, so the numbers agree.
+   *
+   * With it, what release would do with the recipe's licence (ADR-050), from
+   * the same check release runs, so the dialog can show a refusal or ask
+   * for a reason before Release is pressed. Unlocked, like the rest.
    */
   async issuePlan(runId: string, query: IssuePlanQueryDto) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -287,7 +314,14 @@ export class ProductionOrdersService {
         lines.push(line);
       }
 
-      return { lines };
+      const licenceCheck = await checkLicence(
+        tx,
+        organizationId,
+        bom.licenceId,
+        { lock: false },
+      );
+
+      return { lines, licenceCheck };
     });
   }
 

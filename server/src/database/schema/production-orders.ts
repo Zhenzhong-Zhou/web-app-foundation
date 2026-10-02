@@ -15,6 +15,21 @@ import { organizations } from './organizations';
 import { partners } from './partners';
 import { productLicences } from './product-licences';
 import { productVariants } from './product-variants';
+import { users } from './users';
+
+/**
+ * A licence's state as recorded on a run at release (ADR-050). Withdrawn is
+ * absent: release always refuses it, so no run is ever released under one.
+ * Named here, beside the check constraint that holds the same list.
+ */
+export const RELEASE_LICENCE_STATUSES = [
+  'current',
+  'expired',
+  'not_in_force',
+  'none',
+] as const;
+
+export type ReleaseLicenceStatus = (typeof RELEASE_LICENCE_STATUSES)[number];
 
 /**
  * A run: making one variant out of others (ADR-030).
@@ -139,6 +154,37 @@ export const productionOrders = pgTable(
     licenceNumber: text('licence_number'),
     licenceAuthority: text('licence_authority'),
 
+    /**
+     * What the licence's state was at the moment of release, against the
+     * organization's policy (ADR-050): current, expired, not_in_force, or
+     * none when the recipe carried no licence. Withdrawn never appears —
+     * release always refuses it.
+     *
+     * Stored, unlike the licence's own status, which is derived: this is a
+     * fact about one moment, and "was it expired when we made batch X" has
+     * to give the same answer next year. Null on a draft, and on runs
+     * released before migration 0037, which read as "not recorded" rather
+     * than as current — guessing would put a claim in the batch record
+     * nobody made.
+     */
+    licenceStatusAtRelease: text(
+      'licence_status_at_release',
+    ).$type<ReleaseLicenceStatus>(),
+
+    /**
+     * Who released under a licence the policy would otherwise have refused,
+     * and why (ADR-050). The reason lives here rather than in the audit
+     * payload, which records only that an override happened (ADR-018).
+     *
+     * RESTRICT, as stock_movements.actor_id: ADR-012 anonymises a departed
+     * user rather than deleting the row, so the reference stays resolvable.
+     */
+    licenceOverriddenBy: uuid('licence_overridden_by').references(
+      () => users.id,
+      { onDelete: 'restrict' },
+    ),
+    licenceOverrideReason: text('licence_override_reason'),
+
     notes: text('notes'),
 
     ...timestamps,
@@ -167,6 +213,36 @@ export const productionOrders = pgTable(
     check(
       'production_orders_status_check',
       sql`${t.status} in ('draft', 'released', 'completed', 'cancelled')`,
+    ),
+
+    check(
+      'production_orders_licence_status_at_release_check',
+      sql`${t.licenceStatusAtRelease} is null or ${t.licenceStatusAtRelease} in ('current', 'expired', 'not_in_force', 'none')`,
+    ),
+
+    /**
+     * Nothing is recorded before release. A draft is only ever inserted,
+     * never returned to, so a status on one could only be a bug.
+     */
+    check(
+      'production_orders_licence_status_after_release_check',
+      sql`${t.status} <> 'draft' or ${t.licenceStatusAtRelease} is null`,
+    ),
+
+    /** An override always says who and why — never one without the other. */
+    check(
+      'production_orders_licence_override_complete_check',
+      sql`(${t.licenceOverriddenBy} is null) = (${t.licenceOverrideReason} is null)`,
+    ),
+
+    /**
+     * Only the two states an override can unlock. Current needs none, none
+     * is allowed or refused outright, and withdrawn is never released — a
+     * row saying "overridden while current" would be a false record.
+     */
+    check(
+      'production_orders_licence_override_status_check',
+      sql`${t.licenceOverriddenBy} is null or ${t.licenceStatusAtRelease} in ('expired', 'not_in_force')`,
     ),
   ],
 );

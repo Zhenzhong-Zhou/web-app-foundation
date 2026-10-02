@@ -100,6 +100,11 @@ export const PERMISSIONS = {
   PRODUCTION_CREATE: 'production.create',
   PRODUCTION_RELEASE: 'production.release',
   PRODUCTION_COMPLETE: 'production.complete',
+  // Releasing under a licence the organization's policy refuses unless
+  // someone says why (ADR-050). Separate from release: signing off a lapsed
+  // registration is a compliance call, not a floor one. Owner-only until an
+  // organization widens it deliberately.
+  PRODUCTION_OVERRIDE_LICENCE: 'production.override_licence',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -172,6 +177,8 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'production.create': 'Plan a run',
   'production.release': 'Issue components to a run, or cancel one',
   'production.complete': 'Record output and consume components',
+  'production.override_licence':
+    'Release a run under an expired or not-yet-in-force licence, with a reason',
 };
 
 export const SYSTEM_ROLES = {

@@ -31,6 +31,7 @@ import { formatDate, formatDay } from '../lib/format';
 import type { LotMatch, LotTrace } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
+import { LicenceAtRelease } from '../licences/licence-at-release';
 
 /**
  * Finding a lot by the start of its code (ADR-044).
@@ -233,9 +234,15 @@ export function LotTracePage() {
                     >
                       {source.runReference ?? 'without a reference'}
                     </Link>
-                    {source.licenceNumber
-                      ? ` under ${source.licenceNumber} (${source.licenceAuthority ?? ''})`
-                      : ''}
+                    {source.licenceNumber && (
+                      <>
+                        {' under '}
+                        <LicenceAtRelease
+                          run={source}
+                          linkToLicences={can('product_licences.view')}
+                        />
+                      </>
+                    )}
                   </>
                 ) : source.orderId ? (
                   <>
