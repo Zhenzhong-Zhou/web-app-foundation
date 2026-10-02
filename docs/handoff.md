@@ -418,8 +418,17 @@ Rules, still in force:
   Check the generated SQL keeps `NULLS NOT DISTINCT`.
 - A type change on the client means fixing the test fixtures that build that
   type, in the same commit. Vitest does not type-check; `tsc` and CI do.
+- A commit that changes what a person sees, or a rule they work under,
+  updates `docs/manual-checks.md` in the same commit (`docs/conventions.md`,
+  Tests).
 
 **Commits**
+- **Authored as Bob:** `Zhenzhong Zhou <bob0823.zhou@gmail.com>`, the
+  identity on the repo's history (`git log --format='%an <%ae>' | sort |
+  uniq -c` shows it). Every mbox or patch Claude prepares uses it, never a
+  placeholder such as `Claude (draft) <draft@example.invalid>`: removing
+  those took a history rewrite. A local `.git/hooks/pre-push` refuses a push
+  that carries one.
 - Explicit `git add` per concern, never `-A`.
 - Run `git status` before every commit. Files staged earlier — even new or
   empty ones — ride into whichever commit runs first. Unstage with
