@@ -202,7 +202,9 @@ second organization.
 - **MC-801** Settings → Organization: the base currency can be set, and is
   fixed once anything carries a value.
 - **MC-802** Stock value: the total, each pool's quantity, value and unit
-  cost, and the needs-cost list. The demo's BF-2609 shows 1900.00 CAD.
+  cost, and the needs-cost list. The demo's BF-2609 shows 1900.00 CAD. A
+  pool with a receipt still needing a cost is marked provisional, and the
+  mark goes once the cost is set.
 - **MC-803** Correct a needs-cost receipt. The correction splits between
   stock still held and stock already gone, and the item leaves the
   needs-cost list.
@@ -275,6 +277,8 @@ first.
 ## Changes to this list
 
 - 2026-10-01: first version, covering v0.4 (money) and ADR-051 (performance).
+- 2026-10-02: ADR-051 part 2: MC-301 rewritten for the paged list, MC-308
+  and MC-309 added, MC-802 and MC-1201 extended.
 - 2026-10-01: the v0.5 round-2 walkthrough folded in: MC-109, MC-306,
   MC-307, MC-507, MC-611 to MC-613, MC-709, MC-710, MC-R02, MC-R03; MC-204
   and MC-610 made explicit.

@@ -59,6 +59,15 @@ const ALLOWED: { probe: string; table: string; reason: string }[] = [
       "serves. lot-trace.service.ts reads the organization's lots in full " +
       'by design; pg_trgm is the recorded fix if lots reach millions.',
   },
+  ...['valuation_pools', 'lots', 'product_variants'].map((table) => ({
+    probe: 'valuation',
+    table,
+    reason:
+      'A valuation is every pool the organization holds, so reading them ' +
+      'all is the report. Each join carries the organization, so a busier ' +
+      'database reads no other tenant; an export, not a page, is the answer ' +
+      'if one organization outgrows a screen.',
+  })),
 ];
 
 interface Probe {
