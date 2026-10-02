@@ -374,6 +374,24 @@ Rules, still in force:
   the business needs them for customs, prepayment or sample values.
 - Check ADR-047's audit list names `return_authorization.replacement_raised`.
 - `npm audit` on both sides has not been run in a while.
+- ADR-051 tooling, small follow-ups:
+    - **perf/ is never compiled in CI.** ESLint does not report type errors
+      and the build excludes the folder, so a type error there shows only
+      when someone runs it (it happened twice on the first run). Fix: a
+      `perf/tsconfig.json` and `npx tsc --noEmit -p perf/tsconfig.json` in
+      ci.yml's server job.
+    - **One manifest per scale.** seed:volume writes `perf/volume.json`, so
+      seeding the other scale overwrites it and it has to be copied aside by
+      hand (once it was lost and rebuilt from the database). Fix: write
+      `volume-<scale>.json`, and `npm run perf -- --scale small` reads it.
+- `docs/manual-checks.md` coverage pass: map every ADR and every client page
+  to at least one check. The list covers the main flows and round 2, not yet
+  licences, tax codes and organization settings, closing a line short,
+  cancelling or re-raising a run, the price-list screens, printed documents
+  other than the invoice, session timeout, dark mode or narrow screens.
+- The test counts under *Where things stand* predate ADR-051, which added
+  e2e tests for the stock list's paging, cursor and search and the promised
+  availability list. Refresh them from the next full local run.
 - Production performance (ADR-051, **Results**): turn on
   `pg_stat_statements` from the first day of real use. Compression is
   already done by Render's edge (Brotli). The rest wait for their
