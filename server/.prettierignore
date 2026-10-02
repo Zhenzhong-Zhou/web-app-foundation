@@ -1,3 +1,5 @@
 src/database/migrations/meta
 dist
 coverage
+perf/reports
+perf/volume*.json
