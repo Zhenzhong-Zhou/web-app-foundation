@@ -67,9 +67,11 @@ Then tag v0.4.0.
    at its end; none of it is half-done.
 3. **ADR-050, licence status at release** — written, not built: migration
    0037, server with e2e tests, then the client.
-4. **ADR-051, performance testing** — written, not built: `seed:volume`,
-   `npm run perf` with budgets per endpoint, query-plan checks, a manual CI
-   job. Its own PR, from branch `v0.5-performance`, which holds the ADR.
+4. **ADR-051, performance testing** — built, on `v0.5-performance` (its
+   own PR): `seed:volume`, `npm run perf`, `npm run perf:plans`, the
+   Performance workflow, and the fixes the first runs asked for. Results,
+   what to watch and the production items, each with a trigger, are in
+   ADR-051's **Results**.
 5. **ADR-052, languages** — before any code. French (Quebec) and Chinese
    for the app, and French on printed documents. (Planned as ADR-050, then
    ADR-051; those numbers went to licence status and performance.)
@@ -341,8 +343,8 @@ first three):
    e2e tests, then the client.
 2. #20, `date` columns for calendar days: ADR, migration (0038 if ADR-050
    goes first), `npm run migrate:all`.
-3. ADR-051, performance testing: the volume seed, the load runner and its
-   budgets, the plan checks, then the CI job.
+3. ADR-051 — done. Merge `v0.5-performance`, then run the Performance
+   workflow once (Actions → Performance → Run workflow).
 4. The Playwright journey, written with Bob at a computer.
 5. ADR-052, languages.
 
@@ -372,6 +374,10 @@ Rules, still in force:
   the business needs them for customs, prepayment or sample values.
 - Check ADR-047's audit list names `return_authorization.replacement_raised`.
 - `npm audit` on both sides has not been run in a while.
+- Production performance (ADR-051, **Results**): check response
+  compression on Render before the first real customer, and turn on
+  `pg_stat_statements` from the first day of real use. The rest wait for
+  their triggers.
 - CSV/Excel export and import: raised, not decided. Export is low-risk
   (read-only, reuses the lists' permissions and tenant scoping); import and
   bulk insert need an ADR first (validation, partial failure, audit,
