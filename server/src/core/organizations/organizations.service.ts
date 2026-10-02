@@ -19,7 +19,8 @@ import type { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { registeredAddress } from './registered-address';
 
 /**
- * The current organization's own details (ADR-046).
+ * The current organization's own details (ADR-046), and the rules it chose
+ * to work under, such as its licence policy at release (ADR-050).
  *
  * `organizations` is the tenant root and has no organization_id, so
  * TenantDb.select cannot scope it. Every read here goes through
@@ -42,6 +43,9 @@ export class OrganizationsService {
           taxRegistrationNumber: organizations.taxRegistrationNumber,
           baseCurrency: organizations.baseCurrency,
           defaultSalePriceListId: organizations.defaultSalePriceListId,
+          licenceNotInForcePolicy: organizations.licenceNotInForcePolicy,
+          licenceExpiredPolicy: organizations.licenceExpiredPolicy,
+          licenceRequired: organizations.licenceRequired,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
@@ -61,16 +65,27 @@ export class OrganizationsService {
           taxRegistrationNumber: organizations.taxRegistrationNumber,
           baseCurrency: organizations.baseCurrency,
           defaultSalePriceListId: organizations.defaultSalePriceListId,
+          licenceNotInForcePolicy: organizations.licenceNotInForcePolicy,
+          licenceExpiredPolicy: organizations.licenceExpiredPolicy,
+          licenceRequired: organizations.licenceRequired,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
 
       if (!existing) throw new NotFoundException('No such organization');
 
+      /**
+       * The licence policy included: loosening it is the change an auditor
+       * asks about first ("when did expired licences stop being refused, and
+       * who did it?"), so the log keeps what it replaced.
+       */
       recordPrevious({
         taxRegistrationNumber: existing.taxRegistrationNumber,
         baseCurrency: existing.baseCurrency,
         defaultSalePriceListId: existing.defaultSalePriceListId,
+        licenceNotInForcePolicy: existing.licenceNotInForcePolicy,
+        licenceExpiredPolicy: existing.licenceExpiredPolicy,
+        licenceRequired: existing.licenceRequired,
       });
 
       if (input.defaultSalePriceListId) {
@@ -122,6 +137,17 @@ export class OrganizationsService {
         ...(changesBase ? { baseCurrency: input.baseCurrency } : {}),
         ...(input.defaultSalePriceListId !== undefined
           ? { defaultSalePriceListId: input.defaultSalePriceListId }
+          : {}),
+        // Never null by here: the DTO refuses it, since every state needs an
+        // answer (ADR-050).
+        ...(input.licenceNotInForcePolicy !== undefined
+          ? { licenceNotInForcePolicy: input.licenceNotInForcePolicy }
+          : {}),
+        ...(input.licenceExpiredPolicy !== undefined
+          ? { licenceExpiredPolicy: input.licenceExpiredPolicy }
+          : {}),
+        ...(input.licenceRequired !== undefined
+          ? { licenceRequired: input.licenceRequired }
           : {}),
       };
 

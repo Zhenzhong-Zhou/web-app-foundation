@@ -1,11 +1,21 @@
-import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  ValidateIf,
+} from 'class-validator';
 
 import { IsCurrencyCode } from '../../../common/dto/currency';
 import { trim } from '../../../common/dto/trim';
+import { LICENCE_POLICIES, type LicencePolicy } from '../../../database/schema';
 
 /**
- * Only the tax number for now. The name is set at registration, and changing
- * it is a question of its own — it is printed on every document the
+ * What the organization prints and the rules it works under, each changed
+ * on its own. The name is absent: it is set at registration, and changing it
+ * is a question of its own — it is printed on every document the
  * organization has ever issued.
  */
 export class UpdateOrganizationDto {
@@ -34,4 +44,26 @@ export class UpdateOrganizationDto {
   @IsOptional()
   @IsUUID()
   defaultSalePriceListId?: string | null;
+
+  /*
+   * The licence policy at release (ADR-050). Optional, but never null:
+   * every state has to have an answer, so "no policy" is not one. ValidateIf
+   * rather than IsOptional, because IsOptional skips validation for null as
+   * well, and a null would reach the NOT NULL column as a 500.
+   */
+
+  /** A licence whose issue date is still to come. */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsIn(LICENCE_POLICIES)
+  licenceNotInForcePolicy?: LicencePolicy;
+
+  /** A licence past its expiry date. */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsIn(LICENCE_POLICIES)
+  licenceExpiredPolicy?: LicencePolicy;
+
+  /** Whether a recipe with no licence is refused at release. */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean()
+  licenceRequired?: boolean;
 }

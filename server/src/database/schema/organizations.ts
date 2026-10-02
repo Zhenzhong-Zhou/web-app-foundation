@@ -14,6 +14,16 @@ import { isCurrencyCode, primaryKey, timestamps } from './columns';
 import { priceLists } from './price-lists';
 
 /**
+ * What release does with a licence in a given state (ADR-050): refuse it,
+ * refuse it unless someone holding production.override_licence gives a
+ * reason, or let it through. Named here, beside the check constraints that
+ * hold the same list, as every status vocabulary is.
+ */
+export const LICENCE_POLICIES = ['block', 'override', 'allow'] as const;
+
+export type LicencePolicy = (typeof LICENCE_POLICIES)[number];
+
+/**
  * The tenant root (ADR-003). Every tenant-scoped table points here.
  *
  * Deliberately has no created_by: organizations and users would then
@@ -70,9 +80,11 @@ export const organizations = pgTable(
      * expired one usually means a renewal filed but not yet granted.
      */
     licenceNotInForcePolicy: text('licence_not_in_force_policy')
+      .$type<LicencePolicy>()
       .notNull()
       .default('block'),
     licenceExpiredPolicy: text('licence_expired_policy')
+      .$type<LicencePolicy>()
       .notNull()
       .default('override'),
 
