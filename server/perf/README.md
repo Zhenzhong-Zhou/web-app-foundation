@@ -86,7 +86,9 @@ At 10 connections, each sending its next request as soon as the last one
 answers:
 
 - **Reads, p95 under 300 ms:** the order list (open, all, a deep page), an
-  order, the Inventory page's two calls (`/stock`, `/stock/availability`),
+  order, the Inventory page's two calls (`/stock` and
+  `/stock/availability?promised=true`), a deep page of `/stock` and a search,
+  the unfiltered availability list (no screen reads it; kept to watch it),
   the movement list (first page, a deep page, one product), the invoice
   list, and a lot trace.
 - **Writes, p95 under 500 ms:** receiving into a new lot, shipping with

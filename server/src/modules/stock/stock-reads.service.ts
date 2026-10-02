@@ -1,5 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, gt, lt, or, type SQL } from 'drizzle-orm';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  ilike,
+  lt,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 import { pageOf } from '../../common/keyset';
@@ -14,12 +25,10 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { ListMovementsDto } from './dto/list-movements.dto';
+import { ListStockDto } from './dto/list-stock.dto';
 
-export interface ListStockFilters {
-  locationId?: string;
-  variantId?: string;
-  includeEmpty?: string;
-}
+/** A page of the stock list unless the caller asks for fewer (ADR-051). */
+const STOCK_PAGE_SIZE = 50;
 
 /**
  * Reading stock: what is on the shelves now, and the ledger that put it
@@ -34,24 +43,53 @@ export class StockReadsService {
   constructor(private readonly tenantDb: TenantDb) {}
 
   /**
-   * Current stock, optionally narrowed to one location or one variant.
+   * Current stock, a page at a time, in the order people read a stock sheet:
+   * location name, then SKU, then lot code, with the row id last so the
+   * order is total (ADR-051).
+   *
+   * It read the whole organization on every call until ADR-051 measured it:
+   * 520 ms at the large scale, nearly all of it building and sending fifteen
+   * thousand rows. A page is fifty unless asked otherwise.
+   *
+   * The cursor is a stock row's id, as every keyset list's is, but the order
+   * is by names, so the cursor row's names are read back and compared as a
+   * row value. Sorting by names cannot come from one index, so each page
+   * still sorts the organization's matching rows: tens of milliseconds at the
+   * large scale. If the plan check ever flags it, the fix is ordering by an
+   * indexed key instead.
    *
    * Reads the cache and never aggregates the ledger (ADR-025). The join is
-   * three tables deep — variant for the SKU, location for the name, lot for the
-   * code — which `TenantDb.selectJoined` does not express, so this drops to a
-   * raw handle. The scope is applied by hand as a result; that is the cost of
-   * the escape hatch and the reason it is one query rather than the default.
+   * three tables deep, which `TenantDb.selectJoined` does not express, so
+   * this drops to a raw handle and applies the scope by hand.
    */
-  list(filters: ListStockFilters = {}) {
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      const scope = [eq(stockLevels.organizationId, organizationId)];
+  list(query: ListStockDto = {}) {
+    const limit = query.limit ?? STOCK_PAGE_SIZE;
 
-      if (filters.locationId) {
-        scope.push(eq(stockLevels.locationId, filters.locationId));
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      /**
+       * The organization on every joined table, not only on stock_levels.
+       * Redundant for correctness, but without it Postgres joins this
+       * tenant's stock to every tenant's lots, variants and products, which
+       * is what ADR-051's plan check found: a cost that grows with the whole
+       * database rather than with one organization.
+       */
+      const scope: SQL[] = [
+        eq(stockLevels.organizationId, organizationId),
+        eq(productVariants.organizationId, organizationId),
+        eq(products.organizationId, organizationId),
+        eq(locations.organizationId, organizationId),
+      ];
+      const lotOf = and(
+        eq(lots.id, stockLevels.lotId),
+        eq(lots.organizationId, organizationId),
+      );
+
+      if (query.locationId) {
+        scope.push(eq(stockLevels.locationId, query.locationId));
       }
 
-      if (filters.variantId) {
-        scope.push(eq(stockLevels.variantId, filters.variantId));
+      if (query.variantId) {
+        scope.push(eq(stockLevels.variantId, query.variantId));
       }
 
       /**
@@ -60,44 +98,102 @@ export class StockReadsService {
        * so an emptied leaf can still gain children. But "what is on this shelf"
        * means what is there, so they are hidden unless asked for.
        */
-      if (filters.includeEmpty !== 'true') {
+      if (query.includeEmpty !== 'true') {
         scope.push(gt(stockLevels.quantity, '0'));
       }
 
-      return (
-        tx
+      // Anywhere in the SKU, the product name or the lot code: what someone
+      // looking for stock types is any of the three. % and _ match themselves.
+      if (query.search) {
+        const escaped = query.search.replace(/[\\%_]/g, (char) => `\\${char}`);
+        const pattern = `%${escaped}%`;
+        scope.push(
+          or(
+            ilike(productVariants.sku, pattern),
+            ilike(products.name, pattern),
+            ilike(lots.code, pattern),
+          )!,
+        );
+      }
+
+      const order = sql`(${locations.name}, ${productVariants.sku}, coalesce(${lots.code}, ''), ${stockLevels.id})`;
+
+      if (query.before) {
+        const [cursor] = await tx
           .select({
-            variantId: stockLevels.variantId,
-            sku: productVariants.sku,
-            productName: products.name,
-            variantName: productVariants.name,
-            unitOfMeasure: productVariants.unitOfMeasure,
-            locationId: stockLevels.locationId,
             locationName: locations.name,
-            locationCode: locations.code,
-            lotId: stockLevels.lotId,
-            lotCode: lots.code,
-            lotExpiresAt: lots.expiresAt,
-            // Whether the code was ours to invent, and so whether it can be
-            // corrected rather than reclassified (MovementLotDto).
-            lotIsAssigned: lots.isAssigned,
-            quantity: stockLevels.quantity,
+            sku: productVariants.sku,
+            lotCode: sql<string>`coalesce(${lots.code}, '')`,
+            id: stockLevels.id,
           })
           .from(stockLevels)
           .innerJoin(
             productVariants,
             eq(productVariants.id, stockLevels.variantId),
           )
-          // Inner: every variant belongs to a product, and the product name
-          // is what people recognise — most variants have no name of their own.
-          .innerJoin(products, eq(products.id, productVariants.productId))
           .innerJoin(locations, eq(locations.id, stockLevels.locationId))
-          // Left, because lot_id is null for every untracked variant and an
-          // inner join would silently drop most of the warehouse.
-          .leftJoin(lots, eq(lots.id, stockLevels.lotId))
-          .where(and(...scope))
-          .orderBy(asc(locations.name), asc(productVariants.sku))
-      );
+          .leftJoin(lots, lotOf)
+          .where(
+            and(
+              eq(stockLevels.organizationId, organizationId),
+              eq(stockLevels.id, query.before),
+            ),
+          );
+
+        // Another tenant's row, or no row: either way not a place in this
+        // list, and a 400 rather than a 404 says nothing about whether it
+        // exists elsewhere.
+        if (!cursor) {
+          throw new BadRequestException('That cursor is not in this list');
+        }
+
+        scope.push(
+          sql`${order} > (${cursor.locationName}, ${cursor.sku}, ${cursor.lotCode}, ${cursor.id}::uuid)`,
+        );
+      }
+
+      const rows = await tx
+        .select({
+          id: stockLevels.id,
+          variantId: stockLevels.variantId,
+          sku: productVariants.sku,
+          productName: products.name,
+          variantName: productVariants.name,
+          unitOfMeasure: productVariants.unitOfMeasure,
+          locationId: stockLevels.locationId,
+          locationName: locations.name,
+          locationCode: locations.code,
+          lotId: stockLevels.lotId,
+          lotCode: lots.code,
+          lotExpiresAt: lots.expiresAt,
+          // Whether the code was ours to invent, and so whether it can be
+          // corrected rather than reclassified (MovementLotDto).
+          lotIsAssigned: lots.isAssigned,
+          quantity: stockLevels.quantity,
+        })
+        .from(stockLevels)
+        .innerJoin(
+          productVariants,
+          eq(productVariants.id, stockLevels.variantId),
+        )
+        // Inner: every variant belongs to a product, and the product name
+        // is what people recognise — most variants have no name of their own.
+        .innerJoin(products, eq(products.id, productVariants.productId))
+        .innerJoin(locations, eq(locations.id, stockLevels.locationId))
+        // Left, because lot_id is null for every untracked variant and an
+        // inner join would silently drop most of the warehouse.
+        .leftJoin(lots, lotOf)
+        .where(and(...scope))
+        .orderBy(
+          asc(locations.name),
+          asc(productVariants.sku),
+          sql`coalesce(${lots.code}, '')`,
+          asc(stockLevels.id),
+        )
+        // One past the page, so the page knows whether there is more.
+        .limit(limit + 1);
+
+      return pageOf(rows, limit);
     });
   }
 

@@ -241,7 +241,8 @@ Before a release, or after a change to a list, a ledger query or an index.
 The recipe is in `server/perf/README.md`.
 
 - **MC-1201** `seed:volume --scale small` finishes with no refusal and no
-  "sales skipped" warning.
+  "sales skipped" warning. At large scale a handful of skipped sales is
+  expected: now and then no aisle has two goods free to sell.
 - **MC-1202** `npm run perf` passes: every budget, and the concurrency check.
 - **MC-1203** `npm run perf:plans` passes, or each scan it reports is fixed or
   allowed with its reason.

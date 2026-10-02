@@ -35,6 +35,8 @@ export interface Org {
   orderIds: string[];
   deepOrders: string;
   deepMovements: string;
+  /** About a thousand rows into the stock list. */
+  deepStock: string;
 }
 
 export interface Scenario {
@@ -79,8 +81,8 @@ export async function discover(
   session: Session,
   anchors: Anchors,
 ): Promise<Org> {
-  const [rows, locations] = await Promise.all([
-    session.json<StockRow[]>('GET', '/stock'),
+  const [{ rows, deep }, locations] = await Promise.all([
+    everyStockRow(session, '/stock'),
     session.json<{ id: string; isAvailable: boolean }[]>('GET', '/locations'),
   ]);
 
@@ -135,6 +137,7 @@ export async function discover(
     orderIds: orders.ids,
     deepOrders: orders.cursor,
     deepMovements: movements.cursor,
+    deepStock: deep,
   };
 }
 
@@ -190,6 +193,13 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     ),
     // The Inventory page makes these two together.
     read('GET /stock', () => '/stock'),
+    read(
+      'GET /stock/availability?promised',
+      () => '/stock/availability?promised=true',
+    ),
+    read('GET /stock, page 21', (org) => `/stock?before=${org.deepStock}`),
+    read('GET /stock?search', () => '/stock?search=G-001'),
+    // The whole list, which no screen asks for any more: kept to watch it.
     read('GET /stock/availability', () => '/stock/availability'),
     read('GET /stock/movements', () => '/stock/movements'),
     read(
@@ -640,9 +650,33 @@ async function openOrder(
 
 /** On hand for one product on one shelf, every lot, in exact units. */
 async function stockAt(org: Org, hot: Hot): Promise<bigint> {
-  const rows = await org.session.json<StockRow[]>(
-    'GET',
+  const { rows } = await everyStockRow(
+    org.session,
     `/stock?variantId=${hot.variantId}&locationId=${hot.locationId}`,
   );
   return sumUnits(rows.map((row) => row.quantity));
+}
+
+/**
+ * Every row of a stock-list query, page by page, and the cursor about a
+ * thousand rows in for the deep-page read. Untimed: discovery and checks,
+ * never a measurement.
+ */
+async function everyStockRow(session: Session, path: string) {
+  const rows: StockRow[] = [];
+  let cursor: string | null = null;
+  let deep: string | null = null;
+  const join = path.includes('?') ? '&' : '?';
+
+  do {
+    const after: string = cursor ? `&before=${cursor}` : '';
+    const page: { entries: StockRow[]; nextCursor: string | null } =
+      await session.json('GET', `${path}${join}limit=100${after}`);
+
+    rows.push(...page.entries);
+    cursor = page.nextCursor;
+    if (rows.length <= 1_000 && cursor) deep = cursor;
+  } while (cursor);
+
+  return { rows, deep: deep ?? '' };
 }

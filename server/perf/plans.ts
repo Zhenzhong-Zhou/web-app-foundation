@@ -179,7 +179,10 @@ async function buildProbes(
     20,
   );
 
-  const shelf = (await stock.list({})).find((row) => row.lotId);
+  const shelf = (await stock.list({ limit: 100 })).entries.find(
+    (row) => row.lotId,
+  );
+  const deepStock = await cursorAfter((before) => stock.list({ before }), 20);
   if (!shelf) throw new Error('No lot-tracked stock: was this volume-seeded?');
 
   // An open sale to preview: what earliest expiry first reads before a ship.
@@ -202,6 +205,14 @@ async function buildProbes(
     },
     { name: 'inventory', run: () => stock.list({}) },
     {
+      name: 'inventory: page 21',
+      run: () => stock.list({ before: deepStock }),
+    },
+    {
+      name: 'inventory: search',
+      run: () => stock.list({ search: 'G-001' }),
+    },
+    {
       name: 'inventory: one shelf',
       run: () => stock.list({ locationId: shelf.locationId }),
     },
@@ -210,6 +221,10 @@ async function buildProbes(
       run: () => stock.list({ variantId: shelf.variantId }),
     },
     { name: 'availability', run: () => availability.list() },
+    {
+      name: 'availability: promised',
+      run: () => availability.list(true),
+    },
     { name: 'movements', run: () => stock.listMovements({}) },
     {
       name: 'movements: page 21',
@@ -306,7 +321,10 @@ async function firstSale(orders: OrdersService, stock: StockReadsService) {
 
       // The shelf holding most of it: the volume seed keeps each product on
       // one shelf, and ships from there.
-      const rows = await stock.list({ variantId: line.variantId });
+      const { entries: rows } = await stock.list({
+        variantId: line.variantId,
+        limit: 100,
+      });
       const shelf = rows.sort((a, b) =>
         toUnits(b.quantity) > toUnits(a.quantity) ? 1 : -1,
       )[0];

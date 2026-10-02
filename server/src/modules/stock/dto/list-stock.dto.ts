@@ -1,6 +1,15 @@
-import { IsBooleanString, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsBooleanString,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
-export class ListStockDto {
+import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
+
+/** The stock list's filters, and its page (ADR-051). */
+export class ListStockDto extends KeysetQueryDto {
   @IsOptional()
   @IsUUID()
   locationId?: string;
@@ -9,16 +18,13 @@ export class ListStockDto {
   @IsUUID()
   variantId?: string;
 
-  /**
-   * Zero rows are kept rather than deleted — a shelf that emptied yesterday is
-   * a fact worth having, and LocationsService depends on the row surviving so
-   * an emptied leaf can still gain children. But "what is on this shelf" means
-   * what is there, so they are hidden unless asked for.
-   *
-   * A string, not a boolean: query parameters arrive as text and
-   * @IsBoolean() would reject "true". The service compares against 'true'.
-   */
   @IsOptional()
   @IsBooleanString()
   includeEmpty?: string;
+
+  /** Anywhere in the SKU, the product name or the lot code. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  search?: string;
 }
