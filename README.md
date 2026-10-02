@@ -10,10 +10,13 @@ knows nothing about stock or recipes and would carry unchanged into a CRM or a b
 app; everything under `server/src/modules` is the inventory domain and depends on core,
 never the other way round.
 
-> **Status: pre-alpha, in daily use by its author.** Auth, tenancy, permissions and
-> auditing work end to end, and so does the whole inventory cycle: buying,
-> receiving, making under a licence, and shipping, with every lot traceable in
-> both directions. See [Roadmap](#roadmap).
+> **Status: pre-release (v0.5.0-rc.1), in daily use by its author.** Auth,
+> tenancy, permissions and auditing work end to end, and so does the whole cycle
+> for a maker of natural health products: buying, receiving, making under a
+> licence, selling, shipping, invoicing, returns and credit — with every lot
+> traceable in both directions and every movement valued. See
+> [Roadmap](#roadmap).
+
 ---
 
 ## Architecture
@@ -24,15 +27,16 @@ Core  →  Shared Services  →  Application Features
 
 - **Core** — auth, users, organizations, authorization, audit, notifications
 - **Shared Services** — email (background jobs deferred, see ADR-005)
-- **Application Features** — products, locations, stock, partners, orders, recipes,
-  production, licences — in `server/src/modules`
+- **Application Features** — products, licences, locations, stock, partners,
+  orders and shipments, recipes, production, invoices and credit notes, returns,
+  costs, price lists, tax codes — in `server/src/modules`
 
 ```
 web-app-foundation/
 ├── server/              NestJS API — all backend code
 ├── client/              React SPA (Vite + Material UI)
 ├── docker/              container init scripts
-├── docs/decisions.md    architecture decision log
+├── docs/                decisions, conventions, manual checks, handoff, releases
 ├── docker-compose.yml   Postgres 18 + Mailpit
 └── .env                 shared by Compose and the server
 ```
@@ -91,7 +95,7 @@ Four decisions shape everything else:
 | Database         | PostgreSQL 18                           |
 | ORM / migrations | Drizzle ORM + drizzle-kit               |
 | Frontend         | React + TypeScript (Vite) + Material UI |
-| Mail             | Mailpit in dev, Resend in production     |
+| Mail             | Mailpit in dev, Resend in production    |
 | Tests (server)   | Jest + Supertest                        |
 | Tests (client)   | Vitest + MSW, Playwright end to end     |
 
@@ -99,7 +103,7 @@ Four decisions shape everything else:
 
 ## Setup
 
-**Prerequisites:** Node.js 20+, Docker, npm
+**Prerequisites:** Node.js 26+ (both `package.json` files say so), Docker, npm
 
 > Requires **PostgreSQL 18** for the native `uuidv7()` function — the compose file pins it.
 > Note the PG18 volume mount target is `/var/lib/postgresql`, not `/var/lib/postgresql/data`.
@@ -114,8 +118,9 @@ docker compose up -d      # Postgres + Mailpit
 
 cd server
 npm install
-npm run migrate
+npm run migrate:all       # dev, and the two test databases
 npm run seed
+npm run seed:demo         # optional: a worked example to click through
 npm run start:dev
 # in a second terminal
 cd client
@@ -140,25 +145,34 @@ Mailpit — open the inbox above to click verification and password-reset links.
 
 Run from `server/`.
 
-| Command               | Does                                                          |
-|-----------------------|---------------------------------------------------------------|
-| `npm run start:dev`   | Run API with hot reload                                       |
-| `npm run migrate`     | Apply pending migrations                                      |
-| `npm run migrate:new` | Create a new migration                                        |
-| `npm run migrate:test`| Apply migrations to the database Jest uses                     |
-| `npm run migrate:e2e` | Apply migrations to the database Playwright uses               |
-| `npm run seed`        | Seed roles and the permission vocabulary. Safe to re-run.     |
-| `npm test`            | Unit tests                                                    |
-| `npm run test:e2e`    | Integration tests (needs the test DB migrated)                |
-| `npm run lint`        | Lint + format                                                 |
+| Command                             | Does                                                                                 |
+|-------------------------------------|--------------------------------------------------------------------------------------|
+| `npm run start:dev`                 | Run the API with hot reload                                                          |
+| `npm run migrate:new -- --name <n>` | Generate a migration from the schema                                                 |
+| `npm run migrate:all`               | Apply pending migrations to dev, test and e2e databases                              |
+| `npm run migrate`                   | Apply them to the dev database only                                                  |
+| `npm run seed`                      | Roles and the permission vocabulary. Safe to re-run.                                 |
+| `npm run seed:demo`                 | A worked example to click through. Refuses a production database.                    |
+| `npm run seed:volume`               | A year of data for several organizations (`-- --scale small` or `large`), for `perf` |
+| `npm run perf`                      | Response-time budgets over HTTP against the volume seed                              |
+| `npm run perf:plans`                | Query plans: fails on a sequential scan of a large table                             |
+| `npm test`                          | Unit tests                                                                           |
+| `npm run test:e2e`                  | Integration tests; migrates the test database first                                  |
+| `npm run lint` / `lint:ci`          | Lint and fix / lint only, as CI runs it                                              |
+| `npm run verify`                    | What CI runs: format, lint, build, unit and integration tests                        |
 
-A schema change means three migrate commands, not one: `migrate`, `migrate:test` and
-`migrate:e2e` each target a separate database, and a failing schema-invariant test is
-usually one of them left behind.
+A schema change touches three databases — dev, the one Jest uses and the one
+Playwright uses — and `npm run migrate:all` applies it to all three. A failing
+schema-invariant test is usually one of them left behind.
 
-From `client/`: `npm run dev`, `npm run build`, `npm run lint`, `npx vitest run`, and
-`npx playwright test` for the browser suite (which runs its own stack on ports
-3100/5273, never the dev server).
+From `client/`: `npm run dev`, `npm run build`, `npm run lint`, `npm test`
+(Vitest), `npm run test:e2e` for the browser suite (Playwright, on its own stack on
+ports 3100/5273, never the dev server; it migrates and seeds the e2e database
+first), and `npm run verify`.
+
+`docs/manual-checks.md` is the list to walk through by hand before a release and
+after a feature lands; every change that alters what a person sees or a rule they
+work under updates it.
 
 ---
 
@@ -183,6 +197,16 @@ The second is what makes `/members` survive a refresh; without it a static host
 
 `CLIENT_URL` on the API service must point at the static site, or verification
 and reset links are generated against the wrong host.
+
+The API service builds from root directory `server`, branch `main`, with:
+
+```bash
+npm ci --include=dev && npm run build && npm run migrate && npm run seed && npm prune --omit=dev
+```
+
+Migrations and the permission seed run on every deploy, so a deploy that went
+live is one where both succeeded — and a permission added to the code reaches
+every existing Owner without a migration.
 
 The static site builds from root directory `client`, with `npm ci && npm run
 build` and a publish directory of `dist`.
@@ -246,13 +270,33 @@ each step is server-first then the screen that uses it (ADR-019):
 - [x] **22. Reservations** — confirmed sales hold stock, earliest confirmed
   first, computed from open lines rather than stored; what is free, held and
   backordered is shown per product
+- [x] **23. Invoicing** — one invoice per shipment, drafted then issued with a
+  gapless number and every amount stored; voided by a full credit note
+  (ADR-046)
+- [x] **24. RMAs and credit notes** — a return authorized line by line to
+  credit, replace or neither; partial credit notes capped by value, by tax
+  and by what came back (ADR-047)
+- [x] **25. Cost** — every movement valued in a ledger like quantity:
+  weighted average per lot, batches costed at close, purchases in another
+  currency at the day's rate (ADR-048)
+- [x] **26. Price lists** — sale and purchase lists, per partner or the
+  organization's default, proposing the price of a new line (ADR-049)
+- [x] **27. Performance** — a volume seed, response-time budgets, query-plan
+  checks and an on-demand workflow; measured first, then fixed where the
+  measurements pointed (ADR-051)
+- [x] **28. Licence status at release** — a run's licence checked against the
+  organization's policy; expired or not-yet-in-force overridable with a reason
+  by whoever may, and the state recorded on the run and in the lot trace
+  (ADR-050)
 
-**Next:** reservations — holding stock for a confirmed sale so another order
-cannot take it, with what can be promised shown as on hand minus what is held.
+**Next:** calendar days stored as `date` (#20), an end-to-end journey in the
+browser suite, then languages — French (Quebec) and Chinese in the app, French
+on printed documents (ADR-052).
 
 **Deliberately deferred** (all additive): background jobs and queues, invitations,
 file storage, search, admin UI, billing, API docs, scheduled notifications,
-reservations, cost on the lot, price lists and exchange rates.
+payments against invoices, pro forma invoices, CSV import and export, and
+licences beyond the product's own — site, wholesale and business licences.
 
 ---
 
@@ -261,6 +305,10 @@ reservations, cost on the lot, price lists and exchange rates.
 - [`docs/decisions.md`](docs/decisions.md) — why the architecture is the way it is.
   **Read this before changing anything structural.**
 - [`docs/conventions.md`](docs/conventions.md) — naming and code organisation rules
+- [`docs/manual-checks.md`](docs/manual-checks.md) — what to check by hand before a
+  release, each check with an id
+- [`docs/handoff.md`](docs/handoff.md) — where the work stands and what is next
+- [`docs/releases/`](docs/releases) — the notes each tagged release was made with
 
 Both are worth reading before a change that touches money, quantities, or the
 ledger. Three rules catch most newcomers:
@@ -273,4 +321,3 @@ ledger. Three rules catch most newcomers:
 - **Snapshots, not joins, for anything historical.** A line records the SKU it was
   ordered under, a run copies its recipe at release, and an audit row stores what the
   thing was called at the time (ADR-029, ADR-038).
-  that the linter can't enforce.
