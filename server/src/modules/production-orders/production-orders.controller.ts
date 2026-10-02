@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
@@ -29,6 +30,7 @@ import {
   RecordOutputDto,
   ReleaseProductionOrderDto,
 } from './dto/transitions.dto';
+import { LicenceOverrideGuard } from './licence-override.guard';
 import { ProductionCloseService } from './production-close.service';
 import { ProductionExecutionService } from './production-execution.service';
 import { ProductionOrdersService } from './production-orders.service';
@@ -102,10 +104,14 @@ export class ProductionOrdersController {
    * Its own permission, separate from planning: releasing moves stock, and the
    * person who plans a week of runs is not always the person allowed to empty
    * a shelf into one.
+   *
+   * Overriding the licence policy needs production.override_licence as
+   * well, but only when the body carries an override (ADR-050).
    */
   @Post(':id/release')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions(PERMISSIONS.PRODUCTION_RELEASE)
+  @UseGuards(LicenceOverrideGuard)
   @Audited({
     action: AUDIT_ACTIONS.PRODUCTION_ORDER_RELEASED,
     resourceType: 'production_order',

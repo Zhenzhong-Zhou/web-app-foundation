@@ -190,6 +190,10 @@ export class LotTraceService {
    * How the lot came into existence: received from a supplier, or made in a
    * run. A receipt entered by hand has no order, and says so rather than
    * being left out — a gap in the trail is itself worth knowing.
+   *
+   * A run says what licence it was made under, its state at release, and
+   * who overrode the policy and why (ADR-050): the first questions a
+   * regulator asks about a batch, answered where the recall starts.
    */
   private async sources(tx: Tx, organizationId: string, lotId: string) {
     const rows = (
@@ -203,19 +207,25 @@ export class LotTraceService {
           p.name as partner_name,
           po.id as run_id,
           po.reference as run_reference,
+          po.licence_id,
           po.licence_number,
-          po.licence_authority
+          po.licence_authority,
+          po.licence_status_at_release,
+          po.licence_override_reason,
+          u.name as licence_overridden_by_name
         from stock_movements sm
         left join orders o
           on sm.reference_type = 'purchase_order' and o.id = sm.reference_id
         left join partners p on p.id = o.partner_id
         left join production_orders po
           on sm.reference_type = 'production_order' and po.id = sm.reference_id
+        left join users u on u.id = po.licence_overridden_by
         where sm.organization_id = ${organizationId}::uuid
           and sm.lot_id = ${lotId}::uuid
           and sm.reason in ('receipt', 'production')
         group by sm.reason, o.id, o.reference, p.name, po.id, po.reference,
-          po.licence_number, po.licence_authority
+          po.licence_id, po.licence_number, po.licence_authority,
+          po.licence_status_at_release, po.licence_override_reason, u.name
         order by first_at
       `)
     ).rows as {
@@ -227,8 +237,12 @@ export class LotTraceService {
       partner_name: string | null;
       run_id: string | null;
       run_reference: string | null;
+      licence_id: string | null;
       licence_number: string | null;
       licence_authority: string | null;
+      licence_status_at_release: string | null;
+      licence_override_reason: string | null;
+      licence_overridden_by_name: string | null;
     }[];
 
     return rows.map((row) => ({
@@ -240,8 +254,12 @@ export class LotTraceService {
       supplierName: row.partner_name,
       runId: row.run_id,
       runReference: row.run_reference,
+      licenceId: row.licence_id,
       licenceNumber: row.licence_number,
       licenceAuthority: row.licence_authority,
+      licenceStatusAtRelease: row.licence_status_at_release,
+      licenceOverrideReason: row.licence_override_reason,
+      licenceOverriddenByName: row.licence_overridden_by_name,
     }));
   }
 

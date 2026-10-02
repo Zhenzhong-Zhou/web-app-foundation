@@ -141,6 +141,14 @@ second organization.
 - **MC-505** The run's cost panel shows the material cost posted to the
   batch, and its unit cost.
 - **MC-506** A licence on the recipe shows on the run.
+- **MC-508** Licences → Edit the licence on a recipe: set *Valid until* to
+  yesterday. Plan a run from that recipe and Release: it is refused, and
+  the message names the licence, the day it expired, and that someone with
+  `production.override_licence` can release it with a reason. Nothing
+  moves, and the run stays planned (ADR-050).
+- **MC-509** Switch the same licence's *Current* off (withdrawn). Release is
+  refused, saying it was withdrawn, whatever the organization's licence
+  policy.
 - **MC-507** Products → a variant → Recipe: duplicate the active version to a
   draft, then add, edit and remove a line. The active version is untouched.
 
@@ -282,3 +290,4 @@ first.
 - 2026-10-01: the v0.5 round-2 walkthrough folded in: MC-109, MC-306,
   MC-307, MC-507, MC-611 to MC-613, MC-709, MC-710, MC-R02, MC-R03; MC-204
   and MC-610 made explicit.
+- 2026-10-02: ADR-050, the check at release: MC-508 and MC-509 added.

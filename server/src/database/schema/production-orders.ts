@@ -18,6 +18,20 @@ import { productVariants } from './product-variants';
 import { users } from './users';
 
 /**
+ * A licence's state as recorded on a run at release (ADR-050). Withdrawn is
+ * absent: release always refuses it, so no run is ever released under one.
+ * Named here, beside the check constraint that holds the same list.
+ */
+export const RELEASE_LICENCE_STATUSES = [
+  'current',
+  'expired',
+  'not_in_force',
+  'none',
+] as const;
+
+export type ReleaseLicenceStatus = (typeof RELEASE_LICENCE_STATUSES)[number];
+
+/**
  * A run: making one variant out of others (ADR-030).
  *
  * ADR-027 kept this out of `orders` and gave the reason — an order has one
@@ -153,7 +167,9 @@ export const productionOrders = pgTable(
      * than as current — guessing would put a claim in the batch record
      * nobody made.
      */
-    licenceStatusAtRelease: text('licence_status_at_release'),
+    licenceStatusAtRelease: text(
+      'licence_status_at_release',
+    ).$type<ReleaseLicenceStatus>(),
 
     /**
      * Who released under a licence the policy would otherwise have refused,

@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 
+import { AuthorizationModule } from '../../core/authorization/authorization.module';
 import { NotificationsModule } from '../../core/notifications/notifications.module';
 import { StockModule } from '../stock/stock.module';
+import { LicenceOverrideGuard } from './licence-override.guard';
 import { ProductionCloseService } from './production-close.service';
 import { ProductionExecutionService } from './production-execution.service';
 import { ProductionOrdersController } from './production-orders.controller';
@@ -17,14 +19,18 @@ import { ProductionOrdersService } from './production-orders.service';
  * copies them, which is one statement doing the scaling in SQL; routing that
  * through a service would mean fetching rows into JavaScript to multiply
  * decimals, which is what ADR-025 exists to avoid.
+ *
+ * AuthorizationModule for PermissionsService, which LicenceOverrideGuard
+ * resolves per request, as StockModule imports it for AdjustmentGuard.
  */
 @Module({
-  imports: [StockModule, NotificationsModule],
+  imports: [StockModule, NotificationsModule, AuthorizationModule],
   controllers: [ProductionOrdersController],
   providers: [
     ProductionOrdersService,
     ProductionExecutionService,
     ProductionCloseService,
+    LicenceOverrideGuard,
   ],
   exports: [ProductionOrdersService],
 })
