@@ -4134,6 +4134,181 @@ format. Each is a rule or a setting on top, and each waits for its trigger.
 
 ---
 
+## ADR-053 — Backups: an encrypted nightly dump we own, at another provider, restored monthly
+
+**Context.** Nothing in the repo says how the database is backed up or how
+it is brought back. Production runs on Render, and a free Render database
+may have no backups at all and expires 30 days after creation. Every
+organization's data lives in one Postgres database, so one backup holds
+all of them. Bob may move hosts later, so the plan cannot rest on one
+host's features. No customer has asked for a country or a retention period
+yet; the database is megabytes.
+
+Three layers exist in production practice: the host's point-in-time
+recovery (rewind to any minute), a logical dump the team owns (`pg_dump`,
+stored elsewhere), and physical backups with WAL archiving (pgBackRest,
+WAL-G) for self-hosted or very large databases. The rule over all of them
+is 3-2-1-1-0: three copies, two kinds of storage, one off-site, one
+immutable, zero errors when a restore is tested.
+
+**Decision — targets first.** What the plan has to meet, stated as numbers
+so a choice can be checked against them:
+
+| Phase | When | RPO (data that may be lost) | RTO (time to be running again) |
+|---|---|---|---|
+| 1 | This ADR's scripts | 24 hours | 4 hours |
+| 2 | Before paying customers | 15 minutes | 4 hours |
+
+Phase 1 is met by the nightly dump alone. Phase 2 needs the host's
+point-in-time recovery, which is a plan choice at the host, not code.
+
+**Decision — our own nightly dump is the backup that counts.** `pg_dump`
+in custom format (`-Fc`, zstd), once a night at 10:00 UTC (3am in
+Vancouver, 6am in Toronto), the quietest hour. It reads a consistent
+snapshot and does not block the app. It works against any Postgres, so it
+survives a change of host, the host failing, and the account being locked;
+and restoring it somewhere new is exactly how a move between hosts is done.
+
+- Run by a scheduled GitHub Actions workflow, not by the host: if the host
+  disappears, the job and its history do not. The same script runs in a
+  container anywhere, for the day it moves.
+- Logged in as a dedicated read-only role, `backup`, not the app's own
+  login, so the backup job cannot change data.
+- The `pg_dump` client's major version matches the server's (18). An older
+  client refuses a newer server.
+
+**Decision — encrypted before it leaves, with `age`.** Each dump is
+encrypted on the runner with an `age` public key before upload. The public
+key can only lock, so a stolen backup job cannot read any backup. The
+private key never touches the job: one copy in Bob's password manager, one
+offline (printed, kept safe). Losing both makes every backup unreadable,
+which is why there are two.
+
+Encryption is one step of the script with one input, the recipient key.
+A KMS or hardware key, if a contract ever demands one, replaces that step
+and nothing else.
+
+The bucket's own encryption is on as well, as a second lock; it is not
+relied on alone, because the provider holds that key.
+
+**Decision — stored at a different provider, in Canada, immutable.**
+
+- An S3-compatible bucket at a provider other than the database host.
+  Every major object store speaks the S3 API (AWS S3, Backblaze B2,
+  Cloudflare R2), so switching provider is changing the endpoint.
+- In a Canadian region. Choosing a region costs nothing at creation and
+  moving years of backups later does; Canadian customers in regulated
+  industries ask where their data is kept, backups included.
+- Versioning and object lock on, set when the bucket is created, because
+  some providers only allow it then. Each backup is locked for 30 days:
+  nobody can delete or overwrite it in that time, Bob included, which is
+  what survives ransomware or a stolen password.
+- The job's credentials can write but not delete. Expiry is the bucket's
+  lifecycle rule, not the job's.
+- Retention: 30 daily and 12 monthly (the first backup of each month is
+  kept for a year). A setting, so a contract's seven years is one number.
+- Each upload is named by environment and time,
+  `production/2026/10/03/20261003T100000Z.dump.age`, with a SHA-256
+  checksum beside it, so a restore can prove what it downloaded is what was
+  written.
+
+**Decision — every location is a setting.** Nothing about the host, the
+bucket or the region is in code:
+
+| Variable | Holds |
+|---|---|
+| `BACKUP_DATABASE_URL` | The `backup` role's connection string, TLS required |
+| `BACKUP_S3_ENDPOINT`, `BACKUP_S3_REGION`, `BACKUP_BUCKET` | Where backups go |
+| `BACKUP_S3_ACCESS_KEY_ID`, `BACKUP_S3_SECRET_ACCESS_KEY` | Write-only credentials |
+| `BACKUP_AGE_RECIPIENT` | The public key backups are encrypted to |
+| `BACKUP_ENVIRONMENT` | `production`, the first segment of every name |
+
+Held as GitHub Actions secrets. Moving region or provider: a new bucket,
+new values, and the next night's backup lands there; the old bucket's
+backups expire on their own or are copied if a contract says so.
+
+**Decision — restores are rehearsed, timed and written down.** A backup
+nobody has restored is a hope.
+
+- A runbook, `docs/runbooks/restore.md`: the exact commands, in order, for
+  a person under pressure.
+- A monthly restore drill, a second scheduled workflow: download the
+  latest backup, check its checksum, decrypt it, `pg_restore` into a
+  throwaway Postgres 18 on the runner, then check that the tables exist,
+  row counts are plausible, the newest audit row is less than a day old,
+  and the migrations table matches the code. It records how long it took —
+  the real RTO — and fails loudly if any step does. The drill needs the
+  private key, so it runs from a separate secret only that workflow reads.
+- Three kinds of restore, each in the runbook:
+    - **The host is gone:** a new database anywhere, restore the latest
+      dump, point `DATABASE_URL` at it, start the app.
+    - **A bad deploy or a bad delete:** the host's point-in-time recovery to
+      the minute before (phase 2).
+    - **One organization's mistake:** restore into a scratch database and
+      copy back that organization's rows only. Never the whole database:
+      that would erase every other organization's work since the backup.
+      Every table carries `organization_id`, which is what makes one
+      tenant's rows selectable.
+
+**Decision — a missing backup is noticed within a day.** A failed workflow
+emails Bob. A daily check fails if the newest backup is more than 26 hours
+old, which also covers GitHub pausing scheduled workflows after 60 days
+without activity in the repository. A backup whose size moves more than
+50% from the previous one is flagged: a bug or lost data shows up there
+first.
+
+**Decision — the host's own backups are a plan choice, recorded per
+host.** Today's host is Render. Phase 0 is checking what its plan backs up
+now; phase 2 requires a plan with point-in-time recovery. A different host
+needs the same: point-in-time recovery for RPO in minutes, and nothing in
+this ADR changes when it does.
+
+**Consequences.**
+
+- Built in this order, each its own commit:
+    1. Phase 0, by hand this week: check Render's plan, create the bucket
+       (Canada, versioning, object lock), create the `age` key pair and
+       store the private key twice, take one manual encrypted dump.
+    2. The `backup` role. Not a migration: a role belongs to the Postgres
+       server rather than the database, and is created once per host, so
+       the runbook gives the SQL.
+    3. `scripts/backup.sh` and `scripts/restore.sh`, plain shell over
+       `pg_dump`, `age` and an S3 client, so they run anywhere.
+    4. `.github/workflows/backup.yml` (nightly, plus the 26-hour check) and
+       `.github/workflows/restore-drill.yml` (monthly).
+    5. `docs/runbooks/restore.md`, and a manual check that walks it.
+- Backups hold personal data. Someone deleted from the app stays in
+  backups until they expire, at most a year under the monthly rule. That is
+  normal under PIPEDA when disclosed: the privacy policy states the
+  retention.
+- Cost at today's size: cents a month for storage. Egress matters only
+  when restoring large databases; Cloudflare R2 charges none.
+- The dump takes seconds today. Logical dumps stay practical to roughly
+  50–100 GB; past that, Deferred below.
+
+**Deferred — each with what brings it in.**
+
+- **Regional deployments.** One database means one backup region. A
+  customer who needs its data in another country gets a separate
+  deployment there — the same code with its own database, backups and
+  settings — and each organization belongs to one region. Moving an
+  existing organization is an export and import of its rows, its own ADR.
+  Trigger: the first customer whose contract names another country.
+- **A KMS or hardware key** in place of `age`. Trigger: a contract or an
+  audit (SOC 2) that requires key use to be logged.
+- **A standby database** (high availability). Backups bring data back in
+  hours; a standby keeps the app running in seconds. Trigger: downtime
+  costing more than the standby.
+- **Physical backups** (pgBackRest or WAL-G), or dumping from a read
+  replica. Trigger: the database past about 50 GB, or a self-hosted
+  Postgres.
+- **Longer retention.** Trigger: a regulation or contract (often seven
+  years in finance and health).
+- **Two people to restore or to use the key.** Trigger: a team larger than
+  one, or an audit.
+
+---
+
 # Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -4607,21 +4782,6 @@ they exist so the reasoning is not rediscovered from scratch.
   are derivable from existing data (ADR-049 amendment); neither needs a
   migration. Trigger: the first pricing decision or margin question someone
   actually asks, which says which of the two.
-- **Backups and disaster recovery — before real data, not deferred.** Nothing
-  in the repo says how the database is backed up or how it is restored, and
-  a free Render database may have no backups at all. The production shape to
-  decide in an ADR (next, as ADR-053):
-    - the host's automatic backups with point-in-time recovery, on a plan
-      that has them;
-    - a nightly `pg_dump` (custom format) to a different provider, encrypted
-      before it leaves (`age` or `gpg`), its key kept apart from the backups,
-      with a retention rule such as 30 daily and 12 monthly;
-    - a restore drill into a scratch database, on a schedule, timed — a
-      backup nobody has restored is a hope;
-    - the targets: how much data may be lost (RPO) and how long the app may
-      be down (RTO).
-
-  Trigger: before the first real organization's data, which is now.
 - **A security review before real customers.** What is built covers the
   application: hashed tokens, rate limits, tenant isolation tested per
   lookup, an audit log, TLS from the host. What is not decided: two-factor
@@ -4687,3 +4847,4 @@ they exist so the reasoning is not rediscovered from scratch.
 | Licence status at release              | An organization policy; overrides kept on the run     | ADR-050          |
 | Performance testing                    | A volume seed, budgets per endpoint, plan checks      | ADR-051          |
 | Storing a calendar day                 | `date`, sent as `YYYY-MM-DD`; strictness configurable | ADR-052          |
+| Backups and restores                   | Encrypted nightly dump at another provider, drilled   | ADR-053          |

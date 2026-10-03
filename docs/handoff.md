@@ -29,8 +29,8 @@ and price lists proposing the price of a new line.
   #20) is built on `v0.5-calendar-days`, not yet merged, and carries an
   amendment for what was settled while building. ADR-046 carries
   an amendment (one currency per sale from the first priced line). Next is
-  **ADR-053** (backups and disaster recovery), then **ADR-054**
-  (languages).
+  **ADR-053** (backups, written on `v0.5-backups`, phase 0 by hand
+  next), then **ADR-054** (languages).
 - Tests at the last local run (ADR-050 branch, 2 October 2026): server e2e
   627 in 33 suites (`npm run test:e2e`); server unit 36 in 6 files
   (`npm test`); client vitest 160 in 35 files; Playwright 63. CI also runs
@@ -95,9 +95,12 @@ Then tag v0.4.0.
    `todayUtc()` (`server/src/common/today.ts`) is the server's one "today":
    licence status at release and the receipt rate lookup ask it.
    `utcMidnight` is gone from the client; MC-R04 is its manual check.
-6. **ADR-053, backups and disaster recovery** — before real data. The
-   shape is in *Open decisions* in `decisions.md`; first, check what the
-   Render database's plan backs up.
+6. **ADR-053, backups** — written. An encrypted nightly `pg_dump` from
+   GitHub Actions to an S3-compatible bucket at another provider (Canada,
+   object lock, 30 daily + 12 monthly), a monthly restore drill, every
+   location a setting. Targets: RPO 24h / RTO 4h now, RPO 15 min before
+   paying customers (host PITR). Phase 0 is by hand this week: Render's
+   plan, the bucket, the `age` key pair stored twice, one manual dump.
 7. **ADR-054, languages** — before any code. French (Quebec) and Chinese
    for the app, and French on printed documents. (Planned as ADR-050, then
    ADR-051, ADR-052 and ADR-053; those numbers went to licence status,
@@ -376,7 +379,8 @@ first three):
    then, and open an issue for an organization's time zone (ADR-052,
    Deferred).
 3. The Duplicate order fix (`fix-duplicate-order`, its own PR).
-4. ADR-053, backups and disaster recovery.
+4. ADR-053, backups: phase 0 by hand, then the scripts, the two
+   workflows and the runbook, each its own commit.
 5. The Playwright journey, written with Bob at a computer.
 6. ADR-054, languages.
 
