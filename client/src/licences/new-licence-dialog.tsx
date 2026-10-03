@@ -10,7 +10,6 @@ import { type SubmitEvent, useState } from 'react';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { utcMidnight } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 
 const EMPTY = {
@@ -64,8 +63,9 @@ export function NewLicenceDialog({
         body: JSON.stringify({
           number: form.number,
           authority: form.authority,
-          issuedAt: form.issuedAt ? utcMidnight(form.issuedAt) : undefined,
-          expiresAt: form.expiresAt ? utcMidnight(form.expiresAt) : undefined,
+          // As typed, YYYY-MM-DD (ADR-052).
+          issuedAt: form.issuedAt || undefined,
+          expiresAt: form.expiresAt || undefined,
           notes: form.notes || undefined,
         }),
       }),

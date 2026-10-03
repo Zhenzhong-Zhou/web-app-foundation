@@ -19,6 +19,14 @@ export interface Location {
   isActive: boolean;
 }
 
+/**
+ * A calendar day, YYYY-MM-DD, as the API sends and takes it (ADR-052): an
+ * expiry, an expected delivery, a licence's dates. Not a moment, so never
+ * read in the browser's time zone; formatDay shows one. A date input's value
+ * is already this shape, so a form sends it as typed.
+ */
+export type CalendarDay = string;
+
 export interface Movement {
   id: string;
   /** Snapshotted at the time (ADR-023) — not joined from the variant. */
@@ -47,7 +55,7 @@ export interface StockRow {
   locationName: string;
   lotId: string | null;
   lotCode: string | null;
-  lotExpiresAt: string | null;
+  lotExpiresAt: CalendarDay | null;
   lotIsAssigned: boolean | null;
   /** A decimal string from numeric(18, 4). Never parsed — see ADR-025. */
   quantity: string;
@@ -114,7 +122,7 @@ export interface OrderSummary {
   isSample: boolean;
   status: OrderStatus;
   reference: string | null;
-  expectedAt: string | null;
+  expectedAt: CalendarDay | null;
   createdAt: string;
   lineCount: number;
   /** numeric(18,4) as a string — never parsed into a JS number (ADR-025). */
@@ -125,7 +133,7 @@ export interface OrderSummary {
 export interface Lot {
   id: string;
   code: string;
-  expiresAt: string | null;
+  expiresAt: CalendarDay | null;
   /** True when the receiver invented the code — see MovementLotDto. */
   isAssigned: boolean;
 }
@@ -180,7 +188,7 @@ export interface OrderDetail {
   duplicatedFromId: string | null;
   status: OrderStatus;
   reference: string | null;
-  expectedAt: string | null;
+  expectedAt: CalendarDay | null;
   totals: { currency: string; amount: string }[];
   totalsComplete: boolean;
   note: string | null;
@@ -197,9 +205,9 @@ export interface ProductLicence {
   authority: string;
   isActive: boolean;
   /** When it took effect. Null when nobody recorded it. */
-  issuedAt: string | null;
+  issuedAt: CalendarDay | null;
   /** Null for schemes that do not expire, which includes an NPN. */
-  expiresAt: string | null;
+  expiresAt: CalendarDay | null;
   notes: string | null;
 }
 
@@ -272,8 +280,8 @@ export interface LicenceCheck {
     id: string;
     number: string;
     authority: string;
-    issuedAt: string | null;
-    expiresAt: string | null;
+    issuedAt: CalendarDay | null;
+    expiresAt: CalendarDay | null;
   } | null;
   status: LicenceStatusAtRelease | 'withdrawn';
   outcome: 'allow' | 'override' | 'block';
@@ -512,7 +520,7 @@ export interface ComponentLot {
   componentVariantId: string;
   lotId: string;
   code: string;
-  expiresAt: string | null;
+  expiresAt: CalendarDay | null;
   issued: string;
   consumed: string;
 }
@@ -530,7 +538,7 @@ export interface RunDetail extends ProductionRun {
 export interface IssuePlanLot {
   lotId: string;
   code: string;
-  expiresAt: string | null;
+  expiresAt: CalendarDay | null;
   onHand: string;
   take: string;
   taken: boolean;
@@ -603,7 +611,7 @@ export interface Shipment {
     sku: string;
     /** Null for untracked stock, which ships without a lot. */
     lotCode: string | null;
-    expiresAt: string | null;
+    expiresAt: CalendarDay | null;
     quantity: string;
     /** From the catalogue, beside the snapshotted SKU. */
     description: string;
@@ -641,7 +649,7 @@ export interface PackingSlip {
 export interface ReturnableLot {
   lotId: string;
   code: string;
-  expiresAt: string | null;
+  expiresAt: CalendarDay | null;
   shipped: string;
   returned: string;
 }
@@ -674,7 +682,7 @@ export interface OrderReturn {
 export interface LotMatch {
   id: string;
   code: string;
-  expiresAt: string | null;
+  expiresAt: CalendarDay | null;
   sku: string;
 }
 
@@ -694,7 +702,7 @@ export interface LotTrace {
   lot: {
     id: string;
     code: string;
-    expiresAt: string | null;
+    expiresAt: CalendarDay | null;
     sku: string;
     unitOfMeasure: string;
     description: string;

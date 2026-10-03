@@ -92,7 +92,7 @@ export function LotFields({
            */
           onChange({
             code: picked.code,
-            expiresAt: picked.expiresAt ? picked.expiresAt.slice(0, 10) : '',
+            expiresAt: picked.expiresAt ?? '',
           });
         }}
         renderInput={(params) => (

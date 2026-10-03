@@ -53,40 +53,21 @@ const DAY = new Intl.DateTimeFormat(undefined, {
 });
 
 /**
- * A calendar day — an expiry, an expected delivery — stored as timestamptz.
+ * "10 Oct 2026" for a calendar day — an expiry, an expected delivery, a
+ * licence's dates, an invoice date. The API sends and takes these as
+ * YYYY-MM-DD (ADR-052), so a form sends the date input's value as typed and
+ * prefills from the value as it arrives.
  *
- * Every form writes the picked day as UTC midnight (utcMidnight, below), so
- * the day is recovered exactly by reading it back in UTC. formatDate reads it in the browser's zone instead, and anywhere west
- * of Greenwich UTC midnight is still the previous evening: a lot entered as
- * expiring 10 Oct showed as 9 Oct in Vancouver, beside a date field that
- * correctly said 10.
+ * Read in UTC on purpose. `new Date('2026-10-10')` is midnight UTC, and read
+ * in the browser's zone — as formatDate does — anywhere west of Greenwich
+ * that is still 9 Oct: how a lot expiring 10 Oct once showed as 9 Oct in
+ * Vancouver. In UTC the day comes back exactly, wherever the browser is.
  *
- * The date inputs already agree: they prefill with `.slice(0, 10)`, which is
- * the UTC day. A `date` column would remove the question entirely; until then
- * this is exact, not an approximation, as long as writes keep sending
- * midnight UTC.
+ * Also reads the full instants audit rows written before ADR-052 still hold,
+ * which were stored as UTC midnight of the day picked.
  */
 export function formatDay(value: string | Date): string {
   return DAY.format(new Date(value));
-}
-
-/**
- * The write side of formatDay: a picked day ("2026-10-10", as a date input
- * gives it) as the instant a calendar-day timestamptz column stores, UTC
- * midnight.
- *
- * Sent as the full instant, never the bare day. Postgres reads a bare day
- * into timestamptz at midnight in the session's time zone, so the stored
- * instant — and the day formatDay reads back — would depend on how the
- * database happens to be configured. Five forms sent the bare day until
- * this was one function.
- *
- * Only for timestamptz columns: an expiry, an expected delivery, a licence's
- * dates. Invoice, due, credit and rate dates are `date` columns, which take
- * the bare day exactly, and are sent as typed.
- */
-export function utcMidnight(day: string): string {
-  return `${day}T00:00:00.000Z`;
 }
 
 /**

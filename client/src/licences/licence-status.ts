@@ -26,8 +26,9 @@ export interface LicenceStatus {
  * without anyone doing anything, and the two are kept apart: withdrawn is a
  * decision, expired is the calendar.
  *
- * Compared as days in UTC, because the date is a calendar day written as UTC
- * midnight — read in a zone behind Greenwich it would expire a day early.
+ * Compared as days against today's UTC day, as the server compares them at
+ * release (ADR-050, ADR-052): the two must agree, or the page and release
+ * would disagree about a licence near midnight. The dates are YYYY-MM-DD.
  */
 export function licenceStatus(licence: ProductLicence): LicenceStatus {
   if (!licence.isActive) {
@@ -63,6 +64,7 @@ export function licenceStatus(licence: ProductLicence): LicenceStatus {
   return { label: 'Current', usable: true, tone: 'success' };
 }
 
+/** Days from today's UTC day; `new Date('2026-10-10')` is UTC midnight. */
 function daysUntil(day: string): number {
   const MS = 24 * 60 * 60 * 1000;
   const now = new Date();

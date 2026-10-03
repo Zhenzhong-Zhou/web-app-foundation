@@ -41,7 +41,7 @@ const LICENCE = {
   number: '80012345',
   authority: 'Health Canada',
   issuedAt: null,
-  expiresAt: '2026-09-01T00:00:00.000Z',
+  expiresAt: '2026-09-01',
 };
 
 /** Serves the plan with the given check, and records what release is sent. */

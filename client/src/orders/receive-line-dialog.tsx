@@ -13,7 +13,6 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { LotFields } from '../inventory/lot-fields';
 import { api } from '../lib/api';
-import { utcMidnight } from '../lib/format';
 import type { Location, OrderLine } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
@@ -92,9 +91,8 @@ export function ReceiveLineDialog({
           lot: variant?.tracksLots
             ? {
                 code: form.lotCode,
-                expiresAt: form.lotExpiresAt
-                  ? utcMidnight(form.lotExpiresAt)
-                  : undefined,
+                // As typed, YYYY-MM-DD (ADR-052).
+                expiresAt: form.lotExpiresAt || undefined,
               }
             : undefined,
           note: form.note || undefined,

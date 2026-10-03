@@ -20,7 +20,6 @@ import { useNavigate } from 'react-router-dom';
 import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { utcMidnight } from '../lib/format';
 import type { OrderDirection, Partner, VariantOption } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -158,7 +157,8 @@ export function CreateOrderPage() {
           // typed rather than converted: expected_at is a calendar day
           // somebody chose, and building a Date here would pin it to this
           // browser's midnight.
-          expectedAt: expectedAt ? utcMidnight(expectedAt) : undefined,
+          // As typed, YYYY-MM-DD (ADR-052).
+          expectedAt: expectedAt || undefined,
           note: note || undefined,
           /**
            * Quantities and prices stay strings from the input to the column. A
