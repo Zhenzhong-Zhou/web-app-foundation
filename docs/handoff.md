@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-050 built, #20 next
+# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-050 deployed, ADR-052 (#20) in progress
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -23,11 +23,12 @@ and price lists proposing the price of a new line.
 - Migrations: through **0037** (`licence_status_at_release`, ADR-050). Next
   is **0038**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
-- ADRs: through **ADR-051**, both built. ADR-050 (licence status at
-  release) is on `v0.5-licence-status` and carries an amendment for what was
-  settled while building; ADR-051 (performance) is merged. ADR-046 carries
+- ADRs: through **ADR-052**. ADR-050 (licence status at release) and
+  ADR-051 (performance) are built and merged; ADR-050 carries an amendment
+  for what was settled while building. ADR-052 (calendar days as `date`,
+  #20) is written and being built on `v0.5-calendar-days`. ADR-046 carries
   an amendment (one currency per sale from the first priced line). Next is
-  **ADR-052**.
+  **ADR-053** (languages).
 - Tests at the last local run (ADR-050 branch, 2 October 2026): server e2e
   627 in 33 suites (`npm run test:e2e`); server unit 36 in 6 files
   (`npm test`); client vitest 160 in 35 files; Playwright 63. CI also runs
@@ -37,8 +38,9 @@ and price lists proposing the price of a new line.
   Wholesale CAD list (the organization default). It also leaves an RMA
   received and credited on SO-DEMO-1, a voided shipment, and PO-DEMO-2
   bought in USD at a rate of 1.37.
-- **Render is up** (new database; migrations 0000–0035 applied). If it is
-  a free instance it expires 30 days after creation — note the date here.
+- **Render is up** (new database; migrations 0000–0037 applied, ADR-050
+  deployed on 2 October 2026). If it is a free instance it expires 30 days
+  after creation — note the date here.
 
 ## v0.4 milestone — money
 
@@ -71,8 +73,8 @@ Then tag v0.4.0.
 2. **Maintainability, rounds 2 and 3 — done** (PR #36, merged; tagged
    `v0.5.0-alpha.1`): the section after step 1's. What is left is listed
    at its end; none of it is half-done.
-3. **ADR-050, licence status at release** — built, on `v0.5-licence-status`
-   (its own PR): migration 0037; release checks the recipe's licence
+3. **ADR-050, licence status at release** — built, merged (PR #39) and
+   deployed: migration 0037; release checks the recipe's licence
    against the organization's policy (Settings → Organization → Licences at
    release); an expired or not-yet-in-force licence can be overridden with a
    reason by whoever holds `production.override_licence` (Owner-only); the
@@ -83,9 +85,16 @@ Then tag v0.4.0.
    Performance workflow, and the fixes the first runs asked for. Results,
    what to watch and the production items, each with a trigger, are in
    ADR-051's **Results**.
-5. **ADR-052, languages** — before any code. French (Quebec) and Chinese
+5. **ADR-052, calendar days as `date` (#20)** — written; being built on
+   `v0.5-calendar-days`: migration 0038, then the server with e2e tests,
+   then the client and the manual checks it changes. Lot expiry, an order's
+   expected date and a licence's dates become `date`, sent as `YYYY-MM-DD`;
+   `CALENDAR_DAY_INPUT` (strict by default, or lenient) decides whether a
+   UTC-midnight instant is still accepted.
+6. **ADR-053, languages** — before any code. French (Quebec) and Chinese
    for the app, and French on printed documents. (Planned as ADR-050, then
-   ADR-051; those numbers went to licence status and performance.)
+   ADR-051, then ADR-052; those numbers went to licence status, performance
+   and calendar days.)
 
 ## What v0.4 built
 
@@ -351,13 +360,13 @@ first three):
   → credit) in Playwright.
 
 **Next, in this order:**
-1. Merge `v0.5-licence-status` (ADR-050). Deploying it runs migration 0037
-   and the seed, which grants `production.override_licence` to every
-   existing Owner.
-2. #20, `date` columns for calendar days: ADR, migration 0038,
-   `npm run migrate:all`.
+1. ~~Merge `v0.5-licence-status` (ADR-050)~~ — merged and deployed; the
+   deploy ran migration 0037 and the seed, which granted
+   `production.override_licence` to every existing Owner.
+2. #20, `date` columns for calendar days: ADR-052 written; migration 0038,
+   `npm run migrate:all`, server, client, manual checks.
 3. The Playwright journey, written with Bob at a computer.
-4. ADR-052, languages.
+4. ADR-053, languages.
 
 Rules, still in force:
 - no behaviour change in a refactor; a fix is its own commit, first;
