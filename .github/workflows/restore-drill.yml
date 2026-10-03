@@ -1,0 +1,78 @@
+name: Restore drill
+
+# ADR-053: a backup nobody has restored is a hope. Once a month, fetch the
+# newest backup, prove its checksum, decrypt it, restore it into a throwaway
+# Postgres 18, check it and time it. The time is the real recovery time;
+# it lands in the run's summary. Actions → Restore drill → Run workflow runs
+# one now.
+#
+# Reads the same BACKUP_DESTINATION as the Backup workflow, plus the secret
+# BACKUP_AGE_IDENTITY: the private key, which only this workflow reads.
+on:
+  schedule:
+    - cron: '0 11 1 * *' # the 1st, an hour after that day's backup
+  workflow_dispatch:
+
+concurrency:
+  group: restore-drill
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read # to fetch the backup artifact
+
+env:
+  BACKUP_ENVIRONMENT: production
+  BACKUP_DESTINATION: ${{ vars.BACKUP_DESTINATION || 'artifact' }}
+
+jobs:
+  drill:
+    name: Restore the newest backup and check it
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    # Empty, and thrown away with the runner.
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: drill
+          POSTGRES_PASSWORD: drill_password
+          POSTGRES_DB: foundation_drill
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U drill -d foundation_drill"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the Postgres 18 client and age
+        run: |
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y --no-install-recommends postgresql-client-18 age
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
+
+      - name: Fetch the newest backup
+        id: fetch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+          BACKUP_S3_REGION: ${{ secrets.BACKUP_S3_REGION }}
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_READ_ACCESS_KEY_ID }}
+          BACKUP_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_READ_SECRET_ACCESS_KEY }}
+        run: |
+          path=$(scripts/backup-latest.sh --max-age-hours 26 --download "$RUNNER_TEMP/drill")
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+
+      - name: Restore and check
+        env:
+          BACKUP_AGE_IDENTITY: ${{ secrets.BACKUP_AGE_IDENTITY }}
+          RESTORE_PGSSLMODE: disable
+        run: >-
+          scripts/restore.sh "${{ steps.fetch.outputs.path }}"
+          "postgresql://drill:drill_password@localhost:5432/foundation_drill"

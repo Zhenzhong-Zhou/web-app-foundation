@@ -1,0 +1,103 @@
+name: Backup
+
+# ADR-053: an encrypted nightly dump of production, taken from here rather
+# than by the host, so it survives the host. Two schedules share this file:
+# the backup itself, and a check later in the day that one was taken.
+# Actions → Backup → Run workflow takes one now.
+#
+# Where backups go is the repository variable BACKUP_DESTINATION:
+#   artifact (unset)  kept as an Actions artifact for 30 days; for testing
+#   s3                an S3-compatible bucket (ADR-053's production setup)
+# Secrets: BACKUP_DATABASE_URL, BACKUP_AGE_RECIPIENT, and for s3
+# BACKUP_BUCKET, BACKUP_S3_REGION, BACKUP_S3_ENDPOINT (not for AWS),
+# BACKUP_S3_ACCESS_KEY_ID, BACKUP_S3_SECRET_ACCESS_KEY.
+on:
+  schedule:
+    - cron: '0 10 * * *' # the backup: 3am in Vancouver, 6am in Toronto
+    - cron: '30 16 * * *' # the check that today's backup exists
+  workflow_dispatch:
+
+# Never two at once, and never cancelled halfway: a cancelled backup is a
+# missing one.
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read # the freshness check lists artifacts
+
+env:
+  BACKUP_ENVIRONMENT: production
+  BACKUP_DESTINATION: ${{ vars.BACKUP_DESTINATION || 'artifact' }}
+
+jobs:
+  backup:
+    name: Dump, encrypt, store
+    if: github.event.schedule != '30 16 * * *'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # The runner's own client is older than the server; pg_dump refuses a
+      # newer server, so the 18 client comes from the Postgres project's own
+      # apt repository and goes first on PATH.
+      - name: Install the Postgres 18 client and age
+        run: |
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y --no-install-recommends postgresql-client-18 age
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
+
+      - name: Back up
+        id: backup
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+          BACKUP_DIR: ${{ runner.temp }}/backups
+          BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+          BACKUP_S3_REGION: ${{ secrets.BACKUP_S3_REGION }}
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          BACKUP_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+        run: |
+          # An artifact is a local backup that the next step uploads.
+          if [ "$BACKUP_DESTINATION" = artifact ]; then export BACKUP_DESTINATION=local; fi
+          path=$(scripts/backup.sh)
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$path" .dump.age)" >> "$GITHUB_OUTPUT"
+
+      - name: Keep it as an artifact
+        if: env.BACKUP_DESTINATION == 'artifact'
+        uses: actions/upload-artifact@v7
+        with:
+          name: backup-${{ steps.backup.outputs.name }}
+          path: |
+            ${{ steps.backup.outputs.path }}
+            ${{ steps.backup.outputs.path }}.sha256
+          retention-days: 30
+          if-no-files-found: error
+          # Already compressed by pg_dump and encrypted by age.
+          compression-level: 0
+
+  freshness:
+    name: Newest backup is under 26 hours old
+    if: github.event.schedule == '30 16 * * *'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      # Fails, and so emails, when today's backup did not happen. Also
+      # covers GitHub pausing scheduled workflows after 60 days without
+      # activity in the repository: the check stops too, and the drill on
+      # the 1st finds a stale backup.
+      - name: Check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+          BACKUP_S3_REGION: ${{ secrets.BACKUP_S3_REGION }}
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          BACKUP_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+        run: scripts/backup-latest.sh --max-age-hours 26
