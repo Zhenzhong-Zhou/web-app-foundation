@@ -405,11 +405,6 @@ Rules, still in force:
 
 ## Left over, small
 
-- **Duplicating an order drops the dialog's reference and expected date.**
-  `POST /orders/:id/duplicate` takes no body, so what the dialog sends is
-  ignored and the copy has neither (found while building ADR-052). A fix
-  commit, or an issue: decide whether the copy takes them, and MC-403 says
-  which.
 - **Pro forma invoices** — deferred in ADR-046; remind Bob. Bring forward if
   the business needs them for customs, prepayment or sample values.
 - Check ADR-047's audit list names `return_authorization.replacement_raised`.

@@ -20,6 +20,7 @@ import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CloseLineDto } from './dto/close-line.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { DuplicateOrderDto } from './dto/duplicate-order.dto';
 import { ListOrdersDto } from './dto/list-orders.dto';
 import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
 import { ReceiveLineDto } from './dto/receive-line.dto';
@@ -87,9 +88,10 @@ export class OrdersController {
   })
   async duplicate(
     @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DuplicateOrderDto,
     @CurrentUser() user: RequestContext,
   ) {
-    return { order: await this.lifecycle.duplicate(id, user.userId) };
+    return { order: await this.lifecycle.duplicate(id, dto, user.userId) };
   }
 
   /**

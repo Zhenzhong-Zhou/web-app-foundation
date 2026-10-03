@@ -13,6 +13,7 @@ import { addresses, orderLines, orders, partners } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { type Tx } from '../stock/stock.service';
 import type { CreateOrderDto } from './dto/create-order.dto';
+import type { DuplicateOrderDto } from './dto/duplicate-order.dto';
 import type { UpdateOrderDto } from './dto/update-order.dto';
 import { loadOrder } from './load-order';
 import { insertLines } from './order-line-pricing';
@@ -125,7 +126,7 @@ export class OrderLifecycleService {
    * Cancelling first leaves nothing behind if this fails, and it is the order
    * people do it in anyway.
    */
-  async duplicate(orderId: string, actorId: string) {
+  async duplicate(orderId: string, input: DuplicateOrderDto, actorId: string) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const source = await loadOrder(tx, organizationId, orderId);
 
@@ -188,13 +189,20 @@ export class OrderLifecycleService {
           ...shipTo,
 
           /**
-           * Absent on purpose, each for its own reason. `status` defaults to
-           * draft because the point is that somebody reviews it. `reference`
+           * Never copied from the source, each for its own reason. `reference`
            * is the supplier's PO number for the order it was issued against,
            * and two orders claiming it is a reconciliation problem.
            * `expectedAt` would be last month's date on a new order, wrong
-           * every time. Quantities fulfilled start at zero because nothing has
-           * arrived.
+           * every time. Both are the copy's own instead, as the dialog asks
+           * for them, or empty until the edit form sets them.
+           */
+          reference: input.reference ?? null,
+          expectedAt: input.expectedAt ?? null,
+
+          /**
+           * Absent on purpose. `status` defaults to draft because the point
+           * is that somebody reviews it. Quantities fulfilled start at zero
+           * because nothing has arrived.
            */
         })
         .returning();
