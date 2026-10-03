@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-050 deployed, ADR-052 (#20) built
+# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-052 and ADR-053 merged, ADR-054 next
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -20,17 +20,16 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0038** (`calendar_days`, ADR-052), on
-  `v0.5-calendar-days`; `main` and Render are at 0037. Next is **0039**.
+- Migrations: through **0038** (`calendar_days`, ADR-052), on `main`;
+  Render runs it on deploy (confirm in the deploy log, *In flight* below).
+  Next is **0039**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
-- ADRs: through **ADR-052**. ADR-050 (licence status at release) and
-  ADR-051 (performance) are built and merged; ADR-050 carries an amendment
-  for what was settled while building. ADR-052 (calendar days as `date`,
-  #20) is built on `v0.5-calendar-days`, not yet merged, and carries an
-  amendment for what was settled while building. ADR-046 carries
-  an amendment (one currency per sale from the first priced line). Next is
-  **ADR-053** (backups, written on `v0.5-backups`, phase 0 by hand
-  next), then **ADR-054** (languages).
+- ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
+  at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
+  #20) and ADR-053 (backups, phase 1). ADR-050, ADR-052 and ADR-053 carry
+  amendments for what was settled while building; ADR-046 carries one (one
+  currency per sale from the first priced line). Next is **ADR-054**
+  (languages).
 - Tests at the last local run (ADR-050 branch, 2 October 2026): server e2e
   627 in 33 suites (`npm run test:e2e`); server unit 36 in 6 files
   (`npm test`); client vitest 160 in 35 files; Playwright 63. CI also runs
@@ -40,9 +39,11 @@ and price lists proposing the price of a new line.
   Wholesale CAD list (the organization default). It also leaves an RMA
   received and credited on SO-DEMO-1, a voided shipment, and PO-DEMO-2
   bought in USD at a rate of 1.37.
-- **Render is up** (new database; migrations 0000–0037 applied, ADR-050
-  deployed on 2 October 2026). If it is a free instance it expires 30 days
-  after creation — note the date here.
+- **Render is up.** The database `foundation-db` is on the **Free plan**:
+  no backups of its own, and it expires 30 days after creation — note the
+  date here. Used only to test with until real data; then a paid plan
+  (ADR-053, phase 2). Migrations 0000–0037 confirmed; 0038 with the #20
+  deploy.
 
 ## v0.4 milestone — money
 
@@ -87,8 +88,8 @@ Then tag v0.4.0.
    Performance workflow, and the fixes the first runs asked for. Results,
    what to watch and the production items, each with a trigger, are in
    ADR-051's **Results**.
-5. **ADR-052, calendar days as `date` (#20)** — built on
-   `v0.5-calendar-days` (its own PR): migration 0038; lot expiry, an
+5. **ADR-052, calendar days as `date` (#20)** — built and merged (PR #40):
+   migration 0038; lot expiry, an
    order's expected date and a licence's dates are `date`, sent and
    returned as `YYYY-MM-DD`. `CALENDAR_DAY_INPUT` (strict by default, or
    lenient) decides whether an instant at UTC midnight is still accepted.
@@ -98,7 +99,7 @@ Then tag v0.4.0.
 6. **ADR-053, backups** — phases 0 and 1 done. Phase 0 by hand: Render is
    on the Free plan (no backups, expires after 30 days), one manual
    encrypted dump restored locally with both organizations back. Phase 1
-   on `v0.5-backups`: `scripts/backup.sh`, `restore.sh`,
+   merged: `scripts/backup.sh`, `restore.sh`,
    `backup-latest.sh`; `.github/workflows/backup.yml` (10:00 UTC, plus a
    26-hour freshness check) and `restore-drill.yml` (the 1st); the runbook
    `docs/runbooks/restore.md`; MC-1301 to MC-1304. Testing with
@@ -372,21 +373,34 @@ first three):
 - Still open: no end-to-end journey (buy → receive → make → ship → invoice
   → credit) in Playwright.
 
+**In flight — finish before new work:**
+1. **Turn the backups on.** Render's database Access Control allows all
+   IPs (Actions runners change address every run). Add the secrets
+   `BACKUP_DATABASE_URL`, `BACKUP_AGE_RECIPIENT`, `BACKUP_AGE_IDENTITY`
+   (`gh secret set`, runbook section 1). Run **Backup**, then **Restore
+   drill**, by hand: both green, the drill's summary showing the
+   organizations and the time.
+2. Walk MC-1301 to MC-1304. Backups phase 1 is then done.
+3. **Close out #20** (closed on merging PR #40): the Render deploy log
+   shows migration 0038 applied; walk MC-R04 on the Render site.
+4. Open the issue "Organization time zone for today" (ADR-052, Deferred).
+
 **Next, in this order:**
-1. ~~Merge `v0.5-licence-status` (ADR-050)~~ — merged and deployed; the
-   deploy ran migration 0037 and the seed, which granted
-   `production.override_licence` to every existing Owner.
-2. #20, `date` columns for calendar days — built on `v0.5-calendar-days`
-   (ADR-052, migration 0038). Next: green suites locally and in CI, the PR,
-   merge, then check the Render deploy ran 0038 and walk MC-R04. Close #20
-   then, and open an issue for an organization's time zone (ADR-052,
-   Deferred).
-3. The Duplicate order fix (`fix-duplicate-order`, its own PR).
-4. ADR-053, backups: set the three secrets, run Backup and Restore drill
-   by hand, walk MC-1301 to MC-1304. Then `s3` and a paid database plan
-   before real data.
-5. The Playwright journey, written with Bob at a computer.
-6. ADR-054, languages.
+1. **ADR-054, languages** — the ADR before any code.
+2. **The Playwright journey**, written with Bob at a computer: one browser
+   test that buys from a supplier, receives into a lot, makes a batch,
+   ships to a customer, invoices and credits a return — the parts working
+   together, which no single test proves.
+
+**Before real customers** (not needed while the database is the Free
+test instance):
+- Backups phase 2: a paid database plan with point-in-time recovery, and
+  the S3 bucket in Canada with object lock (`BACKUP_DESTINATION=s3`, the
+  runbook's section 1). Settings, not code.
+- The security review in *Open decisions*: two-factor sign-in, dependency
+  scanning on every PR, secret rotation, encryption at rest.
+- The Free database's expiry date. When it comes, recreating it and
+  restoring the newest backup is a real test of the runbook.
 
 Rules, still in force:
 - no behaviour change in a refactor; a fix is its own commit, first;
@@ -405,8 +419,7 @@ Rules, still in force:
   wholesale licences gating shipment, business licences only reminded.
 - #19 generated client types from OpenAPI (would also replace the client's
   copied permission list)
-- #20 `date` column for calendar days — built (ADR-052); closes when
-  `v0.5-calendar-days` merges
+- #20 `date` column for calendar days — done (ADR-052), closed by PR #40
 - #25 show what the customer kept (shipped − returned)
 - #26 cancel check and update are not one transaction
 - #28 run-close top-up ignores holds and the lots picked at release
