@@ -1,11 +1,6 @@
-import {
-  IsIn,
-  IsISO8601,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 
+import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import { trim } from '../../../common/dto/trim';
 import { ORDER_STATUSES } from '../../../database/schema';
 
@@ -32,8 +27,9 @@ export class UpdateOrderDto {
   @MaxLength(100)
   reference?: string;
 
+  /** A calendar day, YYYY-MM-DD (ADR-052). */
   @IsOptional()
-  @IsISO8601()
+  @IsCalendarDay()
   expectedAt?: string;
 
   @IsOptional()

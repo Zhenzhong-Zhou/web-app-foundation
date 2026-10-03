@@ -64,11 +64,16 @@ export function describe(action: string): string {
 }
 
 /**
- * Fields that hold a calendar day, stored as UTC midnight. Named rather than
- * guessed from the value: a real timestamp that happens to fall on midnight
- * UTC would otherwise read as a day, and the list is two entries long.
+ * Fields that held a calendar day as an instant at UTC midnight before
+ * ADR-052. Rows written then still do — the log is never rewritten
+ * (ADR-038) — so an instant under one of these keys reads as its day. Named
+ * rather than guessed from the value: a real timestamp that happens to fall
+ * on midnight UTC would otherwise read as a day.
  */
 const CALENDAR_DAYS = new Set(['expectedAt', 'expiresAt']);
+
+/** A calendar day as rows since ADR-052 hold it, whatever the field. */
+const CALENDAR_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 
@@ -86,11 +91,16 @@ const MOMENT = new Intl.DateTimeFormat(undefined, {
  *
  * Dates are the other raw form that leaked through: "2026-10-10T00:00:00.000Z"
  * is a storage format, not an answer. A calendar day reads as the day that
- * was picked (formatDay, in UTC, for the reason given there); any other
+ * was picked (formatDay, in UTC, for the reason given there), whether it was
+ * recorded as YYYY-MM-DD or, before ADR-052, as UTC midnight; any other
  * timestamp reads in the viewer's local time, because it was a moment.
  */
 function show(key: string, value: unknown): string {
   if (value === null || value === undefined) return '—';
+
+  if (typeof value === 'string' && CALENDAR_DAY.test(value)) {
+    return formatDay(value);
+  }
 
   if (typeof value === 'string' && ISO_TIMESTAMP.test(value)) {
     return CALENDAR_DAYS.has(key)

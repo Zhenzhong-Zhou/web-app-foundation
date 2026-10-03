@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-050 built, #20 next
+# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-050 deployed, ADR-052 (#20) built
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -20,14 +20,16 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0037** (`licence_status_at_release`, ADR-050). Next
-  is **0038**.
+- Migrations: through **0038** (`calendar_days`, ADR-052), on
+  `v0.5-calendar-days`; `main` and Render are at 0037. Next is **0039**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
-- ADRs: through **ADR-051**, both built. ADR-050 (licence status at
-  release) is on `v0.5-licence-status` and carries an amendment for what was
-  settled while building; ADR-051 (performance) is merged. ADR-046 carries
+- ADRs: through **ADR-052**. ADR-050 (licence status at release) and
+  ADR-051 (performance) are built and merged; ADR-050 carries an amendment
+  for what was settled while building. ADR-052 (calendar days as `date`,
+  #20) is built on `v0.5-calendar-days`, not yet merged, and carries an
+  amendment for what was settled while building. ADR-046 carries
   an amendment (one currency per sale from the first priced line). Next is
-  **ADR-052**.
+  **ADR-053** (languages).
 - Tests at the last local run (ADR-050 branch, 2 October 2026): server e2e
   627 in 33 suites (`npm run test:e2e`); server unit 36 in 6 files
   (`npm test`); client vitest 160 in 35 files; Playwright 63. CI also runs
@@ -37,8 +39,9 @@ and price lists proposing the price of a new line.
   Wholesale CAD list (the organization default). It also leaves an RMA
   received and credited on SO-DEMO-1, a voided shipment, and PO-DEMO-2
   bought in USD at a rate of 1.37.
-- **Render is up** (new database; migrations 0000–0035 applied). If it is
-  a free instance it expires 30 days after creation — note the date here.
+- **Render is up** (new database; migrations 0000–0037 applied, ADR-050
+  deployed on 2 October 2026). If it is a free instance it expires 30 days
+  after creation — note the date here.
 
 ## v0.4 milestone — money
 
@@ -71,8 +74,8 @@ Then tag v0.4.0.
 2. **Maintainability, rounds 2 and 3 — done** (PR #36, merged; tagged
    `v0.5.0-alpha.1`): the section after step 1's. What is left is listed
    at its end; none of it is half-done.
-3. **ADR-050, licence status at release** — built, on `v0.5-licence-status`
-   (its own PR): migration 0037; release checks the recipe's licence
+3. **ADR-050, licence status at release** — built, merged (PR #39) and
+   deployed: migration 0037; release checks the recipe's licence
    against the organization's policy (Settings → Organization → Licences at
    release); an expired or not-yet-in-force licence can be overridden with a
    reason by whoever holds `production.override_licence` (Owner-only); the
@@ -83,9 +86,18 @@ Then tag v0.4.0.
    Performance workflow, and the fixes the first runs asked for. Results,
    what to watch and the production items, each with a trigger, are in
    ADR-051's **Results**.
-5. **ADR-052, languages** — before any code. French (Quebec) and Chinese
+5. **ADR-052, calendar days as `date` (#20)** — built on
+   `v0.5-calendar-days` (its own PR): migration 0038; lot expiry, an
+   order's expected date and a licence's dates are `date`, sent and
+   returned as `YYYY-MM-DD`. `CALENDAR_DAY_INPUT` (strict by default, or
+   lenient) decides whether an instant at UTC midnight is still accepted.
+   `todayUtc()` (`server/src/common/today.ts`) is the server's one "today":
+   licence status at release and the receipt rate lookup ask it.
+   `utcMidnight` is gone from the client; MC-R04 is its manual check.
+6. **ADR-053, languages** — before any code. French (Quebec) and Chinese
    for the app, and French on printed documents. (Planned as ADR-050, then
-   ADR-051; those numbers went to licence status and performance.)
+   ADR-051, then ADR-052; those numbers went to licence status, performance
+   and calendar days.)
 
 ## What v0.4 built
 
@@ -115,8 +127,8 @@ Then tag v0.4.0.
 - The method is weighted average within a pool, so lot-tracked stock carries
   its actual cost per batch.
 - How value arrives:
-    - A receipt copies its line's price × the latest rate on or before the day
-      (UTC; #20).
+    - A receipt copies its line's price × the latest rate on or before the
+      server's today, the UTC day (`todayUtc`, ADR-052).
     - Run close posts the batch's material cost to its output.
     - A correction (`PUT /v1/costs/valuations/:id`) splits the difference
       between stock held and stock gone.
@@ -284,7 +296,7 @@ code had been formatted by hand.
 **Shared pieces — use these rather than writing the thing again:**
 - Client `lib/`: `messageFor` and `ApiError` (reads `Retry-After`) in
   `api.ts`; `useResource` (one GET with reload); `useKeysetList` (paged
-  lists); `formatDay` and `utcMidnight` in `format.ts`.
+  lists); `formatDay` in `format.ts`; the `CalendarDay` type in `types.ts`.
 - Client `components/`: `DialogFooter`, `LabelledValue`, `CurrencyField`,
   `SettingsSection`, `LoadMoreButton`, and `print-sheet.tsx` (`PrintSheet`,
   `PrintBanner`, `PrintParty`, `PrintLines`, `PrintTotals`).
@@ -295,8 +307,9 @@ code had been formatted by hand.
 - Server `common/`: `dto/currency.ts` (`IsCurrencyCode`, with
   `isCurrencyCode` in `database/schema/columns.ts` for checks),
   `dto/decimal.ts` (`IsPositiveDecimal`, `IsNonNegativeDecimal`),
-  `dto/calendar-day.ts` (`IsCalendarDay`), `dto/keyset-query.dto.ts` and
-  `keyset.ts` (`pageOf`). A DTO never restates a rule's message; `$property`
+  `dto/calendar-day.ts` (`IsCalendarDay`, which reads `CALENDAR_DAY_INPUT`),
+  `today.ts` (`todayUtc`), `dto/keyset-query.dto.ts` and `keyset.ts`
+  (`pageOf`). A DTO never restates a rule's message; `$property`
   names the field.
 - Server lookups every action starts from, each scoped to the organization
   in its where clause: `orders/load-order.ts`, `invoices/lock-draft.ts`,
@@ -331,9 +344,8 @@ code had been formatted by hand.
 - A rate limit says how long to wait: `api()` reads `Retry-After`.
 - A dialog cannot be closed while it saves — not Cancel, Escape or the
   backdrop (`onClose={submitting ? undefined : close}`).
-- A calendar day stored as `timestamptz` (expiry, expected delivery,
-  licence dates) is written as UTC midnight with `utcMidnight`; `date`
-  columns take the bare day. #20 would make this unnecessary.
+- A calendar day is a `date` column, sent and returned as `YYYY-MM-DD`,
+  and a form sends the date input's value as typed (ADR-052, #20).
 - Paged lists: a successful read clears the error, a page answering after
   the filter changed is dropped, the cursor is URL-encoded, and Load more
   sits centred under the list.
@@ -351,13 +363,16 @@ first three):
   → credit) in Playwright.
 
 **Next, in this order:**
-1. Merge `v0.5-licence-status` (ADR-050). Deploying it runs migration 0037
-   and the seed, which grants `production.override_licence` to every
-   existing Owner.
-2. #20, `date` columns for calendar days: ADR, migration 0038,
-   `npm run migrate:all`.
+1. ~~Merge `v0.5-licence-status` (ADR-050)~~ — merged and deployed; the
+   deploy ran migration 0037 and the seed, which granted
+   `production.override_licence` to every existing Owner.
+2. #20, `date` columns for calendar days — built on `v0.5-calendar-days`
+   (ADR-052, migration 0038). Next: green suites locally and in CI, the PR,
+   merge, then check the Render deploy ran 0038 and walk MC-R04. Close #20
+   then, and open an issue for an organization's time zone (ADR-052,
+   Deferred).
 3. The Playwright journey, written with Bob at a computer.
-4. ADR-052, languages.
+4. ADR-053, languages.
 
 Rules, still in force:
 - no behaviour change in a refactor; a fix is its own commit, first;
@@ -376,14 +391,19 @@ Rules, still in force:
   wholesale licences gating shipment, business licences only reminded.
 - #19 generated client types from OpenAPI (would also replace the client's
   copied permission list)
-- #20 `date` column for calendar days — the rate lookup at receipt reads the
-  UTC day for this reason
+- #20 `date` column for calendar days — built (ADR-052); closes when
+  `v0.5-calendar-days` merges
 - #25 show what the customer kept (shipped − returned)
 - #26 cancel check and update are not one transaction
 - #28 run-close top-up ignores holds and the lots picked at release
 
 ## Left over, small
 
+- **Duplicating an order drops the dialog's reference and expected date.**
+  `POST /orders/:id/duplicate` takes no body, so what the dialog sends is
+  ignored and the copy has neither (found while building ADR-052). A fix
+  commit, or an issue: decide whether the copy takes them, and MC-403 says
+  which.
 - **Pro forma invoices** — deferred in ADR-046; remind Bob. Bring forward if
   the business needs them for customs, prepayment or sample values.
 - Check ADR-047's audit list names `return_authorization.replacement_raised`.

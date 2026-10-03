@@ -16,7 +16,7 @@ export interface LotItem {
   unitOfMeasure: string;
   /** Null for untracked stock, which moves without a lot. */
   lotCode: string | null;
-  expiresAt: Date | null;
+  expiresAt: string | null;
   quantity: string;
 }
 
@@ -80,7 +80,7 @@ export async function lotItemsOf(
     variant_name: string | null;
     unit_of_measure: string;
     lot_code: string | null;
-    expires_at: Date | null;
+    expires_at: string | null;
     quantity: string;
   }[];
 

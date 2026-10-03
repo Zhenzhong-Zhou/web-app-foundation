@@ -242,7 +242,7 @@ export class ProductionOrdersService {
         componentVariantId: row.component_variant_id as string,
         lotId: row.lot_id as string,
         code: row.code as string,
-        expiresAt: (row.expires_at as Date | null) ?? null,
+        expiresAt: (row.expires_at as string | null) ?? null,
         issued: row.issued as string,
         consumed: row.consumed as string,
       }));

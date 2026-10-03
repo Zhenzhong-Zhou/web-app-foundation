@@ -13,7 +13,6 @@ import { type SubmitEvent, useState } from 'react';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { utcMidnight } from '../lib/format';
 import type { ProductLicence } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -38,10 +37,9 @@ export function EditLicenceDialog({
   const [form, setForm] = useState({
     number: licence?.number ?? '',
     authority: licence?.authority ?? '',
-    // The stored instant is UTC midnight of the chosen day, so the first ten
-    // characters are that day (ADR: formatDay).
-    issuedAt: licence?.issuedAt?.slice(0, 10) ?? '',
-    expiresAt: licence?.expiresAt?.slice(0, 10) ?? '',
+    // YYYY-MM-DD both ways, as the date input wants it (ADR-052).
+    issuedAt: licence?.issuedAt ?? '',
+    expiresAt: licence?.expiresAt ?? '',
     notes: licence?.notes ?? '',
     isActive: licence?.isActive ?? true,
   });
@@ -69,8 +67,9 @@ export function EditLicenceDialog({
         body: JSON.stringify({
           number: form.number,
           authority: form.authority,
-          issuedAt: form.issuedAt ? utcMidnight(form.issuedAt) : null,
-          expiresAt: form.expiresAt ? utcMidnight(form.expiresAt) : null,
+          // Blank clears the date.
+          issuedAt: form.issuedAt || null,
+          expiresAt: form.expiresAt || null,
           notes: form.notes || undefined,
           isActive: form.isActive,
         }),

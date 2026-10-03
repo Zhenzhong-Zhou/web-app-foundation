@@ -29,7 +29,7 @@ type ReturnLine = ReturnOrderDto['lines'][number];
 export interface ReturnableLot {
   lotId: string;
   code: string;
-  expiresAt: Date | null;
+  expiresAt: string | null;
   shipped: string;
   returned: string;
 }
@@ -468,7 +468,7 @@ export class ReturnsService {
       variant_id: string;
       lot_id: string;
       code: string;
-      expires_at: Date | null;
+      expires_at: string | null;
       shipped: string;
       returned: string;
     }[];

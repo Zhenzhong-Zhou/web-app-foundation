@@ -30,8 +30,8 @@ export async function baseCurrency(
 /**
  * The latest rate for `currency` on or before `day`, or null when none is on
  * file. `day` is SQL so each caller says which day it means: a receipt costed
- * as it arrives uses `current_date`, a correction uses the day the stock
- * arrived.
+ * as it arrives uses the server's today (todayUtc, ADR-052), a correction
+ * uses the day the stock arrived.
  */
 export async function rateOnOrBefore(
   tx: Tx,

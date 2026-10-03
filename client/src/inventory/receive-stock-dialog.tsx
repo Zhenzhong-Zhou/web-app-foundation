@@ -13,7 +13,6 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
-import { utcMidnight } from '../lib/format';
 import type { Location } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
@@ -88,9 +87,8 @@ export function ReceiveStockDialog({
           lot: variant?.tracksLots
             ? {
                 code: form.lotCode,
-                expiresAt: form.expiresAt
-                  ? utcMidnight(form.expiresAt)
-                  : undefined,
+                // As typed, YYYY-MM-DD (ADR-052).
+                expiresAt: form.expiresAt || undefined,
               }
             : undefined,
         }),

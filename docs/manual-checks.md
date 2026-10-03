@@ -111,7 +111,8 @@ second organization.
 - **MC-306** Movements pages back through the history: the next page follows
   on with no gap and no repeat.
 - **MC-307** Editing a lot's expiry saves, and the new date shows on
-  Inventory and in earliest-expiry-first order.
+  Inventory and in earliest-expiry-first order. Reopening the edit dialog
+  shows the same day that was typed.
 
 ## 4. Buying
 
@@ -119,7 +120,7 @@ second organization.
   lines cannot be edited.
 - **MC-402** Receive part of a line into a new lot with an expiry, then the
   rest into a second lot. The order shows each receipt, and Inventory shows
-  both lots.
+  both lots, each with the expiry typed — the same day on the lot trace.
 - **MC-403** Duplicate a confirmed order. The copy is a draft with no
   reference, no quantities received, and the partner's current address. The
   original is untouched until it is cancelled separately (ADR-031).
@@ -163,7 +164,8 @@ second organization.
   a Save button.
 - **MC-511** Products → a variant → Recipe: the licence the recipe is made
   under carries its status (Current, Expires in N days, Expired, Withdrawn),
-  so a lapse is seen before a run is planned.
+  so a lapse is seen before a run is planned. With *Valid until* set to
+  today it reads *Expires today*, and release treats it as current.
 
 ## 6. Selling
 
@@ -284,6 +286,14 @@ The recipe is in `server/perf/README.md`.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R04** *(#20)* With the computer's time zone set west of UTC
+  (America/Vancouver), in the evening: receive a lot expiring 10 Oct, set an
+  order's expected date, and give a licence an issue and an expiry date.
+  Each shows as the day typed on every screen and in its edit dialog, and
+  the audit log shows days, not timestamps — including entries recorded
+  before migration 0038. On a dev database that had dates before 0038, the
+  dates read the same after `npm run migrate:all` as before (ADR-052).
+
 - **MC-R01** *(seed:volume)* Issuing an invoice to a customer created
   without a billing address is refused with the reason, not a server error.
   See MC-702.
@@ -306,3 +316,5 @@ first.
 - 2026-10-02: ADR-050, the check at release: MC-508 and MC-509 added.
 - 2026-10-02: ADR-050 screens: MC-506, MC-508 and MC-509 rewritten for the
   release dialog and the run page; MC-510 and MC-511 added.
+- 2026-10-02: ADR-052 (#20), calendar days as `date`: MC-307, MC-402 and
+  MC-511 extended; MC-R04 added.

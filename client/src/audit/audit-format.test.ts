@@ -18,6 +18,17 @@ describe('summarise', () => {
     expect(shown).toMatch(/^expected at: .*10.* → .*12.*2026$/);
   });
 
+  // Rows since ADR-052 record the day itself; older rows keep the instant.
+  it('shows a day recorded as YYYY-MM-DD beside an old instant', () => {
+    const shown = summarise({
+      expiresAt: { from: '2026-10-10T00:00:00.000Z', to: '2026-10-12' },
+    });
+
+    expect(shown).not.toContain('T00:00');
+    expect(shown).not.toContain('2026-10-12');
+    expect(shown).toMatch(/^expires at: .*10.* → .*12.*2026$/);
+  });
+
   // "set to" and "changed from" are different claims (ADR-018).
   it('keeps a bare value as a bare value', () => {
     expect(summarise({ status: 'confirmed' })).toBe('status: confirmed');

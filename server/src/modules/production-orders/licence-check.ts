@@ -29,8 +29,9 @@ export interface LicenceCheck {
     id: string;
     number: string;
     authority: string;
-    issuedAt: Date | null;
-    expiresAt: Date | null;
+    /** Calendar days, YYYY-MM-DD (ADR-052). */
+    issuedAt: string | null;
+    expiresAt: string | null;
   } | null;
   status: LicenceStatusAtRelease;
   outcome: LicenceOutcome;
@@ -144,8 +145,9 @@ export function settleLicence(
 
 /**
  * Names the licence and the day that matters, so the message says what to
- * fix: renew it, wait for it, or attach one. Days as ISO dates, which read
- * the same in every locale and are what the licence was entered as.
+ * fix: renew it, wait for it, or attach one. Days as stored, YYYY-MM-DD,
+ * which read the same in every locale and are what the licence was entered
+ * as.
  */
 function refusal({ licence, status }: LicenceCheck): string {
   if (!licence) {
@@ -158,14 +160,10 @@ function refusal({ licence, status }: LicenceCheck): string {
     case 'withdrawn':
       return `${name} has been withdrawn, so nothing can be made under it`;
     case 'not_in_force':
-      return `${name} is not in force until ${isoDay(licence.issuedAt)}, so this run cannot be released under it`;
+      return `${name} is not in force until ${licence.issuedAt ?? 'a later date'}, so this run cannot be released under it`;
     case 'expired':
-      return `${name} expired on ${isoDay(licence.expiresAt)}, so this run cannot be released under it`;
+      return `${name} expired on ${licence.expiresAt ?? 'an unknown date'}, so this run cannot be released under it`;
     default:
       return `${name} cannot be released under`;
   }
-}
-
-function isoDay(instant: Date | null): string {
-  return instant ? instant.toISOString().slice(0, 10) : 'an unknown date';
 }

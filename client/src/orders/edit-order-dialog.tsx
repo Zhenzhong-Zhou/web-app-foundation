@@ -11,7 +11,6 @@ import { type SubmitEvent, useState } from 'react';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { utcMidnight } from '../lib/format';
 import type { OrderDetail } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -46,10 +45,8 @@ export function EditOrderDialog({
   const [reference, setReference] = useState(order.reference ?? '');
   const [note, setNote] = useState(order.note ?? '');
 
-  // The input wants YYYY-MM-DD; the server sends and expects ISO 8601.
-  const [expectedAt, setExpectedAt] = useState(
-    order.expectedAt ? order.expectedAt.slice(0, 10) : '',
-  );
+  // YYYY-MM-DD both ways, as the date input wants it (ADR-052).
+  const [expectedAt, setExpectedAt] = useState(order.expectedAt ?? '');
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
@@ -78,7 +75,7 @@ export function EditOrderDialog({
            */
           reference: reference.trim(),
           note: note.trim(),
-          expectedAt: expectedAt ? utcMidnight(expectedAt) : undefined,
+          expectedAt: expectedAt || undefined,
         }),
       }),
     );

@@ -1,11 +1,6 @@
-import {
-  IsISO8601,
-  IsOptional,
-  IsString,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
+import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import { trim } from '../../../common/dto/trim';
 import { upper } from '../../../common/dto/upper';
 
@@ -26,8 +21,10 @@ export class UpdateLotDto {
    * Always editable, and not only for typos: stability testing extends a
    * shelf life, and suppliers reissue certificates. An immutable expiry would
    * force a reclassification for something that is a correction of fact.
+   *
+   * A calendar day, YYYY-MM-DD (ADR-052).
    */
   @IsOptional()
-  @IsISO8601()
+  @IsCalendarDay()
   expiresAt?: string;
 }

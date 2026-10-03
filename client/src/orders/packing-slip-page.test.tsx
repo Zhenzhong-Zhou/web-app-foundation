@@ -24,7 +24,7 @@ const SLIP: PackingSlip = {
       sku: 'EXTRACT',
       description: 'Echinacea extract',
       lotCode: 'L2026-A',
-      expiresAt: '2027-03-31T00:00:00.000Z',
+      expiresAt: '2027-03-31',
       quantity: '12.0000',
       unitOfMeasure: 'bottles',
     },

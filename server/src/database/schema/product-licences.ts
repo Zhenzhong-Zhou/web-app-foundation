@@ -2,10 +2,10 @@ import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  date,
   index,
   pgTable,
   text,
-  timestamp,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -63,8 +63,10 @@ export const productLicences = pgTable(
      * case a number alone cannot express: a licence issued from a future
      * date, which happens on a renewal or a transfer and must not be
      * offered to a recipe a month early.
+     *
+     * A calendar day, so `date` (ADR-052), as both dates here.
      */
-    issuedAt: timestamp('issued_at', { withTimezone: true }),
+    issuedAt: date('issued_at', { mode: 'string' }),
 
     /**
      * Usually null, and that is not a design flaw. A Health Canada product
@@ -73,11 +75,10 @@ export const productLicences = pgTable(
      * facility registration renews on a cycle, an export certificate ends, an
      * ISO or UL certification has a date on it.
      *
-     * A calendar day stored as timestamptz, like a lot's expiry, written as
-     * UTC midnight and read back in UTC (ADR-025's neighbour: the client's
-     * formatDay).
+     * The last day it is valid: a licence expiring today is still current
+     * today (ADR-050).
      */
-    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    expiresAt: date('expires_at', { mode: 'string' }),
 
     notes: text('notes'),
 

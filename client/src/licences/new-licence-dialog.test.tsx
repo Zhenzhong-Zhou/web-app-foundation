@@ -7,13 +7,12 @@ import { server } from '../test/setup';
 import { NewLicenceDialog } from './new-licence-dialog';
 
 /**
- * A licence's dates are timestamptz columns. Sent as the bare day, Postgres
- * would store midnight in whatever zone its session runs in, and the day
- * shown back could differ from the day picked. Sent as UTC midnight, it
- * cannot.
+ * A licence's dates are `date` columns, sent as the day picked (ADR-052).
+ * No conversion on the way: a day is not a moment, and any instant would
+ * need a time zone to become one again.
  */
 describe('NewLicenceDialog', () => {
-  it('sends its dates as UTC midnight of the days picked', async () => {
+  it('sends its dates as the days picked', async () => {
     const user = userEvent.setup();
     let body: Record<string, unknown> = {};
 
@@ -40,8 +39,9 @@ describe('NewLicenceDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(onCreated).toHaveBeenCalled());
-    expect(body.issuedAt).toBe('2026-01-15T00:00:00.000Z');
-    expect(body.expiresAt).toBe('2031-01-14T00:00:00.000Z');
+    // As typed: the API takes a calendar day as YYYY-MM-DD (ADR-052).
+    expect(body.issuedAt).toBe('2026-01-15');
+    expect(body.expiresAt).toBe('2031-01-14');
   });
 
   it('leaves out a date that was not given', async () => {

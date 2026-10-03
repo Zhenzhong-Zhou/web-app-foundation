@@ -17,9 +17,10 @@ import {
  */
 const NOW = new Date('2026-10-02T15:00:00.000Z');
 
-const YESTERDAY = new Date('2026-10-01T00:00:00.000Z');
-const TODAY = new Date('2026-10-02T00:00:00.000Z');
-const TOMORROW = new Date('2026-10-03T00:00:00.000Z');
+// Calendar days, as the `date` columns hold them (ADR-052).
+const YESTERDAY = '2026-10-01';
+const TODAY = '2026-10-02';
+const TOMORROW = '2026-10-03';
 
 function licence(over: Partial<LicenceDates> = {}): LicenceDates {
   return { isActive: true, issuedAt: null, expiresAt: null, ...over };

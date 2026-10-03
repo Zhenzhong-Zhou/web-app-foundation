@@ -1,12 +1,12 @@
 import {
   IsBoolean,
-  IsISO8601,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
 
+import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import { trim } from '../../../common/dto/trim';
 import { upper } from '../../../common/dto/upper';
 
@@ -38,10 +38,11 @@ export class MovementLotDto {
    * Absent for lots that do not expire — hardware, packaging, most equipment.
    * Ignored when the lot already exists: a second delivery does not get to
    * rewrite the expiry of units already on the shelf, and the expiry is
-   * corrected through PATCH /stock/lots/:id instead.
+   * corrected through PATCH /stock/lots/:id instead. A calendar day,
+   * YYYY-MM-DD (ADR-052).
    */
   @IsOptional()
-  @IsISO8601()
+  @IsCalendarDay()
   expiresAt?: string;
 
   /**

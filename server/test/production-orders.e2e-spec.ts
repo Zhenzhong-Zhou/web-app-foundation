@@ -490,8 +490,8 @@ describe('Production orders (e2e)', () => {
       await org.agent.post(`/v1/boms/${bomId}/promote`).expect(204);
 
       for (const [code, quantity, expiresAt] of [
-        ['LATE', '1500', '2027-06-01T00:00:00.000Z'],
-        ['EARLY', '1500', '2026-12-01T00:00:00.000Z'],
+        ['LATE', '1500', '2027-06-01'],
+        ['EARLY', '1500', '2026-12-01'],
         ['NEVER', '5000', undefined],
       ] as const) {
         await org.agent

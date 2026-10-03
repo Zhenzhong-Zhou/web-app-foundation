@@ -67,9 +67,8 @@ export class LotsService {
         lots,
         {
           code: input.code,
-          ...(input.expiresAt !== undefined
-            ? { expiresAt: new Date(input.expiresAt) }
-            : {}),
+          // YYYY-MM-DD as it arrives (ADR-052); undefined leaves it alone.
+          expiresAt: input.expiresAt,
         },
         eq(lots.id, lotId),
       );

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { CALENDAR_DAY_INPUTS } from '../common/dto/calendar-day';
+
 /**
  * The single source of truth for environment configuration.
  *
@@ -49,6 +51,13 @@ export const envSchema = z.object({
   // Present in production, absent locally. Its presence selects the HTTP
   // transport — see MailService.
   RESEND_API_KEY: z.string().optional(),
+
+  // ADR-052: whether a calendar day may also arrive as an instant at exactly
+  // UTC midnight, the shape clients sent before it. Strict unless a
+  // deployment opts in for a transition or an integration that sends
+  // instants. Read per request by IsCalendarDay(); declared here so a typo
+  // fails at boot rather than silently meaning strict.
+  CALENDAR_DAY_INPUT: z.enum(CALENDAR_DAY_INPUTS).default('strict'),
 
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),

@@ -11,7 +11,6 @@ import { type SubmitEvent, useState } from 'react';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { utcMidnight } from '../lib/format';
 import type { StockRow } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -35,8 +34,8 @@ export function EditLotDialog({
 }) {
   const [form, setForm] = useState({
     code: row?.lotCode ?? '',
-    // The API returns a timestamp; a date input wants YYYY-MM-DD.
-    expiresAt: row?.lotExpiresAt ? row.lotExpiresAt.slice(0, 10) : '',
+    // YYYY-MM-DD both ways, as the date input wants it (ADR-052).
+    expiresAt: row?.lotExpiresAt ?? '',
   });
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -74,7 +73,7 @@ export function EditLotDialog({
         body: JSON.stringify({
           code:
             codeEditable && form.code !== row.lotCode ? form.code : undefined,
-          expiresAt: form.expiresAt ? utcMidnight(form.expiresAt) : undefined,
+          expiresAt: form.expiresAt || undefined,
         }),
       }),
     );

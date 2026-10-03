@@ -12,7 +12,7 @@ const KNOWN: Lot[] = [
   {
     id: 'lot-1',
     code: 'L2024-A',
-    expiresAt: '2027-03-31T00:00:00.000Z',
+    expiresAt: '2027-03-31',
     isAssigned: false,
   },
   { id: 'lot-2', code: 'L2024-B', expiresAt: null, isAssigned: true },
