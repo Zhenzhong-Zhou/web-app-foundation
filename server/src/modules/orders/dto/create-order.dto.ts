@@ -4,7 +4,6 @@ import {
   IsArray,
   IsBoolean,
   IsIn,
-  IsISO8601,
   IsOptional,
   IsString,
   IsUUID,
@@ -12,6 +11,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import { trim } from '../../../common/dto/trim';
 import {
   ORDER_DIRECTIONS,
@@ -48,8 +48,9 @@ export class CreateOrderDto {
   @MaxLength(100)
   reference?: string;
 
+  /** A calendar day, YYYY-MM-DD (ADR-052). */
   @IsOptional()
-  @IsISO8601()
+  @IsCalendarDay()
   expectedAt?: string;
 
   @IsOptional()

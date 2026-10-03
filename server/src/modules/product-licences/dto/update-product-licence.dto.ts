@@ -1,11 +1,6 @@
-import {
-  IsBoolean,
-  IsISO8601,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 
+import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import { trim } from '../../../common/dto/trim';
 
 export class UpdateProductLicenceDto {
@@ -29,14 +24,18 @@ export class UpdateProductLicenceDto {
   @IsBoolean()
   isActive?: boolean;
 
-  /** When it took effect. Blank when nobody looked it up. */
+  /**
+   * When it took effect, YYYY-MM-DD (ADR-052). Null clears it; absent leaves
+   * it as it is.
+   */
   @IsOptional()
-  @IsISO8601()
-  issuedAt?: string;
+  @IsCalendarDay()
+  issuedAt?: string | null;
 
+  /** The last day it is valid, YYYY-MM-DD. Null clears it. */
   @IsOptional()
-  @IsISO8601()
-  expiresAt?: string;
+  @IsCalendarDay()
+  expiresAt?: string | null;
 
   @IsOptional()
   @trim()

@@ -4113,6 +4113,25 @@ format. Each is a rule or a setting on top, and each waits for its trigger.
   (ADR-041), per customer or per organization. Trigger: the first customer
   who asks.
 
+**Amendment — settled while building.** Three points:
+
+- **No type parser.** Drizzle 0.45's node-postgres driver already returns
+  `date` and `timestamptz` as text for every query that goes through it,
+  `tx.execute` included, so registering one would duplicate it. The raw
+  reads that typed a lot's expiry as `Date` were in fact returning text
+  such as `2026-10-10 00:00:00+00`; they now return `2026-10-10` and are
+  typed `string | null`. What holds the guarantee is a test, not a
+  registration: `calendar-days.e2e-spec.ts` reads one expiry through
+  Drizzle, lot search and the lot trace, and expects the same text from all
+  three. A driver change that broke it would fail there.
+- **One switch for every calendar day.** `CALENDAR_DAY_INPUT` applies
+  wherever `IsCalendarDay()` does, so invoice, due, credit and rate dates
+  follow it too. Their client already sends `YYYY-MM-DD`, so nothing
+  changes for them.
+- **The warning names the field.** A decorator cannot see the route; the
+  line is logged inside the request, so the request's log context carries
+  it.
+
 ---
 
 # Open decisions

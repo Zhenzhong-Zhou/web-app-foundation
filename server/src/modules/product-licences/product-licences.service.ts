@@ -41,8 +41,10 @@ export class ProductLicencesService {
         .insert(productLicences, {
           number: input.number,
           authority: input.authority,
-          issuedAt: this.dayOrNull(input.issuedAt),
-          expiresAt: this.dayOrNull(input.expiresAt),
+          // Calendar days as they arrive, YYYY-MM-DD, into `date` columns
+          // (ADR-052).
+          issuedAt: input.issuedAt ?? null,
+          expiresAt: input.expiresAt ?? null,
           notes: input.notes,
         })
         .returning();
@@ -64,15 +66,6 @@ export class ProductLicencesService {
       }
       throw error;
     }
-  }
-
-  /**
-   * A calendar day as it arrives, stored as the instant that day begins in
-   * UTC — read back the same way by the client's formatDay. undefined stays
-   * undefined so a PATCH that omits it leaves the column alone.
-   */
-  private dayOrNull(value: string | undefined): Date | null {
-    return value ? new Date(value) : null;
   }
 
   /**
@@ -98,24 +91,13 @@ export class ProductLicencesService {
     });
 
     /**
-     * Pulled out of the spread rather than overridden inside it: a
-     * conditional spread widens the type to string | Date, and the column
-     * takes a Date. undefined means "not sent"; null clears the date.
+     * The dates go in as they arrive, YYYY-MM-DD (ADR-052): undefined is "not
+     * sent" and leaves the column alone, null clears it.
      */
-    const { issuedAt, expiresAt, ...rest } = input;
-
     try {
       await this.tenantDb.update(
         productLicences,
-        {
-          ...rest,
-          ...(issuedAt !== undefined
-            ? { issuedAt: this.dayOrNull(issuedAt) }
-            : {}),
-          ...(expiresAt !== undefined
-            ? { expiresAt: this.dayOrNull(expiresAt) }
-            : {}),
-        },
+        input,
         eq(productLicences.id, licenceId),
       );
     } catch (error) {

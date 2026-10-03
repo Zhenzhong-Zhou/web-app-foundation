@@ -87,7 +87,8 @@ export class OrderLifecycleService {
             direction: input.direction,
             isSample: input.isSample ?? false,
             reference: input.reference ?? null,
-            expectedAt: input.expectedAt ? new Date(input.expectedAt) : null,
+            // A calendar day as it arrives, YYYY-MM-DD (ADR-052).
+            expectedAt: input.expectedAt ?? null,
             note: input.note ?? null,
             createdBy: actorId,
           })
@@ -309,11 +310,8 @@ export class OrderLifecycleService {
     }
 
     /**
-     * Built field by field rather than spread.
-     *
-     * Spreading the DTO and overwriting expectedAt types it `Date | undefined`
-     * where the column takes `Date | null | undefined`, and it would carry any
-     * future DTO field straight into the table — which is how a validation-only
+     * Built field by field rather than spread: a spread would carry any future
+     * DTO field straight into the table, which is how a validation-only
      * property ends up as a column write nobody intended.
      */
     await this.tenantDb.update(
@@ -324,9 +322,8 @@ export class OrderLifecycleService {
         ...(input.status === 'confirmed' ? { confirmedAt: new Date() } : {}),
         reference: input.reference,
         note: input.note,
-        ...(input.expectedAt !== undefined
-          ? { expectedAt: new Date(input.expectedAt) }
-          : {}),
+        // YYYY-MM-DD as it arrives (ADR-052); undefined leaves it alone.
+        expectedAt: input.expectedAt,
       },
       eq(orders.id, orderId),
     );

@@ -422,7 +422,7 @@ describe('Stock (e2e)', () => {
             .post('/v1/stock/movements')
             .send({
               ...receipt(variant.id, locationId, quantity),
-              lot: { code: 'L2024-A', expiresAt: '2027-01-01T00:00:00.000Z' },
+              lot: { code: 'L2024-A', expiresAt: '2027-01-01' },
             })
             .expect(201);
         }
@@ -888,7 +888,7 @@ describe('Stock (e2e)', () => {
         .expect(204);
 
       const [updated] = await db.select().from(lots);
-      expect(updated.expiresAt?.toISOString()).toContain('2027-06-30');
+      expect(updated.expiresAt).toBe('2027-06-30');
     });
 
     it('renames a code this organization invented', async () => {

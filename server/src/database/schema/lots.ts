@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  date,
   index,
   pgTable,
   text,
@@ -50,9 +51,10 @@ export const lots = pgTable(
     /**
      * Null for lots that do not expire — hardware, packaging, most equipment.
      * Date, not timestamp: an expiry is a calendar fact printed on a box, and
-     * giving it a time of day invents precision the label does not have.
+     * giving it a time of day invents precision the label does not have
+     * (ADR-052). mode string, so '2026-10-10' never passes through a JS Date.
      */
-    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    expiresAt: date('expires_at', { mode: 'string' }),
 
     /**
      * When this lot physically arrived. Distinct from created_at, which is

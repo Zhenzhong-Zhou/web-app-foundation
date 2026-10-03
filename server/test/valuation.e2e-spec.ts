@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
+import { todayUtc } from '../src/common/today';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -230,15 +231,14 @@ describe('Stock valuation (e2e)', () => {
 
     /**
      * "On or before" includes the day itself: a rate entered this morning is
-     * the rate for a receipt this afternoon. The database's own calendar day,
-     * because that is the day valuation reads (current_date).
+     * the rate for a receipt this afternoon. The server's today, because that
+     * is the day valuation reads (todayUtc, ADR-052).
      */
     it('uses a rate entered for the day of the receipt', async () => {
       const s = await setup('alpha');
       const extract = await variant(s, 'EXTRACT');
 
-      const today = await db.execute(sql`select current_date::text as day`);
-      const { day } = today.rows[0] as { day: string };
+      const day = todayUtc();
 
       await db.insert(exchangeRates).values([
         {

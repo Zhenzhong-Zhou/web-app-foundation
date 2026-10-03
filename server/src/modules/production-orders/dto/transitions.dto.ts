@@ -3,7 +3,6 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
-  IsISO8601,
   IsOptional,
   IsString,
   IsUUID,
@@ -12,6 +11,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
 
@@ -117,8 +117,9 @@ class OutputLotDto {
   @MaxLength(64)
   code!: string;
 
+  /** A calendar day, YYYY-MM-DD (ADR-052). */
   @IsOptional()
-  @IsISO8601()
+  @IsCalendarDay()
   expiresAt?: string;
 }
 

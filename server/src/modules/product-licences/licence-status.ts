@@ -1,3 +1,4 @@
+import { todayUtc } from '../../common/today';
 import type {
   LicencePolicy,
   ReleaseLicenceStatus,
@@ -17,10 +18,11 @@ export type LicenceStatusAtRelease = LicenceStatus | 'none';
 /** What release does: let it through, ask for an override, or refuse. */
 export type LicenceOutcome = 'allow' | 'override' | 'block';
 
+/** Calendar days, YYYY-MM-DD, as the `date` columns hold them (ADR-052). */
 export interface LicenceDates {
   isActive: boolean;
-  issuedAt: Date | null;
-  expiresAt: Date | null;
+  issuedAt: string | null;
+  expiresAt: string | null;
 }
 
 export interface LicencePolicySettings {
@@ -31,10 +33,9 @@ export interface LicencePolicySettings {
 
 /**
  * Withdrawn first, because it is a decision somebody made and outranks any
- * date. Then not yet in force, then expired, compared as calendar days in
- * UTC: a licence date is written as midnight UTC (ADR-040), and reading it in
- * a zone behind Greenwich would expire it a day early. A licence expiring
- * today is still current today, as the client says "Expires today".
+ * date. Then not yet in force, then expired, compared as calendar days
+ * against the server's today, the UTC day (todayUtc, ADR-052). A licence
+ * expiring today is still current today, as the client says "Expires today".
  *
  * `now` is a parameter so the unit test can pin the dates either side of
  * today; release passes nothing and gets the clock.
@@ -45,13 +46,14 @@ export function licenceStatus(
 ): LicenceStatus {
   if (!licence.isActive) return 'withdrawn';
 
-  const today = utcDay(now);
+  const today = todayUtc(now);
 
-  if (licence.issuedAt && utcDay(licence.issuedAt) > today) {
+  // YYYY-MM-DD strings compare as days.
+  if (licence.issuedAt && licence.issuedAt > today) {
     return 'not_in_force';
   }
 
-  if (licence.expiresAt && utcDay(licence.expiresAt) < today) {
+  if (licence.expiresAt && licence.expiresAt < today) {
     return 'expired';
   }
 
@@ -97,12 +99,4 @@ export function recordedStatus(
   }
 
   return status;
-}
-
-function utcDay(instant: Date): number {
-  return Date.UTC(
-    instant.getUTCFullYear(),
-    instant.getUTCMonth(),
-    instant.getUTCDate(),
-  );
 }

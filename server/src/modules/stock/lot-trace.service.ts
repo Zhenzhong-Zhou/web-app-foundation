@@ -102,7 +102,7 @@ export class LotTraceService {
       ).rows as {
         id: string;
         code: string;
-        expires_at: Date | null;
+        expires_at: string | null;
         sku: string;
       }[];
 
@@ -135,7 +135,7 @@ export class LotTraceService {
     ).rows as {
       id: string;
       code: string;
-      expires_at: Date | null;
+      expires_at: string | null;
       sku: string;
       unit_of_measure: string;
       product_name: string;

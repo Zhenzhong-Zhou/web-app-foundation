@@ -243,7 +243,7 @@ describe('Orders (e2e)', () => {
           .send({
             ...purchase(ctx.partnerId, ctx.variant.id),
             reference: 'PO-1234',
-            expectedAt: '2026-01-01T00:00:00.000Z',
+            expectedAt: '2026-01-01',
           })
           .expect(201),
       ).order;

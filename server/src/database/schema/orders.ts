@@ -4,6 +4,7 @@ import {
   boolean,
   char,
   check,
+  date,
   index,
   pgTable,
   text,
@@ -90,13 +91,11 @@ export const orders = pgTable(
      * deliveries and are recorded as an open decision — one date is right
      * until something arrives in two parts on purpose.
      *
-     * timestamptz, though this is really a calendar day somebody typed rather
-     * than a moment. A due date entered in Vancouver renders as the previous
-     * day for a reader in Sydney. Harmless while everyone shares a timezone,
-     * wrong the moment they do not — at which point this wants to be `date`,
-     * and the migration is cheapest before real orders depend on it.
+     * A calendar day somebody typed, not a moment, so `date` (ADR-052): the
+     * day entered in Vancouver is the day read in Sydney. mode string, so
+     * '2026-10-10' never passes through a JS Date and a timezone.
      */
-    expectedAt: timestamp('expected_at', { withTimezone: true }),
+    expectedAt: date('expected_at', { mode: 'string' }),
 
     note: text('note'),
 

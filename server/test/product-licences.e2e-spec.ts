@@ -153,8 +153,8 @@ describe('Product licences (e2e)', () => {
         await alpha.agent.get('/v1/product-licences').expect(200),
       );
 
-      // Midnight UTC of the day chosen, the shape every date here takes.
-      expect(stored.expiresAt).toBe('2027-03-01T00:00:00.000Z');
+      // The day chosen, as it was sent: a `date` column (ADR-052).
+      expect(stored.expiresAt).toBe('2027-03-01');
 
       await alpha.agent
         .patch(`/v1/product-licences/${licence.id}`)

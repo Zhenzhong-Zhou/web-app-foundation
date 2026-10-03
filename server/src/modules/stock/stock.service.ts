@@ -63,6 +63,7 @@ export interface RecordMovementInput {
   /** A lot arriving with the shipment, created if its code is new. */
   lot?: {
     code: string;
+    /** A calendar day, YYYY-MM-DD (ADR-052). */
     expiresAt?: string;
     isAssigned?: boolean;
   } | null;
@@ -396,7 +397,7 @@ export class StockService {
         organizationId,
         variantId: variant.id,
         code: incoming.code,
-        expiresAt: incoming.expiresAt ? new Date(incoming.expiresAt) : null,
+        expiresAt: incoming.expiresAt ?? null,
         isAssigned: incoming.isAssigned ?? false,
       })
       .onConflictDoUpdate({

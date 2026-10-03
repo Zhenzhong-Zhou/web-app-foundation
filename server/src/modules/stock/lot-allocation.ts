@@ -9,7 +9,7 @@ type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 export interface LotCandidate {
   lotId: string;
   code: string;
-  expiresAt: Date | null;
+  expiresAt: string | null;
   /** On hand at the location. A numeric(18,4) string, never a number. */
   onHand: string;
   /** What earliest-expiry-first takes from this lot. '0' when none. */
@@ -93,7 +93,7 @@ export async function lotCandidates(
     candidates: rows.rows.map((row) => ({
       lotId: row.lot_id as string,
       code: row.code as string,
-      expiresAt: (row.expires_at as Date | null) ?? null,
+      expiresAt: (row.expires_at as string | null) ?? null,
       onHand: row.on_hand as string,
       take: row.take as string,
       taken: row.taken as boolean,
