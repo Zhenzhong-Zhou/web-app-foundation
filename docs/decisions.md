@@ -4607,6 +4607,38 @@ they exist so the reasoning is not rediscovered from scratch.
   are derivable from existing data (ADR-049 amendment); neither needs a
   migration. Trigger: the first pricing decision or margin question someone
   actually asks, which says which of the two.
+- **Backups and disaster recovery — before real data, not deferred.** Nothing
+  in the repo says how the database is backed up or how it is restored, and
+  a free Render database may have no backups at all. The production shape to
+  decide in an ADR (next, as ADR-053):
+    - the host's automatic backups with point-in-time recovery, on a plan
+      that has them;
+    - a nightly `pg_dump` (custom format) to a different provider, encrypted
+      before it leaves (`age` or `gpg`), its key kept apart from the backups,
+      with a retention rule such as 30 daily and 12 monthly;
+    - a restore drill into a scratch database, on a schedule, timed — a
+      backup nobody has restored is a hope;
+    - the targets: how much data may be lost (RPO) and how long the app may
+      be down (RTO).
+
+  Trigger: before the first real organization's data, which is now.
+- **A security review before real customers.** What is built covers the
+  application: hashed tokens, rate limits, tenant isolation tested per
+  lookup, an audit log, TLS from the host. What is not decided: two-factor
+  sign-in (at least for Owners), dependency scanning on every PR rather
+  than an occasional `npm audit`, how secrets are rotated, and what the
+  host encrypts at rest. Trigger: the same as backups.
+- **Reports.** Which questions the business asks every week or month — stock
+  value by location, what expires in 90 days, purchases by supplier, sales
+  by customer, run variances — and where they are answered: SQL behind a
+  report page, an export to a spreadsheet, or both. The data for most exists
+  already. Trigger: the first question somebody asks twice. *A dashboard
+  at `/`*, above, would show the answers that need watching daily.
+- **When someone is away.** Approvals and notifications go to one person
+  today. Out of office means either a delegate who acts for them for a
+  period, or work routed to a role instead of a person. Staff leave as a
+  record (holiday balances) is an HR system's job, not this one's.
+  Trigger: the first approval that waits on someone on holiday.
 
 ---
 
