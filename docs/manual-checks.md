@@ -283,6 +283,23 @@ The recipe is in `server/perf/README.md`.
 - **MC-1204** If a large-scale report exists, nothing grows more than 3×
   without an issue explaining why.
 
+## 13. Backups (ADR-053)
+
+Monthly, after the restore drill has run, and after any change to the
+backup scripts or workflows. The steps are in `docs/runbooks/restore.md`.
+
+- **MC-1301** Actions → Backup: last night's run is green, and the backup
+  it made is in the destination (an artifact, or the bucket), with its
+  `.sha256`.
+- **MC-1302** Actions → Restore drill: the last run is green, and its
+  summary shows the organizations restored and how long it took, under 4
+  hours (ADR-053's RTO).
+- **MC-1303** On a Mac, following the runbook's section 3, the newest
+  backup restores into the local database and `restore.sh` reports the
+  organizations it found.
+- **MC-1304** The private key is in the password manager and on paper, and
+  nowhere in the repository, an issue or a chat.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -323,4 +340,5 @@ first.
   release dialog and the run page; MC-510 and MC-511 added.
 - 2026-10-02: ADR-052 (#20), calendar days as `date`: MC-307, MC-402 and
   MC-511 extended; MC-R04 added.
+- 2026-10-03: ADR-053, backups: section 13, MC-1301 to MC-1304.
 - 2026-10-02: the Duplicate order fix: MC-403 rewritten, MC-R05 added.
