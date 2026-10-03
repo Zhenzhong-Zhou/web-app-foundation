@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-052 and ADR-053 merged, ADR-054 next
+# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-052 and ADR-053 merged, ADR-054 written
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -28,8 +28,8 @@ and price lists proposing the price of a new line.
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
   #20) and ADR-053 (backups, phase 1). ADR-050, ADR-052 and ADR-053 carry
   amendments for what was settled while building; ADR-046 carries one (one
-  currency per sale from the first priced line). Next is **ADR-054**
-  (languages).
+  currency per sale from the first priced line). **ADR-054** (languages)
+  is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
 - Tests at the last local run (ADR-050 branch, 2 October 2026): server e2e
   627 in 33 suites (`npm run test:e2e`); server unit 36 in 6 files
   (`npm test`); client vitest 160 in 35 files; Playwright 63. CI also runs
@@ -105,10 +105,19 @@ Then tag v0.4.0.
    `docs/runbooks/restore.md`; MC-1301 to MC-1304. Testing with
    `BACKUP_DESTINATION` unset (Actions artifacts); `s3` and a paid database
    plan before real customers' data.
-7. **ADR-054, languages** — before any code. French (Quebec) and Chinese
-   for the app, and French on printed documents. (Planned as ADR-050, then
-   ADR-051, ADR-052 and ADR-053; those numbers went to licence status,
-   performance, calendar days and backups.)
+7. **ADR-054, languages** — written, not built. `en`, `fr-CA` and
+   `zh-Hans`. Two settings: the person's language (`users.locale`, null
+   meaning the browser's) and the document languages, one or two (French
+   with English, Chinese with English), the partner's pair else the
+   organization's, stored on the shipment, invoice and credit note.
+   Product and variant names may be kept in other languages
+   (`product_translations`, `variant_translations`); the organization
+   chooses which are required (Chinese, say), checked at issue. No French
+   names unless the advisor asks for them.
+   FormatJS on both sides with explicit ids and English as the default;
+   the server translates in `AllExceptionsFilter` by `Accept-Language`, so
+   a request without it is English as today. Built in the ADR's seven
+   steps, server first: migration **0039**.
 
 ## What v0.4 built
 
@@ -386,7 +395,11 @@ first three):
 4. Open the issue "Organization time zone for today" (ADR-052, Deferred).
 
 **Next, in this order:**
-1. **ADR-054, languages** — the ADR before any code.
+1. **ADR-054, languages** — written; build it in the ADR's order,
+   starting with step 1 (server, migration 0039). Before the release that
+   offers French or Chinese: a fluent review of each catalogue, and the
+   advisor's answer on which pair a Quebec customer needs and whether its
+   invoices must describe items in French.
 2. **The Playwright journey**, written with Bob at a computer: one browser
    test that buys from a supplier, receives into a lot, makes a batch,
    ships to a customer, invoices and credits a return — the parts working
