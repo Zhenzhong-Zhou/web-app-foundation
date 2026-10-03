@@ -289,9 +289,10 @@ each step is server-first then the screen that uses it (ADR-019):
   by whoever may, and the state recorded on the run and in the lot trace
   (ADR-050)
 
-**Next:** calendar days stored as `date` (#20, ADR-052), an end-to-end
-journey in the browser suite, then languages — French (Quebec) and Chinese in
-the app, French on printed documents (ADR-053).
+**Next:** calendar days stored as `date` (#20, ADR-052), backups and
+disaster recovery (ADR-053), an end-to-end journey in the browser suite, then
+languages — French (Quebec) and Chinese in the app, French on printed
+documents (ADR-054).
 
 **Deliberately deferred** (all additive): background jobs and queues, invitations,
 file storage, search, admin UI, billing, API docs, scheduled notifications,
