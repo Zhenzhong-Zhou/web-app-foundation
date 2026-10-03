@@ -121,9 +121,11 @@ second organization.
 - **MC-402** Receive part of a line into a new lot with an expiry, then the
   rest into a second lot. The order shows each receipt, and Inventory shows
   both lots, each with the expiry typed — the same day on the lot trace.
-- **MC-403** Duplicate a confirmed order. The copy is a draft with no
-  reference, no quantities received, and the partner's current address. The
-  original is untouched until it is cancelled separately (ADR-031).
+- **MC-403** Duplicate a confirmed order, typing a new reference and an
+  expected date in the dialog. The copy is a draft with that reference and
+  date (none if the fields were left blank), no quantities received, and
+  the partner's current address. The original is untouched until it is
+  cancelled separately (ADR-031).
 - **MC-404** A purchase in USD, with no rate entered for today: the receipt
   appears under Stock value as needing a cost. Enter the rate under Exchange
   rates; a later receipt is valued, and the earlier one stays as it was
@@ -303,6 +305,9 @@ backup scripts or workflows. The steps are in `docs/runbooks/restore.md`.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R05** *(found building ADR-052)* Duplicating an order keeps the
+  reference and expected date typed in its dialog; they were silently
+  dropped. See MC-403.
 - **MC-R04** *(#20)* With the computer's time zone set west of UTC
   (America/Vancouver), in the evening: receive a lot expiring 10 Oct, set an
   order's expected date, and give a licence an issue and an expiry date.
@@ -336,3 +341,4 @@ first.
 - 2026-10-02: ADR-052 (#20), calendar days as `date`: MC-307, MC-402 and
   MC-511 extended; MC-R04 added.
 - 2026-10-03: ADR-053, backups: section 13, MC-1301 to MC-1304.
+- 2026-10-02: the Duplicate order fix: MC-403 rewritten, MC-R05 added.

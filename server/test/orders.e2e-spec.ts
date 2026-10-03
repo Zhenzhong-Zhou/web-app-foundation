@@ -272,6 +272,36 @@ describe('Orders (e2e)', () => {
     });
 
     /**
+     * What the Duplicate dialog asks for. The route took no body, so both
+     * were dropped and every copy arrived without them; the copy takes its
+     * own instead of the source's.
+     */
+    it('gives the copy the reference and expected date it is sent', async () => {
+      const ctx = await setup('alpha');
+      const original = await confirmed(ctx);
+
+      const copy = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post(`/v1/orders/${original.id}/duplicate`)
+          .send({ reference: '  PO-5678  ', expectedAt: '2026-11-15' })
+          .expect(201),
+      ).order;
+
+      expect(copy.reference).toBe('PO-5678');
+      expect(copy.expectedAt).toBe('2026-11-15');
+    });
+
+    it('refuses an expected date that is not a calendar day', async () => {
+      const ctx = await setup('alpha');
+      const original = await confirmed(ctx);
+
+      await ctx.agent
+        .post(`/v1/orders/${original.id}/duplicate`)
+        .send({ expectedAt: '2026-11-15T07:00:00.000Z' })
+        .expect(400);
+    });
+
+    /**
      * The flow ADR-031 is for: duplicate first, then cancel. The original
      * keeps its own state, so a failure anywhere leaves something behind.
      */
