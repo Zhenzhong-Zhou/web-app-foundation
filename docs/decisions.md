@@ -4307,6 +4307,35 @@ this ADR changes when it does.
 - **Two people to restore or to use the key.** Trigger: a team larger than
   one, or an audit.
 
+**Amendment — settled while building.**
+
+- **A test destination before the bucket.** `BACKUP_DESTINATION` takes
+  `artifact` as well as `s3`: the encrypted dump is kept as a GitHub Actions
+  artifact for 30 days. It proves every step except object lock while the
+  database is a Free test instance, at no cost and with no account. The
+  repository is public, so anyone signed in to GitHub can download one;
+  encrypted, it shows only its size and time. Real customers' data needs
+  `s3`, which is the variable and its secrets, not a code change.
+- **Freshness from the backup's name, not the audit log.** Production's
+  audit log was empty at the first manual restore, so "the newest audit row
+  is under a day old" would fail a quiet database. Every backup's name
+  carries the moment it was taken (`production-20261003T100000Z`); the
+  26-hour check and the drill read that. The drill checks instead that
+  organizations came back and that the migrations table is not ahead
+  of the code.
+- **The Postgres 18 client, not a container.** The scripts call
+  `pg_dump` and `pg_restore` directly and refuse an older major version.
+  Actions installs the 18 client from the Postgres project's apt
+  repository; a Mac uses Homebrew's `libpq`. The first manual backup used a
+  container, which works, but a container reaching `localhost` differs
+  between Linux and macOS.
+- **The drill reads with its own login.** In `s3`, the backup job can write
+  and list but not read; the drill can read and list but not write. A
+  stolen backup login cannot download backups, and a stolen drill login
+  cannot plant one.
+- **Size against the previous backup** is compared in `local` and `s3`. As
+  an artifact each run starts empty, so the comparison is skipped there.
+
 ---
 
 # Open decisions
