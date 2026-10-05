@@ -9,20 +9,14 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import type { Location } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
-
-const TYPES = [
-  { value: 'site', label: 'Site' },
-  { value: 'zone', label: 'Zone' },
-  { value: 'aisle', label: 'Aisle' },
-  { value: 'shelf', label: 'Shelf' },
-  { value: 'bin', label: 'Bin' },
-];
+import { LOCATION_TYPES, locationTypeLabel } from './location-types';
 
 /**
  * The type of a location one level down from its parent. A guess, not a rule —
@@ -48,6 +42,7 @@ export function CreateLocationDialog({
   onClose: () => void;
   onCreated: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const suggested = parent ? NEXT_TYPE[parent.type] : 'site';
   const [form, setForm] = useState({ type: suggested, name: '', code: '' });
 
@@ -56,7 +51,12 @@ export function CreateLocationDialog({
       close();
       await onCreated();
     },
-    { success: 'Location added' },
+    {
+      success: intl.formatMessage({
+        id: 'locations.added',
+        defaultMessage: 'Location added',
+      }),
+    },
   );
 
   function close() {
@@ -95,7 +95,18 @@ export function CreateLocationDialog({
     >
       <form onSubmit={handleSubmit}>
         <DialogTitle>
-          {parent ? `Add inside ${parent.name}` : 'Add a location'}
+          {parent
+            ? intl.formatMessage(
+                {
+                  id: 'locations.create.titleInside',
+                  defaultMessage: 'Add inside {name}',
+                },
+                { name: parent.name },
+              )
+            : intl.formatMessage({
+                id: 'locations.create.title',
+                defaultMessage: 'Add a location',
+              })}
         </DialogTitle>
 
         <DialogContent>
@@ -108,31 +119,47 @@ export function CreateLocationDialog({
                 worse than being told before. */}
             {parent && (
               <Alert severity="info">
-                {parent.name} will stop holding stock directly. Anything already
-                there has to move into a child location first.
+                {intl.formatMessage(
+                  {
+                    id: 'locations.create.parentStopsHolding',
+                    defaultMessage:
+                      '{name} will stop holding stock directly. Anything already there has to move into a child location first.',
+                  },
+                  { name: parent.name },
+                )}
               </Alert>
             )}
 
             <TextField
               id="location-type"
-              label="Type"
+              label={intl.formatMessage({
+                id: 'locations.typeLabel',
+                defaultMessage: 'Type',
+              })}
               select
               required
               fullWidth
               value={form.type}
               onChange={update('type')}
-              helperText="A label for reading, not a rule. Depth is not enforced."
+              helperText={intl.formatMessage({
+                id: 'locations.type.help',
+                defaultMessage:
+                  'A label for reading, not a rule. Depth is not enforced.',
+              })}
             >
-              {TYPES.map((type) => (
-                <MenuItem key={type.value} value={type.value}>
-                  {type.label}
+              {LOCATION_TYPES.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {locationTypeLabel(type, intl)}
                 </MenuItem>
               ))}
             </TextField>
 
             <TextField
               id="location-name"
-              label="Name"
+              label={intl.formatMessage({
+                id: 'common.name',
+                defaultMessage: 'Name',
+              })}
               required
               fullWidth
               value={form.name}
@@ -142,18 +169,27 @@ export function CreateLocationDialog({
 
             <TextField
               id="location-code"
-              label="Code"
+              label={intl.formatMessage({
+                id: 'locations.code',
+                defaultMessage: 'Code',
+              })}
               fullWidth
               value={form.code}
               onChange={update('code')}
-              helperText="What is on the label — H5, A-01-03. Unique within its parent."
+              helperText={intl.formatMessage({
+                id: 'locations.code.help',
+                defaultMessage:
+                  'What is on the label — H5, A-01-03. Unique within its parent.',
+              })}
               slotProps={{ htmlInput: { maxLength: 64 } }}
             />
 
             <Typography variant="caption" color="text.secondary">
-              Stock sits in the places that contain nothing else. A single room
-              is a location in its own right — add bins inside it later if you
-              need them.
+              {intl.formatMessage({
+                id: 'locations.create.leavesHoldStock',
+                defaultMessage:
+                  'Stock sits in the places that contain nothing else. A single room is a location in its own right — add bins inside it later if you need them.',
+              })}
             </Typography>
           </Stack>
         </DialogContent>
@@ -161,8 +197,14 @@ export function CreateLocationDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Add location"
-          pendingLabel="Adding…"
+          label={intl.formatMessage({
+            id: 'locations.add',
+            defaultMessage: 'Add location',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.adding',
+            defaultMessage: 'Adding…',
+          })}
         />
       </form>
     </Dialog>

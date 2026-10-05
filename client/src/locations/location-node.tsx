@@ -1,7 +1,10 @@
 import { Button, Chip, Stack, Typography } from '@mui/material';
+import { useIntl } from 'react-intl';
 
+import { SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { Location } from '../lib/types';
+import { locationTypeLabel } from './location-types';
 import { childrenOf } from './tree';
 
 /**
@@ -29,6 +32,7 @@ export function LocationNode({
   onEdit: (location: Location) => void;
   onAddChild: (location: Location) => void;
 }) {
+  const intl = useIntl();
   const children = childrenOf(all, location.id);
 
   return (
@@ -49,13 +53,17 @@ export function LocationNode({
           {location.name}
           {location.code && (
             <Typography component="span" color="text.secondary">
-              {' '}
-              · {location.code}
+              {SEPARATOR}
+              {location.code}
             </Typography>
           )}
         </Typography>
 
-        <Chip label={location.type} size="small" variant="outlined" />
+        <Chip
+          label={locationTypeLabel(location.type, intl)}
+          size="small"
+          variant="outlined"
+        />
 
         {/* Leaf-ness is computed, not declared (ADR-024). Showing it here is
             what makes "stock goes in the places that contain nothing else"
@@ -63,18 +71,40 @@ export function LocationNode({
             the chip disappearing the moment a child is added is that invariant
             rendered. */}
         {!children.length && (
-          <Chip label="Holds stock" size="small" color="primary" />
+          <Chip
+            label={intl.formatMessage({
+              id: 'locations.holdsStock',
+              defaultMessage: 'Holds stock',
+            })}
+            size="small"
+            color="primary"
+          />
         )}
 
         {/* Quarantine, Returns, and WIP are locations rather than a status on
             the stock row, so the distinction has to be visible somewhere. */}
         {!location.isAvailable && (
-          <Chip label="Not available" size="small" color="warning" />
+          <Chip
+            label={intl.formatMessage({
+              id: 'locations.notAvailable',
+              defaultMessage: 'Not available',
+            })}
+            size="small"
+            color="warning"
+          />
         )}
 
         {/* Retired rather than deleted: a location referenced by movement
             history cannot be removed without inventing gaps in the ledger. */}
-        {!location.isActive && <Chip label="Retired" size="small" />}
+        {!location.isActive && (
+          <Chip
+            label={intl.formatMessage({
+              id: 'common.retired',
+              defaultMessage: 'Retired',
+            })}
+            size="small"
+          />
+        )}
 
         {canEdit && (
           <>
@@ -83,14 +113,20 @@ export function LocationNode({
               size="small"
               onClick={openDialog(() => onAddChild(location))}
             >
-              Add inside
+              {intl.formatMessage({
+                id: 'locations.addInside',
+                defaultMessage: 'Add inside',
+              })}
             </Button>
             <Button
               variant="text"
               size="small"
               onClick={openDialog(() => onEdit(location))}
             >
-              Edit
+              {intl.formatMessage({
+                id: 'common.edit',
+                defaultMessage: 'Edit',
+              })}
             </Button>
           </>
         )}

@@ -18,6 +18,7 @@ offers either language (MC-1405).
 | SKU | UGS | SKU | French: unité de gestion des stocks. Chinese keeps the Latin abbreviation, as labels do. |
 | Lot | Lot | 批次 | A traced quantity with a code and an expiry. |
 | Location | Emplacement | 库位 | A shelf, bin or site stock sits in. |
+| Site / Zone / Aisle / Shelf / Bin | Site / Zone / Allée / Tablette / Casier | 站点 / 区域 / 通道 / 货架 / 货位 | A location's type by depth, outermost first. |
 | Stock | Stock | 库存 | |
 | Movement | Mouvement | 库存变动 | |
 | Partner | Partenaire | 合作伙伴 | A customer, a supplier, or both. |

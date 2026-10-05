@@ -62,6 +62,7 @@ export default defineConfig([
       'src/components/**/*.tsx',
       'src/account/**/*.tsx',
       'src/products/**/*.tsx',
+      'src/locations/**/*.tsx',
       'src/partners/**/*.tsx',
     ],
     // Specs render with made-up labels on purpose. The print sheet is a

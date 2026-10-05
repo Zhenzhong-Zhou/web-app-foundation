@@ -119,6 +119,23 @@ Then tag v0.4.0.
    a request without it is English as today. Built in the ADR's seven
    steps, server first: migration **0039**.
 
+   Where it stands: the server (step 1, migrations 0039 and 0040), the
+   client foundations (step 2), and step 3 folder by folder, each
+   translated as its strings move (glossary first, `docs/glossary.md`):
+   auth, the frame, shared components, account, products with names in
+   other languages, partners with their document languages, locations.
+
+   Added to the plan while building, not in the ADR's list:
+   - **`seed:demo`**, after step 5: a Quebec customer printing French and
+     English, a Chinese customer printing Chinese and English, Chinese
+     and French names on a few demo products, one bilingual invoice
+     issued, so MC-1407 to MC-1409 walk on a fresh database.
+   - **`seed:volume`**, in step 7: some product translations, then the
+     ADR-051 budgets re-run, since issuing now reads them.
+   - **`docs/conventions.md`**, in step 7: "Adding text" — an id named by
+     feature folder, the English beside it, `npm run i18n:extract`, then
+     French and Chinese with ’ rather than '.
+
 ## What v0.4 built
 
 **ADR-046 — invoicing.**

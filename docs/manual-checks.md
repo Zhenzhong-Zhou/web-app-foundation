@@ -355,7 +355,9 @@ folder by folder; these check what is already in place.
       add-product, add-variant and edit-variant dialogs, including each
       product type and unit of measure by name;
     - partners: the list, the detail page with its addresses and contacts,
-      and the partner, address and contact dialogs.
+      and the partner, address and contact dialogs;
+    - locations: the tree with its chips, and the add and edit dialogs,
+      each location type by name.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -412,3 +414,4 @@ first.
 - 2026-10-04: ADR-054, product names in other languages: MC-1407, MC-1408.
 - 2026-10-04: ADR-054, partners: MC-1406 extended.
 - 2026-10-04: ADR-054, a partner's document languages: MC-1409.
+- 2026-10-05: ADR-054, locations: MC-1406 extended.

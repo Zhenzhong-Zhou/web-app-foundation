@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
@@ -29,6 +30,7 @@ import { childrenOf } from './tree';
  * recursive and has nothing to do with either.
  */
 export function LocationsPage() {
+  const intl = useIntl();
   const can = useCan();
 
   const {
@@ -51,7 +53,10 @@ export function LocationsPage() {
     <Stack spacing={3}>
       <PageHeader
         crumbs={[]}
-        title="Locations"
+        title={intl.formatMessage({
+          id: 'layout.nav.locations',
+          defaultMessage: 'Locations',
+        })}
         actions={
           <Stack direction="row" spacing={1}>
             <Button
@@ -59,11 +64,17 @@ export function LocationsPage() {
               disabled={loading}
               onClick={() => void reload()}
             >
-              Refresh
+              {intl.formatMessage({
+                id: 'common.refresh',
+                defaultMessage: 'Refresh',
+              })}
             </Button>
             {canCreate && (
               <Button onClick={openDialog(() => setCreating(true))}>
-                Add location
+                {intl.formatMessage({
+                  id: 'locations.add',
+                  defaultMessage: 'Add location',
+                })}
               </Button>
             )}
           </Stack>
@@ -101,9 +112,11 @@ export function LocationsPage() {
           </Box>
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
-            No locations yet. Start with a site — a building or an address. You
-            can add zones, aisles, and bins inside it later, or leave it as one
-            room.
+            {intl.formatMessage({
+              id: 'locations.empty',
+              defaultMessage:
+                'No locations yet. Start with a site — a building or an address. You can add zones, aisles, and bins inside it later, or leave it as one room.',
+            })}
           </Typography>
         )}
       </Paper>
