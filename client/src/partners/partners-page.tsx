@@ -15,10 +15,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
+import { NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { Partner } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -39,6 +41,7 @@ import { EditPartnerDialog } from './edit-partner-dialog';
  * inactive partner would be a mistake.
  */
 export function PartnersPage() {
+  const intl = useIntl();
   const can = useCan();
 
   const {
@@ -58,7 +61,10 @@ export function PartnersPage() {
     <Stack spacing={3}>
       <PageHeader
         crumbs={[]}
-        title="Partners"
+        title={intl.formatMessage({
+          id: 'layout.nav.partners',
+          defaultMessage: 'Partners',
+        })}
         actions={
           <Stack direction="row" spacing={1}>
             <Button
@@ -66,11 +72,17 @@ export function PartnersPage() {
               disabled={loading}
               onClick={() => void reload()}
             >
-              Refresh
+              {intl.formatMessage({
+                id: 'common.refresh',
+                defaultMessage: 'Refresh',
+              })}
             </Button>
             {canCreate && (
               <Button onClick={openDialog(() => setCreating(true))}>
-                Add partner
+                {intl.formatMessage({
+                  id: 'partners.add',
+                  defaultMessage: 'Add partner',
+                })}
               </Button>
             )}
           </Stack>
@@ -94,13 +106,40 @@ export function PartnersPage() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Code</TableCell>
-                  <TableCell>Tax ID</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.name',
+                      defaultMessage: 'Name',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'partners.code',
+                      defaultMessage: 'Code',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'partners.taxId',
+                      defaultMessage: 'Tax ID',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.status',
+                      defaultMessage: 'Status',
+                    })}
+                  </TableCell>
                   {/* The column exists only when it can hold anything. An empty
                     actions column is a promise the screen cannot keep. */}
-                  {canEdit && <TableCell align="right">Edit</TableCell>}
+                  {canEdit && (
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'common.edit',
+                        defaultMessage: 'Edit',
+                      })}
+                    </TableCell>
+                  )}
                 </TableRow>
               </TableHead>
 
@@ -118,17 +157,26 @@ export function PartnersPage() {
 
                     {/* An em dash rather than an empty cell: blank reads as a
                       rendering fault, and every one of these is optional. */}
-                    <TableCell>{partner.code ?? '—'}</TableCell>
-                    <TableCell>{partner.taxId ?? '—'}</TableCell>
+                    <TableCell>{partner.code ?? NO_VALUE}</TableCell>
+                    <TableCell>{partner.taxId ?? NO_VALUE}</TableCell>
 
                     <TableCell>
                       {partner.isActive ? (
-                        'Active'
+                        intl.formatMessage({
+                          id: 'common.active',
+                          defaultMessage: 'Active',
+                        })
                       ) : (
                         // Retired rather than deleted: a partner referenced by
                         // an order cannot be removed without inventing gaps in
                         // the history the order exists to record.
-                        <Chip label="Retired" size="small" />
+                        <Chip
+                          label={intl.formatMessage({
+                            id: 'common.retired',
+                            defaultMessage: 'Retired',
+                          })}
+                          size="small"
+                        />
                       )}
                     </TableCell>
 
@@ -139,7 +187,10 @@ export function PartnersPage() {
                           size="small"
                           onClick={openDialog(() => setEditing(partner))}
                         >
-                          Edit
+                          {intl.formatMessage({
+                            id: 'common.edit',
+                            defaultMessage: 'Edit',
+                          })}
                         </Button>
                       </TableCell>
                     )}
@@ -150,8 +201,11 @@ export function PartnersPage() {
           </TableContainer>
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
-            No partners yet. Add the firms you buy from and sell to — an order
-            needs one before it can be raised. The same partner can be both.
+            {intl.formatMessage({
+              id: 'partners.empty',
+              defaultMessage:
+                'No partners yet. Add the firms you buy from and sell to — an order needs one before it can be raised. The same partner can be both.',
+            })}
           </Typography>
         )}
       </Paper>

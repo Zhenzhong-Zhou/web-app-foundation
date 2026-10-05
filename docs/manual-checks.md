@@ -345,7 +345,9 @@ folder by folder; these check what is already in place.
       and Recent activity;
     - products: the list, the detail page with its variants, and the
       add-product, add-variant and edit-variant dialogs, including each
-      product type and unit of measure by name.
+      product type and unit of measure by name;
+    - partners: the list, the detail page with its addresses and contacts,
+      and the partner, address and contact dialogs.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -400,3 +402,4 @@ first.
 - 2026-10-04: ADR-054, the account: MC-1406 extended.
 - 2026-10-04: ADR-054, products: MC-1406 extended.
 - 2026-10-04: ADR-054, product names in other languages: MC-1407, MC-1408.
+- 2026-10-04: ADR-054, partners: MC-1406 extended.

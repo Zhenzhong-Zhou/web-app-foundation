@@ -7,6 +7,7 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -24,6 +25,7 @@ export function CreatePartnerDialog({
   onClose: () => void;
   onCreated: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState(EMPTY);
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -31,7 +33,12 @@ export function CreatePartnerDialog({
       close();
       await onCreated();
     },
-    { success: 'Partner added' },
+    {
+      success: intl.formatMessage({
+        id: 'partners.added',
+        defaultMessage: 'Partner added',
+      }),
+    },
   );
 
   function close() {
@@ -72,7 +79,12 @@ export function CreatePartnerDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Add a partner</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'partners.create.title',
+            defaultMessage: 'Add a partner',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -80,38 +92,62 @@ export function CreatePartnerDialog({
 
             <TextField
               id="partner-name"
-              label="Name"
+              label={intl.formatMessage({
+                id: 'common.name',
+                defaultMessage: 'Name',
+              })}
               required
               fullWidth
               value={form.name}
               onChange={update('name')}
-              helperText="Names are not unique — two branches of one company are two partners."
+              helperText={intl.formatMessage({
+                id: 'partners.name.help',
+                defaultMessage:
+                  'Names are not unique — two branches of one company are two partners.',
+              })}
               slotProps={{ htmlInput: { maxLength: 200 } }}
             />
 
             <TextField
               id="partner-code"
-              label="Code"
+              label={intl.formatMessage({
+                id: 'partners.code',
+                defaultMessage: 'Code',
+              })}
               fullWidth
               value={form.code}
               onChange={update('code')}
-              helperText="Your own reference — a supplier number, a customer code. Unique within your organization if you use one."
+              helperText={intl.formatMessage({
+                id: 'partners.code.help',
+                defaultMessage:
+                  'Your own reference — a supplier number, a customer code. Unique within your organization if you use one.',
+              })}
               slotProps={{ htmlInput: { maxLength: 64 } }}
             />
 
             <TextField
               id="partner-tax-id"
-              label="Tax ID"
+              label={intl.formatMessage({
+                id: 'partners.taxId',
+                defaultMessage: 'Tax ID',
+              })}
               fullWidth
               value={form.taxId}
               onChange={update('taxId')}
-              helperText="VAT, GST, EIN — whatever applies. Stored as typed, never validated."
+              helperText={intl.formatMessage({
+                id: 'partners.taxId.help',
+                defaultMessage:
+                  'VAT, GST, EIN — whatever applies. Stored as typed, never validated.',
+              })}
               slotProps={{ htmlInput: { maxLength: 64 } }}
             />
 
             <TextField
               id="partner-notes"
-              label="Notes"
+              label={intl.formatMessage({
+                id: 'common.notes',
+                defaultMessage: 'Notes',
+              })}
               fullWidth
               multiline
               minRows={3}
@@ -121,9 +157,11 @@ export function CreatePartnerDialog({
             />
 
             <Typography variant="caption" color="text.secondary">
-              One list for both sides of the trade. There is nothing to pick
-              here — whether this partner is a supplier or a customer follows
-              from the orders you raise against them.
+              {intl.formatMessage({
+                id: 'partners.create.oneList',
+                defaultMessage:
+                  'One list for both sides of the trade. There is nothing to pick here — whether this partner is a supplier or a customer follows from the orders you raise against them.',
+              })}
             </Typography>
           </Stack>
         </DialogContent>
@@ -131,8 +169,14 @@ export function CreatePartnerDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Add partner"
-          pendingLabel="Adding…"
+          label={intl.formatMessage({
+            id: 'partners.add',
+            defaultMessage: 'Add partner',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.adding',
+            defaultMessage: 'Adding…',
+          })}
         />
       </form>
     </Dialog>
