@@ -1,8 +1,26 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
+  resolve: {
+    /**
+     * In a production build, the ICU parser is swapped for its stub (ADR-054).
+     * Every catalogue reaches the browser already parsed (npm run
+     * i18n:compile), so the parser would be weight with nothing to do. Dev
+     * and the tests keep it, so a message added in code and not yet
+     * extracted still renders from its English while someone works on it.
+     */
+    alias:
+      command === 'build'
+        ? [
+            {
+              find: /^@formatjs\/icu-messageformat-parser$/,
+              replacement: '@formatjs/icu-messageformat-parser/no-parser.js',
+            },
+          ]
+        : [],
+  },
   // Raised from Vite's 500KB default. MUI is most of the bundle, and ADR-021
   // accepts that: this surface sits behind a login wall, where first paint is
   // not a conversion metric. Revisit when step 9 adds Refine — that is when
@@ -28,4 +46,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

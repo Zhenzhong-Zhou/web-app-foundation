@@ -2,6 +2,7 @@ import { Alert, Button, Link, TextField, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
+import { useLanguage } from '../i18n/use-language';
 import { api } from '../lib/api';
 import {
   EMAIL_MAX_LENGTH,
@@ -26,6 +27,7 @@ import { useAuth } from './use-auth';
  */
 export function RegisterPage() {
   const { refresh } = useAuth();
+  const { locale } = useLanguage();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -48,9 +50,11 @@ export function RegisterPage() {
     setError(null);
 
     try {
+      // The language chosen on these pages becomes the account's, so the
+      // verification email and every screen after it speak it (ADR-054).
       await api('/auth/register', {
         method: 'POST',
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, locale }),
       });
 
       // Registration signs the user in, so the cookie is already set. Read

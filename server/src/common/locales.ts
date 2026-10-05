@@ -8,7 +8,8 @@
  * listed falls back to English instead of failing.
  *
  * The client keeps its own copy (client/src/lib/locales.ts), since the two
- * packages share no files. The two lists must say the same thing.
+ * packages share no files; server/scripts/check-client-locales.js fails CI
+ * when they disagree.
  */
 export const SUPPORTED_LOCALES = ['en', 'fr-CA', 'zh-Hans'] as const;
 

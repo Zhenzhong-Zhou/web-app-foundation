@@ -300,6 +300,23 @@ backup scripts or workflows. The steps are in `docs/runbooks/restore.md`.
 - **MC-1304** The private key is in the password manager and on paper, and
   nowhere in the repository, an issue or a chat.
 
+## 14. Languages (ADR-054)
+
+Most screens stay in English until their words move into the catalogue,
+folder by folder; these check what is already in place.
+
+- **MC-1401** The account menu and the sign-in page each offer English,
+  Français (Canada) and 简体中文, every language in its own name. Choosing
+  French turns the picker's own label to « Langue » and MUI's own text
+  (a table's "Rows per page") to French, at once, with no reload.
+- **MC-1402** Signed in, choose 简体中文, sign out: the sign-in page is
+  still in it. Sign in on another browser: it opens in 简体中文 too.
+- **MC-1403** Signed out, choose Français on the register page and create
+  an account: after signing in, and on another browser, it is in French.
+- **MC-1404** In English, nothing has changed: dates read as the browser's
+  English writes them (10 Oct 2026 with a British browser, Oct 10, 2026 with
+  an American one), and quantities and money as before.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -342,3 +359,4 @@ first.
   MC-511 extended; MC-R04 added.
 - 2026-10-03: ADR-053, backups: section 13, MC-1301 to MC-1304.
 - 2026-10-02: the Duplicate order fix: MC-403 rewritten, MC-R05 added.
+- 2026-10-04: ADR-054, client foundations: section 14, MC-1401 to MC-1404.

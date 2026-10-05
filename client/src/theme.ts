@@ -1,4 +1,11 @@
-import { createTheme } from '@mui/material/styles';
+import { enUS, frFR, zhCN } from '@mui/material/locale';
+import {
+  createTheme,
+  type Theme,
+  type ThemeOptions,
+} from '@mui/material/styles';
+
+import type { Locale } from './lib/locales';
 
 /**
  * CSS variables rather than runtime palette switching: the mode changes by
@@ -9,7 +16,7 @@ import { createTheme } from '@mui/material/styles';
  * The default follows the OS only, which would leave 'system' as the only
  * option.
  */
-export const theme = createTheme({
+const options: ThemeOptions = {
   cssVariables: { colorSchemeSelector: 'class' },
   colorSchemes: { light: true, dark: true },
   // System stack rather than MUI's default Roboto, which is not installed —
@@ -51,4 +58,23 @@ export const theme = createTheme({
       },
     },
   },
-});
+};
+
+/** MUI's own words in each language: Simplified Chinese is zhCN. */
+const MUI_LOCALES = { en: enUS, 'fr-CA': frFR, 'zh-Hans': zhCN };
+
+const themes = new Map<Locale, Theme>();
+
+/**
+ * The theme in a language (ADR-054): the same design, with MUI's built-in
+ * text — pagination, "No options", "Close" — in it. Built once per
+ * language and kept, so switching back costs nothing.
+ */
+export function themeFor(locale: Locale): Theme {
+  let theme = themes.get(locale);
+  if (!theme) {
+    theme = createTheme(options, MUI_LOCALES[locale]);
+    themes.set(locale, theme);
+  }
+  return theme;
+}

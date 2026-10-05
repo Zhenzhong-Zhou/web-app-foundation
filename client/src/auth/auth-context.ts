@@ -1,8 +1,17 @@
 import { createContext } from 'react';
 
+import type { Locale } from '../lib/locales';
+
 /** Mirrors CurrentSession from the server's auth.service.ts. */
 export interface CurrentSession {
-  user: { id: string; email: string; name: string; emailVerified: boolean };
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    emailVerified: boolean;
+    /** The account's language (ADR-054); null follows the browser. */
+    locale: Locale | null;
+  };
   /** Null when the caller belongs to no organization — see SessionGuard. */
   organization: { id: string; name: string; roleId: string } | null;
   /**

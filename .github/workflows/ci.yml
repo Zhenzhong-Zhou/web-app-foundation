@@ -36,6 +36,11 @@ jobs:
       - run: npm run lint:ci
         working-directory: client
 
+      # The catalogues against the code and each other (ADR-054): a message
+      # never extracted, a translation missing, or a placeholder renamed.
+      - run: npm run i18n:check
+        working-directory: client
+
       - run: npm run format:check
         working-directory: client
 
@@ -140,6 +145,11 @@ jobs:
       # button nobody can see.
       - name: Check client permissions
         run: node scripts/check-client-permissions.js
+        working-directory: server
+
+      # The same for the language list (ADR-054).
+      - name: Check client languages
+        run: node scripts/check-client-locales.js
         working-directory: server
 
       # From an empty database every time, which is the path production takes

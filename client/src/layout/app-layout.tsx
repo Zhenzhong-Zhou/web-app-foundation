@@ -29,6 +29,7 @@ import { type Permission, useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
+import { LanguageSelect } from '../components/language-select';
 import { api } from '../lib/api';
 import { NotificationBell } from './notification-bell';
 
@@ -250,6 +251,12 @@ export function AppLayout() {
               sx={{ '&:hover': { bgcolor: 'transparent' } }}
             >
               <ColorModeSelect />
+            </MenuItem>
+            <MenuItem
+              disableRipple
+              sx={{ '&:hover': { bgcolor: 'transparent' } }}
+            >
+              <LanguageSelect />
             </MenuItem>
 
             <Divider />

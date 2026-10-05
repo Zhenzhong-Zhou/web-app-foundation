@@ -5,6 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import formatjs from 'eslint-plugin-formatjs';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export default defineConfig([
@@ -27,6 +28,7 @@ export default defineConfig([
     },
     plugins: {
       'simple-import-sort': simpleImportSort,
+      formatjs,
     },
     rules: {
       /**
@@ -36,6 +38,25 @@ export default defineConfig([
        */
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
+
+      /**
+       * Every message carries its English beside its id, as a literal the
+       * extractor can read, and uses the placeholders it is given (ADR-054).
+       */
+      'formatjs/enforce-default-message': ['error', 'literal'],
+      'formatjs/enforce-placeholders': 'error',
+    },
+  },
+  {
+    /**
+     * No English typed straight into JSX where the language has reached
+     * (ADR-054). Switched on one folder at a time as each is converted, and
+     * everywhere once the last one is; a file listed here can no longer
+     * gain a hard-coded label by accident.
+     */
+    files: ['src/i18n/**/*.tsx', 'src/components/language-select.tsx'],
+    rules: {
+      'formatjs/no-literal-string-in-jsx': 'error',
     },
   },
   {
