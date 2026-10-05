@@ -1,4 +1,5 @@
 import { Box, Button, type SxProps, type Theme } from '@mui/material';
+import { useIntl } from 'react-intl';
 
 /**
  * The foot of a keyset list: Load more, and "Loading…" while a page is on
@@ -24,6 +25,8 @@ export function LoadMoreButton({
   /** Spacing from what sits above it, where the list needs some. */
   sx?: SxProps<Theme>;
 }) {
+  const intl = useIntl();
+
   if (!hasMore) return null;
 
   return (
@@ -38,7 +41,15 @@ export function LoadMoreButton({
         onClick={() => void onLoadMore()}
         disabled={loading}
       >
-        {loading ? 'Loading…' : 'Load more'}
+        {loading
+          ? intl.formatMessage({
+              id: 'common.loading',
+              defaultMessage: 'Loading…',
+            })
+          : intl.formatMessage({
+              id: 'components.loadMore',
+              defaultMessage: 'Load more',
+            })}
       </Button>
     </Box>
   );

@@ -56,11 +56,15 @@ export default defineConfig([
      */
     files: [
       'src/i18n/**/*.tsx',
-      'src/components/language-select.tsx',
       'src/auth/**/*.tsx',
       'src/layout/**/*.tsx',
       'src/App.tsx',
+      'src/components/**/*.tsx',
     ],
+    // Specs render with made-up labels on purpose. The print sheet is a
+    // document, in the customer's language rather than the reader's, and
+    // moves with the printed documents (ADR-054, step 5).
+    ignores: ['**/*.test.tsx', 'src/components/print-sheet.tsx'],
     rules: {
       /**
        * The rule's defaults check JSX text, aria-* everywhere, and

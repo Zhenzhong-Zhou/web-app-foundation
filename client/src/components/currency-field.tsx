@@ -1,4 +1,5 @@
 import { TextField, type TextFieldProps } from '@mui/material';
+import { useIntl } from 'react-intl';
 
 /**
  * A three-letter ISO 4217 code, uppercased as it is typed.
@@ -15,17 +16,25 @@ import { TextField, type TextFieldProps } from '@mui/material';
 export function CurrencyField({
   value,
   onChange,
-  label = 'Currency',
+  label,
   ...props
 }: Omit<TextFieldProps, 'value' | 'onChange' | 'slotProps'> & {
   value: string;
   /** Called with the code already uppercased. */
   onChange: (currency: string) => void;
 }) {
+  const intl = useIntl();
+
   return (
     <TextField
       {...props}
-      label={label}
+      label={
+        label ??
+        intl.formatMessage({
+          id: 'components.currency.label',
+          defaultMessage: 'Currency',
+        })
+      }
       value={value}
       onChange={(event) => onChange(event.target.value.toUpperCase())}
       slotProps={{ htmlInput: { maxLength: 3 } }}

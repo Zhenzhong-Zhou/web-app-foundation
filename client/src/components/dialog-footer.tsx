@@ -1,4 +1,5 @@
 import { Button, DialogActions } from '@mui/material';
+import { useIntl } from 'react-intl';
 
 /**
  * The foot of a dialog that does one thing: Cancel, and the action, which
@@ -26,7 +27,7 @@ export function DialogFooter({
   pendingLabel,
   disabled = false,
   destructive = false,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   onConfirm,
 }: {
   submitting: boolean;
@@ -42,10 +43,16 @@ export function DialogFooter({
   cancelLabel?: string;
   onConfirm?: () => void;
 }) {
+  const intl = useIntl();
+
   return (
     <DialogActions>
       <Button variant="text" onClick={onCancel} disabled={submitting}>
-        {cancelLabel}
+        {cancelLabel ??
+          intl.formatMessage({
+            id: 'common.cancel',
+            defaultMessage: 'Cancel',
+          })}
       </Button>
       <Button
         type={onConfirm ? 'button' : 'submit'}

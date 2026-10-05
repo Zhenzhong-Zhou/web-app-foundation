@@ -1,4 +1,5 @@
 import { Autocomplete, TextField } from '@mui/material';
+import { useIntl } from 'react-intl';
 
 import { itemName } from '../lib/format';
 import type { VariantOption } from '../lib/types';
@@ -42,6 +43,7 @@ export function VariantPicker({
   disabled?: boolean;
   helperText?: string;
 }) {
+  const intl = useIntl();
   const selected = options.find((option) => option.id === value) ?? null;
 
   return (
@@ -54,7 +56,10 @@ export function VariantPicker({
       isOptionEqualToValue={(option, current) => option.id === current.id}
       disabled={disabled}
       fullWidth
-      noOptionsText="No matching items"
+      noOptionsText={intl.formatMessage({
+        id: 'components.variantPicker.noMatches',
+        defaultMessage: 'No matching items',
+      })}
       renderInput={(params) => (
         <TextField
           {...params}

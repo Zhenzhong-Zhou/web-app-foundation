@@ -1,4 +1,5 @@
 import { Alert } from '@mui/material';
+import { useIntl } from 'react-intl';
 
 /**
  * The error line above a form's fields.
@@ -10,8 +11,16 @@ import { Alert } from '@mui/material';
  * already says what the person was doing.
  */
 export function FormError({ message }: { message: string }) {
+  const intl = useIntl();
+
   return (
-    <Alert severity="error" aria-label="Error">
+    <Alert
+      severity="error"
+      aria-label={intl.formatMessage({
+        id: 'components.formError.label',
+        defaultMessage: 'Error',
+      })}
+    >
       {message}
     </Alert>
   );
