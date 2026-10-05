@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { type MouseEvent, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
 import { api } from '../lib/api';
@@ -60,6 +61,7 @@ function linkFor(entry: Notification): string | null {
  * within the minute, and neither is worth a socket.
  */
 export function NotificationBell() {
+  const intl = useIntl();
   const navigate = useNavigate();
 
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
@@ -138,12 +140,25 @@ export function NotificationBell() {
     );
   }
 
+  const title = intl.formatMessage({
+    id: 'layout.notifications.title',
+    defaultMessage: 'Notifications',
+  });
+
   return (
     <>
-      <Tooltip title="Notifications">
+      <Tooltip title={title}>
         <IconButton
           aria-label={
-            count > 0 ? `Notifications, ${count} unread` : 'Notifications'
+            count > 0
+              ? intl.formatMessage(
+                  {
+                    id: 'layout.notifications.unread',
+                    defaultMessage: 'Notifications, {count} unread',
+                  },
+                  { count },
+                )
+              : title
           }
           onClick={(event) => void open(event)}
         >
@@ -165,12 +180,15 @@ export function NotificationBell() {
           sx={{ alignItems: 'center', px: 2, py: 1 }}
         >
           <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
-            Notifications
+            {title}
           </Typography>
 
           {count > 0 && (
             <Button size="small" variant="text" onClick={() => void readAll()}>
-              Mark all read
+              {intl.formatMessage({
+                id: 'layout.notifications.markAllRead',
+                defaultMessage: 'Mark all read',
+              })}
             </Button>
           )}
         </Stack>
@@ -179,13 +197,23 @@ export function NotificationBell() {
 
         {entries === null && (
           <MenuItem disabled>
-            <Typography variant="body2">Loading…</Typography>
+            <Typography variant="body2">
+              {intl.formatMessage({
+                id: 'common.loading',
+                defaultMessage: 'Loading…',
+              })}
+            </Typography>
           </MenuItem>
         )}
 
         {entries?.length === 0 && (
           <MenuItem disabled>
-            <Typography variant="body2">Nothing yet.</Typography>
+            <Typography variant="body2">
+              {intl.formatMessage({
+                id: 'layout.notifications.empty',
+                defaultMessage: 'Nothing yet.',
+              })}
+            </Typography>
           </MenuItem>
         )}
 

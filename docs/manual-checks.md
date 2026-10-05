@@ -319,11 +319,17 @@ folder by folder; these check what is already in place.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
-- **MC-1406** Signed out, in Français and in 简体中文: the sign-in,
-  register, forgot-password, reset and verify pages read entirely in that
-  language, including the rate-limit message after too many sign-ins. A
-  wrong password still shows the server's own words, in English, until the
-  server translates (ADR-054, step 6).
+- **MC-1406** In Français and in 简体中文, every area converted so far
+  reads entirely in that language, with no English left on it:
+    - signed out: sign-in, register, forgot-password, reset and verify,
+      including the rate-limit message after too many sign-ins;
+    - the frame: the navigation bar, the drawer on a narrow window, the
+      account menu, the notification bell, the email-confirmation banner,
+      the page-not-found screen and the could-not-reach-the-server screen.
+
+  A refusal from the server (a wrong password, a rule broken) stays in
+  English until the server translates (ADR-054, step 6), and so do
+  notifications written before that.
 
 ## Regressions
 
@@ -369,3 +375,4 @@ first.
 - 2026-10-02: the Duplicate order fix: MC-403 rewritten, MC-R05 added.
 - 2026-10-04: ADR-054, client foundations: section 14, MC-1401 to MC-1404.
 - 2026-10-04: ADR-054, the signed-out pages: MC-1405 and MC-1406.
+- 2026-10-04: ADR-054, the frame: MC-1406 extended.

@@ -58,6 +58,8 @@ export default defineConfig([
       'src/i18n/**/*.tsx',
       'src/components/language-select.tsx',
       'src/auth/**/*.tsx',
+      'src/layout/**/*.tsx',
+      'src/App.tsx',
     ],
     rules: {
       /**

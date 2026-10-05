@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
+import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 
 import { type Permission, useCan } from '../auth/permissions';
@@ -34,11 +35,38 @@ import { api } from '../lib/api';
 import { NotificationBell } from './notification-bell';
 
 interface NavItem {
-  label: string;
+  label: MessageDescriptor;
   to: string;
   /** Hidden from anyone without it. The server's guard is the real check. */
   permission?: Permission;
 }
+
+const labels = defineMessages({
+  inventory: { id: 'layout.nav.inventory', defaultMessage: 'Inventory' },
+  movements: { id: 'layout.nav.movements', defaultMessage: 'Movements' },
+  orders: { id: 'layout.nav.orders', defaultMessage: 'Orders' },
+  invoices: { id: 'layout.nav.invoices', defaultMessage: 'Invoices' },
+  returns: { id: 'layout.nav.returns', defaultMessage: 'Returns' },
+  products: { id: 'layout.nav.products', defaultMessage: 'Products' },
+  partners: { id: 'layout.nav.partners', defaultMessage: 'Partners' },
+  locations: { id: 'layout.nav.locations', defaultMessage: 'Locations' },
+  production: { id: 'layout.nav.production', defaultMessage: 'Production' },
+  account: { id: 'layout.menu.account', defaultMessage: 'Account' },
+  devices: { id: 'layout.menu.devices', defaultMessage: 'Devices' },
+  members: { id: 'layout.menu.members', defaultMessage: 'Members' },
+  organization: {
+    id: 'layout.menu.organization',
+    defaultMessage: 'Organization',
+  },
+  taxCodes: { id: 'layout.menu.taxCodes', defaultMessage: 'Tax codes' },
+  exchangeRates: {
+    id: 'layout.menu.exchangeRates',
+    defaultMessage: 'Exchange rates',
+  },
+  priceLists: { id: 'layout.menu.priceLists', defaultMessage: 'Price lists' },
+  stockValue: { id: 'layout.menu.stockValue', defaultMessage: 'Stock value' },
+  auditLog: { id: 'layout.menu.auditLog', defaultMessage: 'Audit log' },
+});
 
 /**
  * The work, in the order it happens: what you have, what you have asked for,
@@ -49,48 +77,52 @@ interface NavItem {
  * visited daily, those are visited when something is wrong.
  */
 const NAV: NavItem[] = [
-  { label: 'Inventory', to: '/inventory', permission: 'stock.view' },
-  { label: 'Movements', to: '/movements', permission: 'stock.view' },
-  { label: 'Orders', to: '/orders', permission: 'orders.view' },
-  { label: 'Invoices', to: '/invoices', permission: 'invoices.view' },
+  { label: labels.inventory, to: '/inventory', permission: 'stock.view' },
+  { label: labels.movements, to: '/movements', permission: 'stock.view' },
+  { label: labels.orders, to: '/orders', permission: 'orders.view' },
+  { label: labels.invoices, to: '/invoices', permission: 'invoices.view' },
   {
-    label: 'Returns',
+    label: labels.returns,
     to: '/return-authorizations',
     permission: 'return_authorizations.view',
   },
-  { label: 'Products', to: '/products', permission: 'products.view' },
-  { label: 'Partners', to: '/partners', permission: 'partners.view' },
-  { label: 'Locations', to: '/locations', permission: 'locations.view' },
-  { label: 'Production', to: '/production', permission: 'production.view' },
+  { label: labels.products, to: '/products', permission: 'products.view' },
+  { label: labels.partners, to: '/partners', permission: 'partners.view' },
+  { label: labels.locations, to: '/locations', permission: 'locations.view' },
+  {
+    label: labels.production,
+    to: '/production',
+    permission: 'production.view',
+  },
 ];
 
 /** Reached occasionally, and not worth a slot in the bar. */
 const ACCOUNT_MENU: NavItem[] = [
-  { label: 'Account', to: '/account' },
-  { label: 'Devices', to: '/account/sessions' },
-  { label: 'Members', to: '/members' },
+  { label: labels.account, to: '/account' },
+  { label: labels.devices, to: '/account/sessions' },
+  { label: labels.members, to: '/members' },
   {
-    label: 'Organization',
+    label: labels.organization,
     to: '/settings/organization',
     permission: 'organizations.view',
   },
   {
-    label: 'Tax codes',
+    label: labels.taxCodes,
     to: '/settings/tax-codes',
     permission: 'tax_codes.view',
   },
   {
-    label: 'Exchange rates',
+    label: labels.exchangeRates,
     to: '/settings/exchange-rates',
     permission: 'costs.view',
   },
   {
-    label: 'Price lists',
+    label: labels.priceLists,
     to: '/settings/price-lists',
     permission: 'price_lists.view',
   },
-  { label: 'Stock value', to: '/costs', permission: 'costs.view' },
-  { label: 'Audit log', to: '/audit', permission: 'audit.view' },
+  { label: labels.stockValue, to: '/costs', permission: 'costs.view' },
+  { label: labels.auditLog, to: '/audit', permission: 'audit.view' },
 ];
 
 /**
@@ -122,6 +154,7 @@ function isActive(pathname: string, to: string): boolean {
  * behind a prop would be one component pretending to be two.
  */
 export function AppLayout() {
+  const intl = useIntl();
   const { session, refresh } = useAuth();
   const can = useCan();
   const location = useLocation();
@@ -140,7 +173,16 @@ export function AppLayout() {
   const visible = (item: NavItem) => !item.permission || can(item.permission);
 
   const links = NAV.filter(visible);
-  const orgName = session?.organization?.name ?? 'No organization';
+  const orgName =
+    session?.organization?.name ??
+    intl.formatMessage({
+      id: 'layout.noOrganization',
+      defaultMessage: 'No organization',
+    });
+  const mainNav = intl.formatMessage({
+    id: 'layout.mainNavigation',
+    defaultMessage: 'Main',
+  });
 
   return (
     <Box>
@@ -161,7 +203,10 @@ export function AppLayout() {
         <Toolbar sx={{ gap: 1 }}>
           <IconButton
             edge="start"
-            aria-label="Open navigation"
+            aria-label={intl.formatMessage({
+              id: 'layout.openNavigation',
+              defaultMessage: 'Open navigation',
+            })}
             onClick={() => setDrawer(true)}
             sx={{ display: { xs: 'inline-flex', [BAR]: 'none' } }}
           >
@@ -192,7 +237,7 @@ export function AppLayout() {
 
           <Box
             component="nav"
-            aria-label="Main"
+            aria-label={mainNav}
             sx={{
               display: { xs: 'none', [BAR]: 'flex' },
               gap: 0.5,
@@ -203,7 +248,7 @@ export function AppLayout() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                label={item.label}
+                label={intl.formatMessage(item.label)}
                 active={isActive(location.pathname, item.to)}
               />
             ))}
@@ -218,7 +263,20 @@ export function AppLayout() {
             edge="end"
             // The email rather than "Account": on a shared terminal, who you
             // are signed in as is the thing worth being able to check.
-            aria-label={`Signed in as ${session?.user.email ?? 'unknown'}`}
+            aria-label={intl.formatMessage(
+              {
+                id: 'layout.signedInAs',
+                defaultMessage: 'Signed in as {email}',
+              },
+              {
+                email:
+                  session?.user.email ??
+                  intl.formatMessage({
+                    id: 'layout.unknownUser',
+                    defaultMessage: 'unknown',
+                  }),
+              },
+            )}
             onClick={(event) => setMenu(event.currentTarget)}
           >
             <AccountCircle />
@@ -240,7 +298,7 @@ export function AppLayout() {
                 to={item.to}
                 onClick={() => setMenu(null)}
               >
-                {item.label}
+                {intl.formatMessage(item.label)}
               </MenuItem>
             ))}
 
@@ -271,7 +329,10 @@ export function AppLayout() {
                 void api('/auth/logout', { method: 'POST' }).then(refresh);
               }}
             >
-              Sign out
+              {intl.formatMessage({
+                id: 'layout.signOut',
+                defaultMessage: 'Sign out',
+              })}
             </MenuItem>
           </Menu>
         </Toolbar>
@@ -291,7 +352,10 @@ export function AppLayout() {
             {orgName}
           </Typography>
           <IconButton
-            aria-label="Close navigation"
+            aria-label={intl.formatMessage({
+              id: 'layout.closeNavigation',
+              defaultMessage: 'Close navigation',
+            })}
             onClick={() => setDrawer(false)}
           >
             <CloseIcon />
@@ -300,7 +364,7 @@ export function AppLayout() {
 
         <Divider />
 
-        <List component="nav" aria-label="Main" sx={{ px: 1 }}>
+        <List component="nav" aria-label={mainNav} sx={{ px: 1 }}>
           {links.map((item) => {
             const active = isActive(location.pathname, item.to);
 
@@ -314,7 +378,7 @@ export function AppLayout() {
                 onClick={() => setDrawer(false)}
                 sx={{ borderRadius: 1, mb: 0.5 }}
               >
-                <ListItemText primary={item.label} />
+                <ListItemText primary={intl.formatMessage(item.label)} />
               </ListItemButton>
             );
           })}
@@ -386,6 +450,7 @@ function NavLink({
  * "unverified" is a state with no way out.
  */
 function UnverifiedBanner() {
+  const intl = useIntl();
   const { session } = useAuth();
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -399,7 +464,12 @@ function UnverifiedBanner() {
         // 202 whether or not a message went out, so there is nothing to
         // report but that we tried.
         sent ? (
-          <Typography variant="body2">Sent</Typography>
+          <Typography variant="body2">
+            {intl.formatMessage({
+              id: 'layout.unverified.sent',
+              defaultMessage: 'Sent',
+            })}
+          </Typography>
         ) : (
           <Button
             variant="text"
@@ -412,12 +482,18 @@ function UnverifiedBanner() {
                 .finally(() => setSending(false));
             }}
           >
-            Resend
+            {intl.formatMessage({
+              id: 'layout.unverified.resend',
+              defaultMessage: 'Resend',
+            })}
           </Button>
         )
       }
     >
-      Confirm your email address to secure your account.
+      {intl.formatMessage({
+        id: 'layout.unverified.message',
+        defaultMessage: 'Confirm your email address to secure your account.',
+      })}
     </Alert>
   );
 }
