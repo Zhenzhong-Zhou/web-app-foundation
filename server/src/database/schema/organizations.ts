@@ -10,7 +10,12 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { isCurrencyCode, primaryKey, timestamps } from './columns';
+import {
+  isCurrencyCode,
+  languagesDiffer,
+  primaryKey,
+  timestamps,
+} from './columns';
 import { priceLists } from './price-lists';
 
 /**
@@ -96,6 +101,25 @@ export const organizations = pgTable(
      */
     licenceRequired: boolean('licence_required').notNull().default(false),
 
+    /**
+     * What this organization's documents print in, for partners with no
+     * choice of their own (ADR-054): one language, or two for a bilingual
+     * sheet — French with English, Chinese with English. English until
+     * someone chooses, since every document before ADR-054 was English.
+     */
+    documentLanguage: text('document_language').notNull().default('en'),
+    documentSecondLanguage: text('document_second_language'),
+
+    /**
+     * The languages every product must also be named in (ADR-054): issuing
+     * an invoice in one of them with an untranslated product is refused.
+     * Empty requires nothing, which is where an organization starts.
+     */
+    requiredNameLanguages: text('required_name_languages')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+
     ...timestamps,
   },
   (t) => [
@@ -120,6 +144,11 @@ export const organizations = pgTable(
     check(
       'organizations_licence_expired_policy_check',
       sql`${t.licenceExpiredPolicy} in ('block', 'override', 'allow')`,
+    ),
+    // No needs-first check: the first language is never null here.
+    check(
+      'organizations_document_languages_differ_check',
+      languagesDiffer(t.documentLanguage, t.documentSecondLanguage),
     ),
   ],
 );

@@ -12,12 +12,18 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { isCurrencyCode, primaryKey, timestamps } from './columns';
+import {
+  isCurrencyCode,
+  languagesDiffer,
+  primaryKey,
+  secondLanguageNeedsFirst,
+  timestamps,
+} from './columns';
 import { orders } from './orders';
 import { organizations } from './organizations';
 import { partners } from './partners';
 import { shipments } from './shipments';
-import { billToSnapshot, sellerSnapshot } from './snapshots';
+import { billToSnapshot, languageSnapshot, sellerSnapshot } from './snapshots';
 import { users } from './users';
 
 /**
@@ -105,6 +111,12 @@ export const invoices = pgTable(
     ...billToSnapshot(),
 
     /**
+     * Written at issue (ADR-054). A draft has none: it prints in what it
+     * would be issued in today.
+     */
+    ...languageSnapshot(),
+
+    /**
      * Where the goods went, copied from the order's own snapshot. Optional:
      * the order's ship-to may be empty, and an invoice is valid without one.
      */
@@ -152,6 +164,7 @@ export const invoices = pgTable(
       sql`${t.status} <> 'draft' or (
             ${t.number} is null and ${t.issuedAt} is null and ${t.issuedBy} is null
             and ${t.subtotal} is null and ${t.taxTotal} is null and ${t.total} is null
+            and ${t.language} is null and ${t.secondLanguage} is null
           )`,
     ),
 
@@ -193,6 +206,15 @@ export const invoices = pgTable(
     check(
       'invoices_due_after_issue_check',
       sql`${t.dueDate} is null or ${t.invoiceDate} is null or ${t.dueDate} >= ${t.invoiceDate}`,
+    ),
+
+    check(
+      'invoices_second_language_needs_first_check',
+      secondLanguageNeedsFirst(t.language, t.secondLanguage),
+    ),
+    check(
+      'invoices_languages_differ_check',
+      languagesDiffer(t.language, t.secondLanguage),
     ),
 
     check(

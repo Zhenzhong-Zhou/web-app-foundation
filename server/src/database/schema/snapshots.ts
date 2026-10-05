@@ -3,7 +3,8 @@ import { char, text, uuid } from 'drizzle-orm/pg-core';
 import { addresses } from './addresses';
 
 /**
- * Snapshot columns shared by invoices and credit notes (ADR-046).
+ * Snapshot columns shared by documents: the parties on invoices and credit
+ * notes (ADR-046), and the languages on those and on shipments (ADR-054).
  *
  * Not a table. Functions rather than objects, because Drizzle needs a fresh
  * column builder per table; spreading one shared object into two tables
@@ -48,4 +49,18 @@ export const billToSnapshot = () => ({
   billToRegion: text('bill_to_region'),
   billToPostalCode: text('bill_to_postal_code'),
   billToCountry: char('bill_to_country', { length: 2 }),
+});
+
+/**
+ * What the document is printed in (ADR-054): the partner's pair, else the
+ * organization's, resolved when it becomes a document. Stored so a reprint
+ * reads as the original did, whatever either setting says by then.
+ *
+ * Both nullable here: a draft invoice has none, and the documents written
+ * before ADR-054 were backfilled with English. Each table checks the pair
+ * with secondLanguageNeedsFirst and languagesDiffer (columns.ts).
+ */
+export const languageSnapshot = () => ({
+  language: text('language'),
+  secondLanguage: text('second_language'),
 });

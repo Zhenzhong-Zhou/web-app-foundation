@@ -44,3 +44,20 @@ export const timestamps = {
  */
 export const isCurrencyCode = (column: AnyPgColumn) =>
   sql`${column} ~ '^[A-Z]{3}$'`;
+
+/**
+ * The two rules of a language pair (ADR-054), as bare conditions for check
+ * constraints, like isCurrencyCode. A document prints in one language or
+ * two: no second without a first, and never the same one twice.
+ *
+ * Neither names a language. Which tags exist is SUPPORTED_LOCALES, checked
+ * by the DTOs, so adding a language is a catalogue and a constant, never a
+ * migration.
+ */
+export const secondLanguageNeedsFirst = (
+  first: AnyPgColumn,
+  second: AnyPgColumn,
+) => sql`${second} is null or ${first} is not null`;
+
+export const languagesDiffer = (first: AnyPgColumn, second: AnyPgColumn) =>
+  sql`${second} is null or ${second} <> ${first}`;

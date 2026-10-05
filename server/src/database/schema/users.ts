@@ -19,6 +19,15 @@ export const users = pgTable(
     passwordHash: text('password_hash'),
     name: text('name').notNull(),
 
+    /**
+     * The language the app speaks to this person (ADR-054): screens,
+     * refusals, their emails and notifications. A BCP 47 tag from
+     * SUPPORTED_LOCALES, checked by the DTOs. Null follows the browser, and
+     * where there is no browser to ask, the request that caused the email,
+     * else English.
+     */
+    locale: text('locale'),
+
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
 
     suspendedAt: timestamp('suspended_at', { withTimezone: true }),
