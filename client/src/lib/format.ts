@@ -1,6 +1,16 @@
 import { intl } from '../i18n/intl';
 
 /**
+ * Marks rather than words: what a screen shows for a value that is not
+ * there, and what sits between two values on one line. The same in every
+ * language, and named so no bare string sits in a screen's JSX, where the
+ * no-literal lint rule would rightly ask whether it needs translating
+ * (ADR-054).
+ */
+export const NO_VALUE = '—';
+export const SEPARATOR = ' · ';
+
+/**
  * The tag every formatter here uses (ADR-054): the chosen language, in the
  * browser's own region when it is the same language (formattingLocale in
  * locales.ts). LanguageProvider sets it before the screens render in a new

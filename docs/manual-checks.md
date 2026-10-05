@@ -328,7 +328,10 @@ folder by folder; these check what is already in place.
       the page-not-found screen and the could-not-reach-the-server screen.
     - shared pieces: the colour-mode choices, Cancel and Saving… in every
       dialog and settings section, Load more, the Back button, a picker's
-      "no matching items", and the page shown when a screen breaks.
+      "no matching items", and the page shown when a screen breaks;
+    - the account: the Account page with its language picker, the
+      password form and its devices-signed-out message, Active sessions
+      and Recent activity.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -380,3 +383,4 @@ first.
 - 2026-10-04: ADR-054, the signed-out pages: MC-1405 and MC-1406.
 - 2026-10-04: ADR-054, the frame: MC-1406 extended.
 - 2026-10-04: ADR-054, the shared components: MC-1406 extended.
+- 2026-10-04: ADR-054, the account: MC-1406 extended.
