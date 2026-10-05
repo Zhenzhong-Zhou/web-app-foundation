@@ -327,6 +327,14 @@ folder by folder; these check what is already in place.
   issuing an invoice for a product with no Chinese name is refused naming
   the SKU; after Edit names adds one, it issues, and its printed lines
   show the Chinese name.
+- **MC-1409** On a partner, Document languages: the first offers the
+  organization's default and each language; the second is greyed out
+  until a first is chosen and never offers the first again. Set Français
+  then English and save; ship to that partner: the shipment carries
+  fr-CA and en. Set the first back to the default: the second clears with
+  it, and the next shipment takes the organization's pair. The earlier
+  shipment keeps its own. A role without partners.update sees the section
+  but cannot save it.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -403,3 +411,4 @@ first.
 - 2026-10-04: ADR-054, products: MC-1406 extended.
 - 2026-10-04: ADR-054, product names in other languages: MC-1407, MC-1408.
 - 2026-10-04: ADR-054, partners: MC-1406 extended.
+- 2026-10-04: ADR-054, a partner's document languages: MC-1409.

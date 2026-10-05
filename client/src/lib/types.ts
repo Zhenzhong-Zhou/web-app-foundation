@@ -1,3 +1,5 @@
+import type { Locale } from './locales';
+
 /**
  * Shapes the server returns, shared rather than redeclared per feature.
  *
@@ -69,6 +71,12 @@ export interface Partner {
   /** The lists this partner's orders take default prices from (ADR-049). */
   salePriceListId: string | null;
   purchasePriceListId: string | null;
+  /**
+   * What its documents print in (ADR-054). Null on the first means the
+   * organization's pair; the second is only ever set with a first.
+   */
+  documentLanguage: Locale | null;
+  documentSecondLanguage: Locale | null;
   notes: string | null;
   isActive: boolean;
 }

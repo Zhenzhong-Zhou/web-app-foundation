@@ -25,6 +25,7 @@ import { PartnerPriceLists } from '../price-lists/partner-price-lists';
 import { AddressDialog } from './address-dialog';
 import { ContactDialog } from './contact-dialog';
 import { EditPartnerDialog } from './edit-partner-dialog';
+import { PartnerDocumentLanguages } from './partner-document-languages';
 
 function formatAddress(address: Address): string {
   return [
@@ -362,6 +363,17 @@ export function PartnerDetailPage() {
           onSaved={reload}
         />
       )}
+
+      {/* What this partner's documents print in (ADR-054). Remounted when
+          the saved pair changes, as the price lists above are. */}
+      <PartnerDocumentLanguages
+        key={`${partner.documentLanguage}:${partner.documentSecondLanguage}`}
+        partnerId={partner.id}
+        documentLanguage={partner.documentLanguage}
+        documentSecondLanguage={partner.documentSecondLanguage}
+        readOnly={!canEdit}
+        onSaved={reload}
+      />
 
       <EditPartnerDialog
         key={editingPartner ? partner.id : 'partner-closed'}
