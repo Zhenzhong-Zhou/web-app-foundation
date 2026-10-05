@@ -1,7 +1,15 @@
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
+import { IsLocale } from '../../../common/dto/locale';
 import { normalizeEmail } from '../../../common/dto/normalize-email';
 import { trim } from '../../../common/dto/trim';
+import type { Locale } from '../../../common/locales';
 
 export class RegisterDto {
   // Normalised here so it matches the lower(email) unique index, and so the
@@ -38,4 +46,13 @@ export class RegisterDto {
   @MinLength(1)
   @MaxLength(100)
   organizationName!: string;
+
+  /**
+   * The language the person registered in, if they chose one on the signed
+   * out pages (ADR-054). Stored, so the verification email and every screen
+   * after it speak it. Absent or null follows the browser.
+   */
+  @IsOptional()
+  @IsLocale()
+  locale?: Locale | null;
 }

@@ -11,6 +11,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { asc, eq, sql } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import type { Env } from '../../config/env';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
@@ -35,15 +36,8 @@ export interface AuthenticatedUser {
   email: string;
   name: string;
   emailVerified: boolean;
-  /** Null when a user belongs to no organization — see login(). */
-  organizationId: string | null;
-}
-
-export interface AuthenticatedUser {
-  id: string;
-  email: string;
-  name: string;
-  emailVerified: boolean;
+  /** Null follows the browser (ADR-054). */
+  locale: Locale | null;
   /** Null when a user belongs to no organization — see login(). */
   organizationId: string | null;
 }
@@ -54,6 +48,8 @@ export interface CurrentSession {
     email: string;
     name: string;
     emailVerified: boolean;
+    /** Null follows the browser (ADR-054). */
+    locale: Locale | null;
   };
   /** Null when the caller belongs to no organization — see SessionGuard. */
   organization: { id: string; name: string; roleId: string } | null;
@@ -125,6 +121,7 @@ export class AuthService implements OnModuleInit {
           email: input.email,
           passwordHash,
           name: input.name,
+          locale: input.locale ?? null,
           // Verification lands in step 5. Until then the account exists but is
           // unverified, and the UI shows a banner rather than blocking login.
           emailVerifiedAt: null,
@@ -133,6 +130,7 @@ export class AuthService implements OnModuleInit {
           id: users.id,
           email: users.email,
           name: users.name,
+          locale: users.locale,
         });
 
       // ADR-004: user + organization + Owner membership in ONE transaction.
@@ -189,6 +187,7 @@ export class AuthService implements OnModuleInit {
         id: users.id,
         email: users.email,
         name: users.name,
+        locale: users.locale,
         passwordHash: users.passwordHash,
         emailVerifiedAt: users.emailVerifiedAt,
         deletedAt: users.deletedAt,
@@ -270,6 +269,7 @@ export class AuthService implements OnModuleInit {
         email: row.email,
         name: row.name,
         emailVerified: row.emailVerifiedAt !== null,
+        locale: row.locale,
         organizationId: currentOrgId,
       },
       session,
@@ -313,6 +313,7 @@ export class AuthService implements OnModuleInit {
         email: users.email,
         name: users.name,
         emailVerifiedAt: users.emailVerifiedAt,
+        locale: users.locale,
       })
       .from(users)
       .where(eq(users.id, context.userId));
@@ -329,6 +330,7 @@ export class AuthService implements OnModuleInit {
         email: user.email,
         name: user.name,
         emailVerified: user.emailVerifiedAt !== null,
+        locale: user.locale,
       },
     };
 

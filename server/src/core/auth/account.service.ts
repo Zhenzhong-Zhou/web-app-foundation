@@ -14,6 +14,7 @@ import { users } from '../../database/schema';
 import { AccountEventService } from './account-event.service';
 import { AuthTokenService } from './auth-token.service';
 import type { ChangePasswordDto } from './dto/change-password.dto';
+import type { UpdateProfileDto } from './dto/update-profile.dto';
 import { PasswordService } from './password.service';
 import type { RequestContext } from './request-context';
 import { SessionService } from './session.service';
@@ -53,10 +54,26 @@ export class AccountService {
     private readonly events: AccountEventService,
   ) {}
 
-  async updateProfile(context: RequestContext, name: string): Promise<void> {
+  /**
+   * Name, language, or both. A field left out is left alone; nothing at all
+   * is a 204 that writes nothing and records nothing, as the organization's
+   * settings are.
+   */
+  async updateProfile(
+    context: RequestContext,
+    input: UpdateProfileDto,
+  ): Promise<void> {
+    const changes = {
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      // Null is a choice too: back to following the browser (ADR-054).
+      ...(input.locale !== undefined ? { locale: input.locale } : {}),
+    };
+
+    if (Object.keys(changes).length === 0) return;
+
     await this.db
       .update(users)
-      .set({ name })
+      .set(changes)
       .where(eq(users.id, context.userId));
 
     await this.events.record(context.userId, 'account.profile_updated', {

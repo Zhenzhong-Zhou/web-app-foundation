@@ -34,7 +34,7 @@ const SELF_SERVICE = new Map<string, string>([
     'AuthController.resendVerification',
     'Your own verification email, before you belong anywhere',
   ],
-  ['AccountController.updateProfile', 'Your own name'],
+  ['AccountController.updateProfile', 'Your own name and language'],
   ['AccountController.changePassword', 'Your own password'],
   ['AccountController.listSessions', 'Your own sessions'],
   ['AccountController.revokeSession', 'Ending one of your own sessions'],

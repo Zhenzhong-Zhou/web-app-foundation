@@ -7,6 +7,7 @@ import {
 } from '../src/database/database.module';
 import { isCheckViolation, isUniqueViolation } from '../src/database/errors';
 import {
+  accountEvents,
   invoices,
   organizations,
   partners,
@@ -20,22 +21,26 @@ import {
   createE2eApp,
   createPartner,
   createVariant,
+  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
+import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 import { shippedSale } from './utils/sales';
 
 /**
- * The columns ADR-054 adds, and the database's half of their rules, before
- * any route writes them: a language pair is whole and never repeats itself,
- * a product has one name per language and never a blank one, and a draft
- * invoice has no language yet.
+ * Languages (ADR-054).
  *
- * Written straight to the tables, because the routes that will write them
- * arrive in later commits. Those commits test the routes; this keeps the
- * guards that hold whatever a route does.
+ * The schema first: the columns and the database's half of their rules,
+ * written straight to the tables so they hold whatever a route does. A
+ * language pair is whole and never repeats itself, a product has one name
+ * per language and never a blank one, and a draft invoice has no language
+ * yet.
+ *
+ * Then the routes, as each arrives: the person's language, kept on the user
+ * and returned wherever the client learns who it is.
  */
-describe('Languages, the schema (e2e)', () => {
+describe('Languages (e2e)', () => {
   let app: INestApplication;
   let db: Database;
 
@@ -229,5 +234,121 @@ describe('Languages, the schema (e2e)', () => {
         .where(eq(invoices.id, invoice.id)),
     );
     expect(isCheckViolation(error, 'invoices_draft_shape_check')).toBe(true);
+  });
+
+  describe('the language a person reads', () => {
+    const EMAIL = 'owner@alpha.example.com';
+
+    function registration(extra: Record<string, unknown> = {}) {
+      const agent = authedAgent(app);
+      const request = agent.post('/v1/auth/register').send({
+        email: EMAIL,
+        password: PASSWORD,
+        name: 'Owner',
+        organizationName: 'alpha Co',
+        ...extra,
+      });
+      return { agent, request };
+    }
+
+    /** Registers with the given extras, returning the agent and the user. */
+    async function register(extra: Record<string, unknown> = {}) {
+      const { agent, request } = registration(extra);
+      const res = await request.expect(201);
+      return {
+        agent,
+        user: body<{ user: { id: string; locale: string | null } }>(res).user,
+      };
+    }
+
+    async function me(agent: ReturnType<typeof authedAgent>) {
+      return body<{ user: { locale: string | null } }>(
+        await agent.get('/v1/auth/me').expect(200),
+      ).user;
+    }
+
+    it('keeps the language a person registered in, and returns it on sign-in', async () => {
+      const { agent, user } = await register({ locale: 'zh-Hans' });
+
+      expect(user.locale).toBe('zh-Hans');
+      expect((await me(agent)).locale).toBe('zh-Hans');
+
+      const login = await authedAgent(app)
+        .post('/v1/auth/login')
+        .send({ email: EMAIL, password: PASSWORD })
+        .expect(200);
+      expect(body<{ user: { locale: string } }>(login).user.locale).toBe(
+        'zh-Hans',
+      );
+    });
+
+    it('follows the browser when none was chosen', async () => {
+      const { agent, user } = await register();
+
+      expect(user.locale).toBeNull();
+      expect((await me(agent)).locale).toBeNull();
+    });
+
+    it('refuses a language the app does not speak, exact tags only', async () => {
+      for (const locale of ['fr', 'de']) {
+        await registration({ locale }).request.expect(400);
+      }
+
+      const { agent } = await register();
+      for (const locale of ['fr', 'zh', 'EN', '']) {
+        await agent.patch('/v1/account/profile').send({ locale }).expect(400);
+      }
+    });
+
+    it('changes the language alone, leaving the name, and null goes back to the browser', async () => {
+      const { agent, user } = await register();
+
+      await agent
+        .patch('/v1/account/profile')
+        .send({ locale: 'fr-CA' })
+        .expect(204);
+
+      const [changed] = await db
+        .select({ name: users.name, locale: users.locale })
+        .from(users)
+        .where(eq(users.id, user.id));
+      expect(changed).toEqual({ name: 'Owner', locale: 'fr-CA' });
+      expect((await me(agent)).locale).toBe('fr-CA');
+
+      await agent
+        .patch('/v1/account/profile')
+        .send({ name: 'Renamed' })
+        .expect(204);
+      expect((await me(agent)).locale).toBe('fr-CA');
+
+      await agent
+        .patch('/v1/account/profile')
+        .send({ locale: null })
+        .expect(204);
+      expect((await me(agent)).locale).toBeNull();
+    });
+
+    it('refuses a null name, and changes nothing when sent nothing', async () => {
+      const { agent, user } = await register();
+
+      await agent.patch('/v1/account/profile').send({ name: null }).expect(400);
+
+      const recorded = async () =>
+        (
+          await db
+            .select({ action: accountEvents.action })
+            .from(accountEvents)
+            .where(eq(accountEvents.userId, user.id))
+        ).filter((event) => event.action === 'account.profile_updated');
+
+      await agent.patch('/v1/account/profile').send({}).expect(204);
+      expect(await recorded()).toHaveLength(0);
+
+      await agent
+        .patch('/v1/account/profile')
+        .send({ locale: 'zh-Hans' })
+        .expect(204);
+      expect(await recorded()).toHaveLength(1);
+    });
   });
 });

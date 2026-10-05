@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
+import type { Locale } from '../../common/locales';
 import { primaryKey, timestamps } from './columns';
 
 /**
@@ -26,7 +27,7 @@ export const users = pgTable(
      * where there is no browser to ask, the request that caused the email,
      * else English.
      */
-    locale: text('locale'),
+    locale: text('locale').$type<Locale>(),
 
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
 
