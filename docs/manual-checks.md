@@ -316,6 +316,17 @@ folder by folder; these check what is already in place.
 - **MC-1404** In English, nothing has changed: dates read as the browser's
   English writes them (10 Oct 2026 with a British browser, Oct 10, 2026 with
   an American one), and quantities and money as before.
+- **MC-1407** On a product with a named variant, Edit names: give it a
+  name and description in 简体中文 and its variant a name, and leave
+  Français blank. The page lists the Chinese name; reopening the dialog
+  shows all three as saved. Clear the Chinese name and save: it is gone.
+  A description typed with no name in that language is refused before
+  saving, saying which language.
+- **MC-1408** With 简体中文 required (`requiredNameLanguages` on the
+  organization, until it has a screen) and a customer set to Chinese,
+  issuing an invoice for a product with no Chinese name is refused naming
+  the SKU; after Edit names adds one, it issues, and its printed lines
+  show the Chinese name.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -388,3 +399,4 @@ first.
 - 2026-10-04: ADR-054, the shared components: MC-1406 extended.
 - 2026-10-04: ADR-054, the account: MC-1406 extended.
 - 2026-10-04: ADR-054, products: MC-1406 extended.
+- 2026-10-04: ADR-054, product names in other languages: MC-1407, MC-1408.

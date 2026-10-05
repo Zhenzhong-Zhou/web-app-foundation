@@ -19,11 +19,18 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import type { Locale } from '../lib/locales';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { CreateProductDialog } from './create-product-dialog';
 import { productTypeLabel } from './product-types';
+
+/** A variant's name in one language (ADR-054). On the detail read only. */
+export interface VariantTranslation {
+  locale: Locale;
+  name: string;
+}
 
 export interface Variant {
   id: string;
@@ -37,6 +44,7 @@ export interface Variant {
   widthMm: number | null;
   heightMm: number | null;
   caseQuantity: number | null;
+  translations?: VariantTranslation[];
 }
 
 export interface Product {
