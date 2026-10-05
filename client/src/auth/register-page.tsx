@@ -1,5 +1,6 @@
 import { Alert, Button, Link, TextField, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import { useLanguage } from '../i18n/use-language';
@@ -26,6 +27,7 @@ import { useAuth } from './use-auth';
  * fast oracle.
  */
 export function RegisterPage() {
+  const intl = useIntl();
   const { refresh } = useAuth();
   const { locale } = useLanguage();
   const navigate = useNavigate();
@@ -68,12 +70,21 @@ export function RegisterPage() {
   }
 
   return (
-    <AuthLayout title="Create an account" onSubmit={handleSubmit}>
+    <AuthLayout
+      title={intl.formatMessage({
+        id: 'auth.createAnAccount',
+        defaultMessage: 'Create an account',
+      })}
+      onSubmit={handleSubmit}
+    >
       {error && <Alert severity="error">{error}</Alert>}
 
       <TextField
         id="name"
-        label="Your name"
+        label={intl.formatMessage({
+          id: 'auth.register.yourName',
+          defaultMessage: 'Your name',
+        })}
         autoComplete="name"
         required
         fullWidth
@@ -84,7 +95,10 @@ export function RegisterPage() {
 
       <TextField
         id="organizationName"
-        label="Company name"
+        label={intl.formatMessage({
+          id: 'auth.register.companyName',
+          defaultMessage: 'Company name',
+        })}
         autoComplete="organization"
         required
         fullWidth
@@ -95,7 +109,10 @@ export function RegisterPage() {
 
       <TextField
         id="email"
-        label="Email"
+        label={intl.formatMessage({
+          id: 'auth.field.email',
+          defaultMessage: 'Email',
+        })}
         type="email"
         autoComplete="username"
         required
@@ -107,7 +124,10 @@ export function RegisterPage() {
 
       <TextField
         id="password"
-        label="Password"
+        label={intl.formatMessage({
+          id: 'auth.field.password',
+          defaultMessage: 'Password',
+        })}
         type="password"
         // new-password, not current-password: this is what prompts a manager
         // to offer a generated one (ADR-017).
@@ -118,7 +138,13 @@ export function RegisterPage() {
         onChange={update('password')}
         // Stated, never the authority — anything the browser checks is
         // bypassed by curl, and the 400 is the real control.
-        helperText={`At least ${PASSWORD_MIN_LENGTH} characters.`}
+        helperText={intl.formatMessage(
+          {
+            id: 'auth.passwordMinimum',
+            defaultMessage: 'At least {count} characters.',
+          },
+          { count: PASSWORD_MIN_LENGTH },
+        )}
         slotProps={{
           htmlInput: {
             minLength: PASSWORD_MIN_LENGTH,
@@ -128,14 +154,29 @@ export function RegisterPage() {
       />
 
       <Button type="submit" variant="contained" disabled={submitting}>
-        {submitting ? 'Creating account…' : 'Create account'}
+        {submitting
+          ? intl.formatMessage({
+              id: 'auth.register.creating',
+              defaultMessage: 'Creating account…',
+            })
+          : intl.formatMessage({
+              id: 'auth.register.create',
+              defaultMessage: 'Create account',
+            })}
       </Button>
 
       <Typography variant="body2">
-        Already have an account?{' '}
-        <Link component={RouterLink} to="/login">
-          Sign in
-        </Link>
+        <FormattedMessage
+          id="auth.register.haveAccount"
+          defaultMessage="Already have an account? <link>Sign in</link>"
+          values={{
+            link: (chunks) => (
+              <Link component={RouterLink} to="/login">
+                {chunks}
+              </Link>
+            ),
+          }}
+        />
       </Typography>
     </AuthLayout>
   );

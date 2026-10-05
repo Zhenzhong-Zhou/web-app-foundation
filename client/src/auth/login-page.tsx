@@ -1,5 +1,6 @@
 import { Alert, Button, Link, TextField } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { api } from '../lib/api';
@@ -9,6 +10,7 @@ import { authMessageFor } from './auth-message';
 import { useAuth } from './use-auth';
 
 export function LoginPage() {
+  const intl = useIntl();
   const { refresh } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,14 +46,23 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Sign in" onSubmit={handleSubmit}>
+    <AuthLayout
+      title={intl.formatMessage({
+        id: 'auth.signIn',
+        defaultMessage: 'Sign in',
+      })}
+      onSubmit={handleSubmit}
+    >
       {/* Alert renders role="alert", so a screen reader announces the failure
           without the user tabbing back to find it. */}
       {error && <Alert severity="error">{error}</Alert>}
 
       <TextField
         id="email"
-        label="Email"
+        label={intl.formatMessage({
+          id: 'auth.field.email',
+          defaultMessage: 'Email',
+        })}
         type="email"
         // ADR-017 rests on a password manager capturing credentials at
         // sign-in, and managers key off these attributes.
@@ -67,7 +78,10 @@ export function LoginPage() {
 
       <TextField
         id="password"
-        label="Password"
+        label={intl.formatMessage({
+          id: 'auth.field.password',
+          defaultMessage: 'Password',
+        })}
         type="password"
         autoComplete="current-password"
         required
@@ -81,15 +95,29 @@ export function LoginPage() {
           request just issued and creates another (ADR-015), leaving churn in
           the active-sessions screen that nobody caused. */}
       <Button type="submit" variant="contained" disabled={submitting}>
-        {submitting ? 'Signing in…' : 'Sign in'}
+        {submitting
+          ? intl.formatMessage({
+              id: 'auth.login.signingIn',
+              defaultMessage: 'Signing in…',
+            })
+          : intl.formatMessage({
+              id: 'auth.signIn',
+              defaultMessage: 'Sign in',
+            })}
       </Button>
 
       <Link component={RouterLink} to="/forgot-password" variant="body2">
-        Forgot your password?
+        {intl.formatMessage({
+          id: 'auth.login.forgotPassword',
+          defaultMessage: 'Forgot your password?',
+        })}
       </Link>
 
       <Link component={RouterLink} to="/register" variant="body2">
-        Create an account
+        {intl.formatMessage({
+          id: 'auth.createAnAccount',
+          defaultMessage: 'Create an account',
+        })}
       </Link>
     </AuthLayout>
   );

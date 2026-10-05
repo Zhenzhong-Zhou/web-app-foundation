@@ -1,5 +1,6 @@
 import { Alert, Button, Link, TextField, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { api, ApiError } from '../lib/api';
@@ -12,6 +13,7 @@ import { AuthLayout } from './auth-layout';
  * that email". Saying it here would hand back exactly what the server refused.
  */
 export function ForgotPasswordPage() {
+  const intl = useIntl();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +35,14 @@ export function ForgotPasswordPage() {
       // is a 202 like any other.
       setError(
         caught instanceof ApiError && caught.status === 429
-          ? 'Too many requests. Try again later.'
-          : 'Could not reach the server.',
+          ? intl.formatMessage({
+              id: 'auth.forgot.tooManyRequests',
+              defaultMessage: 'Too many requests. Try again later.',
+            })
+          : intl.formatMessage({
+              id: 'common.serverUnreachable',
+              defaultMessage: 'Could not reach the server.',
+            }),
       );
       setSubmitting(false);
     }
@@ -42,24 +50,45 @@ export function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <AuthLayout title="Check your email">
+      <AuthLayout
+        title={intl.formatMessage({
+          id: 'auth.forgot.checkEmail',
+          defaultMessage: 'Check your email',
+        })}
+      >
         <Typography>
-          If that address has an account, a reset link is on its way.
+          {intl.formatMessage({
+            id: 'auth.forgot.sent',
+            defaultMessage:
+              'If that address has an account, a reset link is on its way.',
+          })}
         </Typography>
         <Link component={RouterLink} to="/login" variant="body2">
-          Back to sign in
+          {intl.formatMessage({
+            id: 'auth.backToSignIn',
+            defaultMessage: 'Back to sign in',
+          })}
         </Link>
       </AuthLayout>
     );
   }
 
   return (
-    <AuthLayout title="Reset your password" onSubmit={handleSubmit}>
+    <AuthLayout
+      title={intl.formatMessage({
+        id: 'auth.forgot.title',
+        defaultMessage: 'Reset your password',
+      })}
+      onSubmit={handleSubmit}
+    >
       {error && <Alert severity="error">{error}</Alert>}
 
       <TextField
         id="email"
-        label="Email"
+        label={intl.formatMessage({
+          id: 'auth.field.email',
+          defaultMessage: 'Email',
+        })}
         type="email"
         autoComplete="username"
         required
@@ -70,11 +99,22 @@ export function ForgotPasswordPage() {
       />
 
       <Button type="submit" variant="contained" disabled={submitting}>
-        {submitting ? 'Sending…' : 'Send reset link'}
+        {submitting
+          ? intl.formatMessage({
+              id: 'auth.forgot.sending',
+              defaultMessage: 'Sending…',
+            })
+          : intl.formatMessage({
+              id: 'auth.forgot.send',
+              defaultMessage: 'Send reset link',
+            })}
       </Button>
 
       <Link component={RouterLink} to="/login" variant="body2">
-        Back to sign in
+        {intl.formatMessage({
+          id: 'auth.backToSignIn',
+          defaultMessage: 'Back to sign in',
+        })}
       </Link>
     </AuthLayout>
   );

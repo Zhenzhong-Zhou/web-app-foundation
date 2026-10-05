@@ -54,9 +54,33 @@ export default defineConfig([
      * everywhere once the last one is; a file listed here can no longer
      * gain a hard-coded label by accident.
      */
-    files: ['src/i18n/**/*.tsx', 'src/components/language-select.tsx'],
+    files: [
+      'src/i18n/**/*.tsx',
+      'src/components/language-select.tsx',
+      'src/auth/**/*.tsx',
+    ],
     rules: {
-      'formatjs/no-literal-string-in-jsx': 'error',
+      /**
+       * The rule's defaults check JSX text, aria-* everywhere, and
+       * placeholder and title on HTML elements only — so MUI's `label`
+       * and `helperText`, a component's `title`, and this codebase's own
+       * `*Label` props would slip through, and they hold most of the copy.
+       * Listed explicitly; a prop that carries no words (variant, to, size)
+       * is never checked.
+       */
+      'formatjs/no-literal-string-in-jsx': [
+        'error',
+        {
+          props: {
+            include: [
+              [
+                '*',
+                '{label,*Label,helperText,title,heading,subtitle,placeholder,empty,message,detail,noOptionsText}',
+              ],
+            ],
+          },
+        },
+      ],
     },
   },
   {

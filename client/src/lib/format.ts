@@ -1,3 +1,5 @@
+import { intl } from '../i18n/intl';
+
 /**
  * The tag every formatter here uses (ADR-054): the chosen language, in the
  * browser's own region when it is the same language (formattingLocale in
@@ -58,7 +60,10 @@ export function relativeTime(
     }
   }
 
-  return 'just now';
+  return intl().formatMessage({
+    id: 'common.justNow',
+    defaultMessage: 'just now',
+  });
 }
 
 /**

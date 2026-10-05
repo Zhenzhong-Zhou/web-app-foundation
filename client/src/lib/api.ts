@@ -1,3 +1,5 @@
+import { intl } from '../i18n/intl';
+
 const BASE = '/api/v1';
 
 export class ApiError extends Error {
@@ -32,7 +34,10 @@ export class ApiError extends Error {
 export function messageFor(caught: unknown): string {
   return caught instanceof ApiError
     ? caught.message
-    : 'Could not reach the server.';
+    : intl().formatMessage({
+        id: 'common.serverUnreachable',
+        defaultMessage: 'Could not reach the server.',
+      });
 }
 
 /**
@@ -87,7 +92,14 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
 
     const message = Array.isArray(body?.message)
       ? body.message.join(', ')
-      : (body?.message ?? `Request failed (${response.status})`);
+      : (body?.message ??
+        intl().formatMessage(
+          {
+            id: 'common.requestFailed',
+            defaultMessage: 'Request failed ({status})',
+          },
+          { status: response.status },
+        ));
 
     throw new ApiError(
       message,

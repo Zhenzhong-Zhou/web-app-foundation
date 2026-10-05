@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import { IntlProvider } from 'react-intl';
+import { type IntlShape, RawIntlProvider } from 'react-intl';
 
 import { setFormatLocale } from '../lib/format';
 import {
@@ -9,6 +9,7 @@ import {
   type Locale,
 } from '../lib/locales';
 import { ENGLISH, loadMessages, type Messages } from './catalogues';
+import { makeIntl, setIntl } from './intl';
 import { LanguageContext } from './language-context';
 
 /** This device's last choice, so the sign-in page opens in it. */
@@ -32,37 +33,27 @@ function remember(locale: Locale): void {
   }
 }
 
-/**
- * Points the formatters and <html lang> at a language, in the step that
- * also swaps the messages, so no screen renders half in one and half in
- * the other. lang is what screen readers pronounce by and what browsers
- * choose Chinese glyph forms by.
- */
-function apply(locale: Locale): string {
-  const tag = formattingLocale(locale, navigator.languages);
-  setFormatLocale(tag);
-  document.documentElement.lang = tag;
-  return tag;
-}
-
-/**
- * A message missing from every catalogue — added in code and not yet
- * extracted — shows its English and says so in development. Anything else
- * the formatter reports is a real fault and is logged as one.
- */
-function reportIntlError(error: { code?: string; message: string }): void {
-  if (error.code === 'MISSING_TRANSLATION') {
-    if (import.meta.env.DEV) console.warn(error.message);
-    return;
-  }
-  console.error(error);
-}
-
 interface Active {
   locale: Locale;
-  /** What Intl formats with: the language, in the browser's region. */
-  tag: string;
-  messages: Messages;
+  intl: IntlShape;
+}
+
+/**
+ * Points everything at a language in one step, so no screen renders half
+ * in one and half in the other: the formatters, the intl object helpers
+ * use, and <html lang>, which screen readers pronounce by and browsers
+ * choose Chinese glyph forms by. The tag is the language in the browser's
+ * own region (formattingLocale).
+ */
+function apply(locale: Locale, messages: Messages): Active {
+  const tag = formattingLocale(locale, navigator.languages);
+  const intl = makeIntl(tag, messages);
+
+  setFormatLocale(tag);
+  setIntl(intl);
+  document.documentElement.lang = tag;
+
+  return { locale, intl };
 }
 
 /**
@@ -82,9 +73,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // English is in the bundle, so it is ready at once; anything else waits
   // for its chunk, below.
   const [active, setActive] = useState<Active | null>(() =>
-    wanted === 'en'
-      ? { locale: 'en', tag: apply('en'), messages: ENGLISH }
-      : null,
+    wanted === 'en' ? apply('en', ENGLISH) : null,
   );
 
   useEffect(() => {
@@ -94,7 +83,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
     void loadMessages(wanted).then((messages) => {
       // A later choice wins over an earlier one still loading.
-      if (!ignore) setActive({ locale: wanted, tag: apply(wanted), messages });
+      if (!ignore) setActive(apply(wanted, messages));
     });
 
     return () => {
@@ -111,14 +100,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   return (
     <LanguageContext.Provider value={{ locale: active.locale, setLocale }}>
-      <IntlProvider
-        locale={active.tag}
-        defaultLocale="en"
-        messages={active.messages}
-        onError={reportIntlError}
-      >
-        {children}
-      </IntlProvider>
+      {/* The same object helpers read through intl(), not a second one. */}
+      <RawIntlProvider value={active.intl}>{children}</RawIntlProvider>
     </LanguageContext.Provider>
   );
 }

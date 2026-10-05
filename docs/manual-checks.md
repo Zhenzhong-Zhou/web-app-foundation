@@ -316,6 +316,14 @@ folder by folder; these check what is already in place.
 - **MC-1404** In English, nothing has changed: dates read as the browser's
   English writes them (10 Oct 2026 with a British browser, Oct 10, 2026 with
   an American one), and quantities and money as before.
+- **MC-1405** Before a release offers French or Chinese, someone fluent in
+  it has read every screen already converted, and `docs/glossary.md`, and
+  their corrections are in the catalogues.
+- **MC-1406** Signed out, in Français and in 简体中文: the sign-in,
+  register, forgot-password, reset and verify pages read entirely in that
+  language, including the rate-limit message after too many sign-ins. A
+  wrong password still shows the server's own words, in English, until the
+  server translates (ADR-054, step 6).
 
 ## Regressions
 
@@ -360,3 +368,4 @@ first.
 - 2026-10-03: ADR-053, backups: section 13, MC-1301 to MC-1304.
 - 2026-10-02: the Duplicate order fix: MC-403 rewritten, MC-R05 added.
 - 2026-10-04: ADR-054, client foundations: section 14, MC-1401 to MC-1404.
+- 2026-10-04: ADR-054, the signed-out pages: MC-1405 and MC-1406.
