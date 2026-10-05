@@ -9,20 +9,13 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
-
-const TYPES = [
-  { value: 'good', label: 'Sellable good' },
-  { value: 'material', label: 'Raw material' },
-  { value: 'packaging', label: 'Packaging' },
-  { value: 'sample', label: 'Sample' },
-  { value: 'supply', label: 'Office supply' },
-  { value: 'equipment', label: 'Equipment' },
-];
+import { PRODUCT_TYPES, productTypeLabel } from './product-types';
 
 const EMPTY = {
   type: 'good',
@@ -50,6 +43,7 @@ export function CreateProductDialog({
   onClose: () => void;
   onCreated: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState(EMPTY);
   const [tracksLots, setTracksBatches] = useState(false);
 
@@ -58,7 +52,12 @@ export function CreateProductDialog({
       close();
       await onCreated();
     },
-    { success: 'Product added' },
+    {
+      success: intl.formatMessage({
+        id: 'products.added',
+        defaultMessage: 'Product added',
+      }),
+    },
   );
 
   function close() {
@@ -103,7 +102,12 @@ export function CreateProductDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Add a product</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'products.create.title',
+            defaultMessage: 'Add a product',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -111,23 +115,29 @@ export function CreateProductDialog({
 
             <TextField
               id="product-type"
-              label="Type"
+              label={intl.formatMessage({
+                id: 'products.typeLabel',
+                defaultMessage: 'Type',
+              })}
               select
               required
               fullWidth
               value={form.type}
               onChange={update('type')}
             >
-              {TYPES.map((type) => (
-                <MenuItem key={type.value} value={type.value}>
-                  {type.label}
+              {PRODUCT_TYPES.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {productTypeLabel(type, intl)}
                 </MenuItem>
               ))}
             </TextField>
 
             <TextField
               id="product-name"
-              label="Name"
+              label={intl.formatMessage({
+                id: 'common.name',
+                defaultMessage: 'Name',
+              })}
               required
               fullWidth
               value={form.name}
@@ -137,7 +147,10 @@ export function CreateProductDialog({
 
             <TextField
               id="product-description"
-              label="Description"
+              label={intl.formatMessage({
+                id: 'products.description',
+                defaultMessage: 'Description',
+              })}
               multiline
               rows={2}
               fullWidth
@@ -148,22 +161,36 @@ export function CreateProductDialog({
 
             <TextField
               id="product-sku"
-              label="SKU"
+              label={intl.formatMessage({
+                id: 'products.sku',
+                defaultMessage: 'SKU',
+              })}
               required
               fullWidth
               value={form.sku}
               onChange={update('sku')}
-              helperText="Typed, not generated — this is the code on the label."
+              helperText={intl.formatMessage({
+                id: 'products.sku.help',
+                defaultMessage:
+                  'Typed, not generated — this is the code on the label.',
+              })}
               slotProps={{ htmlInput: { maxLength: 64 } }}
             />
 
             <TextField
               id="variant-name"
-              label="Size or variation"
+              label={intl.formatMessage({
+                id: 'products.variation',
+                defaultMessage: 'Size or variation',
+              })}
               fullWidth
               value={form.variantName}
               onChange={update('variantName')}
-              helperText="Optional. 60ct, Large, Blue — leave blank if there is only one."
+              helperText={intl.formatMessage({
+                id: 'products.variation.helpOptional',
+                defaultMessage:
+                  'Optional. 60ct, Large, Blue — leave blank if there is only one.',
+              })}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
@@ -177,7 +204,10 @@ export function CreateProductDialog({
               // Cannot be changed later: flipping it on a variant with stock
               // leaves every row violating the invariant in one direction or
               // the other (ADR-023).
-              label="Track lot numbers and expiry"
+              label={intl.formatMessage({
+                id: 'products.tracksLots',
+                defaultMessage: 'Track lot numbers and expiry',
+              })}
             />
           </Stack>
         </DialogContent>
@@ -185,8 +215,14 @@ export function CreateProductDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Add product"
-          pendingLabel="Adding…"
+          label={intl.formatMessage({
+            id: 'products.add',
+            defaultMessage: 'Add product',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.adding',
+            defaultMessage: 'Adding…',
+          })}
         />
       </form>
     </Dialog>

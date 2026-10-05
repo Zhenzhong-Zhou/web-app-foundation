@@ -331,7 +331,10 @@ folder by folder; these check what is already in place.
       "no matching items", and the page shown when a screen breaks;
     - the account: the Account page with its language picker, the
       password form and its devices-signed-out message, Active sessions
-      and Recent activity.
+      and Recent activity;
+    - products: the list, the detail page with its variants, and the
+      add-product, add-variant and edit-variant dialogs, including each
+      product type and unit of measure by name.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -384,3 +387,4 @@ first.
 - 2026-10-04: ADR-054, the frame: MC-1406 extended.
 - 2026-10-04: ADR-054, the shared components: MC-1406 extended.
 - 2026-10-04: ADR-054, the account: MC-1406 extended.
+- 2026-10-04: ADR-054, products: MC-1406 extended.

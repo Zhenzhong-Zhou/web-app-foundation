@@ -14,9 +14,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { type IntlShape, useIntl } from 'react-intl';
 
+import { NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { Variant } from './products-page';
+import { unitLabel } from './units';
 
 /**
  * Millimetres and grams are what is stored, always — a supplier quoting mm and
@@ -24,10 +27,21 @@ import type { Variant } from './products-page';
  * (ADR-023). This renders the stored value; a unit-system preference and a
  * formatter arrive when someone actually needs inches.
  */
-function dimensions(variant: Variant): string | null {
+/** "120 × 80 × 60 mm"; a side not yet measured shows as "?". */
+function dimensions(variant: Variant, intl: IntlShape): string | null {
   const { lengthMm, widthMm, heightMm } = variant;
   if (!lengthMm && !widthMm && !heightMm) return null;
-  return `${lengthMm ?? '?'} × ${widthMm ?? '?'} × ${heightMm ?? '?'} mm`;
+
+  // Plain digits, as before: a millimetre count is not worth grouping.
+  const side = (value: number | null) => (value === null ? '?' : value);
+
+  return intl.formatMessage(
+    {
+      id: 'products.variant.dimensions',
+      defaultMessage: '{length} × {width} × {height} mm',
+    },
+    { length: side(lengthMm), width: side(widthMm), height: side(heightMm) },
+  );
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
@@ -62,8 +76,9 @@ export function VariantRow({
   onToggleActive: () => void;
   onOpenEdit: () => void;
 }) {
+  const intl = useIntl();
   const [open, setOpen] = useState(false);
-  const size = dimensions(variant);
+  const size = dimensions(variant, intl);
 
   // Only worth expanding when there is something to reveal. A chevron that
   // opens an empty panel reads as broken.
@@ -104,15 +119,20 @@ export function VariantRow({
           )}
         </TableCell>
 
-        <TableCell>{variant.name ?? '—'}</TableCell>
-        <TableCell>{variant.unitOfMeasure}</TableCell>
-        <TableCell align="right">{variant.caseQuantity ?? '—'}</TableCell>
+        <TableCell>{variant.name ?? NO_VALUE}</TableCell>
+        <TableCell>{unitLabel(variant.unitOfMeasure, intl)}</TableCell>
+        <TableCell align="right">{variant.caseQuantity ?? NO_VALUE}</TableCell>
 
         <TableCell>
           {/* Read-only. Set once at creation, because flipping it on a variant
               with stock leaves every row violating the invariant in one
               direction or the other. */}
-          {variant.tracksLots ? 'Tracked' : '—'}
+          {variant.tracksLots
+            ? intl.formatMessage({
+                id: 'products.variant.tracked',
+                defaultMessage: 'Tracked',
+              })
+            : NO_VALUE}
         </TableCell>
 
         <TableCell align="center">
@@ -131,7 +151,10 @@ export function VariantRow({
               size="small"
               onClick={openDialog(() => onOpenEdit())}
             >
-              Edit
+              {intl.formatMessage({
+                id: 'common.edit',
+                defaultMessage: 'Edit',
+              })}
             </Button>
           )}
         </TableCell>
@@ -148,9 +171,29 @@ export function VariantRow({
             <Box sx={{ py: 2, pl: 6 }}>
               <Stack spacing={0.5}>
                 {variant.weightGrams !== null && (
-                  <Detail label="Weight" value={`${variant.weightGrams} g`} />
+                  <Detail
+                    label={intl.formatMessage({
+                      id: 'products.variant.weight',
+                      defaultMessage: 'Weight',
+                    })}
+                    value={intl.formatMessage(
+                      {
+                        id: 'products.variant.grams',
+                        defaultMessage: '{grams} g',
+                      },
+                      { grams: variant.weightGrams },
+                    )}
+                  />
                 )}
-                {size && <Detail label="Dimensions" value={size} />}
+                {size && (
+                  <Detail
+                    label={intl.formatMessage({
+                      id: 'products.variant.dimensionsLabel',
+                      defaultMessage: 'Dimensions',
+                    })}
+                    value={size}
+                  />
+                )}
               </Stack>
             </Box>
           </Collapse>

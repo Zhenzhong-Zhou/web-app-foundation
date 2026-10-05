@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
@@ -26,6 +27,7 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { AddVariantDialog } from './add-variant-dialog';
 import { EditVariantDialog } from './edit-variant-dialog';
+import { productTypeLabel } from './product-types';
 import type { Product, Variant } from './products-page';
 import { VariantRow } from './variant-row';
 
@@ -34,6 +36,7 @@ interface ProductDetail extends Product {
 }
 
 export function ProductDetailPage() {
+  const intl = useIntl();
   const { id } = useParams<{ id: string }>();
   const can = useCan();
 
@@ -117,7 +120,10 @@ export function ProductDetailPage() {
       <Stack spacing={2}>
         <Alert severity="error">{error}</Alert>
         <Link component={RouterLink} to="/products">
-          Back to products
+          {intl.formatMessage({
+            id: 'products.backToList',
+            defaultMessage: 'Back to products',
+          })}
         </Link>
       </Stack>
     );
@@ -130,9 +136,20 @@ export function ProductDetailPage() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        crumbs={[{ label: 'Products', to: '/products' }]}
+        crumbs={[
+          {
+            label: intl.formatMessage({
+              id: 'layout.nav.products',
+              defaultMessage: 'Products',
+            }),
+            to: '/products',
+          },
+        ]}
         title={product.name}
-        status={{ label: product.type, color: 'default' }}
+        status={{
+          label: productTypeLabel(product.type, intl),
+          color: 'default',
+        }}
         actions={
           <Stack direction="row" spacing={1}>
             <HistoryButton resourceId={product.id} />
@@ -147,7 +164,15 @@ export function ProductDetailPage() {
                   void patchProduct({ isActive: !product.isActive })
                 }
               >
-                {product.isActive ? 'Discontinue' : 'Reactivate'}
+                {product.isActive
+                  ? intl.formatMessage({
+                      id: 'products.discontinue',
+                      defaultMessage: 'Discontinue',
+                    })
+                  : intl.formatMessage({
+                      id: 'products.reactivate',
+                      defaultMessage: 'Reactivate',
+                    })}
               </Button>
             )}
           </Stack>
@@ -159,19 +184,28 @@ export function ProductDetailPage() {
 
       {!product?.isActive && (
         <Alert severity="info">
-          This product is discontinued. Its variants keep their own status, so
-          reactivating restores each to what it was.
+          {intl.formatMessage({
+            id: 'products.discontinuedNotice',
+            defaultMessage:
+              'This product is discontinued. Its variants keep their own status, so reactivating restores each to what it was.',
+          })}
         </Alert>
       )}
 
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
-          Variants
+          {intl.formatMessage({
+            id: 'products.variants',
+            defaultMessage: 'Variants',
+          })}
         </Typography>
 
         {canEdit && (
           <Button onClick={openDialog(() => setAdding(true))}>
-            Add variant
+            {intl.formatMessage({
+              id: 'products.variant.add',
+              defaultMessage: 'Add variant',
+            })}
           </Button>
         )}
       </Stack>
@@ -182,12 +216,42 @@ export function ProductDetailPage() {
             <TableHead>
               <TableRow>
                 <TableCell padding="checkbox" />
-                <TableCell>SKU</TableCell>
-                <TableCell>Variation</TableCell>
-                <TableCell>Unit</TableCell>
-                <TableCell align="right">Per case</TableCell>
-                <TableCell>Lots</TableCell>
-                <TableCell align="center">Active</TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'products.sku',
+                    defaultMessage: 'SKU',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'products.variationColumn',
+                    defaultMessage: 'Variation',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'products.unit',
+                    defaultMessage: 'Unit',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'products.perCase',
+                    defaultMessage: 'Per case',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'products.lots',
+                    defaultMessage: 'Lots',
+                  })}
+                </TableCell>
+                <TableCell align="center">
+                  {intl.formatMessage({
+                    id: 'common.active',
+                    defaultMessage: 'Active',
+                  })}
+                </TableCell>
                 <TableCell />
               </TableRow>
             </TableHead>
