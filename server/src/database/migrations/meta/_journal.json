@@ -281,6 +281,13 @@
       "when": 1791223507017,
       "tag": "0039_languages",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791225203305,
+      "tag": "0040_document_languages",
+      "breakpoints": true
     }
   ]
 }

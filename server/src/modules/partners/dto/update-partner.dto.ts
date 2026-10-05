@@ -7,7 +7,9 @@ import {
   MinLength,
 } from 'class-validator';
 
+import { IsLocale } from '../../../common/dto/locale';
 import { trim } from '../../../common/dto/trim';
+import type { Locale } from '../../../common/locales';
 
 /**
  * Not PartialType(CreatePartnerDto): isActive belongs here and nowhere else. A
@@ -53,4 +55,18 @@ export class UpdatePartnerDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  /**
+   * The languages this partner's documents print in, when they differ from
+   * the organization's (ADR-054). A whole pair or nothing: a second needs a
+   * first, never the same one. Null on the first means the organization's; a
+   * side left out is checked against the one stored.
+   */
+  @IsOptional()
+  @IsLocale()
+  documentLanguage?: Locale | null;
+
+  @IsOptional()
+  @IsLocale()
+  documentSecondLanguage?: Locale | null;
 }

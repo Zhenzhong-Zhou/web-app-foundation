@@ -1,5 +1,6 @@
 import { char, text, uuid } from 'drizzle-orm/pg-core';
 
+import type { Locale } from '../../common/locales';
 import { addresses } from './addresses';
 
 /**
@@ -54,13 +55,23 @@ export const billToSnapshot = () => ({
 /**
  * What the document is printed in (ADR-054): the partner's pair, else the
  * organization's, resolved when it becomes a document. Stored so a reprint
- * reads as the original did, whatever either setting says by then.
+ * reads as the original did, whatever either setting says by then. Each
+ * table checks the pair with secondLanguageNeedsFirst and languagesDiffer
+ * (columns.ts).
  *
- * Both nullable here: a draft invoice has none, and the documents written
- * before ADR-054 were backfilled with English. Each table checks the pair
- * with secondLanguageNeedsFirst and languagesDiffer (columns.ts).
+ * Nullable, for an invoice: a draft has none until it is issued, and the
+ * invoice's own checks say when it must.
  */
 export const languageSnapshot = () => ({
-  language: text('language'),
-  secondLanguage: text('second_language'),
+  language: text('language').$type<Locale>(),
+  secondLanguage: text('second_language').$type<Locale>(),
+});
+
+/**
+ * The same, for a document that is born complete — a shipment, a credit
+ * note — and so always has its first language.
+ */
+export const requiredLanguageSnapshot = () => ({
+  language: text('language').$type<Locale>().notNull(),
+  secondLanguage: text('second_language').$type<Locale>(),
 });

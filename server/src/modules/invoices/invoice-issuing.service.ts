@@ -8,6 +8,7 @@ import {
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
 import { recordContext } from '../../core/audit/audit-context';
+import { documentLanguages } from '../../core/organizations/document-languages';
 import { registeredAddress } from '../../core/organizations/registered-address';
 import type { Transaction } from '../../database/database.module';
 import { isCheckViolation } from '../../database/errors';
@@ -31,7 +32,7 @@ import { takeNumber } from './document-numbers';
 import type { IssueInvoiceDto } from './dto/issue-invoice.dto';
 import type { VoidInvoiceDto } from './dto/void-invoice.dto';
 import { computeAmounts } from './invoice-amounts';
-import { partiesOf, stored } from './issued-invoice';
+import { languagesOf, partiesOf, stored } from './issued-invoice';
 import { lockDraft } from './lock-draft';
 
 /**
@@ -79,6 +80,13 @@ export class InvoiceIssuingService {
             invoice.partnerId,
           );
           const shipTo = await this.shipTo(tx, organizationId, invoice.orderId);
+          // Resolved now, not at draft: the customer's setting on the day the
+          // invoice is issued is the one it was sent in (ADR-054).
+          const languages = await documentLanguages(
+            tx,
+            organizationId,
+            invoice.partnerId,
+          );
 
           const amounts = await computeAmounts(
             tx,
@@ -159,6 +167,7 @@ export class InvoiceIssuingService {
               ...seller,
               ...billTo,
               ...shipTo,
+              ...languages,
             })
             .where(
               and(
@@ -293,6 +302,7 @@ export class InvoiceIssuingService {
             taxTotal: stored(invoice.taxTotal, 'tax total'),
             total: stored(invoice.total, 'total'),
             ...partiesOf(invoice),
+            ...languagesOf(invoice),
             createdBy: actorId,
           })
           .returning();

@@ -111,8 +111,9 @@ export const invoices = pgTable(
     ...billToSnapshot(),
 
     /**
-     * Written at issue (ADR-054). A draft has none: it prints in what it
-     * would be issued in today.
+     * Written at issue (ADR-054), and required from then on by the issued
+     * shape check. A draft has none: it prints in what it would be issued
+     * in today.
      */
     ...languageSnapshot(),
 
@@ -169,8 +170,8 @@ export const invoices = pgTable(
     ),
 
     /**
-     * Anything past draft is complete: numbered, dated, totalled, and
-     * naming both parties. The service fills these in one statement; this
+     * Anything past draft is complete: numbered, dated, totalled, naming
+     * both parties, and in a language. The service fills these in one statement; this
      * catches the day one is forgotten.
      */
     check(
@@ -181,6 +182,7 @@ export const invoices = pgTable(
             and ${t.subtotal} is not null and ${t.taxTotal} is not null and ${t.total} is not null
             and ${t.sellerName} is not null and ${t.sellerLine1} is not null and ${t.sellerCountry} is not null
             and ${t.billToName} is not null and ${t.billToLine1} is not null and ${t.billToCountry} is not null
+            and ${t.language} is not null
           )`,
     ),
 

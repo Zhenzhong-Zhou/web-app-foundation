@@ -22,7 +22,11 @@ import {
 import { invoices } from './invoices';
 import { organizations } from './organizations';
 import { partners } from './partners';
-import { billToSnapshot, languageSnapshot, sellerSnapshot } from './snapshots';
+import {
+  billToSnapshot,
+  requiredLanguageSnapshot,
+  sellerSnapshot,
+} from './snapshots';
 import { users } from './users';
 
 /**
@@ -91,7 +95,7 @@ export const creditNotes = pgTable(
      * Copied from the invoice, never resolved again (ADR-054), so an invoice
      * and its credit note read as one set.
      */
-    ...languageSnapshot(),
+    ...requiredLanguageSnapshot(),
 
     createdBy: uuid('created_by')
       .notNull()

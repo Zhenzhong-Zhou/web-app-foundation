@@ -10,6 +10,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+import type { Locale } from '../../common/locales';
 import {
   isCurrencyCode,
   languagesDiffer,
@@ -107,8 +108,11 @@ export const organizations = pgTable(
      * sheet — French with English, Chinese with English. English until
      * someone chooses, since every document before ADR-054 was English.
      */
-    documentLanguage: text('document_language').notNull().default('en'),
-    documentSecondLanguage: text('document_second_language'),
+    documentLanguage: text('document_language')
+      .$type<Locale>()
+      .notNull()
+      .default('en'),
+    documentSecondLanguage: text('document_second_language').$type<Locale>(),
 
     /**
      * The languages every product must also be named in (ADR-054): issuing

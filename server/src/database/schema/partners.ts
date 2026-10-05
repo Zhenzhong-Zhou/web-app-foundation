@@ -9,6 +9,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+import type { Locale } from '../../common/locales';
 import {
   languagesDiffer,
   primaryKey,
@@ -88,8 +89,8 @@ export const partners = pgTable(
      * first null the partner takes the organization's pair, never half of
      * each.
      */
-    documentLanguage: text('document_language'),
-    documentSecondLanguage: text('document_second_language'),
+    documentLanguage: text('document_language').$type<Locale>(),
+    documentSecondLanguage: text('document_second_language').$type<Locale>(),
 
     ...timestamps,
   },

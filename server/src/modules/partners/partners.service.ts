@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
 
+import { assertLanguagePair } from '../../core/organizations/document-languages';
 import { isUniqueViolation } from '../../database/errors';
 import { addresses, contacts, partners } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -52,6 +53,11 @@ export class PartnersService {
   }
 
   async create(input: CreatePartnerDto) {
+    assertLanguagePair(
+      input.documentLanguage ?? null,
+      input.documentSecondLanguage ?? null,
+    );
+
     try {
       const [partner] = await this.tenantDb
         .insert(partners, {
@@ -59,6 +65,8 @@ export class PartnersService {
           code: input.code,
           taxId: input.taxId,
           notes: input.notes,
+          documentLanguage: input.documentLanguage ?? null,
+          documentSecondLanguage: input.documentSecondLanguage ?? null,
         })
         .returning();
 
@@ -88,6 +96,16 @@ export class PartnersService {
     );
 
     if (!existing) throw new NotFoundException('No such partner');
+
+    // The pair as it will stand (ADR-054): a side left out keeps its value.
+    assertLanguagePair(
+      input.documentLanguage !== undefined
+        ? input.documentLanguage
+        : existing.documentLanguage,
+      input.documentSecondLanguage !== undefined
+        ? input.documentSecondLanguage
+        : existing.documentSecondLanguage,
+    );
 
     // A named list must be this organization's, price the right side, and
     // still be in use (ADR-049). null clears, and needs no check.

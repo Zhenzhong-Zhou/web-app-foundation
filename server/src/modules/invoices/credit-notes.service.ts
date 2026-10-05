@@ -22,7 +22,7 @@ import type {
   CreditInvoiceDto,
   PreviewCreditDto,
 } from './dto/credit-invoice.dto';
-import { partiesOf, stored } from './issued-invoice';
+import { languagesOf, partiesOf, stored } from './issued-invoice';
 
 type Invoice = typeof invoices.$inferSelect;
 
@@ -115,6 +115,7 @@ export class CreditNotesService {
             taxTotal: amounts.taxTotal,
             total: amounts.total,
             ...partiesOf(invoice),
+            ...languagesOf(invoice),
             createdBy: actorId,
           })
           .returning();

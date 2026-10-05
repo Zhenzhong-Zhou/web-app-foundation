@@ -1,6 +1,8 @@
 import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
+import { IsLocale } from '../../../common/dto/locale';
 import { trim } from '../../../common/dto/trim';
+import type { Locale } from '../../../common/locales';
 
 export class CreatePartnerDto {
   @trim()
@@ -37,4 +39,17 @@ export class CreatePartnerDto {
   @IsString()
   @MaxLength(1000)
   notes?: string;
+
+  /**
+   * The languages this partner's documents print in, when they differ from
+   * the organization's (ADR-054). A whole pair or nothing: a second needs a
+   * first, never the same one. Null on the first means the organization's.
+   */
+  @IsOptional()
+  @IsLocale()
+  documentLanguage?: Locale | null;
+
+  @IsOptional()
+  @IsLocale()
+  documentSecondLanguage?: Locale | null;
 }

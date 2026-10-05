@@ -16,7 +16,7 @@ import {
 import { locations } from './locations';
 import { orders } from './orders';
 import { organizations } from './organizations';
-import { languageSnapshot } from './snapshots';
+import { requiredLanguageSnapshot } from './snapshots';
 import { users } from './users';
 
 /**
@@ -63,7 +63,7 @@ export const shipments = pgTable(
     note: text('note'),
 
     /** What the packing slip prints in, resolved at ship (ADR-054). */
-    ...languageSnapshot(),
+    ...requiredLanguageSnapshot(),
 
     /** RESTRICT, as orders and movements: ADR-012 anonymises, never deletes. */
     createdBy: uuid('created_by')

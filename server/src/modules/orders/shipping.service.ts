@@ -7,6 +7,7 @@ import {
 import { eq, sql } from 'drizzle-orm';
 
 import { recordContext } from '../../core/audit/audit-context';
+import { documentLanguages } from '../../core/organizations/document-languages';
 import { isCheckViolation } from '../../database/errors';
 import { orderLines, shipments } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -133,7 +134,7 @@ export class ShippingService {
 
   async ship(orderId: string, input: ShipOrderDto, actorId: string) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await this.loadShippable(tx, organizationId, orderId);
+      const order = await this.loadShippable(tx, organizationId, orderId);
 
       const ids = input.lines.map((line) => line.lineId);
 
@@ -153,6 +154,13 @@ export class ShippingService {
         lines.map((line) => line.variantId),
       );
 
+      // The packing slip's languages, fixed as the box leaves (ADR-054).
+      const languages = await documentLanguages(
+        tx,
+        organizationId,
+        order.partnerId,
+      );
+
       const [shipment] = await tx
         .insert(shipments)
         .values({
@@ -162,6 +170,7 @@ export class ShippingService {
           carrier: input.carrier,
           trackingNumber: input.trackingNumber,
           note: input.note,
+          ...languages,
           createdBy: actorId,
         })
         .returning();
