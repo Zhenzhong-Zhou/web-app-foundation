@@ -4154,10 +4154,10 @@ immutable, zero errors when a restore is tested.
 **Decision — targets first.** What the plan has to meet, stated as numbers
 so a choice can be checked against them:
 
-| Phase | When | RPO (data that may be lost) | RTO (time to be running again) |
-|---|---|---|---|
-| 1 | This ADR's scripts | 24 hours | 4 hours |
-| 2 | Before paying customers | 15 minutes | 4 hours |
+| Phase | When                    | RPO (data that may be lost) | RTO (time to be running again) |
+|-------|-------------------------|-----------------------------|--------------------------------|
+| 1     | This ADR's scripts      | 24 hours                    | 4 hours                        |
+| 2     | Before paying customers | 15 minutes                  | 4 hours                        |
 
 Phase 1 is met by the nightly dump alone. Phase 2 needs the host's
 point-in-time recovery, which is a plan choice at the host, not code.
@@ -4215,13 +4215,13 @@ relied on alone, because the provider holds that key.
 **Decision — every location is a setting.** Nothing about the host, the
 bucket or the region is in code:
 
-| Variable | Holds |
-|---|---|
-| `BACKUP_DATABASE_URL` | The `backup` role's connection string, TLS required |
-| `BACKUP_S3_ENDPOINT`, `BACKUP_S3_REGION`, `BACKUP_BUCKET` | Where backups go |
-| `BACKUP_S3_ACCESS_KEY_ID`, `BACKUP_S3_SECRET_ACCESS_KEY` | Write-only credentials |
-| `BACKUP_AGE_RECIPIENT` | The public key backups are encrypted to |
-| `BACKUP_ENVIRONMENT` | `production`, the first segment of every name |
+| Variable                                                  | Holds                                               |
+|-----------------------------------------------------------|-----------------------------------------------------|
+| `BACKUP_DATABASE_URL`                                     | The `backup` role's connection string, TLS required |
+| `BACKUP_S3_ENDPOINT`, `BACKUP_S3_REGION`, `BACKUP_BUCKET` | Where backups go                                    |
+| `BACKUP_S3_ACCESS_KEY_ID`, `BACKUP_S3_SECRET_ACCESS_KEY`  | Write-only credentials                              |
+| `BACKUP_AGE_RECIPIENT`                                    | The public key backups are encrypted to             |
+| `BACKUP_ENVIRONMENT`                                      | `production`, the first segment of every name       |
 
 Held as GitHub Actions secrets. Moving region or provider: a new bucket,
 new values, and the next night's backup lands there; the old bucket's

@@ -8,11 +8,11 @@ issue or a commit.** If one leaks, change it (sections 1 and 6).
 
 ## What runs by itself
 
-| What | When | Where to look |
-|---|---|---|
-| Backup | 10:00 UTC daily (3am Vancouver) | Actions → **Backup** |
-| Freshness check | 16:30 UTC daily: fails if the newest backup is over 26 hours old | Actions → **Backup** |
-| Restore drill | 11:00 UTC on the 1st: restores the newest backup and times it | Actions → **Restore drill**, the run's summary |
+| What            | When                                                             | Where to look                                  |
+|-----------------|------------------------------------------------------------------|------------------------------------------------|
+| Backup          | 10:00 UTC daily (3am Vancouver)                                  | Actions → **Backup**                           |
+| Freshness check | 16:30 UTC daily: fails if the newest backup is over 26 hours old | Actions → **Backup**                           |
+| Restore drill   | 11:00 UTC on the 1st: restores the newest backup and times it    | Actions → **Restore drill**, the run's summary |
 
 A failed scheduled run emails the person who last changed the workflow file.
 GitHub pauses scheduled workflows after 60 days with no activity in the
@@ -47,11 +47,11 @@ age-keygen -o ~/foundation-backup-key.txt
 Repository → Settings → Secrets and variables → Actions → New repository
 secret:
 
-| Secret | Value |
-|---|---|
-| `BACKUP_DATABASE_URL` | The database's **External** URL from the host |
-| `BACKUP_AGE_RECIPIENT` | The public key, `age1…` |
-| `BACKUP_AGE_IDENTITY` | The private key: the line starting `AGE-SECRET-KEY-1` |
+| Secret                 | Value                                                 |
+|------------------------|-------------------------------------------------------|
+| `BACKUP_DATABASE_URL`  | The database's **External** URL from the host         |
+| `BACKUP_AGE_RECIPIENT` | The public key, `age1…`                               |
+| `BACKUP_AGE_IDENTITY`  | The private key: the line starting `AGE-SECRET-KEY-1` |
 
 For `s3`, also `BACKUP_BUCKET`, `BACKUP_S3_REGION`, `BACKUP_S3_ENDPOINT`
 (empty for AWS), the write-only login `BACKUP_S3_ACCESS_KEY_ID` and
