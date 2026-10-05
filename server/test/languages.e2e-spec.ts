@@ -9,7 +9,9 @@ import { isCheckViolation, isUniqueViolation } from '../src/database/errors';
 import {
   accountEvents,
   auditLog,
+  creditNoteLines,
   creditNotes,
+  invoiceLines,
   invoices,
   organizations,
   partners,
@@ -43,7 +45,9 @@ import { shippedSale } from './utils/sales';
  * Then the routes, as each arrives: the person's language, kept on the user
  * and returned wherever the client learns who it is; then the document
  * languages, set on the organization and the partner, resolved when the
- * paper becomes a document and never again.
+ * paper becomes a document and never again; then product names in other
+ * languages, required where the organization says, written onto an invoice
+ * line in each of its languages as it is issued.
  */
 describe('Languages (e2e)', () => {
   let app: INestApplication;
@@ -641,6 +645,225 @@ describe('Languages (e2e)', () => {
 
       expect(await creditNoteLanguages(draft.invoiceId)).toEqual([
         { first: 'fr-CA', second: 'en' },
+      ]);
+    });
+
+    /** The product behind a SKU, for the one organization in a test. */
+    async function productOf(sku: string) {
+      const [row] = await db
+        .select({ productId: productVariants.productId })
+        .from(productVariants)
+        .where(eq(productVariants.sku, sku));
+      return row.productId;
+    }
+
+    async function lineNames(invoiceId: string) {
+      return db
+        .select({
+          sku: invoiceLines.sku,
+          first: invoiceLines.description,
+          second: invoiceLines.secondDescription,
+        })
+        .from(invoiceLines)
+        .where(eq(invoiceLines.invoiceId, invoiceId))
+        .orderBy(invoiceLines.sku);
+    }
+
+    it('keeps a product and its variants named in other languages, replaced as a set', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const variantId = await createVariant(alpha.agent, {
+        type: 'good',
+        name: 'Focus capsules',
+        variant: { sku: 'FOCUS-60CT', name: '60ct' },
+      });
+      const productId = await productOf('FOCUS-60CT');
+      const put = (translations: object[]) =>
+        alpha.agent
+          .put(`/v1/products/${productId}/translations`)
+          .send({ translations });
+
+      await put([
+        { locale: 'zh-Hans', name: '专注胶囊', description: '每瓶六十粒' },
+        { locale: 'fr-CA', name: 'Capsules Focus' },
+      ]).expect(204);
+
+      // One per language, exact tags only.
+      await put([
+        { locale: 'zh-Hans', name: '专注' },
+        { locale: 'zh-Hans', name: '专注胶囊' },
+      ]).expect(400);
+      await put([{ locale: 'zh', name: '专注' }]).expect(400);
+      await put([{ locale: 'fr-CA', name: '  ' }]).expect(400);
+
+      await alpha.agent
+        .put(`/v1/products/${productId}/variants/${variantId}/translations`)
+        .send({ translations: [{ locale: 'zh-Hans', name: '60粒' }] })
+        .expect(204);
+
+      const read = async () =>
+        body<{
+          translations: object[];
+          variants: { translations: object[] }[];
+        }>(await alpha.agent.get(`/v1/products/${productId}`).expect(200));
+
+      const product = await read();
+      expect(product.translations).toEqual([
+        { locale: 'fr-CA', name: 'Capsules Focus', description: null },
+        { locale: 'zh-Hans', name: '专注胶囊', description: '每瓶六十粒' },
+      ]);
+      expect(product.variants[0].translations).toEqual([
+        { locale: 'zh-Hans', name: '60粒' },
+      ]);
+
+      // A language left out is removed.
+      await put([{ locale: 'zh-Hans', name: '专注胶囊' }]).expect(204);
+      expect((await read()).translations).toEqual([
+        { locale: 'zh-Hans', name: '专注胶囊', description: null },
+      ]);
+
+      const [entry] = await db
+        .select({ payload: auditLog.payload })
+        .from(auditLog)
+        .where(eq(auditLog.action, 'product.variant_updated'));
+      expect(entry.payload).toEqual({
+        sku: 'FOCUS-60CT',
+        names: 'zh-Hans 60粒',
+      });
+    });
+
+    it('refuses a variant through another product', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const variantId = await createVariant(alpha.agent, {
+        type: 'good',
+        name: 'Focus capsules',
+        variant: { sku: 'FOCUS-60CT' },
+      });
+      await createVariant(alpha.agent, {
+        type: 'good',
+        name: 'Scoop',
+        variant: { sku: 'SCOOP' },
+      });
+      const otherProduct = await productOf('SCOOP');
+
+      await alpha.agent
+        .put(`/v1/products/${otherProduct}/variants/${variantId}/translations`)
+        .send({ translations: [{ locale: 'zh-Hans', name: '60粒' }] })
+        .expect(404);
+    });
+
+    it('requires the languages the organization names, as a set of supported tags', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const patch = (requiredNameLanguages: unknown) =>
+        alpha.agent.patch('/v1/organization').send({ requiredNameLanguages });
+
+      await patch(['zh-Hans', 'zh-Hans']).expect(400);
+      await patch(['zh']).expect(400);
+      await patch(null).expect(400);
+      await patch(['zh-Hans']).expect(204);
+
+      const { organization } = body<{
+        organization: { requiredNameLanguages: string[] };
+      }>(await alpha.agent.get('/v1/organization').expect(200));
+      expect(organization.requiredNameLanguages).toEqual(['zh-Hans']);
+
+      // Recorded, since it decides which invoices may be issued.
+      const [entry] = await db
+        .select({ payload: auditLog.payload })
+        .from(auditLog)
+        .where(eq(auditLog.action, 'organization.updated'));
+      expect(entry.payload).toEqual({
+        requiredNameLanguages: { from: [], to: ['zh-Hans'] },
+      });
+    });
+
+    it('refuses to issue in a required language until every product is named in it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await alpha.agent
+        .patch('/v1/organization')
+        .send({ requiredNameLanguages: ['zh-Hans'] })
+        .expect(204);
+
+      const draft = await draftInvoice(alpha);
+      await alpha.agent
+        .patch(`/v1/partners/${draft.partnerId}`)
+        .send({ documentLanguage: 'zh-Hans', documentSecondLanguage: 'en' })
+        .expect(204);
+
+      const issue = () =>
+        alpha.agent
+          .post(`/v1/invoices/${draft.invoiceId}/issue`)
+          .send({ invoiceDate: TODAY });
+
+      const refused = await issue().expect(409);
+      expect(body<{ message: string }>(refused).message).toMatch(
+        /^FOCUS-60CT has no .*Chinese name/,
+      );
+
+      await alpha.agent
+        .put(`/v1/products/${await productOf('FOCUS-60CT')}/translations`)
+        .send({ translations: [{ locale: 'zh-Hans', name: '专注胶囊' }] })
+        .expect(204);
+      await alpha.agent
+        .put(`/v1/products/${await productOf('SCOOP')}/translations`)
+        .send({ translations: [{ locale: 'zh-Hans', name: '量勺' }] })
+        .expect(204);
+
+      await issue().expect(200);
+
+      expect(await lineNames(draft.invoiceId)).toEqual([
+        { sku: 'FOCUS-60CT', first: '专注胶囊', second: 'FOCUS-60CT' },
+        { sku: 'SCOOP', first: '量勺', second: 'SCOOP' },
+      ]);
+    });
+
+    it('prints a name once when both languages agree, and a credit copies both', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const draft = await draftInvoice(alpha);
+
+      await alpha.agent
+        .patch(`/v1/partners/${draft.partnerId}`)
+        .send({ documentLanguage: 'fr-CA', documentSecondLanguage: 'en' })
+        .expect(204);
+
+      // French is optional: one product has a name in it, the other falls
+      // back to its base name, which is then the same in both languages.
+      await alpha.agent
+        .put(`/v1/products/${await productOf('FOCUS-60CT')}/translations`)
+        .send({ translations: [{ locale: 'fr-CA', name: 'Capsules Focus' }] })
+        .expect(204);
+
+      await alpha.agent
+        .post(`/v1/invoices/${draft.invoiceId}/issue`)
+        .send({ invoiceDate: TODAY })
+        .expect(200);
+
+      expect(await lineNames(draft.invoiceId)).toEqual([
+        { sku: 'FOCUS-60CT', first: 'Capsules Focus', second: 'FOCUS-60CT' },
+        { sku: 'SCOOP', first: 'SCOOP', second: null },
+      ]);
+
+      const [capsulesLine] = await db
+        .select({ id: invoiceLines.id })
+        .from(invoiceLines)
+        .where(eq(invoiceLines.sku, 'FOCUS-60CT'));
+
+      await alpha.agent
+        .post(`/v1/invoices/${draft.invoiceId}/credit-notes`)
+        .send({
+          reason: 'Two arrived cracked',
+          creditDate: TODAY,
+          lines: [{ invoiceLineId: capsulesLine.id, quantity: '1' }],
+        })
+        .expect(201);
+
+      const credited = await db
+        .select({
+          first: creditNoteLines.description,
+          second: creditNoteLines.secondDescription,
+        })
+        .from(creditNoteLines);
+      expect(credited).toEqual([
+        { first: 'Capsules Focus', second: 'FOCUS-60CT' },
       ]);
     });
   });

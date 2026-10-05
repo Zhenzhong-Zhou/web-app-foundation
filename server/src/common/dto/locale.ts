@@ -1,4 +1,4 @@
-import { IsIn } from 'class-validator';
+import { IsIn, type ValidationOptions } from 'class-validator';
 
 import { SUPPORTED_LOCALES } from '../locales';
 
@@ -8,6 +8,8 @@ import { SUPPORTED_LOCALES } from '../locales';
  * tag it was printed in and must name a catalogue that exists.
  *
  * Put beside IsOptional where null means "none chosen", and beside a
- * ValidateIf where the field may be left out but never cleared.
+ * ValidateIf where the field may be left out but never cleared. `{ each:
+ * true }` checks every tag in an array.
  */
-export const IsLocale = () => IsIn(SUPPORTED_LOCALES);
+export const IsLocale = (options?: ValidationOptions) =>
+  IsIn(SUPPORTED_LOCALES, options);

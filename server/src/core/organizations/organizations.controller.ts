@@ -53,6 +53,7 @@ export class OrganizationController {
       // since every document made after it carries the result.
       'documentLanguage',
       'documentSecondLanguage',
+      'requiredNameLanguages',
     ],
   })
   async update(@Body() dto: UpdateOrganizationDto): Promise<void> {

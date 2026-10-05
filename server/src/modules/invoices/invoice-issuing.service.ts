@@ -33,6 +33,7 @@ import type { IssueInvoiceDto } from './dto/issue-invoice.dto';
 import type { VoidInvoiceDto } from './dto/void-invoice.dto';
 import { computeAmounts } from './invoice-amounts';
 import { languagesOf, partiesOf, stored } from './issued-invoice';
+import { namedLines } from './line-names';
 import { lockDraft } from './lock-draft';
 
 /**
@@ -87,6 +88,13 @@ export class InvoiceIssuingService {
             organizationId,
             invoice.partnerId,
           );
+          // Refuses a product with no name in a required language (409).
+          const names = await namedLines(
+            tx,
+            organizationId,
+            invoiceId,
+            languages,
+          );
 
           const amounts = await computeAmounts(
             tx,
@@ -105,6 +113,9 @@ export class InvoiceIssuingService {
               .update(invoiceLines)
               .set({
                 netAmount: line.netAmount,
+                // In the invoice's languages, as issued (ADR-054). The draft
+                // carried the base name until now.
+                ...names.get(line.id),
                 // Aliased plain SQL, as the other correlated subqueries are:
                 // which table each column belongs to is written here, not
                 // left to how Drizzle renders columns inside an update.
@@ -314,6 +325,7 @@ export class InvoiceIssuingService {
             invoiceLineId: line.id,
             sku: line.sku,
             description: line.description,
+            secondDescription: line.secondDescription,
             quantity: line.quantity,
             unitPrice: line.unitPrice,
             taxCodeName: line.taxCodeName,

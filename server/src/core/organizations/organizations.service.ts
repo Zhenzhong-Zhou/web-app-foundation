@@ -49,6 +49,7 @@ export class OrganizationsService {
           licenceRequired: organizations.licenceRequired,
           documentLanguage: organizations.documentLanguage,
           documentSecondLanguage: organizations.documentSecondLanguage,
+          requiredNameLanguages: organizations.requiredNameLanguages,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
@@ -73,6 +74,7 @@ export class OrganizationsService {
           licenceRequired: organizations.licenceRequired,
           documentLanguage: organizations.documentLanguage,
           documentSecondLanguage: organizations.documentSecondLanguage,
+          requiredNameLanguages: organizations.requiredNameLanguages,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
@@ -102,6 +104,7 @@ export class OrganizationsService {
         licenceRequired: existing.licenceRequired,
         documentLanguage: existing.documentLanguage,
         documentSecondLanguage: existing.documentSecondLanguage,
+        requiredNameLanguages: existing.requiredNameLanguages,
       });
 
       if (input.defaultSalePriceListId) {
@@ -170,6 +173,9 @@ export class OrganizationsService {
           : {}),
         ...(input.documentSecondLanguage !== undefined
           ? { documentSecondLanguage: input.documentSecondLanguage }
+          : {}),
+        ...(input.requiredNameLanguages !== undefined
+          ? { requiredNameLanguages: input.requiredNameLanguages }
           : {}),
       };
 

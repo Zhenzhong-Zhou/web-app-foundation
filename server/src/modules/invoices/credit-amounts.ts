@@ -18,6 +18,8 @@ interface CheckedLine {
   returnAuthorizationLineId: string | null;
   sku: string;
   description: string;
+  /** The invoice line's, copied as issued (ADR-054). */
+  secondDescription: string | null;
   taxCodeName: string | null;
   quantity: string;
   unitPrice: string;
@@ -106,6 +108,7 @@ async function checkLines(
       missing: boolean;
       sku: string | null;
       description: string | null;
+      second_description: string | null;
       tax_code_name: string | null;
       order_line_id: string | null;
       quantity: string;
@@ -125,6 +128,7 @@ async function checkLines(
           il.id is null as missing,
           il.sku,
           il.description,
+          il.second_description,
           il.tax_code_name,
           il.order_line_id,
           il.unit_price as billed_price,
@@ -151,6 +155,7 @@ async function checkLines(
         missing,
         sku,
         description,
+        second_description,
         tax_code_name,
         order_line_id,
         quantity::numeric(18, 4)::text as quantity,
@@ -198,6 +203,7 @@ async function checkLines(
     returnAuthorizationLineId: row.rma_line_id,
     sku: row.sku as string,
     description: row.description as string,
+    secondDescription: row.second_description,
     taxCodeName: row.tax_code_name,
     quantity: row.quantity,
     unitPrice: row.unit_price as string,

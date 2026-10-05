@@ -4,16 +4,40 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 
-import { recordPrevious } from '../../core/audit/audit-context';
+import {
+  recordContext,
+  recordPrevious,
+} from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
-import { products, productVariants } from '../../database/schema';
+import {
+  products,
+  productTranslations,
+  productVariants,
+  variantTranslations,
+} from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
+import type {
+  SetProductTranslationsDto,
+  SetVariantTranslationsDto,
+} from './dto/set-translations.dto';
 import type { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
+
+/**
+ * A set of names in other languages as one line for the audit log:
+ * "zh-Hans 专注胶囊 · fr-CA Capsules Focus", or "none" once cleared.
+ */
+function describeNames(translations: { locale: string; name: string }[]) {
+  return translations.length > 0
+    ? translations
+        .map((translation) => `${translation.locale} ${translation.name}`)
+        .join(' · ')
+    : 'none';
+}
 
 @Injectable()
 export class ProductsService {
@@ -68,7 +92,37 @@ export class ProductsService {
       { orderBy: asc(productVariants.id) },
     );
 
-    return { ...product, variants };
+    // Its names in other languages, and each variant's (ADR-054).
+    const [translations, variantNames] = await Promise.all([
+      this.tenantDb.select(
+        productTranslations,
+        eq(productTranslations.productId, productId),
+        { orderBy: asc(productTranslations.locale) },
+      ),
+      this.tenantDb.select(
+        variantTranslations,
+        inArray(
+          variantTranslations.variantId,
+          variants.map((variant) => variant.id),
+        ),
+        { orderBy: asc(variantTranslations.locale) },
+      ),
+    ]);
+
+    return {
+      ...product,
+      translations: translations.map(({ locale, name, description }) => ({
+        locale,
+        name,
+        description,
+      })),
+      variants: variants.map((variant) => ({
+        ...variant,
+        translations: variantNames
+          .filter((row) => row.variantId === variant.id)
+          .map(({ locale, name }) => ({ locale, name })),
+      })),
+    };
   }
 
   /**
@@ -202,5 +256,132 @@ export class ProductsService {
     }
 
     this.logger.log(`Variant ${variantId} updated`);
+  }
+
+  /**
+   * Replaces a product's names in other languages with the set sent
+   * (ADR-054): a language sent is written, one left out is removed. Upserted
+   * rather than deleted and reinserted, so an unchanged name keeps its row
+   * and its updated_at.
+   */
+  async setTranslations(productId: string, input: SetProductTranslationsDto) {
+    await this.tenantDb.transaction(async (tx, organizationId) => {
+      const [product] = await tx
+        .select({ id: products.id })
+        .from(products)
+        .where(
+          and(
+            eq(products.organizationId, organizationId),
+            eq(products.id, productId),
+          ),
+        );
+
+      if (!product) throw new NotFoundException('No such product');
+
+      recordContext({ names: describeNames(input.translations) });
+
+      const kept = input.translations.map((translation) => translation.locale);
+
+      await tx
+        .delete(productTranslations)
+        .where(
+          and(
+            eq(productTranslations.organizationId, organizationId),
+            eq(productTranslations.productId, productId),
+            kept.length > 0
+              ? notInArray(productTranslations.locale, kept)
+              : undefined,
+          ),
+        );
+
+      if (input.translations.length === 0) return;
+
+      await tx
+        .insert(productTranslations)
+        .values(
+          input.translations.map((translation) => ({
+            organizationId,
+            productId,
+            locale: translation.locale,
+            name: translation.name,
+            // Empty means none, which the column holds as null.
+            description: translation.description || null,
+          })),
+        )
+        .onConflictDoUpdate({
+          target: [productTranslations.productId, productTranslations.locale],
+          set: {
+            name: sql`excluded.name`,
+            description: sql`excluded.description`,
+          },
+          // Plain SQL, so the table each column belongs to is written here.
+          setWhere: sql`(product_translations.name, product_translations.description)
+            is distinct from (excluded.name, excluded.description)`,
+        });
+    });
+
+    this.logger.log(`Product ${productId} translations set`);
+  }
+
+  /** A variant's names in other languages, as setTranslations. */
+  async setVariantTranslations(
+    productId: string,
+    variantId: string,
+    input: SetVariantTranslationsDto,
+  ) {
+    await this.tenantDb.transaction(async (tx, organizationId) => {
+      // The variant must belong to this product, as updateVariant requires.
+      const [variant] = await tx
+        .select({ id: productVariants.id, sku: productVariants.sku })
+        .from(productVariants)
+        .where(
+          and(
+            eq(productVariants.organizationId, organizationId),
+            eq(productVariants.id, variantId),
+            eq(productVariants.productId, productId),
+          ),
+        );
+
+      if (!variant) throw new NotFoundException('No such variant');
+
+      recordContext({
+        sku: variant.sku,
+        names: describeNames(input.translations),
+      });
+
+      const kept = input.translations.map((translation) => translation.locale);
+
+      await tx
+        .delete(variantTranslations)
+        .where(
+          and(
+            eq(variantTranslations.organizationId, organizationId),
+            eq(variantTranslations.variantId, variantId),
+            kept.length > 0
+              ? notInArray(variantTranslations.locale, kept)
+              : undefined,
+          ),
+        );
+
+      if (input.translations.length === 0) return;
+
+      await tx
+        .insert(variantTranslations)
+        .values(
+          input.translations.map((translation) => ({
+            organizationId,
+            variantId,
+            locale: translation.locale,
+            name: translation.name,
+          })),
+        )
+        .onConflictDoUpdate({
+          target: [variantTranslations.variantId, variantTranslations.locale],
+          set: { name: sql`excluded.name` },
+          setWhere: sql`variant_translations.name is distinct from excluded.name`,
+        });
+    });
+
+    this.logger.log(`Variant ${variantId} translations set`);
   }
 }

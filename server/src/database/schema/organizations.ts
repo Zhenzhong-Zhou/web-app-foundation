@@ -121,6 +121,7 @@ export const organizations = pgTable(
      */
     requiredNameLanguages: text('required_name_languages')
       .array()
+      .$type<Locale[]>()
       .notNull()
       .default(sql`'{}'::text[]`),
 

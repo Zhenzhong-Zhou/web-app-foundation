@@ -1,4 +1,6 @@
 import {
+  ArrayUnique,
+  IsArray,
   IsBoolean,
   IsIn,
   IsOptional,
@@ -85,4 +87,15 @@ export class UpdateOrganizationDto {
   @IsOptional()
   @IsLocale()
   documentSecondLanguage?: Locale | null;
+
+  /**
+   * The languages every product must also be named in (ADR-054), checked
+   * when an invoice in one of them is issued. Empty requires nothing; never
+   * null, for the same reason.
+   */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsArray()
+  @ArrayUnique()
+  @IsLocale({ each: true })
+  requiredNameLanguages?: Locale[];
 }

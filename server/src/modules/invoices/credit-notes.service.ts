@@ -128,6 +128,7 @@ export class CreditNotesService {
             returnAuthorizationLineId: line.returnAuthorizationLineId,
             sku: line.sku,
             description: line.description,
+            secondDescription: line.secondDescription,
             quantity: line.quantity,
             unitPrice: line.unitPrice,
             taxCodeName: line.taxCodeName,
