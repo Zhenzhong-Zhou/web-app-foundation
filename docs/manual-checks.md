@@ -322,8 +322,8 @@ folder by folder; these check what is already in place.
   shows all three as saved. Clear the Chinese name and save: it is gone.
   A description typed with no name in that language is refused before
   saving, saying which language.
-- **MC-1408** With 简体中文 required (`requiredNameLanguages` on the
-  organization, until it has a screen) and a customer set to Chinese,
+- **MC-1408** With 简体中文 checked under Product names required on
+  invoices, on the Organization page, and a customer set to Chinese,
   issuing an invoice for a product with no Chinese name is refused naming
   the SKU; after Edit names adds one, it issues, and its printed lines
   show the Chinese name.
@@ -353,6 +353,14 @@ folder by folder; these check what is already in place.
   its components' quantities per batch, likewise; and a cost's unit price
   and exchange rate; a price on a price list; and a tax rate and an
   exchange rate in settings, which open the reader's way.
+- **MC-1411** On the Organization page, Document languages: the first
+  has no "default" option and Save stays off without one; the second
+  behaves as on a partner. Set Français then English and save; ship to a
+  partner with no languages of its own: the shipment carries fr-CA and en.
+  A partner with its own pair is unaffected. Product names required on
+  invoices: checking and unchecking back leaves Save off; checking 简体中文
+  and saving survives a reload. A role without organizations.update sees
+  both sections but cannot save them.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -477,3 +485,4 @@ first.
 - 2026-10-05: ADR-054, licences: MC-1406 extended.
 - 2026-10-05: ADR-054, price lists: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, settings: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, the organization's languages: MC-1411, MC-1408 reworded.

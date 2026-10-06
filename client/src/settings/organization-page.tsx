@@ -21,6 +21,10 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
+import {
+  OrganizationDocumentLanguages,
+  RequiredNameLanguages,
+} from './document-languages-form';
 
 /**
  * What the organization prints as the seller on every invoice (ADR-046) —
@@ -94,6 +98,23 @@ export function OrganizationPage() {
               onSaved={reload}
             />
           )}
+          {/* Keyed on what was saved, as the forms above. */}
+          <OrganizationDocumentLanguages
+            key={[
+              organization.documentLanguage,
+              organization.documentSecondLanguage,
+            ].join()}
+            documentLanguage={organization.documentLanguage}
+            documentSecondLanguage={organization.documentSecondLanguage}
+            readOnly={!canUpdate}
+            onSaved={reload}
+          />
+          <RequiredNameLanguages
+            key={organization.requiredNameLanguages.join()}
+            value={organization.requiredNameLanguages}
+            readOnly={!canUpdate}
+            onSaved={reload}
+          />
           <LicencePolicyForm
             key={[
               organization.licenceNotInForcePolicy,

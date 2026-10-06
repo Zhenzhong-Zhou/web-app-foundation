@@ -261,6 +261,11 @@ export interface OrganizationProfile {
   licenceExpiredPolicy: LicencePolicy;
   /** Whether a recipe with no licence is refused at release. */
   licenceRequired: boolean;
+  /** What documents print in, unless a partner says otherwise (ADR-054). */
+  documentLanguage: Locale;
+  documentSecondLanguage: Locale | null;
+  /** Languages an invoice may not be issued in while a name is missing. */
+  requiredNameLanguages: Locale[];
 }
 
 /**
