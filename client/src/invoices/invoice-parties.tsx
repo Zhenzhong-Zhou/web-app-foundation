@@ -1,14 +1,19 @@
 import { Paper, Stack, Typography } from '@mui/material';
+import { useIntl } from 'react-intl';
 
 import type { InvoiceDetail } from '../lib/types';
 import { oneLine } from './calendar-day';
 
 /** Who issued it and who pays, as they were copied at issue. */
 export function Parties({ invoice }: { invoice: InvoiceDetail }) {
+  const intl = useIntl();
+
   return (
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
       <Paper variant="outlined" sx={{ p: 2, flex: 1 }}>
-        <Typography variant="overline">From</Typography>
+        <Typography variant="overline">
+          {intl.formatMessage({ id: 'invoices.from', defaultMessage: 'From' })}
+        </Typography>
         <Typography variant="body2">{invoice.sellerName}</Typography>
         <Typography variant="body2">
           {oneLine([
@@ -22,13 +27,24 @@ export function Parties({ invoice }: { invoice: InvoiceDetail }) {
         </Typography>
         {invoice.sellerTaxNumber && (
           <Typography variant="body2" color="text.secondary">
-            Tax number {invoice.sellerTaxNumber}
+            {intl.formatMessage(
+              {
+                id: 'invoices.taxNumber',
+                defaultMessage: 'Tax number {number}',
+              },
+              { number: invoice.sellerTaxNumber },
+            )}
           </Typography>
         )}
       </Paper>
 
       <Paper variant="outlined" sx={{ p: 2, flex: 1 }}>
-        <Typography variant="overline">Bill to</Typography>
+        <Typography variant="overline">
+          {intl.formatMessage({
+            id: 'invoices.billTo',
+            defaultMessage: 'Bill to',
+          })}
+        </Typography>
         <Typography variant="body2">{invoice.billToName}</Typography>
         <Typography variant="body2">
           {oneLine([
@@ -44,7 +60,12 @@ export function Parties({ invoice }: { invoice: InvoiceDetail }) {
 
       {invoice.shipToLine1 && (
         <Paper variant="outlined" sx={{ p: 2, flex: 1 }}>
-          <Typography variant="overline">Shipped to</Typography>
+          <Typography variant="overline">
+            {intl.formatMessage({
+              id: 'invoices.shippedTo',
+              defaultMessage: 'Shipped to',
+            })}
+          </Typography>
           {invoice.shipToLabel && (
             <Typography variant="body2">{invoice.shipToLabel}</Typography>
           )}

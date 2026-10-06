@@ -65,15 +65,19 @@ export default defineConfig([
       'src/locations/**/*.tsx',
       'src/inventory/**/*.tsx',
       'src/orders/**/*.tsx',
+      'src/invoices/**/*.tsx',
       'src/partners/**/*.tsx',
     ],
     // Specs render with made-up labels on purpose. The print sheet and the
-    // packing slip are documents, in the customer's language rather than the
-    // reader's, and move with the printed documents (ADR-054, step 5).
+    // printed packing slip, invoice and credit note are documents, in the
+    // customer's language rather than the reader's, and move with the
+    // printed documents (ADR-054, step 5).
     ignores: [
       '**/*.test.tsx',
       'src/components/print-sheet.tsx',
       'src/orders/packing-slip-page.tsx',
+      'src/invoices/invoice-print-page.tsx',
+      'src/invoices/credit-note-print-page.tsx',
     ],
     rules: {
       /**

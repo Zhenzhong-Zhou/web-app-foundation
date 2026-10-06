@@ -15,11 +15,17 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, messageFor } from '../lib/api';
-import { formatMoney } from '../lib/format';
+import {
+  formatMoney,
+  formatQuantity,
+  groupedNumberMessage,
+  toApiDecimal,
+} from '../lib/format';
 import type {
   InvoiceDetail,
   InvoiceTax,
@@ -34,7 +40,7 @@ const NOTHING = '0.0000';
 
 /** A quantity of nothing, recognised as text rather than parsed (ADR-025). */
 function isNothing(quantity: string | undefined): boolean {
-  return /^\s*0*(\.0*)?\s*$/.test(quantity ?? '');
+  return /^\s*0*([.,]0*)?\s*$/.test(quantity ?? '');
 }
 
 interface Row {
@@ -83,12 +89,24 @@ export function CreditInvoiceDialog({
   onClose: () => void;
   onIssued: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [rows, setRows] = useState<Record<string, Row>>(() =>
     initialRows(invoice, rma),
   );
+  // A suggestion in the reader's language; the reason is theirs to edit,
+  // and is printed on the credit note as written.
   const [reason, setReason] = useState(
-    rma ? `Returned under ${rma.number}: ${rma.reason}` : '',
+    rma
+      ? intl.formatMessage(
+          {
+            id: 'invoices.credit.reasonFromRma',
+            defaultMessage: 'Returned under {rma}: {reason}',
+          },
+          { rma: rma.number, reason: rma.reason },
+        )
+      : '',
   );
+
   const [creditDate, setCreditDate] = useState(todayLocal());
   /**
    * The last answer, with the request it answered. Shown only while it
@@ -109,22 +127,29 @@ export function CreditInvoiceDialog({
     .filter((line) => !isNothing(rows[line.id]?.quantity))
     .map((line) => {
       const row = rows[line.id];
+      // In the API's form: the reader's decimal comma made a point, null
+      // where a thousands separator was typed (ADR-054).
+      const price = toApiDecimal(row.unitPrice);
       return {
         invoiceLineId: line.id,
-        quantity: row.quantity.trim(),
+        quantity: toApiDecimal(row.quantity),
         // Sent only when changed, so an untouched line is credited at the
         // invoice's own price by the server, not by a copy of it.
-        ...(row.unitPrice.trim() !== line.unitPrice
-          ? { unitPrice: row.unitPrice.trim() }
-          : {}),
+        ...(price !== line.unitPrice ? { unitPrice: price } : {}),
         ...(row.returnAuthorizationLineId
           ? { returnAuthorizationLineId: row.returnAuthorizationLineId }
           : {}),
       };
     });
 
-  const request = JSON.stringify({ lines });
-  const hasLines = lines.length > 0;
+  const grouped = lines.some(
+    (line) =>
+      line.quantity === null ||
+      ('unitPrice' in line && line.unitPrice === null),
+  );
+  // Nothing sound to preview while a number holds a thousands separator.
+  const request = grouped ? '' : JSON.stringify({ lines });
+  const hasLines = lines.length > 0 && !grouped;
 
   /**
    * The server's figures for what is entered, a moment after typing stops.
@@ -170,7 +195,12 @@ export function CreditInvoiceDialog({
       close();
       await onIssued();
     },
-    { success: 'Credit note issued' },
+    {
+      success: intl.formatMessage({
+        id: 'invoices.credit.issued',
+        defaultMessage: 'Credit note issued',
+      }),
+    },
   );
 
   function close() {
@@ -191,15 +221,27 @@ export function CreditInvoiceDialog({
       Object.fromEntries(
         invoice.lines.map((line) => [
           line.id,
-          { quantity: line.quantity, unitPrice: line.unitPrice },
+          {
+            quantity: formatQuantity(line.quantity),
+            unitPrice: formatQuantity(line.unitPrice),
+          },
         ]),
       ),
     );
-    setReason('Uncollectable');
+    setReason(
+      intl.formatMessage({
+        id: 'invoices.credit.uncollectable',
+        defaultMessage: 'Uncollectable',
+      }),
+    );
   }
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
+
+    // Unreachable while grouped, since the button waits for figures; kept
+    // so a submit never sends a number the API would misread.
+    if (grouped) return;
 
     void submit(() =>
       api(`/invoices/${invoice.id}/credit-notes`, {
@@ -220,22 +262,61 @@ export function CreditInvoiceDialog({
     >
       <form onSubmit={handleSubmit}>
         <DialogTitle>
-          Credit {invoice.number}
-          {rma ? ` for ${rma.number}` : ''}
+          {rma
+            ? intl.formatMessage(
+                {
+                  id: 'invoices.credit.titleForRma',
+                  defaultMessage: 'Credit {number} for {rma}',
+                },
+                { number: invoice.number, rma: rma.number },
+              )
+            : intl.formatMessage(
+                {
+                  id: 'invoices.credit.title',
+                  defaultMessage: 'Credit {number}',
+                },
+                { number: invoice.number },
+              )}
         </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {/* Said as soon as it is typed: the preview, and so the
+                button, wait until the number reads one way only. */}
+            {grouped ? (
+              <FormError message={groupedNumberMessage()} />
+            ) : (
+              error && <FormError message={error} />
+            )}
 
             <TableContainer>
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Item</TableCell>
-                    <TableCell align="right">Billed</TableCell>
-                    <TableCell align="right">Credit quantity</TableCell>
-                    <TableCell align="right">At unit price</TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.item',
+                        defaultMessage: 'Item',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'invoices.credit.billed',
+                        defaultMessage: 'Billed',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'invoices.credit.quantity',
+                        defaultMessage: 'Credit quantity',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'invoices.credit.atPrice',
+                        defaultMessage: 'At unit price',
+                      })}
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -256,17 +337,59 @@ export function CreditInvoiceDialog({
                           </Typography>
                           {rma && rmaLine && (
                             <Typography variant="body2" color="text.secondary">
-                              {rma.number}: {rmaLine.quantity} authorized
                               {rma.expectsGoods
-                                ? `, ${rmaLine.quantityReceived} back`
-                                : ''}
-                              , {rmaLine.quantityCredited} credited
+                                ? intl.formatMessage(
+                                    {
+                                      id: 'invoices.credit.rmaLineGoods',
+                                      defaultMessage:
+                                        '{rma}: {authorized} authorized, {back} back, {credited} credited',
+                                    },
+                                    {
+                                      rma: rma.number,
+                                      authorized: formatQuantity(
+                                        rmaLine.quantity,
+                                      ),
+                                      back: formatQuantity(
+                                        rmaLine.quantityReceived,
+                                      ),
+                                      credited: formatQuantity(
+                                        rmaLine.quantityCredited,
+                                      ),
+                                    },
+                                  )
+                                : intl.formatMessage(
+                                    {
+                                      id: 'invoices.credit.rmaLine',
+                                      defaultMessage:
+                                        '{rma}: {authorized} authorized, {credited} credited',
+                                    },
+                                    {
+                                      rma: rma.number,
+                                      authorized: formatQuantity(
+                                        rmaLine.quantity,
+                                      ),
+                                      credited: formatQuantity(
+                                        rmaLine.quantityCredited,
+                                      ),
+                                    },
+                                  )}
                             </Typography>
                           )}
                         </TableCell>
                         <TableCell align="right">
-                          {line.quantity} at{' '}
-                          {formatMoney(line.unitPrice, invoice.currency)}
+                          {intl.formatMessage(
+                            {
+                              id: 'invoices.credit.billedAt',
+                              defaultMessage: '{quantity} at {price}',
+                            },
+                            {
+                              quantity: formatQuantity(line.quantity),
+                              price: formatMoney(
+                                line.unitPrice,
+                                invoice.currency,
+                              ),
+                            },
+                          )}
                         </TableCell>
                         <TableCell align="right" sx={{ width: 140 }}>
                           <TextField
@@ -279,7 +402,13 @@ export function CreditInvoiceDialog({
                               htmlInput: {
                                 inputMode: 'decimal',
                                 maxLength: 19,
-                                'aria-label': `Credit quantity for ${line.sku}`,
+                                'aria-label': intl.formatMessage(
+                                  {
+                                    id: 'invoices.credit.quantityFor',
+                                    defaultMessage: 'Credit quantity for {sku}',
+                                  },
+                                  { sku: line.sku },
+                                ),
                               },
                             }}
                           />
@@ -287,7 +416,9 @@ export function CreditInvoiceDialog({
                         <TableCell align="right" sx={{ width: 160 }}>
                           <TextField
                             size="small"
-                            value={row?.unitPrice ?? line.unitPrice}
+                            value={
+                              row?.unitPrice ?? formatQuantity(line.unitPrice)
+                            }
                             onChange={(event) =>
                               update(line.id, 'unitPrice', event.target.value)
                             }
@@ -295,7 +426,13 @@ export function CreditInvoiceDialog({
                               htmlInput: {
                                 inputMode: 'decimal',
                                 maxLength: 19,
-                                'aria-label': `Credit price for ${line.sku}`,
+                                'aria-label': intl.formatMessage(
+                                  {
+                                    id: 'invoices.credit.priceFor',
+                                    defaultMessage: 'Credit price for {sku}',
+                                  },
+                                  { sku: line.sku },
+                                ),
                               },
                             }}
                           />
@@ -308,8 +445,11 @@ export function CreditInvoiceDialog({
             </TableContainer>
 
             <Typography variant="body2" color="text.secondary">
-              The price can be lowered — a restocking fee, goodwill, a price
-              correction at the difference — but never raised.
+              {intl.formatMessage({
+                id: 'invoices.credit.priceRule',
+                defaultMessage:
+                  'The price can be lowered — a restocking fee, goodwill, a price correction at the difference — but never raised.',
+              })}
             </Typography>
 
             {!rma && untouched && (
@@ -318,7 +458,10 @@ export function CreditInvoiceDialog({
                 onClick={creditEverything}
                 sx={{ alignSelf: 'flex-start' }}
               >
-                Credit everything — uncollectable
+                {intl.formatMessage({
+                  id: 'invoices.credit.everything',
+                  defaultMessage: 'Credit everything — uncollectable',
+                })}
               </Button>
             )}
 
@@ -327,34 +470,59 @@ export function CreditInvoiceDialog({
             {preview && (
               <Stack spacing={0.5} sx={{ alignItems: 'flex-end' }}>
                 <Typography variant="body2">
-                  Subtotal {formatMoney(preview.subtotal, invoice.currency)}
+                  {intl.formatMessage(
+                    {
+                      id: 'invoices.credit.subtotal',
+                      defaultMessage: 'Subtotal {amount}',
+                    },
+                    { amount: formatMoney(preview.subtotal, invoice.currency) },
+                  )}
                 </Typography>
                 {preview.taxes.map((tax) => (
                   <Typography key={`${tax.name}-${tax.rate}`} variant="body2">
-                    {tax.name} {formatRate(tax.rate)}{' '}
-                    {formatMoney(tax.amount, invoice.currency)}
+                    {[
+                      tax.name,
+                      formatRate(tax.rate),
+                      formatMoney(tax.amount, invoice.currency),
+                    ].join(' ')}
                   </Typography>
                 ))}
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Total credited {formatMoney(preview.total, invoice.currency)}
+                  {intl.formatMessage(
+                    {
+                      id: 'invoices.credit.total',
+                      defaultMessage: 'Total credited {amount}',
+                    },
+                    { amount: formatMoney(preview.total, invoice.currency) },
+                  )}
                 </Typography>
               </Stack>
             )}
 
             <TextField
               id="credit-reason"
-              label="Reason"
+              label={intl.formatMessage({
+                id: 'invoices.void.reason',
+                defaultMessage: 'Reason',
+              })}
               required
               fullWidth
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              helperText="Printed on the credit note, so the customer reads it."
+              helperText={intl.formatMessage({
+                id: 'invoices.void.reason.help',
+                defaultMessage:
+                  'Printed on the credit note, so the customer reads it.',
+              })}
               slotProps={{ htmlInput: { maxLength: 500 } }}
             />
 
             <TextField
               id="credit-date"
-              label="Credit note date"
+              label={intl.formatMessage({
+                id: 'invoices.creditDate',
+                defaultMessage: 'Credit note date',
+              })}
               type="date"
               required
               value={creditDate}
@@ -368,8 +536,14 @@ export function CreditInvoiceDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Issue credit note"
-          pendingLabel="Issuing…"
+          label={intl.formatMessage({
+            id: 'invoices.credit.action',
+            defaultMessage: 'Issue credit note',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'invoices.issue.pending',
+            defaultMessage: 'Issuing…',
+          })}
           disabled={!showFigures || !reason.trim()}
         />
       </form>
@@ -396,8 +570,12 @@ function initialRows(
           candidate.resolution === 'credit',
       );
 
+      // Numbers shown the reader's way, and read back the same (ADR-054).
       if (!rma || !rmaLine) {
-        return [line.id, { quantity: '', unitPrice: line.unitPrice }];
+        return [
+          line.id,
+          { quantity: '', unitPrice: formatQuantity(line.unitPrice) },
+        ];
       }
 
       const available = rma.expectsGoods
@@ -409,9 +587,9 @@ function initialRows(
         {
           quantity:
             rmaLine.quantityCredited === NOTHING && available !== NOTHING
-              ? available
+              ? formatQuantity(available)
               : '',
-          unitPrice: line.unitPrice,
+          unitPrice: formatQuantity(line.unitPrice),
           returnAuthorizationLineId: rmaLine.id,
         },
       ];
