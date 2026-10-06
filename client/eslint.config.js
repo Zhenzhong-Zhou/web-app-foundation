@@ -71,6 +71,7 @@ export default defineConfig([
       'src/boms/**/*.tsx',
       'src/costs/**/*.tsx',
       'src/licences/**/*.tsx',
+      'src/price-lists/**/*.tsx',
       'src/partners/**/*.tsx',
     ],
     // Specs render with made-up labels on purpose. The print sheet and the

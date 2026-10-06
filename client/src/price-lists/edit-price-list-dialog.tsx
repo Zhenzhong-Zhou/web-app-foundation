@@ -8,6 +8,7 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -29,6 +30,7 @@ export function EditPriceListDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [name, setName] = useState(list?.name ?? '');
   const [isActive, setIsActive] = useState(list?.isActive ?? true);
 
@@ -37,7 +39,12 @@ export function EditPriceListDialog({
       close();
       await onSaved();
     },
-    { success: 'Price list saved' },
+    {
+      success: intl.formatMessage({
+        id: 'priceLists.saved',
+        defaultMessage: 'Price list saved',
+      }),
+    },
   );
 
   function close() {
@@ -65,7 +72,12 @@ export function EditPriceListDialog({
       maxWidth="xs"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Edit {list?.name}</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage(
+            { id: 'priceLists.editTitle', defaultMessage: 'Edit {name}' },
+            { name: list?.name },
+          )}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -73,7 +85,10 @@ export function EditPriceListDialog({
 
             <TextField
               id="edit-price-list-name"
-              label="Name"
+              label={intl.formatMessage({
+                id: 'common.name',
+                defaultMessage: 'Name',
+              })}
               required
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -87,7 +102,10 @@ export function EditPriceListDialog({
                   onChange={(event) => setIsActive(event.target.checked)}
                 />
               }
-              label="In use"
+              label={intl.formatMessage({
+                id: 'locations.edit.inUse',
+                defaultMessage: 'In use',
+              })}
             />
           </Stack>
         </DialogContent>
@@ -95,8 +113,14 @@ export function EditPriceListDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

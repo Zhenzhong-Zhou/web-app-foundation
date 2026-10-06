@@ -351,7 +351,7 @@ folder by folder; these check what is already in place.
   amounts used at close, and the lot amounts chosen at release, which open
   the reader's way and must still add up exactly. A recipe's batch size and
   its components' quantities per batch, likewise; and a cost's unit price
-  and exchange rate.
+  and exchange rate; and a price on a price list.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -402,7 +402,10 @@ folder by folder; these check what is already in place.
       lot's and a run's cost panels, and setting a cost;
     - licences: the register with each licence's status (Current, Expires
       in N days, Expired, In force from, Withdrawn), adding and editing one,
-      and what a batch was made under on a run and a lot trace.
+      and what a batch was made under on a run and a lot trace;
+    - price lists: the lists, a list with its prices, creating and editing
+      one, setting a price, the picker (a retired list marked so), a
+      partner's lists and the organization's default.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -469,3 +472,4 @@ first.
 - 2026-10-05: ADR-054, recipes: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, costs: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, licences: MC-1406 extended.
+- 2026-10-05: ADR-054, price lists: MC-1406, MC-1410 extended.

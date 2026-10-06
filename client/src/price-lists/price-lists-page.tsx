@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
@@ -23,8 +24,7 @@ import type { PriceList } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { CreatePriceListDialog } from './create-price-list-dialog';
-
-const SIDE = { sale: 'Sale', purchase: 'Purchase' } as const;
+import { sideLabel } from './sides';
 
 /**
  * Every price list (ADR-049). A list proposes the price a line takes when it
@@ -32,6 +32,7 @@ const SIDE = { sale: 'Sale', purchase: 'Purchase' } as const;
  * an order already written.
  */
 export function PriceListsPage() {
+  const intl = useIntl();
   const can = useCan();
   const navigate = useNavigate();
   const { data, error, loading } = useResource<{ priceLists: PriceList[] }>(
@@ -46,19 +47,27 @@ export function PriceListsPage() {
     <Stack spacing={3}>
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          Price lists
+          {intl.formatMessage({
+            id: 'layout.menu.priceLists',
+            defaultMessage: 'Price lists',
+          })}
         </Typography>
         {can('price_lists.create') && (
           <Button onClick={openDialog(() => setCreating(true))}>
-            New price list
+            {intl.formatMessage({
+              id: 'priceLists.new',
+              defaultMessage: 'New price list',
+            })}
           </Button>
         )}
       </Stack>
 
       <Typography variant="body2" color="text.secondary">
-        A line added without a price takes one from its customer’s or supplier’s
-        list, and keeps it. Changing a list never changes an order already
-        written.
+        {intl.formatMessage({
+          id: 'priceLists.intro',
+          defaultMessage:
+            'A line added without a price takes one from its customer’s or supplier’s list, and keeps it. Changing a list never changes an order already written.',
+        })}
       </Typography>
 
       {error && <Alert severity="error">{error}</Alert>}
@@ -69,17 +78,47 @@ export function PriceListsPage() {
             <Skeleton height={120} sx={{ m: 2 }} />
           ) : null
         ) : lists.length === 0 ? (
-          <Alert severity="info">No price lists yet.</Alert>
+          <Alert severity="info">
+            {intl.formatMessage({
+              id: 'priceLists.empty',
+              defaultMessage: 'No price lists yet.',
+            })}
+          </Alert>
         ) : (
           <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Side</TableCell>
-                  <TableCell>Currency</TableCell>
-                  <TableCell align="right">Items</TableCell>
-                  <TableCell aria-label="Status" />
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.name',
+                      defaultMessage: 'Name',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'priceLists.side',
+                      defaultMessage: 'Side',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'components.currency.label',
+                      defaultMessage: 'Currency',
+                    })}
+                  </TableCell>
+                  <TableCell align="right">
+                    {intl.formatMessage({
+                      id: 'orders.items',
+                      defaultMessage: 'Items',
+                    })}
+                  </TableCell>
+                  <TableCell
+                    aria-label={intl.formatMessage({
+                      id: 'common.status',
+                      defaultMessage: 'Status',
+                    })}
+                  />
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -93,11 +132,19 @@ export function PriceListsPage() {
                         {list.name}
                       </Link>
                     </TableCell>
-                    <TableCell>{SIDE[list.direction]}</TableCell>
+                    <TableCell>{sideLabel(list.direction)}</TableCell>
                     <TableCell>{list.currency}</TableCell>
                     <TableCell align="right">{list.itemCount}</TableCell>
                     <TableCell>
-                      {!list.isActive && <Chip size="small" label="Retired" />}
+                      {!list.isActive && (
+                        <Chip
+                          size="small"
+                          label={intl.formatMessage({
+                            id: 'common.retired',
+                            defaultMessage: 'Retired',
+                          })}
+                        />
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

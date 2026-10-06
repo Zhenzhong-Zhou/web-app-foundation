@@ -1,7 +1,9 @@
 import { MenuItem, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { api } from '../lib/api';
+import { nameAndCode } from '../lib/format';
 import type { PriceList, PriceListDirection } from '../lib/types';
 
 /**
@@ -29,6 +31,7 @@ export function PriceListPicker({
   disabled?: boolean;
   helperText?: string;
 }) {
+  const intl = useIntl();
   const [lists, setLists] = useState<PriceList[] | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -60,15 +63,35 @@ export function PriceListPicker({
       value={lists === null ? '' : (value ?? '')}
       onChange={(event) => onChange(event.target.value || null)}
       disabled={disabled || lists === null}
-      helperText={failed ? 'Could not load the price lists.' : helperText}
+      helperText={
+        failed
+          ? intl.formatMessage({
+              id: 'priceLists.picker.failed',
+              defaultMessage: 'Could not load the price lists.',
+            })
+          : helperText
+      }
       fullWidth
     >
       <MenuItem value="">
-        <em>None</em>
+        <em>
+          {intl.formatMessage({
+            id: 'orders.return.noRma',
+            defaultMessage: 'None',
+          })}
+        </em>
       </MenuItem>
       {shown.map((list) => (
         <MenuItem key={list.id} value={list.id} disabled={!list.isActive}>
-          {list.name} ({list.currency}){list.isActive ? '' : ' — retired'}
+          {list.isActive
+            ? nameAndCode(list.name, list.currency)
+            : intl.formatMessage(
+                {
+                  id: 'priceLists.picker.retired',
+                  defaultMessage: '{list} — retired',
+                },
+                { list: nameAndCode(list.name, list.currency) },
+              )}
         </MenuItem>
       ))}
     </TextField>
