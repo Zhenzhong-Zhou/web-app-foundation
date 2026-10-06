@@ -108,7 +108,7 @@ export function ShipmentsList({
     return () => {
       ignore = true;
     };
-  }, [orderId, refreshKey, canViewInvoices]);
+  }, [orderId, refreshKey, canViewInvoices, intl]);
 
   /**
    * A draft for exactly what this shipment carried, then straight to it:

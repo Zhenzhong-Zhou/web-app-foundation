@@ -124,7 +124,8 @@ export function CreateOrderPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+    // intl only words the error; a new language refetches, which is harmless.
+  }, [intl]);
 
   /**
    * Retired partners are filtered out here and nowhere else.

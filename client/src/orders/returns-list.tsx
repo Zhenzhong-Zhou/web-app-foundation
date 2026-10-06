@@ -102,7 +102,7 @@ export function ReturnsList({
     return () => {
       ignore = true;
     };
-  }, [orderId, refreshKey, linked, canSeeRmas]);
+  }, [orderId, refreshKey, linked, canSeeRmas, intl]);
 
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!returns?.length) return null;

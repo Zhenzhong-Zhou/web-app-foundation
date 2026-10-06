@@ -157,7 +157,7 @@ export function ReturnOrderDialog({
     return () => {
       ignore = true;
     };
-  }, [open, orderId]);
+  }, [open, orderId, intl]);
 
   useEffect(() => {
     if (!open || !canSeeRmas) return;
