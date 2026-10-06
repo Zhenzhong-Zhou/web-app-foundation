@@ -9,11 +9,12 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { formatDate } from '../lib/format';
+import { formatDate, formatQuantity, SEPARATOR } from '../lib/format';
 import type { OrderReturn } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -37,6 +38,7 @@ export function LinkReturnDialog({
   onClose: () => void;
   onLinked: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [returns, setReturns] = useState<OrderReturn[] | null>(null);
   const [returnId, setReturnId] = useState('');
 
@@ -45,7 +47,15 @@ export function LinkReturnDialog({
       close();
       await onLinked();
     },
-    { success: `Return counted against ${rmaNumber}` },
+    {
+      success: intl.formatMessage(
+        {
+          id: 'orders.returns.counted',
+          defaultMessage: 'Return counted against {rma}',
+        },
+        { rma: rmaNumber },
+      ),
+    },
   );
 
   useEffect(() => {
@@ -92,26 +102,44 @@ export function LinkReturnDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Link a return to {rmaNumber}</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage(
+            {
+              id: 'rmas.link.title',
+              defaultMessage: 'Link a return to {rma}',
+            },
+            { rma: rmaNumber },
+          )}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2}>
             {error && <FormError message={error} />}
 
             <DialogContentText>
-              For goods that arrived before this RMA was raised. A return is
-              counted against one RMA, once.
+              {intl.formatMessage({
+                id: 'rmas.link.intro',
+                defaultMessage:
+                  'For goods that arrived before this RMA was raised. A return is counted against one RMA, once.',
+              })}
             </DialogContentText>
 
             {returns?.length === 0 ? (
               <Alert severity="info">
-                Every return on this order already counts against an RMA.
+                {intl.formatMessage({
+                  id: 'rmas.link.noneLeft',
+                  defaultMessage:
+                    'Every return on this order already counts against an RMA.',
+                })}
               </Alert>
             ) : (
               <TextField
                 id="link-return"
                 select
-                label="Return"
+                label={intl.formatMessage({
+                  id: 'rmas.link.return',
+                  defaultMessage: 'Return',
+                })}
                 required
                 fullWidth
                 value={returnId}
@@ -120,10 +148,14 @@ export function LinkReturnDialog({
                 {returns?.map((entry) => (
                   <MenuItem key={entry.id} value={entry.id}>
                     {formatDate(entry.createdAt)}
-                    {' · '}
-                    {entry.items
-                      .map((item) => `${item.sku} ${item.quantity}`)
-                      .join(', ')}
+                    {SEPARATOR}
+                    {intl.formatList(
+                      entry.items.map(
+                        (item) =>
+                          `${item.sku} ${formatQuantity(item.quantity)}`,
+                      ),
+                      { type: 'conjunction', style: 'narrow' },
+                    )}
                   </MenuItem>
                 ))}
               </TextField>
@@ -134,8 +166,14 @@ export function LinkReturnDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Link"
-          pendingLabel="Linking…"
+          label={intl.formatMessage({
+            id: 'orders.returns.link',
+            defaultMessage: 'Link',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'orders.returns.linking',
+            defaultMessage: 'Linking…',
+          })}
           disabled={!returnId}
         />
       </form>

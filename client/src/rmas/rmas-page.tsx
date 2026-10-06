@@ -16,6 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { LoadMoreButton } from '../components/load-more-button';
@@ -30,11 +31,18 @@ import { rmaStatus } from './rma-labels';
 
 type Filter = ReturnAuthorizationStatus | 'all';
 
-const FILTERS: { value: Filter; label: string }[] = [
-  { value: 'open', label: 'Open' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'cancelled', label: 'Cancelled' },
-  { value: 'all', label: 'All' },
+const LABELS = defineMessages({
+  open: { id: 'orders.filter.open', defaultMessage: 'Open' },
+  closed: { id: 'rmas.status.closed', defaultMessage: 'Closed' },
+  cancelled: { id: 'orders.status.cancelled', defaultMessage: 'Cancelled' },
+  all: { id: 'invoices.filter.all', defaultMessage: 'All' },
+});
+
+const FILTERS: { value: Filter; label: MessageDescriptor }[] = [
+  { value: 'open', label: LABELS.open },
+  { value: 'closed', label: LABELS.closed },
+  { value: 'cancelled', label: LABELS.cancelled },
+  { value: 'all', label: LABELS.all },
 ];
 
 function query(filter: Filter): string {
@@ -52,6 +60,7 @@ function query(filter: Filter): string {
  * order's lines.
  */
 export function RmasPage() {
+  const intl = useIntl();
   const [filter, setFilter] = useState<Filter>('open');
   const {
     entries: rows,
@@ -66,21 +75,34 @@ export function RmasPage() {
   return (
     <Stack spacing={3}>
       <Typography variant="h5" component="h1">
-        Returns
+        {intl.formatMessage({
+          id: 'layout.nav.returns',
+          defaultMessage: 'Returns',
+        })}
       </Typography>
 
       <Typography variant="body2" color="text.secondary">
-        Return authorizations: what a customer may send back, and whether it is
-        credited, replaced or neither. Raise one from the sale it concerns.
+        {intl.formatMessage({
+          id: 'rmas.intro',
+          defaultMessage:
+            'Return authorizations: what a customer may send back, and whether it is credited, replaced or neither. Raise one from the sale it concerns.',
+        })}
       </Typography>
 
       <Tabs
         value={filter}
         onChange={(_event, value: Filter) => setFilter(value)}
-        aria-label="Return authorization status"
+        aria-label={intl.formatMessage({
+          id: 'rmas.filter.label',
+          defaultMessage: 'Return authorization status',
+        })}
       >
         {FILTERS.map((option) => (
-          <Tab key={option.value} value={option.value} label={option.label} />
+          <Tab
+            key={option.value}
+            value={option.value}
+            label={intl.formatMessage(option.label)}
+          />
         ))}
       </Tabs>
 
@@ -93,19 +115,57 @@ export function RmasPage() {
           </Stack>
         ) : rows?.length === 0 ? (
           <Alert severity="info">
-            {filter === 'open' ? 'No open returns.' : 'Nothing here.'}
+            {filter === 'open'
+              ? intl.formatMessage({
+                  id: 'rmas.empty',
+                  defaultMessage: 'No open returns.',
+                })
+              : intl.formatMessage({
+                  id: 'invoices.emptyFiltered',
+                  defaultMessage: 'Nothing here.',
+                })}
           </Alert>
         ) : (
           <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Number</TableCell>
-                  <TableCell>Customer</TableCell>
-                  <TableCell>Order</TableCell>
-                  <TableCell>Reason</TableCell>
-                  <TableCell>Raised</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.number',
+                      defaultMessage: 'Number',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.customer',
+                      defaultMessage: 'Customer',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'inventory.trace.order',
+                      defaultMessage: 'Order',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.void.reason',
+                      defaultMessage: 'Reason',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'rmas.raised',
+                      defaultMessage: 'Raised',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.status',
+                      defaultMessage: 'Status',
+                    })}
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -127,7 +187,11 @@ export function RmasPage() {
                           component={RouterLink}
                           to={`/orders/${row.orderId}`}
                         >
-                          {row.orderReference ?? 'Order'}
+                          {row.orderReference ??
+                            intl.formatMessage({
+                              id: 'inventory.trace.order',
+                              defaultMessage: 'Order',
+                            })}
                         </Link>
                       </TableCell>
                       <TableCell>{row.reason}</TableCell>
