@@ -14,12 +14,19 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import {
+  formatQuantity,
+  groupedNumberMessage,
+  toApiDecimal,
+} from '../lib/format';
 import type { LineVariance, OutputVariance, RunDetail } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
+import { withUnit } from '../products/units';
 
 /** What close reports back: lines off plan, and the yield if it was too. */
 export interface CloseResult {
@@ -45,20 +52,32 @@ export function CloseRunDialog({
   onClose: () => void;
   onClosed: (result: CloseResult) => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const stocked = run.lines.filter((line) => line.supplyType === 'stocked');
 
+  // Pre-filled the reader's way, 2,5000 in French, and read back the same.
   const [amounts, setAmounts] = useState<Record<string, string>>(() =>
-    Object.fromEntries(stocked.map((line) => [line.id, line.quantityPlanned])),
+    Object.fromEntries(
+      stocked.map((line) => [line.id, formatQuantity(line.quantityPlanned)]),
+    ),
   );
+  // Set when an amount is typed with a thousands separator (ADR-054).
+  const [numberError, setNumberError] = useState<string | null>(null);
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
       close();
     },
-    { success: 'Run closed' },
+    {
+      success: intl.formatMessage({
+        id: 'production.closed',
+        defaultMessage: 'Run closed',
+      }),
+    },
   );
 
   function close() {
+    setNumberError(null);
     reset();
     onClose();
   }
@@ -66,17 +85,28 @@ export function CloseRunDialog({
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
+    // Each amount in the API's form; a line still at its plan is not sent.
+    const used = stocked.map((line) => ({
+      line,
+      quantity: toApiDecimal(amounts[line.id] ?? ''),
+    }));
+    if (used.some(({ quantity }) => quantity === null)) {
+      setNumberError(groupedNumberMessage());
+      return;
+    }
+    setNumberError(null);
+
     void submit(async () => {
       const result = await api<CloseResult>(
         `/production-orders/${run.id}/close`,
         {
           method: 'POST',
           body: JSON.stringify({
-            lines: stocked
-              .filter((line) => amounts[line.id] !== line.quantityPlanned)
-              .map((line) => ({
+            lines: used
+              .filter(({ line, quantity }) => quantity !== line.quantityPlanned)
+              .map(({ line, quantity }) => ({
                 lineId: line.id,
-                quantityConsumed: amounts[line.id],
+                quantityConsumed: quantity,
               })),
           }),
         },
@@ -95,24 +125,49 @@ export function CloseRunDialog({
       maxWidth="md"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Close this run</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'production.close.title',
+            defaultMessage: 'Close this run',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {(numberError ?? error) && (
+              <FormError message={(numberError ?? error)!} />
+            )}
 
             <Typography variant="body2" color="text.secondary">
-              Enter what was actually used. Anything left as planned is recorded
-              as planned.
+              {intl.formatMessage({
+                id: 'production.close.intro',
+                defaultMessage:
+                  'Enter what was actually used. Anything left as planned is recorded as planned.',
+              })}
             </Typography>
 
             <TableContainer>
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Component</TableCell>
-                    <TableCell align="right">Planned</TableCell>
-                    <TableCell align="right">Actually used</TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'production.component',
+                        defaultMessage: 'Component',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'production.status.draft',
+                        defaultMessage: 'Planned',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'production.close.used',
+                        defaultMessage: 'Actually used',
+                      })}
+                    </TableCell>
                   </TableRow>
                 </TableHead>
 
@@ -121,7 +176,11 @@ export function CloseRunDialog({
                     <TableRow key={line.id}>
                       <TableCell>{line.sku}</TableCell>
                       <TableCell align="right">
-                        {line.quantityPlanned} {line.unitOfMeasure}
+                        {withUnit(
+                          line.quantityPlanned,
+                          line.unitOfMeasure,
+                          intl,
+                        )}
                       </TableCell>
                       <TableCell align="right">
                         <TextField
@@ -153,9 +212,11 @@ export function CloseRunDialog({
                 already used. Anything short stays where it was issued, for a
                 person to put away (ADR-032). */}
             <Alert severity="info">
-              Using more than planned is fine — the extra is taken from the same
-              place the rest came from. Anything left over stays where the run
-              is and needs putting away by hand.
+              {intl.formatMessage({
+                id: 'production.close.overPlan',
+                defaultMessage:
+                  'Using more than planned is fine — the extra is taken from the same place the rest came from. Anything left over stays where the run is and needs putting away by hand.',
+              })}
             </Alert>
           </Stack>
         </DialogContent>
@@ -163,8 +224,14 @@ export function CloseRunDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Close run"
-          pendingLabel="Closing…"
+          label={intl.formatMessage({
+            id: 'production.close.action',
+            defaultMessage: 'Close run',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'orders.closeLine.pending',
+            defaultMessage: 'Closing…',
+          })}
         />
       </form>
     </Dialog>

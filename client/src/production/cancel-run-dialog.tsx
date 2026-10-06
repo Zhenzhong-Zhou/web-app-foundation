@@ -7,6 +7,7 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -25,6 +26,7 @@ export function CancelRunDialog({
   onClose: () => void;
   onCancelled: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [reason, setReason] = useState('');
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -32,7 +34,12 @@ export function CancelRunDialog({
       close();
       await onCancelled();
     },
-    { success: 'Run cancelled' },
+    {
+      success: intl.formatMessage({
+        id: 'production.cancelled',
+        defaultMessage: 'Run cancelled',
+      }),
+    },
   );
 
   function close() {
@@ -75,7 +82,12 @@ export function CancelRunDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Cancel this run</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'production.cancel.title',
+            defaultMessage: 'Cancel this run',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -83,21 +95,31 @@ export function CancelRunDialog({
 
             {issued && (
               <Alert severity="warning">
-                The components already issued stay where the run is. Cancelling
-                does not carry them back — somebody has to move them.
+                {intl.formatMessage({
+                  id: 'production.cancel.issuedStay',
+                  defaultMessage:
+                    'The components already issued stay where the run is. Cancelling does not carry them back — somebody has to move them.',
+                })}
               </Alert>
             )}
 
             <TextField
               id="cancel-reason"
-              label="Why"
+              label={intl.formatMessage({
+                id: 'inventory.why',
+                defaultMessage: 'Why',
+              })}
               required
               fullWidth
               multiline
               minRows={2}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              helperText="The first thing whoever finds the leftover material will ask."
+              helperText={intl.formatMessage({
+                id: 'production.cancel.why.help',
+                defaultMessage:
+                  'The first thing whoever finds the leftover material will ask.',
+              })}
               slotProps={{ htmlInput: { maxLength: 1000 } }}
             />
           </Stack>
@@ -106,9 +128,18 @@ export function CancelRunDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Cancel run"
-          pendingLabel="Cancelling…"
-          cancelLabel="Keep it"
+          label={intl.formatMessage({
+            id: 'production.cancel.action',
+            defaultMessage: 'Cancel run',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'production.cancel.pending',
+            defaultMessage: 'Cancelling…',
+          })}
+          cancelLabel={intl.formatMessage({
+            id: 'orders.void.keep',
+            defaultMessage: 'Keep it',
+          })}
         />
       </form>
     </Dialog>

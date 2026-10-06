@@ -16,12 +16,20 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
+import { type IntlShape, useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { fromScaled, sumDecimals, toScaled } from '../lib/decimal';
-import { formatDay } from '../lib/format';
+import {
+  formatDay,
+  formatQuantity,
+  groupedNumberMessage,
+  nameAndCode,
+  SEPARATOR,
+  toApiDecimal,
+} from '../lib/format';
 import type {
   Bom,
   IssuePlan,
@@ -30,6 +38,30 @@ import type {
   ProductionRun,
 } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
+import { withUnit } from '../products/units';
+
+/**
+ * The lots chosen for one component, added up exactly (ADR-025), each read
+ * the reader's way first. Null when any amount is not a number.
+ */
+function pickedTotal(picking: Record<string, string>): bigint | null {
+  return sumDecimals(
+    Object.values(picking).map((value) => toApiDecimal(value) ?? 'x'),
+  );
+}
+
+/** What "Chosen {chosen} of {needed}" fills in, the reader's way. */
+function chosenValues(
+  intl: IntlShape,
+  chosen: string,
+  needed: string,
+  unit: string,
+) {
+  return {
+    chosen: formatQuantity(chosen),
+    needed: withUnit(needed, unit, intl),
+  };
+}
 
 interface LocationSummary {
   id: string;
@@ -58,6 +90,7 @@ export function ReleaseRunDialog({
   onClose: () => void;
   onReleased: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [sourceLocationId, setSource] = useState('');
   const [locations, setLocations] = useState<LocationSummary[]>([]);
 
@@ -119,7 +152,12 @@ export function ReleaseRunDialog({
       .catch((caught: unknown) => {
         if (!ignore) {
           setPlanError(
-            caught instanceof Error ? caught.message : 'Could not load lots.',
+            caught instanceof Error
+              ? caught.message
+              : intl.formatMessage({
+                  id: 'production.release.lotsFailed',
+                  defaultMessage: 'Could not load lots.',
+                }),
           );
         }
       });
@@ -127,7 +165,7 @@ export function ReleaseRunDialog({
     return () => {
       ignore = true;
     };
-  }, [open, needsRecipe, sourceLocationId, run.id]);
+  }, [open, needsRecipe, sourceLocationId, run.id, intl]);
 
   const trackedLines = (plan ?? []).filter(
     (line) => line.supplyType === 'stocked' && line.tracksLots,
@@ -142,7 +180,7 @@ export function ReleaseRunDialog({
     const picking = picks[line.componentVariantId];
     if (!picking) return true;
 
-    const total = sumDecimals(Object.values(picking));
+    const total = pickedTotal(picking);
     return total !== null && total === toScaled(line.quantity);
   });
 
@@ -150,7 +188,11 @@ export function ReleaseRunDialog({
     setPicks((current) => ({
       ...current,
       [line.componentVariantId]: Object.fromEntries(
-        line.lots.map((lot) => [lot.lotId, lot.taken ? lot.take : '']),
+        // Shown the reader's way, 2,5000 in French, and read back the same.
+        line.lots.map((lot) => [
+          lot.lotId,
+          lot.taken ? formatQuantity(lot.take) : '',
+        ]),
       ),
     }));
   }
@@ -192,7 +234,12 @@ export function ReleaseRunDialog({
       close();
       await onReleased();
     },
-    { success: 'Run released' },
+    {
+      success: intl.formatMessage({
+        id: 'production.released',
+        defaultMessage: 'Run released',
+      }),
+    },
   );
 
   useEffect(() => {
@@ -246,7 +293,12 @@ export function ReleaseRunDialog({
           componentVariantId,
           lots: Object.entries(byLot)
             .filter(([, quantity]) => quantity.trim() !== '')
-            .map(([lotId, quantity]) => ({ lotId, quantity: quantity.trim() })),
+            // The button waits until every amount reads one way, so none is
+            // null here; the comma becomes the API's point.
+            .map(([lotId, quantity]) => ({
+              lotId,
+              quantity: toApiDecimal(quantity),
+            })),
         }))
         .filter((entry) => entry.lots.length > 0);
 
@@ -273,7 +325,12 @@ export function ReleaseRunDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Release this run</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'production.release.title',
+            defaultMessage: 'Release this run',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -281,26 +338,57 @@ export function ReleaseRunDialog({
 
             {needsRecipe && recipes.length === 0 && (
               <Alert severity="warning">
-                There is no recipe for this item yet. Create one on the
-                product&apos;s page and make it active, then release.
+                {intl.formatMessage({
+                  id: 'production.release.noRecipe',
+                  defaultMessage:
+                    "There is no recipe for this item yet. Create one on the product's page and make it active, then release.",
+                })}
               </Alert>
             )}
 
             {needsRecipe && recipes.length > 0 && (
               <TextField
                 id="release-recipe"
-                label="Recipe"
+                label={intl.formatMessage({
+                  id: 'production.recipe',
+                  defaultMessage: 'Recipe',
+                })}
                 select
                 required
                 fullWidth
                 value={chosenBom}
                 onChange={(event) => setBomId(event.target.value)}
-                helperText="This run was planned without one. It is attached before releasing."
+                helperText={intl.formatMessage({
+                  id: 'production.release.recipe.help',
+                  defaultMessage:
+                    'This run was planned without one. It is attached before releasing.',
+                })}
               >
                 {recipes.map((row) => (
                   <MenuItem key={row.id} value={row.id}>
-                    v{row.version} — {row.status}, makes {row.outputQuantity}{' '}
-                    per batch
+                    {row.status === 'active'
+                      ? intl.formatMessage(
+                          {
+                            id: 'production.release.recipeActive',
+                            defaultMessage:
+                              'v{version} — active, makes {quantity} per batch',
+                          },
+                          {
+                            version: row.version,
+                            quantity: formatQuantity(row.outputQuantity),
+                          },
+                        )
+                      : intl.formatMessage(
+                          {
+                            id: 'production.release.recipeArchived',
+                            defaultMessage:
+                              'v{version} — archived, makes {quantity} per batch',
+                          },
+                          {
+                            version: row.version,
+                            quantity: formatQuantity(row.outputQuantity),
+                          },
+                        )}
                   </MenuItem>
                 ))}
               </TextField>
@@ -308,7 +396,10 @@ export function ReleaseRunDialog({
 
             <TextField
               id="release-source"
-              label="Pick components from"
+              label={intl.formatMessage({
+                id: 'production.release.source',
+                defaultMessage: 'Pick components from',
+              })}
               select
               required
               fullWidth
@@ -352,7 +443,20 @@ export function ReleaseRunDialog({
                     }}
                   >
                     <Typography variant="subtitle2">
-                      {line.sku} — needs {line.quantity} {line.unitOfMeasure}
+                      {intl.formatMessage(
+                        {
+                          id: 'production.release.needs',
+                          defaultMessage: '{sku} — needs {amount}',
+                        },
+                        {
+                          sku: line.sku,
+                          amount: withUnit(
+                            line.quantity,
+                            line.unitOfMeasure,
+                            intl,
+                          ),
+                        },
+                      )}
                     </Typography>
                     <Button
                       variant="text"
@@ -363,14 +467,34 @@ export function ReleaseRunDialog({
                           : startPicking(line)
                       }
                     >
-                      {picking ? 'Use earliest expiry' : 'Choose lots'}
+                      {picking
+                        ? intl.formatMessage({
+                            id: 'orders.ship.earliestExpiry',
+                            defaultMessage: 'Use earliest expiry',
+                          })
+                        : intl.formatMessage({
+                            id: 'orders.ship.chooseLots',
+                            defaultMessage: 'Choose lots',
+                          })}
                     </Button>
                   </Stack>
 
                   {line.shortBy && (
                     <Alert severity="warning">
-                      This location is {line.shortBy} {line.unitOfMeasure} short
-                      across all its lots.
+                      {intl.formatMessage(
+                        {
+                          id: 'production.release.short',
+                          defaultMessage:
+                            'This location is {amount} short across all its lots.',
+                        },
+                        {
+                          amount: withUnit(
+                            line.shortBy,
+                            line.unitOfMeasure,
+                            intl,
+                          ),
+                        },
+                      )}
                     </Alert>
                   )}
 
@@ -379,12 +503,37 @@ export function ReleaseRunDialog({
                       {line.lots.some((lot) => lot.taken)
                         ? line.lots
                             .filter((lot) => lot.taken)
-                            .map(
-                              (lot) =>
-                                `${lot.code}${lot.expiresAt ? ` (expires ${formatDay(lot.expiresAt)})` : ''}: ${lot.take}`,
+                            .map((lot) =>
+                              lot.expiresAt
+                                ? intl.formatMessage(
+                                    {
+                                      id: 'orders.ship.lotTakeExpiring',
+                                      defaultMessage:
+                                        '{code} (expires {day}): {quantity}',
+                                    },
+                                    {
+                                      code: lot.code,
+                                      day: formatDay(lot.expiresAt),
+                                      quantity: formatQuantity(lot.take),
+                                    },
+                                  )
+                                : intl.formatMessage(
+                                    {
+                                      id: 'orders.ship.lotTake',
+                                      defaultMessage: '{code}: {quantity}',
+                                    },
+                                    {
+                                      code: lot.code,
+                                      quantity: formatQuantity(lot.take),
+                                    },
+                                  ),
                             )
-                            .join(' · ')
-                        : 'No lots of this at the chosen location.'}
+                            .join(SEPARATOR)
+                        : intl.formatMessage({
+                            id: 'orders.ship.noLots',
+                            defaultMessage:
+                              'No lots of this at the chosen location.',
+                          })}
                     </Typography>
                   )}
 
@@ -393,10 +542,30 @@ export function ReleaseRunDialog({
                       <Table size="small">
                         <TableHead>
                           <TableRow>
-                            <TableCell>Lot</TableCell>
-                            <TableCell>Expires</TableCell>
-                            <TableCell align="right">On hand</TableCell>
-                            <TableCell align="right">Use</TableCell>
+                            <TableCell>
+                              {intl.formatMessage({
+                                id: 'inventory.lot',
+                                defaultMessage: 'Lot',
+                              })}
+                            </TableCell>
+                            <TableCell>
+                              {intl.formatMessage({
+                                id: 'inventory.lot.expires',
+                                defaultMessage: 'Expires',
+                              })}
+                            </TableCell>
+                            <TableCell align="right">
+                              {intl.formatMessage({
+                                id: 'inventory.promised.onHand',
+                                defaultMessage: 'On hand',
+                              })}
+                            </TableCell>
+                            <TableCell align="right">
+                              {intl.formatMessage({
+                                id: 'production.release.use',
+                                defaultMessage: 'Use',
+                              })}
+                            </TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -406,9 +575,14 @@ export function ReleaseRunDialog({
                               <TableCell>
                                 {lot.expiresAt
                                   ? formatDay(lot.expiresAt)
-                                  : 'Does not expire'}
+                                  : intl.formatMessage({
+                                      id: 'orders.ship.noExpiry',
+                                      defaultMessage: 'Does not expire',
+                                    })}
                               </TableCell>
-                              <TableCell align="right">{lot.onHand}</TableCell>
+                              <TableCell align="right">
+                                {formatQuantity(lot.onHand)}
+                              </TableCell>
                               <TableCell align="right" sx={{ width: 140 }}>
                                 <TextField
                                   size="small"
@@ -424,7 +598,13 @@ export function ReleaseRunDialog({
                                     htmlInput: {
                                       inputMode: 'decimal',
                                       maxLength: 19,
-                                      'aria-label': `Use from lot ${lot.code}`,
+                                      'aria-label': intl.formatMessage(
+                                        {
+                                          id: 'production.release.useFromLot',
+                                          defaultMessage: 'Use from lot {code}',
+                                        },
+                                        { code: lot.code },
+                                      ),
                                     },
                                   }}
                                 />
@@ -438,13 +618,28 @@ export function ReleaseRunDialog({
 
                   {picking &&
                     (() => {
-                      const total = sumDecimals(Object.values(picking));
+                      if (
+                        Object.values(picking).some(
+                          (value) => toApiDecimal(value) === null,
+                        )
+                      ) {
+                        return (
+                          <Typography variant="caption" color="error">
+                            {groupedNumberMessage()}
+                          </Typography>
+                        );
+                      }
+
+                      const total = pickedTotal(picking);
 
                       if (total === null) {
                         return (
                           <Typography variant="caption" color="error">
-                            Enter each amount as a number, up to four decimal
-                            places.
+                            {intl.formatMessage({
+                              id: 'production.release.amountsInvalid',
+                              defaultMessage:
+                                'Enter each amount as a number, up to four decimal places.',
+                            })}
                           </Typography>
                         );
                       }
@@ -456,9 +651,32 @@ export function ReleaseRunDialog({
                           variant="caption"
                           color={matches ? 'text.secondary' : 'error'}
                         >
-                          Chosen {fromScaled(total)} of {line.quantity}{' '}
-                          {line.unitOfMeasure}
-                          {matches ? '' : ' — the amounts must add up exactly'}
+                          {matches
+                            ? intl.formatMessage(
+                                {
+                                  id: 'production.release.chosen',
+                                  defaultMessage: 'Chosen {chosen} of {needed}',
+                                },
+                                chosenValues(
+                                  intl,
+                                  fromScaled(total),
+                                  line.quantity,
+                                  line.unitOfMeasure,
+                                ),
+                              )
+                            : intl.formatMessage(
+                                {
+                                  id: 'production.release.chosenMismatch',
+                                  defaultMessage:
+                                    'Chosen {chosen} of {needed} — the amounts must add up exactly',
+                                },
+                                chosenValues(
+                                  intl,
+                                  fromScaled(total),
+                                  line.quantity,
+                                  line.unitOfMeasure,
+                                ),
+                              )}
                         </Typography>
                       );
                     })()}
@@ -468,21 +686,30 @@ export function ReleaseRunDialog({
 
             {needsRecipe && (
               <Typography variant="caption" color="text.secondary">
-                Lot-tracked components are taken earliest expiry first.
+                {intl.formatMessage({
+                  id: 'production.release.earliestFirst',
+                  defaultMessage:
+                    'Lot-tracked components are taken earliest expiry first.',
+                })}
               </Typography>
             )}
 
             <Alert severity="info">
-              Releasing copies the recipe onto this run and moves the components
-              to where it is made. Editing the recipe afterwards will not change
-              what this run consumed.
+              {intl.formatMessage({
+                id: 'production.release.copiesRecipe',
+                defaultMessage:
+                  'Releasing copies the recipe onto this run and moves the components to where it is made. Editing the recipe afterwards will not change what this run consumed.',
+              })}
             </Alert>
 
             {/* Said plainly because "released" sounds terminal and is not:
                 material has moved but nothing has been used up yet. */}
             <Typography variant="caption" color="text.secondary">
-              Nothing is consumed yet — that happens when you close the run,
-              with the amounts actually used.
+              {intl.formatMessage({
+                id: 'production.release.nothingConsumed',
+                defaultMessage:
+                  'Nothing is consumed yet — that happens when you close the run, with the amounts actually used.',
+              })}
             </Typography>
           </Stack>
         </DialogContent>
@@ -490,8 +717,14 @@ export function ReleaseRunDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Release"
-          pendingLabel="Releasing…"
+          label={intl.formatMessage({
+            id: 'production.release.action',
+            defaultMessage: 'Release',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'production.release.pending',
+            defaultMessage: 'Releasing…',
+          })}
           disabled={(needsRecipe && !chosenBom) || !picksMatch || licenceStops}
         />
       </form>
@@ -519,41 +752,98 @@ function LicencePanel({
   reason: string;
   onReason: (reason: string) => void;
 }) {
+  const intl = useIntl();
   const { licence, status, outcome } = check;
 
   if (!licence) {
     return outcome === 'block' ? (
       <Alert severity="error">
-        This recipe carries no licence, and your organization requires one
-        before a run is released. Attach one to the recipe first.
+        {intl.formatMessage({
+          id: 'production.licence.missing',
+          defaultMessage:
+            'This recipe carries no licence, and your organization requires one before a run is released. Attach one to the recipe first.',
+        })}
       </Alert>
     ) : null;
   }
 
-  const name = `${licence.number} (${licence.authority})`;
+  // "NPN 80012345 (Health Canada)": data, the same in every language.
+  const name = nameAndCode(licence.number, licence.authority);
 
   if (status === 'current') {
     return (
       <Typography variant="body2" color="text.secondary">
-        Made under {name}, current.
+        {intl.formatMessage(
+          {
+            id: 'production.licence.current',
+            defaultMessage: 'Made under {name}, current.',
+          },
+          { name },
+        )}
       </Typography>
     );
   }
 
   const problem =
     status === 'withdrawn'
-      ? `${name} has been withdrawn.`
+      ? intl.formatMessage(
+          {
+            id: 'production.licence.withdrawn',
+            defaultMessage: '{name} has been withdrawn.',
+          },
+          { name },
+        )
       : status === 'expired'
-        ? `${name} expired on ${licence.expiresAt ? formatDay(licence.expiresAt) : 'an unknown date'}.`
-        : `${name} is not in force until ${licence.issuedAt ? formatDay(licence.issuedAt) : 'a later date'}.`;
+        ? intl.formatMessage(
+            {
+              id: 'production.licence.expired',
+              defaultMessage: '{name} expired on {date}.',
+            },
+            {
+              name,
+              date: licence.expiresAt
+                ? formatDay(licence.expiresAt)
+                : intl.formatMessage({
+                    id: 'production.licence.unknownDate',
+                    defaultMessage: 'an unknown date',
+                  }),
+            },
+          )
+        : intl.formatMessage(
+            {
+              id: 'production.licence.notYet',
+              defaultMessage: '{name} is not in force until {date}.',
+            },
+            {
+              name,
+              date: licence.issuedAt
+                ? formatDay(licence.issuedAt)
+                : intl.formatMessage({
+                    id: 'production.licence.laterDate',
+                    defaultMessage: 'a later date',
+                  }),
+            },
+          );
 
   if (outcome === 'block') {
     return (
       <Alert severity="error">
-        {problem}{' '}
         {status === 'withdrawn'
-          ? 'Nothing can be made under it.'
-          : 'Your organization does not release runs under it.'}
+          ? intl.formatMessage(
+              {
+                id: 'production.licence.blockWithdrawn',
+                defaultMessage: '{problem} Nothing can be made under it.',
+              },
+              { problem },
+            )
+          : intl.formatMessage(
+              {
+                id: 'production.licence.block',
+                defaultMessage:
+                  '{problem} Your organization does not release runs under it.',
+              },
+              { problem },
+            )}
       </Alert>
     );
   }
@@ -561,9 +851,14 @@ function LicencePanel({
   if (outcome === 'allow') {
     return (
       <Alert severity="info">
-        {problem} Your organization allows releasing under it; the run will
-        record that it was{' '}
-        {status === 'expired' ? 'expired' : 'not yet in force'}.
+        {intl.formatMessage(
+          {
+            id: 'production.licence.allow',
+            defaultMessage:
+              '{problem} Your organization allows releasing under it; the run will record that it was {state, select, expired {expired} other {not yet in force}}.',
+          },
+          { problem, state: status },
+        )}
       </Alert>
     );
   }
@@ -571,8 +866,14 @@ function LicencePanel({
   if (!canOverride) {
     return (
       <Alert severity="error">
-        {problem} Releasing under it needs an override from someone allowed to
-        give one, with a reason.
+        {intl.formatMessage(
+          {
+            id: 'production.licence.needsOverride',
+            defaultMessage:
+              '{problem} Releasing under it needs an override from someone allowed to give one, with a reason.',
+          },
+          { problem },
+        )}
       </Alert>
     );
   }
@@ -580,19 +881,32 @@ function LicencePanel({
   return (
     <Stack spacing={1}>
       <Alert severity="warning">
-        {problem} You can release under it with a reason, which is kept on the
-        run and shown wherever the batch is traced.
+        {intl.formatMessage(
+          {
+            id: 'production.licence.canOverride',
+            defaultMessage:
+              '{problem} You can release under it with a reason, which is kept on the run and shown wherever the batch is traced.',
+          },
+          { problem },
+        )}
       </Alert>
       <TextField
         id="release-licence-reason"
-        label="Reason for releasing anyway"
+        label={intl.formatMessage({
+          id: 'production.licence.reason',
+          defaultMessage: 'Reason for releasing anyway',
+        })}
         required
         fullWidth
         multiline
         minRows={2}
         value={reason}
         onChange={(event) => onReason(event.target.value)}
-        helperText="For example: renewal filed 3 Sept, confirmed by the regulator."
+        helperText={intl.formatMessage({
+          id: 'production.licence.reason.help',
+          defaultMessage:
+            'For example: renewal filed 3 Sept, confirmed by the regulator.',
+        })}
         slotProps={{ htmlInput: { maxLength: 500 } }}
       />
     </Stack>

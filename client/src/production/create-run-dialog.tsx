@@ -9,11 +9,17 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
+import {
+  formatQuantity,
+  groupedNumberMessage,
+  toApiDecimal,
+} from '../lib/format';
 import type {
   Bom,
   Location,
@@ -48,7 +54,10 @@ export function CreateRunDialog({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState(EMPTY);
+  // Set when the quantity is typed with a thousands separator (ADR-054).
+  const [quantityError, setQuantityError] = useState<string | null>(null);
   const [variants, setVariants] = useState<VariantOption[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -59,7 +68,12 @@ export function CreateRunDialog({
       close();
       onCreated();
     },
-    { success: 'Run planned' },
+    {
+      success: intl.formatMessage({
+        id: 'production.planned',
+        defaultMessage: 'Run planned',
+      }),
+    },
   );
 
   // Loaded when the dialog opens rather than at page load: a variant or a
@@ -111,12 +125,20 @@ export function CreateRunDialog({
   function close() {
     setForm(EMPTY);
     setBoms([]);
+    setQuantityError(null);
     reset();
     onClose();
   }
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
+
+    const quantityPlanned = toApiDecimal(form.quantityPlanned);
+    if (quantityPlanned === null) {
+      setQuantityError(groupedNumberMessage());
+      return;
+    }
+    setQuantityError(null);
 
     void submit(() =>
       api<{ productionOrder: ProductionRun }>('/production-orders', {
@@ -133,8 +155,9 @@ export function CreateRunDialog({
             undefined,
           locationId: form.locationId,
           partnerId: form.partnerId || undefined,
-          // The string as typed. Number() here would undo numeric(18, 4).
-          quantityPlanned: form.quantityPlanned,
+          // The string as typed, its decimal separator made a point.
+          // Number() here would undo numeric(18, 4).
+          quantityPlanned,
           reference: form.reference || undefined,
         }),
       }),
@@ -151,7 +174,12 @@ export function CreateRunDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Plan a run</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'production.plan',
+            defaultMessage: 'Plan a run',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -159,7 +187,10 @@ export function CreateRunDialog({
 
             <VariantPicker
               id="run-output"
-              label="Making"
+              label={intl.formatMessage({
+                id: 'production.making',
+                defaultMessage: 'Making',
+              })}
               required
               options={variants}
               value={form.outputVariantId}
@@ -174,16 +205,21 @@ export function CreateRunDialog({
 
             {form.outputVariantId && boms.length === 0 && (
               <Alert severity="warning">
-                No promoted recipe for this item. You can still plan the run,
-                but releasing it needs a recipe — there would be nothing to
-                issue.
+                {intl.formatMessage({
+                  id: 'production.create.noRecipe',
+                  defaultMessage:
+                    'No promoted recipe for this item. You can still plan the run, but releasing it needs a recipe — there would be nothing to issue.',
+                })}
               </Alert>
             )}
 
             {boms.length > 0 && (
               <TextField
                 id="run-bom"
-                label="Recipe"
+                label={intl.formatMessage({
+                  id: 'production.recipe',
+                  defaultMessage: 'Recipe',
+                })}
                 select
                 fullWidth
                 value={form.bomId || active?.id || ''}
@@ -193,13 +229,37 @@ export function CreateRunDialog({
                     bomId: event.target.value,
                   }))
                 }
-                helperText="An archived version is offered for repeating an old batch."
+                helperText={intl.formatMessage({
+                  id: 'production.create.recipe.help',
+                  defaultMessage:
+                    'An archived version is offered for repeating an old batch.',
+                })}
               >
                 {boms.map((row) => (
                   <MenuItem key={row.id} value={row.id}>
-                    v{row.version}
-                    {row.status === 'active' ? ' (current)' : ' (archived)'} —
-                    makes {row.outputQuantity}
+                    {row.status === 'active'
+                      ? intl.formatMessage(
+                          {
+                            id: 'production.create.recipeCurrent',
+                            defaultMessage:
+                              'v{version} (current) — makes {quantity}',
+                          },
+                          {
+                            version: row.version,
+                            quantity: formatQuantity(row.outputQuantity),
+                          },
+                        )
+                      : intl.formatMessage(
+                          {
+                            id: 'production.create.recipeArchived',
+                            defaultMessage:
+                              'v{version} (archived) — makes {quantity}',
+                          },
+                          {
+                            version: row.version,
+                            quantity: formatQuantity(row.outputQuantity),
+                          },
+                        )}
                   </MenuItem>
                 ))}
               </TextField>
@@ -207,7 +267,10 @@ export function CreateRunDialog({
 
             <TextField
               id="run-reference"
-              label="Reference"
+              label={intl.formatMessage({
+                id: 'orders.reference',
+                defaultMessage: 'Reference',
+              })}
               fullWidth
               value={form.reference}
               onChange={(event) =>
@@ -216,32 +279,56 @@ export function CreateRunDialog({
                   reference: event.target.value,
                 }))
               }
-              helperText="A batch number or the maker's works order. Optional."
+              helperText={intl.formatMessage({
+                id: 'production.create.reference.help',
+                defaultMessage:
+                  "A batch number or the maker's works order. Optional.",
+              })}
             />
 
             <TextField
               id="run-quantity"
-              label="Quantity to make"
+              label={intl.formatMessage({
+                id: 'production.create.quantity',
+                defaultMessage: 'Quantity to make',
+              })}
               required
               fullWidth
               value={form.quantityPlanned}
-              onChange={(event) =>
+              onChange={(event) => {
+                setQuantityError(null);
                 setForm((current) => ({
                   ...current,
                   quantityPlanned: event.target.value,
-                }))
-              }
+                }));
+              }}
+              error={!!quantityError}
               helperText={
-                active
-                  ? `The recipe makes ${active.outputQuantity} per batch — components scale to whatever you enter.`
-                  : 'How many finished units this run should produce.'
+                quantityError ??
+                (active
+                  ? intl.formatMessage(
+                      {
+                        id: 'production.create.quantity.scales',
+                        defaultMessage:
+                          'The recipe makes {quantity} per batch — components scale to whatever you enter.',
+                      },
+                      { quantity: formatQuantity(active.outputQuantity) },
+                    )
+                  : intl.formatMessage({
+                      id: 'production.create.quantity.help',
+                      defaultMessage:
+                        'How many finished units this run should produce.',
+                    }))
               }
               slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 19 } }}
             />
 
             <TextField
               id="run-location"
-              label="Made at"
+              label={intl.formatMessage({
+                id: 'production.madeAt',
+                defaultMessage: 'Made at',
+              })}
               select
               required
               fullWidth
@@ -252,7 +339,11 @@ export function CreateRunDialog({
                   locationId: event.target.value,
                 }))
               }
-              helperText="Components are issued here and output is received here."
+              helperText={intl.formatMessage({
+                id: 'production.create.location.help',
+                defaultMessage:
+                  'Components are issued here and output is received here.',
+              })}
             >
               {locations.map((row) => (
                 <MenuItem key={row.id} value={row.id}>
@@ -263,7 +354,10 @@ export function CreateRunDialog({
 
             <TextField
               id="run-partner"
-              label="Contract manufacturer"
+              label={intl.formatMessage({
+                id: 'production.contract',
+                defaultMessage: 'Contract manufacturer',
+              })}
               select
               fullWidth
               value={form.partnerId}
@@ -274,7 +368,12 @@ export function CreateRunDialog({
                 }))
               }
             >
-              <MenuItem value="">We make it ourselves</MenuItem>
+              <MenuItem value="">
+                {intl.formatMessage({
+                  id: 'production.create.ourselves',
+                  defaultMessage: 'We make it ourselves',
+                })}
+              </MenuItem>
               {partners.map((row) => (
                 <MenuItem key={row.id} value={row.id}>
                   {row.name}
@@ -286,9 +385,11 @@ export function CreateRunDialog({
                 input and delivers finished goods is a purchase order, not a
                 run — nothing of ours was consumed (ADR-030). */}
             <Typography variant="caption" color="text.secondary">
-              Only set a manufacturer when we supply some of the components. If
-              they buy everything and deliver finished goods, that is a purchase
-              order.
+              {intl.formatMessage({
+                id: 'production.create.manufacturerNote',
+                defaultMessage:
+                  'Only set a manufacturer when we supply some of the components. If they buy everything and deliver finished goods, that is a purchase order.',
+              })}
             </Typography>
           </Stack>
         </DialogContent>
@@ -296,8 +397,14 @@ export function CreateRunDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Plan run"
-          pendingLabel="Planning…"
+          label={intl.formatMessage({
+            id: 'production.create.action',
+            defaultMessage: 'Plan run',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'production.create.pending',
+            defaultMessage: 'Planning…',
+          })}
         />
       </form>
     </Dialog>

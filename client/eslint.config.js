@@ -67,6 +67,7 @@ export default defineConfig([
       'src/orders/**/*.tsx',
       'src/invoices/**/*.tsx',
       'src/rmas/**/*.tsx',
+      'src/production/**/*.tsx',
       'src/partners/**/*.tsx',
     ],
     // Specs render with made-up labels on purpose. The print sheet and the

@@ -347,7 +347,9 @@ folder by folder; these check what is already in place.
   French 2,5; and taking a return. An invoice line's price, and a credit's
   quantities and prices, likewise: the credit's figures wait, and say why,
   while a number holds a thousands separator. Authorizing a return's
-  quantities, likewise.
+  quantities, likewise; and a run's planned quantity, its output, the
+  amounts used at close, and the lot amounts chosen at release, which open
+  the reader's way and must still add up exactly.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -386,7 +388,10 @@ folder by folder; these check what is already in place.
       page. The printed invoice and credit note stay English until step 5;
     - returns: the RMA list with its status tabs, raising an RMA with each
       line's resolution by name, an RMA's page with closing, cancelling,
-      linking a return and raising a replacement.
+      linking a return and raising a replacement;
+    - production: the runs list with its statuses, planning a run, a run's
+      page with its components, lots and variances, and the release (with
+      its licence warnings), record-output, close and cancel dialogs.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -449,3 +454,4 @@ first.
 - 2026-10-05: ADR-054, receiving, shipping and returns: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, invoices and credit notes: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, returns (RMAs): MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, production: MC-1406, MC-1410 extended.
