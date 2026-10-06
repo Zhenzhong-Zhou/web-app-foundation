@@ -9,6 +9,7 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -34,6 +35,7 @@ export function EditLicenceDialog({
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState({
     number: licence?.number ?? '',
     authority: licence?.authority ?? '',
@@ -49,7 +51,12 @@ export function EditLicenceDialog({
       close();
       await onSaved();
     },
-    { success: 'Licence saved' },
+    {
+      success: intl.formatMessage({
+        id: 'licences.saved',
+        defaultMessage: 'Licence saved',
+      }),
+    },
   );
 
   function close() {
@@ -85,7 +92,12 @@ export function EditLicenceDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Licence {licence?.number}</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage(
+            { id: 'licences.title', defaultMessage: 'Licence {number}' },
+            { number: licence?.number },
+          )}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -93,7 +105,10 @@ export function EditLicenceDialog({
 
             <TextField
               id="edit-licence-number"
-              label="Number"
+              label={intl.formatMessage({
+                id: 'invoices.number',
+                defaultMessage: 'Number',
+              })}
               required
               fullWidth
               value={form.number}
@@ -108,7 +123,10 @@ export function EditLicenceDialog({
 
             <TextField
               id="edit-licence-authority"
-              label="Issued by"
+              label={intl.formatMessage({
+                id: 'licences.issuedBy',
+                defaultMessage: 'Issued by',
+              })}
               required
               fullWidth
               value={form.authority}
@@ -123,7 +141,10 @@ export function EditLicenceDialog({
 
             <TextField
               id="edit-licence-notes"
-              label="Notes"
+              label={intl.formatMessage({
+                id: 'boms.notes',
+                defaultMessage: 'Notes',
+              })}
               fullWidth
               multiline
               minRows={2}
@@ -139,7 +160,10 @@ export function EditLicenceDialog({
 
             <TextField
               id="edit-licence-issued"
-              label="Issued"
+              label={intl.formatMessage({
+                id: 'licences.issued',
+                defaultMessage: 'Issued',
+              })}
               type="date"
               fullWidth
               value={form.issuedAt}
@@ -150,12 +174,18 @@ export function EditLicenceDialog({
                 }))
               }
               slotProps={{ inputLabel: { shrink: true } }}
-              helperText="The date on the notice, if you have it."
+              helperText={intl.formatMessage({
+                id: 'licences.issued.help',
+                defaultMessage: 'The date on the notice, if you have it.',
+              })}
             />
 
             <TextField
               id="edit-licence-expires"
-              label="Valid until"
+              label={intl.formatMessage({
+                id: 'licences.validUntil',
+                defaultMessage: 'Valid until',
+              })}
               type="date"
               fullWidth
               value={form.expiresAt}
@@ -166,7 +196,10 @@ export function EditLicenceDialog({
                 }))
               }
               slotProps={{ inputLabel: { shrink: true } }}
-              helperText="Blank for a scheme that does not expire."
+              helperText={intl.formatMessage({
+                id: 'licences.validUntil.help',
+                defaultMessage: 'Blank for a scheme that does not expire.',
+              })}
             />
 
             <FormControlLabel
@@ -181,13 +214,19 @@ export function EditLicenceDialog({
                   }
                 />
               }
-              label="Current"
+              label={intl.formatMessage({
+                id: 'licences.status.current',
+                defaultMessage: 'Current',
+              })}
             />
 
             {!form.isActive && (
               <Alert severity="info">
-                Withdrawn licences stay on recipes that were made under them —
-                only new recipes stop offering it.
+                {intl.formatMessage({
+                  id: 'licences.withdrawnNote',
+                  defaultMessage:
+                    'Withdrawn licences stay on recipes that were made under them — only new recipes stop offering it.',
+                })}
               </Alert>
             )}
           </Stack>
@@ -196,8 +235,14 @@ export function EditLicenceDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

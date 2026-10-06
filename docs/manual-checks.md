@@ -399,7 +399,10 @@ folder by folder; these check what is already in place.
       new version and promote with their tooltips, and the licence on a
       version;
     - costs: the stock value page with what waits for a cost and why, a
-      lot's and a run's cost panels, and setting a cost.
+      lot's and a run's cost panels, and setting a cost;
+    - licences: the register with each licence's status (Current, Expires
+      in N days, Expired, In force from, Withdrawn), adding and editing one,
+      and what a batch was made under on a run and a lot trace.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -465,3 +468,4 @@ first.
 - 2026-10-05: ADR-054, production: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, recipes: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, costs: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, licences: MC-1406 extended.

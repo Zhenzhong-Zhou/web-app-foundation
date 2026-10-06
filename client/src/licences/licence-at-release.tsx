@@ -1,6 +1,8 @@
 import { Link } from '@mui/material';
+import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { nameAndCode, NO_VALUE } from '../lib/format';
 import type {
   LicenceAtReleaseFields,
   LicenceStatusAtRelease,
@@ -26,39 +28,82 @@ export function LicenceAtRelease({
   run: LicenceAtReleaseFields;
   linkToLicences: boolean;
 }) {
+  const intl = useIntl();
+
   if (!run.licenceNumber) {
-    return <>{run.licenceStatusAtRelease === 'none' ? 'No licence' : '—'}</>;
+    return (
+      <>
+        {run.licenceStatusAtRelease === 'none'
+          ? intl.formatMessage({
+              id: 'licences.atRelease.noLicence',
+              defaultMessage: 'No licence',
+            })
+          : NO_VALUE}
+      </>
+    );
   }
 
-  const name = `${run.licenceNumber} (${run.licenceAuthority ?? ''})`;
+  // Data, the same in every language: "80012345 (Health Canada)".
+  const name = nameAndCode(run.licenceNumber, run.licenceAuthority ?? '');
+  const licence = linkToLicences ? (
+    <Link component={RouterLink} to="/licences">
+      {name}
+    </Link>
+  ) : (
+    name
+  );
+  const status = intl.formatMessage(
+    PHRASES[run.licenceStatusAtRelease ?? 'unrecorded'],
+  );
 
-  return (
-    <>
-      {linkToLicences ? (
-        <Link component={RouterLink} to="/licences">
-          {name}
-        </Link>
-      ) : (
-        name
-      )}
-      {`, ${statusPhrase(run.licenceStatusAtRelease)}`}
-      {run.licenceOverrideReason &&
-        `, released by ${run.licenceOverriddenByName ?? 'a former member'}: ${run.licenceOverrideReason}`}
-    </>
+  // One sentence each way, so a language orders the parts as it needs.
+  return run.licenceOverrideReason ? (
+    <FormattedMessage
+      id="licences.atRelease.overridden"
+      defaultMessage="{licence}, {status}, released by {who}: {reason}"
+      values={{
+        licence,
+        status,
+        who:
+          run.licenceOverriddenByName ??
+          intl.formatMessage({
+            id: 'licences.atRelease.formerMember',
+            defaultMessage: 'a former member',
+          }),
+        reason: run.licenceOverrideReason,
+      }}
+    />
+  ) : (
+    <FormattedMessage
+      id="licences.atRelease.line"
+      defaultMessage="{licence}, {status}"
+      values={{ licence, status }}
+    />
   );
 }
 
-function statusPhrase(status: LicenceStatusAtRelease | null): string {
-  switch (status) {
-    case 'current':
-      return 'current at release';
-    case 'expired':
-      return 'expired at release';
-    case 'not_in_force':
-      return 'not yet in force at release';
-    case 'none':
-      return 'no licence at release';
-    case null:
-      return 'state at release not recorded';
-  }
-}
+const PHRASES = defineMessages({
+  current: {
+    id: 'licences.atRelease.current',
+    defaultMessage: 'current at release',
+  },
+  expired: {
+    id: 'licences.atRelease.expired',
+    defaultMessage: 'expired at release',
+  },
+  not_in_force: {
+    id: 'licences.atRelease.notInForce',
+    defaultMessage: 'not yet in force at release',
+  },
+  none: {
+    id: 'licences.atRelease.none',
+    defaultMessage: 'no licence at release',
+  },
+  unrecorded: {
+    id: 'licences.atRelease.unrecorded',
+    defaultMessage: 'state at release not recorded',
+  },
+} satisfies Record<
+  LicenceStatusAtRelease | 'unrecorded',
+  { id: string; defaultMessage: string }
+>);

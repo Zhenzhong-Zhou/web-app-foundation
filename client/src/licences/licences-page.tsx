@@ -14,10 +14,11 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
-import { formatDay } from '../lib/format';
+import { formatDay, NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { ProductLicence } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -35,6 +36,7 @@ import { NewLicenceDialog } from './new-licence-dialog';
  * not earn a permanent tab.
  */
 export function LicencesPage() {
+  const intl = useIntl();
   const can = useCan();
   const {
     data: licences,
@@ -54,21 +56,28 @@ export function LicencesPage() {
     <Stack spacing={3}>
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          Licences
+          {intl.formatMessage({
+            id: 'products.licences',
+            defaultMessage: 'Licences',
+          })}
         </Typography>
 
         {canCreate && (
           <Button onClick={openDialog(() => setCreating(true))}>
-            Add licence
+            {intl.formatMessage({
+              id: 'licences.add',
+              defaultMessage: 'Add licence',
+            })}
           </Button>
         )}
       </Stack>
 
       <Typography variant="body2" color="text.secondary">
-        Recipes are made under these. Withdrawn or expired ones stay listed
-        rather than being deleted, so a batch made under one still traces back.
-        Leave &ldquo;Valid until&rdquo; blank for a scheme that does not expire
-        — an NPN does not.
+        {intl.formatMessage({
+          id: 'licences.intro',
+          defaultMessage:
+            'Recipes are made under these. Withdrawn or expired ones stay listed rather than being deleted, so a batch made under one still traces back. Leave “Valid until” blank for a scheme that does not expire — an NPN does not.',
+        })}
       </Typography>
 
       {error && <Alert severity="error">{error}</Alert>}
@@ -80,21 +89,60 @@ export function LicencesPage() {
           </Stack>
         ) : licences?.length === 0 ? (
           <Alert severity="info">
-            No licences yet. Add the number a formulation is registered under —
-            for a natural health product in Canada, its NPN.
+            {intl.formatMessage({
+              id: 'licences.empty',
+              defaultMessage:
+                'No licences yet. Add the number a formulation is registered under — for a natural health product in Canada, its NPN.',
+            })}
           </Alert>
         ) : (
           <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Number</TableCell>
-                  <TableCell>Issued by</TableCell>
-                  <TableCell>Issued</TableCell>
-                  <TableCell>Valid until</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Notes</TableCell>
-                  <TableCell align="right" aria-label="Actions" />
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.number',
+                      defaultMessage: 'Number',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'licences.issuedBy',
+                      defaultMessage: 'Issued by',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'licences.issued',
+                      defaultMessage: 'Issued',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'licences.validUntil',
+                      defaultMessage: 'Valid until',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.status',
+                      defaultMessage: 'Status',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'boms.notes',
+                      defaultMessage: 'Notes',
+                    })}
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    aria-label={intl.formatMessage({
+                      id: 'orders.lines.actions',
+                      defaultMessage: 'Actions',
+                    })}
+                  />
                 </TableRow>
               </TableHead>
 
@@ -104,10 +152,14 @@ export function LicencesPage() {
                     <TableCell>{licence.number}</TableCell>
                     <TableCell>{licence.authority}</TableCell>
                     <TableCell>
-                      {licence.issuedAt ? formatDay(licence.issuedAt) : '—'}
+                      {licence.issuedAt
+                        ? formatDay(licence.issuedAt)
+                        : NO_VALUE}
                     </TableCell>
                     <TableCell>
-                      {licence.expiresAt ? formatDay(licence.expiresAt) : '—'}
+                      {licence.expiresAt
+                        ? formatDay(licence.expiresAt)
+                        : NO_VALUE}
                     </TableCell>
                     <TableCell>
                       {/* Derived, not stored: a date passes on its own, and a
@@ -121,7 +173,7 @@ export function LicencesPage() {
                         }
                       />
                     </TableCell>
-                    <TableCell>{licence.notes ?? '—'}</TableCell>
+                    <TableCell>{licence.notes ?? NO_VALUE}</TableCell>
                     <TableCell align="right">
                       {/* A correction is the change people come looking for:
                           "who changed the number, and when". */}
@@ -133,7 +185,10 @@ export function LicencesPage() {
                           size="small"
                           onClick={openDialog(() => setEditing(licence))}
                         >
-                          Edit
+                          {intl.formatMessage({
+                            id: 'common.edit',
+                            defaultMessage: 'Edit',
+                          })}
                         </Button>
                       )}
                     </TableCell>
