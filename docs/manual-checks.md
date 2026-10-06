@@ -535,6 +535,9 @@ first.
   language, sign-in and account first: MC-1413.
 - 2026-10-06: ADR-054, emails and notifications in the recipient's
   language: MC-1414.
+- 2026-10-06: ADR-054, `e2e/languages.spec.ts` covers a bilingual printed
+  invoice and a French screen with a French refusal; MC-1412 and MC-1413
+  remain for what a browser test cannot judge (glyphs, layout on paper).
 - 2026-10-06: ADR-054, `seed:demo` sets up a French-and-English and a
   Chinese customer with an issued invoice each, so MC-1407 to MC-1412
   start from a fresh database.
