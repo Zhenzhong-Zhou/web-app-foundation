@@ -3923,6 +3923,16 @@ so:
   an index is not a sequential scan; the growth column caught it. Keep the
   two predicates identical, or Postgres stops using the index.
 
+**Re-run after ADR-054 (6 October 2026).** Small scale, five
+organizations, seed 51, on `seed:volume` with customers whose documents
+print in French and English or in Chinese, and finished goods named in
+French or Chinese. Issuing an invoice, which now looks up product and
+variant names in the customer's languages: 25 ms p95 at 10 connections
+(budget 500 ms), 251 ms at 100, in line with the run above. Every
+budget passed with no errors, the concurrency check passed, and the
+plan check found no new sequential scan; it has no probe for issuing,
+so the timing is the evidence for the name lookup.
+
 **Watch, each with its trigger.**
 
 - **`GET /stock` sorts by names**, which no single index serves, so each
