@@ -392,8 +392,13 @@ folder by folder; these check what is already in place.
   an order line short: a member set to English reads "will not be
   delivered in full" while a member set to Français reads it in French.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
-  it has read every screen already converted, and `docs/glossary.md`, and
-  their corrections are in the catalogues.
+  it has read every message, screens and server both, and
+  `docs/glossary.md`, and their corrections are in the catalogues:
+  `node scripts/i18n-review.mjs export` writes `review/fr-CA.xlsx` and
+  `review/zh-Hans.xlsx`; each reviewer fills in the Correction column;
+  `node scripts/i18n-review.mjs import review/fr-CA.xlsx` writes them
+  back, refusing the whole file if any correction loses a placeholder;
+  then `npm run i18n:check` in client/ and server/, and one commit.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
     - signed out: sign-in, register, forgot-password, reset and verify,

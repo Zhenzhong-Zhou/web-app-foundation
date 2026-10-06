@@ -144,8 +144,10 @@ Then tag v0.4.0.
    the audit log names every action in the reader's language too
    (`client/src/audit/audit-actions.ts`, held to the server's list by
    `server/scripts/check-client-audit-actions.js`); field names in a
-   change stay as the API names them. Left: the review tools, then step 4
-   (the fluent review), then step 7. The packing slip's item names are the products' own names; only
+   change stay as the API names them. The review tools are in
+   `scripts/i18n-review.mjs` (export one workbook per language, import the
+   reviewers' corrections; see MC-1405). Left: step 7, while the reviewers
+   work, then step 4's import as one commit. The packing slip's item names are the products' own names; only
    the invoice and credit note carry names in other languages.
 
    Added to the plan while building, not in the ADR's list:
