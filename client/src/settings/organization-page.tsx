@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { defineMessages, useIntl } from 'react-intl';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
@@ -31,6 +32,7 @@ import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
  * Anyone can read them; only the Owner changes them.
  */
 export function OrganizationPage() {
+  const intl = useIntl();
   const can = useCan();
   const { data, error, reload } = useResource<{
     organization: OrganizationProfile;
@@ -44,15 +46,21 @@ export function OrganizationPage() {
     <Stack spacing={3}>
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          {organization?.name ?? 'Organization'}
+          {organization?.name ??
+            intl.formatMessage({
+              id: 'layout.menu.organization',
+              defaultMessage: 'Organization',
+            })}
         </Typography>
         {organization && <HistoryButton resourceId={organization.id} />}
       </Stack>
 
       <Typography variant="body2" color="text.secondary">
-        Every invoice prints these as the seller, copied on the day it is issued
-        — changing them here never changes an invoice already sent. Invoices
-        cannot be issued until the registered address is set.
+        {intl.formatMessage({
+          id: 'settings.org.intro',
+          defaultMessage:
+            'Every invoice prints these as the seller, copied on the day it is issued — changing them here never changes an invoice already sent. Invoices cannot be issued until the registered address is set.',
+        })}
       </Typography>
 
       {error && <Alert severity="error">{error}</Alert>}
@@ -113,9 +121,13 @@ function TaxNumberForm({
   readOnly: boolean;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [taxNumber, setTaxNumber] = useState(value ?? '');
   const { submitting, error, submit } = useSubmit(onSaved, {
-    success: 'Tax number saved',
+    success: intl.formatMessage({
+      id: 'settings.org.tax.saved',
+      defaultMessage: 'Tax number saved',
+    }),
   });
 
   function handleSubmit(event: SubmitEvent) {
@@ -132,21 +144,34 @@ function TaxNumberForm({
 
   return (
     <SettingsSection
-      title="Tax registration"
+      title={intl.formatMessage({
+        id: 'settings.org.tax.title',
+        defaultMessage: 'Tax registration',
+      })}
       onSubmit={handleSubmit}
       error={error}
       submitting={submitting}
       readOnly={readOnly}
-      saveLabel="Save tax number"
+      saveLabel={intl.formatMessage({
+        id: 'settings.org.tax.save',
+        defaultMessage: 'Save tax number',
+      })}
     >
       <TextField
         id="organization-tax-number"
-        label="Tax registration number"
+        label={intl.formatMessage({
+          id: 'settings.org.tax.label',
+          defaultMessage: 'Tax registration number',
+        })}
         fullWidth
         value={taxNumber}
         onChange={(event) => setTaxNumber(event.target.value)}
         disabled={readOnly}
-        helperText="GST/HST, VAT, ABN — as issued. Leave blank if not registered."
+        helperText={intl.formatMessage({
+          id: 'settings.org.tax.help',
+          defaultMessage:
+            'GST/HST, VAT, ABN — as issued. Leave blank if not registered.',
+        })}
         slotProps={{ htmlInput: { maxLength: 50 } }}
       />
     </SettingsSection>
@@ -171,6 +196,7 @@ function AddressForm({
   readOnly: boolean;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState(
     address
       ? {
@@ -185,7 +211,10 @@ function AddressForm({
   );
 
   const { submitting, error, submit } = useSubmit(onSaved, {
-    success: 'Registered address saved',
+    success: intl.formatMessage({
+      id: 'settings.org.address.saved',
+      defaultMessage: 'Registered address saved',
+    }),
   });
 
   function update(field: keyof typeof form) {
@@ -214,24 +243,37 @@ function AddressForm({
 
   return (
     <SettingsSection
-      title="Registered address"
+      title={intl.formatMessage({
+        id: 'settings.org.address.title',
+        defaultMessage: 'Registered address',
+      })}
       onSubmit={handleSubmit}
       error={error}
       submitting={submitting}
       readOnly={readOnly}
-      saveLabel="Save address"
+      saveLabel={intl.formatMessage({
+        id: 'settings.org.address.save',
+        defaultMessage: 'Save address',
+      })}
       notice={
         !address &&
         !readOnly && (
           <Alert severity="info">
-            Not set yet. Invoices print this, so none can be issued until it is.
+            {intl.formatMessage({
+              id: 'settings.org.address.notSet',
+              defaultMessage:
+                'Not set yet. Invoices print this, so none can be issued until it is.',
+            })}
           </Alert>
         )
       }
     >
       <TextField
         id="organization-line1"
-        label="Address line 1"
+        label={intl.formatMessage({
+          id: 'settings.org.address.line1',
+          defaultMessage: 'Address line 1',
+        })}
         required
         fullWidth
         value={form.line1}
@@ -241,7 +283,10 @@ function AddressForm({
       />
       <TextField
         id="organization-line2"
-        label="Address line 2"
+        label={intl.formatMessage({
+          id: 'partners.address.line2',
+          defaultMessage: 'Address line 2',
+        })}
         fullWidth
         value={form.line2}
         onChange={update('line2')}
@@ -252,7 +297,10 @@ function AddressForm({
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
         <TextField
           id="organization-city"
-          label="City"
+          label={intl.formatMessage({
+            id: 'partners.address.city',
+            defaultMessage: 'City',
+          })}
           fullWidth
           value={form.city}
           onChange={update('city')}
@@ -261,7 +309,10 @@ function AddressForm({
         />
         <TextField
           id="organization-region"
-          label="Province or state"
+          label={intl.formatMessage({
+            id: 'partners.address.region',
+            defaultMessage: 'Province or state',
+          })}
           fullWidth
           value={form.region}
           onChange={update('region')}
@@ -273,7 +324,10 @@ function AddressForm({
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
         <TextField
           id="organization-postal-code"
-          label="Postal code"
+          label={intl.formatMessage({
+            id: 'partners.address.postalCode',
+            defaultMessage: 'Postal code',
+          })}
           fullWidth
           value={form.postalCode}
           onChange={update('postalCode')}
@@ -282,13 +336,19 @@ function AddressForm({
         />
         <TextField
           id="organization-country"
-          label="Country"
+          label={intl.formatMessage({
+            id: 'partners.address.country',
+            defaultMessage: 'Country',
+          })}
           required
           fullWidth
           value={form.country}
           onChange={update('country')}
           disabled={readOnly}
-          helperText="Two letters: CA, US."
+          helperText={intl.formatMessage({
+            id: 'settings.org.country.help',
+            defaultMessage: 'Two letters: CA, US.',
+          })}
           slotProps={{ htmlInput: { maxLength: 2 } }}
         />
       </Stack>
@@ -311,9 +371,13 @@ function BaseCurrencyForm({
   readOnly: boolean;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [currency, setCurrency] = useState(value ?? '');
   const { submitting, error, submit } = useSubmit(onSaved, {
-    success: 'Base currency saved',
+    success: intl.formatMessage({
+      id: 'settings.org.currency.saved',
+      defaultMessage: 'Base currency saved',
+    }),
   });
 
   const trimmed = currency.trim().toUpperCase();
@@ -331,40 +395,65 @@ function BaseCurrencyForm({
 
   return (
     <SettingsSection
-      title="Base currency"
+      title={intl.formatMessage({
+        id: 'settings.org.currency.title',
+        defaultMessage: 'Base currency',
+      })}
       onSubmit={handleSubmit}
       error={error}
       submitting={submitting}
       readOnly={readOnly}
-      saveLabel="Save base currency"
+      saveLabel={intl.formatMessage({
+        id: 'settings.org.currency.save',
+        defaultMessage: 'Save base currency',
+      })}
       saveDisabled={trimmed.length !== 3 || trimmed === value}
       notice={
         !value &&
         !readOnly && (
           <Alert severity="info">
-            Not set yet. Stock received before it is set waits for a cost.
+            {intl.formatMessage({
+              id: 'settings.org.currency.notSet',
+              defaultMessage:
+                'Not set yet. Stock received before it is set waits for a cost.',
+            })}
           </Alert>
         )
       }
     >
       <CurrencyField
         id="organization-base-currency"
-        label="Base currency"
+        label={intl.formatMessage({
+          id: 'settings.org.currency.title',
+          defaultMessage: 'Base currency',
+        })}
         value={currency}
         onChange={setCurrency}
         disabled={readOnly}
-        helperText="What stock is valued in: CAD, USD. It cannot change once stock carries a value in it."
+        helperText={intl.formatMessage({
+          id: 'settings.org.currency.help',
+          defaultMessage:
+            'What stock is valued in: CAD, USD. It cannot change once stock carries a value in it.',
+        })}
         sx={{ maxWidth: 240 }}
       />
     </SettingsSection>
   );
 }
 
-const POLICY_LABEL: Record<LicencePolicy, string> = {
-  block: 'Refuse',
-  override: 'Refuse unless overridden, with a reason',
-  allow: 'Allow, and record it',
-};
+const POLICY_LABEL = defineMessages({
+  block: { id: 'settings.org.policy.block', defaultMessage: 'Refuse' },
+  override: {
+    id: 'settings.org.policy.override',
+    defaultMessage: 'Refuse unless overridden, with a reason',
+  },
+  allow: {
+    id: 'settings.org.policy.allow',
+    defaultMessage: 'Allow, and record it',
+  },
+});
+
+const POLICIES: LicencePolicy[] = ['block', 'override', 'allow'];
 
 /**
  * What release does with the licence on a run's recipe (ADR-050). One rule
@@ -385,6 +474,7 @@ function LicencePolicyForm({
   readOnly: boolean;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [notInForce, setNotInForce] = useState(
     organization.licenceNotInForcePolicy,
   );
@@ -392,7 +482,10 @@ function LicencePolicyForm({
   const [required, setRequired] = useState(organization.licenceRequired);
 
   const { submitting, error, submit } = useSubmit(onSaved, {
-    success: 'Licence policy saved',
+    success: intl.formatMessage({
+      id: 'settings.org.licence.saved',
+      defaultMessage: 'Licence policy saved',
+    }),
   });
 
   const unchanged =
@@ -417,23 +510,35 @@ function LicencePolicyForm({
 
   return (
     <SettingsSection
-      title="Licences at release"
+      title={intl.formatMessage({
+        id: 'settings.org.licence.title',
+        defaultMessage: 'Licences at release',
+      })}
       onSubmit={handleSubmit}
       error={error}
       submitting={submitting}
       readOnly={readOnly}
-      saveLabel="Save licence policy"
+      saveLabel={intl.formatMessage({
+        id: 'settings.org.licence.save',
+        defaultMessage: 'Save licence policy',
+      })}
       saveDisabled={unchanged}
     >
       <Typography variant="body2" color="text.secondary">
-        Checked when a run is released, against the licence on its recipe. A
-        withdrawn licence is always refused.
+        {intl.formatMessage({
+          id: 'settings.org.licence.intro',
+          defaultMessage:
+            'Checked when a run is released, against the licence on its recipe. A withdrawn licence is always refused.',
+        })}
       </Typography>
 
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
         <TextField
           id="organization-licence-not-in-force"
-          label="Not yet in force"
+          label={intl.formatMessage({
+            id: 'settings.org.licence.notInForce',
+            defaultMessage: 'Not yet in force',
+          })}
           select
           fullWidth
           value={notInForce}
@@ -441,28 +546,38 @@ function LicencePolicyForm({
             setNotInForce(event.target.value as LicencePolicy)
           }
           disabled={readOnly}
-          helperText="Issued from a date still to come."
+          helperText={intl.formatMessage({
+            id: 'settings.org.licence.notInForce.help',
+            defaultMessage: 'Issued from a date still to come.',
+          })}
         >
-          {(Object.keys(POLICY_LABEL) as LicencePolicy[]).map((policy) => (
+          {POLICIES.map((policy) => (
             <MenuItem key={policy} value={policy}>
-              {POLICY_LABEL[policy]}
+              {intl.formatMessage(POLICY_LABEL[policy])}
             </MenuItem>
           ))}
         </TextField>
 
         <TextField
           id="organization-licence-expired"
-          label="Expired"
+          label={intl.formatMessage({
+            id: 'licences.status.expired',
+            defaultMessage: 'Expired',
+          })}
           select
           fullWidth
           value={expired}
           onChange={(event) => setExpired(event.target.value as LicencePolicy)}
           disabled={readOnly}
-          helperText="Past its expiry date, such as a renewal still pending."
+          helperText={intl.formatMessage({
+            id: 'settings.org.licence.expired.help',
+            defaultMessage:
+              'Past its expiry date, such as a renewal still pending.',
+          })}
         >
-          {(Object.keys(POLICY_LABEL) as LicencePolicy[]).map((policy) => (
+          {POLICIES.map((policy) => (
             <MenuItem key={policy} value={policy}>
-              {POLICY_LABEL[policy]}
+              {intl.formatMessage(POLICY_LABEL[policy])}
             </MenuItem>
           ))}
         </TextField>
@@ -476,7 +591,10 @@ function LicencePolicyForm({
             disabled={readOnly}
           />
         }
-        label="A recipe must carry a licence to be released"
+        label={intl.formatMessage({
+          id: 'settings.org.licence.required',
+          defaultMessage: 'A recipe must carry a licence to be released',
+        })}
       />
     </SettingsSection>
   );

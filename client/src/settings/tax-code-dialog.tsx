@@ -11,13 +11,18 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import { groupedNumberMessage, toApiDecimal } from '../lib/format';
 import type { TaxCode } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
-import { formatRate } from './tax-rate';
+import { rateNumber } from './tax-rate';
+
+/** The remove button's mark: a symbol, the same in every language. */
+const CROSS = '×';
 
 interface ComponentRow {
   name: string;
@@ -45,7 +50,10 @@ export function TaxCodeDialog({
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const editing = taxCode !== null;
+  // Set when a rate is typed with a thousands separator (ADR-054).
+  const [numberError, setNumberError] = useState<string | null>(null);
 
   const [name, setName] = useState(taxCode?.name ?? '');
   const [isActive, setIsActive] = useState(taxCode?.isActive ?? true);
@@ -54,7 +62,8 @@ export function TaxCodeDialog({
       ? taxCode.components.map((component) => ({
           name: component.name,
           // Shown as people read it: 5, not 5.0000.
-          rate: formatRate(component.rate).slice(0, -1),
+          // The number alone, the reader's way: "9,975" in French.
+          rate: rateNumber(component.rate),
         }))
       : [{ name: '', rate: '' }],
   );
@@ -64,10 +73,21 @@ export function TaxCodeDialog({
       close();
       await onSaved();
     },
-    { success: editing ? 'Tax code saved' : 'Tax code added' },
+    {
+      success: editing
+        ? intl.formatMessage({
+            id: 'settings.tax.saved',
+            defaultMessage: 'Tax code saved',
+          })
+        : intl.formatMessage({
+            id: 'settings.tax.added',
+            defaultMessage: 'Tax code added',
+          }),
+    },
   );
 
   function close() {
+    setNumberError(null);
     reset();
     onClose();
   }
@@ -84,7 +104,13 @@ export function TaxCodeDialog({
     // A row left completely empty is a row the person meant to delete.
     const components = rows
       .filter((row) => row.name.trim() || row.rate.trim())
-      .map((row) => ({ name: row.name.trim(), rate: row.rate.trim() }));
+      .map((row) => ({ name: row.name.trim(), rate: toApiDecimal(row.rate) }));
+
+    if (components.some((component) => component.rate === null)) {
+      setNumberError(groupedNumberMessage());
+      return;
+    }
+    setNumberError(null);
 
     void submit(() =>
       taxCode
@@ -108,28 +134,53 @@ export function TaxCodeDialog({
     >
       <form onSubmit={handleSubmit}>
         <DialogTitle>
-          {editing ? 'Edit tax code' : 'Add a tax code'}
+          {editing
+            ? intl.formatMessage({
+                id: 'settings.tax.editTitle',
+                defaultMessage: 'Edit tax code',
+              })
+            : intl.formatMessage({
+                id: 'settings.tax.addTitle',
+                defaultMessage: 'Add a tax code',
+              })}
         </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {(numberError ?? error) && (
+              <FormError message={(numberError ?? error)!} />
+            )}
 
             <TextField
               id="tax-code-name"
-              label="Name"
+              label={intl.formatMessage({
+                id: 'common.name',
+                defaultMessage: 'Name',
+              })}
               required
               fullWidth
               value={name}
               onChange={(event) => setName(event.target.value)}
-              helperText="What the invoice line shows: GST, GST + PST (BC), Exempt."
+              helperText={intl.formatMessage({
+                id: 'settings.tax.name.help',
+                defaultMessage:
+                  'What the invoice line shows: GST, GST + PST (BC), Exempt.',
+              })}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
-            <Typography variant="subtitle2">Taxes it charges</Typography>
+            <Typography variant="subtitle2">
+              {intl.formatMessage({
+                id: 'settings.tax.charges.title',
+                defaultMessage: 'Taxes it charges',
+              })}
+            </Typography>
             <Typography variant="body2" color="text.secondary">
-              Each is charged on the same amount. Leave none for a code that
-              charges nothing.
+              {intl.formatMessage({
+                id: 'settings.tax.charges.help',
+                defaultMessage:
+                  'Each is charged on the same amount. Leave none for a code that charges nothing.',
+              })}
             </Typography>
 
             {rows.map((row, index) => (
@@ -140,7 +191,10 @@ export function TaxCodeDialog({
                 sx={{ alignItems: 'center' }}
               >
                 <TextField
-                  label="Tax"
+                  label={intl.formatMessage({
+                    id: 'invoices.tax',
+                    defaultMessage: 'Tax',
+                  })}
                   size="small"
                   value={row.name}
                   onChange={(event) =>
@@ -150,7 +204,10 @@ export function TaxCodeDialog({
                   sx={{ flexGrow: 1 }}
                 />
                 <TextField
-                  label="Rate %"
+                  label={intl.formatMessage({
+                    id: 'settings.tax.ratePercent',
+                    defaultMessage: 'Rate %',
+                  })}
                   size="small"
                   value={row.rate}
                   onChange={(event) =>
@@ -162,12 +219,25 @@ export function TaxCodeDialog({
                   sx={{ width: 120 }}
                 />
                 <IconButton
-                  aria-label={`Remove ${row.name || 'this tax'}`}
+                  aria-label={
+                    row.name
+                      ? intl.formatMessage(
+                          {
+                            id: 'orders.lines.remove',
+                            defaultMessage: 'Remove {sku}',
+                          },
+                          { sku: row.name },
+                        )
+                      : intl.formatMessage({
+                          id: 'settings.tax.removeThis',
+                          defaultMessage: 'Remove this tax',
+                        })
+                  }
                   onClick={() =>
                     setRows((current) => current.filter((_, i) => i !== index))
                   }
                 >
-                  ×
+                  {CROSS}
                 </IconButton>
               </Stack>
             ))}
@@ -179,7 +249,10 @@ export function TaxCodeDialog({
               }
               sx={{ alignSelf: 'flex-start' }}
             >
-              Add a tax
+              {intl.formatMessage({
+                id: 'settings.tax.addTax',
+                defaultMessage: 'Add a tax',
+              })}
             </Button>
 
             {editing && (
@@ -190,7 +263,11 @@ export function TaxCodeDialog({
                     onChange={(event) => setIsActive(event.target.checked)}
                   />
                 }
-                label="In use — retired codes stay on invoices that used them"
+                label={intl.formatMessage({
+                  id: 'settings.tax.inUse',
+                  defaultMessage:
+                    'In use — retired codes stay on invoices that used them',
+                })}
               />
             )}
           </Stack>
@@ -199,8 +276,14 @@ export function TaxCodeDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

@@ -13,12 +13,13 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { api, messageFor } from '../lib/api';
-import { formatDay } from '../lib/format';
+import { formatDay, formatQuantity } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { ExchangeRate, OrganizationProfile } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -28,8 +29,9 @@ import { ExchangeRateDialog } from './exchange-rate-dialog';
  * 1.37000000 as 1.37. String work, not arithmetic (ADR-025): the column
  * always carries eight places, so only zeros after a point are dropped.
  */
+/** Trailing zeros dropped on the string, then the reader's separator. */
 function trimRate(rate: string): string {
-  return rate.includes('.') ? rate.replace(/\.?0+$/, '') : rate;
+  return formatQuantity(rate.includes('.') ? rate.replace(/\.?0+$/, '') : rate);
 }
 
 interface Loaded {
@@ -57,6 +59,7 @@ async function fetchAll(): Promise<Loaded> {
  * on or before the day it arrived; with none on file it waits for a cost.
  */
 export function ExchangeRatesPage() {
+  const intl = useIntl();
   const can = useCan();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -98,32 +101,45 @@ export function ExchangeRatesPage() {
     <Stack spacing={3}>
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          Exchange rates
+          {intl.formatMessage({
+            id: 'layout.menu.exchangeRates',
+            defaultMessage: 'Exchange rates',
+          })}
         </Typography>
 
         {canUpdate && baseCurrency && (
           <Button onClick={openDialog(() => setCreating(true))}>
-            Set a rate
+            {intl.formatMessage({
+              id: 'settings.rates.set',
+              defaultMessage: 'Set a rate',
+            })}
           </Button>
         )}
       </Stack>
 
       <Typography variant="body2" color="text.secondary">
-        What one unit of another currency is worth in your base currency, day by
-        day. A purchase priced in that currency is valued at the latest rate on
-        or before the day it arrived. Correcting a rate changes nothing already
-        valued.
+        {intl.formatMessage({
+          id: 'settings.rates.intro',
+          defaultMessage:
+            'What one unit of another currency is worth in your base currency, day by day. A purchase priced in that currency is valued at the latest rate on or before the day it arrived. Correcting a rate changes nothing already valued.',
+        })}
       </Typography>
 
       {error && <Alert severity="error">{error}</Alert>}
 
       {loaded && !baseCurrency && (
         <Alert severity="info">
-          Set a base currency on the{' '}
-          <Link component={RouterLink} to="/settings/organization">
-            Organization
-          </Link>{' '}
-          page first — a rate converts into it.
+          <FormattedMessage
+            id="settings.rates.noBase"
+            defaultMessage="Set a base currency on the <link>Organization</link> page first — a rate converts into it."
+            values={{
+              link: (chunks: ReactNode[]) => (
+                <Link component={RouterLink} to="/settings/organization">
+                  {chunks}
+                </Link>
+              ),
+            }}
+          />
         </Alert>
       )}
 
@@ -133,18 +149,50 @@ export function ExchangeRatesPage() {
             {showSkeleton ? <Skeleton height={48} /> : null}
           </Stack>
         ) : loaded?.rates.length === 0 ? (
-          <Alert severity="info">No rates yet.</Alert>
+          <Alert severity="info">
+            {intl.formatMessage({
+              id: 'settings.rates.empty',
+              defaultMessage: 'No rates yet.',
+            })}
+          </Alert>
         ) : (
           <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Day</TableCell>
-                  <TableCell>Currency</TableCell>
-                  <TableCell align="right">
-                    Rate{baseCurrency ? ` (in ${baseCurrency})` : ''}
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'settings.rates.day',
+                      defaultMessage: 'Day',
+                    })}
                   </TableCell>
-                  <TableCell align="right" aria-label="Actions" />
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'components.currency.label',
+                      defaultMessage: 'Currency',
+                    })}
+                  </TableCell>
+                  <TableCell align="right">
+                    {baseCurrency
+                      ? intl.formatMessage(
+                          {
+                            id: 'settings.rates.rateIn',
+                            defaultMessage: 'Rate (in {currency})',
+                          },
+                          { currency: baseCurrency },
+                        )
+                      : intl.formatMessage({
+                          id: 'settings.rates.rate',
+                          defaultMessage: 'Rate',
+                        })}
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    aria-label={intl.formatMessage({
+                      id: 'orders.lines.actions',
+                      defaultMessage: 'Actions',
+                    })}
+                  />
                 </TableRow>
               </TableHead>
 
@@ -161,7 +209,10 @@ export function ExchangeRatesPage() {
                           size="small"
                           onClick={openDialog(() => setEditing(rate))}
                         >
-                          Correct
+                          {intl.formatMessage({
+                            id: 'settings.rates.correct',
+                            defaultMessage: 'Correct',
+                          })}
                         </Button>
                       )}
                     </TableCell>
