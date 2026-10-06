@@ -23,6 +23,27 @@ export const LANGUAGE_NAMES: Record<Locale, string> = {
   'zh-Hans': '简体中文',
 };
 
+/**
+ * Where a language is offered to read the app in, its name says when its
+ * translations have not been reviewed by someone fluent (MC-1405), in that
+ * language's own words, so a reader expects rough wording before choosing
+ * it. Empty for a reviewed language: delete a language's entry once its
+ * review is imported, and the mark is gone everywhere.
+ *
+ * Only the language picker shows it. A document's languages and required
+ * name languages are the customer's settings, not a choice of how to read
+ * the app, and keep the plain names.
+ */
+export const UNREVIEWED_MARK: Partial<Record<Locale, string>> = {
+  'fr-CA': ' — bêta',
+  'zh-Hans': '（测试版）',
+};
+
+/** A language's name as the picker offers it. */
+export function pickerName(locale: Locale): string {
+  return LANGUAGE_NAMES[locale] + (UNREVIEWED_MARK[locale] ?? '');
+}
+
 export function isLocale(value: unknown): value is Locale {
   return (SUPPORTED_LOCALES as readonly unknown[]).includes(value);
 }

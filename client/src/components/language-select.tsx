@@ -5,7 +5,7 @@ import { useIntl } from 'react-intl';
 import { useAuth } from '../auth/use-auth';
 import { useLanguage } from '../i18n/use-language';
 import { api } from '../lib/api';
-import { isLocale, LANGUAGE_NAMES, SUPPORTED_LOCALES } from '../lib/locales';
+import { isLocale, pickerName, SUPPORTED_LOCALES } from '../lib/locales';
 
 /**
  * The language the app speaks to you (ADR-054): in the account menu beside
@@ -50,7 +50,7 @@ export function LanguageSelect() {
     >
       {SUPPORTED_LOCALES.map((tag) => (
         <MenuItem key={tag} value={tag} lang={tag}>
-          {LANGUAGE_NAMES[tag]}
+          {pickerName(tag)}
         </MenuItem>
       ))}
     </Select>

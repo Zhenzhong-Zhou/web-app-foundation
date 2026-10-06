@@ -149,8 +149,11 @@ Then tag v0.4.0.
      drafts, written alongside the code against `docs/glossary.md`. When a
      reviewer is available: `node scripts/i18n-review.mjs export` writes
      `review/fr-CA.xlsx` and `review/zh-Hans.xlsx`, they fill in the
-     Correction column, `import` writes it back, one commit. Say so in
-     release notes until then.
+     Correction column, `import` writes it back, one commit. Until then the
+     language picker marks both, "Français (Canada) — bêta" and
+     "简体中文（测试版）" (`UNREVIEWED_MARK` in `client/src/lib/locales.ts`;
+     delete a language's entry once its review is imported), and release
+     notes say so.
    - **The v0.4 end-of-milestone walkthrough was skipped**, and v0.4.0
      never tagged; the next tag (v0.5.0, covering ADR-052 to ADR-054)
      says so in its notes.

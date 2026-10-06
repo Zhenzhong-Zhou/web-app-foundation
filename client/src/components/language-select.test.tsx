@@ -23,11 +23,10 @@ describe('LanguageSelect', () => {
 
     expect(
       screen.getAllByRole('option').map((option) => option.textContent),
-    ).toEqual(['English', 'Français (Canada)', '简体中文']);
-    expect(screen.getByRole('option', { name: '简体中文' })).toHaveAttribute(
-      'lang',
-      'zh-Hans',
-    );
+    ).toEqual(['English', 'Français (Canada) — bêta', '简体中文（测试版）']);
+    expect(
+      screen.getByRole('option', { name: '简体中文（测试版）' }),
+    ).toHaveAttribute('lang', 'zh-Hans');
   });
 
   it('switches the screens, the page language and the account', async () => {
@@ -43,7 +42,7 @@ describe('LanguageSelect', () => {
 
     await userEvent.click(screen.getByRole('combobox', { name: 'Language' }));
     await userEvent.click(
-      screen.getByRole('option', { name: 'Français (Canada)' }),
+      screen.getByRole('option', { name: 'Français (Canada) — bêta' }),
     );
 
     // Its own label is now French: the catalogue loaded and took over.
