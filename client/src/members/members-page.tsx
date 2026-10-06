@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
@@ -23,6 +24,7 @@ import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { CreateMemberDialog } from './create-member-dialog.tsx';
+import { roleLabel } from './role-names';
 
 interface Member {
   id: string;
@@ -37,6 +39,7 @@ interface Role {
 }
 
 export function MembersPage() {
+  const intl = useIntl();
   const { session } = useAuth();
   const can = useCan();
 
@@ -111,14 +114,23 @@ export function MembersPage() {
   }
 
   const roleName = (roleId: string) =>
-    roles.find((role) => role.id === roleId)?.name ?? 'Unknown';
+    roleLabel(
+      roles.find((role) => role.id === roleId)?.name ??
+        intl.formatMessage({
+          id: 'members.role.unknown',
+          defaultMessage: 'Unknown',
+        }),
+    );
 
   return (
     // Heading draws immediately; only the table holds space and fills in.
     <Stack spacing={3}>
       <PageHeader
         crumbs={[]}
-        title="Members"
+        title={intl.formatMessage({
+          id: 'layout.menu.members',
+          defaultMessage: 'Members',
+        })}
         actions={
           <Stack direction="row" spacing={1}>
             <Button
@@ -126,14 +138,20 @@ export function MembersPage() {
               disabled={loading}
               onClick={() => void load()}
             >
-              Refresh
+              {intl.formatMessage({
+                id: 'common.refresh',
+                defaultMessage: 'Refresh',
+              })}
             </Button>
 
             {/* Hidden without users.create — display only, since the 403 is the
             actual control (ADR-016). */}
             {can('users.create') && (
               <Button onClick={openDialog(() => setCreating(true))}>
-                Add member
+                {intl.formatMessage({
+                  id: 'members.add',
+                  defaultMessage: 'Add member',
+                })}
               </Button>
             )}
           </Stack>
@@ -164,9 +182,24 @@ export function MembersPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.name',
+                      defaultMessage: 'Name',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'auth.field.email',
+                      defaultMessage: 'Email',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'members.role',
+                      defaultMessage: 'Role',
+                    })}
+                  </TableCell>
                 </TableRow>
               </TableHead>
 
@@ -193,7 +226,7 @@ export function MembersPage() {
                           >
                             {roles.map((role) => (
                               <MenuItem key={role.id} value={role.id}>
-                                {role.name}
+                                {roleLabel(role.name)}
                               </MenuItem>
                             ))}
                           </Select>
@@ -210,7 +243,10 @@ export function MembersPage() {
                             sx={{ ml: 1 }}
                             color="text.secondary"
                           >
-                            you
+                            {intl.formatMessage({
+                              id: 'members.you',
+                              defaultMessage: 'you',
+                            })}
                           </Typography>
                         )}
                       </TableCell>

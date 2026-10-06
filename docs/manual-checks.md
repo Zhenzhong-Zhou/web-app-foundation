@@ -416,7 +416,10 @@ folder by folder; these check what is already in place.
       one, setting a price, the picker (a retired list marked so), a
       partner's lists and the organization's default;
     - settings: the Organization page's sections and licence policy, tax
-      codes with their rates (9,975 % in French), and exchange rates.
+      codes with their rates (9,975 % in French), and exchange rates;
+    - members: the list, changing a role and adding a member, with the
+      built-in roles (Owner, Admin, Viewer) named in the language and a
+      role the organization named itself shown as named.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -486,3 +489,4 @@ first.
 - 2026-10-05: ADR-054, price lists: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, settings: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, the organization's languages: MC-1411, MC-1408 reworded.
+- 2026-10-06: ADR-054, members: MC-1406 extended.
