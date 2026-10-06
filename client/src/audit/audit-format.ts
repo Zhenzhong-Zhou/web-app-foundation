@@ -1,4 +1,7 @@
-import { formatDay } from '../lib/format';
+import { defineMessages } from 'react-intl';
+
+import { intl } from '../i18n/intl';
+import { formatDay, NO_VALUE, SEPARATOR } from '../lib/format';
 
 /**
  * How an audit row reads, shared by the audit page and the history drawer.
@@ -41,10 +44,16 @@ export interface AuditRecord {
  * is the worst time to meet a raw key. `describe` derives instead, and this
  * holds the handful of exceptions.
  */
-const ACTION_LABELS: Record<string, string> = {
-  'user.created': 'Added a member',
-  'user.role_changed': "Changed a member's role",
-};
+const ACTION_LABELS = defineMessages({
+  'user.created': {
+    id: 'audit.action.userCreated',
+    defaultMessage: 'Added a member',
+  },
+  'user.role_changed': {
+    id: 'audit.action.userRoleChanged',
+    defaultMessage: "Changed a member's role",
+  },
+});
 
 /**
  * Human text for an action key.
@@ -54,8 +63,14 @@ const ACTION_LABELS: Record<string, string> = {
  * keep in step with the server's, and the client cannot import that constant.
  */
 export function describe(action: string): string {
-  const override = ACTION_LABELS[action];
-  if (override) return override;
+  // These two in the reader's language (ADR-054). The rest are spelled out
+  // from the server's keys, in English until the server names its own
+  // actions (ADR-054, step 6).
+  if (action in ACTION_LABELS) {
+    return intl().formatMessage(
+      ACTION_LABELS[action as keyof typeof ACTION_LABELS],
+    );
+  }
 
   const [resource, ...rest] = action.split('.');
   const words = `${resource} ${rest.join('.')}`.replace(/_/g, ' ').trim();
@@ -77,10 +92,13 @@ const CALENDAR_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 
-const MOMENT = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
+/** A moment, in the reader's language. */
+function moment(value: string): string {
+  return intl().formatDate(new Date(value), {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
 
 /**
  * A value as it should read in the log.
@@ -96,16 +114,14 @@ const MOMENT = new Intl.DateTimeFormat(undefined, {
  * timestamp reads in the viewer's local time, because it was a moment.
  */
 function show(key: string, value: unknown): string {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return NO_VALUE;
 
   if (typeof value === 'string' && CALENDAR_DAY.test(value)) {
     return formatDay(value);
   }
 
   if (typeof value === 'string' && ISO_TIMESTAMP.test(value)) {
-    return CALENDAR_DAYS.has(key)
-      ? formatDay(value)
-      : MOMENT.format(new Date(value));
+    return CALENDAR_DAYS.has(key) ? formatDay(value) : moment(value);
   }
 
   return String(value);
@@ -157,6 +173,11 @@ export function summarise(
     }
   }
 
-  if (parts.length > 0) return parts.join(' · ');
-  return entries.length > 0 ? 'Saved with no changes' : null;
+  if (parts.length > 0) return parts.join(SEPARATOR);
+  return entries.length > 0
+    ? intl().formatMessage({
+        id: 'audit.noChanges',
+        defaultMessage: 'Saved with no changes',
+      })
+    : null;
 }

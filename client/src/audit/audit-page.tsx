@@ -15,13 +15,14 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { api } from '../lib/api';
-import { relativeTime } from '../lib/format';
+import { NO_VALUE, relativeTime, SEPARATOR } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { type AuditRecord, describe, summarise } from './audit-format';
@@ -37,6 +38,7 @@ import { type AuditRecord, describe, summarise } from './audit-format';
 const PAGE_SIZE = 25;
 
 export function AuditPage() {
+  const intl = useIntl();
   const can = useCan();
 
   /**
@@ -121,10 +123,17 @@ export function AuditPage() {
     return (
       <Stack spacing={2}>
         <Typography variant="h5" component="h1">
-          Audit log
+          {intl.formatMessage({
+            id: 'layout.menu.auditLog',
+            defaultMessage: 'Audit log',
+          })}
         </Typography>
         <Alert severity="info">
-          Your role does not include access to the audit log.
+          {intl.formatMessage({
+            id: 'audit.noAccess',
+            defaultMessage:
+              'Your role does not include access to the audit log.',
+          })}
         </Alert>
       </Stack>
     );
@@ -134,8 +143,15 @@ export function AuditPage() {
     <Stack spacing={3}>
       <PageHeader
         crumbs={[]}
-        title="Audit log"
-        subtitle="Every change made in this organization, newest first. Entries are kept for two years and cannot be edited or removed. Where a value is shown, it is what the field was set to — not what it was before."
+        title={intl.formatMessage({
+          id: 'layout.menu.auditLog',
+          defaultMessage: 'Audit log',
+        })}
+        subtitle={intl.formatMessage({
+          id: 'audit.intro',
+          defaultMessage:
+            'Every change made in this organization, newest first. Entries are kept for two years and cannot be edited or removed. Where a value is shown, it is what the field was set to — not what it was before.',
+        })}
       />
 
       {/* Their own row rather than beside the title: three controls crowd a
@@ -143,14 +159,22 @@ export function AuditPage() {
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <TextField
           id="audit-action"
-          label="Action"
+          label={intl.formatMessage({
+            id: 'audit.action',
+            defaultMessage: 'Action',
+          })}
           select
           size="small"
           value={action}
           onChange={(event) => changeFilter({ action: event.target.value })}
           sx={{ minWidth: 220 }}
         >
-          <MenuItem value="">All actions</MenuItem>
+          <MenuItem value="">
+            {intl.formatMessage({
+              id: 'audit.allActions',
+              defaultMessage: 'All actions',
+            })}
+          </MenuItem>
           {actions.map((key) => (
             <MenuItem key={key} value={key}>
               {describe(key)}
@@ -160,7 +184,10 @@ export function AuditPage() {
 
         <TextField
           id="audit-from"
-          label="From"
+          label={intl.formatMessage({
+            id: 'audit.from',
+            defaultMessage: 'From',
+          })}
           type="date"
           size="small"
           value={from}
@@ -170,7 +197,10 @@ export function AuditPage() {
 
         <TextField
           id="audit-to"
-          label="To"
+          label={intl.formatMessage({
+            id: 'audit.to',
+            defaultMessage: 'To',
+          })}
           type="date"
           size="small"
           value={to}
@@ -189,11 +219,17 @@ export function AuditPage() {
               size="small"
               onClick={() => changeFilter({ resourceId: '' })}
             >
-              Show all
+              {intl.formatMessage({
+                id: 'audit.showAll',
+                defaultMessage: 'Show all',
+              })}
             </Button>
           }
         >
-          Showing one record only.
+          {intl.formatMessage({
+            id: 'audit.oneRecord',
+            defaultMessage: 'Showing one record only.',
+          })}
         </Alert>
       )}
 
@@ -204,8 +240,14 @@ export function AuditPage() {
       {entries?.length === 0 && (
         <Alert severity="info">
           {action || from || to || resourceId
-            ? 'Nothing matches these filters.'
-            : 'Nothing recorded yet.'}
+            ? intl.formatMessage({
+                id: 'audit.noMatch',
+                defaultMessage: 'Nothing matches these filters.',
+              })
+            : intl.formatMessage({
+                id: 'account.activity.empty',
+                defaultMessage: 'Nothing recorded yet.',
+              })}
         </Alert>
       )}
 
@@ -216,10 +258,30 @@ export function AuditPage() {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Action</TableCell>
-                    <TableCell>By</TableCell>
-                    <TableCell>When</TableCell>
-                    <TableCell>From</TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'audit.action',
+                        defaultMessage: 'Action',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.movements.by',
+                        defaultMessage: 'By',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.movements.when',
+                        defaultMessage: 'When',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'audit.from',
+                        defaultMessage: 'From',
+                      })}
+                    </TableCell>
                   </TableRow>
                 </TableHead>
 
@@ -236,7 +298,7 @@ export function AuditPage() {
                             variant="inherit"
                             sx={{ fontWeight: 600 }}
                           >
-                            {' · '}
+                            {SEPARATOR}
                             {entry.resourceLabel}
                           </Typography>
                         )}
@@ -256,11 +318,15 @@ export function AuditPage() {
                       <TableCell>
                         {/* A tombstoned actor keeps its id and loses its email
                           (ADR-012). The row stays, which is the point. */}
-                        {entry.actorEmail ?? 'A removed account'}
+                        {entry.actorEmail ??
+                          intl.formatMessage({
+                            id: 'audit.removedAccount',
+                            defaultMessage: 'A removed account',
+                          })}
                       </TableCell>
 
                       <TableCell>{relativeTime(entry.createdAt)}</TableCell>
-                      <TableCell>{entry.ip ?? '—'}</TableCell>
+                      <TableCell>{entry.ip ?? NO_VALUE}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

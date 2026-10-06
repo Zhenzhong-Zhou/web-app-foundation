@@ -49,33 +49,11 @@ export default defineConfig([
   },
   {
     /**
-     * No English typed straight into JSX where the language has reached
-     * (ADR-054). Switched on one folder at a time as each is converted, and
-     * everywhere once the last one is; a file listed here can no longer
-     * gain a hard-coded label by accident.
+     * No English typed straight into JSX (ADR-054). Switched on one folder
+     * at a time as each was converted; every screen is now, so a new file
+     * cannot gain a hard-coded label by accident.
      */
-    files: [
-      'src/i18n/**/*.tsx',
-      'src/auth/**/*.tsx',
-      'src/layout/**/*.tsx',
-      'src/App.tsx',
-      'src/components/**/*.tsx',
-      'src/account/**/*.tsx',
-      'src/products/**/*.tsx',
-      'src/locations/**/*.tsx',
-      'src/inventory/**/*.tsx',
-      'src/orders/**/*.tsx',
-      'src/invoices/**/*.tsx',
-      'src/rmas/**/*.tsx',
-      'src/production/**/*.tsx',
-      'src/boms/**/*.tsx',
-      'src/costs/**/*.tsx',
-      'src/licences/**/*.tsx',
-      'src/price-lists/**/*.tsx',
-      'src/settings/**/*.tsx',
-      'src/members/**/*.tsx',
-      'src/partners/**/*.tsx',
-    ],
+    files: ['src/**/*.tsx'],
     // Specs render with made-up labels on purpose. The print sheet and the
     // printed packing slip, invoice and credit note are documents, in the
     // customer's language rather than the reader's, and move with the

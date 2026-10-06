@@ -120,10 +120,16 @@ Then tag v0.4.0.
    steps, server first: migration **0039**.
 
    Where it stands: the server (step 1, migrations 0039 and 0040), the
-   client foundations (step 2), and step 3 folder by folder, each
-   translated as its strings move (glossary first, `docs/glossary.md`):
-   auth, the frame, shared components, account, products with names in
-   other languages, partners with their document languages, locations.
+   client foundations (step 2), and step 3 complete: every screen speaks
+   English, French and Chinese, each folder translated as its strings
+   moved (glossary first, `docs/glossary.md`), with the organization's
+   and each partner's document languages and the required product names
+   on screens of their own. Step 4, the fluent review (MC-1405), is
+   outstanding. Next is step 5, printed documents: the print sheet, the
+   packing slip, the invoice and the credit note are the only pages still
+   in English, and the lint rule's ignore list names them. The audit log
+   spells out most action and field names from the server's keys, in
+   English until step 6.
 
    Added to the plan while building, not in the ADR's list:
    - **`seed:demo`**, after step 5: a Quebec customer printing French and

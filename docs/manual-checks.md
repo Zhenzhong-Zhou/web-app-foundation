@@ -419,7 +419,11 @@ folder by folder; these check what is already in place.
       codes with their rates (9,975 % in French), and exchange rates;
     - members: the list, changing a role and adding a member, with the
       built-in roles (Owner, Admin, Viewer) named in the language and a
-      role the organization named itself shown as named.
+      role the organization named itself shown as named;
+    - audit: the audit log with its filters and the History panel on a
+      record, timestamps in the language. Action and field names other
+      than member changes are spelled out from the server's keys and stay
+      English until the server names them (step 6).
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -490,3 +494,4 @@ first.
 - 2026-10-05: ADR-054, settings: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, the organization's languages: MC-1411, MC-1408 reworded.
 - 2026-10-06: ADR-054, members: MC-1406 extended.
+- 2026-10-06: ADR-054, audit: MC-1406 extended; step 3 complete.

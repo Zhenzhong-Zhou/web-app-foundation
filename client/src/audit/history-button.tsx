@@ -14,11 +14,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { LoadMoreButton } from '../components/load-more-button';
-import { relativeTime } from '../lib/format';
+import { relativeTime, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
@@ -48,6 +49,7 @@ const PAGE_SIZE = 20;
  * request, and a disabled control asks a question only an admin can answer.
  */
 export function HistoryButton({ resourceId }: { resourceId: string }) {
+  const intl = useIntl();
   const can = useCan();
   const [open, setOpen] = useState(false);
 
@@ -57,7 +59,10 @@ export function HistoryButton({ resourceId }: { resourceId: string }) {
     <>
       {/* A Drawer is a Modal: it hides #root the same way a Dialog does. */}
       <Button variant="text" onClick={openDialog(() => setOpen(true))}>
-        History
+        {intl.formatMessage({
+          id: 'inventory.actions.history',
+          defaultMessage: 'History',
+        })}
       </Button>
 
       <Drawer
@@ -86,6 +91,7 @@ function HistoryPanel({
   resourceId: string;
   onClose: () => void;
 }) {
+  const intl = useIntl();
   const query = new URLSearchParams({
     resourceId,
     limit: String(PAGE_SIZE),
@@ -102,9 +108,18 @@ function HistoryPanel({
         sx={{ alignItems: 'center', px: 2, py: 1.5, gap: 1 }}
       >
         <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
-          History
+          {intl.formatMessage({
+            id: 'inventory.actions.history',
+            defaultMessage: 'History',
+          })}
         </Typography>
-        <IconButton aria-label="Close history" onClick={onClose}>
+        <IconButton
+          aria-label={intl.formatMessage({
+            id: 'audit.history.close',
+            defaultMessage: 'Close history',
+          })}
+          onClick={onClose}
+        >
           <CloseIcon />
         </IconButton>
       </Stack>
@@ -121,7 +136,10 @@ function HistoryPanel({
           // or before its variant and receipt events were keyed to it, have
           // no rows here.
           <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-            No recorded changes.
+            {intl.formatMessage({
+              id: 'audit.history.empty',
+              defaultMessage: 'No recorded changes.',
+            })}
           </Typography>
         )}
 
@@ -147,8 +165,14 @@ function HistoryPanel({
                 <Typography variant="caption" color="text.secondary">
                   {/* A tombstoned actor keeps its id and loses its email
                       (ADR-012). */}
-                  {entry.actorEmail ?? 'A removed account'} ·{' '}
-                  {relativeTime(entry.createdAt)}
+                  {[
+                    entry.actorEmail ??
+                      intl.formatMessage({
+                        id: 'audit.removedAccount',
+                        defaultMessage: 'A removed account',
+                      }),
+                    relativeTime(entry.createdAt),
+                  ].join(SEPARATOR)}
                 </Typography>
               </ListItem>
             ))}
@@ -174,7 +198,10 @@ function HistoryPanel({
           variant="body2"
           underline="hover"
         >
-          Open in audit log
+          {intl.formatMessage({
+            id: 'audit.history.openInLog',
+            defaultMessage: 'Open in audit log',
+          })}
         </Link>
       </Box>
     </Stack>
