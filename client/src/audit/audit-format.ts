@@ -1,7 +1,6 @@
-import { defineMessages } from 'react-intl';
-
 import { intl } from '../i18n/intl';
 import { formatDay, NO_VALUE, SEPARATOR } from '../lib/format';
+import { AUDIT_ACTION_NAMES } from './audit-actions';
 
 /**
  * How an audit row reads, shared by the audit page and the history drawer.
@@ -44,31 +43,19 @@ export interface AuditRecord {
  * is the worst time to meet a raw key. `describe` derives instead, and this
  * holds the handful of exceptions.
  */
-const ACTION_LABELS = defineMessages({
-  'user.created': {
-    id: 'audit.action.userCreated',
-    defaultMessage: 'Added a member',
-  },
-  'user.role_changed': {
-    id: 'audit.action.userRoleChanged',
-    defaultMessage: "Changed a member's role",
-  },
-});
 
 /**
- * Human text for an action key.
+ * Human text for an action key, in the reader's language (ADR-054).
  *
- * Derived, because the keys are already structured: `order.line_closed_short`
- * carries its own words. A map of every action would be a second vocabulary to
- * keep in step with the server's, and the client cannot import that constant.
+ * Named from AUDIT_ACTION_NAMES, which a CI check holds to the server's
+ * list: a language cannot be derived from a key, so the old rule of
+ * spelling every key out stopped being enough. It remains the fallback, in
+ * English, for an action recorded before a client that knows its name.
  */
 export function describe(action: string): string {
-  // These two in the reader's language (ADR-054). The rest are spelled out
-  // from the server's keys, in English until the server names its own
-  // actions (ADR-054, step 6).
-  if (action in ACTION_LABELS) {
+  if (action in AUDIT_ACTION_NAMES) {
     return intl().formatMessage(
-      ACTION_LABELS[action as keyof typeof ACTION_LABELS],
+      AUDIT_ACTION_NAMES[action as keyof typeof AUDIT_ACTION_NAMES],
     );
   }
 

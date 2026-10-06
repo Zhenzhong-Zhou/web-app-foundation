@@ -451,9 +451,9 @@ folder by folder; these check what is already in place.
       built-in roles (Owner, Admin, Viewer) named in the language and a
       role the organization named itself shown as named;
     - audit: the audit log with its filters and the History panel on a
-      record, timestamps in the language. Action and field names other
-      than member changes are spelled out from the server's keys and stay
-      English until the server names them (step 6).
+      record, timestamps and action names in the language ("Commande
+      expédiée", not "Order shipped"); field names stay as the API names
+      them.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do

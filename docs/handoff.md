@@ -140,9 +140,12 @@ Then tag v0.4.0.
    each). Emails and notifications are written in the recipient's
    language (`recipientLocale`: their choice, else the request's, else
    English), a notification once per recipient. Still English: the two
-   developer errors (a missing tenant context, a misused @CurrentUser). The audit log spells out
-   most action and field names from the server's keys, in English until
-   step 6. The packing slip's item names are the products' own names; only
+   developer errors (a missing tenant context, a misused @CurrentUser). Step 6 is complete:
+   the audit log names every action in the reader's language too
+   (`client/src/audit/audit-actions.ts`, held to the server's list by
+   `server/scripts/check-client-audit-actions.js`); field names in a
+   change stay as the API names them. Left: the review tools, then step 4
+   (the fluent review), then step 7. The packing slip's item names are the products' own names; only
    the invoice and credit note carry names in other languages.
 
    Added to the plan while building, not in the ADR's list:
