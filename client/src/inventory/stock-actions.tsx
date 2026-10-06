@@ -1,6 +1,7 @@
 import MoreVert from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
 import type { StockRow } from '../lib/types';
@@ -27,6 +28,7 @@ export function StockActions({
   onHistory: (row: StockRow) => void;
   onEditLot: (row: StockRow) => void;
 }) {
+  const intl = useIntl();
   const navigate = useNavigate();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [pending, setPending] = useState<Choice | null>(null);
@@ -54,7 +56,13 @@ export function StockActions({
     <>
       <IconButton
         size="small"
-        aria-label={`Actions for ${row.sku} at ${row.locationName}`}
+        aria-label={intl.formatMessage(
+          {
+            id: 'inventory.actions.label',
+            defaultMessage: 'Actions for {sku} at {location}',
+          },
+          { sku: row.sku, location: row.locationName },
+        )}
         onClick={(event) => setAnchor(event.currentTarget)}
       >
         <MoreVert fontSize="small" />
@@ -72,7 +80,10 @@ export function StockActions({
             setAnchor(null);
           }}
         >
-          Move
+          {intl.formatMessage({
+            id: 'inventory.actions.move',
+            defaultMessage: 'Move',
+          })}
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -80,7 +91,10 @@ export function StockActions({
             setAnchor(null);
           }}
         >
-          Ship out
+          {intl.formatMessage({
+            id: 'inventory.move.ship.title',
+            defaultMessage: 'Ship out',
+          })}
         </MenuItem>
         {/* A hand-out: a trade show, a visitor, a bottle opened for a test.
             A posted sample is a sale flagged as one, raised from Orders
@@ -91,7 +105,10 @@ export function StockActions({
             setAnchor(null);
           }}
         >
-          Send sample
+          {intl.formatMessage({
+            id: 'inventory.actions.sendSample',
+            defaultMessage: 'Send sample',
+          })}
         </MenuItem>
         {/* stock.adjust, not stock.move. Receiving, shipping, and transferring
             record what happened in the world; an adjustment overrides the
@@ -105,7 +122,10 @@ export function StockActions({
               setAnchor(null);
             }}
           >
-            Correct the count
+            {intl.formatMessage({
+              id: 'inventory.move.adjust.title',
+              defaultMessage: 'Correct the count',
+            })}
           </MenuItem>
         )}
         {/* Only for a lot-tracked row — there is nothing to edit otherwise,
@@ -117,7 +137,10 @@ export function StockActions({
               setAnchor(null);
             }}
           >
-            Edit lot details
+            {intl.formatMessage({
+              id: 'inventory.actions.editLot',
+              defaultMessage: 'Edit lot details',
+            })}
           </MenuItem>
         )}
         {/* Where this lot came from and everyone who has it (ADR-044). */}
@@ -128,7 +151,10 @@ export function StockActions({
               setAnchor(null);
             }}
           >
-            Trace lot
+            {intl.formatMessage({
+              id: 'inventory.actions.traceLot',
+              defaultMessage: 'Trace lot',
+            })}
           </MenuItem>
         )}
         <MenuItem
@@ -137,7 +163,10 @@ export function StockActions({
             setAnchor(null);
           }}
         >
-          History
+          {intl.formatMessage({
+            id: 'inventory.actions.history',
+            defaultMessage: 'History',
+          })}
         </MenuItem>
       </Menu>
     </>

@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Chip,
   Dialog,
@@ -15,13 +16,19 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { useIntl } from 'react-intl';
 
 import { FormError } from '../components/form-error';
 import { LoadMoreButton } from '../components/load-more-button';
-import { relativeTime } from '../lib/format';
+import { formatMoment, formatQuantity, relativeTime } from '../lib/format';
 import type { Movement, StockRow } from '../lib/types';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { describeMovement } from './describe-movement';
+import {
+  MOVEMENT_HEADINGS,
+  reasonDetailLabel,
+  reasonLabel,
+} from './movement-reasons';
 
 const PAGE_SIZE = 25;
 
@@ -61,6 +68,7 @@ export function MovementHistoryDialog({
   row: StockRow | null;
   onClose: () => void;
 }) {
+  const intl = useIntl();
   // Mounted only while a row is open (see InventoryPage), so each open
   // starts fresh and closing needs nothing reset.
   const { entries, error, hasMore, loadingMore, loadMore } =
@@ -69,8 +77,21 @@ export function MovementHistoryDialog({
   return (
     <Dialog open={!!row} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>
-        History for {row?.sku}
-        {row?.lotCode ? ` · lot ${row.lotCode}` : ''}
+        {row?.lotCode
+          ? intl.formatMessage(
+              {
+                id: 'inventory.history.titleWithLot',
+                defaultMessage: 'History for {sku} · lot {lot}',
+              },
+              { sku: row.sku, lot: row.lotCode },
+            )
+          : intl.formatMessage(
+              {
+                id: 'inventory.history.title',
+                defaultMessage: 'History for {sku}',
+              },
+              { sku: row?.sku },
+            )}
       </DialogTitle>
 
       <DialogContent>
@@ -82,10 +103,22 @@ export function MovementHistoryDialog({
               of the story a per-shelf view loses. */}
           <Typography variant="body2" color="text.secondary">
             {row?.lotCode
-              ? `Every movement of lot ${row.lotCode}, newest first.`
-              : `Every movement of ${row?.sku}, newest first.`}{' '}
-            Nothing here can be edited or removed — a correction is another
-            movement that says so.
+              ? intl.formatMessage(
+                  {
+                    id: 'inventory.history.introLot',
+                    defaultMessage:
+                      'Every movement of lot {lot}, newest first. Nothing here can be edited or removed — a correction is another movement that says so.',
+                  },
+                  { lot: row.lotCode },
+                )
+              : intl.formatMessage(
+                  {
+                    id: 'inventory.history.introVariant',
+                    defaultMessage:
+                      'Every movement of {sku}, newest first. Nothing here can be edited or removed — a correction is another movement that says so.',
+                  },
+                  { sku: row?.sku },
+                )}
           </Typography>
 
           {entries === null && !error ? (
@@ -99,11 +132,21 @@ export function MovementHistoryDialog({
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>When</TableCell>
-                    <TableCell align="right">Change</TableCell>
-                    <TableCell>Where</TableCell>
-                    <TableCell>Why</TableCell>
-                    <TableCell>By</TableCell>
+                    <TableCell>
+                      {intl.formatMessage(MOVEMENT_HEADINGS.when)}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage(MOVEMENT_HEADINGS.change)}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage(MOVEMENT_HEADINGS.where)}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage(MOVEMENT_HEADINGS.why)}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage(MOVEMENT_HEADINGS.by)}
+                    </TableCell>
                   </TableRow>
                 </TableHead>
 
@@ -114,11 +157,7 @@ export function MovementHistoryDialog({
                     return (
                       <TableRow key={movement.id}>
                         <TableCell>
-                          <span
-                            title={new Date(
-                              movement.createdAt,
-                            ).toLocaleString()}
-                          >
+                          <span title={formatMoment(movement.createdAt)}>
                             {relativeTime(movement.createdAt)}
                           </span>
                         </TableCell>
@@ -128,14 +167,23 @@ export function MovementHistoryDialog({
                           ADR-025 exists to avoid. */}
                         <TableCell align="right">
                           {sign}
-                          {movement.quantity}
+                          {formatQuantity(movement.quantity)}
                         </TableCell>
 
                         <TableCell>{where}</TableCell>
 
                         <TableCell>
-                          <Chip label={movement.reason} size="small" />
-                          {movement.reasonDetail && ` ${movement.reasonDetail}`}
+                          <Chip
+                            label={reasonLabel(movement.reason, intl)}
+                            size="small"
+                          />
+                          {/* A margin, not a space: a space would be text, and text
+                              here would be English (ADR-054). */}
+                          {movement.reasonDetail && (
+                            <Box component="span" sx={{ ml: 0.5 }}>
+                              {reasonDetailLabel(movement.reasonDetail, intl)}
+                            </Box>
+                          )}
                           {/* Required on an adjustment, because a person
                             asserting the system is wrong has to say what they
                             found (ADR-023). This is where it gets read. */}
@@ -154,7 +202,8 @@ export function MovementHistoryDialog({
                           survives its author, which is what RESTRICT on
                           actor_id is for. */}
                         <TableCell>
-                          {movement.actorEmail ?? 'Deleted user'}
+                          {movement.actorEmail ??
+                            intl.formatMessage(MOVEMENT_HEADINGS.deletedUser)}
                         </TableCell>
                       </TableRow>
                     );
@@ -164,7 +213,10 @@ export function MovementHistoryDialog({
             </TableContainer>
           ) : (
             <Typography color="text.secondary" sx={{ py: 3 }}>
-              Nothing recorded yet.
+              {intl.formatMessage({
+                id: 'account.activity.empty',
+                defaultMessage: 'Nothing recorded yet.',
+              })}
             </Typography>
           )}
 
@@ -178,7 +230,7 @@ export function MovementHistoryDialog({
 
       <DialogActions>
         <Button variant="text" onClick={onClose}>
-          Close
+          {intl.formatMessage({ id: 'common.close', defaultMessage: 'Close' })}
         </Button>
       </DialogActions>
     </Dialog>

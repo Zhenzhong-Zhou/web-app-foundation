@@ -7,6 +7,7 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -32,6 +33,7 @@ export function EditLotDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState({
     code: row?.lotCode ?? '',
     // YYYY-MM-DD both ways, as the date input wants it (ADR-052).
@@ -43,7 +45,12 @@ export function EditLotDialog({
       close();
       await onSaved();
     },
-    { success: 'Lot saved' },
+    {
+      success: intl.formatMessage({
+        id: 'inventory.lot.saved',
+        defaultMessage: 'Lot saved',
+      }),
+    },
   );
 
   function close() {
@@ -87,7 +94,12 @@ export function EditLotDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Lot {row?.lotCode}</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage(
+            { id: 'inventory.lot.title', defaultMessage: 'Lot {code}' },
+            { code: row?.lotCode },
+          )}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -95,7 +107,10 @@ export function EditLotDialog({
 
             <TextField
               id="edit-lot-code"
-              label="Lot number"
+              label={intl.formatMessage({
+                id: 'inventory.lot.number',
+                defaultMessage: 'Lot number',
+              })}
               required
               fullWidth
               disabled={!codeEditable}
@@ -105,15 +120,26 @@ export function EditLotDialog({
               }
               helperText={
                 codeEditable
-                  ? 'Nobody printed this code, so a typo can be corrected here.'
-                  : 'Printed on the boxes, so it cannot be renamed. Move the stock to the correct lot instead.'
+                  ? intl.formatMessage({
+                      id: 'inventory.lot.codeEditable',
+                      defaultMessage:
+                        'Nobody printed this code, so a typo can be corrected here.',
+                    })
+                  : intl.formatMessage({
+                      id: 'inventory.lot.codePrinted',
+                      defaultMessage:
+                        'Printed on the boxes, so it cannot be renamed. Move the stock to the correct lot instead.',
+                    })
               }
               slotProps={{ htmlInput: { maxLength: 64 } }}
             />
 
             <TextField
               id="edit-lot-expires"
-              label="Expires"
+              label={intl.formatMessage({
+                id: 'inventory.lot.expires',
+                defaultMessage: 'Expires',
+              })}
               type="date"
               fullWidth
               value={form.expiresAt}
@@ -124,14 +150,23 @@ export function EditLotDialog({
                 }))
               }
               slotProps={{ inputLabel: { shrink: true } }}
-              helperText="Leave blank if it does not expire."
+              helperText={intl.formatMessage({
+                id: 'inventory.lot.expires.help',
+                defaultMessage: 'Leave blank if it does not expire.',
+              })}
             />
 
             {/* Not a warning about this dialog — a reminder of what it reaches.
                 One lot is one run, wherever its units sit. */}
             <Alert severity="info">
-              This changes the lot everywhere, not only the units at{' '}
-              {row?.locationName}.
+              {intl.formatMessage(
+                {
+                  id: 'inventory.lot.changesEverywhere',
+                  defaultMessage:
+                    'This changes the lot everywhere, not only the units at {location}.',
+                },
+                { location: row?.locationName },
+              )}
             </Alert>
           </Stack>
         </DialogContent>
@@ -139,8 +174,14 @@ export function EditLotDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

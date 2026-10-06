@@ -122,6 +122,35 @@ describe('ReceiveStockDialog', () => {
     });
   });
 
+  it('refuses a thousands separator on the field, sending nothing', async () => {
+    const user = userEvent.setup();
+    let sent = false;
+
+    server.use(
+      http.post('/api/v1/stock/movements', () => {
+        sent = true;
+        return HttpResponse.json({ movement: { id: 'm' } }, { status: 201 });
+      }),
+    );
+
+    open();
+
+    await choose('Item', /PLAIN-1/);
+    await user.type(quantityField(), '1,234');
+    await user.click(screen.getByRole('button', { name: 'Receive' }));
+
+    /**
+     * "1,234" is a thousand to an English reader and one and a bit to a
+     * French one. Guessing wrong on a quantity is worse than asking, so the
+     * field says how to write it and the request never leaves (ADR-054).
+     */
+    expect(
+      await screen.findByText(/without separators between thousands/i),
+    ).toBeInTheDocument();
+    expect(quantityField()).toHaveAttribute('aria-invalid', 'true');
+    expect(sent).toBe(false);
+  });
+
   it('renders a refusal from the server rather than swallowing it', async () => {
     const user = userEvent.setup();
     const { onReceived } = open();

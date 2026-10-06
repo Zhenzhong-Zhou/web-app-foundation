@@ -83,6 +83,27 @@ export function relativeTime(
  *
  * Not for calendar days. Use formatDay for those.
  */
+/**
+ * A moment in full, as a tooltip shows it: the browser's own form, in the
+ * reader's language — the same output toLocaleString() always gave an
+ * English reader, now in the chosen language for everyone else.
+ */
+export function formatMoment(
+  value: string | Date,
+  locale: string | undefined = current,
+): string {
+  return new Date(value).toLocaleString(locale);
+}
+
+/**
+ * "Shelf 3 (A-01-03)": a name with its code beside it, as on a label, or
+ * the name alone when there is no code. Data, not words, so the same in
+ * every language.
+ */
+export function nameAndCode(name: string, code: string | null): string {
+  return code ? `${name} (${code})` : name;
+}
+
 export function formatDate(
   value: string | Date,
   locale: string | undefined = current,
@@ -199,6 +220,21 @@ export function formatQuantity(
 ): string {
   const { decimal } = separators(locale);
   return decimal === '.' ? value : value.replace('.', decimal);
+}
+
+/**
+ * What a quantity or price field says when toApiDecimal refuses what was
+ * typed, with an example written the language's way ("1234,5" in French).
+ */
+export function groupedNumberMessage(): string {
+  return intl().formatMessage(
+    {
+      id: 'common.decimal.grouped',
+      defaultMessage:
+        'Type the number without separators between thousands, as in {example}.',
+    },
+    { example: formatQuantity('1234.5') },
+  );
 }
 
 /**

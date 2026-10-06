@@ -1,8 +1,9 @@
 import { Autocomplete, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { api } from '../lib/api';
-import { formatDay } from '../lib/format';
+import { formatDay, SEPARATOR } from '../lib/format';
 import type { Lot } from '../lib/types';
 
 /** The lot as the form holds it: expiry as the date input gives it. */
@@ -32,6 +33,7 @@ export function LotFields({
   value: LotInput;
   onChange: (next: LotInput) => void;
 }) {
+  const intl = useIntl();
   const [knownLots, setKnownLots] = useState<Lot[]>([]);
 
   /**
@@ -71,9 +73,26 @@ export function LotFields({
                   that exists but belongs to another delivery. */}
               <Typography variant="caption" color="text.secondary">
                 {option.expiresAt
-                  ? `Expires ${formatDay(option.expiresAt)}`
-                  : 'No expiry'}
-                {option.isAssigned ? ' · code assigned here' : ''}
+                  ? intl.formatMessage(
+                      {
+                        id: 'inventory.lot.expiresOn',
+                        defaultMessage: 'Expires {day}',
+                      },
+                      { day: formatDay(option.expiresAt) },
+                    )
+                  : intl.formatMessage({
+                      id: 'inventory.lot.noExpiry',
+                      defaultMessage: 'No expiry',
+                    })}
+                {option.isAssigned && (
+                  <>
+                    {SEPARATOR}
+                    {intl.formatMessage({
+                      id: 'inventory.lot.codeAssignedHere',
+                      defaultMessage: 'code assigned here',
+                    })}
+                  </>
+                )}
               </Typography>
             </Stack>
           </li>
@@ -99,16 +118,26 @@ export function LotFields({
           <TextField
             {...params}
             id={`${idPrefix}-lot-code`}
-            label="Lot number"
+            label={intl.formatMessage({
+              id: 'inventory.lot.number',
+              defaultMessage: 'Lot number',
+            })}
             required
-            helperText="As printed on the box. Receiving the same lot again adds to it."
+            helperText={intl.formatMessage({
+              id: 'inventory.lot.number.help',
+              defaultMessage:
+                'As printed on the box. Receiving the same lot again adds to it.',
+            })}
           />
         )}
       />
 
       <TextField
         id={`${idPrefix}-lot-expires`}
-        label="Expires"
+        label={intl.formatMessage({
+          id: 'inventory.lot.expires',
+          defaultMessage: 'Expires',
+        })}
         type="date"
         fullWidth
         value={value.expiresAt}
@@ -116,7 +145,11 @@ export function LotFields({
           onChange({ ...value, expiresAt: event.target.value })
         }
         slotProps={{ inputLabel: { shrink: true } }}
-        helperText="Leave blank if it does not expire. Ignored if this lot already exists."
+        helperText={intl.formatMessage({
+          id: 'inventory.lot.expires.helpReceive',
+          defaultMessage:
+            'Leave blank if it does not expire. Ignored if this lot already exists.',
+        })}
       />
     </>
   );
