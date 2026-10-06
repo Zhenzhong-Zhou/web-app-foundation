@@ -16,11 +16,18 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
-import { formatDay } from '../lib/format';
+import {
+  formatDay,
+  formatQuantity,
+  groupedNumberMessage,
+  SEPARATOR,
+  toApiDecimal,
+} from '../lib/format';
 import type {
   Location,
   OrderDetail,
@@ -31,11 +38,11 @@ import { useSubmit } from '../lib/use-submit';
 
 /**
  * A quantity of nothing, recognised as text rather than parsed: "", "0",
- * "0.00". Quantities stay strings end to end (ADR-025), so zero is a shape,
- * not a number compared against 0.
+ * "0.00", or "0,00" as French writes it. Quantities stay strings end to end
+ * (ADR-025), so zero is a shape, not a number compared against 0.
  */
 function isNothing(quantity: string): boolean {
-  return /^\s*0*(\.0*)?\s*$/.test(quantity);
+  return /^\s*0*([.,]0*)?\s*$/.test(quantity);
 }
 
 /**
@@ -66,6 +73,9 @@ export function ShipOrderDialog({
   onClose: () => void;
   onShipped: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
+  // Set when a quantity is typed with a thousands separator (ADR-054).
+  const [numberError, setNumberError] = useState<string | null>(null);
   const outstanding = order.lines.filter(
     (line) => !line.isComplete && !line.isClosedShort,
   );
@@ -76,7 +86,11 @@ export function ShipOrderDialog({
   const [note, setNote] = useState('');
   const [quantities, setQuantities] = useState<Record<string, string>>(() =>
     Object.fromEntries(
-      outstanding.map((line) => [line.id, line.quantityOutstanding]),
+      // Shown the reader's way, 6,0000 in French, and read back the same.
+      outstanding.map((line) => [
+        line.id,
+        formatQuantity(line.quantityOutstanding),
+      ]),
     ),
   );
 
@@ -93,7 +107,12 @@ export function ShipOrderDialog({
       close();
       await onShipped();
     },
-    { success: 'Shipped' },
+    {
+      success: intl.formatMessage({
+        id: 'orders.status.shipped',
+        defaultMessage: 'Shipped',
+      }),
+    },
   );
 
   const sending = outstanding.filter(
@@ -104,14 +123,19 @@ export function ShipOrderDialog({
    * What the preview is asked about, as one string, so the effect reruns
    * when a quantity changes and not on every render.
    */
-  const request = JSON.stringify(
-    sending.map((line) => [line.id, quantities[line.id].trim()]),
+  // What the preview asks about, in the API's form. Empty while a quantity
+  // holds a thousands separator: there is nothing sound to preview.
+  const asSent = sending.map(
+    (line) => [line.id, toApiDecimal(quantities[line.id])] as const,
   );
+  const request = asSent.some(([, quantity]) => quantity === null)
+    ? ''
+    : JSON.stringify(asSent);
 
   // Previewed after a short pause, so typing "120" asks once, not three
   // times. State is only ever set in the callback, never in the effect body.
   useEffect(() => {
-    if (!open || !fromLocationId || sending.length === 0) return;
+    if (!open || !fromLocationId || sending.length === 0 || !request) return;
 
     let ignore = false;
 
@@ -139,7 +163,10 @@ export function ShipOrderDialog({
             setPlanError(
               caught instanceof ApiError
                 ? caught.message
-                : 'Could not check stock.',
+                : intl.formatMessage({
+                    id: 'orders.ship.checkFailed',
+                    defaultMessage: 'Could not check stock.',
+                  }),
             );
           }
         });
@@ -154,6 +181,7 @@ export function ShipOrderDialog({
   }, [open, fromLocationId, request, order.id]);
 
   function close() {
+    setNumberError(null);
     reset();
     onClose();
   }
@@ -177,7 +205,10 @@ export function ShipOrderDialog({
     setPicks((current) => ({
       ...current,
       [entry.lineId]: Object.fromEntries(
-        entry.lots.map((lot) => [lot.lotId, lot.taken ? lot.take : '']),
+        entry.lots.map((lot) => [
+          lot.lotId,
+          lot.taken ? formatQuantity(lot.take) : '',
+        ]),
       ),
     }));
   }
@@ -193,6 +224,38 @@ export function ShipOrderDialog({
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
+    // Every number in the API's form: the language's decimal comma made a
+    // point, a thousands separator refused rather than guessed (ADR-054).
+    const lines = sending.map((line) => {
+      const byLot = picks[line.id];
+      const lots = byLot
+        ? Object.entries(byLot)
+            .filter(([, quantity]) => !isNothing(quantity))
+            .map(([lotId, quantity]) => ({
+              lotId,
+              quantity: toApiDecimal(quantity),
+            }))
+        : [];
+
+      return {
+        lineId: line.id,
+        quantity: toApiDecimal(quantities[line.id]),
+        lots,
+      };
+    });
+
+    if (
+      lines.some(
+        (line) =>
+          line.quantity === null ||
+          line.lots.some((lot) => lot.quantity === null),
+      )
+    ) {
+      setNumberError(groupedNumberMessage());
+      return;
+    }
+    setNumberError(null);
+
     void submit(() =>
       api(`/orders/${order.id}/shipments`, {
         method: 'POST',
@@ -201,23 +264,11 @@ export function ShipOrderDialog({
           carrier: carrier.trim() || undefined,
           trackingNumber: trackingNumber.trim() || undefined,
           note: note.trim() || undefined,
-          lines: sending.map((line) => {
-            const byLot = picks[line.id];
-            const lots = byLot
-              ? Object.entries(byLot)
-                  .filter(([, quantity]) => !isNothing(quantity))
-                  .map(([lotId, quantity]) => ({
-                    lotId,
-                    quantity: quantity.trim(),
-                  }))
-              : [];
-
-            return {
-              lineId: line.id,
-              quantity: quantities[line.id].trim(),
-              lots: lots.length > 0 ? lots : undefined,
-            };
-          }),
+          lines: lines.map((line) => ({
+            lineId: line.lineId,
+            quantity: line.quantity,
+            lots: line.lots.length > 0 ? line.lots : undefined,
+          })),
         }),
       }),
     );
@@ -231,15 +282,25 @@ export function ShipOrderDialog({
       maxWidth="md"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Ship</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'orders.lines.ship',
+            defaultMessage: 'Ship',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {(numberError ?? error) && (
+              <FormError message={(numberError ?? error)!} />
+            )}
 
             <TextField
               id="ship-from"
-              label="Ship from"
+              label={intl.formatMessage({
+                id: 'orders.ship.from',
+                defaultMessage: 'Ship from',
+              })}
               select
               required
               fullWidth
@@ -278,15 +339,26 @@ export function ShipOrderDialog({
                         component="span"
                         variant="body2"
                         color="text.secondary"
+                        sx={{ ml: 0.5 }}
                       >
-                        {' '}
-                        — {line.quantityOutstanding} outstanding
+                        {intl.formatMessage(
+                          {
+                            id: 'orders.ship.outstanding',
+                            defaultMessage: '— {quantity} outstanding',
+                          },
+                          {
+                            quantity: formatQuantity(line.quantityOutstanding),
+                          },
+                        )}
                       </Typography>
                     </Typography>
 
                     <TextField
                       size="small"
-                      label="Ship"
+                      label={intl.formatMessage({
+                        id: 'orders.lines.ship',
+                        defaultMessage: 'Ship',
+                      })}
                       value={quantities[line.id] ?? ''}
                       onChange={(event) =>
                         setQuantity(line.id, event.target.value)
@@ -295,7 +367,13 @@ export function ShipOrderDialog({
                         htmlInput: {
                           inputMode: 'decimal',
                           maxLength: 19,
-                          'aria-label': `Ship ${line.sku}`,
+                          'aria-label': intl.formatMessage(
+                            {
+                              id: 'orders.ship.lineLabel',
+                              defaultMessage: 'Ship {sku}',
+                            },
+                            { sku: line.sku },
+                          ),
                         },
                       }}
                       sx={{ width: 140 }}
@@ -304,14 +382,30 @@ export function ShipOrderDialog({
 
                   {entry?.exceedsOutstanding && (
                     <Alert severity="warning">
-                      More than the {line.quantityOutstanding} still
-                      outstanding. The server will refuse it.
+                      {intl.formatMessage(
+                        {
+                          id: 'orders.ship.tooMany',
+                          defaultMessage:
+                            'More than the {quantity} still outstanding. The server will refuse it.',
+                        },
+                        { quantity: formatQuantity(line.quantityOutstanding) },
+                      )}
                     </Alert>
                   )}
 
                   {entry?.shortBy && (
                     <Alert severity="warning">
-                      This location is {entry.shortBy} short of {line.sku}.
+                      {intl.formatMessage(
+                        {
+                          id: 'orders.ship.short',
+                          defaultMessage:
+                            'This location is {quantity} short of {sku}.',
+                        },
+                        {
+                          quantity: formatQuantity(entry.shortBy),
+                          sku: line.sku,
+                        },
+                      )}
                     </Alert>
                   )}
 
@@ -329,19 +423,47 @@ export function ShipOrderDialog({
                         {entry.lots.some((lot) => lot.taken)
                           ? entry.lots
                               .filter((lot) => lot.taken)
-                              .map(
-                                (lot) =>
-                                  `${lot.code}${lot.expiresAt ? ` (expires ${formatDay(lot.expiresAt)})` : ''}: ${lot.take}`,
+                              .map((lot) =>
+                                lot.expiresAt
+                                  ? intl.formatMessage(
+                                      {
+                                        id: 'orders.ship.lotTakeExpiring',
+                                        defaultMessage:
+                                          '{code} (expires {day}): {quantity}',
+                                      },
+                                      {
+                                        code: lot.code,
+                                        day: formatDay(lot.expiresAt),
+                                        quantity: formatQuantity(lot.take),
+                                      },
+                                    )
+                                  : intl.formatMessage(
+                                      {
+                                        id: 'orders.ship.lotTake',
+                                        defaultMessage: '{code}: {quantity}',
+                                      },
+                                      {
+                                        code: lot.code,
+                                        quantity: formatQuantity(lot.take),
+                                      },
+                                    ),
                               )
-                              .join(' · ')
-                          : 'No lots of this at the chosen location.'}
+                              .join(SEPARATOR)
+                          : intl.formatMessage({
+                              id: 'orders.ship.noLots',
+                              defaultMessage:
+                                'No lots of this at the chosen location.',
+                            })}
                       </Typography>
                       <Button
                         variant="text"
                         size="small"
                         onClick={() => startPicking(entry)}
                       >
-                        Choose lots
+                        {intl.formatMessage({
+                          id: 'orders.ship.chooseLots',
+                          defaultMessage: 'Choose lots',
+                        })}
                       </Button>
                     </Stack>
                   )}
@@ -352,10 +474,30 @@ export function ShipOrderDialog({
                         <Table size="small">
                           <TableHead>
                             <TableRow>
-                              <TableCell>Lot</TableCell>
-                              <TableCell>Expires</TableCell>
-                              <TableCell align="right">On hand</TableCell>
-                              <TableCell align="right">Ship</TableCell>
+                              <TableCell>
+                                {intl.formatMessage({
+                                  id: 'inventory.lot',
+                                  defaultMessage: 'Lot',
+                                })}
+                              </TableCell>
+                              <TableCell>
+                                {intl.formatMessage({
+                                  id: 'inventory.lot.expires',
+                                  defaultMessage: 'Expires',
+                                })}
+                              </TableCell>
+                              <TableCell align="right">
+                                {intl.formatMessage({
+                                  id: 'inventory.promised.onHand',
+                                  defaultMessage: 'On hand',
+                                })}
+                              </TableCell>
+                              <TableCell align="right">
+                                {intl.formatMessage({
+                                  id: 'orders.lines.ship',
+                                  defaultMessage: 'Ship',
+                                })}
+                              </TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -365,10 +507,13 @@ export function ShipOrderDialog({
                                 <TableCell>
                                   {lot.expiresAt
                                     ? formatDay(lot.expiresAt)
-                                    : 'Does not expire'}
+                                    : intl.formatMessage({
+                                        id: 'orders.ship.noExpiry',
+                                        defaultMessage: 'Does not expire',
+                                      })}
                                 </TableCell>
                                 <TableCell align="right">
-                                  {lot.onHand}
+                                  {formatQuantity(lot.onHand)}
                                 </TableCell>
                                 <TableCell align="right" sx={{ width: 140 }}>
                                   <TextField
@@ -387,7 +532,14 @@ export function ShipOrderDialog({
                                       htmlInput: {
                                         inputMode: 'decimal',
                                         maxLength: 19,
-                                        'aria-label': `Ship from lot ${lot.code}`,
+                                        'aria-label': intl.formatMessage(
+                                          {
+                                            id: 'orders.ship.fromLot',
+                                            defaultMessage:
+                                              'Ship from lot {code}',
+                                          },
+                                          { code: lot.code },
+                                        ),
                                       },
                                     }}
                                   />
@@ -406,15 +558,24 @@ export function ShipOrderDialog({
                         }}
                       >
                         <Typography variant="caption" color="text.secondary">
-                          Must add up to {quantities[line.id]}. The server
-                          checks when you ship.
+                          {intl.formatMessage(
+                            {
+                              id: 'orders.ship.mustAddUp',
+                              defaultMessage:
+                                'Must add up to {quantity}. The server checks when you ship.',
+                            },
+                            { quantity: quantities[line.id] },
+                          )}
                         </Typography>
                         <Button
                           variant="text"
                           size="small"
                           onClick={() => stopPicking(line.id)}
                         >
-                          Use earliest expiry
+                          {intl.formatMessage({
+                            id: 'orders.ship.earliestExpiry',
+                            defaultMessage: 'Use earliest expiry',
+                          })}
                         </Button>
                       </Stack>
                     </>
@@ -426,7 +587,10 @@ export function ShipOrderDialog({
             <Stack direction="row" spacing={2}>
               <TextField
                 id="ship-carrier"
-                label="Carrier"
+                label={intl.formatMessage({
+                  id: 'orders.ship.carrier',
+                  defaultMessage: 'Carrier',
+                })}
                 fullWidth
                 value={carrier}
                 onChange={(event) => setCarrier(event.target.value)}
@@ -434,7 +598,10 @@ export function ShipOrderDialog({
               />
               <TextField
                 id="ship-tracking"
-                label="Tracking number"
+                label={intl.formatMessage({
+                  id: 'orders.ship.tracking',
+                  defaultMessage: 'Tracking number',
+                })}
                 fullWidth
                 value={trackingNumber}
                 onChange={(event) => setTracking(event.target.value)}
@@ -444,7 +611,10 @@ export function ShipOrderDialog({
 
             <TextField
               id="ship-note"
-              label="Note"
+              label={intl.formatMessage({
+                id: 'inventory.note',
+                defaultMessage: 'Note',
+              })}
               fullWidth
               multiline
               minRows={2}
@@ -454,8 +624,11 @@ export function ShipOrderDialog({
             />
 
             <Typography variant="caption" color="text.secondary">
-              Everything listed ships together, or nothing does. Set a line to 0
-              to leave it for a later shipment.
+              {intl.formatMessage({
+                id: 'orders.ship.together',
+                defaultMessage:
+                  'Everything listed ships together, or nothing does. Set a line to 0 to leave it for a later shipment.',
+              })}
             </Typography>
           </Stack>
         </DialogContent>
@@ -463,8 +636,14 @@ export function ShipOrderDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Ship"
-          pendingLabel="Shipping…"
+          label={intl.formatMessage({
+            id: 'orders.lines.ship',
+            defaultMessage: 'Ship',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'orders.ship.pending',
+            defaultMessage: 'Shipping…',
+          })}
           disabled={!fromLocationId || sending.length === 0}
         />
       </form>

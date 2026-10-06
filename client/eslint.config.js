@@ -64,24 +64,17 @@ export default defineConfig([
       'src/products/**/*.tsx',
       'src/locations/**/*.tsx',
       'src/inventory/**/*.tsx',
-      // Orders arrive in two commits; listed by file until the second.
-      'src/orders/orders-page.tsx',
-      'src/orders/create-order-page.tsx',
-      'src/orders/order-detail-page.tsx',
-      'src/orders/order-lines-section.tsx',
-      'src/orders/order-status-actions.tsx',
-      'src/orders/edit-order-dialog.tsx',
-      'src/orders/duplicate-order-dialog.tsx',
-      'src/orders/close-order-dialog.tsx',
-      'src/orders/add-order-line-dialog.tsx',
-      'src/orders/edit-order-line-dialog.tsx',
-      'src/orders/close-line-dialog.tsx',
+      'src/orders/**/*.tsx',
       'src/partners/**/*.tsx',
     ],
-    // Specs render with made-up labels on purpose. The print sheet is a
-    // document, in the customer's language rather than the reader's, and
-    // moves with the printed documents (ADR-054, step 5).
-    ignores: ['**/*.test.tsx', 'src/components/print-sheet.tsx'],
+    // Specs render with made-up labels on purpose. The print sheet and the
+    // packing slip are documents, in the customer's language rather than the
+    // reader's, and move with the printed documents (ADR-054, step 5).
+    ignores: [
+      '**/*.test.tsx',
+      'src/components/print-sheet.tsx',
+      'src/orders/packing-slip-page.tsx',
+    ],
     rules: {
       /**
        * The rule's defaults check JSX text, aria-* everywhere, and

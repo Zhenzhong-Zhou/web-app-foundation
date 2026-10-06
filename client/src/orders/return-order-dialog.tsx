@@ -15,11 +15,18 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
-import { formatDay } from '../lib/format';
+import {
+  formatDay,
+  formatQuantity,
+  groupedNumberMessage,
+  NO_VALUE,
+  toApiDecimal,
+} from '../lib/format';
 import type {
   Location,
   ReturnableLine,
@@ -29,29 +36,22 @@ import type {
   ReturnAuthorizationSummary,
 } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
-
-/** Why things usually come back. "Other" leaves the note to explain. */
-const REASONS = [
-  'damaged',
-  'wrong item',
-  'not wanted',
-  'expired',
-  'quality concern',
-  'other',
-];
+import { unitLabel } from '../products/units';
+import { RETURN_REASONS, returnReasonLabel } from './return-reasons';
 
 /**
  * A quantity of nothing, recognised as text rather than parsed: "", "0",
  * "0.00". Quantities stay strings end to end (ADR-025).
  */
 function isNothing(quantity: string | undefined): boolean {
-  return /^\s*0*(\.0*)?\s*$/.test(quantity ?? '');
+  return /^\s*0*([.,]0*)?\s*$/.test(quantity ?? '');
 }
 
 /** A tracked line sends its lots, an untracked one a quantity (ADR-043). */
+/** Null where a quantity was typed with a thousands separator (ADR-054). */
 type ReturnLinePayload =
-  | { lineId: string; lots: { lotId: string; quantity: string }[] }
-  | { lineId: string; quantity: string };
+  | { lineId: string; lots: { lotId: string; quantity: string | null }[] }
+  | { lineId: string; quantity: string | null };
 
 /**
  * Takes a customer return against a sales order (ADR-043).
@@ -88,6 +88,8 @@ export function ReturnOrderDialog({
   onClose: () => void;
   onReturned: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
+  const [numberError, setNumberError] = useState<string | null>(null);
   const [lines, setLines] = useState<ReturnableLine[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -122,7 +124,12 @@ export function ReturnOrderDialog({
       close();
       await onReturned();
     },
-    { success: 'Return received' },
+    {
+      success: intl.formatMessage({
+        id: 'orders.return.done',
+        defaultMessage: 'Return received',
+      }),
+    },
   );
 
   useEffect(() => {
@@ -139,7 +146,10 @@ export function ReturnOrderDialog({
           setLoadError(
             caught instanceof ApiError
               ? caught.message
-              : 'Could not load what shipped.',
+              : intl.formatMessage({
+                  id: 'orders.return.loadFailed',
+                  defaultMessage: 'Could not load what shipped.',
+                }),
           );
         }
       });
@@ -199,6 +209,7 @@ export function ReturnOrderDialog({
   const rmaLines = rmaId && loaded?.id === rmaId ? loaded.lines : null;
 
   function close() {
+    setNumberError(null);
     reset();
     onClose();
   }
@@ -209,7 +220,10 @@ export function ReturnOrderDialog({
       if (line.tracksLots) {
         const lots = Object.entries(byLot[line.lineId] ?? {})
           .filter(([, quantity]) => !isNothing(quantity))
-          .map(([lotId, quantity]) => ({ lotId, quantity: quantity.trim() }));
+          .map(([lotId, quantity]) => ({
+            lotId,
+            quantity: toApiDecimal(quantity),
+          }));
 
         return lots.length > 0 ? [{ lineId: line.lineId, lots }] : [];
       }
@@ -217,7 +231,7 @@ export function ReturnOrderDialog({
       const quantity = quantities[line.lineId];
       return isNothing(quantity)
         ? []
-        : [{ lineId: line.lineId, quantity: quantity.trim() }];
+        : [{ lineId: line.lineId, quantity: toApiDecimal(quantity!) }];
     });
   }
 
@@ -225,6 +239,18 @@ export function ReturnOrderDialog({
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
+
+    // A thousands separator anywhere is refused rather than guessed.
+    const grouped = sending.some((line) =>
+      'lots' in line
+        ? line.lots.some((lot) => lot.quantity === null)
+        : line.quantity === null,
+    );
+    if (grouped) {
+      setNumberError(groupedNumberMessage());
+      return;
+    }
+    setNumberError(null);
 
     void submit(() =>
       api(`/orders/${orderId}/returns`, {
@@ -248,43 +274,67 @@ export function ReturnOrderDialog({
       maxWidth="md"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Take a return</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'orders.lines.takeReturn',
+            defaultMessage: 'Take a return',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {(numberError ?? error) && (
+              <FormError message={(numberError ?? error)!} />
+            )}
             {loadError && <Alert severity="error">{loadError}</Alert>}
 
             <Stack direction="row" spacing={2}>
               <TextField
                 id="return-to"
-                label="Put it in"
+                label={intl.formatMessage({
+                  id: 'orders.return.putIn',
+                  defaultMessage: 'Put it in',
+                })}
                 select
                 required
                 fullWidth
                 value={toLocationId}
                 onChange={(event) => setTo(event.target.value)}
-                helperText="Usually a bin marked not available, so nothing ships it again before it is checked."
+                helperText={intl.formatMessage({
+                  id: 'orders.return.putIn.help',
+                  defaultMessage:
+                    'Usually a bin marked not available, so nothing ships it again before it is checked.',
+                })}
               >
                 {locations.map((location) => (
                   <MenuItem key={location.id} value={location.id}>
-                    {location.name}
-                    {location.isAvailable ? '' : ' (not available)'}
+                    {location.isAvailable
+                      ? location.name
+                      : intl.formatMessage(
+                          {
+                            id: 'orders.return.notAvailable',
+                            defaultMessage: '{name} (not available)',
+                          },
+                          { name: location.name },
+                        )}
                   </MenuItem>
                 ))}
               </TextField>
 
               <TextField
                 id="return-reason"
-                label="Why"
+                label={intl.formatMessage({
+                  id: 'inventory.why',
+                  defaultMessage: 'Why',
+                })}
                 select
                 fullWidth
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
               >
-                {REASONS.map((option) => (
+                {RETURN_REASONS.map((option) => (
                   <MenuItem key={option} value={option}>
-                    {option}
+                    {returnReasonLabel(option, intl)}
                   </MenuItem>
                 ))}
               </TextField>
@@ -293,19 +343,31 @@ export function ReturnOrderDialog({
             {rmas.length > 0 && (
               <TextField
                 id="return-rma"
-                label="Against RMA"
+                label={intl.formatMessage({
+                  id: 'orders.return.againstRma',
+                  defaultMessage: 'Against RMA',
+                })}
                 select
                 fullWidth
                 value={rmaId}
                 onChange={(event) => setRmaId(event.target.value)}
-                helperText="If the customer was authorized to send this back. It is then held to what the RMA allows."
+                helperText={intl.formatMessage({
+                  id: 'orders.return.againstRma.help',
+                  defaultMessage:
+                    'If the customer was authorized to send this back. It is then held to what the RMA allows.',
+                })}
               >
                 <MenuItem value="">
-                  <em>None</em>
+                  <em>
+                    {intl.formatMessage({
+                      id: 'orders.return.noRma',
+                      defaultMessage: 'None',
+                    })}
+                  </em>
                 </MenuItem>
                 {rmas.map((rma) => (
                   <MenuItem key={rma.id} value={rma.id}>
-                    {rma.number} — {rma.reason}
+                    {[rma.number, rma.reason].join(' — ')}
                   </MenuItem>
                 ))}
               </TextField>
@@ -324,10 +386,19 @@ export function ReturnOrderDialog({
                       component="span"
                       variant="body2"
                       color="text.secondary"
+                      sx={{ ml: 0.5 }}
                     >
-                      {' '}
-                      — {line.quantityFulfilled} shipped,{' '}
-                      {line.quantityReturned} already back
+                      {intl.formatMessage(
+                        {
+                          id: 'orders.return.lineSummary',
+                          defaultMessage:
+                            '— {shipped} shipped, {returned} already back',
+                        },
+                        {
+                          shipped: formatQuantity(line.quantityFulfilled),
+                          returned: formatQuantity(line.quantityReturned),
+                        },
+                      )}
                     </Typography>
                   </Typography>
 
@@ -337,13 +408,31 @@ export function ReturnOrderDialog({
                     rmaLines &&
                     (authorized ? (
                       <Typography variant="body2" color="text.secondary">
-                        {chosenRma.number} authorizes {authorized.quantity},{' '}
-                        {authorized.quantityReceived} back against it so far
+                        {intl.formatMessage(
+                          {
+                            id: 'orders.return.rmaAllows',
+                            defaultMessage:
+                              '{rma} authorizes {quantity}, {received} back against it so far',
+                          },
+                          {
+                            rma: chosenRma.number,
+                            quantity: formatQuantity(authorized.quantity),
+                            received: formatQuantity(
+                              authorized.quantityReceived,
+                            ),
+                          },
+                        )}
                       </Typography>
                     ) : (
                       <Typography variant="body2" color="warning.main">
-                        Not on {chosenRma.number} — leave it empty, or receive
-                        it without the RMA
+                        {intl.formatMessage(
+                          {
+                            id: 'orders.return.notOnRma',
+                            defaultMessage:
+                              'Not on {rma} — leave it empty, or receive it without the RMA',
+                          },
+                          { rma: chosenRma.number },
+                        )}
                       </Typography>
                     ))}
 
@@ -352,11 +441,36 @@ export function ReturnOrderDialog({
                       <Table size="small">
                         <TableHead>
                           <TableRow>
-                            <TableCell>Lot</TableCell>
-                            <TableCell>Expires</TableCell>
-                            <TableCell align="right">Shipped</TableCell>
-                            <TableCell align="right">Already back</TableCell>
-                            <TableCell align="right">Coming back</TableCell>
+                            <TableCell>
+                              {intl.formatMessage({
+                                id: 'inventory.lot',
+                                defaultMessage: 'Lot',
+                              })}
+                            </TableCell>
+                            <TableCell>
+                              {intl.formatMessage({
+                                id: 'inventory.lot.expires',
+                                defaultMessage: 'Expires',
+                              })}
+                            </TableCell>
+                            <TableCell align="right">
+                              {intl.formatMessage({
+                                id: 'inventory.trace.shipped',
+                                defaultMessage: 'Shipped',
+                              })}
+                            </TableCell>
+                            <TableCell align="right">
+                              {intl.formatMessage({
+                                id: 'orders.return.alreadyBack',
+                                defaultMessage: 'Already back',
+                              })}
+                            </TableCell>
+                            <TableCell align="right">
+                              {intl.formatMessage({
+                                id: 'orders.return.comingBack',
+                                defaultMessage: 'Coming back',
+                              })}
+                            </TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -364,11 +478,15 @@ export function ReturnOrderDialog({
                             <TableRow key={lot.lotId}>
                               <TableCell>{lot.code}</TableCell>
                               <TableCell>
-                                {lot.expiresAt ? formatDay(lot.expiresAt) : '—'}
+                                {lot.expiresAt
+                                  ? formatDay(lot.expiresAt)
+                                  : NO_VALUE}
                               </TableCell>
-                              <TableCell align="right">{lot.shipped}</TableCell>
                               <TableCell align="right">
-                                {lot.returned}
+                                {formatQuantity(lot.shipped)}
+                              </TableCell>
+                              <TableCell align="right">
+                                {formatQuantity(lot.returned)}
                               </TableCell>
                               <TableCell align="right" sx={{ width: 140 }}>
                                 <TextField
@@ -387,7 +505,14 @@ export function ReturnOrderDialog({
                                     htmlInput: {
                                       inputMode: 'decimal',
                                       maxLength: 19,
-                                      'aria-label': `Return from lot ${lot.code}`,
+                                      'aria-label': intl.formatMessage(
+                                        {
+                                          id: 'orders.return.fromLot',
+                                          defaultMessage:
+                                            'Return from lot {code}',
+                                        },
+                                        { code: lot.code },
+                                      ),
                                     },
                                   }}
                                 />
@@ -400,7 +525,10 @@ export function ReturnOrderDialog({
                   ) : (
                     <TextField
                       size="small"
-                      label="Coming back"
+                      label={intl.formatMessage({
+                        id: 'orders.return.comingBack',
+                        defaultMessage: 'Coming back',
+                      })}
                       value={quantities[line.lineId] ?? ''}
                       onChange={(event) =>
                         setQuantities((current) => ({
@@ -412,10 +540,16 @@ export function ReturnOrderDialog({
                         htmlInput: {
                           inputMode: 'decimal',
                           maxLength: 19,
-                          'aria-label': `Return ${line.sku}`,
+                          'aria-label': intl.formatMessage(
+                            {
+                              id: 'orders.return.lineLabel',
+                              defaultMessage: 'Return {sku}',
+                            },
+                            { sku: line.sku },
+                          ),
                         },
                       }}
-                      helperText={line.unitOfMeasure}
+                      helperText={unitLabel(line.unitOfMeasure, intl)}
                       sx={{ width: 180 }}
                     />
                   )}
@@ -425,25 +559,39 @@ export function ReturnOrderDialog({
 
             {lines?.length === 0 && (
               <Typography color="text.secondary">
-                Nothing has shipped on this order, so nothing can come back.
+                {intl.formatMessage({
+                  id: 'orders.return.nothingShipped',
+                  defaultMessage:
+                    'Nothing has shipped on this order, so nothing can come back.',
+                })}
               </Typography>
             )}
 
             <TextField
               id="return-note"
-              label="Note"
+              label={intl.formatMessage({
+                id: 'inventory.note',
+                defaultMessage: 'Note',
+              })}
               fullWidth
               multiline
               minRows={2}
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              helperText="What the customer said, or what you found in the box."
+              helperText={intl.formatMessage({
+                id: 'orders.return.note.help',
+                defaultMessage:
+                  'What the customer said, or what you found in the box.',
+              })}
               slotProps={{ htmlInput: { maxLength: 1000 } }}
             />
 
             <Typography variant="caption" color="text.secondary">
-              Nothing is restocked here. Once checked, move it to a shelf, or
-              correct the count if it is being written off.
+              {intl.formatMessage({
+                id: 'orders.return.notRestocked',
+                defaultMessage:
+                  'Nothing is restocked here. Once checked, move it to a shelf, or correct the count if it is being written off.',
+              })}
             </Typography>
           </Stack>
         </DialogContent>
@@ -451,8 +599,14 @@ export function ReturnOrderDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Receive return"
-          pendingLabel="Receiving…"
+          label={intl.formatMessage({
+            id: 'orders.return.action',
+            defaultMessage: 'Receive return',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'inventory.receive.pending',
+            defaultMessage: 'Receiving…',
+          })}
           disabled={!toLocationId || sending.length === 0}
         />
       </form>

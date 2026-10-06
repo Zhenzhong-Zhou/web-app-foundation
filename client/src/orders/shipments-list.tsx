@@ -9,10 +9,11 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import { api, ApiError, messageFor } from '../lib/api';
-import { formatDate } from '../lib/format';
+import { formatDate, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { InvoicePage, InvoiceSummary, Shipment } from '../lib/types';
 import { LotItemsTable } from './lot-items-table';
@@ -60,6 +61,7 @@ export function ShipmentsList({
   /** The order changes too — fulfilled quantities and holds — so the page reloads both. */
   onVoided: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const navigate = useNavigate();
   const [shipments, setShipments] = useState<Shipment[] | null>(null);
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
@@ -95,7 +97,10 @@ export function ShipmentsList({
           setError(
             caught instanceof ApiError
               ? caught.message
-              : 'Could not load shipments.',
+              : intl.formatMessage({
+                  id: 'orders.shipments.loadFailed',
+                  defaultMessage: 'Could not load shipments.',
+                }),
           );
         }
       });
@@ -132,14 +137,20 @@ export function ShipmentsList({
   return (
     <Stack spacing={1}>
       <Typography variant="h6" component="h2">
-        Shipments
+        {intl.formatMessage({
+          id: 'orders.shipments.title',
+          defaultMessage: 'Shipments',
+        })}
       </Typography>
 
       {invoiceError && <Alert severity="error">{invoiceError}</Alert>}
 
       {shipments.length === 0 && (
         <Typography variant="body2" color="text.secondary">
-          Nothing has shipped against this order yet.
+          {intl.formatMessage({
+            id: 'orders.shipments.empty',
+            defaultMessage: 'Nothing has shipped against this order yet.',
+          })}
         </Typography>
       )}
 
@@ -155,14 +166,26 @@ export function ShipmentsList({
           <Paper key={shipment.id} variant="outlined" sx={{ p: 2 }}>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
               <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
-                {formatDate(shipment.createdAt)}
-                {shipment.carrier ? ` · ${shipment.carrier}` : ''}
-                {shipment.trackingNumber ? ` · ${shipment.trackingNumber}` : ''}
+                {[
+                  formatDate(shipment.createdAt),
+                  shipment.carrier,
+                  shipment.trackingNumber,
+                ]
+                  .filter(Boolean)
+                  .join(SEPARATOR)}
               </Typography>
 
               {/* Beside the heading, not inside it: a chip is a div, and a
                   div inside the heading's h6 is invalid markup. */}
-              {voided && <Chip label="Voided" size="small" />}
+              {voided && (
+                <Chip
+                  label={intl.formatMessage({
+                    id: 'orders.shipments.voided',
+                    defaultMessage: 'Voided',
+                  })}
+                  size="small"
+                />
+              )}
 
               {/* Before the slip link, so the destructive action is not
                   where the eye lands first. */}
@@ -173,7 +196,10 @@ export function ShipmentsList({
                   color="error"
                   onClick={openDialog(() => setVoiding(shipment))}
                 >
-                  Void
+                  {intl.formatMessage({
+                    id: 'orders.shipments.void',
+                    defaultMessage: 'Void',
+                  })}
                 </Button>
               )}
 
@@ -184,8 +210,17 @@ export function ShipmentsList({
                   variant="body2"
                 >
                   {invoice.number
-                    ? `Invoice ${invoice.number}`
-                    : 'Draft invoice'}
+                    ? intl.formatMessage(
+                        {
+                          id: 'orders.shipments.invoice',
+                          defaultMessage: 'Invoice {number}',
+                        },
+                        { number: invoice.number },
+                      )
+                    : intl.formatMessage({
+                        id: 'orders.shipments.draftInvoice',
+                        defaultMessage: 'Draft invoice',
+                      })}
                 </Link>
               )}
 
@@ -196,7 +231,15 @@ export function ShipmentsList({
                   disabled={invoicing !== null}
                   onClick={() => void createInvoice(shipment.id)}
                 >
-                  {invoicing === shipment.id ? 'Creating…' : 'Create invoice'}
+                  {invoicing === shipment.id
+                    ? intl.formatMessage({
+                        id: 'orders.shipments.creatingInvoice',
+                        defaultMessage: 'Creating…',
+                      })
+                    : intl.formatMessage({
+                        id: 'orders.shipments.createInvoice',
+                        defaultMessage: 'Create invoice',
+                      })}
                 </Button>
               )}
 
@@ -209,14 +252,26 @@ export function ShipmentsList({
                 rel="noopener"
                 variant="body2"
               >
-                Packing slip
+                {intl.formatMessage({
+                  id: 'orders.shipments.packingSlip',
+                  defaultMessage: 'Packing slip',
+                })}
               </Link>
             </Stack>
 
             {shipment.voidedAt && (
               <Typography variant="body2" color="text.secondary">
-                Voided {formatDate(shipment.voidedAt)}: {shipment.voidReason}.
-                Everything on it went back where it came from.
+                {intl.formatMessage(
+                  {
+                    id: 'orders.shipments.voidedNote',
+                    defaultMessage:
+                      'Voided {date}: {reason}. Everything on it went back where it came from.',
+                  },
+                  {
+                    date: formatDate(shipment.voidedAt),
+                    reason: shipment.voidReason,
+                  },
+                )}
               </Typography>
             )}
 

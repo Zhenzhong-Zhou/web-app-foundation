@@ -342,7 +342,9 @@ folder by folder; these check what is already in place.
   1234,5. In English, 2.5 behaves exactly as before, and 1,234 is refused
   the same way. The same holds for an order's quantities and prices: raising
   one, adding a line, editing a line, which also opens showing its numbers
-  the reader's way.
+  the reader's way; receiving a line; shipping, whose quantities and lot
+  picks open the reader's way and whose stock preview still works with a
+  French 2,5; and taking a return.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -371,7 +373,10 @@ folder by folder; these check what is already in place.
       the movements page with its reasons, and tracing a lot;
     - orders: the list with its filter and statuses, raising an order,
       the order page with its lines, and the edit, duplicate, close, add,
-      edit and close-short dialogs.
+      edit and close-short dialogs; receiving a line, shipping with its lot
+      preview, the shipments and returns on an order, voiding a shipment,
+      taking a return with its reasons, and linking a return to an RMA. The
+      packing slip stays English until printed documents (step 5).
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -431,3 +436,4 @@ first.
 - 2026-10-05: ADR-054, locations: MC-1406 extended.
 - 2026-10-05: ADR-054, inventory: MC-1406 extended, MC-1410.
 - 2026-10-05: ADR-054, orders and their lines: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, receiving, shipping and returns: MC-1406, MC-1410 extended.
