@@ -4700,6 +4700,22 @@ languages; which are required is the organization's setting.**
 Questions land here before they are promoted to an ADR. None of these block V1;
 they exist so the reasoning is not rediscovered from scratch.
 
+- **Industry vocabulary and optional modules.** The screens were written
+  for the first customers, who make supplements: "recipe" and "batch" are
+  their words, and the Licences screen exists for Health Canada's NPN. A
+  machine shop says "bill of materials", a cosmetics maker "formula", and
+  a business making nothing regulated never needs a licence. Two separate
+  answers when one is needed. Modules an industry does not use (licences,
+  perhaps production) switched off per organization, removing their
+  screens and fields rather than leaving them unused. And vocabulary
+  chosen per organization from a short list of variants (Recipe, Formula,
+  Bill of materials), laid over the standard catalogue in each language:
+  ADR-054 already takes every screen word from a catalogue, so the
+  mechanism is small and the work is deciding which terms vary and
+  writing each variant in every language. Licences are already optional
+  in effect — nothing requires one unless the organization says so — so
+  nothing is blocked today. Trigger: the first customer outside
+  supplements, whose words are then the evidence rather than a guess.
 - **Row-scoped permissions.** ADR-004 handles global rules but not "this member
   sees only rows related to them" (a manufacturer viewing only their own
   inventory). Extend rather than replace: likely a scope on the membership,
