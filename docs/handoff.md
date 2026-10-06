@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-052 and ADR-053 merged, ADR-054 written
+# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-052 and ADR-053 merged, ADR-054 built and in review
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -105,61 +105,53 @@ Then tag v0.4.0.
    `docs/runbooks/restore.md`; MC-1301 to MC-1304. Testing with
    `BACKUP_DESTINATION` unset (Actions artifacts); `s3` and a paid database
    plan before real customers' data.
-7. **ADR-054, languages** — written, not built. `en`, `fr-CA` and
-   `zh-Hans`. Two settings: the person's language (`users.locale`, null
-   meaning the browser's) and the document languages, one or two (French
-   with English, Chinese with English), the partner's pair else the
-   organization's, stored on the shipment, invoice and credit note.
-   Product and variant names may be kept in other languages
-   (`product_translations`, `variant_translations`); the organization
-   chooses which are required (Chinese, say), checked at issue. No French
-   names unless the advisor asks for them.
-   FormatJS on both sides with explicit ids and English as the default;
-   the server translates in `AllExceptionsFilter` by `Accept-Language`, so
-   a request without it is English as today. Built in the ADR's seven
-   steps, server first: migration **0039**.
+7. **ADR-054, languages** — built on `adr-054-languages`, awaiting the
+   fluent review and the budget re-run, then merge. `en`, `fr-CA` and
+   `zh-Hans`, all seven steps of the ADR:
+   - **The person's language** (`users.locale`, null meaning the browser's),
+     chosen on the account page; FormatJS on the client, every screen in
+     all three (1193 messages, `client/src/locales/`), English compiled in
+     and the others loaded on demand. A no-literal lint rule covers all of
+     `src/**/*.tsx`.
+   - **Document languages**: one or two (French with English, Chinese
+     alone), the partner's pair else the organization's, stored on the
+     shipment, invoice and credit note. The packing slip, invoice and
+     credit note print in them (`useDocumentText`), whatever the reader
+     reads; item names in both on the invoice and credit note, copied at
+     issue; the packing slip prints the products' own names. Product and
+     variant names in other languages (`product_translations`,
+     `variant_translations`); the organization chooses which are required,
+     checked at issue.
+   - **The server answers in the request's language**: services throw
+     `t({ id, defaultMessage }, values)`, AllExceptionsFilter renders it by
+     Accept-Language, which `api()` sets to the chosen language; English
+     unchanged word for word without the header. Validation messages
+     (TranslatingValidationPipe), emails and notifications (in the
+     recipient's language, `recipientLocale`), and the audit log's action
+     names too. 323 messages in `server/src/i18n/`. Two developer errors
+     stay English on purpose.
+   - **Checks**: `npm run i18n:check` on both sides in CI, with
+     `check-client-locales.js` and `check-client-audit-actions.js` keeping
+     the two packages' lists in step. `e2e/languages.spec.ts` runs the
+     whole path in a browser; MC-1405 to MC-1414 are the manual checks.
+   - **Demo and volume**: `seed:demo` has a French-and-English and a
+     Chinese customer with an invoice each; `seed:volume` has customers in
+     both and products named in them.
 
-   Where it stands: the server (step 1, migrations 0039 and 0040), the
-   client foundations (step 2), and step 3 complete: every screen speaks
-   English, French and Chinese, each folder translated as its strings
-   moved (glossary first, `docs/glossary.md`), with the organization's
-   and each partner's document languages and the required product names
-   on screens of their own. Step 5 is done too: the packing slip, invoice
-   and credit note print in their customer's one or two languages
-   (`useDocumentText`), whatever the reader reads, with item names in both
-   from the invoice's copy. Step 4, the fluent review (MC-1405), is
-   outstanding and best done once after step 6, through an export and
-   import script still to write. Step 6 is under way: the server throws
-   `t({ id, defaultMessage }, values)` and AllExceptionsFilter renders it
-   in the request's Accept-Language, which `api()` sets to the chosen
-   language; catalogues in `server/src/i18n/`, checked by `npm run
-   i18n:check` as the client's are. Every refusal a service throws is
-   converted (252 messages); a status or verb passed in as a value is
-   named in each language through an ICU select. Validation messages too
-   (TranslatingValidationPipe: Nest's English unchanged, an id beside
-   each). Emails and notifications are written in the recipient's
-   language (`recipientLocale`: their choice, else the request's, else
-   English), a notification once per recipient. Still English: the two
-   developer errors (a missing tenant context, a misused @CurrentUser). Step 6 is complete:
-   the audit log names every action in the reader's language too
-   (`client/src/audit/audit-actions.ts`, held to the server's list by
-   `server/scripts/check-client-audit-actions.js`); field names in a
-   change stay as the API names them. The review tools are in
-   `scripts/i18n-review.mjs` (export one workbook per language, import the
-   reviewers' corrections; see MC-1405). Left: step 7, while the reviewers
-   work, then step 4's import as one commit. The packing slip's item names are the products' own names; only
-   the invoice and credit note carry names in other languages.
+   **Before merging:**
+   1. **Step 4, the fluent review (MC-1405).** `node scripts/i18n-review.mjs
+      export` writes `review/fr-CA.xlsx` and `review/zh-Hans.xlsx` (1516
+      messages each); the reviewers fill in Correction; `import` writes them
+      back, refusing a file that loses a placeholder. One commit.
+   2. **ADR-051's budgets re-run** on a fresh `seed:volume`: issuing now
+      reads product names. Record the figures in ADR-051's Results as the
+      earlier runs were.
+   3. The full server e2e suite and `e2e/languages.spec.ts` green in CI.
 
-   Added to the plan while building, not in the ADR's list:
-   - **`seed:demo`**, done after step 5: Pharmacie Saint-Laurent prints
-     French and English (with GST + QST, 9,975 %), 明德药房 prints
-     Chinese, Focus 60ct is named in both, and each has an invoice
-     issued, so MC-1407 to MC-1412 walk on a fresh database.
-   - **`seed:volume`**, in step 7: some product translations, then the
-     ADR-051 budgets re-run, since issuing now reads them.
-   - **`docs/conventions.md`**, in step 7: "Adding text" — an id named by
-     feature folder, the English beside it, `npm run i18n:extract`, then
-     French and Chinese with ’ rather than '.
+   Known edges, written down rather than fixed: the packing slip has no
+   item names in other languages; field names inside an audit entry and
+   in validation messages are the API's; the industry vocabulary
+   ("recipe", "batch") is an open decision in `decisions.md`.
 
 ## What v0.4 built
 

@@ -167,6 +167,41 @@ and silently goes stale.
 
 ---
 
+## Adding text
+
+Every word a person reads comes from a catalogue, in English, French and
+Chinese (ADR-054). The rules, so a new screen or refusal arrives in all
+three:
+
+- **On a screen**, `intl.formatMessage({ id, defaultMessage })` or
+  `<FormattedMessage>`, the English beside the code that shows it. A
+  helper outside a component uses `intl()` from `src/i18n/intl`. A label
+  the lint rule finds typed straight into JSX fails CI.
+- **On the server**, throw `t({ id, defaultMessage }, values)` from
+  `src/i18n/translate`, never a finished sentence; a DTO rule's own
+  message is `rule(defineMessage({ id, defaultMessage }))`, with
+  `{property}` for the field. Something written where no browser asks,
+  an email or a notification, is rendered with `recipientLocale`.
+- **The id** is named by feature folder, dotted, camelCase:
+  `orders.ship.title`, `stock.lots.runShort`. Never a hash, never the
+  English: a copy edit must not orphan a translation. Reuse an id only
+  where the meaning is the same, not merely the words.
+- **Values, not sentences.** Data goes in as a value, `{sku}`, `{number}`;
+  a count as an ICU plural, never "has"/"have" chosen in code; a status
+  or kind as an ICU select over its stored value; a list as a list (the
+  server joins it per language); a nested sentence as a message of its
+  own. A number for a person is formatted for them (`formatQuantity`,
+  `formatMoney`), a calendar day stays YYYY-MM-DD in a server message.
+- **Then** `npm run i18n:extract` in that package, and add the same id to
+  `fr-CA.json` and `zh-Hans.json`, using `docs/glossary.md`'s words and a
+  typographic apostrophe (’), which ICU leaves alone where ' starts a
+  quote. `npm run i18n:check` fails until all three agree, placeholders
+  included. Written by whoever adds the English, reviewed by someone
+  fluent before a release (MC-1405, `scripts/i18n-review.mjs`).
+- **A printed document** speaks its customer's languages, not the
+  reader's: its words go through `useDocumentText`, its figures through
+  the document's locale.
+
 ## Tests
 
 - Unit tests sit beside their source: `users.service.spec.ts`.
