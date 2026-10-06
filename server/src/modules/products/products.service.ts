@@ -6,10 +6,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 
-import {
-  recordContext,
-  recordPrevious,
-} from '../../core/audit/audit-context';
+import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
 import {
   products,
