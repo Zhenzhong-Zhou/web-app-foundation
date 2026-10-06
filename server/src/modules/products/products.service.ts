@@ -15,6 +15,7 @@ import {
   variantTranslations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import type { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import type {
@@ -81,7 +82,10 @@ export class ProductsService {
       eq(products.id, productId),
     );
 
-    if (!product) throw new NotFoundException('No such product');
+    if (!product)
+      throw new NotFoundException(
+        t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+      );
 
     const variants = await this.tenantDb.select(
       productVariants,
@@ -163,7 +167,13 @@ export class ProductsService {
         // caller whether they meant the existing item or have a collision in
         // their own numbering — "already exists" makes them go hunting.
         throw new ConflictException(
-          `SKU ${input.variant.sku} is already in use`,
+          t(
+            {
+              id: 'products.skuSkuUse',
+              defaultMessage: 'SKU {sku} is already in use',
+            },
+            { sku: input.variant.sku },
+          ),
         );
       }
       throw error;
@@ -176,7 +186,10 @@ export class ProductsService {
       eq(products.id, productId),
     );
 
-    if (!existing) throw new NotFoundException('No such product');
+    if (!existing)
+      throw new NotFoundException(
+        t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+      );
 
     await this.tenantDb.update(products, input, eq(products.id, productId));
 
@@ -195,7 +208,10 @@ export class ProductsService {
       eq(products.id, productId),
     );
 
-    if (!product) throw new NotFoundException('No such product');
+    if (!product)
+      throw new NotFoundException(
+        t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+      );
 
     try {
       // organizationId comes from tenant context inside insert() — its
@@ -208,7 +224,15 @@ export class ProductsService {
       return variant;
     } catch (error) {
       if (isUniqueViolation(error)) {
-        throw new ConflictException(`SKU ${input.sku} is already in use`);
+        throw new ConflictException(
+          t(
+            {
+              id: 'products.skuSkuUse',
+              defaultMessage: 'SKU {sku} is already in use',
+            },
+            { sku: input.sku },
+          ),
+        );
       }
       throw error;
     }
@@ -235,7 +259,10 @@ export class ProductsService {
       ),
     );
 
-    if (!variant) throw new NotFoundException('No such variant');
+    if (!variant)
+      throw new NotFoundException(
+        t({ id: 'products.suchVariant', defaultMessage: 'No such variant' }),
+      );
 
     try {
       await this.tenantDb.update(
@@ -247,7 +274,15 @@ export class ProductsService {
       recordPrevious({ sku: variant.sku });
     } catch (error) {
       if (isUniqueViolation(error)) {
-        throw new ConflictException(`SKU ${input.sku} is already in use`);
+        throw new ConflictException(
+          t(
+            {
+              id: 'products.skuSkuUse',
+              defaultMessage: 'SKU {sku} is already in use',
+            },
+            { sku: input.sku },
+          ),
+        );
       }
       throw error;
     }
@@ -273,7 +308,10 @@ export class ProductsService {
           ),
         );
 
-      if (!product) throw new NotFoundException('No such product');
+      if (!product)
+        throw new NotFoundException(
+          t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
+        );
 
       recordContext({ names: describeNames(input.translations) });
 
@@ -339,7 +377,10 @@ export class ProductsService {
           ),
         );
 
-      if (!variant) throw new NotFoundException('No such variant');
+      if (!variant)
+        throw new NotFoundException(
+          t({ id: 'products.suchVariant', defaultMessage: 'No such variant' }),
+        );
 
       recordContext({
         sku: variant.sku,

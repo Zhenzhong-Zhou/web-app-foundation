@@ -14,6 +14,7 @@ import {
 } from '../../database/errors';
 import { bomLines, boms, productionOrders } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { ProductLicencesService } from '../product-licences/product-licences.service';
 import type { CreateBomDto } from './dto/create-bom.dto';
 import type { CreateBomLineDto } from './dto/create-bom-line.dto';
@@ -64,7 +65,12 @@ export class BomsService {
     if (!licenceId) return;
 
     if (!(await this.licences.existsWithin(licenceId))) {
-      throw new BadRequestException('licenceId does not exist');
+      throw new BadRequestException(
+        t({
+          id: 'boms.licenceidDoesExist',
+          defaultMessage: 'licenceId does not exist',
+        }),
+      );
     }
   }
 
@@ -87,7 +93,10 @@ export class BomsService {
   async findById(bomId: string) {
     const [bom] = await this.tenantDb.select(boms, eq(boms.id, bomId));
 
-    if (!bom) throw new NotFoundException('No such BOM');
+    if (!bom)
+      throw new NotFoundException(
+        t({ id: 'boms.suchBom', defaultMessage: 'No such BOM' }),
+      );
 
     return bom;
   }
@@ -187,7 +196,12 @@ export class BomsService {
       await this.tenantDb.update(boms, input, eq(boms.id, bomId));
     } catch (error) {
       if (isForeignKeyViolation(error)) {
-        throw new BadRequestException('licenceId does not exist');
+        throw new BadRequestException(
+          t({
+            id: 'boms.licenceidDoesExist',
+            defaultMessage: 'licenceId does not exist',
+          }),
+        );
       }
       throw error;
     }
@@ -231,7 +245,11 @@ export class BomsService {
 
     if (await this.usedByARun(bom.id)) {
       throw new ConflictException(
-        'A run has been made against this recipe, so its licence is fixed — draft a new version instead',
+        t({
+          id: 'boms.runMadeAgainstRecipe',
+          defaultMessage:
+            'A run has been made against this recipe, so its licence is fixed — draft a new version instead',
+        }),
       );
     }
   }
@@ -302,7 +320,14 @@ export class BomsService {
 
       if (bom.status !== 'draft') {
         throw new ConflictException(
-          `A ${bom.status} BOM cannot be promoted — create a new version instead`,
+          t(
+            {
+              id: 'boms.statusBomPromotedCreate',
+              defaultMessage:
+                'A {status} BOM cannot be promoted — create a new version instead',
+            },
+            { status: bom.status },
+          ),
         );
       }
 
@@ -318,7 +343,12 @@ export class BomsService {
        * ledger exists to prevent (ADR-023).
        */
       if (lines.length === 0) {
-        throw new ConflictException('A BOM with no lines cannot be promoted');
+        throw new ConflictException(
+          t({
+            id: 'boms.bomLinesPromoted',
+            defaultMessage: 'A BOM with no lines cannot be promoted',
+          }),
+        );
       }
 
       await tx
@@ -348,7 +378,12 @@ export class BomsService {
     const bom = await this.findById(bomId);
 
     if (bom.status === 'archived') {
-      throw new ConflictException('This BOM is already archived');
+      throw new ConflictException(
+        t({
+          id: 'boms.bomArchived',
+          defaultMessage: 'This BOM is already archived',
+        }),
+      );
     }
 
     await this.tenantDb.update(
@@ -420,7 +455,14 @@ export class BomsService {
   private assertDraft(status: string, verb: string): void {
     if (status !== 'draft') {
       throw new ConflictException(
-        `A ${status} BOM cannot be ${verb} — duplicate it to a new draft instead`,
+        t(
+          {
+            id: 'boms.statusBomVerbDuplicate',
+            defaultMessage:
+              'A {status} BOM cannot be {verb} — duplicate it to a new draft instead',
+          },
+          { status, verb },
+        ),
       );
     }
   }
@@ -443,13 +485,20 @@ export class BomsService {
     } catch (error) {
       if (isForeignKeyViolation(error)) {
         throw new BadRequestException(
-          'outputVariantId or licenceId does not exist',
+          t({
+            id: 'boms.outputvariantidLicenceidDoesExist',
+            defaultMessage: 'outputVariantId or licenceId does not exist',
+          }),
         );
       }
       if (isUniqueViolation(error)) {
         // Two drafts raced for the same version number.
         throw new ConflictException(
-          'Another version of this recipe was created at the same time — try again',
+          t({
+            id: 'boms.anotherVersionRecipeWas',
+            defaultMessage:
+              'Another version of this recipe was created at the same time — try again',
+          }),
         );
       }
       throw error;
@@ -462,7 +511,10 @@ export class BomsService {
       .from(boms)
       .where(and(eq(boms.organizationId, organizationId), eq(boms.id, bomId)));
 
-    if (!bom) throw new NotFoundException('No such BOM');
+    if (!bom)
+      throw new NotFoundException(
+        t({ id: 'boms.suchBom', defaultMessage: 'No such BOM' }),
+      );
 
     return bom;
   }
@@ -499,7 +551,13 @@ export class BomsService {
       and(eq(bomLines.id, lineId), eq(bomLines.bomId, bomId)),
     );
 
-    if (!line) throw new NotFoundException('No such line on this BOM');
+    if (!line)
+      throw new NotFoundException(
+        t({
+          id: 'boms.suchLineBom',
+          defaultMessage: 'No such line on this BOM',
+        }),
+      );
 
     return line;
   }
@@ -529,11 +587,20 @@ export class BomsService {
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException(
-          'That component is already a line on this BOM — edit the quantity instead',
+          t({
+            id: 'boms.componentLineBomEdit',
+            defaultMessage:
+              'That component is already a line on this BOM — edit the quantity instead',
+          }),
         );
       }
       if (isForeignKeyViolation(error)) {
-        throw new BadRequestException('componentVariantId does not exist');
+        throw new BadRequestException(
+          t({
+            id: 'boms.componentvariantidDoesExist',
+            defaultMessage: 'componentVariantId does not exist',
+          }),
+        );
       }
       throw error;
     }
@@ -580,7 +647,11 @@ export class BomsService {
 
     if (found.rows.length > 0) {
       throw new ConflictException(
-        'That component is made from this product, directly or through another recipe — adding it would make a cycle',
+        t({
+          id: 'boms.componentMadeProductDirectly',
+          defaultMessage:
+            'That component is made from this product, directly or through another recipe — adding it would make a cycle',
+        }),
       );
     }
   }

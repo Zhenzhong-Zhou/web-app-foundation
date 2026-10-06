@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
+import { t } from '../../i18n/translate';
 import type { Tx } from '../stock/stock.service';
 
 /** The list an order's new lines take their default prices from. */
@@ -125,15 +126,33 @@ export async function assertListAssignable(
     is_active: boolean;
   }[];
 
-  if (!list) throw new BadRequestException('Unknown price list');
+  if (!list)
+    throw new BadRequestException(
+      t({
+        id: 'priceLists.unknownPriceList',
+        defaultMessage: 'Unknown price list',
+      }),
+    );
 
   if (list.direction !== direction) {
     throw new BadRequestException(
-      `${list.name} is a ${list.direction} list, and this needs a ${direction} list`,
+      t(
+        {
+          id: 'priceLists.nameDirectionListNeeds',
+          defaultMessage:
+            '{name} is a {direction} list, and this needs a {direction2} list',
+        },
+        { name: list.name, direction: list.direction, direction2: direction },
+      ),
     );
   }
 
   if (!list.is_active) {
-    throw new ConflictException(`${list.name} is retired`);
+    throw new ConflictException(
+      t(
+        { id: 'priceLists.nameRetired', defaultMessage: '{name} is retired' },
+        { name: list.name },
+      ),
+    );
   }
 }

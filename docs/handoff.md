@@ -133,10 +133,11 @@ Then tag v0.4.0.
    `t({ id, defaultMessage }, values)` and AllExceptionsFilter renders it
    in the request's Accept-Language, which `api()` sets to the chosen
    language; catalogues in `server/src/i18n/`, checked by `npm run
-   i18n:check` as the client's are. Converted so far: sign-in, account,
-   members, organization (24 messages). Still English: the feature
-   modules' refusals (about 245), validation messages, emails and
-   notifications. The audit log spells out
+   i18n:check` as the client's are. Every refusal a service throws is
+   converted (252 messages); a status or verb passed in as a value is
+   named in each language through an ICU select. Still English:
+   validation messages, emails and notifications, and the two developer
+   errors (a missing tenant context, a misused @CurrentUser). The audit log spells out
    most action and field names from the server's keys, in English until
    step 6. The packing slip's item names are the products' own names; only
    the invoice and credit note carry names in other languages.

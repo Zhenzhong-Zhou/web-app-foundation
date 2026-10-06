@@ -34,8 +34,12 @@ import chinese from './zh-Hans.json';
  * `i18n:check` as the client's holds the French and Chinese to it.
  */
 
-/** A value a message can carry: data, never a sentence of its own. */
-export type MessageValue = string | number | boolean | null | undefined;
+/**
+ * A value a message can carry: data, or a whole message of its own, which
+ * is rendered in the same language as the sentence around it.
+ */
+export type MessageValue =
+  string | number | boolean | null | undefined | Translatable;
 
 /**
  * What a translatable exception carries as its response body. `message` is
@@ -68,7 +72,18 @@ function render(
     formatter = new IntlMessageFormat(source, locale);
     formatters.set(key, formatter);
   }
-  return String(formatter.format(values ?? {}));
+  // A nested message in the same language as the sentence it sits in.
+  const flat = Object.fromEntries(
+    Object.entries(values ?? {}).map(([key, value]) => [
+      key,
+      isTranslatable(value)
+        ? locale === DEFAULT_LOCALE
+          ? value.message
+          : translate(value, locale)
+        : value,
+    ]),
+  );
+  return String(formatter.format(flat));
 }
 
 /**

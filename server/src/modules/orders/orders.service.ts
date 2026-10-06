@@ -11,6 +11,7 @@ import {
   productVariants,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { itemName } from '../stock/item-name';
 import { ListOrdersDto } from './dto/list-orders.dto';
 
@@ -191,7 +192,10 @@ export class OrdersService {
           ),
         );
 
-      if (!order) throw new NotFoundException('No such order');
+      if (!order)
+        throw new NotFoundException(
+          t({ id: 'orders.suchOrder', defaultMessage: 'No such order' }),
+        );
 
       const lines = await tx
         .select({

@@ -7,6 +7,7 @@ import { sql } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
 import { invoices } from '../../database/schema';
+import { t } from '../../i18n/translate';
 import type { CreditLineDto } from './dto/credit-invoice.dto';
 import { minorUnits } from './invoice-amounts';
 
@@ -173,25 +174,51 @@ async function checkLines(
   for (const row of checked) {
     if (row.missing) {
       throw new NotFoundException(
-        `No line ${row.invoice_line_id} on ${invoice.number}`,
+        t(
+          {
+            id: 'invoices.lineInvoiceLineId',
+            defaultMessage: 'No line {lineId} on {number}',
+          },
+          { lineId: row.invoice_line_id, number: invoice.number },
+        ),
       );
     }
 
     if (row.above_price) {
       throw new ConflictException(
-        `${row.sku} can be credited at its invoiced price or less, never more`,
+        t(
+          {
+            id: 'invoices.skuCreditedInvoicedPrice',
+            defaultMessage:
+              '{sku} can be credited at its invoiced price or less, never more',
+          },
+          { sku: row.sku },
+        ),
       );
     }
 
     if (row.above_quantity) {
       throw new ConflictException(
-        `${row.sku} was billed in a smaller quantity than that`,
+        t(
+          {
+            id: 'invoices.skuWasBilledSmaller',
+            defaultMessage: '{sku} was billed in a smaller quantity than that',
+          },
+          { sku: row.sku },
+        ),
       );
     }
 
     if (row.above_value) {
       throw new ConflictException(
-        `${row.sku} has ${row.remaining} left to credit on ${invoice.number}, less than this credit`,
+        t(
+          {
+            id: 'invoices.skuRemainingLeftCredit',
+            defaultMessage:
+              '{sku} has {remaining} left to credit on {number}, less than this credit',
+          },
+          { sku: row.sku, remaining: row.remaining, number: invoice.number },
+        ),
       );
     }
   }
@@ -425,31 +452,69 @@ async function assertWithinAuthorizations(
 
   for (const row of rows) {
     if (row.missing) {
-      throw new BadRequestException('No such return authorization line');
+      throw new BadRequestException(
+        t({
+          id: 'invoices.suchReturnAuthorizationLine',
+          defaultMessage: 'No such return authorization line',
+        }),
+      );
     }
     if (row.other_order) {
       throw new ConflictException(
-        `${row.number} is for another order than this invoice`,
+        t(
+          {
+            id: 'invoices.numberAnotherOrderThan',
+            defaultMessage: '{number} is for another order than this invoice',
+          },
+          { number: row.number },
+        ),
       );
     }
     if (row.status !== 'open') {
       throw new ConflictException(
-        `${row.number} is ${row.status}, so nothing more is credited under it`,
+        t(
+          {
+            id: 'invoices.numberStatusSoNothing',
+            defaultMessage:
+              '{number} is {status}, so nothing more is credited under it',
+          },
+          { number: row.number, status: row.status },
+        ),
       );
     }
     if (row.resolution !== 'credit') {
       throw new ConflictException(
-        `That line of ${row.number} is resolved as ${row.resolution}, not credit`,
+        t(
+          {
+            id: 'invoices.lineNumberResolvedResolution',
+            defaultMessage:
+              'That line of {number} is resolved as {resolution}, not credit',
+          },
+          { number: row.number, resolution: row.resolution },
+        ),
       );
     }
     if (row.other_item) {
       throw new ConflictException(
-        `That line of ${row.number} is for a different item`,
+        t(
+          {
+            id: 'invoices.lineNumberDifferentItem',
+            defaultMessage: 'That line of {number} is for a different item',
+          },
+          { number: row.number },
+        ),
       );
     }
     if (row.exceeds) {
       throw new ConflictException(
-        `${row.number} has ${row.remaining} left to credit on that line, less than this credit`,
+        t(
+          {
+            id: 'invoices.numberRemainingLeftCredit',
+            defaultMessage:
+              '{number} has {remaining} left to credit on that line, less than this credit',
+          },
+          { number: row.number, remaining: row.remaining },
+        ),
       );
     }
   }

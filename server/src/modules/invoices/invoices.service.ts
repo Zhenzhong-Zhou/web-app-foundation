@@ -15,6 +15,7 @@ import {
   taxCodes,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import type { ListInvoicesDto } from './dto/list-invoices.dto';
 import { computeAmounts } from './invoice-amounts';
 
@@ -88,7 +89,10 @@ export class InvoicesService {
           ),
         );
 
-      if (!invoice) throw new NotFoundException('No such invoice');
+      if (!invoice)
+        throw new NotFoundException(
+          t({ id: 'invoices.suchInvoice', defaultMessage: 'No such invoice' }),
+        );
 
       const lines = await tx
         .select({
@@ -209,7 +213,13 @@ export class InvoicesService {
           ),
         );
 
-      if (!row) throw new NotFoundException('No such credit note');
+      if (!row)
+        throw new NotFoundException(
+          t({
+            id: 'invoices.suchCreditNote',
+            defaultMessage: 'No such credit note',
+          }),
+        );
 
       const lines = await tx
         .select({

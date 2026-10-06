@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
 import { invoices } from '../../database/schema';
+import { t } from '../../i18n/translate';
 
 /**
  * The invoice, locked, and only if it is still a draft. Anything past
@@ -24,11 +25,21 @@ export async function lockDraft(
     )
     .for('update');
 
-  if (!invoice) throw new NotFoundException('No such invoice');
+  if (!invoice)
+    throw new NotFoundException(
+      t({ id: 'invoices.suchInvoice', defaultMessage: 'No such invoice' }),
+    );
 
   if (invoice.status !== 'draft') {
     throw new ConflictException(
-      `This invoice is ${invoice.status} — it cannot be changed. Void it and issue a new one`,
+      t(
+        {
+          id: 'invoices.invoiceStatusChangedVoid',
+          defaultMessage:
+            'This invoice is {status} — it cannot be changed. Void it and issue a new one',
+        },
+        { status: invoice.status },
+      ),
     );
   }
 

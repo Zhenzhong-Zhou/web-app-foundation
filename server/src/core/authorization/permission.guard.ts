@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 
+import { t } from '../../i18n/translate';
 import { getRequestContext } from '../auth/request-context';
 import type { Permission } from './permissions';
 import { PermissionsService } from './permissions.service';
@@ -60,7 +61,12 @@ export class PermissionGuard implements CanActivate {
     // means a route was decorated with @RequirePermissions() and @Public()
     // together — a contradiction worth failing on rather than ignoring.
     if (!requestContext?.roleId) {
-      throw new ForbiddenException('No role in the current organization');
+      throw new ForbiddenException(
+        t({
+          id: 'auth.noRole',
+          defaultMessage: 'No role in the current organization',
+        }),
+      );
     }
 
     const held = new Set(
@@ -72,7 +78,16 @@ export class PermissionGuard implements CanActivate {
       // Names the missing permission. The caller is already authenticated, so
       // telling them which grant they lack is useful rather than a disclosure —
       // they can ask an admin for it by name instead of filing "it says 403".
-      throw new ForbiddenException(`Missing permission: ${missing.join(', ')}`);
+      // The keys as the API names them: an integrator reads these.
+      throw new ForbiddenException(
+        t(
+          {
+            id: 'auth.missingPermission',
+            defaultMessage: 'Missing permission: {permissions}',
+          },
+          { permissions: missing.join(', ') },
+        ),
+      );
     }
 
     return true;

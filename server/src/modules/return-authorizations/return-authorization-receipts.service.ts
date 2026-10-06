@@ -9,6 +9,7 @@ import { recordContext } from '../../core/audit/audit-context';
 import type { Transaction } from '../../database/database.module';
 import { orderReturns, returnAuthorizations } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { linesWithProgress } from './lines-with-progress';
 import { lockOpen } from './lock-open';
 
@@ -52,21 +53,49 @@ export class ReturnAuthorizationReceiptsService {
       )
       .for('update');
 
-    if (!rma) throw new BadRequestException('No such return authorization');
+    if (!rma)
+      throw new BadRequestException(
+        t({
+          id: 'rmas.suchReturnAuthorization',
+          defaultMessage: 'No such return authorization',
+        }),
+      );
 
     if (rma.orderId !== orderId) {
-      throw new ConflictException(`${rma.number} is for another order`);
+      throw new ConflictException(
+        t(
+          {
+            id: 'rmas.numberAnotherOrder',
+            defaultMessage: '{number} is for another order',
+          },
+          { number: rma.number },
+        ),
+      );
     }
 
     if (rma.status !== 'open') {
       throw new ConflictException(
-        `${rma.number} is ${rma.status}, so nothing more is received against it`,
+        t(
+          {
+            id: 'rmas.numberStatusSoNothing',
+            defaultMessage:
+              '{number} is {status}, so nothing more is received against it',
+          },
+          { number: rma.number, status: rma.status },
+        ),
       );
     }
 
     if (!rma.expectsGoods) {
       throw new ConflictException(
-        `${rma.number} told the customer to keep the goods — receive this without it, and link it if it should count`,
+        t(
+          {
+            id: 'rmas.numberToldCustomerKeep',
+            defaultMessage:
+              '{number} told the customer to keep the goods — receive this without it, and link it if it should count',
+          },
+          { number: rma.number },
+        ),
       );
     }
 
@@ -93,7 +122,12 @@ export class ReturnAuthorizationReceiptsService {
     const line = lines.find((row) => row.variantId === variantId);
 
     if (!line) {
-      throw new ConflictException(`${sku} is not on ${rma.number}`);
+      throw new ConflictException(
+        t(
+          { id: 'rmas.skuNumber', defaultMessage: '{sku} is not on {number}' },
+          { sku, number: rma.number },
+        ),
+      );
     }
 
     const result = await tx.execute<{ within: boolean; remaining: string }>(sql`
@@ -106,7 +140,14 @@ export class ReturnAuthorizationReceiptsService {
 
     if (!check.within) {
       throw new ConflictException(
-        `${rma.number} has ${check.remaining} of ${sku} left to come back, less than this return brings`,
+        t(
+          {
+            id: 'rmas.numberRemainingSkuLeft',
+            defaultMessage:
+              '{number} has {remaining} of {sku} left to come back, less than this return brings',
+          },
+          { number: rma.number, remaining: check.remaining, sku },
+        ),
       );
     }
   }
@@ -136,17 +177,36 @@ export class ReturnAuthorizationReceiptsService {
         )
         .for('update');
 
-      if (!received) throw new BadRequestException('No such return');
+      if (!received)
+        throw new BadRequestException(
+          t({ id: 'rmas.suchReturn', defaultMessage: 'No such return' }),
+        );
 
       if (received.orderId !== rma.orderId) {
-        throw new ConflictException('That return is on another order');
+        throw new ConflictException(
+          t({
+            id: 'rmas.returnAnotherOrder',
+            defaultMessage: 'That return is on another order',
+          }),
+        );
       }
 
       if (received.returnAuthorizationId) {
         throw new ConflictException(
           received.returnAuthorizationId === rma.id
-            ? `That return is already counted against ${rma.number}`
-            : 'That return is already counted against another RMA',
+            ? t(
+                {
+                  id: 'rmas.receipt.alreadyThis',
+                  defaultMessage:
+                    'That return is already counted against {rma}',
+                },
+                { rma: rma.number },
+              )
+            : t({
+                id: 'rmas.receipt.alreadyOther',
+                defaultMessage:
+                  'That return is already counted against another RMA',
+              }),
         );
       }
 
@@ -193,8 +253,26 @@ export class ReturnAuthorizationReceiptsService {
       if (refused) {
         throw new ConflictException(
           refused.missing
-            ? `${refused.sku} came back on that return but is not on ${rma.number}`
-            : `${rma.number} has ${refused.remaining} of ${refused.sku} left to come back, less than that return brought`,
+            ? t(
+                {
+                  id: 'rmas.receipt.notOnRma',
+                  defaultMessage:
+                    '{sku} came back on that return but is not on {rma}',
+                },
+                { sku: refused.sku, rma: rma.number },
+              )
+            : t(
+                {
+                  id: 'rmas.receipt.tooMany',
+                  defaultMessage:
+                    '{rma} has {remaining} of {sku} left to come back, less than that return brought',
+                },
+                {
+                  rma: rma.number,
+                  remaining: refused.remaining,
+                  sku: refused.sku,
+                },
+              ),
         );
       }
 

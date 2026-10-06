@@ -19,6 +19,7 @@ import {
   returnAuthorizations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { takeNumber } from '../invoices/document-numbers';
 import { loadOrder } from '../orders/load-order';
 import { requestedLines } from '../orders/order-line-lookup';
@@ -108,7 +109,13 @@ export class ReturnAuthorizationsService {
           ),
         );
 
-      if (!row) throw new NotFoundException('No such return authorization');
+      if (!row)
+        throw new NotFoundException(
+          t({
+            id: 'rmas.suchReturnAuthorization',
+            defaultMessage: 'No such return authorization',
+          }),
+        );
 
       const lines = await linesWithProgress(
         tx,
@@ -150,13 +157,24 @@ export class ReturnAuthorizationsService {
 
         if (order.direction !== 'sale') {
           throw new BadRequestException(
-            'Only a sale is returned against. Goods sent back to a supplier are an adjustment.',
+            t({
+              id: 'rmas.saleReturnedAgainstGoods',
+              defaultMessage:
+                'Only a sale is returned against. Goods sent back to a supplier are an adjustment.',
+            }),
           );
         }
 
         if (order.status !== 'confirmed' && order.status !== 'fulfilled') {
           throw new ConflictException(
-            `A ${order.status} order has shipped nothing to return`,
+            t(
+              {
+                id: 'rmas.statusOrderShippedNothing',
+                defaultMessage:
+                  'A {status} order has shipped nothing to return',
+              },
+              { status: order.status },
+            ),
           );
         }
 
@@ -171,7 +189,11 @@ export class ReturnAuthorizationsService {
           input.lines.some((line) => line.resolution === 'credit')
         ) {
           throw new ConflictException(
-            'A sample was never billed, so nothing on it can be credited — replace it, or take it back with no resolution',
+            t({
+              id: 'rmas.sampleWasNeverBilled',
+              defaultMessage:
+                'A sample was never billed, so nothing on it can be credited — replace it, or take it back with no resolution',
+            }),
           );
         }
 
@@ -275,9 +297,17 @@ export class ReturnAuthorizationsService {
 
       if (received || credited) {
         throw new ConflictException(
-          `${rma.number} already has ${
-            received ? 'goods back' : 'a credit'
-          } against it, so it is closed rather than cancelled`,
+          t(
+            {
+              id: 'rmas.numberCreditAgainstSo',
+              defaultMessage:
+                '{number} already has {credit} against it, so it is closed rather than cancelled',
+            },
+            {
+              number: rma.number,
+              credit: received ? 'goods back' : 'a credit',
+            },
+          ),
         );
       }
 
@@ -349,7 +379,14 @@ export class ReturnAuthorizationsService {
 
     if (short) {
       throw new ConflictException(
-        `The customer holds ${short.held} of ${short.sku} — shipped less returned — so no more can be authorized to come back`,
+        t(
+          {
+            id: 'rmas.customerHoldsHeldSku',
+            defaultMessage:
+              'The customer holds {held} of {sku} — shipped less returned — so no more can be authorized to come back',
+          },
+          { held: short.held, sku: short.sku },
+        ),
       );
     }
   }
@@ -379,19 +416,39 @@ export class ReturnAuthorizationsService {
         ),
       );
 
-    if (!invoice) throw new BadRequestException('No such invoice');
+    if (!invoice)
+      throw new BadRequestException(
+        t({ id: 'rmas.suchInvoice', defaultMessage: 'No such invoice' }),
+      );
 
     if (invoice.orderId !== orderId) {
       throw new ConflictException(
-        `${invoice.number ?? 'That invoice'} is for another order`,
+        t(
+          {
+            id: 'rmas.numberAnotherOrder',
+            defaultMessage: '{number} is for another order',
+          },
+          { number: invoice.number ?? 'That invoice' },
+        ),
       );
     }
 
     if (invoice.status !== 'issued') {
       throw new ConflictException(
         invoice.status === 'draft'
-          ? 'That invoice is still a draft — nothing on it is owed yet, so nothing can be credited'
-          : `${invoice.number} was voided — it was credited in full already`,
+          ? t({
+              id: 'rmas.credit.draftInvoice',
+              defaultMessage:
+                'That invoice is still a draft — nothing on it is owed yet, so nothing can be credited',
+            })
+          : t(
+              {
+                id: 'rmas.credit.voidedInvoice',
+                defaultMessage:
+                  '{number} was voided — it was credited in full already',
+              },
+              { number: invoice.number },
+            ),
       );
     }
   }

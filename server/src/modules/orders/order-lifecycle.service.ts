@@ -11,6 +11,7 @@ import { recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
 import { addresses, orderLines, orders, partners } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { type Tx } from '../stock/stock.service';
 import type { CreateOrderDto } from './dto/create-order.dto';
 import type { DuplicateOrderDto } from './dto/duplicate-order.dto';
@@ -68,16 +69,32 @@ export class OrderLifecycleService {
             ),
           );
 
-        if (!partner) throw new BadRequestException('Unknown partner');
+        if (!partner)
+          throw new BadRequestException(
+            t({
+              id: 'orders.unknownPartner',
+              defaultMessage: 'Unknown partner',
+            }),
+          );
 
         // Retired partners stay in the directory but cannot take new orders —
         // that is the whole point of retiring rather than deleting (ADR-026).
         if (!partner.isActive) {
-          throw new ConflictException(`${partner.name} is retired`);
+          throw new ConflictException(
+            t(
+              { id: 'orders.nameRetired', defaultMessage: '{name} is retired' },
+              { name: partner.name },
+            ),
+          );
         }
 
         if (input.isSample && input.direction !== 'sale') {
-          throw new BadRequestException('Only a sale can be a sample');
+          throw new BadRequestException(
+            t({
+              id: 'orders.saleSample',
+              defaultMessage: 'Only a sale can be a sample',
+            }),
+          );
         }
 
         const [order] = await tx
@@ -108,7 +125,11 @@ export class OrderLifecycleService {
         // The only unique constraint on order_lines. Two lines for one variant
         // make "how much did we order" ambiguous; amending is what editing is.
         throw new ConflictException(
-          'The same item appears twice — amend the quantity instead',
+          t({
+            id: 'orders.sameItemAppearsTwice',
+            defaultMessage:
+              'The same item appears twice — amend the quantity instead',
+          }),
         );
       }
       throw error;
@@ -148,7 +169,10 @@ export class OrderLifecycleService {
        */
       if (!partner?.isActive) {
         throw new ConflictException(
-          `${partner?.name ?? 'That partner'} is retired`,
+          t(
+            { id: 'orders.nameRetired', defaultMessage: '{name} is retired' },
+            { name: partner?.name ?? 'That partner' },
+          ),
         );
       }
 
@@ -159,7 +183,12 @@ export class OrderLifecycleService {
         .orderBy(asc(orderLines.id));
 
       if (sourceLines.length === 0) {
-        throw new ConflictException('That order has no lines to copy');
+        throw new ConflictException(
+          t({
+            id: 'orders.orderLinesCopy',
+            defaultMessage: 'That order has no lines to copy',
+          }),
+        );
       }
 
       /**
@@ -170,7 +199,11 @@ export class OrderLifecycleService {
        */
       if (sourceLines.some((line) => Number(line.quantityFulfilled) > 0)) {
         throw new ConflictException(
-          'Part of this order has already been received — duplicating it would re-order what arrived',
+          t({
+            id: 'orders.partOrderReceivedDuplicating',
+            defaultMessage:
+              'Part of this order has already been received — duplicating it would re-order what arrived',
+          }),
         );
       }
 
@@ -245,7 +278,10 @@ export class OrderLifecycleService {
       eq(orders.id, orderId),
     );
 
-    if (!existing) throw new NotFoundException('No such order');
+    if (!existing)
+      throw new NotFoundException(
+        t({ id: 'orders.suchOrder', defaultMessage: 'No such order' }),
+      );
 
     /**
      * A reference is matched against a supplier invoice once goods arrive, so
@@ -259,7 +295,11 @@ export class OrderLifecycleService {
       existing.status === 'fulfilled'
     ) {
       throw new ConflictException(
-        'The reference cannot change once an order is fulfilled — it is what an invoice is matched against',
+        t({
+          id: 'orders.referenceChangeOnceOrder',
+          defaultMessage:
+            'The reference cannot change once an order is fulfilled — it is what an invoice is matched against',
+        }),
       );
     }
 
@@ -268,7 +308,13 @@ export class OrderLifecycleService {
 
       if (!from.includes(existing.status)) {
         throw new ConflictException(
-          `An order cannot go from ${existing.status} to ${input.status}`,
+          t(
+            {
+              id: 'orders.orderGoStatusStatus',
+              defaultMessage: 'An order cannot go from {from} to {to}',
+            },
+            { from: existing.status, to: input.status },
+          ),
         );
       }
     }
@@ -312,7 +358,11 @@ export class OrderLifecycleService {
 
       if (moved) {
         throw new ConflictException(
-          'Goods have already moved against this order, so it cannot be cancelled — close it instead',
+          t({
+            id: 'orders.goodsMovedAgainstOrder',
+            defaultMessage:
+              'Goods have already moved against this order, so it cannot be cancelled — close it instead',
+          }),
         );
       }
     }
@@ -359,9 +409,14 @@ export class OrderLifecycleService {
       const skus = unpriced.map((line) => line.sku).join(', ');
 
       throw new ConflictException(
-        `Every item on a sale needs a price before it is confirmed. ${skus} ${
-          unpriced.length === 1 ? 'has' : 'have'
-        } none; zero is a price`,
+        t(
+          {
+            id: 'orders.everyItemSaleNeeds',
+            defaultMessage:
+              'Every item on a sale needs a price before it is confirmed. {skus} {count, plural, one {has} other {have}} none; zero is a price',
+          },
+          { skus, count: unpriced.length },
+        ),
       );
     }
 
@@ -369,9 +424,14 @@ export class OrderLifecycleService {
 
     if (currencies.length > 1) {
       throw new ConflictException(
-        `A sale is invoiced in one currency, and this one has ${currencies.join(
-          ' and ',
-        )}. Price every item in one of them`,
+        t(
+          {
+            id: 'orders.saleInvoicedOneCurrency',
+            defaultMessage:
+              'A sale is invoiced in one currency, and this one has {currencies}. Price every item in one of them',
+          },
+          { currencies: currencies.join(' and ') },
+        ),
       );
     }
   }

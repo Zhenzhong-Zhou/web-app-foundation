@@ -10,6 +10,7 @@ import { assertLanguagePair } from '../../core/organizations/document-languages'
 import { isUniqueViolation } from '../../database/errors';
 import { addresses, contacts, partners } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { assertListAssignable } from '../price-lists/list-price';
 import type { CreatePartnerDto } from './dto/create-partner.dto';
 import type { UpdatePartnerDto } from './dto/update-partner.dto';
@@ -47,7 +48,10 @@ export class PartnersService {
       eq(partners.id, partnerId),
     );
 
-    if (!partner) throw new NotFoundException('No such partner');
+    if (!partner)
+      throw new NotFoundException(
+        t({ id: 'partners.suchPartner', defaultMessage: 'No such partner' }),
+      );
 
     return partner;
   }
@@ -81,7 +85,13 @@ export class PartnersService {
          * "Acme (2)".
          */
         throw new ConflictException(
-          `Code ${input.code} is already used by another partner`,
+          t(
+            {
+              id: 'partners.codeCodeUsedAnother',
+              defaultMessage: 'Code {code} is already used by another partner',
+            },
+            { code: input.code },
+          ),
         );
       }
       throw error;
@@ -95,7 +105,10 @@ export class PartnersService {
       eq(partners.id, partnerId),
     );
 
-    if (!existing) throw new NotFoundException('No such partner');
+    if (!existing)
+      throw new NotFoundException(
+        t({ id: 'partners.suchPartner', defaultMessage: 'No such partner' }),
+      );
 
     // The pair as it will stand (ADR-054): a side left out keeps its value.
     assertLanguagePair(
@@ -135,7 +148,13 @@ export class PartnersService {
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException(
-          `Code ${input.code} is already used by another partner`,
+          t(
+            {
+              id: 'partners.codeCodeUsedAnother',
+              defaultMessage: 'Code {code} is already used by another partner',
+            },
+            { code: input.code },
+          ),
         );
       }
       throw error;

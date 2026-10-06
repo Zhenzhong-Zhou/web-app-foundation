@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { boms, productionOrders } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import type { ProductionOrder } from './production-orders.service';
 
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
@@ -23,7 +24,14 @@ export function assertStatus(
 ): void {
   if (actual !== required) {
     throw new ConflictException(
-      `A ${actual} run cannot be ${verb} — it must be ${required}`,
+      t(
+        {
+          id: 'production.actualRunVerbRequired',
+          defaultMessage:
+            'A {actual} run cannot be {verb} — it must be {required}',
+        },
+        { actual, verb, required },
+      ),
     );
   }
 }
@@ -47,7 +55,13 @@ export async function loadWithin(
       ),
     );
 
-  if (!run) throw new NotFoundException('No such production order');
+  if (!run)
+    throw new NotFoundException(
+      t({
+        id: 'production.suchProductionOrder',
+        defaultMessage: 'No such production order',
+      }),
+    );
 
   return run;
 }
@@ -72,7 +86,11 @@ export async function loadForIssue(
 
   if (!run.bomId) {
     throw new ConflictException(
-      'This run has no BOM, so there is nothing to issue — attach one first',
+      t({
+        id: 'production.runBomSoThere',
+        defaultMessage:
+          'This run has no BOM, so there is nothing to issue — attach one first',
+      }),
     );
   }
 
@@ -83,7 +101,10 @@ export async function loadForIssue(
       and(eq(boms.organizationId, organizationId), eq(boms.id, run.bomId)),
     );
 
-  if (!bom) throw new NotFoundException('No such BOM');
+  if (!bom)
+    throw new NotFoundException(
+      t({ id: 'production.suchBom', defaultMessage: 'No such BOM' }),
+    );
 
   return { run, bom };
 }

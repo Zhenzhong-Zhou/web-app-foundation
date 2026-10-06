@@ -6,6 +6,7 @@ import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types'
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { productionOrderLines, productionOrders } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { allocateFefo } from '../stock/lot-allocation';
 import { postRunCost } from '../stock/revaluation';
 import { StockService } from '../stock/stock.service';
@@ -78,7 +79,15 @@ export class ProductionCloseService {
 
       for (const lineId of actuals.keys()) {
         if (!lines.some((line) => line.id === lineId)) {
-          throw new NotFoundException(`No line ${lineId} on this run`);
+          throw new NotFoundException(
+            t(
+              {
+                id: 'production.lineLineidRun',
+                defaultMessage: 'No line {lineId} on this run',
+              },
+              { lineId },
+            ),
+          );
         }
       }
 

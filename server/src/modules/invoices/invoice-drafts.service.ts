@@ -21,6 +21,7 @@ import {
   stockMovements,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { itemName } from '../stock/item-name';
 import { TaxCodesService } from '../tax-codes/tax-codes.service';
 import type { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -82,21 +83,40 @@ export class InvoiceDraftsService {
              */
             .for('share', { of: shipments });
 
-          if (!shipment) throw new NotFoundException('No such shipment');
+          if (!shipment)
+            throw new NotFoundException(
+              t({
+                id: 'invoices.suchShipment',
+                defaultMessage: 'No such shipment',
+              }),
+            );
 
           if (shipment.direction !== 'sale') {
-            throw new BadRequestException('Only a sale is invoiced');
+            throw new BadRequestException(
+              t({
+                id: 'invoices.saleInvoiced',
+                defaultMessage: 'Only a sale is invoiced',
+              }),
+            );
           }
 
           if (shipment.voidedAt) {
             throw new ConflictException(
-              'That shipment was voided — nothing left, so there is nothing to bill',
+              t({
+                id: 'invoices.shipmentWasVoidedNothing',
+                defaultMessage:
+                  'That shipment was voided — nothing left, so there is nothing to bill',
+              }),
             );
           }
 
           if (shipment.isSample) {
             throw new ConflictException(
-              'Samples are not invoiced — they ship and trace like sales, but nobody pays for them',
+              t({
+                id: 'invoices.samplesInvoicedTheyShip',
+                defaultMessage:
+                  'Samples are not invoiced — they ship and trace like sales, but nobody pays for them',
+              }),
             );
           }
 
@@ -108,22 +128,39 @@ export class InvoiceDraftsService {
           );
 
           if (carried.length === 0) {
-            throw new ConflictException('That shipment carried nothing');
+            throw new ConflictException(
+              t({
+                id: 'invoices.shipmentCarriedNothing',
+                defaultMessage: 'That shipment carried nothing',
+              }),
+            );
           }
 
           const unpriced = carried.filter((line) => line.unitPrice === null);
           if (unpriced.length > 0) {
             throw new ConflictException(
-              `${unpriced.map((line) => line.sku).join(', ')} ${
-                unpriced.length === 1 ? 'has' : 'have'
-              } no price on the order — price the order line before invoicing`,
+              t(
+                {
+                  id: 'invoices.skuPriceOrderPrice',
+                  defaultMessage:
+                    '{sku} {count, plural, one {has} other {have}} no price on the order — price the order line before invoicing',
+                },
+                {
+                  sku: unpriced.map((line) => line.sku).join(', '),
+                  count: unpriced.length,
+                },
+              ),
             );
           }
 
           const currencies = [...new Set(carried.map((line) => line.currency))];
           if (currencies.length !== 1 || !currencies[0]) {
             throw new ConflictException(
-              'An invoice is in one currency, and this shipment carried items in more than one',
+              t({
+                id: 'invoices.invoiceOneCurrencyShipment',
+                defaultMessage:
+                  'An invoice is in one currency, and this shipment carried items in more than one',
+              }),
             );
           }
 
@@ -168,7 +205,11 @@ export class InvoiceDraftsService {
     } catch (error) {
       if (isUniqueViolation(error, 'invoices_shipment_standing_key')) {
         throw new ConflictException(
-          'That shipment already has an invoice — void it before billing the shipment again',
+          t({
+            id: 'invoices.shipmentInvoiceVoidBefore',
+            defaultMessage:
+              'That shipment already has an invoice — void it before billing the shipment again',
+          }),
         );
       }
       throw error;
@@ -244,7 +285,13 @@ export class InvoiceDraftsService {
           ),
         );
 
-      if (!line) throw new NotFoundException('No such line on this invoice');
+      if (!line)
+        throw new NotFoundException(
+          t({
+            id: 'invoices.suchLineInvoice',
+            defaultMessage: 'No such line on this invoice',
+          }),
+        );
 
       recordPrevious({
         sku: line.sku,
@@ -355,14 +402,25 @@ export class InvoiceDraftsService {
       .findById(taxCodeId)
       .catch((error: unknown) => {
         if (error instanceof NotFoundException) {
-          throw new BadRequestException('No such tax code');
+          throw new BadRequestException(
+            t({
+              id: 'invoices.suchTaxCode',
+              defaultMessage: 'No such tax code',
+            }),
+          );
         }
         throw error;
       });
 
     if (!code.isActive) {
       throw new ConflictException(
-        `${code.name} is retired — choose a code still in use`,
+        t(
+          {
+            id: 'invoices.nameRetiredChooseCode',
+            defaultMessage: '{name} is retired — choose a code still in use',
+          },
+          { name: code.name },
+        ),
       );
     }
   }

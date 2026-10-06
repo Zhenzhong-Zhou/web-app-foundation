@@ -376,8 +376,11 @@ folder by folder; these check what is already in place.
 - **MC-1413** Signed out, in 简体中文, sign in with a wrong password: the
   banner reads 邮箱或密码错误, not English; in Français, Courriel ou mot de
   passe invalide. Signed in, in Français, try to remove yourself from
-  Members: the refusal is French. The same request from curl, with no
-  Accept-Language, answers in English word for word.
+  Members: the refusal is French. In 简体中文, ship more than an order
+  has outstanding, cancel an order goods have moved against, and release
+  a run under an expired licence: each refusal is Chinese, the statuses
+  in it too (已确认, not "confirmed"). The same requests from curl, with
+  no Accept-Language, answer in English word for word.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.

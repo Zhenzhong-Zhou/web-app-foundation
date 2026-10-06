@@ -11,6 +11,7 @@ import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
 import { orderLines } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { StockService } from '../stock/stock.service';
 import type { ReceiveLineDto } from './dto/receive-line.dto';
 import { loadOrder } from './load-order';
@@ -56,7 +57,11 @@ export class OrderReceiptsService {
 
       if (order.direction !== 'purchase') {
         throw new BadRequestException(
-          'Only a purchase order is received. A sale is shipped.',
+          t({
+            id: 'orders.purchaseOrderReceivedSale',
+            defaultMessage:
+              'Only a purchase order is received. A sale is shipped.',
+          }),
         );
       }
 
@@ -68,7 +73,13 @@ export class OrderReceiptsService {
        */
       if (order.status !== 'confirmed') {
         throw new ConflictException(
-          `A ${order.status} order cannot be received against`,
+          t(
+            {
+              id: 'orders.statusOrderReceivedAgainst',
+              defaultMessage: 'A {status} order cannot be received against',
+            },
+            { status: order.status },
+          ),
         );
       }
 
@@ -79,7 +90,13 @@ export class OrderReceiptsService {
         .from(orderLines)
         .where(and(eq(orderLines.id, lineId), eq(orderLines.orderId, orderId)));
 
-      if (!line) throw new NotFoundException('No such line on this order');
+      if (!line)
+        throw new NotFoundException(
+          t({
+            id: 'orders.suchLineOrder',
+            defaultMessage: 'No such line on this order',
+          }),
+        );
 
       // Which item, for the audit row: the body names a quantity, and an
       // order has several lines. The snapshotted SKU, as the line shows it.
@@ -92,7 +109,11 @@ export class OrderReceiptsService {
        */
       if (line.isClosedShort) {
         throw new ConflictException(
-          'That line was closed short — reopen it before receiving against it',
+          t({
+            id: 'orders.lineWasClosedShort',
+            defaultMessage:
+              'That line was closed short — reopen it before receiving against it',
+          }),
         );
       }
 
@@ -137,7 +158,17 @@ export class OrderReceiptsService {
           isCheckViolation(error, 'order_lines_fulfilled_within_ordered_check')
         ) {
           throw new ConflictException(
-            `That is more than was ordered. ${line.quantityOrdered} ordered, ${line.quantityFulfilled} already received.`,
+            t(
+              {
+                id: 'orders.moreThanWasOrdered',
+                defaultMessage:
+                  'That is more than was ordered. {quantityOrdered} ordered, {quantityFulfilled} already received.',
+              },
+              {
+                quantityOrdered: line.quantityOrdered,
+                quantityFulfilled: line.quantityFulfilled,
+              },
+            ),
           );
         }
         throw error;

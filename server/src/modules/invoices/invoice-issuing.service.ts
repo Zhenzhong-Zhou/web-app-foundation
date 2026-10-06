@@ -28,6 +28,7 @@ import {
   taxCodes,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { takeNumber } from './document-numbers';
 import type { IssueInvoiceDto } from './dto/issue-invoice.dto';
 import type { VoidInvoiceDto } from './dto/void-invoice.dto';
@@ -68,7 +69,14 @@ export class InvoiceIssuingService {
           // Calendar days as YYYY-MM-DD compare correctly as strings.
           if (invoice.dueDate && invoice.dueDate < input.invoiceDate) {
             throw new BadRequestException(
-              `The due date (${invoice.dueDate}) is before the invoice date`,
+              t(
+                {
+                  id: 'invoices.dueDateDuedateBefore',
+                  defaultMessage:
+                    'The due date ({dueDate}) is before the invoice date',
+                },
+                { dueDate: invoice.dueDate },
+              ),
             );
           }
 
@@ -198,7 +206,10 @@ export class InvoiceIssuingService {
       // Checked above; this is the database saying so if that ever drifts.
       if (isCheckViolation(error, 'invoices_due_after_issue_check')) {
         throw new BadRequestException(
-          'The due date is before the invoice date',
+          t({
+            id: 'invoices.dueDateBeforeInvoice',
+            defaultMessage: 'The due date is before the invoice date',
+          }),
         );
       }
       throw error;
@@ -231,16 +242,31 @@ export class InvoiceIssuingService {
           )
           .for('update');
 
-        if (!invoice) throw new NotFoundException('No such invoice');
+        if (!invoice)
+          throw new NotFoundException(
+            t({
+              id: 'invoices.suchInvoice',
+              defaultMessage: 'No such invoice',
+            }),
+          );
 
         if (invoice.status === 'draft') {
           throw new ConflictException(
-            'A draft is deleted, not voided — nobody outside has seen it',
+            t({
+              id: 'invoices.draftDeletedVoidedNobody',
+              defaultMessage:
+                'A draft is deleted, not voided — nobody outside has seen it',
+            }),
           );
         }
 
         if (invoice.status === 'voided') {
-          throw new ConflictException('That invoice has already been voided');
+          throw new ConflictException(
+            t({
+              id: 'invoices.invoiceVoided',
+              defaultMessage: 'That invoice has already been voided',
+            }),
+          );
         }
 
         /**
@@ -261,7 +287,14 @@ export class InvoiceIssuingService {
 
         if (partial) {
           throw new ConflictException(
-            `${partial.number} already credits part of this invoice — credit what remains instead of voiding it, so nothing is credited twice`,
+            t(
+              {
+                id: 'invoices.numberCreditsPartInvoice',
+                defaultMessage:
+                  '{number} already credits part of this invoice — credit what remains instead of voiding it, so nothing is credited twice',
+              },
+              { number: partial.number },
+            ),
           );
         }
 
@@ -270,7 +303,14 @@ export class InvoiceIssuingService {
         // Calendar days as YYYY-MM-DD compare correctly as strings.
         if (input.creditDate < issuedOn) {
           throw new BadRequestException(
-            `A credit note cannot be dated before the invoice it reverses (${issuedOn})`,
+            t(
+              {
+                id: 'invoices.creditNoteDatedBefore2',
+                defaultMessage:
+                  'A credit note cannot be dated before the invoice it reverses ({issuedOn})',
+              },
+              { issuedOn },
+            ),
           );
         }
 
@@ -405,9 +445,17 @@ export class InvoiceIssuingService {
     const untaxed = lines.filter((line) => !line.taxCodeId);
     if (untaxed.length > 0) {
       throw new ConflictException(
-        `${untaxed.map((line) => line.sku).join(', ')} ${
-          untaxed.length === 1 ? 'has' : 'have'
-        } no tax code — choose one, or Exempt`,
+        t(
+          {
+            id: 'invoices.skuTaxCodeChoose',
+            defaultMessage:
+              '{sku} {count, plural, one {has} other {have}} no tax code — choose one, or Exempt',
+          },
+          {
+            sku: untaxed.map((line) => line.sku).join(', '),
+            count: untaxed.length,
+          },
+        ),
       );
     }
 
@@ -415,9 +463,14 @@ export class InvoiceIssuingService {
     if (retired.length > 0) {
       const names = [...new Set(retired.map((line) => line.taxCodeName))];
       throw new ConflictException(
-        `${names.join(', ')} ${
-          names.length === 1 ? 'is' : 'are'
-        } retired — choose a code still in use`,
+        t(
+          {
+            id: 'invoices.namesRetiredChooseCode',
+            defaultMessage:
+              '{names} {count, plural, one {is} other {are}} retired — choose a code still in use',
+          },
+          { names: names.join(', '), count: names.length },
+        ),
       );
     }
   }
@@ -436,7 +489,11 @@ export class InvoiceIssuingService {
 
     if (!address) {
       throw new ConflictException(
-        'Set the organization’s registered address before issuing — every invoice prints it',
+        t({
+          id: 'invoices.setOrganizationSRegistered',
+          defaultMessage:
+            'Set the organization’s registered address before issuing — every invoice prints it',
+        }),
       );
     }
 
@@ -488,7 +545,14 @@ export class InvoiceIssuingService {
         );
 
       throw new ConflictException(
-        `${partner?.name ?? 'This customer'} has no billing address — add one before issuing`,
+        t(
+          {
+            id: 'invoices.nameBillingAddressAdd',
+            defaultMessage:
+              '{name} has no billing address — add one before issuing',
+          },
+          { name: partner?.name ?? 'This customer' },
+        ),
       );
     }
 

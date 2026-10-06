@@ -12,6 +12,7 @@ import type { Transaction } from '../../database/database.module';
 import { isCheckViolation, isUniqueViolation } from '../../database/errors';
 import { taxCodeComponents, taxCodes } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import type { CreateTaxCodeDto } from './dto/create-tax-code.dto';
 import type { TaxCodeComponentDto } from './dto/tax-code-component.dto';
 import type { UpdateTaxCodeDto } from './dto/update-tax-code.dto';
@@ -61,7 +62,10 @@ export class TaxCodesService {
       eq(taxCodes.id, taxCodeId),
     );
 
-    if (!code) throw new NotFoundException('No such tax code');
+    if (!code)
+      throw new NotFoundException(
+        t({ id: 'taxCodes.suchTaxCode', defaultMessage: 'No such tax code' }),
+      );
     return code;
   }
 
@@ -184,7 +188,14 @@ export class TaxCodesService {
     for (const component of components) {
       if (seen.has(component.name)) {
         throw new BadRequestException(
-          `${component.name} is listed twice — a code charges each tax once`,
+          t(
+            {
+              id: 'taxCodes.nameListedTwiceCode',
+              defaultMessage:
+                '{name} is listed twice — a code charges each tax once',
+            },
+            { name: component.name },
+          ),
         );
       }
       seen.add(component.name);
@@ -193,10 +204,20 @@ export class TaxCodesService {
 
   private translate(error: unknown): never {
     if (isUniqueViolation(error, 'tax_codes_org_name_key')) {
-      throw new ConflictException('A tax code with that name already exists');
+      throw new ConflictException(
+        t({
+          id: 'taxCodes.taxCodeNameExists',
+          defaultMessage: 'A tax code with that name already exists',
+        }),
+      );
     }
     if (isCheckViolation(error, 'tax_code_components_rate_range_check')) {
-      throw new BadRequestException('A rate is a percentage between 0 and 100');
+      throw new BadRequestException(
+        t({
+          id: 'taxCodes.ratePercentageBetween',
+          defaultMessage: 'A rate is a percentage between 0 and 100',
+        }),
+      );
     }
     throw error;
   }

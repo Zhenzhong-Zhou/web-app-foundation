@@ -9,6 +9,7 @@ import type { Request } from 'express';
 import { getRequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { PermissionsService } from '../../core/authorization/permissions.service';
+import { t } from '../../i18n/translate';
 
 /**
  * stock.adjust, but only for the one reason that needs it.
@@ -34,13 +35,21 @@ export class AdjustmentGuard implements CanActivate {
     if (body?.reason !== 'adjustment') return true;
 
     const ctx = getRequestContext(request);
-    if (!ctx?.roleId) throw new ForbiddenException('No role');
+    if (!ctx?.roleId)
+      throw new ForbiddenException(
+        t({ id: 'stock.role', defaultMessage: 'No role' }),
+      );
 
     // Resolved per request, never cached (ADR-016).
     const held = await this.permissions.listForRole(ctx.roleId);
 
     if (!held.includes(PERMISSIONS.STOCK_ADJUST)) {
-      throw new ForbiddenException('Correcting a count needs stock.adjust');
+      throw new ForbiddenException(
+        t({
+          id: 'stock.correctingCountNeedsStock',
+          defaultMessage: 'Correcting a count needs stock.adjust',
+        }),
+      );
     }
 
     return true;

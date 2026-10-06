@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
 import { returnAuthorizations } from '../../database/schema';
+import { t } from '../../i18n/translate';
 
 /**
  * The RMA, locked, and only if it is still open. Cancelling, closing,
@@ -24,10 +25,24 @@ export async function lockOpen(
     )
     .for('update');
 
-  if (!rma) throw new NotFoundException('No such return authorization');
+  if (!rma)
+    throw new NotFoundException(
+      t({
+        id: 'rmas.suchReturnAuthorization',
+        defaultMessage: 'No such return authorization',
+      }),
+    );
 
   if (rma.status !== 'open') {
-    throw new ConflictException(`${rma.number} is already ${rma.status}`);
+    throw new ConflictException(
+      t(
+        {
+          id: 'rmas.numberStatus',
+          defaultMessage: '{number} is already {status}',
+        },
+        { number: rma.number, status: rma.status },
+      ),
+    );
   }
 
   return rma;

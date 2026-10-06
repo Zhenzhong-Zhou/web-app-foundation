@@ -4,6 +4,7 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import type { Locale } from '../../common/locales';
 import { shipments } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { lotItemsOf, withLotItems } from './lot-items';
 
 /**
@@ -112,7 +113,13 @@ export class ShipmentsService {
         from_location_name: string;
       }[];
 
-      if (!row) throw new NotFoundException('No such shipment on this order');
+      if (!row)
+        throw new NotFoundException(
+          t({
+            id: 'orders.suchShipmentOrder',
+            defaultMessage: 'No such shipment on this order',
+          }),
+        );
 
       const items = await lotItemsOf(tx, organizationId, {
         referenceType: 'shipment',

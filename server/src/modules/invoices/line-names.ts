@@ -4,6 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import type { DocumentLanguages } from '../../core/organizations/document-languages';
 import type { Transaction } from '../../database/database.module';
 import { organizations } from '../../database/schema';
+import { t } from '../../i18n/translate';
 import { itemName } from '../stock/item-name';
 
 /** What an issued line prints, in the invoice's one or two languages. */
@@ -111,7 +112,14 @@ export async function namedLines(
 
     if (untranslated) {
       throw new ConflictException(
-        `${untranslated.sku} has no ${languageName(slot.language)} name, which this organization requires on its documents`,
+        t(
+          {
+            id: 'invoices.skuLanguageNameWhich',
+            defaultMessage:
+              '{sku} has no {language} name, which this organization requires on its documents',
+          },
+          { sku: untranslated.sku, language: languageName(slot.language) },
+        ),
       );
     }
   }

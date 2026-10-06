@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { orderLines } from '../../database/schema';
+import { t } from '../../i18n/translate';
 import type { Tx } from '../stock/stock.service';
 
 export type OrderLine = typeof orderLines.$inferSelect;
@@ -37,7 +38,16 @@ export async function requestedLines(
   const found = new Set(lines.map((line) => line.id));
   const missing = lineIds.find((id) => !found.has(id));
 
-  if (missing) throw new NotFoundException(`No line ${missing} on this order`);
+  if (missing)
+    throw new NotFoundException(
+      t(
+        {
+          id: 'orders.lineMissingOrder',
+          defaultMessage: 'No line {missing} on this order',
+        },
+        { missing },
+      ),
+    );
 
   return lines;
 }
@@ -45,6 +55,15 @@ export async function requestedLines(
 /** One line from a set already loaded by requestedLines. */
 export function lineFor(lines: OrderLine[], lineId: string): OrderLine {
   const line = lines.find((row) => row.id === lineId);
-  if (!line) throw new NotFoundException(`No line ${lineId} on this order`);
+  if (!line)
+    throw new NotFoundException(
+      t(
+        {
+          id: 'orders.lineLineidOrder',
+          defaultMessage: 'No line {lineId} on this order',
+        },
+        { lineId },
+      ),
+    );
   return line;
 }

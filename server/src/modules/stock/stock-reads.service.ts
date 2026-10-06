@@ -24,6 +24,7 @@ import {
   users,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
 
@@ -144,7 +145,12 @@ export class StockReadsService {
         // list, and a 400 rather than a 404 says nothing about whether it
         // exists elsewhere.
         if (!cursor) {
-          throw new BadRequestException('That cursor is not in this list');
+          throw new BadRequestException(
+            t({
+              id: 'stock.cursorList',
+              defaultMessage: 'That cursor is not in this list',
+            }),
+          );
         }
 
         scope.push(

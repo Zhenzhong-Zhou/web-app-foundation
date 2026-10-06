@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { and, eq, isNotNull, ne } from 'drizzle-orm';
 
 import { orderLines, productVariants } from '../../database/schema';
+import { t } from '../../i18n/translate';
 import { listForOrder, priceOnList } from '../price-lists/list-price';
 import { type Tx } from '../stock/stock.service';
 
@@ -86,7 +87,10 @@ export async function insertLines(
         ),
       );
 
-    if (!variant) throw new BadRequestException('Unknown variant');
+    if (!variant)
+      throw new BadRequestException(
+        t({ id: 'orders.unknownVariant', defaultMessage: 'Unknown variant' }),
+      );
 
     let unitPrice: string | null = line.unitPrice ?? null;
     let currency: string | null = line.currency ?? null;
@@ -166,7 +170,11 @@ export function assertPriceAndCurrency(input: {
 }): void {
   if ((input.unitPrice === undefined) !== (input.currency === undefined)) {
     throw new BadRequestException(
-      'A price needs a currency, and a currency needs a price',
+      t({
+        id: 'orders.priceNeedsCurrencyCurrency',
+        defaultMessage:
+          'A price needs a currency, and a currency needs a price',
+      }),
     );
   }
 }
@@ -211,7 +219,14 @@ export function assertOneSaleCurrency(
 ): void {
   if (currencies.size > 0 && !currencies.has(currency)) {
     throw new ConflictException(
-      `This sale is in ${[...currencies].sort().join(', ')}, so ${sku} cannot be priced in ${currency}`,
+      t(
+        {
+          id: 'orders.saleSortSoSku',
+          defaultMessage:
+            'This sale is in {currencies}, so {sku} cannot be priced in {currency}',
+        },
+        { currencies: [...currencies].sort().join(', '), sku, currency },
+      ),
     );
   }
 }

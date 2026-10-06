@@ -18,6 +18,7 @@ import {
   stockMovements,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { assertTakeable } from './availability';
 import { PurchaseCost, valueMovement } from './valuation';
 
@@ -164,7 +165,10 @@ export class StockService {
      */
     if (input.reason === 'adjustment' && !input.note?.trim()) {
       throw new BadRequestException(
-        'An adjustment needs a note saying what was found',
+        t({
+          id: 'stock.adjustmentNeedsNoteSaying',
+          defaultMessage: 'An adjustment needs a note saying what was found',
+        }),
       );
     }
 
@@ -178,7 +182,10 @@ export class StockService {
         ),
       );
 
-    if (!variant) throw new NotFoundException('No such variant');
+    if (!variant)
+      throw new NotFoundException(
+        t({ id: 'stock.suchVariant', defaultMessage: 'No such variant' }),
+      );
 
     const lotId = await this.resolveLot(tx, organizationId, variant, input);
 
@@ -220,7 +227,14 @@ export class StockService {
         !location.isAvailable
       ) {
         throw new ConflictException(
-          `${location.name} holds stock that is not for sending. Move it to an available location first.`,
+          t(
+            {
+              id: 'stock.nameHoldsStockSending',
+              defaultMessage:
+                '{name} holds stock that is not for sending. Move it to an available location first.',
+            },
+            { name: location.name },
+          ),
         );
       }
 
@@ -282,7 +296,11 @@ export class StockService {
     if (input.reason === 'transfer') {
       if (!from || !to) {
         throw new BadRequestException(
-          'A transfer needs both a source and a destination location',
+          t({
+            id: 'stock.transferNeedsBothSource',
+            defaultMessage:
+              'A transfer needs both a source and a destination location',
+          }),
         );
       }
       return { from, to };
@@ -291,7 +309,14 @@ export class StockService {
     if (INBOUND.has(input.reason)) {
       if (!to || from) {
         throw new BadRequestException(
-          `A ${input.reason} needs a destination location and no source`,
+          t(
+            {
+              id: 'stock.reasonNeedsDestinationLocation',
+              defaultMessage:
+                'A {reason} needs a destination location and no source',
+            },
+            { reason: input.reason },
+          ),
         );
       }
       return { from: null, to };
@@ -300,7 +325,14 @@ export class StockService {
     if (OUTBOUND.has(input.reason)) {
       if (!from || to) {
         throw new BadRequestException(
-          `A ${input.reason} needs a source location and no destination`,
+          t(
+            {
+              id: 'stock.reasonNeedsSourceLocation',
+              defaultMessage:
+                'A {reason} needs a source location and no destination',
+            },
+            { reason: input.reason },
+          ),
         );
       }
       return { from, to: null };
@@ -310,7 +342,11 @@ export class StockService {
     // reveal more on the shelf than recorded, or less.
     if (!from === !to) {
       throw new BadRequestException(
-        'An adjustment needs exactly one of a source or a destination',
+        t({
+          id: 'stock.adjustmentNeedsExactlyOne',
+          defaultMessage:
+            'An adjustment needs exactly one of a source or a destination',
+        }),
       );
     }
 
@@ -340,19 +376,36 @@ export class StockService {
 
     if (variant.tracksLots && !supplied) {
       throw new BadRequestException(
-        `${variant.sku} is lot tracked, so this movement needs a lot`,
+        t(
+          {
+            id: 'stock.skuLotTrackedSo',
+            defaultMessage:
+              '{sku} is lot tracked, so this movement needs a lot',
+          },
+          { sku: variant.sku },
+        ),
       );
     }
 
     if (!variant.tracksLots && supplied) {
       throw new BadRequestException(
-        `${variant.sku} is not lot tracked, so this movement cannot have a lot`,
+        t(
+          {
+            id: 'stock.skuLotTrackedSo2',
+            defaultMessage:
+              '{sku} is not lot tracked, so this movement cannot have a lot',
+          },
+          { sku: variant.sku },
+        ),
       );
     }
 
     if (input.lotId && input.lot) {
       throw new BadRequestException(
-        'Give either an existing lot or a new one, not both',
+        t({
+          id: 'stock.giveEitherExistingLot',
+          defaultMessage: 'Give either an existing lot or a new one, not both',
+        }),
       );
     }
 
@@ -373,7 +426,13 @@ export class StockService {
           ),
         );
 
-      if (!lot) throw new BadRequestException('Unknown lot for this variant');
+      if (!lot)
+        throw new BadRequestException(
+          t({
+            id: 'stock.unknownLotVariant',
+            defaultMessage: 'Unknown lot for this variant',
+          }),
+        );
       return lot.id;
     }
 
@@ -433,10 +492,18 @@ export class StockService {
         ),
       );
 
-    if (!location) throw new NotFoundException('No such location');
+    if (!location)
+      throw new NotFoundException(
+        t({ id: 'stock.suchLocation', defaultMessage: 'No such location' }),
+      );
 
     if (!location.isActive) {
-      throw new ConflictException(`${location.name} is retired`);
+      throw new ConflictException(
+        t(
+          { id: 'stock.nameRetired', defaultMessage: '{name} is retired' },
+          { name: location.name },
+        ),
+      );
     }
 
     const [child] = await tx
@@ -452,7 +519,14 @@ export class StockService {
 
     if (child) {
       throw new ConflictException(
-        `${location.name} contains other locations. Stock belongs in one of them.`,
+        t(
+          {
+            id: 'stock.nameContainsOtherLocations',
+            defaultMessage:
+              '{name} contains other locations. Stock belongs in one of them.',
+          },
+          { name: location.name },
+        ),
       );
     }
 
@@ -519,7 +593,11 @@ export class StockService {
        */
       if (isCheckViolation(error, 'stock_levels_quantity_non_negative_check')) {
         throw new ConflictException(
-          'Not enough stock at that location for this movement',
+          t({
+            id: 'stock.enoughStockLocationMovement',
+            defaultMessage:
+              'Not enough stock at that location for this movement',
+          }),
         );
       }
       throw error;
@@ -544,7 +622,12 @@ export class StockService {
     }
 
     if (input.reason !== 'sample') {
-      throw new BadRequestException('Only a sample has a recipient');
+      throw new BadRequestException(
+        t({
+          id: 'stock.sampleRecipient',
+          defaultMessage: 'Only a sample has a recipient',
+        }),
+      );
     }
 
     const [partner] = await tx
@@ -557,7 +640,13 @@ export class StockService {
         ),
       );
 
-    if (!partner) throw new BadRequestException('Unknown recipient');
+    if (!partner)
+      throw new BadRequestException(
+        t({
+          id: 'stock.unknownRecipient',
+          defaultMessage: 'Unknown recipient',
+        }),
+      );
 
     return { referenceType: 'partner', referenceId: partner.id };
   }

@@ -9,6 +9,7 @@ import { desc, eq } from 'drizzle-orm';
 import { isUniqueViolation } from '../../database/errors';
 import { lots } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { ListLotsDto } from './dto/list-lots.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
 
@@ -54,11 +55,21 @@ export class LotsService {
   async updateLot(lotId: string, input: UpdateLotDto) {
     const [lot] = await this.tenantDb.select(lots, eq(lots.id, lotId));
 
-    if (!lot) throw new NotFoundException('No such lot');
+    if (!lot)
+      throw new NotFoundException(
+        t({ id: 'stock.suchLot', defaultMessage: 'No such lot' }),
+      );
 
     if (input.code && input.code !== lot.code && !lot.isAssigned) {
       throw new ConflictException(
-        `${lot.code} came from the supplier, so it cannot be renamed. Move the stock to the correct lot instead.`,
+        t(
+          {
+            id: 'stock.codeCameSupplierSo',
+            defaultMessage:
+              '{code} came from the supplier, so it cannot be renamed. Move the stock to the correct lot instead.',
+          },
+          { code: lot.code },
+        ),
       );
     }
 
@@ -77,7 +88,13 @@ export class LotsService {
       // lots is a different operation with its own rules, not a rename.
       if (isUniqueViolation(error)) {
         throw new ConflictException(
-          `${input.code} already exists for this item`,
+          t(
+            {
+              id: 'stock.codeExistsItem',
+              defaultMessage: '{code} already exists for this item',
+            },
+            { code: input.code },
+          ),
         );
       }
       throw error;

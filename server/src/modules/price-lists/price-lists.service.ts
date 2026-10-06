@@ -15,6 +15,7 @@ import {
   productVariants,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { itemName } from '../stock/item-name';
 import type { Tx } from '../stock/stock.service';
 import type { CreatePriceListDto } from './dto/create-price-list.dto';
@@ -122,7 +123,13 @@ export class PriceListsService {
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException(
-          `A price list called ${input.name} already exists`,
+          t(
+            {
+              id: 'priceLists.priceListCalledName',
+              defaultMessage: 'A price list called {name} already exists',
+            },
+            { name: input.name },
+          ),
         );
       }
       throw error;
@@ -144,7 +151,13 @@ export class PriceListsService {
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException(
-          `A price list called ${input.name} already exists`,
+          t(
+            {
+              id: 'priceLists.priceListCalledName',
+              defaultMessage: 'A price list called {name} already exists',
+            },
+            { name: input.name },
+          ),
         );
       }
       throw error;
@@ -174,7 +187,10 @@ export class PriceListsService {
 
       // In the path, so a variant that is not this organization's is not
       // found, as any other path id is.
-      if (!variant) throw new NotFoundException('No such item');
+      if (!variant)
+        throw new NotFoundException(
+          t({ id: 'priceLists.suchItem', defaultMessage: 'No such item' }),
+        );
 
       const [existing] = await tx
         .select({ unitPrice: priceListItems.unitPrice })
@@ -226,7 +242,13 @@ export class PriceListsService {
         )
         .returning({ unitPrice: priceListItems.unitPrice });
 
-      if (!removed) throw new NotFoundException('That item is not on the list');
+      if (!removed)
+        throw new NotFoundException(
+          t({
+            id: 'priceLists.itemList',
+            defaultMessage: 'That item is not on the list',
+          }),
+        );
 
       recordPrevious({ unitPrice: removed.unitPrice });
 
@@ -245,7 +267,13 @@ export class PriceListsService {
         ),
       );
 
-    if (!list) throw new NotFoundException('No such price list');
+    if (!list)
+      throw new NotFoundException(
+        t({
+          id: 'priceLists.suchPriceList',
+          defaultMessage: 'No such price list',
+        }),
+      );
     return list;
   }
 }

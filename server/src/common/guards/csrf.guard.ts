@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 
+import { t } from '../../i18n/translate';
 import { SKIP_CSRF } from './skip-csrf.decorator';
 
 /**
@@ -53,7 +54,14 @@ export class CsrfGuard implements CanActivate {
 
     if (header === undefined || header === '') {
       throw new ForbiddenException(
-        `Missing ${CSRF_HEADER} header on a state-changing request`,
+        t(
+          {
+            id: 'common.missingCsrfHeaderHeader',
+            defaultMessage:
+              'Missing {CSRF_HEADER} header on a state-changing request',
+          },
+          { CSRF_HEADER },
+        ),
       );
     }
 

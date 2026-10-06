@@ -1,6 +1,7 @@
 import { InternalServerErrorException } from '@nestjs/common';
 
 import type { invoices } from '../../database/schema';
+import { t } from '../../i18n/translate';
 
 type Invoice = typeof invoices.$inferSelect;
 
@@ -46,7 +47,13 @@ export function languagesOf(invoice: Invoice) {
 export function stored<T>(value: T | null, what: string): T {
   if (value === null) {
     throw new InternalServerErrorException(
-      `An issued invoice is missing its ${what}`,
+      t(
+        {
+          id: 'invoices.issuedInvoiceMissingWhat',
+          defaultMessage: 'An issued invoice is missing its {what}',
+        },
+        { what },
+      ),
     );
   }
   return value;

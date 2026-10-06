@@ -7,6 +7,7 @@ import {
   productLicences,
   type ReleaseLicenceStatus,
 } from '../../database/schema';
+import { t, type Translatable } from '../../i18n/translate';
 import {
   type LicenceOutcome,
   licenceStatus,
@@ -52,7 +53,13 @@ export async function checkLicence(
     .from(organizations)
     .where(eq(organizations.id, organizationId));
 
-  if (!policy) throw new NotFoundException('No such organization');
+  if (!policy)
+    throw new NotFoundException(
+      t({
+        id: 'production.suchOrganization',
+        defaultMessage: 'No such organization',
+      }),
+    );
 
   if (!licenceId) {
     return {
@@ -89,7 +96,10 @@ export async function checkLicence(
 
   // The recipe is this organization's and attaching checked the licence
   // was too (ADR-040), so a miss here is a broken record, not a bad request.
-  if (!row) throw new NotFoundException('No such licence');
+  if (!row)
+    throw new NotFoundException(
+      t({ id: 'production.suchLicence', defaultMessage: 'No such licence' }),
+    );
 
   const { isActive, ...licence } = row;
   const status = licenceStatus({ ...licence, isActive });
@@ -125,7 +135,15 @@ export function settleLicence(
   if (check.outcome === 'override') {
     if (!override) {
       throw new ConflictException(
-        `${refusal(check)} without an override — someone holding production.override_licence can release it with a reason`,
+        t(
+          {
+            id: 'production.licence.needsOverride',
+            defaultMessage:
+              '{refusal} without an override — someone holding production.override_licence can release it with a reason',
+          },
+          // A sentence of its own, rendered in the same language.
+          { refusal: refusal(check) },
+        ),
       );
     }
 
@@ -149,21 +167,69 @@ export function settleLicence(
  * which read the same in every locale and are what the licence was entered
  * as.
  */
-function refusal({ licence, status }: LicenceCheck): string {
+function refusal({ licence, status }: LicenceCheck): Translatable {
   if (!licence) {
-    return 'This recipe carries no licence, and this organization requires one to release a run';
+    return t({
+      id: 'production.licence.missing',
+      defaultMessage:
+        'This recipe carries no licence, and this organization requires one to release a run',
+    });
   }
 
+  // Data, the same in every language.
   const name = `${licence.number} (${licence.authority})`;
 
   switch (status) {
     case 'withdrawn':
-      return `${name} has been withdrawn, so nothing can be made under it`;
+      return t(
+        {
+          id: 'production.licence.withdrawn',
+          defaultMessage:
+            '{name} has been withdrawn, so nothing can be made under it',
+        },
+        { name },
+      );
     case 'not_in_force':
-      return `${name} is not in force until ${licence.issuedAt ?? 'a later date'}, so this run cannot be released under it`;
+      return t(
+        {
+          id: 'production.licence.notInForce',
+          defaultMessage:
+            '{name} is not in force until {day}, so this run cannot be released under it',
+        },
+        {
+          name,
+          day:
+            licence.issuedAt ??
+            t({
+              id: 'production.licence.laterDate',
+              defaultMessage: 'a later date',
+            }),
+        },
+      );
     case 'expired':
-      return `${name} expired on ${licence.expiresAt ?? 'an unknown date'}, so this run cannot be released under it`;
+      return t(
+        {
+          id: 'production.licence.expired',
+          defaultMessage:
+            '{name} expired on {day}, so this run cannot be released under it',
+        },
+        {
+          name,
+          day:
+            licence.expiresAt ??
+            t({
+              id: 'production.licence.unknownDate',
+              defaultMessage: 'an unknown date',
+            }),
+        },
+      );
     default:
-      return `${name} cannot be released under`;
+      return t(
+        {
+          id: 'production.licence.cannotRelease',
+          defaultMessage: '{name} cannot be released under',
+        },
+        { name },
+      );
   }
 }

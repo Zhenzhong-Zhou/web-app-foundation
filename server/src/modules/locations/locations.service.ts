@@ -10,6 +10,7 @@ import { and, asc, eq, gt } from 'drizzle-orm';
 import { isUniqueViolation } from '../../database/errors';
 import { locations, stockLevels } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import type { CreateLocationDto } from './dto/create-location.dto';
 import type { UpdateLocationDto } from './dto/update-location.dto';
 
@@ -61,7 +62,13 @@ export class LocationsService {
         // Codes are unique within a parent, not globally: Bin 5 in two aisles
         // is two bins, and both labels reading "5" is normal.
         throw new ConflictException(
-          `Code ${input.code} is already used in this location`,
+          t(
+            {
+              id: 'locations.codeCodeUsedLocation',
+              defaultMessage: 'Code {code} is already used in this location',
+            },
+            { code: input.code },
+          ),
         );
       }
       throw error;
@@ -74,7 +81,10 @@ export class LocationsService {
       eq(locations.id, locationId),
     );
 
-    if (!existing) throw new NotFoundException('No such location');
+    if (!existing)
+      throw new NotFoundException(
+        t({ id: 'locations.suchLocation', defaultMessage: 'No such location' }),
+      );
 
     if (input.parentId !== undefined && input.parentId !== existing.parentId) {
       if (input.parentId !== null) {
@@ -97,7 +107,13 @@ export class LocationsService {
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException(
-          `Code ${input.code} is already used in this location`,
+          t(
+            {
+              id: 'locations.codeCodeUsedLocation',
+              defaultMessage: 'Code {code} is already used in this location',
+            },
+            { code: input.code },
+          ),
         );
       }
       throw error;
@@ -117,7 +133,13 @@ export class LocationsService {
       eq(locations.id, parentId),
     );
 
-    if (!parent) throw new BadRequestException('Unknown parent location');
+    if (!parent)
+      throw new BadRequestException(
+        t({
+          id: 'locations.unknownParentLocation',
+          defaultMessage: 'Unknown parent location',
+        }),
+      );
 
     await this.assertHoldsNoStock(parentId);
   }
@@ -143,7 +165,11 @@ export class LocationsService {
 
     if (held) {
       throw new ConflictException(
-        'This location holds stock. Move it to a child location first.',
+        t({
+          id: 'locations.locationHoldsStockMove',
+          defaultMessage:
+            'This location holds stock. Move it to a child location first.',
+        }),
       );
     }
   }
@@ -162,7 +188,10 @@ export class LocationsService {
     for (let depth = 0; depth < MAX_DEPTH && current !== null; depth += 1) {
       if (current === locationId) {
         throw new BadRequestException(
-          'A location cannot be moved inside itself',
+          t({
+            id: 'locations.locationMovedInsideItself',
+            defaultMessage: 'A location cannot be moved inside itself',
+          }),
         );
       }
 
@@ -180,7 +209,12 @@ export class LocationsService {
     }
 
     if (depth > MAX_DEPTH) {
-      throw new BadRequestException('Location nesting is too deep');
+      throw new BadRequestException(
+        t({
+          id: 'locations.locationNestingTooDeep',
+          defaultMessage: 'Location nesting is too deep',
+        }),
+      );
     }
   }
 
