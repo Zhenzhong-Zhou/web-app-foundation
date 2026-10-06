@@ -129,17 +129,17 @@ Then tag v0.4.0.
    (`useDocumentText`), whatever the reader reads, with item names in both
    from the invoice's copy. Step 4, the fluent review (MC-1405), is
    outstanding and best done once after step 6, through an export and
-   import script still to write. Next: the `seed:demo` commit below, then
-   step 6, the server's own messages and emails. The audit log spells out
+   import script still to write. Next: step 6, the server's own messages
+   and emails. The audit log spells out
    most action and field names from the server's keys, in English until
    step 6. The packing slip's item names are the products' own names; only
    the invoice and credit note carry names in other languages.
 
    Added to the plan while building, not in the ADR's list:
-   - **`seed:demo`**, after step 5: a Quebec customer printing French and
-     English, a Chinese customer printing Chinese and English, Chinese
-     and French names on a few demo products, one bilingual invoice
-     issued, so MC-1407 to MC-1409 walk on a fresh database.
+   - **`seed:demo`**, done after step 5: Pharmacie Saint-Laurent prints
+     French and English (with GST + QST, 9,975 %), 明德药房 prints
+     Chinese, Focus 60ct is named in both, and each has an invoice
+     issued, so MC-1407 to MC-1412 walk on a fresh database.
    - **`seed:volume`**, in step 7: some product translations, then the
      ADR-051 budgets re-run, since issuing now reads them.
    - **`docs/conventions.md`**, in step 7: "Adding text" — an id named by

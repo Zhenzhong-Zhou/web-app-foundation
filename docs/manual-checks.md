@@ -508,3 +508,6 @@ first.
 - 2026-10-06: ADR-054, members: MC-1406 extended.
 - 2026-10-06: ADR-054, audit: MC-1406 extended; step 3 complete.
 - 2026-10-06: ADR-054, printed documents: MC-1412; step 5 complete.
+- 2026-10-06: ADR-054, `seed:demo` sets up a French-and-English and a
+  Chinese customer with an issued invoice each, so MC-1407 to MC-1412
+  start from a fresh database.

@@ -580,6 +580,118 @@ async function seedDemo(): Promise<void> {
           rate: '1.3700',
         });
 
+        /**
+         * Languages (ADR-054): the same product sold to a Quebec pharmacy
+         * whose documents print in French and English, and to a Chinese
+         * one whose print in Chinese alone. Its name is given in both
+         * languages, so each invoice prints the customer's, and the Quebec
+         * one shows both names on a line. Shipped before SO-DEMO-2 holds
+         * its stock, from what the run made.
+         */
+        await products.setTranslations(finished.id, {
+          translations: [
+            { locale: 'fr-CA', name: 'Focus, 60 capsules' },
+            { locale: 'zh-Hans', name: '专注胶囊 60 粒' },
+          ],
+        });
+
+        // Quebec charges QST beside GST: 9.975 prints as 9,975 % in French.
+        const gstQst = await taxCode('GST + QST (QC)', [
+          { name: 'GST', rate: '5' },
+          { name: 'QST', rate: '9.975' },
+        ]);
+
+        async function soldAndInvoiced(
+          customerId: string,
+          reference: string,
+          quantity: string,
+          taxCodeId: string,
+        ) {
+          const order = await orders.create(
+            {
+              partnerId: customerId,
+              direction: 'sale',
+              reference,
+              lines: [
+                {
+                  variantId: finished.variants[0].id,
+                  quantityOrdered: quantity,
+                  unitPrice: '24.9900',
+                  currency: 'CAD',
+                },
+              ],
+            },
+            actor,
+          );
+          await orders.update(order.id, { status: 'confirmed' });
+
+          const shipped = await shipping.ship(
+            order.id,
+            {
+              fromLocationId: blending.id,
+              carrier: 'Canada Post',
+              lines: [{ lineId: order.lines[0].id, quantity }],
+            },
+            actor,
+          );
+
+          const bill = await invoiceDrafts.createDraft(
+            { shipmentId: shipped.id, taxCodeId },
+            actor,
+          );
+          await invoiceDrafts.update(bill.id, { dueDate: daysFromNow(30) });
+
+          return invoiceIssuing.issue(
+            bill.id,
+            { invoiceDate: daysFromNow(0) },
+            actor,
+          );
+        }
+
+        const quebec = await partners.create({
+          name: 'Pharmacie Saint-Laurent',
+          code: 'QUEBEC',
+          documentLanguage: 'fr-CA',
+          documentSecondLanguage: 'en',
+        });
+        await partnerAddresses.create(quebec.id, {
+          label: 'Comptes fournisseurs',
+          line1: '1200, rue Sainte-Catherine Ouest',
+          city: 'Montréal',
+          region: 'QC',
+          postalCode: 'H3B 1K9',
+          country: 'CA',
+          isBilling: true,
+          isDefault: true,
+        });
+        const quebecInvoice = await soldAndInvoiced(
+          quebec.id,
+          'SO-DEMO-QC',
+          '24',
+          gstQst.id,
+        );
+
+        const chinese = await partners.create({
+          name: '明德药房',
+          code: 'MINGDE',
+          documentLanguage: 'zh-Hans',
+        });
+        await partnerAddresses.create(chinese.id, {
+          line1: '8171 Ackroyd Rd, Unit 210',
+          city: 'Richmond',
+          region: 'BC',
+          postalCode: 'V6X 3K1',
+          country: 'CA',
+          isBilling: true,
+          isDefault: true,
+        });
+        const chineseInvoice = await soldAndInvoiced(
+          chinese.id,
+          'SO-DEMO-ZH',
+          '12',
+          gst.id,
+        );
+
         const usSupplier = await partners.create({
           name: 'Pacific Extracts',
           code: 'PACX',
@@ -662,7 +774,7 @@ async function seedDemo(): Promise<void> {
         await orders.update(second.id, { status: 'confirmed' });
 
         logger.log(
-          `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s); SO-DEMO-1 shipped 400 of 600, invoiced as ${invoice.number}, with 5 returned, ${rma.number} received and credited as ${creditNote.number}, and a shipment of 100 voided; 4 retained, 2 sampled; PO-DEMO-2 bought in USD at 1.37; SO-DEMO-2 confirmed for 500 and partly backordered`,
+          `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s); SO-DEMO-1 shipped 400 of 600, invoiced as ${invoice.number}, with 5 returned, ${rma.number} received and credited as ${creditNote.number}, and a shipment of 100 voided; 4 retained, 2 sampled; PO-DEMO-2 bought in USD at 1.37; SO-DEMO-2 confirmed for 500 and partly backordered; ${quebecInvoice.number} printing in French and English for Pharmacie Saint-Laurent, ${chineseInvoice.number} in Chinese for 明德药房`,
         );
       },
     );
