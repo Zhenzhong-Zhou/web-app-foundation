@@ -105,8 +105,8 @@ Then tag v0.4.0.
    `docs/runbooks/restore.md`; MC-1301 to MC-1304. Testing with
    `BACKUP_DESTINATION` unset (Actions artifacts); `s3` and a paid database
    plan before real customers' data.
-7. **ADR-054, languages** — built on `adr-054-languages`, awaiting the
-   fluent review and the budget re-run, then merge. `en`, `fr-CA` and
+7. **ADR-054, languages** — built on `adr-054-languages`, tested, and
+   ready to merge. `en`, `fr-CA` and
    `zh-Hans`, all seven steps of the ADR:
    - **The person's language** (`users.locale`, null meaning the browser's),
      chosen on the account page; FormatJS on the client, every screen in
@@ -138,15 +138,22 @@ Then tag v0.4.0.
      Chinese customer with an invoice each; `seed:volume` has customers in
      both and products named in them.
 
-   **Before merging:**
-   1. **Step 4, the fluent review (MC-1405).** `node scripts/i18n-review.mjs
-      export` writes `review/fr-CA.xlsx` and `review/zh-Hans.xlsx` (1516
-      messages each); the reviewers fill in Correction; `import` writes them
-      back, refusing a file that loses a placeholder. One commit.
-   2. **ADR-051's budgets re-run** on a fresh `seed:volume`: issuing now
-      reads product names. Record the figures in ADR-051's Results as the
-      earlier runs were.
-   3. The full server e2e suite and `e2e/languages.spec.ts` green in CI.
+   **Tested before merging (6 October 2026):** 659 server e2e tests, 64
+   server unit tests, 175 client unit tests, 65 Playwright tests including
+   `e2e/languages.spec.ts`, and ADR-051's budgets re-run on the new
+   `seed:volume` (recorded in ADR-051's Results; issuing 25 ms p95).
+
+   **Decided, not forgotten:**
+   - **The fluent review (MC-1405, step 4) is skipped for now.** No one
+     fluent in French or Chinese is available, so both are unreviewed
+     drafts, written alongside the code against `docs/glossary.md`. When a
+     reviewer is available: `node scripts/i18n-review.mjs export` writes
+     `review/fr-CA.xlsx` and `review/zh-Hans.xlsx`, they fill in the
+     Correction column, `import` writes it back, one commit. Say so in
+     release notes until then.
+   - **The v0.4 end-of-milestone walkthrough was skipped**, and v0.4.0
+     never tagged; the next tag (v0.5.0, covering ADR-052 to ADR-054)
+     says so in its notes.
 
    Known edges, written down rather than fixed: the packing slip has no
    item names in other languages; field names inside an audit entry and

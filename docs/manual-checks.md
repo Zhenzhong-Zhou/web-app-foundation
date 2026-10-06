@@ -391,9 +391,11 @@ folder by folder; these check what is already in place.
   email and the bell's notification are in the account's language. Close
   an order line short: a member set to English reads "will not be
   delivered in full" while a member set to Français reads it in French.
-- **MC-1405** Before a release offers French or Chinese, someone fluent in
-  it has read every message, screens and server both, and
-  `docs/glossary.md`, and their corrections are in the catalogues:
+- **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
+  available, so French and Chinese ship as unreviewed drafts, and release
+  notes say so.* When one is: someone fluent in each language reads every
+  message, screens and server both, and `docs/glossary.md`, and their
+  corrections are in the catalogues:
   `node scripts/i18n-review.mjs export` writes `review/fr-CA.xlsx` and
   `review/zh-Hans.xlsx`; each reviewer fills in the Correction column;
   `node scripts/i18n-review.mjs import review/fr-CA.xlsx` writes them
@@ -535,6 +537,8 @@ first.
   language, sign-in and account first: MC-1413.
 - 2026-10-06: ADR-054, emails and notifications in the recipient's
   language: MC-1414.
+- 2026-10-06: ADR-054, MC-1405 (the fluent review) skipped for now,
+  recorded as such.
 - 2026-10-06: ADR-054, `e2e/languages.spec.ts` covers a bilingual printed
   invoice and a French screen with a French refusal; MC-1412 and MC-1413
   remain for what a browser test cannot judge (glyphs, layout on paper).
