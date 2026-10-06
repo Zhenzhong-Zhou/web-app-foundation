@@ -8,10 +8,12 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import { groupedNumberMessage, toApiDecimal } from '../lib/format';
 import type { Bom, ProductLicence } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { licenceStatus } from '../licences/licence-status';
@@ -38,7 +40,10 @@ export function CreateBomDialog({
   onClose: () => void;
   onCreated: (bomId: string) => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState(EMPTY);
+  // Set when the quantity is typed with a thousands separator (ADR-054).
+  const [quantityError, setQuantityError] = useState<string | null>(null);
 
   /**
    * What the formulation is registered under — an NPN for a natural health
@@ -83,12 +88,18 @@ export function CreateBomDialog({
       close();
       if (bomId) await onCreated(bomId);
     },
-    { success: 'Recipe created' },
+    {
+      success: intl.formatMessage({
+        id: 'boms.created',
+        defaultMessage: 'Recipe created',
+      }),
+    },
   );
 
   function close() {
     setForm(EMPTY);
     createdId.current = null;
+    setQuantityError(null);
     reset();
     onClose();
   }
@@ -96,12 +107,19 @@ export function CreateBomDialog({
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
+    const outputQuantity = toApiDecimal(form.outputQuantity);
+    if (outputQuantity === null) {
+      setQuantityError(groupedNumberMessage());
+      return;
+    }
+    setQuantityError(null);
+
     void submit(async () => {
       const { bom } = await api<{ bom: Bom }>('/boms', {
         method: 'POST',
         body: JSON.stringify({
           outputVariantId,
-          outputQuantity: form.outputQuantity,
+          outputQuantity,
           licenceId: form.licenceId || undefined,
           notes: form.notes || undefined,
         }),
@@ -119,7 +137,12 @@ export function CreateBomDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>New recipe</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'boms.new',
+            defaultMessage: 'New recipe',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -127,24 +150,39 @@ export function CreateBomDialog({
 
             <TextField
               id="bom-output-quantity"
-              label="Makes per batch"
+              label={intl.formatMessage({
+                id: 'boms.makesPerBatch',
+                defaultMessage: 'Makes per batch',
+              })}
               required
               fullWidth
               value={form.outputQuantity}
-              onChange={(event) =>
+              onChange={(event) => {
+                setQuantityError(null);
                 setForm((current) => ({
                   ...current,
                   outputQuantity: event.target.value,
-                }))
+                }));
+              }}
+              error={!!quantityError}
+              helperText={
+                quantityError ??
+                intl.formatMessage({
+                  id: 'boms.makesPerBatch.help',
+                  defaultMessage:
+                    'How many this recipe produces in one run — 1000, not 1.',
+                })
               }
-              helperText="How many this recipe produces in one run — 1000, not 1."
               slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 19 } }}
             />
 
             {licences.length > 0 && (
               <TextField
                 id="bom-licence"
-                label="Licence"
+                label={intl.formatMessage({
+                  id: 'boms.licence',
+                  defaultMessage: 'Licence',
+                })}
                 select
                 fullWidth
                 value={form.licenceId}
@@ -154,12 +192,21 @@ export function CreateBomDialog({
                     licenceId: event.target.value,
                   }))
                 }
-                helperText="What this formulation is registered under. Leave blank if it is not."
+                helperText={intl.formatMessage({
+                  id: 'boms.licence.helpNew',
+                  defaultMessage:
+                    'What this formulation is registered under. Leave blank if it is not.',
+                })}
               >
-                <MenuItem value="">Not registered</MenuItem>
+                <MenuItem value="">
+                  {intl.formatMessage({
+                    id: 'boms.licence.none',
+                    defaultMessage: 'Not registered',
+                  })}
+                </MenuItem>
                 {licences.map((licence) => (
                   <MenuItem key={licence.id} value={licence.id}>
-                    {licence.number} — {licence.authority}
+                    {[licence.number, licence.authority].join(' — ')}
                   </MenuItem>
                 ))}
               </TextField>
@@ -167,7 +214,10 @@ export function CreateBomDialog({
 
             <TextField
               id="bom-notes"
-              label="Notes"
+              label={intl.formatMessage({
+                id: 'boms.notes',
+                defaultMessage: 'Notes',
+              })}
               fullWidth
               multiline
               minRows={2}
@@ -185,8 +235,11 @@ export function CreateBomDialog({
                 is what people reach for, and it forces a division that
                 reappears as stock drift (ADR-029). */}
             <Typography variant="caption" color="text.secondary">
-              Enter batch amounts, not amounts per unit. Starts as a draft: add
-              components, then promote it.
+              {intl.formatMessage({
+                id: 'boms.batchAmountsNote',
+                defaultMessage:
+                  'Enter batch amounts, not amounts per unit. Starts as a draft: add components, then promote it.',
+              })}
             </Typography>
           </Stack>
         </DialogContent>
@@ -194,8 +247,14 @@ export function CreateBomDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Create draft"
-          pendingLabel="Creating…"
+          label={intl.formatMessage({
+            id: 'boms.createDraft',
+            defaultMessage: 'Create draft',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'orders.shipments.creatingInvoice',
+            defaultMessage: 'Creating…',
+          })}
         />
       </form>
     </Dialog>

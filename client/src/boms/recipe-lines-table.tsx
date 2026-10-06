@@ -12,9 +12,15 @@ import {
   TableRow,
   Tooltip,
 } from '@mui/material';
+import { useIntl } from 'react-intl';
 
+import { formatQuantity } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { BomLine } from '../lib/types';
+import { withUnit } from '../products/units';
+
+/** The remove button's mark: a symbol, the same in every language. */
+const CROSS = '×';
 
 /**
  * A recipe version's components, per batch, with who supplies each. Edit and
@@ -38,15 +44,32 @@ export function RecipeLinesTable({
   onEdit: (line: BomLine) => void;
   onRemove: (lineId: string) => void;
 }) {
+  const intl = useIntl();
+
   return (
     <Paper variant="outlined">
       <TableContainer>
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Component</TableCell>
-              <TableCell align="right">Per batch</TableCell>
-              <TableCell>Supplied by</TableCell>
+              <TableCell>
+                {intl.formatMessage({
+                  id: 'production.component',
+                  defaultMessage: 'Component',
+                })}
+              </TableCell>
+              <TableCell align="right">
+                {intl.formatMessage({
+                  id: 'boms.perBatch',
+                  defaultMessage: 'Per batch',
+                })}
+              </TableCell>
+              <TableCell>
+                {intl.formatMessage({
+                  id: 'production.suppliedBy',
+                  defaultMessage: 'Supplied by',
+                })}
+              </TableCell>
               <TableCell />
             </TableRow>
           </TableHead>
@@ -56,15 +79,40 @@ export function RecipeLinesTable({
               <TableRow key={line.id}>
                 <TableCell>{labelFor(line.componentVariantId)}</TableCell>
                 <TableCell align="right">
-                  {line.quantity} {unitFor(line.componentVariantId)}
+                  {unitFor(line.componentVariantId)
+                    ? withUnit(
+                        line.quantity,
+                        unitFor(line.componentVariantId),
+                        intl,
+                      )
+                    : formatQuantity(line.quantity)}
                 </TableCell>
                 <TableCell>
                   {line.supplyType === 'external' ? (
-                    <Tooltip title="Provided by whoever manufactures — never enters our stock">
-                      <Chip label="Manufacturer" size="small" />
+                    <Tooltip
+                      title={intl.formatMessage({
+                        id: 'boms.external.tooltip',
+                        defaultMessage:
+                          'Provided by whoever manufactures — never enters our stock',
+                      })}
+                    >
+                      <Chip
+                        label={intl.formatMessage({
+                          id: 'production.manufacturer',
+                          defaultMessage: 'Manufacturer',
+                        })}
+                        size="small"
+                      />
                     </Tooltip>
                   ) : (
-                    <Chip label="Us" size="small" variant="outlined" />
+                    <Chip
+                      label={intl.formatMessage({
+                        id: 'production.us',
+                        defaultMessage: 'Us',
+                      })}
+                      size="small"
+                      variant="outlined"
+                    />
                   )}
                 </TableCell>
                 <TableCell align="right">
@@ -80,15 +128,24 @@ export function RecipeLinesTable({
                         disabled={busy}
                         onClick={openDialog(() => onEdit(line))}
                       >
-                        Edit
+                        {intl.formatMessage({
+                          id: 'common.edit',
+                          defaultMessage: 'Edit',
+                        })}
                       </Button>
                       <IconButton
                         size="small"
-                        aria-label={`Remove ${labelFor(line.componentVariantId)}`}
+                        aria-label={intl.formatMessage(
+                          {
+                            id: 'orders.lines.remove',
+                            defaultMessage: 'Remove {sku}',
+                          },
+                          { sku: labelFor(line.componentVariantId) },
+                        )}
                         disabled={busy}
                         onClick={() => onRemove(line.id)}
                       >
-                        ×
+                        {CROSS}
                       </IconButton>
                     </Stack>
                   )}

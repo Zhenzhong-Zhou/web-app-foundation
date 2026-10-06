@@ -349,7 +349,8 @@ folder by folder; these check what is already in place.
   while a number holds a thousands separator. Authorizing a return's
   quantities, likewise; and a run's planned quantity, its output, the
   amounts used at close, and the lot amounts chosen at release, which open
-  the reader's way and must still add up exactly.
+  the reader's way and must still add up exactly. A recipe's batch size and
+  its components' quantities per batch, likewise.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -391,7 +392,11 @@ folder by folder; these check what is already in place.
       linking a return and raising a replacement;
     - production: the runs list with its statuses, planning a run, a run's
       page with its components, lots and variances, and the release (with
-      its licence warnings), record-output, close and cancel dialogs.
+      its licence warnings), record-output, close and cancel dialogs;
+    - recipes: the recipe panel on a product with its versions and statuses,
+      the new-recipe, add-component and edit-component dialogs, archiving,
+      new version and promote with their tooltips, and the licence on a
+      version.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -455,3 +460,4 @@ first.
 - 2026-10-05: ADR-054, invoices and credit notes: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, returns (RMAs): MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, production: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, recipes: MC-1406, MC-1410 extended.

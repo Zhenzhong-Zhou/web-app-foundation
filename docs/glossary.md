@@ -34,6 +34,11 @@ offers either language (MC-1405).
 | Return authorization (RMA) | Autorisation de retour | 退货授权 | |
 | Recipe | Recette | 配方 | A product's bill of materials. |
 | Production run | Ordre de fabrication | 生产订单 | |
+| Batch | Lot | 批次 | What a run makes; the same word as a received lot. |
+| Component | Composant | 物料 | What a recipe consumes. |
+| Release (a run) | Lancer | 下达 | Copies the recipe and issues the components. |
+| Promote (a recipe) | Mettre en vigueur | 启用 | Makes a draft the recipe new runs use. |
+| Contract manufacturer | Fabricant à façon | 代工厂 | |
 | Licence | Licence | 许可证 | NPN and similar product licences. |
 | Price list | Liste de prix | 价目表 | |
 | Tax code | Code de taxe | 税码 | |
