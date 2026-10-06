@@ -8,6 +8,7 @@ import {
 
 import { trim } from '../../../common/dto/trim';
 import { upper } from '../../../common/dto/upper';
+import { defineMessage, rule } from '../../../i18n/validation';
 
 /**
  * The organization's registered address, sent whole (ADR-046).
@@ -51,7 +52,13 @@ export class OrganizationAddressDto {
   @upper()
   @IsString()
   @Matches(/^[A-Z]{2}$/, {
-    message: 'country must be a two-letter ISO-3166 code, such as CA or US',
+    message: rule(
+      defineMessage({
+        id: 'validation.countryCode',
+        defaultMessage:
+          'country must be a two-letter ISO-3166 code, such as CA or US',
+      }),
+    ),
   })
   country!: string;
 }

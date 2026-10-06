@@ -19,6 +19,7 @@ import {
   RETURN_RESOLUTIONS,
   type ReturnResolution,
 } from '../../../database/schema';
+import { defineMessage, rule } from '../../../i18n/validation';
 
 /** One item the customer may send back, how many, and what happens to it. */
 export class ReturnAuthorizationLineDto {
@@ -71,7 +72,12 @@ export class CreateReturnAuthorizationDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayUnique((line?: ReturnAuthorizationLineDto) => line?.lineId, {
-    message: 'A line appears twice on one RMA — send its total once',
+    message: rule(
+      defineMessage({
+        id: 'validation.rmaLineTwice',
+        defaultMessage: 'A line appears twice on one RMA — send its total once',
+      }),
+    ),
   })
   @ValidateNested({ each: true })
   @Type(() => ReturnAuthorizationLineDto)

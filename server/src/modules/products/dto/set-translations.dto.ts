@@ -13,6 +13,7 @@ import {
 import { IsLocale } from '../../../common/dto/locale';
 import { trim } from '../../../common/dto/trim';
 import { type Locale, SUPPORTED_LOCALES } from '../../../common/locales';
+import { defineMessage, rule } from '../../../i18n/validation';
 
 /** A product's name, and optionally its description, in one language. */
 export class ProductTranslationDto {
@@ -47,7 +48,12 @@ export class VariantTranslationDto {
 }
 
 const ONE_PER_LANGUAGE = {
-  message: 'A language appears twice — send each one once',
+  message: rule(
+    defineMessage({
+      id: 'validation.languageTwice',
+      defaultMessage: 'A language appears twice — send each one once',
+    }),
+  ),
 };
 
 /**

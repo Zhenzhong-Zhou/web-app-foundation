@@ -1,5 +1,7 @@
 import { Matches } from 'class-validator';
 
+import { defineMessage, rule } from '../../i18n/validation';
+
 /**
  * An ISO 4217 code: three capital letters (ADR-035, ADR-048). The validator
  * half of the rule; `isCurrencyCode` in database/schema/columns.ts is the
@@ -15,5 +17,10 @@ export const CURRENCY_CODE = /^[A-Z]{3}$/;
 
 export const IsCurrencyCode = () =>
   Matches(CURRENCY_CODE, {
-    message: '$property must be a 3-letter ISO code',
+    message: rule(
+      defineMessage({
+        id: 'validation.currencyCode',
+        defaultMessage: '{property} must be a 3-letter ISO code',
+      }),
+    ),
   });

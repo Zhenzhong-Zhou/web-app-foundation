@@ -94,6 +94,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (typeof res === 'string') return res;
     if (isTranslatable(res)) return translate(res, locale);
 
+    // Validation: one message per failed rule, each with its id.
+    const { messages } = res as { messages?: unknown[] };
+    if (Array.isArray(messages) && messages.every(isTranslatable)) {
+      return messages.map((message) => translate(message, locale));
+    }
+
     // ValidationPipe returns { message: string[], error, statusCode }
     const { message } = res as { message?: string | string[] };
     return message ?? (exception as HttpException).message;

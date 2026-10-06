@@ -18,6 +18,7 @@ import {
   IsPositiveDecimal,
 } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
+import { defineMessage, rule } from '../../../i18n/validation';
 
 /**
  * One invoice line credited (ADR-047): how many, at what unit price, and —
@@ -52,8 +53,13 @@ export class PreviewCreditDto {
   @ArrayMinSize(1)
   @ArrayMaxSize(200)
   @ArrayUnique((line?: CreditLineDto) => line?.invoiceLineId, {
-    message:
-      'An invoice line appears twice on one credit — send its total once',
+    message: rule(
+      defineMessage({
+        id: 'validation.creditLineTwice',
+        defaultMessage:
+          'An invoice line appears twice on one credit — send its total once',
+      }),
+    ),
   })
   @ValidateNested({ each: true })
   @Type(() => CreditLineDto)

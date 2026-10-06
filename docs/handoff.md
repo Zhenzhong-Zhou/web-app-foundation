@@ -135,8 +135,9 @@ Then tag v0.4.0.
    language; catalogues in `server/src/i18n/`, checked by `npm run
    i18n:check` as the client's are. Every refusal a service throws is
    converted (252 messages); a status or verb passed in as a value is
-   named in each language through an ICU select. Still English:
-   validation messages, emails and notifications, and the two developer
+   named in each language through an ICU select. Validation messages too
+   (TranslatingValidationPipe: Nest's English unchanged, an id beside
+   each). Still English: emails and notifications, and the two developer
    errors (a missing tenant context, a misused @CurrentUser). The audit log spells out
    most action and field names from the server's keys, in English until
    step 6. The packing slip's item names are the products' own names; only

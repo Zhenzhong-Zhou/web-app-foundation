@@ -3,6 +3,7 @@ import { IsOptional, IsString, Matches } from 'class-validator';
 import { IsCurrencyCode } from '../../../common/dto/currency';
 import { IsNonNegativeDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
+import { defineMessage, rule } from '../../../i18n/validation';
 import { EXCHANGE_RATE } from './set-exchange-rate.dto';
 
 /**
@@ -28,8 +29,13 @@ export class SetCostDto {
   @IsOptional()
   @IsString()
   @Matches(EXCHANGE_RATE, {
-    message:
-      'exchangeRate must be greater than zero with at most 8 decimal places, sent as a string',
+    message: rule(
+      defineMessage({
+        id: 'validation.exchangeRate',
+        defaultMessage:
+          'exchangeRate must be greater than zero with at most 8 decimal places, sent as a string',
+      }),
+    ),
   })
   exchangeRate?: string;
 }

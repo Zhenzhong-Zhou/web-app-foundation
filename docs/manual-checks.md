@@ -379,8 +379,11 @@ folder by folder; these check what is already in place.
   Members: the refusal is French. In 简体中文, ship more than an order
   has outstanding, cancel an order goods have moved against, and release
   a run under an expired licence: each refusal is Chinese, the statuses
-  in it too (已确认, not "confirmed"). The same requests from curl, with
-  no Accept-Language, answer in English word for word.
+  in it too (已确认, not "confirmed"). A request with a field the server
+  refuses, such as a quantity of -1 sent with curl and
+  `Accept-Language: fr-CA`, names the field as the API does
+  (lines.0.quantity) in a French sentence. The same requests with no
+  Accept-Language answer in English word for word.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.

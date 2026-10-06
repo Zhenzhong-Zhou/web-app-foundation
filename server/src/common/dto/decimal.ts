@@ -1,5 +1,7 @@
 import { Matches } from 'class-validator';
 
+import { defineMessage, rule } from '../../i18n/validation';
+
 /**
  * Quantities and prices arrive as strings, never JSON numbers (ADR-025): a
  * JSON number has already been through a double before any validator sees
@@ -22,12 +24,22 @@ export const NON_NEGATIVE_DECIMAL = /^\d{1,14}(\.\d{1,4})?$/;
  */
 export const IsPositiveDecimal = () =>
   Matches(POSITIVE_DECIMAL, {
-    message:
-      '$property must be a positive number with at most 4 decimal places, sent as a string',
+    message: rule(
+      defineMessage({
+        id: 'validation.positiveDecimal',
+        defaultMessage:
+          '{property} must be a positive number with at most 4 decimal places, sent as a string',
+      }),
+    ),
   });
 
 export const IsNonNegativeDecimal = () =>
   Matches(NON_NEGATIVE_DECIMAL, {
-    message:
-      '$property must be zero or more with at most 4 decimal places, sent as a string',
+    message: rule(
+      defineMessage({
+        id: 'validation.nonNegativeDecimal',
+        defaultMessage:
+          '{property} must be zero or more with at most 4 decimal places, sent as a string',
+      }),
+    ),
   });
