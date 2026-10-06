@@ -247,6 +247,12 @@ export class OrganizationWriter {
       const partner = await this.services.partners.create({
         name: this.partnerName(i),
         code: `C${pad(i, 4)}`,
+        // Some customers' documents in other languages (ADR-054), so
+        // issuing reads product names as it does in real use: every
+        // fourth in French with English beside it, every tenth in Chinese.
+        // By position, not by the random source, so the rest of the year
+        // is the same data as before and the budgets compare.
+        ...documentLanguagesFor(i),
       });
 
       await this.services.partnerAddresses.create(partner.id, {
@@ -286,9 +292,27 @@ export class OrganizationWriter {
         kind === 'material' ||
         (kind === 'good' && this.random.chance(this.volume.trackedGoodsShare));
 
-      const product = await this.services.products.create(
-        this.productFor(kind, i, tracked),
-      );
+      const input = this.productFor(kind, i, tracked);
+      const product = await this.services.products.create(input);
+
+      // Names in other languages on most finished goods (ADR-054): French
+      // on two in three, Chinese on one in three, so an invoice in either
+      // language finds a name for most lines and falls back for the rest.
+      // By position again, leaving the random sequence untouched.
+      const translations = [
+        ...(kind === 'good' && i % 3 !== 0
+          ? [{ locale: 'fr-CA' as const, name: `${input.name} (FR)` }]
+          : []),
+        ...(kind === 'good' && i % 3 === 0
+          ? [{ locale: 'zh-Hans' as const, name: `${input.name}（中）` }]
+          : []),
+      ];
+      if (translations.length > 0) {
+        await this.services.products.setTranslations(product.id, {
+          translations,
+        });
+        this.calls += 1;
+      }
 
       // Materials sit in the raw bins, everything else in the aisles. One
       // home bin per item keeps "where is it" a single answer, so a sale can
@@ -930,4 +954,18 @@ function money(cents: number): string {
 
 function pad(value: number, width: number): string {
   return String(value).padStart(width, '0');
+}
+
+/** A customer's document languages by its position (ADR-054). */
+function documentLanguagesFor(
+  position: number,
+):
+  | { documentLanguage: 'fr-CA'; documentSecondLanguage: 'en' }
+  | { documentLanguage: 'zh-Hans' }
+  | Record<string, never> {
+  if (position % 10 === 0) return { documentLanguage: 'zh-Hans' };
+  if (position % 4 === 0) {
+    return { documentLanguage: 'fr-CA', documentSecondLanguage: 'en' };
+  }
+  return {};
 }
