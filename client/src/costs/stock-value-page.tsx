@@ -14,13 +14,25 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  defineMessages,
+  FormattedMessage,
+  type IntlShape,
+  useIntl,
+} from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { LoadMoreButton } from '../components/load-more-button';
 import { api, messageFor } from '../lib/api';
-import { formatDate, formatMoney, formatUnitCost } from '../lib/format';
+import {
+  formatDate,
+  formatMoney,
+  formatQuantity,
+  formatUnitCost,
+  NO_VALUE,
+} from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { NeedsCostEntry, StockValuation } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -44,15 +56,41 @@ function takesACost(entry: NeedsCostEntry): boolean {
 }
 
 /** Why a row is waiting, in the words someone would fix it by. */
-function whyWaiting(entry: NeedsCostEntry): string {
-  if (entry.kind === 'opening') return 'On hand when valuation began';
-  if (entry.reason === 'production') return 'Made by a run that is still open';
-  if (entry.reason === 'adjustment')
-    return 'Counted in, with nothing to value it by';
+const WHY = defineMessages({
+  opening: {
+    id: 'costs.why.opening',
+    defaultMessage: 'On hand when valuation began',
+  },
+  production: {
+    id: 'costs.why.production',
+    defaultMessage: 'Made by a run that is still open',
+  },
+  adjustment: {
+    id: 'costs.why.adjustment',
+    defaultMessage: 'Counted in, with nothing to value it by',
+  },
+  noPrice: {
+    id: 'costs.why.noPrice',
+    defaultMessage: 'Received with no price',
+  },
+});
+
+function whyWaiting(entry: NeedsCostEntry, intl: IntlShape): string {
+  if (entry.kind === 'opening') return intl.formatMessage(WHY.opening);
+  if (entry.reason === 'production') return intl.formatMessage(WHY.production);
+  if (entry.reason === 'adjustment') return intl.formatMessage(WHY.adjustment);
   if (entry.unitPrice && entry.currency) {
-    return `Priced in ${entry.currency}, with no rate on file`;
+    // Written here rather than in WHY: a descriptor from defineMessages is
+    // typed as taking no values.
+    return intl.formatMessage(
+      {
+        id: 'costs.why.noRate',
+        defaultMessage: 'Priced in {currency}, with no rate on file',
+      },
+      { currency: entry.currency },
+    );
   }
-  return 'Received with no price';
+  return intl.formatMessage(WHY.noPrice);
 }
 
 /**
@@ -64,6 +102,7 @@ function whyWaiting(entry: NeedsCostEntry): string {
  * provisional until it is cleared.
  */
 export function StockValuePage() {
+  const intl = useIntl();
   const can = useCan();
   const [valuation, setValuation] = useState<StockValuation | null>(null);
   const [waiting, setWaiting] = useState<NeedsCostPage | null>(null);
@@ -137,24 +176,35 @@ export function StockValuePage() {
   return (
     <Stack spacing={3}>
       <Typography variant="h5" component="h1">
-        Stock value
+        {intl.formatMessage({
+          id: 'layout.menu.stockValue',
+          defaultMessage: 'Stock value',
+        })}
       </Typography>
 
       <Typography variant="body2" color="text.secondary">
-        Each lot carries what it cost; stock without lots carries a running
-        average. Values are material cost only — what was bought and what went
-        into a batch — in the base currency.
+        {intl.formatMessage({
+          id: 'costs.intro',
+          defaultMessage:
+            'Each lot carries what it cost; stock without lots carries a running average. Values are material cost only — what was bought and what went into a batch — in the base currency.',
+        })}
       </Typography>
 
       {error && <Alert severity="error">{error}</Alert>}
 
       {valuation && !currency && (
         <Alert severity="info">
-          No base currency yet, so nothing can be valued. Set one on the{' '}
-          <Link component={RouterLink} to="/settings/organization">
-            Organization
-          </Link>{' '}
-          page.
+          <FormattedMessage
+            id="costs.noBaseCurrency"
+            defaultMessage="No base currency yet, so nothing can be valued. Set one on the <link>Organization</link> page."
+            values={{
+              link: (chunks: ReactNode[]) => (
+                <Link component={RouterLink} to="/settings/organization">
+                  {chunks}
+                </Link>
+              ),
+            }}
+          />
         </Alert>
       )}
 
@@ -167,35 +217,84 @@ export function StockValuePage() {
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
               <Typography variant="subtitle1" component="h2">
-                On hand
+                {intl.formatMessage({
+                  id: 'inventory.promised.onHand',
+                  defaultMessage: 'On hand',
+                })}
               </Typography>
               <Typography variant="h6" component="p">
                 {formatMoney(valuation?.total ?? null, currency)}
               </Typography>
               {valuation?.provisional && (
-                <Chip size="small" label="Provisional" color="warning" />
+                <Chip
+                  size="small"
+                  label={intl.formatMessage({
+                    id: 'costs.provisional',
+                    defaultMessage: 'Provisional',
+                  })}
+                  color="warning"
+                />
               )}
             </Stack>
           </Paper>
 
           <Paper variant="outlined">
             <Typography variant="subtitle1" component="h2" sx={{ p: 2 }}>
-              Waiting for a cost
+              {intl.formatMessage({
+                id: 'costs.waiting',
+                defaultMessage: 'Waiting for a cost',
+              })}
             </Typography>
 
             {waiting?.entries.length === 0 ? (
-              <Alert severity="success">Everything on hand has a cost.</Alert>
+              <Alert severity="success">
+                {intl.formatMessage({
+                  id: 'costs.allCosted',
+                  defaultMessage: 'Everything on hand has a cost.',
+                })}
+              </Alert>
             ) : (
               <TableContainer>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Item</TableCell>
-                      <TableCell>Lot</TableCell>
-                      <TableCell align="right">Quantity</TableCell>
-                      <TableCell>Why</TableCell>
-                      <TableCell>Since</TableCell>
-                      <TableCell align="right" aria-label="Actions" />
+                      <TableCell>
+                        {intl.formatMessage({
+                          id: 'inventory.item',
+                          defaultMessage: 'Item',
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        {intl.formatMessage({
+                          id: 'inventory.lot',
+                          defaultMessage: 'Lot',
+                        })}
+                      </TableCell>
+                      <TableCell align="right">
+                        {intl.formatMessage({
+                          id: 'inventory.quantity',
+                          defaultMessage: 'Quantity',
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        {intl.formatMessage({
+                          id: 'inventory.why',
+                          defaultMessage: 'Why',
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        {intl.formatMessage({
+                          id: 'costs.since',
+                          defaultMessage: 'Since',
+                        })}
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        aria-label={intl.formatMessage({
+                          id: 'orders.lines.actions',
+                          defaultMessage: 'Actions',
+                        })}
+                      />
                     </TableRow>
                   </TableHead>
 
@@ -203,9 +302,11 @@ export function StockValuePage() {
                     {waiting?.entries.map((entry) => (
                       <TableRow key={entry.id}>
                         <TableCell>{entry.sku}</TableCell>
-                        <TableCell>{entry.lotCode ?? '—'}</TableCell>
-                        <TableCell align="right">{entry.quantity}</TableCell>
-                        <TableCell>{whyWaiting(entry)}</TableCell>
+                        <TableCell>{entry.lotCode ?? NO_VALUE}</TableCell>
+                        <TableCell align="right">
+                          {formatQuantity(entry.quantity)}
+                        </TableCell>
+                        <TableCell>{whyWaiting(entry, intl)}</TableCell>
                         <TableCell>{formatDate(entry.createdAt)}</TableCell>
                         <TableCell align="right">
                           {entry.reason === 'production' &&
@@ -216,7 +317,10 @@ export function StockValuePage() {
                               component={RouterLink}
                               to={`/production/${entry.referenceId}`}
                             >
-                              Open run
+                              {intl.formatMessage({
+                                id: 'costs.openRun',
+                                defaultMessage: 'Open run',
+                              })}
                             </Button>
                           ) : (
                             canUpdate &&
@@ -227,7 +331,10 @@ export function StockValuePage() {
                                 size="small"
                                 onClick={openDialog(() => setCosting(entry))}
                               >
-                                Set cost
+                                {intl.formatMessage({
+                                  id: 'costs.set.title',
+                                  defaultMessage: 'Set cost',
+                                })}
                               </Button>
                             )
                           )}
@@ -249,22 +356,60 @@ export function StockValuePage() {
 
           <Paper variant="outlined">
             <Typography variant="subtitle1" component="h2" sx={{ p: 2 }}>
-              By item and lot
+              {intl.formatMessage({
+                id: 'costs.byItemAndLot',
+                defaultMessage: 'By item and lot',
+              })}
             </Typography>
 
             {valuation?.pools.length === 0 ? (
-              <Alert severity="info">Nothing on hand.</Alert>
+              <Alert severity="info">
+                {intl.formatMessage({
+                  id: 'costs.nothingOnHand',
+                  defaultMessage: 'Nothing on hand.',
+                })}
+              </Alert>
             ) : (
               <TableContainer>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Item</TableCell>
-                      <TableCell>Lot</TableCell>
-                      <TableCell align="right">Quantity</TableCell>
-                      <TableCell align="right">Unit cost</TableCell>
-                      <TableCell align="right">Value</TableCell>
-                      <TableCell aria-label="Status" />
+                      <TableCell>
+                        {intl.formatMessage({
+                          id: 'inventory.item',
+                          defaultMessage: 'Item',
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        {intl.formatMessage({
+                          id: 'inventory.lot',
+                          defaultMessage: 'Lot',
+                        })}
+                      </TableCell>
+                      <TableCell align="right">
+                        {intl.formatMessage({
+                          id: 'inventory.quantity',
+                          defaultMessage: 'Quantity',
+                        })}
+                      </TableCell>
+                      <TableCell align="right">
+                        {intl.formatMessage({
+                          id: 'costs.unitCost',
+                          defaultMessage: 'Unit cost',
+                        })}
+                      </TableCell>
+                      <TableCell align="right">
+                        {intl.formatMessage({
+                          id: 'costs.value',
+                          defaultMessage: 'Value',
+                        })}
+                      </TableCell>
+                      <TableCell
+                        aria-label={intl.formatMessage({
+                          id: 'common.status',
+                          defaultMessage: 'Status',
+                        })}
+                      />
                     </TableRow>
                   </TableHead>
 
@@ -281,10 +426,12 @@ export function StockValuePage() {
                               {pool.lotCode}
                             </Link>
                           ) : (
-                            '—'
+                            NO_VALUE
                           )}
                         </TableCell>
-                        <TableCell align="right">{pool.quantity}</TableCell>
+                        <TableCell align="right">
+                          {formatQuantity(pool.quantity)}
+                        </TableCell>
                         <TableCell align="right">
                           {formatUnitCost(pool.unitCost, currency)}
                         </TableCell>
@@ -295,7 +442,10 @@ export function StockValuePage() {
                           {pool.provisional && (
                             <Chip
                               size="small"
-                              label="Provisional"
+                              label={intl.formatMessage({
+                                id: 'costs.provisional',
+                                defaultMessage: 'Provisional',
+                              })}
                               color="warning"
                               variant="outlined"
                             />

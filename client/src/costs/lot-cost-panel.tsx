@@ -13,48 +13,79 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import type { ReactNode } from 'react';
+import {
+  defineMessages,
+  FormattedMessage,
+  type IntlShape,
+  useIntl,
+} from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { LabelledValue } from '../components/labelled-value';
-import { formatDate, formatMoney, formatUnitCost } from '../lib/format';
+import {
+  formatDate,
+  formatMoney,
+  formatQuantity,
+  formatUnitCost,
+  NO_VALUE,
+} from '../lib/format';
 import type { LotCost, LotCostEntry } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 
+const WORDS = defineMessages({
+  opening: { id: 'costs.entry.opening', defaultMessage: 'Opening balance' },
+  run_close: {
+    id: 'costs.entry.runClose',
+    defaultMessage: 'Batch cost at close',
+  },
+  correction: {
+    id: 'costs.entry.correction',
+    defaultMessage: 'Cost set or corrected',
+  },
+  issued: {
+    id: 'costs.entry.issued',
+    defaultMessage: 'Cost of stock already gone',
+  },
+  receipt: { id: 'orders.status.received', defaultMessage: 'Received' },
+  production: { id: 'costs.entry.made', defaultMessage: 'Made' },
+  consumption: { id: 'costs.entry.usedInRun', defaultMessage: 'Used in a run' },
+  shipment: { id: 'orders.status.shipped', defaultMessage: 'Shipped' },
+  sample: { id: 'costs.entry.sampled', defaultMessage: 'Sampled' },
+  return: { id: 'inventory.trace.returned', defaultMessage: 'Returned' },
+  countedOut: { id: 'costs.entry.countedOut', defaultMessage: 'Counted out' },
+  countedIn: { id: 'costs.entry.countedIn', defaultMessage: 'Counted in' },
+});
+
 /**
- * What a valuation row was, in words. A sign test on the string, not
- * arithmetic (ADR-025): an inbound adjustment is positive, an outbound one
- * negative.
+ * What a valuation row was, in words, in the reader's language (ADR-054). A
+ * sign test on the string, not arithmetic (ADR-025): an inbound adjustment
+ * is positive, an outbound one negative.
  */
-function describe(entry: LotCostEntry): string {
+function describe(entry: LotCostEntry, intl: IntlShape): string {
   switch (entry.kind) {
     case 'opening':
-      return 'Opening balance';
     case 'run_close':
-      return 'Batch cost at close';
     case 'correction':
-      return 'Cost set or corrected';
     case 'issued':
-      return 'Cost of stock already gone';
+      return intl.formatMessage(WORDS[entry.kind]);
     default:
       break;
   }
 
   switch (entry.reason) {
     case 'receipt':
-      return 'Received';
     case 'production':
-      return 'Made';
     case 'consumption':
-      return 'Used in a run';
     case 'shipment':
-      return 'Shipped';
     case 'sample':
-      return 'Sampled';
     case 'return':
-      return 'Returned';
+      return intl.formatMessage(WORDS[entry.reason]);
     case 'adjustment':
-      return entry.quantity.startsWith('-') ? 'Counted out' : 'Counted in';
+      return intl.formatMessage(
+        entry.quantity.startsWith('-') ? WORDS.countedOut : WORDS.countedIn,
+      );
     default:
       return entry.reason ?? entry.kind;
   }
@@ -68,6 +99,7 @@ function describe(entry: LotCostEntry): string {
  * is where the to-do list lives; this links there when the lot is waiting.
  */
 export function LotCostPanel({ lotId }: { lotId: string }) {
+  const intl = useIntl();
   const { data, error, loading } = useResource<{ lotCost: LotCost }>(
     `/costs/lots/${lotId}`,
   );
@@ -84,36 +116,64 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
     <Stack spacing={2}>
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <Typography variant="h6" component="h2">
-          Cost
+          {intl.formatMessage({ id: 'costs.cost', defaultMessage: 'Cost' })}
         </Typography>
         {cost.provisional && (
-          <Chip size="small" label="Provisional" color="warning" />
+          <Chip
+            size="small"
+            label={intl.formatMessage({
+              id: 'costs.provisional',
+              defaultMessage: 'Provisional',
+            })}
+            color="warning"
+          />
         )}
       </Stack>
 
       {cost.provisional && (
         <Alert severity="warning">
-          Part of this lot is still waiting for a cost. Set it on the{' '}
-          <Link component={RouterLink} to="/costs">
-            Stock value
-          </Link>{' '}
-          page.
+          <FormattedMessage
+            id="costs.lot.waiting"
+            defaultMessage="Part of this lot is still waiting for a cost. Set it on the <link>Stock value</link> page."
+            values={{
+              link: (chunks: ReactNode[]) => (
+                <Link component={RouterLink} to="/costs">
+                  {chunks}
+                </Link>
+              ),
+            }}
+          />
         </Alert>
       )}
 
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Stack direction="row" spacing={4}>
           <LabelledValue
-            label="Unit cost"
+            label={intl.formatMessage({
+              id: 'costs.unitCost',
+              defaultMessage: 'Unit cost',
+            })}
             value={
               cost.unitCost === null
-                ? 'None on hand'
+                ? intl.formatMessage({
+                    id: 'costs.noneOnHand',
+                    defaultMessage: 'None on hand',
+                  })
                 : formatUnitCost(cost.unitCost, currency)
             }
           />
-          <LabelledValue label="On hand" value={cost.quantity} />
           <LabelledValue
-            label="Value"
+            label={intl.formatMessage({
+              id: 'inventory.promised.onHand',
+              defaultMessage: 'On hand',
+            })}
+            value={formatQuantity(cost.quantity)}
+          />
+          <LabelledValue
+            label={intl.formatMessage({
+              id: 'costs.value',
+              defaultMessage: 'Value',
+            })}
             value={formatMoney(cost.value, currency)}
           />
         </Stack>
@@ -122,14 +182,45 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
       {cost.entries.length > 0 && (
         <Paper variant="outlined">
           <TableContainer>
-            <Table size="small" aria-label="How its value changed">
+            <Table
+              size="small"
+              aria-label={intl.formatMessage({
+                id: 'costs.lot.history',
+                defaultMessage: 'How its value changed',
+              })}
+            >
               <TableHead>
                 <TableRow>
-                  <TableCell>When</TableCell>
-                  <TableCell>What</TableCell>
-                  <TableCell align="right">Quantity</TableCell>
-                  <TableCell align="right">Value</TableCell>
-                  <TableCell>Paid</TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'inventory.movements.when',
+                      defaultMessage: 'When',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'account.activity.what',
+                      defaultMessage: 'What',
+                    })}
+                  </TableCell>
+                  <TableCell align="right">
+                    {intl.formatMessage({
+                      id: 'inventory.quantity',
+                      defaultMessage: 'Quantity',
+                    })}
+                  </TableCell>
+                  <TableCell align="right">
+                    {intl.formatMessage({
+                      id: 'costs.value',
+                      defaultMessage: 'Value',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'costs.paid',
+                      defaultMessage: 'Paid',
+                    })}
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -137,11 +228,14 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
                   <TableRow key={entry.id}>
                     <TableCell>{formatDate(entry.createdAt)}</TableCell>
                     <TableCell>
-                      {describe(entry)}
+                      {describe(entry, intl)}
                       {entry.needsCost && (
                         <Chip
                           size="small"
-                          label="Needs a cost"
+                          label={intl.formatMessage({
+                            id: 'costs.needsCost',
+                            defaultMessage: 'Needs a cost',
+                          })}
                           color="warning"
                           variant="outlined"
                           sx={{ ml: 1 }}
@@ -150,20 +244,34 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
                     </TableCell>
                     <TableCell align="right">
                       {entry.kind === 'movement' || entry.kind === 'opening'
-                        ? entry.quantity
-                        : '—'}
+                        ? formatQuantity(entry.quantity)
+                        : NO_VALUE}
                     </TableCell>
                     <TableCell align="right">
                       {formatMoney(entry.value, currency)}
                     </TableCell>
                     <TableCell>
                       {entry.unitPrice
-                        ? `${formatUnitCost(entry.unitPrice, entry.currency)}${
-                            entry.exchangeRate
-                              ? ` at ${entry.exchangeRate.replace(/\.?0+$/, '')}`
-                              : ''
-                          }`
-                        : '—'}
+                        ? entry.exchangeRate
+                          ? intl.formatMessage(
+                              {
+                                id: 'costs.paidAtRate',
+                                defaultMessage: '{price} at {rate}',
+                              },
+                              {
+                                price: formatUnitCost(
+                                  entry.unitPrice,
+                                  entry.currency,
+                                ),
+                                // Trailing zeros dropped on the string, then
+                                // the language's decimal separator.
+                                rate: formatQuantity(
+                                  entry.exchangeRate.replace(/\.?0+$/, ''),
+                                ),
+                              },
+                            )
+                          : formatUnitCost(entry.unitPrice, entry.currency)
+                        : NO_VALUE}
                     </TableCell>
                   </TableRow>
                 ))}

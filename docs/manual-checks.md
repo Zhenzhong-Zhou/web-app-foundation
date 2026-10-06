@@ -350,7 +350,8 @@ folder by folder; these check what is already in place.
   quantities, likewise; and a run's planned quantity, its output, the
   amounts used at close, and the lot amounts chosen at release, which open
   the reader's way and must still add up exactly. A recipe's batch size and
-  its components' quantities per batch, likewise.
+  its components' quantities per batch, likewise; and a cost's unit price
+  and exchange rate.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -396,7 +397,9 @@ folder by folder; these check what is already in place.
     - recipes: the recipe panel on a product with its versions and statuses,
       the new-recipe, add-component and edit-component dialogs, archiving,
       new version and promote with their tooltips, and the licence on a
-      version.
+      version;
+    - costs: the stock value page with what waits for a cost and why, a
+      lot's and a run's cost panels, and setting a cost.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -461,3 +464,4 @@ first.
 - 2026-10-05: ADR-054, returns (RMAs): MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, production: MC-1406, MC-1410 extended.
 - 2026-10-05: ADR-054, recipes: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, costs: MC-1406, MC-1410 extended.
