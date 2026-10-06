@@ -1,8 +1,86 @@
+import { execFile } from 'node:child_process';
+import path from 'node:path';
+
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
+
+/**
+ * Recompiles the catalogues while `npm run dev` runs (ADR-054).
+ *
+ * The browser reads src/i18n/compiled/, which `predev` writes once at start.
+ * A catalogue changed afterwards — a translation edited, a branch switched,
+ * patches applied with `git am` — used to reach the screen only after a
+ * restart, and until then every new message showed its English. Now a
+ * change to src/locales/*.json runs the same `i18n:compile`, and Vite
+ * reloads the page from the fresh files. A compile that fails, a catalogue
+ * mid-edit that is not yet valid JSON, is reported and leaves the last good
+ * files in place.
+ */
+function recompileCatalogues(): Plugin {
+  return {
+    name: 'recompile-catalogues',
+    apply: 'serve',
+    configureServer(server) {
+      const root = server.config.root;
+      const locales = path.join(root, 'src/locales');
+      const formatjs = path.join(root, 'node_modules/.bin/formatjs');
+      const { logger } = server.config;
+
+      let running = false;
+      let again = false;
+
+      const compile = () => {
+        // One at a time: a save that lands mid-compile runs once more after.
+        if (running) {
+          again = true;
+          return;
+        }
+        running = true;
+
+        execFile(
+          formatjs,
+          [
+            'compile-folder',
+            '--format',
+            'simple',
+            '--ast',
+            'src/locales',
+            'src/i18n/compiled',
+          ],
+          { cwd: root },
+          (error, _stdout, stderr) => {
+            running = false;
+            if (error) {
+              // The reason, not the CLI's stack: "Failed to parse JSON in
+              // file: src/locales/zh-Hans.json".
+              const reason =
+                stderr.split('\n').find((line) => line.trim()) ?? error.message;
+              logger.error(`Catalogues not recompiled. ${reason}`, {
+                timestamp: true,
+              });
+            } else {
+              logger.info('Catalogues recompiled.', { timestamp: true });
+            }
+            if (again) {
+              again = false;
+              compile();
+            }
+          },
+        );
+      };
+
+      server.watcher.add(locales);
+      server.watcher.on('all', (_event, file) => {
+        if (path.dirname(file) === locales && file.endsWith('.json')) {
+          compile();
+        }
+      });
+    },
+  };
+}
 
 export default defineConfig(({ command }) => ({
-  plugins: [react()],
+  plugins: [react(), recompileCatalogues()],
   resolve: {
     /**
      * In a production build, the ICU parser is swapped for its stub (ADR-054).
