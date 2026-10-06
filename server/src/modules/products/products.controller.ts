@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
 } from '@nestjs/common';
 
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
@@ -16,6 +17,10 @@ import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
+import {
+  SetProductTranslationsDto,
+  SetVariantTranslationsDto,
+} from './dto/set-translations.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
 import { ProductsService } from './products.service';
@@ -128,5 +133,44 @@ export class ProductsController {
     @Body() dto: UpdateVariantDto,
   ): Promise<void> {
     await this.products.updateVariant(id, variantId, dto);
+  }
+
+  /**
+   * The product's names in other languages (ADR-054), replaced as a set.
+   * products.update, as a rename is: a name in Chinese is still the name.
+   * The service records the new set as one line of catalogue data, since
+   * the body's array would not read as one; the previous set is the entry
+   * before.
+   */
+  @Put(':id/translations')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.PRODUCTS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.PRODUCT_UPDATED,
+    resourceType: 'product',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async setTranslations(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetProductTranslationsDto,
+  ): Promise<void> {
+    await this.products.setTranslations(id, dto);
+  }
+
+  /** A variant's names in other languages, as above, naming its SKU. */
+  @Put(':id/variants/:variantId/translations')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.PRODUCTS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.PRODUCT_VARIANT_UPDATED,
+    resourceType: 'product',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async setVariantTranslations(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('variantId', ParseUUIDPipe) variantId: string,
+    @Body() dto: SetVariantTranslationsDto,
+  ): Promise<void> {
+    await this.products.setVariantTranslations(id, variantId, dto);
   }
 }

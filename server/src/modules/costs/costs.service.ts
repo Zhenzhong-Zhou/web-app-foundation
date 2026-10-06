@@ -3,6 +3,7 @@ import { type SQL, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { baseCurrency } from '../stock/rates';
 import {
   correctCost,
@@ -161,7 +162,10 @@ export class CostsService {
       `);
 
       const [lot] = found.rows as Row[];
-      if (!lot) throw new NotFoundException('No such lot');
+      if (!lot)
+        throw new NotFoundException(
+          t({ id: 'costs.suchLot', defaultMessage: 'No such lot' }),
+        );
 
       const base = await baseCurrency(tx, organizationId);
 
@@ -245,7 +249,13 @@ export class CostsService {
       `);
 
       const [run] = found.rows as Row[];
-      if (!run) throw new NotFoundException('No such production order');
+      if (!run)
+        throw new NotFoundException(
+          t({
+            id: 'costs.suchProductionOrder',
+            defaultMessage: 'No such production order',
+          }),
+        );
 
       const base = await baseCurrency(tx, organizationId);
       const closed = run.status === 'completed';

@@ -6,6 +6,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
+import { useIntl } from 'react-intl';
 
 import type { OrderDirection } from '../lib/types';
 
@@ -39,25 +40,48 @@ export function CloseOrderDialog({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const intl = useIntl();
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs">
-      <DialogTitle>Close this order?</DialogTitle>
+      <DialogTitle>
+        {intl.formatMessage({
+          id: 'orders.close.title',
+          defaultMessage: 'Close this order?',
+        })}
+      </DialogTitle>
 
       <DialogContent>
         <DialogContentText>
           {direction === 'purchase'
-            ? 'Some of what was ordered has not been received. Closing the order says nothing more is expected — the stock already received stays exactly as it is, and anything that turns up later can be received from the Inventory screen.'
-            : 'Some of what was ordered has not been shipped. Closing the order says nothing more will be sent — what has shipped stays exactly as it is, and anything sent later can be shipped from the Inventory screen.'}
+            ? intl.formatMessage({
+                id: 'orders.close.purchase',
+                defaultMessage:
+                  'Some of what was ordered has not been received. Closing the order says nothing more is expected — the stock already received stays exactly as it is, and anything that turns up later can be received from the Inventory screen.',
+              })
+            : intl.formatMessage({
+                id: 'orders.close.sale',
+                defaultMessage:
+                  'Some of what was ordered has not been shipped. Closing the order says nothing more will be sent — what has shipped stays exactly as it is, and anything sent later can be shipped from the Inventory screen.',
+              })}
         </DialogContentText>
       </DialogContent>
 
       <DialogActions>
         <Button variant="text" onClick={onClose}>
-          Keep it open
+          {intl.formatMessage({
+            id: 'orders.close.keepOpen',
+            defaultMessage: 'Keep it open',
+          })}
         </Button>
         {/* Terminal by hand (ADR-027). The one way back is voiding a
             shipment that never left, which reopens the order (ADR-046). */}
-        <Button onClick={onConfirm}>Close it</Button>
+        <Button onClick={onConfirm}>
+          {intl.formatMessage({
+            id: 'orders.close.confirm',
+            defaultMessage: 'Close it',
+          })}
+        </Button>
       </DialogActions>
     </Dialog>
   );

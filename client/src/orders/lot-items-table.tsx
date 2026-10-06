@@ -7,10 +7,12 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { formatDay } from '../lib/format';
+import { formatDay, NO_VALUE } from '../lib/format';
 import type { Shipment } from '../lib/types';
+import { withUnit } from '../products/units';
 
 /**
  * What a shipment carried, or what a return brought back: one row per SKU and
@@ -21,16 +23,43 @@ import type { Shipment } from '../lib/types';
  * page resolves an exact one straight to its trace (ADR-044).
  */
 export function LotItemsTable({ items }: { items: Shipment['items'] }) {
+  const intl = useIntl();
+
   return (
     <TableContainer>
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>SKU</TableCell>
-            <TableCell>Item</TableCell>
-            <TableCell>Lot</TableCell>
-            <TableCell>Expires</TableCell>
-            <TableCell align="right">Quantity</TableCell>
+            <TableCell>
+              {intl.formatMessage({
+                id: 'products.sku',
+                defaultMessage: 'SKU',
+              })}
+            </TableCell>
+            <TableCell>
+              {intl.formatMessage({
+                id: 'inventory.item',
+                defaultMessage: 'Item',
+              })}
+            </TableCell>
+            <TableCell>
+              {intl.formatMessage({
+                id: 'inventory.lot',
+                defaultMessage: 'Lot',
+              })}
+            </TableCell>
+            <TableCell>
+              {intl.formatMessage({
+                id: 'inventory.lot.expires',
+                defaultMessage: 'Expires',
+              })}
+            </TableCell>
+            <TableCell align="right">
+              {intl.formatMessage({
+                id: 'inventory.quantity',
+                defaultMessage: 'Quantity',
+              })}
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -47,14 +76,14 @@ export function LotItemsTable({ items }: { items: Shipment['items'] }) {
                     {item.lotCode}
                   </Link>
                 ) : (
-                  '—'
+                  NO_VALUE
                 )}
               </TableCell>
               <TableCell>
-                {item.expiresAt ? formatDay(item.expiresAt) : '—'}
+                {item.expiresAt ? formatDay(item.expiresAt) : NO_VALUE}
               </TableCell>
               <TableCell align="right">
-                {item.quantity} {item.unitOfMeasure}
+                {withUnit(item.quantity, item.unitOfMeasure, intl)}
               </TableCell>
             </TableRow>
           ))}

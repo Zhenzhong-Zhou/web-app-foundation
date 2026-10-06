@@ -18,17 +18,25 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
-import { formatDay, itemName } from '../lib/format';
+import {
+  formatDay,
+  formatQuantity,
+  itemName,
+  nameAndCode,
+  NO_VALUE,
+} from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { Availability, Location, StockRow } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { withUnit } from '../products/units';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { MovementHistoryDialog } from './movement-history-dialog';
@@ -66,6 +74,7 @@ function leavesOf(locations: Location[]): Location[] {
  * out whether the three actually fit together.
  */
 export function InventoryPage() {
+  const intl = useIntl();
   const can = useCan();
 
   const [locations, setLocations] = useState<Location[] | null>(null);
@@ -173,12 +182,18 @@ export function InventoryPage() {
     <Stack spacing={3}>
       <PageHeader
         crumbs={[]}
-        title="Inventory"
+        title={intl.formatMessage({
+          id: 'layout.nav.inventory',
+          defaultMessage: 'Inventory',
+        })}
         actions={
           <Stack direction="row" spacing={1}>
             {/* A recall starts from a code off a label (ADR-044). */}
             <Button variant="text" component={RouterLink} to="/lots">
-              Trace a lot
+              {intl.formatMessage({
+                id: 'inventory.trace.title',
+                defaultMessage: 'Trace a lot',
+              })}
             </Button>
 
             <Button
@@ -186,7 +201,10 @@ export function InventoryPage() {
               disabled={loading}
               onClick={() => void refresh()}
             >
-              Refresh
+              {intl.formatMessage({
+                id: 'common.refresh',
+                defaultMessage: 'Refresh',
+              })}
             </Button>
 
             {/* Hidden without stock.move — display only, since the 403 is the
@@ -196,7 +214,10 @@ export function InventoryPage() {
                 disabled={!leaves.length}
                 onClick={openDialog(() => setReceiving(true))}
               >
-                Receive stock
+                {intl.formatMessage({
+                  id: 'inventory.receive',
+                  defaultMessage: 'Receive stock',
+                })}
               </Button>
             )}
           </Stack>
@@ -207,27 +228,38 @@ export function InventoryPage() {
 
       {locations && !leaves.length && (
         <Alert severity="info">
-          Add a location before receiving stock. Stock sits in the places that
-          contain nothing else — a bin, a shelf, or a whole warehouse if you
-          have not divided it up yet.
+          {intl.formatMessage({
+            id: 'inventory.needsLocation',
+            defaultMessage:
+              'Add a location before receiving stock. Stock sits in the places that contain nothing else — a bin, a shelf, or a whole warehouse if you have not divided it up yet.',
+          })}
         </Alert>
       )}
 
       <TextField
         id="stock-location"
-        label="Location"
+        label={intl.formatMessage({
+          id: 'inventory.location',
+          defaultMessage: 'Location',
+        })}
         select
         fullWidth
         value={locationId}
         onChange={(event) => setLocationId(event.target.value)}
-        helperText="Only locations that hold stock directly are listed."
+        helperText={intl.formatMessage({
+          id: 'inventory.leavesOnly',
+          defaultMessage: 'Only locations that hold stock directly are listed.',
+        })}
       >
-        <MenuItem value="">Everywhere</MenuItem>
+        <MenuItem value="">
+          {intl.formatMessage({
+            id: 'inventory.everywhere',
+            defaultMessage: 'Everywhere',
+          })}
+        </MenuItem>
         {leaves.map((location) => (
           <MenuItem key={location.id} value={location.id}>
-            {location.code
-              ? `${location.name} (${location.code})`
-              : location.name}
+            {nameAndCode(location.name, location.code)}
           </MenuItem>
         ))}
       </TextField>
@@ -238,11 +270,18 @@ export function InventoryPage() {
           there, but reachable, or that history has no route. */}
       <TextField
         id="stock-search"
-        label="Search"
+        label={intl.formatMessage({
+          id: 'inventory.search',
+          defaultMessage: 'Search',
+        })}
         fullWidth
         value={searchText}
         onChange={(event) => setSearchText(event.target.value)}
-        helperText="Anywhere in the SKU, the product name or the lot code."
+        helperText={intl.formatMessage({
+          id: 'inventory.search.help',
+          defaultMessage:
+            'Anywhere in the SKU, the product name or the lot code.',
+        })}
       />
 
       <FormControlLabel
@@ -252,7 +291,10 @@ export function InventoryPage() {
             onChange={(event) => setIncludeEmpty(event.target.checked)}
           />
         }
-        label="Show emptied"
+        label={intl.formatMessage({
+          id: 'inventory.showEmptied',
+          defaultMessage: 'Show emptied',
+        })}
       />
 
       <Paper variant="outlined">
@@ -270,12 +312,42 @@ export function InventoryPage() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>SKU</TableCell>
-                  <TableCell>Item</TableCell>
-                  <TableCell>Location</TableCell>
-                  <TableCell>Lot</TableCell>
-                  <TableCell>Expires</TableCell>
-                  <TableCell align="right">Quantity</TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'products.sku',
+                      defaultMessage: 'SKU',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'inventory.item',
+                      defaultMessage: 'Item',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'inventory.location',
+                      defaultMessage: 'Location',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'inventory.lot',
+                      defaultMessage: 'Lot',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'inventory.lot.expires',
+                      defaultMessage: 'Expires',
+                    })}
+                  </TableCell>
+                  <TableCell align="right">
+                    {intl.formatMessage({
+                      id: 'inventory.quantity',
+                      defaultMessage: 'Quantity',
+                    })}
+                  </TableCell>
                   {/* The actions column. Headerless because a column of menu
                     buttons has no name worth reading out. */}
                   <TableCell padding="checkbox" />
@@ -297,17 +369,20 @@ export function InventoryPage() {
                       {row.lotCode ? (
                         <Chip label={row.lotCode} size="small" />
                       ) : (
-                        '—'
+                        NO_VALUE
                       )}
                     </TableCell>
                     <TableCell>
-                      {row.lotExpiresAt ? formatDay(row.lotExpiresAt) : '—'}
+                      {row.lotExpiresAt
+                        ? formatDay(row.lotExpiresAt)
+                        : NO_VALUE}
                     </TableCell>
-                    {/* Rendered as it arrived. Formatting it means parsing it,
-                      and a numeric that passes through a JS double is the
+                    {/* Rendered as it arrived, with only its decimal separator
+                      the language's (withUnit, through formatQuantity).
+                      Parsing it would put a numeric through a JS double, the
                       precision loss ADR-025 exists to avoid. */}
                     <TableCell align="right">
-                      {row.quantity} {row.unitOfMeasure}
+                      {withUnit(row.quantity, row.unitOfMeasure, intl)}
                     </TableCell>
 
                     <TableCell padding="checkbox">
@@ -330,7 +405,15 @@ export function InventoryPage() {
           </TableContainer>
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
-            {search ? 'Nothing matches that search.' : 'Nothing here yet.'}
+            {search
+              ? intl.formatMessage({
+                  id: 'inventory.noMatch',
+                  defaultMessage: 'Nothing matches that search.',
+                })
+              : intl.formatMessage({
+                  id: 'inventory.empty',
+                  defaultMessage: 'Nothing here yet.',
+                })}
           </Typography>
         )}
       </Paper>
@@ -350,12 +433,17 @@ export function InventoryPage() {
       ) && (
         <Stack spacing={1}>
           <Typography variant="h6" component="h2">
-            Promised to customers
+            {intl.formatMessage({
+              id: 'inventory.promised.title',
+              defaultMessage: 'Promised to customers',
+            })}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Across every location stock can be sent from. Held stock is for a
-            confirmed sale, earliest confirmed first; free stock can be
-            promised, sampled or used in production.
+            {intl.formatMessage({
+              id: 'inventory.promised.intro',
+              defaultMessage:
+                'Across every location stock can be sent from. Held stock is for a confirmed sale, earliest confirmed first; free stock can be promised, sampled or used in production.',
+            })}
           </Typography>
 
           <Paper variant="outlined">
@@ -363,11 +451,36 @@ export function InventoryPage() {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>SKU</TableCell>
-                    <TableCell align="right">On hand</TableCell>
-                    <TableCell align="right">Held</TableCell>
-                    <TableCell align="right">Free</TableCell>
-                    <TableCell align="right">Backordered</TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'products.sku',
+                        defaultMessage: 'SKU',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'inventory.promised.onHand',
+                        defaultMessage: 'On hand',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'inventory.promised.held',
+                        defaultMessage: 'Held',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'inventory.promised.free',
+                        defaultMessage: 'Free',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'inventory.promised.backordered',
+                        defaultMessage: 'Backordered',
+                      })}
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -380,10 +493,14 @@ export function InventoryPage() {
                       <TableRow key={row.variantId}>
                         <TableCell>{row.sku}</TableCell>
                         <TableCell align="right">
-                          {row.onHand} {row.unitOfMeasure}
+                          {withUnit(row.onHand, row.unitOfMeasure, intl)}
                         </TableCell>
-                        <TableCell align="right">{row.held}</TableCell>
-                        <TableCell align="right">{row.free}</TableCell>
+                        <TableCell align="right">
+                          {formatQuantity(row.held)}
+                        </TableCell>
+                        <TableCell align="right">
+                          {formatQuantity(row.free)}
+                        </TableCell>
                         <TableCell
                           align="right"
                           sx={
@@ -392,7 +509,7 @@ export function InventoryPage() {
                               : undefined
                           }
                         >
-                          {row.backordered}
+                          {formatQuantity(row.backordered)}
                         </TableCell>
                       </TableRow>
                     ))}

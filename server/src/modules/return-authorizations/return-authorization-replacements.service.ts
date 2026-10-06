@@ -9,6 +9,7 @@ import {
   returnAuthorizationLines,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { lockOpen } from './lock-open';
 
 /**
@@ -57,7 +58,14 @@ export class ReturnAuthorizationReplacementsService {
 
         if (standing) {
           throw new ConflictException(
-            `${rma.number} already has a replacement order — cancel it to raise another`,
+            t(
+              {
+                id: 'rmas.numberReplacementOrderCancel',
+                defaultMessage:
+                  '{number} already has a replacement order — cancel it to raise another',
+              },
+              { number: rma.number },
+            ),
           );
         }
 
@@ -84,7 +92,13 @@ export class ReturnAuthorizationReplacementsService {
 
         if (replaced.length === 0) {
           throw new ConflictException(
-            `Nothing on ${rma.number} is to be replaced`,
+            t(
+              {
+                id: 'rmas.nothingNumberReplaced',
+                defaultMessage: 'Nothing on {number} is to be replaced',
+              },
+              { number: rma.number },
+            ),
           );
         }
 
@@ -106,7 +120,14 @@ export class ReturnAuthorizationReplacementsService {
         // Retired partners take no new orders (ADR-026), replacements included.
         if (!original.partnerActive) {
           throw new ConflictException(
-            `${original.partnerName} is retired, so no new order can be raised for them`,
+            t(
+              {
+                id: 'rmas.partnernameRetiredSoNew',
+                defaultMessage:
+                  '{partnerName} is retired, so no new order can be raised for them',
+              },
+              { partnerName: original.partnerName },
+            ),
           );
         }
 

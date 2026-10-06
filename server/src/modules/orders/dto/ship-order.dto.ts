@@ -13,6 +13,7 @@ import {
 
 import { IsPositiveDecimal } from '../../../common/dto/decimal';
 import { trim } from '../../../common/dto/trim';
+import { defineMessage, rule } from '../../../i18n/validation';
 
 class ShipLotDto {
   @IsUUID()
@@ -66,7 +67,13 @@ export class ShipOrderDto {
   @ArrayMinSize(1)
   @ArrayMaxSize(200)
   @ArrayUnique((line?: ShipLineDto) => line?.lineId, {
-    message: 'A line appears twice in one shipment — send its total once',
+    message: rule(
+      defineMessage({
+        id: 'validation.shipmentLineTwice',
+        defaultMessage:
+          'A line appears twice in one shipment — send its total once',
+      }),
+    ),
   })
   @ValidateNested({ each: true })
   @Type(() => ShipLineDto)

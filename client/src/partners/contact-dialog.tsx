@@ -8,6 +8,7 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -29,6 +30,7 @@ export function ContactDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState({
     name: contact?.name ?? '',
     role: contact?.role ?? '',
@@ -43,7 +45,12 @@ export function ContactDialog({
       close();
       await onSaved();
     },
-    { success: 'Contact saved' },
+    {
+      success: intl.formatMessage({
+        id: 'partners.contact.saved',
+        defaultMessage: 'Contact saved',
+      }),
+    },
   );
 
   function close() {
@@ -89,7 +96,17 @@ export function ContactDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>{contact ? 'Edit contact' : 'Add a contact'}</DialogTitle>
+        <DialogTitle>
+          {contact
+            ? intl.formatMessage({
+                id: 'partners.contact.editTitle',
+                defaultMessage: 'Edit contact',
+              })
+            : intl.formatMessage({
+                id: 'partners.contact.addTitle',
+                defaultMessage: 'Add a contact',
+              })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -97,7 +114,10 @@ export function ContactDialog({
 
             <TextField
               id="contact-name"
-              label="Name"
+              label={intl.formatMessage({
+                id: 'common.name',
+                defaultMessage: 'Name',
+              })}
               required
               fullWidth
               value={form.name}
@@ -107,17 +127,27 @@ export function ContactDialog({
 
             <TextField
               id="contact-role"
-              label="Role"
+              label={intl.formatMessage({
+                id: 'partners.contact.role',
+                defaultMessage: 'Role',
+              })}
               fullWidth
               value={form.role}
               onChange={update('role')}
-              helperText="In their words — Accounts payable, Warehouse manager."
+              helperText={intl.formatMessage({
+                id: 'partners.contact.role.help',
+                defaultMessage:
+                  'In their words — Accounts payable, Warehouse manager.',
+              })}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
             <TextField
               id="contact-email"
-              label="Email"
+              label={intl.formatMessage({
+                id: 'auth.field.email',
+                defaultMessage: 'Email',
+              })}
               type="email"
               fullWidth
               value={form.email}
@@ -127,20 +157,29 @@ export function ContactDialog({
 
             <TextField
               id="contact-phone"
-              label="Phone"
+              label={intl.formatMessage({
+                id: 'partners.contact.phone',
+                defaultMessage: 'Phone',
+              })}
               fullWidth
               value={form.phone}
               onChange={update('phone')}
               // One of these two is required by the database, not by the
               // form: a warehouse contact often has only a phone, and a
               // finance inbox often has only an address.
-              helperText="An email or a phone — at least one."
+              helperText={intl.formatMessage({
+                id: 'partners.contact.phone.help',
+                defaultMessage: 'An email or a phone — at least one.',
+              })}
               slotProps={{ htmlInput: { maxLength: 50 } }}
             />
 
             <TextField
               id="contact-notes"
-              label="Notes"
+              label={intl.formatMessage({
+                id: 'common.notes',
+                defaultMessage: 'Notes',
+              })}
               fullWidth
               multiline
               minRows={2}
@@ -161,7 +200,10 @@ export function ContactDialog({
                   }
                 />
               }
-              label="Main contact"
+              label={intl.formatMessage({
+                id: 'partners.contact.isPrimary',
+                defaultMessage: 'Main contact',
+              })}
             />
           </Stack>
         </DialogContent>
@@ -169,8 +211,21 @@ export function ContactDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label={contact ? 'Save' : 'Add contact'}
-          pendingLabel="Saving…"
+          label={
+            contact
+              ? intl.formatMessage({
+                  id: 'common.save',
+                  defaultMessage: 'Save',
+                })
+              : intl.formatMessage({
+                  id: 'partners.contact.add',
+                  defaultMessage: 'Add contact',
+                })
+          }
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

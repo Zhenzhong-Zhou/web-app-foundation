@@ -6,6 +6,7 @@ import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types'
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { productionOrderLines, productionOrders } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { allocateFefo } from '../stock/lot-allocation';
 import { postRunCost } from '../stock/revaluation';
 import { StockService } from '../stock/stock.service';
@@ -78,7 +79,15 @@ export class ProductionCloseService {
 
       for (const lineId of actuals.keys()) {
         if (!lines.some((line) => line.id === lineId)) {
-          throw new NotFoundException(`No line ${lineId} on this run`);
+          throw new NotFoundException(
+            t(
+              {
+                id: 'production.lineLineidRun',
+                defaultMessage: 'No line {lineId} on this run',
+              },
+              { lineId },
+            ),
+          );
         }
       }
 
@@ -240,8 +249,22 @@ export class ProductionCloseService {
         // The yield leads when it is off, because it is the run's own result;
         // the components explain it underneath.
         const title = outputVariance
-          ? `A production run made ${run.quantityProduced} against a plan of ${run.quantityPlanned}`
-          : `A production run closed with ${variances.length} line${variances.length === 1 ? '' : 's'} off plan`;
+          ? t(
+              {
+                id: 'notifications.variance.output',
+                defaultMessage:
+                  'A production run made {produced} against a plan of {planned}',
+              },
+              { produced: run.quantityProduced, planned: run.quantityPlanned },
+            )
+          : t(
+              {
+                id: 'notifications.variance.lines',
+                defaultMessage:
+                  'A production run closed with {count, plural, one {# line} other {# lines}} off plan',
+              },
+              { count: variances.length },
+            );
 
         await this.notifications.emit(
           recipients.map((userId) => ({

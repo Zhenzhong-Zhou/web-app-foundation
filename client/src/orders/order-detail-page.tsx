@@ -8,19 +8,19 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
-import { formatDay } from '../lib/format';
+import { formatDay, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
   LineHold,
   Location,
   OrderDetail,
-  OrderDirection,
   OrderLine,
   OrderStatus,
 } from '../lib/types';
@@ -40,7 +40,7 @@ import { ReturnOrderDialog } from './return-order-dialog';
 import { ReturnsList } from './returns-list';
 import { ShipOrderDialog } from './ship-order-dialog';
 import { ShipmentsList } from './shipments-list';
-import { DONE, NEXT_STATUSES } from './status';
+import { NEXT_STATUSES, orderStatusLabel } from './status';
 
 const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
   draft: 'default',
@@ -49,15 +49,8 @@ const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
   cancelled: 'default',
 };
 
-/** Chip labels. What the order is, rather than relying on CSS capitalisation. */
-function statusLabel(status: OrderStatus, direction: OrderDirection): string {
-  if (status === 'fulfilled') return DONE[direction];
-  if (status === 'draft') return 'Draft';
-  if (status === 'confirmed') return 'Confirmed';
-  return 'Cancelled';
-}
-
 export function OrderDetailPage() {
+  const intl = useIntl();
   const { id } = useParams<{ id: string }>();
   const can = useCan();
   const navigate = useNavigate();
@@ -254,11 +247,21 @@ export function OrderDetailPage() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        crumbs={[{ label: 'Orders', to: '/orders' }]}
+        crumbs={[
+          {
+            label: intl.formatMessage({
+              id: 'layout.nav.orders',
+              defaultMessage: 'Orders',
+            }),
+            to: '/orders',
+          },
+        ]}
         title={order.partnerName}
         titleTo={`/partners/${order.partnerId}`}
         status={{
-          label: statusLabel(order.status, order.direction),
+          // What the order is, by name, rather than relying on CSS
+          // capitalisation of the stored status.
+          label: orderStatusLabel(order.status, order.direction),
           color: STATUS_COLOUR[order.status],
         }}
         actions={
@@ -270,7 +273,10 @@ export function OrderDetailPage() {
                 disabled={working}
                 onClick={openDialog(() => setEditing(true))}
               >
-                Edit
+                {intl.formatMessage({
+                  id: 'common.edit',
+                  defaultMessage: 'Edit',
+                })}
               </Button>
             )}
             {canCreate && (
@@ -281,29 +287,56 @@ export function OrderDetailPage() {
                 disabled={working}
                 onClick={openDialog(() => setDuplicating(true))}
               >
-                Duplicate
+                {intl.formatMessage({
+                  id: 'orders.duplicate.action',
+                  defaultMessage: 'Duplicate',
+                })}
               </Button>
             )}
           </Stack>
         }
         subtitle={
           <>
-            {order.direction === 'purchase' ? 'Buying' : 'Selling'}
-            {order.isSample ? ' · sample' : ''}
-            {order.reference ? ` · ${order.reference}` : ''}
-            {order.expectedAt
-              ? ` · expected ${formatDay(order.expectedAt)}`
-              : ''}
+            {[
+              order.direction === 'purchase'
+                ? intl.formatMessage({
+                    id: 'orders.direction.buying',
+                    defaultMessage: 'Buying',
+                  })
+                : intl.formatMessage({
+                    id: 'orders.direction.selling',
+                    defaultMessage: 'Selling',
+                  }),
+              order.isSample &&
+                intl.formatMessage({
+                  id: 'orders.subtitle.sample',
+                  defaultMessage: 'sample',
+                }),
+              order.reference,
+              order.expectedAt &&
+                intl.formatMessage(
+                  {
+                    id: 'orders.subtitle.expected',
+                    defaultMessage: 'expected {day}',
+                  },
+                  { day: formatDay(order.expectedAt) },
+                ),
+            ]
+              .filter(Boolean)
+              .join(SEPARATOR)}
             {order.duplicatedFromId && (
               <>
-                {' · '}
+                {SEPARATOR}
                 <Link
                   component={RouterLink}
                   to={`/orders/${order.duplicatedFromId}`}
                   color="inherit"
                   underline="hover"
                 >
-                  duplicated from a previous order
+                  {intl.formatMessage({
+                    id: 'orders.subtitle.duplicatedFrom',
+                    defaultMessage: 'duplicated from a previous order',
+                  })}
                 </Link>
               </>
             )}

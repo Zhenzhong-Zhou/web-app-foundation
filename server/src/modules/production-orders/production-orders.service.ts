@@ -17,6 +17,7 @@ import {
   users,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { type LotCandidate, lotCandidates } from '../stock/lot-allocation';
 import type {
   CreateProductionOrderDto,
@@ -135,7 +136,13 @@ export class ProductionOrdersService {
       eq(productionOrders.id, runId),
     );
 
-    if (!run) throw new NotFoundException('No such production order');
+    if (!run)
+      throw new NotFoundException(
+        t({
+          id: 'production.suchProductionOrder',
+          defaultMessage: 'No such production order',
+        }),
+      );
 
     return run;
   }
@@ -357,7 +364,11 @@ export class ProductionOrdersService {
       } catch (error) {
         if (isForeignKeyViolation(error)) {
           throw new BadRequestException(
-            'outputVariantId, bomId, locationId, or partnerId does not exist',
+            t({
+              id: 'production.outputvariantidBomidLocationidPartnerid',
+              defaultMessage:
+                'outputVariantId, bomId, locationId, or partnerId does not exist',
+            }),
           );
         }
         throw error;
@@ -388,7 +399,10 @@ export class ProductionOrdersService {
       } catch (error) {
         if (isForeignKeyViolation(error)) {
           throw new BadRequestException(
-            'bomId, locationId, or partnerId does not exist',
+            t({
+              id: 'production.bomidLocationidPartneridDoes',
+              defaultMessage: 'bomId, locationId, or partnerId does not exist',
+            }),
           );
         }
         throw error;
@@ -414,7 +428,15 @@ export class ProductionOrdersService {
       const run = await loadWithin(tx, organizationId, runId);
 
       if (run.status === 'completed' || run.status === 'cancelled') {
-        throw new ConflictException(`A ${run.status} run cannot be cancelled`);
+        throw new ConflictException(
+          t(
+            {
+              id: 'production.statusRunCancelled',
+              defaultMessage: 'A {status} run cannot be cancelled',
+            },
+            { status: run.status },
+          ),
+        );
       }
 
       const stranded =
@@ -472,11 +494,20 @@ export class ProductionOrdersService {
       .from(boms)
       .where(and(eq(boms.organizationId, organizationId), eq(boms.id, bomId)));
 
-    if (!bom) throw new BadRequestException('bomId does not exist');
+    if (!bom)
+      throw new BadRequestException(
+        t({
+          id: 'production.bomidDoesExist',
+          defaultMessage: 'bomId does not exist',
+        }),
+      );
 
     if (bom.outputVariantId !== outputVariantId) {
       throw new BadRequestException(
-        'That BOM makes a different variant than this run',
+        t({
+          id: 'production.bomMakesDifferentVariant',
+          defaultMessage: 'That BOM makes a different variant than this run',
+        }),
       );
     }
   }

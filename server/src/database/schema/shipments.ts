@@ -8,10 +8,15 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey } from './columns';
+import {
+  languagesDiffer,
+  primaryKey,
+  secondLanguageNeedsFirst,
+} from './columns';
 import { locations } from './locations';
 import { orders } from './orders';
 import { organizations } from './organizations';
+import { requiredLanguageSnapshot } from './snapshots';
 import { users } from './users';
 
 /**
@@ -57,6 +62,9 @@ export const shipments = pgTable(
     trackingNumber: text('tracking_number'),
     note: text('note'),
 
+    /** What the packing slip prints in, resolved at ship (ADR-054). */
+    ...requiredLanguageSnapshot(),
+
     /** RESTRICT, as orders and movements: ADR-012 anonymises, never deletes. */
     createdBy: uuid('created_by')
       .notNull()
@@ -86,6 +94,15 @@ export const shipments = pgTable(
     check(
       'shipments_void_complete_check',
       sql`(${t.voidedAt} is null) = (${t.voidedBy} is null) and (${t.voidedAt} is null) = (${t.voidReason} is null)`,
+    ),
+
+    check(
+      'shipments_second_language_needs_first_check',
+      secondLanguageNeedsFirst(t.language, t.secondLanguage),
+    ),
+    check(
+      'shipments_languages_differ_check',
+      languagesDiffer(t.language, t.secondLanguage),
     ),
   ],
 );

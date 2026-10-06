@@ -22,6 +22,7 @@ import type {
   ReleaseProductionOrderDto,
 } from './dto/transitions.dto';
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
+import { t } from '../../i18n/translate';
 import { checkLicence, settleLicence } from './licence-check';
 import type { ProductionOrderLine } from './production-orders.service';
 import { assertStatus, loadForIssue, loadWithin } from './run-guards';
@@ -106,7 +107,14 @@ export class ProductionExecutionService {
 
       if (held) {
         throw new ConflictException(
-          `${held.name} holds stock that is not for use. Pick components from an available location.`,
+          t(
+            {
+              id: 'production.nameHoldsStockUse',
+              defaultMessage:
+                '{name} holds stock that is not for use. Pick components from an available location.',
+            },
+            { name: held.name },
+          ),
         );
       }
 
@@ -136,7 +144,11 @@ export class ProductionExecutionService {
 
       if (lines.rows.length === 0) {
         throw new ConflictException(
-          'That BOM has no lines, so this run would consume nothing',
+          t({
+            id: 'production.bomLinesSoRun',
+            defaultMessage:
+              'That BOM has no lines, so this run would consume nothing',
+          }),
         );
       }
 
@@ -184,13 +196,24 @@ export class ProductionExecutionService {
 
         if (!line || line.supplyType !== 'stocked') {
           throw new BadRequestException(
-            'Lots were given for a component this run does not issue from stock',
+            t({
+              id: 'production.lotsWereGivenComponent',
+              defaultMessage:
+                'Lots were given for a component this run does not issue from stock',
+            }),
           );
         }
 
         if (!tracked.has(componentVariantId)) {
           throw new BadRequestException(
-            `${line.sku} is not lot tracked, so it cannot be issued by lot`,
+            t(
+              {
+                id: 'production.skuLotTrackedSo',
+                defaultMessage:
+                  '{sku} is not lot tracked, so it cannot be issued by lot',
+              },
+              { sku: line.sku },
+            ),
           );
         }
       }
@@ -315,7 +338,7 @@ export class ProductionExecutionService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const run = await loadWithin(tx, organizationId, runId);
 
-      assertStatus(run.status, 'released', 'credited with output');
+      assertStatus(run.status, 'released', 'creditedWithOutput');
 
       const movement = await this.stock.recordWithin(
         tx,
@@ -391,7 +414,18 @@ export class ProductionExecutionService {
 
     if (!check.matches) {
       throw new BadRequestException(
-        `The lots chosen for ${line.sku} add up to ${check.total}, but the run needs ${line.quantityPlanned}`,
+        t(
+          {
+            id: 'production.lotsChosenSkuAdd',
+            defaultMessage:
+              'The lots chosen for {sku} add up to {total}, but the run needs {quantityPlanned}',
+          },
+          {
+            sku: line.sku,
+            total: check.total,
+            quantityPlanned: line.quantityPlanned,
+          },
+        ),
       );
     }
 

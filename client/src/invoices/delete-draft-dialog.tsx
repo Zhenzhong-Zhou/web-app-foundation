@@ -4,6 +4,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -22,8 +23,12 @@ export function DeleteDraftDialog({
   onClose: () => void;
   onDeleted: () => void;
 }) {
+  const intl = useIntl();
   const { submitting, error, reset, submit } = useSubmit(onDeleted, {
-    success: 'Draft deleted',
+    success: intl.formatMessage({
+      id: 'invoices.draft.deleted',
+      defaultMessage: 'Draft deleted',
+    }),
   });
 
   function close() {
@@ -38,19 +43,33 @@ export function DeleteDraftDialog({
       fullWidth
       maxWidth="xs"
     >
-      <DialogTitle>Delete this draft?</DialogTitle>
+      <DialogTitle>
+        {intl.formatMessage({
+          id: 'invoices.draft.deleteTitle',
+          defaultMessage: 'Delete this draft?',
+        })}
+      </DialogTitle>
       <DialogContent>
         {error && <FormError message={error} />}
         <DialogContentText>
-          Nobody outside has seen it, and it has no number yet. The shipment can
-          be invoiced again afterwards.
+          {intl.formatMessage({
+            id: 'invoices.draft.deleteNotice',
+            defaultMessage:
+              'Nobody outside has seen it, and it has no number yet. The shipment can be invoiced again afterwards.',
+          })}
         </DialogContentText>
       </DialogContent>
       <DialogFooter
         submitting={submitting}
         onCancel={close}
-        label="Delete draft"
-        pendingLabel="Deleting…"
+        label={intl.formatMessage({
+          id: 'invoices.draft.delete',
+          defaultMessage: 'Delete draft',
+        })}
+        pendingLabel={intl.formatMessage({
+          id: 'invoices.draft.deleting',
+          defaultMessage: 'Deleting…',
+        })}
         destructive
         onConfirm={() =>
           void submit(() => api(`/invoices/${invoiceId}`, { method: 'DELETE' }))

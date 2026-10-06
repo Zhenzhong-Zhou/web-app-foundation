@@ -300,6 +300,172 @@ backup scripts or workflows. The steps are in `docs/runbooks/restore.md`.
 - **MC-1304** The private key is in the password manager and on paper, and
   nowhere in the repository, an issue or a chat.
 
+## 14. Languages (ADR-054)
+
+Most screens stay in English until their words move into the catalogue,
+folder by folder; these check what is already in place.
+
+- **MC-1401** The account menu and the sign-in page each offer English,
+  Français (Canada) and 简体中文, every language in its own name. Choosing
+  French turns the picker's own label to « Langue » and MUI's own text
+  (a table's "Rows per page") to French, at once, with no reload.
+- **MC-1402** Signed in, choose 简体中文, sign out: the sign-in page is
+  still in it. Sign in on another browser: it opens in 简体中文 too.
+- **MC-1403** Signed out, choose Français on the register page and create
+  an account: after signing in, and on another browser, it is in French.
+- **MC-1404** In English, nothing has changed: dates read as the browser's
+  English writes them (10 Oct 2026 with a British browser, Oct 10, 2026 with
+  an American one), and quantities and money as before.
+- **MC-1407** On a product with a named variant, Edit names: give it a
+  name and description in 简体中文 and its variant a name, and leave
+  Français blank. The page lists the Chinese name; reopening the dialog
+  shows all three as saved. Clear the Chinese name and save: it is gone.
+  A description typed with no name in that language is refused before
+  saving, saying which language.
+- **MC-1408** With 简体中文 checked under Product names required on
+  invoices, on the Organization page, and a customer set to Chinese,
+  issuing an invoice for a product with no Chinese name is refused naming
+  the SKU; after Edit names adds one, it issues, and its printed lines
+  show the Chinese name.
+- **MC-1409** On a partner, Document languages: the first offers the
+  organization's default and each language; the second is greyed out
+  until a first is chosen and never offers the first again. Set Français
+  then English and save; ship to that partner: the shipment carries
+  fr-CA and en. Set the first back to the default: the second clears with
+  it, and the next shipment takes the organization's pair. The earlier
+  shipment keeps its own. A role without partners.update sees the section
+  but cannot save it.
+- **MC-1410** In Français, receive 2,5 of an item: it is recorded as 2.5
+  (the API's form) and shown as 2,5000 everywhere it appears — the stock
+  list, the movements page, the history. Typing 1 234 or 1.234,5 is refused
+  on the field itself, before anything is sent, with an example written
+  1234,5. In English, 2.5 behaves exactly as before, and 1,234 is refused
+  the same way. The same holds for an order's quantities and prices: raising
+  one, adding a line, editing a line, which also opens showing its numbers
+  the reader's way; receiving a line; shipping, whose quantities and lot
+  picks open the reader's way and whose stock preview still works with a
+  French 2,5; and taking a return. An invoice line's price, and a credit's
+  quantities and prices, likewise: the credit's figures wait, and say why,
+  while a number holds a thousands separator. Authorizing a return's
+  quantities, likewise; and a run's planned quantity, its output, the
+  amounts used at close, and the lot amounts chosen at release, which open
+  the reader's way and must still add up exactly. A recipe's batch size and
+  its components' quantities per batch, likewise; and a cost's unit price
+  and exchange rate; a price on a price list; and a tax rate and an
+  exchange rate in settings, which open the reader's way.
+- **MC-1411** On the Organization page, Document languages: the first
+  has no "default" option and Save stays off without one; the second
+  behaves as on a partner. Set Français then English and save; ship to a
+  partner with no languages of its own: the shipment carries fr-CA and en.
+  A partner with its own pair is unaffected. Product names required on
+  invoices: checking and unchecking back leaves Save off; checking 简体中文
+  and saving survives a reload. A role without organizations.update sees
+  both sections but cannot save them.
+- **MC-1412** Printed documents follow the customer, not the reader.
+  With the screens in English, a partner set to Français then English:
+  ship, print the packing slip — every heading reads "French / English"
+  at the same size, figures once with a decimal comma, the unit named in
+  both. Invoice it: the draft's printout is already French and English,
+  with no item names in French yet; issue it with a French name on one
+  product, and the printed line shows the French name and the English
+  under it at the same weight, the other product's name once. Credit it,
+  change the partner to 简体中文 alone, and print the credit note: still
+  French and English, as its invoice was. A partner in 简体中文 alone
+  prints Chinese only, glyphs Chinese rather than Japanese forms. Paper
+  shows no Back link or Print button, in any language.
+- **MC-1413** Signed out, in 简体中文, sign in with a wrong password: the
+  banner reads 邮箱或密码错误, not English; in Français, Courriel ou mot de
+  passe invalide. Signed in, in Français, try to remove yourself from
+  Members: the refusal is French. In 简体中文, ship more than an order
+  has outstanding, cancel an order goods have moved against, and release
+  a run under an expired licence: each refusal is Chinese, the statuses
+  in it too (已确认, not "confirmed"). A request with a field the server
+  refuses, such as a quantity of -1 sent with curl and
+  `Accept-Language: fr-CA`, names the field as the API does
+  (lines.0.quantity) in a French sentence. The same requests with no
+  Accept-Language answer in English word for word.
+- **MC-1414** With the account's language set to Français, request a
+  password reset: the email (Mailpit) is French, subject included. Sign
+  out, switch the page to 简体中文, and request one for an account with
+  no language chosen: Chinese. Sign in from a new browser: the security
+  email and the bell's notification are in the account's language. Close
+  an order line short: a member set to English reads "will not be
+  delivered in full" while a member set to Français reads it in French.
+- **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
+  available, so French and Chinese ship as unreviewed drafts, and release
+  notes say so.* When one is: someone fluent in each language reads every
+  message, screens and server both, and `docs/glossary.md`, and their
+  corrections are in the catalogues:
+  `node scripts/i18n-review.mjs export` writes `review/fr-CA.xlsx` and
+  `review/zh-Hans.xlsx`; each reviewer fills in the Correction column;
+  `node scripts/i18n-review.mjs import review/fr-CA.xlsx` writes them
+  back, refusing the whole file if any correction loses a placeholder;
+  then `npm run i18n:check` in client/ and server/, and one commit.
+- **MC-1406** In Français and in 简体中文, every area converted so far
+  reads entirely in that language, with no English left on it:
+    - signed out: sign-in, register, forgot-password, reset and verify,
+      including the rate-limit message after too many sign-ins;
+    - the frame: the navigation bar, the drawer on a narrow window, the
+      account menu, the notification bell, the email-confirmation banner,
+      the page-not-found screen and the could-not-reach-the-server screen.
+    - shared pieces: the colour-mode choices, Cancel and Saving… in every
+      dialog and settings section, Load more, the Back button, a picker's
+      "no matching items", and the page shown when a screen breaks;
+    - the account: the Account page with its language picker, the
+      password form and its devices-signed-out message, Active sessions
+      and Recent activity;
+    - products: the list, the detail page with its variants, and the
+      add-product, add-variant and edit-variant dialogs, including each
+      product type and unit of measure by name;
+    - partners: the list, the detail page with its addresses and contacts,
+      and the partner, address and contact dialogs;
+    - locations: the tree with its chips, and the add and edit dialogs,
+      each location type by name;
+    - inventory: the stock list and what is promised, the action menu, the
+      receive, move, sample, correct and lot dialogs, a pile's history,
+      the movements page with its reasons, and tracing a lot;
+    - orders: the list with its filter and statuses, raising an order,
+      the order page with its lines, and the edit, duplicate, close, add,
+      edit and close-short dialogs; receiving a line, shipping with its lot
+      preview, the shipments and returns on an order, voiding a shipment,
+      taking a return with its reasons, and linking a return to an RMA. The
+      packing slip stays English until printed documents (step 5);
+    - invoices: the list with its status tabs, an invoice with its lines,
+      totals, parties and credit notes, the draft's details and tax code,
+      the line, issue, void, credit and delete dialogs, and a credit note's
+      page. The printed invoice and credit note stay English until step 5;
+    - returns: the RMA list with its status tabs, raising an RMA with each
+      line's resolution by name, an RMA's page with closing, cancelling,
+      linking a return and raising a replacement;
+    - production: the runs list with its statuses, planning a run, a run's
+      page with its components, lots and variances, and the release (with
+      its licence warnings), record-output, close and cancel dialogs;
+    - recipes: the recipe panel on a product with its versions and statuses,
+      the new-recipe, add-component and edit-component dialogs, archiving,
+      new version and promote with their tooltips, and the licence on a
+      version;
+    - costs: the stock value page with what waits for a cost and why, a
+      lot's and a run's cost panels, and setting a cost;
+    - licences: the register with each licence's status (Current, Expires
+      in N days, Expired, In force from, Withdrawn), adding and editing one,
+      and what a batch was made under on a run and a lot trace;
+    - price lists: the lists, a list with its prices, creating and editing
+      one, setting a price, the picker (a retired list marked so), a
+      partner's lists and the organization's default;
+    - settings: the Organization page's sections and licence policy, tax
+      codes with their rates (9,975 % in French), and exchange rates;
+    - members: the list, changing a role and adding a member, with the
+      built-in roles (Owner, Admin, Viewer) named in the language and a
+      role the organization named itself shown as named;
+    - audit: the audit log with its filters and the History panel on a
+      record, timestamps and action names in the language ("Commande
+      expédiée", not "Order shipped"); field names stay as the API names
+      them.
+
+  A refusal from the server (a wrong password, a rule broken) stays in
+  English until the server translates (ADR-054, step 6), and so do
+  notifications written before that.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -342,3 +508,40 @@ first.
   MC-511 extended; MC-R04 added.
 - 2026-10-03: ADR-053, backups: section 13, MC-1301 to MC-1304.
 - 2026-10-02: the Duplicate order fix: MC-403 rewritten, MC-R05 added.
+- 2026-10-04: ADR-054, client foundations: section 14, MC-1401 to MC-1404.
+- 2026-10-04: ADR-054, the signed-out pages: MC-1405 and MC-1406.
+- 2026-10-04: ADR-054, the frame: MC-1406 extended.
+- 2026-10-04: ADR-054, the shared components: MC-1406 extended.
+- 2026-10-04: ADR-054, the account: MC-1406 extended.
+- 2026-10-04: ADR-054, products: MC-1406 extended.
+- 2026-10-04: ADR-054, product names in other languages: MC-1407, MC-1408.
+- 2026-10-04: ADR-054, partners: MC-1406 extended.
+- 2026-10-04: ADR-054, a partner's document languages: MC-1409.
+- 2026-10-05: ADR-054, locations: MC-1406 extended.
+- 2026-10-05: ADR-054, inventory: MC-1406 extended, MC-1410.
+- 2026-10-05: ADR-054, orders and their lines: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, receiving, shipping and returns: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, invoices and credit notes: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, returns (RMAs): MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, production: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, recipes: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, costs: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, licences: MC-1406 extended.
+- 2026-10-05: ADR-054, price lists: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, settings: MC-1406, MC-1410 extended.
+- 2026-10-05: ADR-054, the organization's languages: MC-1411, MC-1408 reworded.
+- 2026-10-06: ADR-054, members: MC-1406 extended.
+- 2026-10-06: ADR-054, audit: MC-1406 extended; step 3 complete.
+- 2026-10-06: ADR-054, printed documents: MC-1412; step 5 complete.
+- 2026-10-06: ADR-054 step 6 begins: the server answers in the request's
+  language, sign-in and account first: MC-1413.
+- 2026-10-06: ADR-054, emails and notifications in the recipient's
+  language: MC-1414.
+- 2026-10-06: ADR-054, MC-1405 (the fluent review) skipped for now,
+  recorded as such.
+- 2026-10-06: ADR-054, `e2e/languages.spec.ts` covers a bilingual printed
+  invoice and a French screen with a French refusal; MC-1412 and MC-1413
+  remain for what a browser test cannot judge (glyphs, layout on paper).
+- 2026-10-06: ADR-054, `seed:demo` sets up a French-and-English and a
+  Chinese customer with an issued invoice each, so MC-1407 to MC-1412
+  start from a fresh database.

@@ -7,11 +7,17 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import {
+  formatQuantity,
+  groupedNumberMessage,
+  toApiDecimal,
+} from '../lib/format';
 import type { OrderLine, OrderStatus } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -46,8 +52,16 @@ export function EditOrderLineDialog({
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
-  const [quantity, setQuantity] = useState(line?.quantityOrdered ?? '');
-  const [price, setPrice] = useState(line?.unitPrice ?? '');
+  const intl = useIntl();
+  // Shown the reader's way, 35,0000 in French, and read back the same way.
+  const [quantity, setQuantity] = useState(
+    line ? formatQuantity(line.quantityOrdered) : '',
+  );
+  const [price, setPrice] = useState(
+    line?.unitPrice ? formatQuantity(line.unitPrice) : '',
+  );
+  // Set when a number is typed with a thousands separator (ADR-054).
+  const [numberError, setNumberError] = useState<string | null>(null);
   const [currency, setCurrency] = useState(line?.currency ?? defaultCurrency);
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -55,10 +69,16 @@ export function EditOrderLineDialog({
       close();
       await onSaved();
     },
-    { success: 'Line saved' },
+    {
+      success: intl.formatMessage({
+        id: 'orders.lines.saved',
+        defaultMessage: 'Line saved',
+      }),
+    },
   );
 
   function close() {
+    setNumberError(null);
     reset();
     onClose();
   }
@@ -67,11 +87,19 @@ export function EditOrderLineDialog({
     event.preventDefault();
     if (!line) return;
 
+    const quantityOrdered = toApiDecimal(quantity);
+    const unitPrice = price.trim() ? toApiDecimal(price) : '';
+    if (quantityOrdered === null || unitPrice === null) {
+      setNumberError(groupedNumberMessage());
+      return;
+    }
+    setNumberError(null);
+
     void submit(() =>
       api(`/orders/${orderId}/lines/${line.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          quantityOrdered: quantity,
+          quantityOrdered,
           /**
            * Omitted entirely when blank, which leaves the stored price
            * untouched rather than clearing it. There is deliberately no way to
@@ -79,8 +107,8 @@ export function EditOrderLineDialog({
            * inventing one from an empty field would make a cleared price
            * indistinguishable from an unchanged one.
            */
-          unitPrice: price.trim() || undefined,
-          currency: price.trim() ? currency : undefined,
+          unitPrice: unitPrice || undefined,
+          currency: unitPrice ? currency : undefined,
         }),
       }),
     );
@@ -98,20 +126,28 @@ export function EditOrderLineDialog({
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {(numberError ?? error) && (
+              <FormError message={(numberError ?? error)!} />
+            )}
 
             {orderStatus === 'confirmed' && (
               // On a draft this is a correction; here it changes what the
               // supplier was told.
               <Alert severity="info">
-                This order has been confirmed. Changing the quantity or price
-                amends what was agreed with the supplier.
+                {intl.formatMessage({
+                  id: 'orders.lines.confirmedNotice',
+                  defaultMessage:
+                    'This order has been confirmed. Changing the quantity or price amends what was agreed with the supplier.',
+                })}
               </Alert>
             )}
 
             <TextField
               id="edit-line-quantity"
-              label="Quantity"
+              label={intl.formatMessage({
+                id: 'inventory.quantity',
+                defaultMessage: 'Quantity',
+              })}
               required
               fullWidth
               value={quantity}
@@ -123,10 +159,16 @@ export function EditOrderLineDialog({
             <Stack direction="row" spacing={2}>
               <TextField
                 id="edit-line-price"
-                label="Unit price"
+                label={intl.formatMessage({
+                  id: 'orders.unitPrice',
+                  defaultMessage: 'Unit price',
+                })}
                 value={price}
                 onChange={(event) => setPrice(event.target.value)}
-                helperText="Leave blank to keep the current price."
+                helperText={intl.formatMessage({
+                  id: 'orders.lines.price.keep',
+                  defaultMessage: 'Leave blank to keep the current price.',
+                })}
                 sx={{ flexGrow: 1 }}
                 slotProps={{
                   htmlInput: { inputMode: 'decimal', maxLength: 19 },
@@ -147,8 +189,14 @@ export function EditOrderLineDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

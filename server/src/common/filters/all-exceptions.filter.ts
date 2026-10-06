@@ -9,6 +9,8 @@ import {
 import { HttpAdapterHost } from '@nestjs/core';
 import type { Request } from 'express';
 
+import { isTranslatable, localeOf, t, translate } from '../../i18n/translate';
+
 interface ErrorBody {
   statusCode: number;
   error: string;
@@ -44,7 +46,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const body: ErrorBody = {
       statusCode: status,
       error: HttpStatus[status] ?? 'INTERNAL_SERVER_ERROR',
-      message: this.messageFor(exception, isHttp),
+      message: this.messageFor(exception, isHttp, req),
       path: httpAdapter.getRequestUrl(req) as string,
       timestamp: new Date().toISOString(),
       requestId: req.id,
@@ -62,16 +64,41 @@ export class AllExceptionsFilter implements ExceptionFilter {
     httpAdapter.reply(ctx.getResponse(), body, status);
   }
 
-  private messageFor(exception: unknown, isHttp: boolean): string | string[] {
+  /**
+   * The message in the request's language (ADR-054). A service threw an id
+   * with its English and values; it is rendered here in whatever the
+   * request's Accept-Language asks for. No header, or one asking for
+   * English, gets the English it was thrown with, word for word.
+   */
+  private messageFor(
+    exception: unknown,
+    isHttp: boolean,
+    req: Request,
+  ): string | string[] {
+    const locale = localeOf(req.headers['accept-language']);
+
     // Never surface an unexpected error's text: it leaks table names,
     // file paths, and driver internals to whoever triggered it.
     if (!isHttp) {
-      return 'Internal server error';
+      return translate(
+        t({
+          id: 'common.internalError',
+          defaultMessage: 'Internal server error',
+        }),
+        locale,
+      );
     }
 
     const res = (exception as HttpException).getResponse();
 
     if (typeof res === 'string') return res;
+    if (isTranslatable(res)) return translate(res, locale);
+
+    // Validation: one message per failed rule, each with its id.
+    const { messages } = res as { messages?: unknown[] };
+    if (Array.isArray(messages) && messages.every(isTranslatable)) {
+      return messages.map((message) => translate(message, locale));
+    }
 
     // ValidationPipe returns { message: string[], error, statusCode }
     const { message } = res as { message?: string | string[] };

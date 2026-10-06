@@ -1,5 +1,6 @@
 import { Stack } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
@@ -27,11 +28,15 @@ export function PartnerPriceLists({
   readOnly: boolean;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [sale, setSale] = useState(salePriceListId);
   const [purchase, setPurchase] = useState(purchasePriceListId);
 
   const { submitting, error, submit } = useSubmit(onSaved, {
-    success: 'Price lists saved',
+    success: intl.formatMessage({
+      id: 'priceLists.partner.saved',
+      defaultMessage: 'Price lists saved',
+    }),
   });
 
   const changed = sale !== salePriceListId || purchase !== purchasePriceListId;
@@ -53,32 +58,50 @@ export function PartnerPriceLists({
 
   return (
     <SettingsSection
-      title="Price lists"
+      title={intl.formatMessage({
+        id: 'layout.menu.priceLists',
+        defaultMessage: 'Price lists',
+      })}
       onSubmit={handleSubmit}
       error={error}
       submitting={submitting}
       readOnly={readOnly}
-      saveLabel="Save price lists"
+      saveLabel={intl.formatMessage({
+        id: 'priceLists.partner.save',
+        defaultMessage: 'Save price lists',
+      })}
       saveDisabled={!changed}
     >
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
         <PriceListPicker
           id="partner-sale-price-list"
-          label="Sales to them"
+          label={intl.formatMessage({
+            id: 'priceLists.partner.sales',
+            defaultMessage: 'Sales to them',
+          })}
           direction="sale"
           value={sale}
           onChange={setSale}
           disabled={readOnly}
-          helperText="Prices a sale line added without one."
+          helperText={intl.formatMessage({
+            id: 'priceLists.partner.sales.help',
+            defaultMessage: 'Prices a sale line added without one.',
+          })}
         />
         <PriceListPicker
           id="partner-purchase-price-list"
-          label="Purchases from them"
+          label={intl.formatMessage({
+            id: 'priceLists.partner.purchases',
+            defaultMessage: 'Purchases from them',
+          })}
           direction="purchase"
           value={purchase}
           onChange={setPurchase}
           disabled={readOnly}
-          helperText="Prices a purchase line added without one."
+          helperText={intl.formatMessage({
+            id: 'priceLists.partner.purchases.help',
+            defaultMessage: 'Prices a purchase line added without one.',
+          })}
         />
       </Stack>
     </SettingsSection>

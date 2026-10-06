@@ -7,6 +7,7 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -18,6 +19,7 @@ import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
 } from '../lib/validation';
+import { roleLabel } from './role-names';
 
 interface Role {
   id: string;
@@ -48,6 +50,7 @@ export function CreateMemberDialog({
 }) {
   // Least privilege by default. Owner is in the list because the server
   // decides who may assign it, but it should never be the resting choice.
+  const intl = useIntl();
   const defaultRoleId =
     roles.find((role) => role.name === 'Viewer')?.id ?? roles[0]?.id ?? '';
 
@@ -59,7 +62,12 @@ export function CreateMemberDialog({
       close();
       await onCreated();
     },
-    { success: 'Member added' },
+    {
+      success: intl.formatMessage({
+        id: 'members.added',
+        defaultMessage: 'Member added',
+      }),
+    },
   );
 
   function close() {
@@ -95,7 +103,12 @@ export function CreateMemberDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Add a member</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'members.addTitle',
+            defaultMessage: 'Add a member',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -103,7 +116,10 @@ export function CreateMemberDialog({
 
             <TextField
               id="member-name"
-              label="Name"
+              label={intl.formatMessage({
+                id: 'common.name',
+                defaultMessage: 'Name',
+              })}
               required
               fullWidth
               value={form.name}
@@ -113,7 +129,10 @@ export function CreateMemberDialog({
 
             <TextField
               id="member-email"
-              label="Email"
+              label={intl.formatMessage({
+                id: 'auth.field.email',
+                defaultMessage: 'Email',
+              })}
               type="email"
               required
               fullWidth
@@ -124,7 +143,10 @@ export function CreateMemberDialog({
 
             <TextField
               id="member-password"
-              label="Temporary password"
+              label={intl.formatMessage({
+                id: 'members.tempPassword',
+                defaultMessage: 'Temporary password',
+              })}
               type="password"
               // Not new-password: this is not the signed-in admin's
               // credential, and prompting a manager to save it would file
@@ -134,7 +156,14 @@ export function CreateMemberDialog({
               fullWidth
               value={form.password}
               onChange={update('password')}
-              helperText={`At least ${PASSWORD_MIN_LENGTH} characters. Share it with them and ask them to change it.`}
+              helperText={intl.formatMessage(
+                {
+                  id: 'members.tempPassword.help',
+                  defaultMessage:
+                    'At least {count} characters. Share it with them and ask them to change it.',
+                },
+                { count: PASSWORD_MIN_LENGTH },
+              )}
               slotProps={{
                 htmlInput: {
                   minLength: PASSWORD_MIN_LENGTH,
@@ -145,7 +174,10 @@ export function CreateMemberDialog({
 
             <TextField
               id="member-role"
-              label="Role"
+              label={intl.formatMessage({
+                id: 'members.role',
+                defaultMessage: 'Role',
+              })}
               select
               required
               fullWidth
@@ -154,7 +186,7 @@ export function CreateMemberDialog({
             >
               {roles.map((role) => (
                 <MenuItem key={role.id} value={role.id}>
-                  {role.name}
+                  {roleLabel(role.name)}
                 </MenuItem>
               ))}
             </TextField>
@@ -164,8 +196,14 @@ export function CreateMemberDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Add member"
-          pendingLabel="Adding…"
+          label={intl.formatMessage({
+            id: 'members.add',
+            defaultMessage: 'Add member',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.adding',
+            defaultMessage: 'Adding…',
+          })}
         />
       </form>
     </Dialog>

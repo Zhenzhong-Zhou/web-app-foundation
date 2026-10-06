@@ -10,13 +10,26 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { defineMessages, useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
+import { useDocumentText } from '../components/document-text';
 import { PrintBanner, PrintSheet } from '../components/print-sheet';
-import { formatDate, formatDay } from '../lib/format';
+import { PRINTED } from '../components/printed-words';
+import { formatDate, formatDay, formatQuantity, NO_VALUE } from '../lib/format';
 import type { PackingSlip } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
+import { unitLabel } from '../products/units';
+
+const WORDS = defineMessages({
+  title: { id: 'documents.packingSlip', defaultMessage: 'Packing slip' },
+  void: {
+    id: 'documents.packingSlip.void',
+    defaultMessage: 'VOID — nothing on this slip left',
+  },
+  shipment: { id: 'documents.shipment', defaultMessage: 'Shipment' },
+});
 
 /**
  * One shipment on paper (ADR-041).
@@ -30,6 +43,7 @@ import { useResource } from '../lib/use-resource';
  * customer checking a delivery, or a recall a year later, reads them here.
  */
 export function PackingSlipPage() {
+  const intl = useIntl();
   const { id, shipmentId } = useParams<{ id: string; shipmentId: string }>();
 
   const {
@@ -39,10 +53,16 @@ export function PackingSlipPage() {
   } = useResource<PackingSlip>(`/orders/${id}/shipments/${shipmentId}`);
 
   const showSkeleton = useDelayedFlag(loading);
+  // In the languages fixed when it shipped (ADR-054).
+  const doc = useDocumentText(
+    slip
+      ? { language: slip.language, secondLanguage: slip.secondLanguage }
+      : null,
+  );
 
   if (error) return <Alert severity="error">{error}</Alert>;
 
-  if (!slip) {
+  if (!slip || !doc) {
     return showSkeleton ? <Skeleton height={320} /> : null;
   }
 
@@ -52,36 +72,60 @@ export function PackingSlipPage() {
   return (
     <PrintSheet
       backTo={`/orders/${slip.order.id}`}
-      backLabel="Back to the order"
+      backLabel={intl.formatMessage({
+        id: 'documents.backToOrder',
+        defaultMessage: 'Back to the order',
+      })}
+      languages={doc.languages}
     >
       {/* A voided slip found in a drawer later must not pass for goods that
           left (PrintBanner says why it is bordered, not coloured). */}
       {slip.voidedAt && (
         <PrintBanner
-          title="VOID — nothing on this slip left"
-          detail={
-            <>
-              Voided {formatDate(slip.voidedAt)}: {slip.voidReason}
-            </>
-          }
+          title={doc.label(WORDS.void)}
+          detail={doc.lines((words) =>
+            words.formatMessage(
+              {
+                id: 'documents.voidedOn',
+                defaultMessage: 'Voided {date}: {reason}',
+              },
+              {
+                date: formatDate(slip.voidedAt!, doc.locale),
+                reason: slip.voidReason ?? '',
+              },
+            ),
+          )}
         />
       )}
 
       <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
         <Box>
           <Typography variant="h5" component="h1">
-            Packing slip
+            {doc.label(WORDS.title)}
           </Typography>
           <Typography variant="body2">{slip.organizationName}</Typography>
         </Box>
 
         <Box sx={{ textAlign: 'right' }}>
           <Typography variant="body2">
-            Shipped {formatDate(slip.createdAt)}
+            {doc.join((words) =>
+              words.formatMessage(
+                { id: 'documents.shippedOn', defaultMessage: 'Shipped {date}' },
+                { date: formatDate(slip.createdAt, doc.locale) },
+              ),
+            )}
           </Typography>
           {slip.order.reference && (
             <Typography variant="body2">
-              Order {slip.order.reference}
+              {doc.join((words) =>
+                words.formatMessage(
+                  {
+                    id: 'documents.orderReference',
+                    defaultMessage: 'Order {reference}',
+                  },
+                  { reference: slip.order.reference },
+                ),
+              )}
             </Typography>
           )}
         </Box>
@@ -89,7 +133,9 @@ export function PackingSlipPage() {
 
       <Stack direction="row" spacing={6}>
         <Box>
-          <Typography variant="overline">Ship to</Typography>
+          <Typography variant="overline">
+            {doc.label(PRINTED.shipTo)}
+          </Typography>
           <Typography>{slip.order.partnerName}</Typography>
           {address && (
             <>
@@ -107,11 +153,45 @@ export function PackingSlipPage() {
         </Box>
 
         <Box>
-          <Typography variant="overline">Shipment</Typography>
-          <Typography>From {slip.fromLocationName}</Typography>
-          {slip.carrier && <Typography>Carrier: {slip.carrier}</Typography>}
+          <Typography variant="overline">
+            {doc.label(WORDS.shipment)}
+          </Typography>
+          <Typography>
+            {doc.join((words) =>
+              words.formatMessage(
+                {
+                  id: 'documents.fromLocation',
+                  defaultMessage: 'From {place}',
+                },
+                { place: slip.fromLocationName },
+              ),
+            )}
+          </Typography>
+          {slip.carrier && (
+            <Typography>
+              {doc.join((words) =>
+                words.formatMessage(
+                  {
+                    id: 'documents.carrier',
+                    defaultMessage: 'Carrier: {carrier}',
+                  },
+                  { carrier: slip.carrier },
+                ),
+              )}
+            </Typography>
+          )}
           {slip.trackingNumber && (
-            <Typography>Tracking: {slip.trackingNumber}</Typography>
+            <Typography>
+              {doc.join((words) =>
+                words.formatMessage(
+                  {
+                    id: 'documents.tracking',
+                    defaultMessage: 'Tracking: {number}',
+                  },
+                  { number: slip.trackingNumber },
+                ),
+              )}
+            </Typography>
           )}
         </Box>
       </Stack>
@@ -121,11 +201,11 @@ export function PackingSlipPage() {
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>SKU</TableCell>
-            <TableCell>Item</TableCell>
-            <TableCell>Lot</TableCell>
-            <TableCell>Expires</TableCell>
-            <TableCell align="right">Quantity</TableCell>
+            <TableCell>{doc.label(PRINTED.sku)}</TableCell>
+            <TableCell>{doc.label(PRINTED.item)}</TableCell>
+            <TableCell>{doc.label(PRINTED.lot)}</TableCell>
+            <TableCell>{doc.label(PRINTED.expires)}</TableCell>
+            <TableCell align="right">{doc.label(PRINTED.quantity)}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -133,12 +213,18 @@ export function PackingSlipPage() {
             <TableRow key={`${item.sku}-${item.lotCode ?? 'none'}`}>
               <TableCell>{item.sku}</TableCell>
               <TableCell>{item.description}</TableCell>
-              <TableCell>{item.lotCode ?? '—'}</TableCell>
+              <TableCell>{item.lotCode ?? NO_VALUE}</TableCell>
               <TableCell>
-                {item.expiresAt ? formatDay(item.expiresAt) : '—'}
+                {item.expiresAt
+                  ? formatDay(item.expiresAt, doc.locale)
+                  : NO_VALUE}
               </TableCell>
+              {/* The figure once, the unit in each language. */}
               <TableCell align="right">
-                {item.quantity} {item.unitOfMeasure}
+                {[
+                  formatQuantity(item.quantity, doc.locale),
+                  doc.join((words) => unitLabel(item.unitOfMeasure, words)),
+                ].join(' ')}
               </TableCell>
             </TableRow>
           ))}
@@ -151,7 +237,15 @@ export function PackingSlipPage() {
           Not on a voided one — nothing arrived to sign for. */}
       {!voided && (
         <Typography variant="body2" sx={{ pt: 4 }}>
-          Received by: ______________________ Date: ____________
+          {doc.join((words) =>
+            words.formatMessage(
+              {
+                id: 'documents.receivedBy',
+                defaultMessage: 'Received by: {line} Date: {shortLine}',
+              },
+              { line: '______________________', shortLine: '____________' },
+            ),
+          )}
         </Typography>
       )}
     </PrintSheet>

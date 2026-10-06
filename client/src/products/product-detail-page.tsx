@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
@@ -21,19 +22,31 @@ import { useCan } from '../auth/permissions';
 import { RecipePanel } from '../boms/recipe-panel';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
+import { LANGUAGE_NAMES, type Locale } from '../lib/locales';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { AddVariantDialog } from './add-variant-dialog';
 import { EditVariantDialog } from './edit-variant-dialog';
+import { productTypeLabel } from './product-types';
 import type { Product, Variant } from './products-page';
+import { TranslationsDialog } from './translations-dialog';
 import { VariantRow } from './variant-row';
 
-interface ProductDetail extends Product {
+/** A product's name and description in one language (ADR-054). */
+export interface ProductTranslation {
+  locale: Locale;
+  name: string;
+  description: string | null;
+}
+
+export interface ProductDetail extends Product {
+  translations: ProductTranslation[];
   variants: Variant[];
 }
 
 export function ProductDetailPage() {
+  const intl = useIntl();
   const { id } = useParams<{ id: string }>();
   const can = useCan();
 
@@ -46,6 +59,7 @@ export function ProductDetailPage() {
   } = useResource<ProductDetail>(`/products/${id!}`);
   const [saving, setSaving] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [translating, setTranslating] = useState(false);
 
   // The SKU being edited, and its draft value. One at a time: editing several
   // rows before saving any would need a dirty-state map and a way to discard,
@@ -117,7 +131,10 @@ export function ProductDetailPage() {
       <Stack spacing={2}>
         <Alert severity="error">{error}</Alert>
         <Link component={RouterLink} to="/products">
-          Back to products
+          {intl.formatMessage({
+            id: 'products.backToList',
+            defaultMessage: 'Back to products',
+          })}
         </Link>
       </Stack>
     );
@@ -130,9 +147,20 @@ export function ProductDetailPage() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        crumbs={[{ label: 'Products', to: '/products' }]}
+        crumbs={[
+          {
+            label: intl.formatMessage({
+              id: 'layout.nav.products',
+              defaultMessage: 'Products',
+            }),
+            to: '/products',
+          },
+        ]}
         title={product.name}
-        status={{ label: product.type, color: 'default' }}
+        status={{
+          label: productTypeLabel(product.type, intl),
+          color: 'default',
+        }}
         actions={
           <Stack direction="row" spacing={1}>
             <HistoryButton resourceId={product.id} />
@@ -147,7 +175,15 @@ export function ProductDetailPage() {
                   void patchProduct({ isActive: !product.isActive })
                 }
               >
-                {product.isActive ? 'Discontinue' : 'Reactivate'}
+                {product.isActive
+                  ? intl.formatMessage({
+                      id: 'products.discontinue',
+                      defaultMessage: 'Discontinue',
+                    })
+                  : intl.formatMessage({
+                      id: 'products.reactivate',
+                      defaultMessage: 'Reactivate',
+                    })}
               </Button>
             )}
           </Stack>
@@ -159,19 +195,81 @@ export function ProductDetailPage() {
 
       {!product?.isActive && (
         <Alert severity="info">
-          This product is discontinued. Its variants keep their own status, so
-          reactivating restores each to what it was.
+          {intl.formatMessage({
+            id: 'products.discontinuedNotice',
+            defaultMessage:
+              'This product is discontinued. Its variants keep their own status, so reactivating restores each to what it was.',
+          })}
         </Alert>
+      )}
+
+      {/* What documents print in each language (ADR-054). Shown when there
+          is something to show, or someone who could add it. */}
+      {(product.translations.length > 0 || canEdit) && (
+        <Stack spacing={1}>
+          <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+            <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
+              {intl.formatMessage({
+                id: 'products.translations.title',
+                defaultMessage: 'Names in other languages',
+              })}
+            </Typography>
+
+            {canEdit && (
+              <Button
+                variant="text"
+                onClick={openDialog(() => setTranslating(true))}
+              >
+                {intl.formatMessage({
+                  id: 'products.translations.edit',
+                  defaultMessage: 'Edit names',
+                })}
+              </Button>
+            )}
+          </Stack>
+
+          {product.translations.length > 0 ? (
+            product.translations.map((row) => (
+              <Typography key={row.locale} variant="body2">
+                {/* The component, not intl.formatMessage: a value that is an
+                    element comes back as a list, which React would want keys
+                    for. */}
+                <FormattedMessage
+                  id="products.translations.line"
+                  defaultMessage="{language}: {name}"
+                  values={{
+                    language: LANGUAGE_NAMES[row.locale] ?? row.locale,
+                    name: <span lang={row.locale}>{row.name}</span>,
+                  }}
+                />
+              </Typography>
+            ))
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              {intl.formatMessage({
+                id: 'products.translations.none',
+                defaultMessage:
+                  'None yet: every document prints the name above.',
+              })}
+            </Typography>
+          )}
+        </Stack>
       )}
 
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
-          Variants
+          {intl.formatMessage({
+            id: 'products.variants',
+            defaultMessage: 'Variants',
+          })}
         </Typography>
 
         {canEdit && (
           <Button onClick={openDialog(() => setAdding(true))}>
-            Add variant
+            {intl.formatMessage({
+              id: 'products.variant.add',
+              defaultMessage: 'Add variant',
+            })}
           </Button>
         )}
       </Stack>
@@ -182,12 +280,42 @@ export function ProductDetailPage() {
             <TableHead>
               <TableRow>
                 <TableCell padding="checkbox" />
-                <TableCell>SKU</TableCell>
-                <TableCell>Variation</TableCell>
-                <TableCell>Unit</TableCell>
-                <TableCell align="right">Per case</TableCell>
-                <TableCell>Lots</TableCell>
-                <TableCell align="center">Active</TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'products.sku',
+                    defaultMessage: 'SKU',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'products.variationColumn',
+                    defaultMessage: 'Variation',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'products.unit',
+                    defaultMessage: 'Unit',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'products.perCase',
+                    defaultMessage: 'Per case',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'products.lots',
+                    defaultMessage: 'Lots',
+                  })}
+                </TableCell>
+                <TableCell align="center">
+                  {intl.formatMessage({
+                    id: 'common.active',
+                    defaultMessage: 'Active',
+                  })}
+                </TableCell>
                 <TableCell />
               </TableRow>
             </TableHead>
@@ -235,6 +363,13 @@ export function ProductDetailPage() {
         productId={id!}
         onClose={() => setAdding(false)}
         onCreated={reload}
+      />
+
+      <TranslationsDialog
+        open={translating}
+        product={product}
+        onClose={() => setTranslating(false)}
+        onSaved={reload}
       />
 
       <EditVariantDialog

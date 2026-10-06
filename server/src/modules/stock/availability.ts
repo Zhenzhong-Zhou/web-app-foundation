@@ -1,6 +1,7 @@
 import { ConflictException } from '@nestjs/common';
 import { type SQL, sql } from 'drizzle-orm';
 
+import { t } from '../../i18n/translate';
 import type { Tx } from './stock.service';
 
 /** One open sale line's hold on a product (ADR-045). */
@@ -304,9 +305,19 @@ export async function assertTakeable(
    */
   if (check.anything_held && check.too_much) {
     throw new ConflictException(
-      `Only ${check.takeable} ${input.sku} can be taken: ${check.held} is held for ${
-        input.forOrderId ? 'other orders' : 'confirmed orders'
-      }.`,
+      t(
+        {
+          id: 'stock.takeableSkuTakenHeld',
+          defaultMessage:
+            'Only {takeable} {sku} can be taken: {held} is held for {orders}.',
+        },
+        {
+          takeable: check.takeable,
+          sku: input.sku,
+          held: check.held,
+          orders: input.forOrderId ? 'other orders' : 'confirmed orders',
+        },
+      ),
     );
   }
 }

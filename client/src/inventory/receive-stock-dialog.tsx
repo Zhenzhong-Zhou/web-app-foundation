@@ -8,14 +8,17 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
+import { groupedNumberMessage, nameAndCode, toApiDecimal } from '../lib/format';
 import type { Location } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
+import { unitLabel } from '../products/units';
 import { LotFields } from './lot-fields';
 
 const EMPTY = {
@@ -45,7 +48,10 @@ export function ReceiveStockDialog({
   onClose: () => void;
   onReceived: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState({ ...EMPTY, locationId: defaultLocationId });
+  // Set when the quantity is typed with a thousands separator (ADR-054).
+  const [quantityError, setQuantityError] = useState<string | null>(null);
   const { variants, failed: variantsError } = useVariants(open);
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -53,13 +59,19 @@ export function ReceiveStockDialog({
       close();
       await onReceived();
     },
-    { success: 'Stock received' },
+    {
+      success: intl.formatMessage({
+        id: 'inventory.received',
+        defaultMessage: 'Stock received',
+      }),
+    },
   );
 
   const variant = variants.find((item) => item.id === form.variantId);
 
   function close() {
     setForm({ ...EMPTY, locationId: defaultLocationId });
+    setQuantityError(null);
     reset();
     onClose();
   }
@@ -72,15 +84,25 @@ export function ReceiveStockDialog({
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    // The language's decimal comma becomes the point the API takes; a
+    // thousands separator is refused here rather than guessed at (ADR-054).
+    const quantity = toApiDecimal(form.quantity);
+    if (quantity === null) {
+      setQuantityError(groupedNumberMessage());
+      return;
+    }
+    setQuantityError(null);
+
     void submit(() =>
       api('/stock/movements', {
         method: 'POST',
         body: JSON.stringify({
           variantId: form.variantId,
           toLocationId: form.locationId,
-          // Sent as the string the person typed. Number() here would undo the
-          // decision numeric(18, 4) exists to enforce (ADR-025).
-          quantity: form.quantity,
+          // Sent as the string the person typed, with only its decimal
+          // separator made a point. Number() here would undo the decision
+          // numeric(18, 4) exists to enforce (ADR-025).
+          quantity,
           reason: 'receipt',
           // The lot is created with the movement — it arrives printed on the
           // box, and a separate call would leave an orphan whenever this fails.
@@ -104,27 +126,42 @@ export function ReceiveStockDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Receive stock</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'inventory.receive',
+            defaultMessage: 'Receive stock',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
 
             {variantsError && (
-              <FormError message="Could not load the catalogue." />
+              <FormError
+                message={intl.formatMessage({
+                  id: 'inventory.catalogueFailed',
+                  defaultMessage: 'Could not load the catalogue.',
+                })}
+              />
             )}
 
             {!variantsError && !variants.length && (
               <Alert severity="info">
-                No products yet. Add one on the Products screen — stock is
-                counted against a variant, so there has to be something to
-                count.
+                {intl.formatMessage({
+                  id: 'inventory.receive.noProducts',
+                  defaultMessage:
+                    'No products yet. Add one on the Products screen — stock is counted against a variant, so there has to be something to count.',
+                })}
               </Alert>
             )}
 
             <VariantPicker
               id="receive-variant"
-              label="Item"
+              label={intl.formatMessage({
+                id: 'inventory.item',
+                defaultMessage: 'Item',
+              })}
               required
               options={variants}
               value={form.variantId}
@@ -135,7 +172,10 @@ export function ReceiveStockDialog({
 
             <TextField
               id="receive-location"
-              label="Into"
+              label={intl.formatMessage({
+                id: 'inventory.into',
+                defaultMessage: 'Into',
+              })}
               select
               required
               fullWidth
@@ -144,20 +184,24 @@ export function ReceiveStockDialog({
             >
               {locations.map((location) => (
                 <MenuItem key={location.id} value={location.id}>
-                  {location.code
-                    ? `${location.name} (${location.code})`
-                    : location.name}
+                  {nameAndCode(location.name, location.code)}
                 </MenuItem>
               ))}
             </TextField>
 
             <TextField
               id="receive-quantity"
-              label="Quantity"
+              label={intl.formatMessage({
+                id: 'inventory.quantity',
+                defaultMessage: 'Quantity',
+              })}
               required
               fullWidth
               value={form.quantity}
-              onChange={update('quantity')}
+              onChange={(event) => {
+                setQuantityError(null);
+                update('quantity')(event);
+              }}
               /**
                * inputMode rather than type="number". A number input coerces,
                * strips leading zeros, and hands back a value the browser has
@@ -165,10 +209,21 @@ export function ReceiveStockDialog({
                * inputMode gets the numeric keypad on a phone without any of it.
                */
               slotProps={{ htmlInput: { inputMode: 'decimal' } }}
+              error={!!quantityError}
               helperText={
-                variant
-                  ? `In ${variant.unitOfMeasure}. Up to 4 decimal places.`
-                  : 'Up to 4 decimal places.'
+                quantityError ??
+                (variant
+                  ? intl.formatMessage(
+                      {
+                        id: 'inventory.quantity.inUnit',
+                        defaultMessage: 'In {unit}. Up to 4 decimal places.',
+                      },
+                      { unit: unitLabel(variant.unitOfMeasure, intl) },
+                    )
+                  : intl.formatMessage({
+                      id: 'inventory.quantity.help',
+                      defaultMessage: 'Up to 4 decimal places.',
+                    }))
               }
             />
 
@@ -196,8 +251,14 @@ export function ReceiveStockDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Receive"
-          pendingLabel="Receiving…"
+          label={intl.formatMessage({
+            id: 'inventory.receive.action',
+            defaultMessage: 'Receive',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'inventory.receive.pending',
+            defaultMessage: 'Receiving…',
+          })}
         />
       </form>
     </Dialog>

@@ -6,6 +6,7 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -33,6 +34,7 @@ export function NewLicenceDialog({
   onClose: () => void;
   onCreated: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState(EMPTY);
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -40,7 +42,12 @@ export function NewLicenceDialog({
       close();
       await onCreated();
     },
-    { success: 'Licence added' },
+    {
+      success: intl.formatMessage({
+        id: 'licences.added',
+        defaultMessage: 'Licence added',
+      }),
+    },
   );
 
   function close() {
@@ -80,7 +87,12 @@ export function NewLicenceDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Add a licence</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'licences.addTitle',
+            defaultMessage: 'Add a licence',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -88,51 +100,80 @@ export function NewLicenceDialog({
 
             <TextField
               id="licence-number"
-              label="Number"
+              label={intl.formatMessage({
+                id: 'invoices.number',
+                defaultMessage: 'Number',
+              })}
               required
               fullWidth
               value={form.number}
               onChange={update('number')}
-              helperText="As issued — an NPN, a DIN, a notification number."
+              helperText={intl.formatMessage({
+                id: 'licences.number.help',
+                defaultMessage:
+                  'As issued — an NPN, a DIN, a notification number.',
+              })}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
             <TextField
               id="licence-authority"
-              label="Issued by"
+              label={intl.formatMessage({
+                id: 'licences.issuedBy',
+                defaultMessage: 'Issued by',
+              })}
               required
               fullWidth
               value={form.authority}
               onChange={update('authority')}
-              helperText="Health Canada, FDA, TGA."
+              helperText={intl.formatMessage({
+                id: 'licences.issuedBy.help',
+                defaultMessage: 'Health Canada, FDA, TGA.',
+              })}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
             <TextField
               id="licence-issued"
-              label="Issued"
+              label={intl.formatMessage({
+                id: 'licences.issued',
+                defaultMessage: 'Issued',
+              })}
               type="date"
               fullWidth
               value={form.issuedAt}
               onChange={update('issuedAt')}
               slotProps={{ inputLabel: { shrink: true } }}
-              helperText="The date on the notice, if you have it."
+              helperText={intl.formatMessage({
+                id: 'licences.issued.help',
+                defaultMessage: 'The date on the notice, if you have it.',
+              })}
             />
 
             <TextField
               id="licence-expires"
-              label="Valid until"
+              label={intl.formatMessage({
+                id: 'licences.validUntil',
+                defaultMessage: 'Valid until',
+              })}
               type="date"
               fullWidth
               value={form.expiresAt}
               onChange={update('expiresAt')}
               slotProps={{ inputLabel: { shrink: true } }}
-              helperText="Blank for a scheme that does not expire, which includes an NPN."
+              helperText={intl.formatMessage({
+                id: 'licences.validUntil.helpNew',
+                defaultMessage:
+                  'Blank for a scheme that does not expire, which includes an NPN.',
+              })}
             />
 
             <TextField
               id="licence-notes"
-              label="Notes"
+              label={intl.formatMessage({
+                id: 'boms.notes',
+                defaultMessage: 'Notes',
+              })}
               fullWidth
               multiline
               minRows={2}
@@ -146,8 +187,14 @@ export function NewLicenceDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

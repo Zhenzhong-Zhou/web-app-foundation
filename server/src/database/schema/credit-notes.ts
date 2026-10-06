@@ -13,11 +13,20 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { isCurrencyCode, primaryKey } from './columns';
+import {
+  isCurrencyCode,
+  languagesDiffer,
+  primaryKey,
+  secondLanguageNeedsFirst,
+} from './columns';
 import { invoices } from './invoices';
 import { organizations } from './organizations';
 import { partners } from './partners';
-import { billToSnapshot, sellerSnapshot } from './snapshots';
+import {
+  billToSnapshot,
+  requiredLanguageSnapshot,
+  sellerSnapshot,
+} from './snapshots';
 import { users } from './users';
 
 /**
@@ -82,6 +91,12 @@ export const creditNotes = pgTable(
     ...sellerSnapshot(),
     ...billToSnapshot(),
 
+    /**
+     * Copied from the invoice, never resolved again (ADR-054), so an invoice
+     * and its credit note read as one set.
+     */
+    ...requiredLanguageSnapshot(),
+
     createdBy: uuid('created_by')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
@@ -113,6 +128,15 @@ export const creditNotes = pgTable(
       'credit_notes_parties_check',
       sql`${t.sellerName} is not null and ${t.sellerLine1} is not null and ${t.sellerCountry} is not null
           and ${t.billToName} is not null and ${t.billToLine1} is not null and ${t.billToCountry} is not null`,
+    ),
+
+    check(
+      'credit_notes_second_language_needs_first_check',
+      secondLanguageNeedsFirst(t.language, t.secondLanguage),
+    ),
+    check(
+      'credit_notes_languages_differ_check',
+      languagesDiffer(t.language, t.secondLanguage),
     ),
 
     uniqueIndex('credit_notes_org_number_key').on(t.organizationId, t.number),

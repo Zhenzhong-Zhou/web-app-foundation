@@ -8,10 +8,16 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import {
+  formatQuantity,
+  groupedNumberMessage,
+  toApiDecimal,
+} from '../lib/format';
 import type { InvoiceLine, TaxCode } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -33,7 +39,13 @@ export function InvoiceLineDialog({
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
-  const [unitPrice, setUnitPrice] = useState(line?.unitPrice ?? '');
+  const intl = useIntl();
+  // Shown the reader's way, 12,5000 in French, and read back the same.
+  const [unitPrice, setUnitPrice] = useState(
+    line?.unitPrice ? formatQuantity(line.unitPrice) : '',
+  );
+  // Set when the price is typed with a thousands separator (ADR-054).
+  const [priceError, setPriceError] = useState<string | null>(null);
   const [taxCodeId, setTaxCodeId] = useState(line?.taxCodeId ?? '');
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -41,10 +53,16 @@ export function InvoiceLineDialog({
       close();
       await onSaved();
     },
-    { success: 'Line saved' },
+    {
+      success: intl.formatMessage({
+        id: 'orders.lines.saved',
+        defaultMessage: 'Line saved',
+      }),
+    },
   );
 
   function close() {
+    setPriceError(null);
     reset();
     onClose();
   }
@@ -53,11 +71,18 @@ export function InvoiceLineDialog({
     event.preventDefault();
     if (!line) return;
 
+    const price = toApiDecimal(unitPrice);
+    if (price === null) {
+      setPriceError(groupedNumberMessage());
+      return;
+    }
+    setPriceError(null);
+
     void submit(() =>
       api(`/invoices/${invoiceId}/lines/${line.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          unitPrice,
+          unitPrice: price,
           taxCodeId: taxCodeId || undefined,
         }),
       }),
@@ -79,24 +104,51 @@ export function InvoiceLineDialog({
             {error && <FormError message={error} />}
 
             <Typography variant="body2" color="text.secondary">
-              {line?.description} — quantity {line?.quantity}, as shipped.
+              {line &&
+                intl.formatMessage(
+                  {
+                    id: 'invoices.line.asShipped',
+                    defaultMessage:
+                      '{description} — quantity {quantity}, as shipped.',
+                  },
+                  {
+                    description: line.description,
+                    quantity: formatQuantity(line.quantity),
+                  },
+                )}
             </Typography>
 
             <TextField
               id="invoice-line-price"
-              label="Unit price"
+              label={intl.formatMessage({
+                id: 'orders.unitPrice',
+                defaultMessage: 'Unit price',
+              })}
               required
               fullWidth
               value={unitPrice}
-              onChange={(event) => setUnitPrice(event.target.value)}
-              helperText="Defaults to the order's price."
+              onChange={(event) => {
+                setPriceError(null);
+                setUnitPrice(event.target.value);
+              }}
+              error={!!priceError}
+              helperText={
+                priceError ??
+                intl.formatMessage({
+                  id: 'invoices.line.price.help',
+                  defaultMessage: "Defaults to the order's price.",
+                })
+              }
               slotProps={{ htmlInput: { inputMode: 'decimal' } }}
             />
 
             <TextField
               id="invoice-line-tax"
               select
-              label="Tax code"
+              label={intl.formatMessage({
+                id: 'invoices.taxCode',
+                defaultMessage: 'Tax code',
+              })}
               fullWidth
               value={taxCodeId}
               onChange={(event) => setTaxCodeId(event.target.value)}
@@ -113,8 +165,14 @@ export function InvoiceLineDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

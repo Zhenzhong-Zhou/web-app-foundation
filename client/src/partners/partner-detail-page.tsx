@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { type ReactNode, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
@@ -24,6 +25,7 @@ import { PartnerPriceLists } from '../price-lists/partner-price-lists';
 import { AddressDialog } from './address-dialog';
 import { ContactDialog } from './contact-dialog';
 import { EditPartnerDialog } from './edit-partner-dialog';
+import { PartnerDocumentLanguages } from './partner-document-languages';
 
 function formatAddress(address: Address): string {
   return [
@@ -48,6 +50,7 @@ function formatAddress(address: Address): string {
  * demoted default is a harder bug than a second fetch is a cost.
  */
 export function PartnerDetailPage() {
+  const intl = useIntl();
   const { id } = useParams<{ id: string }>();
   const can = useCan();
 
@@ -107,10 +110,26 @@ export function PartnerDetailPage() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        crumbs={[{ label: 'Partners', to: '/partners' }]}
+        crumbs={[
+          {
+            label: intl.formatMessage({
+              id: 'layout.nav.partners',
+              defaultMessage: 'Partners',
+            }),
+            to: '/partners',
+          },
+        ]}
         title={partner.name}
         status={
-          partner.isActive ? undefined : { label: 'Retired', color: 'default' }
+          partner.isActive
+            ? undefined
+            : {
+                label: intl.formatMessage({
+                  id: 'common.retired',
+                  defaultMessage: 'Retired',
+                }),
+                color: 'default',
+              }
         }
         actions={
           <Stack direction="row" spacing={1}>
@@ -120,14 +139,20 @@ export function PartnerDetailPage() {
                 variant="text"
                 onClick={openDialog(() => setEditingPartner(true))}
               >
-                Edit
+                {intl.formatMessage({
+                  id: 'common.edit',
+                  defaultMessage: 'Edit',
+                })}
               </Button>
             )}
           </Stack>
         }
         subtitle={
           [partner.code, partner.taxId].filter(Boolean).join(' · ') ||
-          'No code or tax ID'
+          intl.formatMessage({
+            id: 'partners.noCodeOrTaxId',
+            defaultMessage: 'No code or tax ID',
+          })
         }
       />
 
@@ -142,10 +167,20 @@ export function PartnerDetailPage() {
       )}
 
       <Section
-        title="Addresses"
+        title={intl.formatMessage({
+          id: 'partners.addresses',
+          defaultMessage: 'Addresses',
+        })}
         onAdd={canEdit ? () => setAddingAddress(true) : undefined}
-        addLabel="Add address"
-        empty="No addresses yet. An order needs somewhere to ship to."
+        addLabel={intl.formatMessage({
+          id: 'partners.address.add',
+          defaultMessage: 'Add address',
+        })}
+        empty={intl.formatMessage({
+          id: 'partners.addresses.empty',
+          defaultMessage:
+            'No addresses yet. An order needs somewhere to ship to.',
+        })}
         rows={partner.addresses}
         renderRow={(address) => (
           <Stack
@@ -157,14 +192,49 @@ export function PartnerDetailPage() {
             <Box sx={{ flexGrow: 1, opacity: address.isActive ? 1 : 0.5 }}>
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <Typography variant="subtitle2">
-                  {address.label ?? 'Address'}
+                  {address.label ??
+                    intl.formatMessage({
+                      id: 'partners.address.untitled',
+                      defaultMessage: 'Address',
+                    })}
                 </Typography>
                 {address.isDefault && (
-                  <Chip label="Default" size="small" color="primary" />
+                  <Chip
+                    label={intl.formatMessage({
+                      id: 'partners.address.default',
+                      defaultMessage: 'Default',
+                    })}
+                    size="small"
+                    color="primary"
+                  />
                 )}
-                {address.isBilling && <Chip label="Billing" size="small" />}
-                {address.isShipping && <Chip label="Shipping" size="small" />}
-                {!address.isActive && <Chip label="Retired" size="small" />}
+                {address.isBilling && (
+                  <Chip
+                    label={intl.formatMessage({
+                      id: 'partners.address.billing',
+                      defaultMessage: 'Billing',
+                    })}
+                    size="small"
+                  />
+                )}
+                {address.isShipping && (
+                  <Chip
+                    label={intl.formatMessage({
+                      id: 'partners.address.shipping',
+                      defaultMessage: 'Shipping',
+                    })}
+                    size="small"
+                  />
+                )}
+                {!address.isActive && (
+                  <Chip
+                    label={intl.formatMessage({
+                      id: 'common.retired',
+                      defaultMessage: 'Retired',
+                    })}
+                    size="small"
+                  />
+                )}
               </Stack>
 
               <Typography variant="body2" color="text.secondary">
@@ -179,14 +249,20 @@ export function PartnerDetailPage() {
                   size="small"
                   onClick={openDialog(() => setEditingAddress(address))}
                 >
-                  Edit
+                  {intl.formatMessage({
+                    id: 'common.edit',
+                    defaultMessage: 'Edit',
+                  })}
                 </Button>
                 <Button
                   variant="text"
                   size="small"
                   onClick={() => void retireAddress(address)}
                 >
-                  Retire
+                  {intl.formatMessage({
+                    id: 'partners.retire',
+                    defaultMessage: 'Retire',
+                  })}
                 </Button>
               </Stack>
             )}
@@ -195,10 +271,20 @@ export function PartnerDetailPage() {
       />
 
       <Section
-        title="Contacts"
+        title={intl.formatMessage({
+          id: 'partners.contacts',
+          defaultMessage: 'Contacts',
+        })}
         onAdd={canEdit ? () => setAddingContact(true) : undefined}
-        addLabel="Add contact"
-        empty="No contacts yet. Someone has to answer when an order is late."
+        addLabel={intl.formatMessage({
+          id: 'partners.contact.add',
+          defaultMessage: 'Add contact',
+        })}
+        empty={intl.formatMessage({
+          id: 'partners.contacts.empty',
+          defaultMessage:
+            'No contacts yet. Someone has to answer when an order is late.',
+        })}
         rows={partner.contacts}
         renderRow={(contact) => (
           <Stack
@@ -211,9 +297,24 @@ export function PartnerDetailPage() {
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                 <Typography variant="subtitle2">{contact.name}</Typography>
                 {contact.isPrimary && (
-                  <Chip label="Primary" size="small" color="primary" />
+                  <Chip
+                    label={intl.formatMessage({
+                      id: 'partners.contact.primary',
+                      defaultMessage: 'Primary',
+                    })}
+                    size="small"
+                    color="primary"
+                  />
                 )}
-                {!contact.isActive && <Chip label="Retired" size="small" />}
+                {!contact.isActive && (
+                  <Chip
+                    label={intl.formatMessage({
+                      id: 'common.retired',
+                      defaultMessage: 'Retired',
+                    })}
+                    size="small"
+                  />
+                )}
               </Stack>
 
               <Typography variant="body2" color="text.secondary">
@@ -230,14 +331,20 @@ export function PartnerDetailPage() {
                   size="small"
                   onClick={openDialog(() => setEditingContact(contact))}
                 >
-                  Edit
+                  {intl.formatMessage({
+                    id: 'common.edit',
+                    defaultMessage: 'Edit',
+                  })}
                 </Button>
                 <Button
                   variant="text"
                   size="small"
                   onClick={() => void retireContact(contact)}
                 >
-                  Retire
+                  {intl.formatMessage({
+                    id: 'partners.retire',
+                    defaultMessage: 'Retire',
+                  })}
                 </Button>
               </Stack>
             )}
@@ -256,6 +363,17 @@ export function PartnerDetailPage() {
           onSaved={reload}
         />
       )}
+
+      {/* What this partner's documents print in (ADR-054). Remounted when
+          the saved pair changes, as the price lists above are. */}
+      <PartnerDocumentLanguages
+        key={`${partner.documentLanguage}:${partner.documentSecondLanguage}`}
+        partnerId={partner.id}
+        documentLanguage={partner.documentLanguage}
+        documentSecondLanguage={partner.documentSecondLanguage}
+        readOnly={!canEdit}
+        onSaved={reload}
+      />
 
       <EditPartnerDialog
         key={editingPartner ? partner.id : 'partner-closed'}

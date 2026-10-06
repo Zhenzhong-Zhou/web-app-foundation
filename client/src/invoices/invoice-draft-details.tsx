@@ -1,8 +1,10 @@
 import { Button, MenuItem, Paper, Stack, TextField } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import { BLANK_LINE } from '../lib/format';
 import type { InvoiceDetail, TaxCode } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -20,17 +22,28 @@ export function DraftDetails({
   taxCodes: TaxCode[];
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [dueDate, setDueDate] = useState(invoice.dueDate ?? '');
   const [note, setNote] = useState(invoice.note ?? '');
   const [taxCodeId, setTaxCodeId] = useState('');
 
-  const details = useSubmit(onSaved, { success: 'Invoice saved' });
+  const details = useSubmit(onSaved, {
+    success: intl.formatMessage({
+      id: 'invoices.saved',
+      defaultMessage: 'Invoice saved',
+    }),
+  });
   const tax = useSubmit(
     async () => {
       setTaxCodeId('');
       await onSaved();
     },
-    { success: 'Tax code set on every line' },
+    {
+      success: intl.formatMessage({
+        id: 'invoices.taxCode.applied',
+        defaultMessage: 'Tax code set on every line',
+      }),
+    },
   );
 
   function saveDetails(event: SubmitEvent) {
@@ -64,7 +77,10 @@ export function DraftDetails({
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
                 id="invoice-due-date"
-                label="Due date"
+                label={intl.formatMessage({
+                  id: 'invoices.dueDate',
+                  defaultMessage: 'Due date',
+                })}
                 type="date"
                 value={dueDate}
                 onChange={(event) => setDueDate(event.target.value)}
@@ -73,11 +89,18 @@ export function DraftDetails({
               />
               <TextField
                 id="invoice-note"
-                label="Note on the invoice"
+                label={intl.formatMessage({
+                  id: 'invoices.note',
+                  defaultMessage: 'Note on the invoice',
+                })}
                 fullWidth
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                helperText="Printed for the customer: a PO number, a thank-you."
+                helperText={intl.formatMessage({
+                  id: 'invoices.note.help',
+                  defaultMessage:
+                    'Printed for the customer: a PO number, a thank-you.',
+                })}
                 slotProps={{ htmlInput: { maxLength: 1000 } }}
               />
             </Stack>
@@ -88,7 +111,15 @@ export function DraftDetails({
               disabled={details.submitting}
               sx={{ alignSelf: 'flex-start' }}
             >
-              {details.submitting ? 'Saving…' : 'Save details'}
+              {details.submitting
+                ? intl.formatMessage({
+                    id: 'common.saving',
+                    defaultMessage: 'Saving…',
+                  })
+                : intl.formatMessage({
+                    id: 'invoices.saveDetails',
+                    defaultMessage: 'Save details',
+                  })}
             </Button>
           </Stack>
         </form>
@@ -103,14 +134,20 @@ export function DraftDetails({
           <TextField
             id="invoice-tax-code"
             select
-            label="Tax code for every line"
+            label={intl.formatMessage({
+              id: 'invoices.taxCode.everyLine',
+              defaultMessage: 'Tax code for every line',
+            })}
             value={taxCodeId}
             onChange={(event) => setTaxCodeId(event.target.value)}
             sx={{ minWidth: 260 }}
             helperText={
               taxCodes.length === 0
-                ? 'No tax codes yet — add them in Tax codes.'
-                : ' '
+                ? intl.formatMessage({
+                    id: 'invoices.taxCode.none',
+                    defaultMessage: 'No tax codes yet — add them in Tax codes.',
+                  })
+                : BLANK_LINE
             }
           >
             {taxCodes.map((code) => (
@@ -124,7 +161,10 @@ export function DraftDetails({
             onClick={applyTaxCode}
             disabled={!taxCodeId || tax.submitting}
           >
-            Apply to every line
+            {intl.formatMessage({
+              id: 'invoices.taxCode.apply',
+              defaultMessage: 'Apply to every line',
+            })}
           </Button>
         </Stack>
       </Stack>

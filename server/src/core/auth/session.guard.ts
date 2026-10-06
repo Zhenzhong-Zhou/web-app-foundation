@@ -8,6 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 
+import { t } from '../../i18n/translate';
 import { ALLOW_NO_ORGANIZATION } from './allow-no-organization.decorator';
 import { IS_PUBLIC } from './public.decorator';
 import { getRequestContext } from './request-context';
@@ -37,7 +38,9 @@ export class SessionGuard implements CanActivate {
     // One message for missing, expired, and revoked. Which one it was is
     // information the caller has not earned.
     if (!requestContext) {
-      throw new UnauthorizedException('Authentication required');
+      throw new UnauthorizedException(
+        t({ id: 'auth.required', defaultMessage: 'Authentication required' }),
+      );
     }
 
     if (
@@ -47,7 +50,12 @@ export class SessionGuard implements CanActivate {
       // 403, not 401: the credential is valid, the context is not. Retrying
       // with a fresh login would not help, and telling the client to would
       // send it into a loop.
-      throw new ForbiddenException('You do not belong to any organization');
+      throw new ForbiddenException(
+        t({
+          id: 'auth.noOrganization',
+          defaultMessage: 'You do not belong to any organization',
+        }),
+      );
     }
 
     return true;

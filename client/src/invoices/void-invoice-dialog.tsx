@@ -6,7 +6,8 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { type SubmitEvent, useState } from 'react';
+import { type ReactNode, type SubmitEvent, useState } from 'react';
+import { FormattedMessage, useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -32,6 +33,7 @@ export function VoidInvoiceDialog({
   onClose: () => void;
   onVoided: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [reason, setReason] = useState('');
   const [creditDate, setCreditDate] = useState(todayLocal());
 
@@ -40,7 +42,12 @@ export function VoidInvoiceDialog({
       close();
       await onVoided();
     },
-    { success: 'Invoice voided' },
+    {
+      success: intl.formatMessage({
+        id: 'invoices.voided',
+        defaultMessage: 'Invoice voided',
+      }),
+    },
   );
 
   function close() {
@@ -68,35 +75,54 @@ export function VoidInvoiceDialog({
       maxWidth="xs"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Void {invoice.number}?</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage(
+            { id: 'invoices.void.title', defaultMessage: 'Void {number}?' },
+            { number: invoice.number },
+          )}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2}>
             {error && <FormError message={error} />}
 
             <DialogContentText>
-              A credit note for{' '}
-              <strong>{formatMoney(invoice.total, invoice.currency)}</strong>{' '}
-              reverses it in full. Both stay on record. The shipment can then be
-              invoiced again, or voided itself.
+              <FormattedMessage
+                id="invoices.void.intro"
+                defaultMessage="A credit note for <b>{amount}</b> reverses it in full. Both stay on record. The shipment can then be invoiced again, or voided itself."
+                values={{
+                  amount: formatMoney(invoice.total, invoice.currency),
+                  b: (chunks: ReactNode[]) => <strong>{chunks}</strong>,
+                }}
+              />
             </DialogContentText>
 
             <TextField
               id="void-reason"
-              label="Reason"
+              label={intl.formatMessage({
+                id: 'invoices.void.reason',
+                defaultMessage: 'Reason',
+              })}
               required
               fullWidth
               multiline
               minRows={2}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              helperText="Printed on the credit note, so the customer reads it."
+              helperText={intl.formatMessage({
+                id: 'invoices.void.reason.help',
+                defaultMessage:
+                  'Printed on the credit note, so the customer reads it.',
+              })}
               slotProps={{ htmlInput: { maxLength: 500 } }}
             />
 
             <TextField
               id="credit-date"
-              label="Credit note date"
+              label={intl.formatMessage({
+                id: 'invoices.creditDate',
+                defaultMessage: 'Credit note date',
+              })}
               type="date"
               required
               fullWidth
@@ -110,8 +136,14 @@ export function VoidInvoiceDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Void invoice"
-          pendingLabel="Voiding…"
+          label={intl.formatMessage({
+            id: 'invoices.void.action',
+            defaultMessage: 'Void invoice',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'orders.void.pending',
+            defaultMessage: 'Voiding…',
+          })}
           destructive
         />
       </form>

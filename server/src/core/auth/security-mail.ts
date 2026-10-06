@@ -1,10 +1,14 @@
 import { UAParser } from 'ua-parser-js';
 
+import type { Locale } from '../../common/locales';
 import type { AccountEventAction } from '../../database/schema';
+import { t, type Translatable, translate } from '../../i18n/translate';
 import { escapeHtml } from '../../shared/mail/escape-html';
 import type { Mail } from '../../shared/mail/mail.service';
 
 interface SecurityMailContext {
+  /** The recipient's language, else the request's (ADR-054). */
+  locale: Locale;
   to: string;
   name: string;
   ip?: string;
@@ -22,32 +26,68 @@ interface SecurityMailContext {
  * delete.
  */
 const COPY: Partial<
-  Record<AccountEventAction, { subject: string; happened: string }>
+  Record<AccountEventAction, { subject: Translatable; happened: Translatable }>
 > = {
   'session.created': {
-    subject: 'New sign-in to your account',
-    happened:
-      'Your account was signed in to from a browser it has not used before.',
+    subject: t({
+      id: 'mail.security.signIn.subject',
+      defaultMessage: 'New sign-in to your account',
+    }),
+    happened: t({
+      id: 'mail.security.signIn.happened',
+      defaultMessage:
+        'Your account was signed in to from a browser it has not used before.',
+    }),
   },
   'account.password_changed': {
-    subject: 'Your password was changed',
-    happened: 'The password for your account was changed.',
+    subject: t({
+      id: 'mail.security.changed.subject',
+      defaultMessage: 'Your password was changed',
+    }),
+    happened: t({
+      id: 'mail.security.changed.happened',
+      defaultMessage: 'The password for your account was changed.',
+    }),
   },
   'account.password_reset': {
-    subject: 'Your password was reset',
-    happened:
-      'The password for your account was reset from a link sent to this address, and every device was signed out.',
+    subject: t({
+      id: 'mail.security.reset.subject',
+      defaultMessage: 'Your password was reset',
+    }),
+    happened: t({
+      id: 'mail.security.reset.happened',
+      defaultMessage:
+        'The password for your account was reset from a link sent to this address, and every device was signed out.',
+    }),
   },
 };
 
 /** "Chrome on macOS", or as much of it as the user agent gives up. */
-function describeBrowser(userAgent?: string): string {
-  if (!userAgent) return 'Unknown browser';
+function describeBrowser(
+  userAgent: string | undefined,
+  locale: Locale,
+): string {
+  const unknown = translate(
+    t({
+      id: 'mail.security.unknownBrowser',
+      defaultMessage: 'Unknown browser',
+    }),
+    locale,
+  );
+  if (!userAgent) return unknown;
 
   const { browser, os } = new UAParser(userAgent).getResult();
 
-  if (browser.name && os.name) return `${browser.name} on ${os.name}`;
-  return browser.name ?? os.name ?? 'Unknown browser';
+  if (browser.name && os.name) {
+    return translate(
+      t(
+        { id: 'mail.security.browserOn', defaultMessage: '{browser} on {os}' },
+        { browser: browser.name, os: os.name },
+      ),
+      locale,
+    );
+  }
+  return browser.name ?? os.name ?? unknown;
 }
 
 /**
@@ -68,45 +108,107 @@ export function buildSecurityMail(
   const copy = COPY[action];
   if (!copy) return null;
 
+  // Every sentence in the recipient's language; the English is unchanged.
+  const say = (message: Translatable) => translate(message, context.locale);
+  const when =
+    context.locale === 'en'
+      ? context.at.toUTCString()
+      : new Intl.DateTimeFormat(context.locale, {
+          dateStyle: 'full',
+          timeStyle: 'long',
+          timeZone: 'UTC',
+        }).format(context.at);
+
   const details = [
-    ['When', context.at.toUTCString()],
-    ['Browser', describeBrowser(context.userAgent)],
-    ['IP address', context.ip ?? 'Unknown'],
+    [say(t({ id: 'mail.security.when', defaultMessage: 'When' })), when],
+    [
+      say(t({ id: 'mail.security.browser', defaultMessage: 'Browser' })),
+      describeBrowser(context.userAgent, context.locale),
+    ],
+    [
+      say(t({ id: 'mail.security.ip', defaultMessage: 'IP address' })),
+      context.ip ??
+        say(t({ id: 'mail.security.unknown', defaultMessage: 'Unknown' })),
+    ],
   ];
 
   const reset = `${context.clientUrl}/forgot-password`;
   const sessions = `${context.clientUrl}/account/sessions`;
 
   const text = [
-    `Hi ${context.name},`,
+    say(
+      t(
+        { id: 'mail.hi', defaultMessage: 'Hi {name},' },
+        { name: context.name },
+      ),
+    ),
     '',
-    copy.happened,
+    say(copy.happened),
     '',
     ...details.map(([label, value]) => `${label}: ${value}`),
     '',
-    'If this was you, there is nothing to do.',
+    say(
+      t({
+        id: 'mail.security.wasYou',
+        defaultMessage: 'If this was you, there is nothing to do.',
+      }),
+    ),
     '',
-    `If it was not, reset your password now — that signs out every device: ${reset}`,
-    `Then check which devices are signed in: ${sessions}`,
+    say(
+      t(
+        {
+          id: 'mail.security.notYou',
+          defaultMessage:
+            'If it was not, reset your password now — that signs out every device: {link}',
+        },
+        { link: reset },
+      ),
+    ),
+    say(
+      t(
+        {
+          id: 'mail.security.checkDevices',
+          defaultMessage: 'Then check which devices are signed in: {link}',
+        },
+        { link: sessions },
+      ),
+    ),
     '',
-    'We will never ask for your password by email.',
+    say(
+      t({
+        id: 'mail.security.neverAsk',
+        defaultMessage: 'We will never ask for your password by email.',
+      }),
+    ),
   ].join('\n');
 
   const cell = 'padding:4px 12px 4px 0';
 
   const html = [
-    `<p>Hi ${escapeHtml(context.name)},</p>`,
-    `<p>${copy.happened}</p>`,
+    `<p>${say(t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name: escapeHtml(context.name) }))}</p>`,
+    `<p>${say(copy.happened)}</p>`,
     '<table style="border-collapse:collapse">',
     ...details.map(
       ([label, value]) =>
         `<tr><td style="${cell};color:#666">${label}</td><td style="${cell}">${escapeHtml(value)}</td></tr>`,
     ),
     '</table>',
-    '<p>If this was you, there is nothing to do.</p>',
-    `<p>If it was not, <a href="${reset}">reset your password</a> now — that signs out every device. Then <a href="${sessions}">check which devices are signed in</a>.</p>`,
-    '<p style="color:#666">We will never ask for your password by email.</p>',
+    `<p>${say(t({ id: 'mail.security.wasYou', defaultMessage: 'If this was you, there is nothing to do.' }))}</p>`,
+    `<p>${say(
+      t(
+        {
+          id: 'mail.security.notYouHtml',
+          defaultMessage:
+            'If it was not, {resetLink} now — that signs out every device. Then {sessionsLink}.',
+        },
+        {
+          resetLink: `<a href="${reset}">${say(t({ id: 'mail.security.resetLink', defaultMessage: 'reset your password' }))}</a>`,
+          sessionsLink: `<a href="${sessions}">${say(t({ id: 'mail.security.sessionsLink', defaultMessage: 'check which devices are signed in' }))}</a>`,
+        },
+      ),
+    )}</p>`,
+    `<p style="color:#666">${say(t({ id: 'mail.security.neverAsk', defaultMessage: 'We will never ask for your password by email.' }))}</p>`,
   ].join('\n');
 
-  return { to: context.to, subject: copy.subject, text, html };
+  return { to: context.to, subject: say(copy.subject), text, html };
 }

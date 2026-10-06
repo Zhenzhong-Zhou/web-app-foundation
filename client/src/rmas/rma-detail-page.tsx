@@ -19,6 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
@@ -26,7 +27,7 @@ import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
 import { api } from '../lib/api';
-import { formatDate } from '../lib/format';
+import { formatDate, formatQuantity, NO_VALUE, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
   InvoicePage,
@@ -37,7 +38,7 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { LinkReturnDialog } from './link-return-dialog';
-import { RESOLUTION_LABELS, rmaStatus } from './rma-labels';
+import { resolutionLabel, rmaStatus } from './rma-labels';
 
 /** A numeric(18,4) of nothing always reads '0.0000' (ADR-025). */
 const NOTHING = '0.0000';
@@ -55,6 +56,7 @@ type Confirming = 'close' | 'cancel' | null;
  * naming this RMA, or are linked here if they arrived first.
  */
 export function RmaDetailPage() {
+  const intl = useIntl();
   const { id } = useParams<{ id: string }>();
   const can = useCan();
   const navigate = useNavigate();
@@ -112,7 +114,12 @@ export function RmaDetailPage() {
   const replacementId = useRef<string | null>(null);
   const replacement = useSubmit(
     () => navigate(`/orders/${replacementId.current}`),
-    { success: 'Replacement order raised' },
+    {
+      success: intl.formatMessage({
+        id: 'rmas.replacement.raised',
+        defaultMessage: 'Replacement order raised',
+      }),
+    },
   );
 
   if (!rma) {
@@ -145,23 +152,47 @@ export function RmaDetailPage() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        crumbs={[{ label: 'Returns', to: '/return-authorizations' }]}
+        crumbs={[
+          {
+            label: intl.formatMessage({
+              id: 'layout.nav.returns',
+              defaultMessage: 'Returns',
+            }),
+            to: '/return-authorizations',
+          },
+        ]}
         title={rma.number}
         subtitle={
           <>
-            {rma.partnerName} ·{' '}
+            {rma.partnerName}
+            {SEPARATOR}
             <Link component={RouterLink} to={`/orders/${rma.orderId}`}>
-              {rma.orderReference ? `Order ${rma.orderReference}` : 'Order'}
+              {rma.orderReference
+                ? intl.formatMessage(
+                    {
+                      id: 'invoices.orderReference',
+                      defaultMessage: 'Order {reference}',
+                    },
+                    { reference: rma.orderReference },
+                  )
+                : intl.formatMessage({
+                    id: 'inventory.trace.order',
+                    defaultMessage: 'Order',
+                  })}
             </Link>
             {rma.invoiceId && (
               <>
-                {' · '}
+                {SEPARATOR}
                 <Link component={RouterLink} to={`/invoices/${rma.invoiceId}`}>
                   {rma.invoiceNumber}
                 </Link>
               </>
             )}
-            {` · raised ${formatDate(rma.createdAt)}`}
+            {SEPARATOR}
+            {intl.formatMessage(
+              { id: 'rmas.raisedOn', defaultMessage: 'raised {date}' },
+              { date: formatDate(rma.createdAt) },
+            )}
           </>
         }
         status={status}
@@ -175,7 +206,10 @@ export function RmaDetailPage() {
                 color="error"
                 onClick={openDialog(() => setConfirming('cancel'))}
               >
-                Cancel RMA
+                {intl.formatMessage({
+                  id: 'rmas.cancel',
+                  defaultMessage: 'Cancel RMA',
+                })}
               </Button>
             )}
 
@@ -184,7 +218,10 @@ export function RmaDetailPage() {
                 variant="outlined"
                 onClick={openDialog(() => setConfirming('close'))}
               >
-                Close RMA
+                {intl.formatMessage({
+                  id: 'rmas.close',
+                  defaultMessage: 'Close RMA',
+                })}
               </Button>
             )}
           </>
@@ -197,8 +234,11 @@ export function RmaDetailPage() {
       <Typography>{rma.reason}</Typography>
       {!rma.expectsGoods && (
         <Alert severity="info">
-          The customer was told to keep or destroy the goods, so nothing will be
-          received. Credit follows what is authorized.
+          {intl.formatMessage({
+            id: 'rmas.keepOrDestroy',
+            defaultMessage:
+              'The customer was told to keep or destroy the goods, so nothing will be received. Credit follows what is authorized.',
+          })}
         </Alert>
       )}
       {rma.note && (
@@ -212,24 +252,55 @@ export function RmaDetailPage() {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Item</TableCell>
-                <TableCell>Then</TableCell>
-                <TableCell align="right">Authorized</TableCell>
-                <TableCell align="right">Received</TableCell>
-                <TableCell align="right">Credited</TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'inventory.item',
+                    defaultMessage: 'Item',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'rmas.then',
+                    defaultMessage: 'Then',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'rmas.authorizedQty',
+                    defaultMessage: 'Authorized',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'orders.status.received',
+                    defaultMessage: 'Received',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'rmas.credited',
+                    defaultMessage: 'Credited',
+                  })}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {rma.lines.map((line) => (
                 <TableRow key={line.id}>
                   <TableCell>{line.sku}</TableCell>
-                  <TableCell>{RESOLUTION_LABELS[line.resolution]}</TableCell>
-                  <TableCell align="right">{line.quantity}</TableCell>
+                  <TableCell>{resolutionLabel(line.resolution)}</TableCell>
                   <TableCell align="right">
-                    {rma.expectsGoods ? line.quantityReceived : '—'}
+                    {formatQuantity(line.quantity)}
                   </TableCell>
                   <TableCell align="right">
-                    {line.resolution === 'credit' ? line.quantityCredited : '—'}
+                    {rma.expectsGoods
+                      ? formatQuantity(line.quantityReceived)
+                      : NO_VALUE}
+                  </TableCell>
+                  <TableCell align="right">
+                    {line.resolution === 'credit'
+                      ? formatQuantity(line.quantityCredited)
+                      : NO_VALUE}
                   </TableCell>
                 </TableRow>
               ))}
@@ -245,7 +316,10 @@ export function RmaDetailPage() {
               variant="outlined"
               onClick={openDialog(() => setLinking(true))}
             >
-              Link a return
+              {intl.formatMessage({
+                id: 'rmas.link.action',
+                defaultMessage: 'Link a return',
+              })}
             </Button>
           )}
 
@@ -255,7 +329,15 @@ export function RmaDetailPage() {
               disabled={replacement.submitting}
               onClick={raiseReplacement}
             >
-              {replacement.submitting ? 'Raising…' : 'Raise replacement'}
+              {replacement.submitting
+                ? intl.formatMessage({
+                    id: 'orders.create.raising',
+                    defaultMessage: 'Raising…',
+                  })
+                : intl.formatMessage({
+                    id: 'rmas.replacement.raise',
+                    defaultMessage: 'Raise replacement',
+                  })}
             </Button>
           )}
         </Stack>
@@ -272,7 +354,10 @@ export function RmaDetailPage() {
               component={RouterLink}
               to={`/invoices/${invoice.id}?credit=${rma.id}`}
             >
-              Credit on {invoice.number}
+              {intl.formatMessage(
+                { id: 'rmas.creditOn', defaultMessage: 'Credit on {number}' },
+                { number: invoice.number },
+              )}
             </Button>
           ))}
         </Stack>
@@ -280,8 +365,14 @@ export function RmaDetailPage() {
 
       {open && rma.expectsGoods && (
         <Typography variant="body2" color="text.secondary">
-          Goods come back through Take a return on the order, naming{' '}
-          {rma.number}.
+          {intl.formatMessage(
+            {
+              id: 'rmas.goodsComeBack',
+              defaultMessage:
+                'Goods come back through Take a return on the order, naming {rma}.',
+            },
+            { rma: rma.number },
+          )}
         </Typography>
       )}
 
@@ -320,6 +411,7 @@ function ConfirmDialog({
   onClose: () => void;
   onDone: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
       close();
@@ -327,7 +419,15 @@ function ConfirmDialog({
     },
     {
       success:
-        action === 'cancel' ? `${rmaNumber} cancelled` : `${rmaNumber} closed`,
+        action === 'cancel'
+          ? intl.formatMessage(
+              { id: 'rmas.cancelled', defaultMessage: '{rma} cancelled' },
+              { rma: rmaNumber },
+            )
+          : intl.formatMessage(
+              { id: 'rmas.closed', defaultMessage: '{rma} closed' },
+              { rma: rmaNumber },
+            ),
     },
   );
 
@@ -344,19 +444,38 @@ function ConfirmDialog({
       maxWidth="xs"
     >
       <DialogTitle>
-        {action === 'cancel' ? `Cancel ${rmaNumber}?` : `Close ${rmaNumber}?`}
+        {action === 'cancel'
+          ? intl.formatMessage(
+              { id: 'rmas.cancel.title', defaultMessage: 'Cancel {rma}?' },
+              { rma: rmaNumber },
+            )
+          : intl.formatMessage(
+              { id: 'rmas.close.title', defaultMessage: 'Close {rma}?' },
+              { rma: rmaNumber },
+            )}
       </DialogTitle>
       <DialogContent>
         {error && <FormError message={error} />}
         <DialogContentText>
           {action === 'cancel'
-            ? 'Says it never happened: nothing came back and nothing was credited. It stays on record, marked cancelled.'
-            : 'Says nothing more will happen under it — no more goods back, no more credit. What was received and credited stays as it is.'}
+            ? intl.formatMessage({
+                id: 'rmas.cancel.notice',
+                defaultMessage:
+                  'Says it never happened: nothing came back and nothing was credited. It stays on record, marked cancelled.',
+              })
+            : intl.formatMessage({
+                id: 'rmas.close.notice',
+                defaultMessage:
+                  'Says nothing more will happen under it — no more goods back, no more credit. What was received and credited stays as it is.',
+              })}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
         <Button variant="text" onClick={close}>
-          Keep it open
+          {intl.formatMessage({
+            id: 'orders.close.keepOpen',
+            defaultMessage: 'Keep it open',
+          })}
         </Button>
         <Button
           color={action === 'cancel' ? 'error' : 'primary'}
@@ -369,7 +488,15 @@ function ConfirmDialog({
             )
           }
         >
-          {action === 'cancel' ? 'Cancel it' : 'Close it'}
+          {action === 'cancel'
+            ? intl.formatMessage({
+                id: 'rmas.cancel.confirm',
+                defaultMessage: 'Cancel it',
+              })
+            : intl.formatMessage({
+                id: 'orders.close.confirm',
+                defaultMessage: 'Close it',
+              })}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,3 +1,4 @@
+import { intl } from '../i18n/intl';
 import { ApiError, messageFor } from '../lib/api';
 
 /**
@@ -19,8 +20,18 @@ import { ApiError, messageFor } from '../lib/api';
 export function authMessageFor(caught: unknown): string {
   if (caught instanceof ApiError && caught.status === 429) {
     return caught.retryAfterSeconds
-      ? `Too many attempts. Try again in ${caught.retryAfterSeconds} seconds.`
-      : 'Too many attempts. Try again later.';
+      ? intl().formatMessage(
+          {
+            id: 'auth.tooManyAttemptsFor',
+            defaultMessage:
+              'Too many attempts. Try again in {seconds, plural, one {# second} other {# seconds}}.',
+          },
+          { seconds: caught.retryAfterSeconds },
+        )
+      : intl().formatMessage({
+          id: 'auth.tooManyAttempts',
+          defaultMessage: 'Too many attempts. Try again later.',
+        });
   }
 
   return messageFor(caught);

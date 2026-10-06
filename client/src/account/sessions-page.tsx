@@ -13,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { type IntlShape, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { PageHeader } from '../components/page-header';
@@ -35,13 +36,28 @@ interface SessionSummary {
 }
 
 /** "Chrome on macOS", degrading as far as the agent allows. */
-function describe(session: SessionSummary): string {
-  if (session.browser && session.os)
-    return `${session.browser} on ${session.os}`;
-  return session.browser ?? session.os ?? 'Unknown device';
+function describe(session: SessionSummary, intl: IntlShape): string {
+  if (session.browser && session.os) {
+    return intl.formatMessage(
+      {
+        id: 'account.sessions.browserOnOs',
+        defaultMessage: '{browser} on {os}',
+      },
+      { browser: session.browser, os: session.os },
+    );
+  }
+  return (
+    session.browser ??
+    session.os ??
+    intl.formatMessage({
+      id: 'account.sessions.unknownDevice',
+      defaultMessage: 'Unknown device',
+    })
+  );
 }
 
 export function SessionsPage() {
+  const intl = useIntl();
   const {
     data: sessions,
     error,
@@ -81,7 +97,13 @@ export function SessionsPage() {
             // user needs to see the device they are on. Ending it is
             // sign-out, which clears the cookie in the right order.
             session.current ? (
-              <Chip label="This device" size="small" />
+              <Chip
+                label={intl.formatMessage({
+                  id: 'account.sessions.thisDevice',
+                  defaultMessage: 'This device',
+                })}
+                size="small"
+              />
             ) : (
               <Button
                 variant="text"
@@ -93,20 +115,28 @@ export function SessionsPage() {
                 {revoking === session.id ? (
                   <CircularProgress size={16} />
                 ) : (
-                  'Sign out'
+                  intl.formatMessage({
+                    id: 'layout.signOut',
+                    defaultMessage: 'Sign out',
+                  })
                 )}
               </Button>
             )
           }
         >
           <ListItemText
-            primary={describe(session)}
-            secondary={
-              <>
-                Last active {relativeTime(session.lastSeenAt)}
-                {session.ip ? ` · ${session.ip}` : ''}
-              </>
-            }
+            primary={describe(session, intl)}
+            secondary={intl.formatMessage(
+              {
+                id: 'account.sessions.lastActive',
+                defaultMessage:
+                  'Last active {when}{ip, select, none {} other { · {ip}}}',
+              },
+              {
+                when: relativeTime(session.lastSeenAt),
+                ip: session.ip ?? 'none',
+              },
+            )}
           />
         </ListItem>
       ))}
@@ -116,7 +146,10 @@ export function SessionsPage() {
     // empty array means it disappeared between the request and the render —
     // worth saying rather than showing a blank box.
     <Typography color="text.secondary" sx={{ p: 3 }}>
-      No active sessions. Try refreshing.
+      {intl.formatMessage({
+        id: 'account.sessions.empty',
+        defaultMessage: 'No active sessions. Try refreshing.',
+      })}
     </Typography>
   );
 
@@ -126,18 +159,36 @@ export function SessionsPage() {
     // to be correct.
     <Stack spacing={3}>
       <PageHeader
-        crumbs={[{ label: 'Account', to: '/account' }]}
-        title="Active sessions"
+        crumbs={[
+          {
+            label: intl.formatMessage({
+              id: 'account.title',
+              defaultMessage: 'Account',
+            }),
+            to: '/account',
+          },
+        ]}
+        title={intl.formatMessage({
+          id: 'account.sessions.title',
+          defaultMessage: 'Active sessions',
+        })}
         actions={
           <Button
             variant="text"
             disabled={loading || revoking !== null}
             onClick={() => void reload()}
           >
-            Refresh
+            {intl.formatMessage({
+              id: 'common.refresh',
+              defaultMessage: 'Refresh',
+            })}
           </Button>
         }
-        subtitle="Every device signed in to your account. If you do not recognise one, sign it out and change your password."
+        subtitle={intl.formatMessage({
+          id: 'account.sessions.intro',
+          defaultMessage:
+            'Every device signed in to your account. If you do not recognise one, sign it out and change your password.',
+        })}
       />
 
       {error && <Alert severity="error">{error}</Alert>}
@@ -160,7 +211,10 @@ export function SessionsPage() {
       <RecentActivity />
 
       <Link component={RouterLink} to="/account">
-        Back to account
+        {intl.formatMessage({
+          id: 'account.sessions.backToAccount',
+          defaultMessage: 'Back to account',
+        })}
       </Link>
     </Stack>
   );

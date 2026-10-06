@@ -13,13 +13,14 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
-import { formatDate } from '../lib/format';
+import { formatDate, formatQuantity, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
   OrderReturn,
@@ -28,6 +29,7 @@ import type {
 } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { LotItemsTable } from './lot-items-table';
+import { returnReasonLabel } from './return-reasons';
 
 /**
  * What came back against this order, newest first, lot by lot (ADR-043).
@@ -48,6 +50,7 @@ export function ReturnsList({
   orderId: string;
   refreshKey: number;
 }) {
+  const intl = useIntl();
   const can = useCan();
   const canSeeRmas = can('return_authorizations.view');
   const canLink = can('return_authorizations.update');
@@ -88,7 +91,10 @@ export function ReturnsList({
           setError(
             caught instanceof ApiError
               ? caught.message
-              : 'Could not load returns.',
+              : intl.formatMessage({
+                  id: 'orders.returns.loadFailed',
+                  defaultMessage: 'Could not load returns.',
+                }),
           );
         }
       });
@@ -96,7 +102,7 @@ export function ReturnsList({
     return () => {
       ignore = true;
     };
-  }, [orderId, refreshKey, linked, canSeeRmas]);
+  }, [orderId, refreshKey, linked, canSeeRmas, intl]);
 
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!returns?.length) return null;
@@ -106,7 +112,10 @@ export function ReturnsList({
   return (
     <Stack spacing={1}>
       <Typography variant="h6" component="h2">
-        Returns
+        {intl.formatMessage({
+          id: 'layout.nav.returns',
+          defaultMessage: 'Returns',
+        })}
       </Typography>
 
       {returns.map((entry) => {
@@ -116,8 +125,12 @@ export function ReturnsList({
           <Paper key={entry.id} variant="outlined" sx={{ p: 2 }}>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
               <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
-                {formatDate(entry.createdAt)}
-                {entry.reason ? ` · ${entry.reason}` : ''}
+                {[
+                  formatDate(entry.createdAt),
+                  entry.reason && returnReasonLabel(entry.reason, intl),
+                ]
+                  .filter(Boolean)
+                  .join(SEPARATOR)}
               </Typography>
 
               {rma && (
@@ -126,7 +139,13 @@ export function ReturnsList({
                   to={`/return-authorizations/${rma.id}`}
                   variant="body2"
                 >
-                  Against {rma.number}
+                  {intl.formatMessage(
+                    {
+                      id: 'orders.returns.against',
+                      defaultMessage: 'Against {rma}',
+                    },
+                    { rma: rma.number },
+                  )}
                 </Link>
               )}
 
@@ -138,7 +157,10 @@ export function ReturnsList({
                     size="small"
                     onClick={openDialog(() => setLinking(entry))}
                   >
-                    Link to RMA
+                    {intl.formatMessage({
+                      id: 'orders.returns.linkToRma',
+                      defaultMessage: 'Link to RMA',
+                    })}
                   </Button>
                 )}
             </Stack>
@@ -180,6 +202,7 @@ function LinkToRmaDialog({
   onClose: () => void;
   onLinked: () => void;
 }) {
+  const intl = useIntl();
   const [rmaId, setRmaId] = useState(rmas.length === 1 ? rmas[0].id : '');
   const chosen = rmas.find((rma) => rma.id === rmaId);
 
@@ -188,7 +211,17 @@ function LinkToRmaDialog({
       close();
       onLinked();
     },
-    { success: chosen ? `Return counted against ${chosen.number}` : undefined },
+    {
+      success: chosen
+        ? intl.formatMessage(
+            {
+              id: 'orders.returns.counted',
+              defaultMessage: 'Return counted against {rma}',
+            },
+            { rma: chosen.number },
+          )
+        : undefined,
+    },
   );
 
   function close() {
@@ -216,7 +249,12 @@ function LinkToRmaDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Link this return to an RMA</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'orders.returns.linkTitle',
+            defaultMessage: 'Link this return to an RMA',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2}>
@@ -224,17 +262,38 @@ function LinkToRmaDialog({
 
             <DialogContentText>
               {entry
-                ? `Received ${formatDate(entry.createdAt)}: ${entry.items
-                    .map((item) => `${item.sku} ${item.quantity}`)
-                    .join(', ')}. `
-                : ''}
-              A return is counted against one RMA, once.
+                ? intl.formatMessage(
+                    {
+                      id: 'orders.returns.linkIntro',
+                      defaultMessage:
+                        'Received {date}: {items}. A return is counted against one RMA, once.',
+                    },
+                    {
+                      date: formatDate(entry.createdAt),
+                      // "A, B, C" in English and French, "A、B、C" in Chinese.
+                      items: intl.formatList(
+                        entry.items.map(
+                          (item) =>
+                            `${item.sku} ${formatQuantity(item.quantity)}`,
+                        ),
+                        { type: 'conjunction', style: 'narrow' },
+                      ),
+                    },
+                  )
+                : intl.formatMessage({
+                    id: 'orders.returns.onceOnly',
+                    defaultMessage:
+                      'A return is counted against one RMA, once.',
+                  })}
             </DialogContentText>
 
             <TextField
               id="link-to-rma"
               select
-              label="RMA"
+              label={intl.formatMessage({
+                id: 'orders.returns.rma',
+                defaultMessage: 'RMA',
+              })}
               required
               fullWidth
               value={rmaId}
@@ -242,7 +301,7 @@ function LinkToRmaDialog({
             >
               {rmas.map((rma) => (
                 <MenuItem key={rma.id} value={rma.id}>
-                  {rma.number} — {rma.reason}
+                  {[rma.number, rma.reason].join(' — ')}
                 </MenuItem>
               ))}
             </TextField>
@@ -252,8 +311,14 @@ function LinkToRmaDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Link"
-          pendingLabel="Linking…"
+          label={intl.formatMessage({
+            id: 'orders.returns.link',
+            defaultMessage: 'Link',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'orders.returns.linking',
+            defaultMessage: 'Linking…',
+          })}
           disabled={!rmaId}
         />
       </form>

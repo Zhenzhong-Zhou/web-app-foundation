@@ -8,6 +8,7 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -24,6 +25,7 @@ export function EditPartnerDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState({
     name: partner?.name ?? '',
     code: partner?.code ?? '',
@@ -37,7 +39,12 @@ export function EditPartnerDialog({
       close();
       await onSaved();
     },
-    { success: 'Partner saved' },
+    {
+      success: intl.formatMessage({
+        id: 'partners.saved',
+        defaultMessage: 'Partner saved',
+      }),
+    },
   );
 
   function close() {
@@ -87,7 +94,12 @@ export function EditPartnerDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Edit {partner?.name}</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage(
+            { id: 'partners.edit.title', defaultMessage: 'Edit {name}' },
+            { name: partner?.name },
+          )}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -95,7 +107,10 @@ export function EditPartnerDialog({
 
             <TextField
               id="edit-partner-name"
-              label="Name"
+              label={intl.formatMessage({
+                id: 'common.name',
+                defaultMessage: 'Name',
+              })}
               required
               fullWidth
               value={form.name}
@@ -105,7 +120,10 @@ export function EditPartnerDialog({
 
             <TextField
               id="edit-partner-code"
-              label="Code"
+              label={intl.formatMessage({
+                id: 'partners.code',
+                defaultMessage: 'Code',
+              })}
               fullWidth
               value={form.code}
               onChange={update('code')}
@@ -114,7 +132,10 @@ export function EditPartnerDialog({
 
             <TextField
               id="edit-partner-tax-id"
-              label="Tax ID"
+              label={intl.formatMessage({
+                id: 'partners.taxId',
+                defaultMessage: 'Tax ID',
+              })}
               fullWidth
               value={form.taxId}
               onChange={update('taxId')}
@@ -123,7 +144,10 @@ export function EditPartnerDialog({
 
             <TextField
               id="edit-partner-notes"
-              label="Notes"
+              label={intl.formatMessage({
+                id: 'common.notes',
+                defaultMessage: 'Notes',
+              })}
               fullWidth
               multiline
               minRows={3}
@@ -149,7 +173,10 @@ export function EditPartnerDialog({
               // is history that cannot be given a hole in it. Turning this off
               // keeps the partner readable everywhere it is already referenced
               // and takes it out of the order form's picker.
-              label="In use"
+              label={intl.formatMessage({
+                id: 'partners.inUse',
+                defaultMessage: 'In use',
+              })}
             />
           </Stack>
         </DialogContent>
@@ -157,8 +184,14 @@ export function EditPartnerDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

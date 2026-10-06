@@ -8,11 +8,12 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { formatDate } from '../lib/format';
+import { formatDate, SEPARATOR } from '../lib/format';
 import type { Shipment } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -42,6 +43,7 @@ export function VoidShipmentDialog({
   onClose: () => void;
   onVoided: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [reason, setReason] = useState('');
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -49,7 +51,12 @@ export function VoidShipmentDialog({
       close();
       await onVoided();
     },
-    { success: 'Shipment voided' },
+    {
+      success: intl.formatMessage({
+        id: 'orders.void.done',
+        defaultMessage: 'Shipment voided',
+      }),
+    },
   );
 
   function close() {
@@ -78,7 +85,12 @@ export function VoidShipmentDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Void this shipment</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'orders.void.title',
+            defaultMessage: 'Void this shipment',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -86,36 +98,57 @@ export function VoidShipmentDialog({
 
             {shipment && (
               <Typography variant="body2">
-                Recorded {formatDate(shipment.createdAt)}
-                {shipment.carrier ? ` · ${shipment.carrier}` : ''}
-                {shipment.trackingNumber ? ` · ${shipment.trackingNumber}` : ''}
+                {[
+                  intl.formatMessage(
+                    {
+                      id: 'orders.void.recorded',
+                      defaultMessage: 'Recorded {date}',
+                    },
+                    { date: formatDate(shipment.createdAt) },
+                  ),
+                  shipment.carrier,
+                  shipment.trackingNumber,
+                ]
+                  .filter(Boolean)
+                  .join(SEPARATOR)}
               </Typography>
             )}
 
             <Alert severity="warning">
-              Only for a box that has not left. Everything on it goes back where
-              it came from and the order can ship again. The shipment stays on
-              the order, struck through, with your reason. If the box did leave
-              and came back, take a return instead.
+              {intl.formatMessage({
+                id: 'orders.void.warning',
+                defaultMessage:
+                  'Only for a box that has not left. Everything on it goes back where it came from and the order can ship again. The shipment stays on the order, struck through, with your reason. If the box did leave and came back, take a return instead.',
+              })}
             </Alert>
 
             {orderClosed && (
               <Alert severity="info">
-                This order is closed. Voiding reopens it, since what it was
-                closed on never left.
+                {intl.formatMessage({
+                  id: 'orders.void.reopens',
+                  defaultMessage:
+                    'This order is closed. Voiding reopens it, since what it was closed on never left.',
+                })}
               </Alert>
             )}
 
             <TextField
               id="void-shipment-reason"
-              label="Why"
+              label={intl.formatMessage({
+                id: 'inventory.why',
+                defaultMessage: 'Why',
+              })}
               required
               fullWidth
               multiline
               minRows={2}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              helperText="Customer cancelled before pickup, recorded on the wrong order, clicked too early."
+              helperText={intl.formatMessage({
+                id: 'orders.void.why.help',
+                defaultMessage:
+                  'Customer cancelled before pickup, recorded on the wrong order, clicked too early.',
+              })}
               slotProps={{ htmlInput: { maxLength: 500 } }}
             />
           </Stack>
@@ -124,10 +157,19 @@ export function VoidShipmentDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Void shipment"
-          pendingLabel="Voiding…"
+          label={intl.formatMessage({
+            id: 'orders.void.action',
+            defaultMessage: 'Void shipment',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'orders.void.pending',
+            defaultMessage: 'Voiding…',
+          })}
           destructive
-          cancelLabel="Keep it"
+          cancelLabel={intl.formatMessage({
+            id: 'orders.void.keep',
+            defaultMessage: 'Keep it',
+          })}
         />
       </form>
     </Dialog>

@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 
+import { t } from '../../i18n/translate';
 import { AccountService } from './account.service';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { CurrentUser } from './current-user.decorator';
@@ -39,7 +40,7 @@ export class AccountController {
     @CurrentUser() context: RequestContext,
     @Body() dto: UpdateProfileDto,
   ): Promise<void> {
-    await this.account.updateProfile(context, dto.name);
+    await this.account.updateProfile(context, dto);
   }
 
   /**
@@ -84,6 +85,12 @@ export class AccountController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     const revoked = await this.account.revokeSession(context, id);
-    if (!revoked) throw new NotFoundException('No such session');
+    if (!revoked)
+      throw new NotFoundException(
+        t({
+          id: 'account.sessions.notFound',
+          defaultMessage: 'No such session',
+        }),
+      );
   }
 }

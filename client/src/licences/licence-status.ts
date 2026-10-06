@@ -1,12 +1,30 @@
+import { defineMessages } from 'react-intl';
+
+import { intl } from '../i18n/intl';
 import type { ProductLicence } from '../lib/types';
 
-/** The same UTC reading as formatDay, kept local to avoid a cycle. */
-const DAY = new Intl.DateTimeFormat(undefined, {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-  timeZone: 'UTC',
+const WORDS = defineMessages({
+  withdrawn: { id: 'licences.status.withdrawn', defaultMessage: 'Withdrawn' },
+  current: { id: 'licences.status.current', defaultMessage: 'Current' },
+  expired: { id: 'licences.status.expired', defaultMessage: 'Expired' },
+  expiresToday: {
+    id: 'licences.status.expiresToday',
+    defaultMessage: 'Expires today',
+  },
 });
+
+/**
+ * The same UTC reading as formatDay, in the reader's language (ADR-054),
+ * through the shared intl object rather than lib/format, to avoid a cycle.
+ */
+function day(value: string): string {
+  return intl().formatDate(new Date(value), {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
 
 /** How long before an expiry is worth saying out loud. */
 const SOON_DAYS = 60;
@@ -32,36 +50,70 @@ export interface LicenceStatus {
  */
 export function licenceStatus(licence: ProductLicence): LicenceStatus {
   if (!licence.isActive) {
-    return { label: 'Withdrawn', usable: false, tone: 'default' };
+    return {
+      label: intl().formatMessage(WORDS.withdrawn),
+      usable: false,
+      tone: 'default',
+    };
   }
 
   // Issued from a future date: a renewal or a transfer that takes effect at
   // the start of a period. Recordable now, not usable until then.
   if (licence.issuedAt && daysUntil(licence.issuedAt) > 0) {
     return {
-      label: `In force from ${DAY.format(new Date(licence.issuedAt))}`,
+      label: intl().formatMessage(
+        {
+          id: 'licences.status.inForceFrom',
+          defaultMessage: 'In force from {day}',
+        },
+        { day: day(licence.issuedAt) },
+      ),
       usable: false,
       tone: 'warning',
     };
   }
 
   if (!licence.expiresAt) {
-    return { label: 'Current', usable: true, tone: 'success' };
+    return {
+      label: intl().formatMessage(WORDS.current),
+      usable: true,
+      tone: 'success',
+    };
   }
 
   const days = daysUntil(licence.expiresAt);
 
-  if (days < 0) return { label: 'Expired', usable: false, tone: 'default' };
+  if (days < 0) {
+    return {
+      label: intl().formatMessage(WORDS.expired),
+      usable: false,
+      tone: 'default',
+    };
+  }
 
   if (days <= SOON_DAYS) {
     return {
-      label: days === 0 ? 'Expires today' : `Expires in ${days} days`,
+      label:
+        days === 0
+          ? intl().formatMessage(WORDS.expiresToday)
+          : intl().formatMessage(
+              {
+                id: 'licences.status.expiresIn',
+                defaultMessage:
+                  'Expires in {days, plural, one {# day} other {# days}}',
+              },
+              { days },
+            ),
       usable: true,
       tone: 'warning',
     };
   }
 
-  return { label: 'Current', usable: true, tone: 'success' };
+  return {
+    label: intl().formatMessage(WORDS.current),
+    usable: true,
+    tone: 'success',
+  };
 }
 
 /** Days from today's UTC day; `new Date('2026-10-10')` is UTC midnight. */

@@ -9,6 +9,7 @@ import { and, asc, eq } from 'drizzle-orm';
 import type { Transaction } from '../../database/database.module';
 import { addresses } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import type { CreateAddressDto } from './dto/create-address.dto';
 import type { UpdateAddressDto } from './dto/update-address.dto';
 import { PartnersService } from './partners.service';
@@ -120,7 +121,11 @@ export class PartnerAddressesService {
       // the default is a decision, and guessing it is how a partner ends up
       // shipping to a closed warehouse.
       throw new BadRequestException(
-        'Make another address the default before retiring this one',
+        t({
+          id: 'partners.makeAnotherAddressDefault',
+          defaultMessage:
+            'Make another address the default before retiring this one',
+        }),
       );
     }
 
@@ -144,7 +149,10 @@ export class PartnerAddressesService {
       and(eq(addresses.id, addressId), eq(addresses.partnerId, partnerId)),
     );
 
-    if (!address) throw new NotFoundException('No such address');
+    if (!address)
+      throw new NotFoundException(
+        t({ id: 'partners.suchAddress', defaultMessage: 'No such address' }),
+      );
 
     return address;
   }

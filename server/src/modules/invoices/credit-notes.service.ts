@@ -16,13 +16,14 @@ import {
   invoices,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { computeCredit } from './credit-amounts';
 import { takeNumber } from './document-numbers';
 import type {
   CreditInvoiceDto,
   PreviewCreditDto,
 } from './dto/credit-invoice.dto';
-import { partiesOf, stored } from './issued-invoice';
+import { languagesOf, partiesOf, stored } from './issued-invoice';
 
 type Invoice = typeof invoices.$inferSelect;
 
@@ -85,7 +86,14 @@ export class CreditNotesService {
         // Calendar days as YYYY-MM-DD compare correctly as strings.
         if (input.creditDate < issuedOn) {
           throw new BadRequestException(
-            `A credit note cannot be dated before the invoice it credits (${issuedOn})`,
+            t(
+              {
+                id: 'invoices.creditNoteDatedBefore',
+                defaultMessage:
+                  'A credit note cannot be dated before the invoice it credits ({issuedOn})',
+              },
+              { issuedOn },
+            ),
           );
         }
 
@@ -115,6 +123,7 @@ export class CreditNotesService {
             taxTotal: amounts.taxTotal,
             total: amounts.total,
             ...partiesOf(invoice),
+            ...languagesOf(invoice),
             createdBy: actorId,
           })
           .returning();
@@ -127,6 +136,7 @@ export class CreditNotesService {
             returnAuthorizationLineId: line.returnAuthorizationLineId,
             sku: line.sku,
             description: line.description,
+            secondDescription: line.secondDescription,
             quantity: line.quantity,
             unitPrice: line.unitPrice,
             taxCodeName: line.taxCodeName,
@@ -185,17 +195,31 @@ export class CreditNotesService {
 
     const [invoice] = lock ? await query.for('update') : await query;
 
-    if (!invoice) throw new NotFoundException('No such invoice');
+    if (!invoice)
+      throw new NotFoundException(
+        t({ id: 'invoices.suchInvoice', defaultMessage: 'No such invoice' }),
+      );
 
     if (invoice.status === 'draft') {
       throw new ConflictException(
-        'A draft owes nothing yet, so nothing on it can be credited — edit it instead',
+        t({
+          id: 'invoices.draftOwesNothingYet',
+          defaultMessage:
+            'A draft owes nothing yet, so nothing on it can be credited — edit it instead',
+        }),
       );
     }
 
     if (invoice.status === 'voided') {
       throw new ConflictException(
-        `${invoice.number} was voided — it was credited in full already`,
+        t(
+          {
+            id: 'invoices.numberWasVoidedWas',
+            defaultMessage:
+              '{number} was voided — it was credited in full already',
+          },
+          { number: invoice.number },
+        ),
       );
     }
 

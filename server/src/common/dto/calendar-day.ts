@@ -2,6 +2,8 @@ import { applyDecorators, Logger } from '@nestjs/common';
 import { Transform } from 'class-transformer';
 import { IsISO8601, IsString, Matches } from 'class-validator';
 
+import { defineMessage, rule } from '../../i18n/validation';
+
 /** How strictly a calendar day is read from a request (ADR-052). */
 export const CALENDAR_DAY_INPUTS = ['strict', 'lenient'] as const;
 
@@ -77,7 +79,22 @@ export const IsCalendarDay = () =>
     Transform(acceptUtcMidnight),
     IsString(),
     Matches(/^\d{4}-\d{2}-\d{2}$/, {
-      message: '$property must be a calendar day, YYYY-MM-DD',
+      message: rule(
+        defineMessage({
+          id: 'validation.calendarDay',
+          defaultMessage: '{property} must be a calendar day, YYYY-MM-DD',
+        }),
+      ),
     }),
-    IsISO8601({ strict: true }, { message: '$property must be a real date' }),
+    IsISO8601(
+      { strict: true },
+      {
+        message: rule(
+          defineMessage({
+            id: 'validation.realDate',
+            defaultMessage: '{property} must be a real date',
+          }),
+        ),
+      },
+    ),
   );

@@ -1,6 +1,8 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
+import { useLanguage } from '../i18n/use-language';
 import { api, ApiError } from '../lib/api';
+import { isLocale } from '../lib/locales';
 import { AuthContext, type CurrentSession } from './auth-context';
 
 interface Resolved {
@@ -67,6 +69,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ignore = true;
     };
   }, []);
+
+  /**
+   * The account's language follows the person to this device (ADR-054):
+   * once the session says what it is, the screens switch to it and this
+   * device remembers it, so signing out leaves the sign-in page in it too.
+   * Null leaves this device's choice, or the browser's, as it was. A tag
+   * this client does not know is ignored rather than trusted.
+   */
+  const { setLocale } = useLanguage();
+  const accountLocale = state.session?.user.locale;
+
+  useEffect(() => {
+    if (isLocale(accountLocale)) setLocale(accountLocale);
+  }, [accountLocale, setLocale]);
 
   return (
     <AuthContext.Provider value={{ ...state, refresh }}>

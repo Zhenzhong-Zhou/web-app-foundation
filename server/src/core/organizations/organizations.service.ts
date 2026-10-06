@@ -12,8 +12,10 @@ import {
   stockValuations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { assertListAssignable } from '../../modules/price-lists/list-price';
 import { recordPrevious } from '../audit/audit-context';
+import { assertLanguagePair } from './document-languages';
 import type { OrganizationAddressDto } from './dto/organization-address.dto';
 import type { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { registeredAddress } from './registered-address';
@@ -46,11 +48,20 @@ export class OrganizationsService {
           licenceNotInForcePolicy: organizations.licenceNotInForcePolicy,
           licenceExpiredPolicy: organizations.licenceExpiredPolicy,
           licenceRequired: organizations.licenceRequired,
+          documentLanguage: organizations.documentLanguage,
+          documentSecondLanguage: organizations.documentSecondLanguage,
+          requiredNameLanguages: organizations.requiredNameLanguages,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
 
-      if (!organization) throw new NotFoundException('No such organization');
+      if (!organization)
+        throw new NotFoundException(
+          t({
+            id: 'organizations.notFound',
+            defaultMessage: 'No such organization',
+          }),
+        );
 
       const address = await registeredAddress(tx, organizationId);
 
@@ -68,11 +79,29 @@ export class OrganizationsService {
           licenceNotInForcePolicy: organizations.licenceNotInForcePolicy,
           licenceExpiredPolicy: organizations.licenceExpiredPolicy,
           licenceRequired: organizations.licenceRequired,
+          documentLanguage: organizations.documentLanguage,
+          documentSecondLanguage: organizations.documentSecondLanguage,
+          requiredNameLanguages: organizations.requiredNameLanguages,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
 
-      if (!existing) throw new NotFoundException('No such organization');
+      if (!existing)
+        throw new NotFoundException(
+          t({
+            id: 'organizations.notFound',
+            defaultMessage: 'No such organization',
+          }),
+        );
+
+      // The pair as it will stand, so one side sent alone is checked against
+      // the other as stored (ADR-054).
+      assertLanguagePair(
+        input.documentLanguage ?? existing.documentLanguage,
+        input.documentSecondLanguage !== undefined
+          ? input.documentSecondLanguage
+          : existing.documentSecondLanguage,
+      );
 
       /**
        * The licence policy included: loosening it is the change an auditor
@@ -86,6 +115,9 @@ export class OrganizationsService {
         licenceNotInForcePolicy: existing.licenceNotInForcePolicy,
         licenceExpiredPolicy: existing.licenceExpiredPolicy,
         licenceRequired: existing.licenceRequired,
+        documentLanguage: existing.documentLanguage,
+        documentSecondLanguage: existing.documentSecondLanguage,
+        requiredNameLanguages: existing.requiredNameLanguages,
       });
 
       if (input.defaultSalePriceListId) {
@@ -121,7 +153,14 @@ export class OrganizationsService {
 
         if (valued) {
           throw new ConflictException(
-            `Stock is already valued in ${existing.baseCurrency}, so the base currency cannot change`,
+            t(
+              {
+                id: 'organizations.baseCurrencyFixed',
+                defaultMessage:
+                  'Stock is already valued in {baseCurrency}, so the base currency cannot change',
+              },
+              { baseCurrency: existing.baseCurrency },
+            ),
           );
         }
       }
@@ -148,6 +187,15 @@ export class OrganizationsService {
           : {}),
         ...(input.licenceRequired !== undefined
           ? { licenceRequired: input.licenceRequired }
+          : {}),
+        ...(input.documentLanguage !== undefined
+          ? { documentLanguage: input.documentLanguage }
+          : {}),
+        ...(input.documentSecondLanguage !== undefined
+          ? { documentSecondLanguage: input.documentSecondLanguage }
+          : {}),
+        ...(input.requiredNameLanguages !== undefined
+          ? { requiredNameLanguages: input.requiredNameLanguages }
           : {}),
       };
 

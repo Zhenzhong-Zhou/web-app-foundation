@@ -15,6 +15,7 @@ import {
   stockMovements,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { StockService } from '../stock/stock.service';
 import type { VoidShipmentDto } from './dto/void-shipment.dto';
 import { loadOrder } from './load-order';
@@ -83,7 +84,12 @@ export class ShipmentVoidsService {
         .for('update');
 
       if (!shipment) {
-        throw new NotFoundException('No such shipment on this order');
+        throw new NotFoundException(
+          t({
+            id: 'orders.suchShipmentOrder',
+            defaultMessage: 'No such shipment on this order',
+          }),
+        );
       }
 
       /**
@@ -107,8 +113,19 @@ export class ShipmentVoidsService {
       if (standing) {
         throw new ConflictException(
           standing.number
-            ? `This shipment is billed on ${standing.number} — void the invoice first`
-            : 'This shipment has a draft invoice — delete it first',
+            ? t(
+                {
+                  id: 'orders.void.billed',
+                  defaultMessage:
+                    'This shipment is billed on {number} — void the invoice first',
+                },
+                { number: standing.number },
+              )
+            : t({
+                id: 'orders.void.draftInvoice',
+                defaultMessage:
+                  'This shipment has a draft invoice — delete it first',
+              }),
         );
       }
 
@@ -118,12 +135,23 @@ export class ShipmentVoidsService {
        */
       if (order.status !== 'confirmed' && order.status !== 'fulfilled') {
         throw new ConflictException(
-          `A ${order.status} order has no shipments to void`,
+          t(
+            {
+              id: 'orders.statusOrderShipmentsVoid',
+              defaultMessage: 'A {status} order has no shipments to void',
+            },
+            { status: order.status },
+          ),
         );
       }
 
       if (shipment.voidedAt) {
-        throw new ConflictException('That shipment has already been voided');
+        throw new ConflictException(
+          t({
+            id: 'orders.shipmentVoided',
+            defaultMessage: 'That shipment has already been voided',
+          }),
+        );
       }
 
       /**
@@ -183,7 +211,14 @@ export class ShipmentVoidsService {
 
       if (returned) {
         throw new ConflictException(
-          `${returned.sku} lot ${returned.code} from this shipment has already been returned — it did leave, so the shipment cannot be voided`,
+          t(
+            {
+              id: 'orders.skuLotCodeShipment',
+              defaultMessage:
+                '{sku} lot {code} from this shipment has already been returned — it did leave, so the shipment cannot be voided',
+            },
+            { sku: returned.sku, code: returned.code },
+          ),
         );
       }
 
@@ -248,7 +283,11 @@ export class ShipmentVoidsService {
           isCheckViolation(error, 'order_lines_returned_within_fulfilled_check')
         ) {
           throw new ConflictException(
-            'Part of this shipment has already been returned — it did leave, so the shipment cannot be voided',
+            t({
+              id: 'orders.partShipmentReturnedDid',
+              defaultMessage:
+                'Part of this shipment has already been returned — it did leave, so the shipment cannot be voided',
+            }),
           );
         }
         throw error;

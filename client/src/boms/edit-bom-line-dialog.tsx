@@ -8,10 +8,16 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import {
+  formatQuantity,
+  groupedNumberMessage,
+  toApiDecimal,
+} from '../lib/format';
 import type { BomLine } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -41,7 +47,13 @@ export function EditBomLineDialog({
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
-  const [quantity, setQuantity] = useState(line?.quantity ?? '');
+  const intl = useIntl();
+  // Shown the reader's way, 2,5000 in French, and read back the same.
+  const [quantity, setQuantity] = useState(
+    line ? formatQuantity(line.quantity) : '',
+  );
+  // Set when the quantity is typed with a thousands separator (ADR-054).
+  const [quantityError, setQuantityError] = useState<string | null>(null);
   const [notes, setNotes] = useState(line?.notes ?? '');
   const [external, setExternal] = useState(line?.supplyType === 'external');
 
@@ -50,10 +62,16 @@ export function EditBomLineDialog({
       close();
       await onSaved();
     },
-    { success: 'Component saved' },
+    {
+      success: intl.formatMessage({
+        id: 'boms.line.saved',
+        defaultMessage: 'Component saved',
+      }),
+    },
   );
 
   function close() {
+    setQuantityError(null);
     reset();
     onClose();
   }
@@ -62,11 +80,18 @@ export function EditBomLineDialog({
     event.preventDefault();
     if (!bomId || !line) return;
 
+    const amount = toApiDecimal(quantity);
+    if (amount === null) {
+      setQuantityError(groupedNumberMessage());
+      return;
+    }
+    setQuantityError(null);
+
     void submit(() =>
       api(`/boms/${bomId}/lines/${line.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          quantity,
+          quantity: amount,
           supplyType: external ? 'external' : 'stocked',
           notes: notes || undefined,
         }),
@@ -82,7 +107,12 @@ export function EditBomLineDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Edit component</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'boms.line.editTitle',
+            defaultMessage: 'Edit component',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -90,11 +120,19 @@ export function EditBomLineDialog({
 
             <TextField
               id="bom-line-edit-quantity"
-              label="Quantity per batch"
+              label={intl.formatMessage({
+                id: 'boms.quantityPerBatch',
+                defaultMessage: 'Quantity per batch',
+              })}
               required
               fullWidth
               value={quantity}
-              onChange={(event) => setQuantity(event.target.value)}
+              onChange={(event) => {
+                setQuantityError(null);
+                setQuantity(event.target.value);
+              }}
+              error={!!quantityError}
+              helperText={quantityError}
               slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 19 } }}
             />
 
@@ -105,12 +143,18 @@ export function EditBomLineDialog({
                   onChange={(event) => setExternal(event.target.checked)}
                 />
               }
-              label="The manufacturer provides this"
+              label={intl.formatMessage({
+                id: 'boms.external',
+                defaultMessage: 'The manufacturer provides this',
+              })}
             />
 
             <TextField
               id="bom-line-edit-notes"
-              label="Notes"
+              label={intl.formatMessage({
+                id: 'boms.notes',
+                defaultMessage: 'Notes',
+              })}
               fullWidth
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
@@ -122,8 +166,14 @@ export function EditBomLineDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

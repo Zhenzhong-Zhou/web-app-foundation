@@ -6,15 +6,18 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
+import { groupedNumberMessage, toApiDecimal } from '../lib/format';
 import type { OrderDetail } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
+import { unitLabel } from '../products/units';
 
 /**
  * Adds an item to a draft.
@@ -45,8 +48,11 @@ export function AddOrderLineDialog({
 }) {
   const { variants, failed } = useVariants(open);
   const [variantId, setVariantId] = useState('');
+  const intl = useIntl();
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
+  // Set when a number is typed with a thousands separator (ADR-054).
+  const [numberError, setNumberError] = useState<string | null>(null);
 
   /**
    * Seeded from the order's other lines. A currency per line supports a mixed
@@ -67,13 +73,19 @@ export function AddOrderLineDialog({
       close();
       await onAdded(notice);
     },
-    { success: 'Line added' },
+    {
+      success: intl.formatMessage({
+        id: 'orders.lines.added',
+        defaultMessage: 'Line added',
+      }),
+    },
   );
 
   function close() {
     setVariantId('');
     setQuantity('');
     setPrice('');
+    setNumberError(null);
     reset();
     onClose();
   }
@@ -83,6 +95,16 @@ export function AddOrderLineDialog({
 
     priceNotice.current = null;
 
+    // The language's decimal comma made a point; a thousands separator is
+    // refused rather than guessed (ADR-054).
+    const quantityOrdered = toApiDecimal(quantity);
+    const unitPrice = price.trim() ? toApiDecimal(price) : '';
+    if (quantityOrdered === null || unitPrice === null) {
+      setNumberError(groupedNumberMessage());
+      return;
+    }
+    setNumberError(null);
+
     void submit(async () => {
       const response = await api<{ line: { priceNotice?: string } }>(
         `/orders/${order.id}/lines`,
@@ -91,12 +113,12 @@ export function AddOrderLineDialog({
           body: JSON.stringify({
             variantId,
             // Strings as typed. Number() here would undo numeric(18,4).
-            quantityOrdered: quantity,
+            quantityOrdered,
             // Both or neither: the server refuses half a price, and sending an
             // empty string would fail the format check rather than read as
             // absent.
-            unitPrice: price.trim() || undefined,
-            currency: price.trim() ? currency : undefined,
+            unitPrice: unitPrice || undefined,
+            currency: unitPrice ? currency : undefined,
           }),
         },
       );
@@ -117,34 +139,64 @@ export function AddOrderLineDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Add an item</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'orders.lines.addTitle',
+            defaultMessage: 'Add an item',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {(numberError ?? error) && (
+              <FormError message={(numberError ?? error)!} />
+            )}
 
             <VariantPicker
               id="add-line-variant"
-              label="Item"
+              label={intl.formatMessage({
+                id: 'inventory.item',
+                defaultMessage: 'Item',
+              })}
               required
               options={choices}
               value={variantId}
               onChange={setVariantId}
               helperText={
                 failed
-                  ? 'Could not load the catalogue. Close and try again.'
+                  ? intl.formatMessage({
+                      id: 'orders.lines.catalogueFailed',
+                      defaultMessage:
+                        'Could not load the catalogue. Close and try again.',
+                    })
                   : undefined
               }
             />
 
             <TextField
               id="add-line-quantity"
-              label="Quantity"
+              label={intl.formatMessage({
+                id: 'inventory.quantity',
+                defaultMessage: 'Quantity',
+              })}
               required
               fullWidth
               value={quantity}
               onChange={(event) => setQuantity(event.target.value)}
-              helperText={unit ? `In ${unit}.` : 'Up to 4 decimal places.'}
+              helperText={
+                unit
+                  ? intl.formatMessage(
+                      {
+                        id: 'orders.lines.inUnit',
+                        defaultMessage: 'In {unit}.',
+                      },
+                      { unit: unitLabel(unit, intl) },
+                    )
+                  : intl.formatMessage({
+                      id: 'inventory.quantity.help',
+                      defaultMessage: 'Up to 4 decimal places.',
+                    })
+              }
               slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 19 } }}
             />
 
@@ -153,10 +205,17 @@ export function AddOrderLineDialog({
             <Stack direction="row" spacing={2}>
               <TextField
                 id="add-line-price"
-                label="Unit price"
+                label={intl.formatMessage({
+                  id: 'orders.unitPrice',
+                  defaultMessage: 'Unit price',
+                })}
                 value={price}
                 onChange={(event) => setPrice(event.target.value)}
-                helperText="Optional. Left blank, the order's price list supplies it when there is one."
+                helperText={intl.formatMessage({
+                  id: 'orders.lines.price.help',
+                  defaultMessage:
+                    "Optional. Left blank, the order's price list supplies it when there is one.",
+                })}
                 sx={{ flexGrow: 1 }}
                 slotProps={{
                   htmlInput: { inputMode: 'decimal', maxLength: 19 },
@@ -177,8 +236,14 @@ export function AddOrderLineDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Add item"
-          pendingLabel="Adding…"
+          label={intl.formatMessage({
+            id: 'orders.lines.add',
+            defaultMessage: 'Add item',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.adding',
+            defaultMessage: 'Adding…',
+          })}
         />
       </form>
     </Dialog>

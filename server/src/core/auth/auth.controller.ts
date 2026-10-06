@@ -4,6 +4,7 @@ import {
   ConflictException,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Post,
@@ -16,6 +17,7 @@ import type { Request, Response } from 'express';
 
 import type { Env } from '../../config/env';
 import { isUniqueViolation } from '../../database/errors';
+import { t } from '../../i18n/translate';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
@@ -81,6 +83,7 @@ export class AuthController {
       const { user, session } = await this.auth.register(dto, {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
+        language: req.headers['accept-language'],
       });
 
       const isProduction =
@@ -98,7 +101,12 @@ export class AuthController {
       return { user };
     } catch (error) {
       if (isUniqueViolation(error, 'users_email_lower_key')) {
-        throw new ConflictException('That email address is already registered');
+        throw new ConflictException(
+          t({
+            id: 'auth.emailTaken',
+            defaultMessage: 'That email address is already registered',
+          }),
+        );
       }
       throw error;
     }
@@ -129,7 +137,11 @@ export class AuthController {
   ) {
     const { user, session } = await this.auth.login(
       dto,
-      { ip: req.ip, userAgent: req.headers['user-agent'] },
+      {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        language: req.headers['accept-language'],
+      },
       readSessionCookie(req),
     );
 
@@ -194,11 +206,16 @@ export class AuthController {
     const verified = await this.auth.verifyEmail(dto.token, {
       ip: req.ip,
       userAgent: req.headers['user-agent'],
+      language: req.headers['accept-language'],
     });
 
     if (!verified) {
       throw new BadRequestException(
-        'That link is invalid or has expired. Request a new one.',
+        t({
+          id: 'auth.linkInvalid',
+          defaultMessage:
+            'That link is invalid or has expired. Request a new one.',
+        }),
       );
     }
 
@@ -217,8 +234,11 @@ export class AuthController {
   @AllowNoOrganization()
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle({ default: { limit: 3, ttl: 300_000 } })
-  async resendVerification(@CurrentUser() user: RequestContext) {
-    await this.auth.resendVerification(user);
+  async resendVerification(
+    @CurrentUser() user: RequestContext,
+    @Headers('accept-language') language?: string,
+  ) {
+    await this.auth.resendVerification(user, language);
     return { sent: true };
   }
 
@@ -243,8 +263,11 @@ export class AuthController {
       getTracker: loginTracker,
     },
   })
-  async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    await this.auth.requestPasswordReset(dto.email);
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+    @Headers('accept-language') language?: string,
+  ) {
+    await this.auth.requestPasswordReset(dto.email, language);
     return { sent: true };
   }
 
@@ -266,11 +289,16 @@ export class AuthController {
     const reset = await this.auth.resetPassword(dto.token, dto.password, {
       ip: req.ip,
       userAgent: req.headers['user-agent'],
+      language: req.headers['accept-language'],
     });
 
     if (!reset) {
       throw new BadRequestException(
-        'That link is invalid or has expired. Request a new one.',
+        t({
+          id: 'auth.linkInvalid',
+          defaultMessage:
+            'That link is invalid or has expired. Request a new one.',
+        }),
       );
     }
   }

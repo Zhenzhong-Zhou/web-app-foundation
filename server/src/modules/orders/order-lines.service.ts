@@ -13,6 +13,7 @@ import { NotificationsService } from '../../core/notifications/notifications.ser
 import { isUniqueViolation } from '../../database/errors';
 import { orderLines } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { listForOrder, priceOnList } from '../price-lists/list-price';
 import { type Tx } from '../stock/stock.service';
 import { CloseLineDto } from './dto/close-line.dto';
@@ -55,7 +56,14 @@ export class OrderLinesService {
        */
       if (order.status !== 'draft') {
         throw new ConflictException(
-          `An item cannot be added to a ${order.status} order — raise a new one`,
+          t(
+            {
+              id: 'orders.itemAddedStatusOrder',
+              defaultMessage:
+                'An item cannot be added to a {status} order — raise a new one',
+            },
+            { status: order.status },
+          ),
         );
       }
 
@@ -67,7 +75,11 @@ export class OrderLinesService {
       } catch (error) {
         if (isUniqueViolation(error)) {
           throw new ConflictException(
-            'That item is already on this order — amend its quantity instead',
+            t({
+              id: 'orders.itemOrderAmendQuantity',
+              defaultMessage:
+                'That item is already on this order — amend its quantity instead',
+            }),
           );
         }
         throw error;
@@ -95,7 +107,13 @@ export class OrderLinesService {
 
       if (order.status !== 'draft' && order.status !== 'confirmed') {
         throw new ConflictException(
-          `A ${order.status} order cannot be amended`,
+          t(
+            {
+              id: 'orders.statusOrderAmended',
+              defaultMessage: 'A {status} order cannot be amended',
+            },
+            { status: order.status },
+          ),
         );
       }
 
@@ -164,20 +182,36 @@ export class OrderLinesService {
 
       if (order.status !== 'draft' && order.status !== 'confirmed') {
         throw new ConflictException(
-          `A ${order.status} order cannot be amended`,
+          t(
+            {
+              id: 'orders.statusOrderAmended',
+              defaultMessage: 'A {status} order cannot be amended',
+            },
+            { status: order.status },
+          ),
         );
       }
 
       this.assertNothingReceived(line, 'repriced');
 
       if (order.isSample) {
-        throw new ConflictException('A sample is never priced from a list');
+        throw new ConflictException(
+          t({
+            id: 'orders.sampleNeverPricedList',
+            defaultMessage: 'A sample is never priced from a list',
+          }),
+        );
       }
 
       const list = await listForOrder(tx, organizationId, order);
 
       if (!list) {
-        throw new ConflictException('No price list applies to this order');
+        throw new ConflictException(
+          t({
+            id: 'orders.priceListAppliesOrder',
+            defaultMessage: 'No price list applies to this order',
+          }),
+        );
       }
 
       const unitPrice = await priceOnList(
@@ -189,7 +223,13 @@ export class OrderLinesService {
 
       if (unitPrice === null) {
         throw new ConflictException(
-          `${list.name} has no price for ${line.sku}`,
+          t(
+            {
+              id: 'orders.namePriceSku',
+              defaultMessage: '{name} has no price for {sku}',
+            },
+            { name: list.name, sku: line.sku },
+          ),
         );
       }
 
@@ -231,7 +271,14 @@ export class OrderLinesService {
        */
       if (order.status !== 'draft') {
         throw new ConflictException(
-          `An item cannot be removed from a ${order.status} order — cancel the order instead`,
+          t(
+            {
+              id: 'orders.itemRemovedStatusOrder',
+              defaultMessage:
+                'An item cannot be removed from a {status} order — cancel the order instead',
+            },
+            { status: order.status },
+          ),
         );
       }
 
@@ -249,7 +296,11 @@ export class OrderLinesService {
        */
       if (count <= 1) {
         throw new ConflictException(
-          'That is the only item on this order — cancel the order instead',
+          t({
+            id: 'orders.itemOrderCancelOrder',
+            defaultMessage:
+              'That is the only item on this order — cancel the order instead',
+          }),
         );
       }
 
@@ -282,17 +333,33 @@ export class OrderLinesService {
          */
         if (order.status !== 'confirmed') {
           throw new ConflictException(
-            `A line on a ${order.status} order cannot be closed short`,
+            t(
+              {
+                id: 'orders.lineStatusOrderClosed',
+                defaultMessage:
+                  'A line on a {status} order cannot be closed short',
+              },
+              { status: order.status },
+            ),
           );
         }
 
         if (line.isClosedShort) {
-          throw new ConflictException('That line is already closed');
+          throw new ConflictException(
+            t({
+              id: 'orders.lineClosed',
+              defaultMessage: 'That line is already closed',
+            }),
+          );
         }
 
         if (Number(line.quantityFulfilled) >= Number(line.quantityOrdered)) {
           throw new ConflictException(
-            'That line is already complete — there is nothing outstanding to close',
+            t({
+              id: 'orders.lineCompleteThereNothing',
+              defaultMessage:
+                'That line is already complete — there is nothing outstanding to close',
+            }),
           );
         }
 
@@ -328,8 +395,20 @@ export class OrderLinesService {
         userId,
         organizationId,
         type: NOTIFICATION_TYPES.ORDER_LINE_CLOSED_SHORT,
-        title: `${sku} will not be delivered in full`,
-        body: `${fulfilled} of ${ordered} received. ${input.reason}`,
+        title: t(
+          {
+            id: 'notifications.closedShort.title',
+            defaultMessage: '{sku} will not be delivered in full',
+          },
+          { sku },
+        ),
+        body: t(
+          {
+            id: 'notifications.closedShort.body',
+            defaultMessage: '{fulfilled} of {ordered} received. {reason}',
+          },
+          { fulfilled, ordered, reason: input.reason },
+        ),
         resourceType: 'order',
         resourceId: orderId,
       })),
@@ -348,12 +427,23 @@ export class OrderLinesService {
 
       if (order.status !== 'confirmed') {
         throw new ConflictException(
-          `A line on a ${order.status} order cannot be reopened`,
+          t(
+            {
+              id: 'orders.lineStatusOrderReopened',
+              defaultMessage: 'A line on a {status} order cannot be reopened',
+            },
+            { status: order.status },
+          ),
         );
       }
 
       if (!line.isClosedShort) {
-        throw new ConflictException('That line is not closed');
+        throw new ConflictException(
+          t({
+            id: 'orders.lineClosed2',
+            defaultMessage: 'That line is not closed',
+          }),
+        );
       }
 
       await tx
@@ -375,7 +465,13 @@ export class OrderLinesService {
       .from(orderLines)
       .where(and(eq(orderLines.id, lineId), eq(orderLines.orderId, orderId)));
 
-    if (!line) throw new NotFoundException('No such line on this order');
+    if (!line)
+      throw new NotFoundException(
+        t({
+          id: 'orders.suchLineOrder',
+          defaultMessage: 'No such line on this order',
+        }),
+      );
 
     return line;
   }
@@ -387,7 +483,14 @@ export class OrderLinesService {
   private assertNothingReceived(line: OrderLine, verb: string): void {
     if (Number(line.quantityFulfilled) > 0) {
       throw new ConflictException(
-        `${line.quantityFulfilled} has already been received against this item, so it cannot be ${verb}`,
+        t(
+          {
+            id: 'orders.quantityfulfilledReceivedAgainstItem',
+            defaultMessage:
+              '{quantityFulfilled} has already been received against this item, so it cannot be {verb}',
+          },
+          { quantityFulfilled: line.quantityFulfilled, verb },
+        ),
       );
     }
   }

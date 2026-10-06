@@ -11,9 +11,11 @@ import { UAParser } from 'ua-parser-js';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { users } from '../../database/schema';
+import { t } from '../../i18n/translate';
 import { AccountEventService } from './account-event.service';
 import { AuthTokenService } from './auth-token.service';
 import type { ChangePasswordDto } from './dto/change-password.dto';
+import type { UpdateProfileDto } from './dto/update-profile.dto';
 import { PasswordService } from './password.service';
 import type { RequestContext } from './request-context';
 import { SessionService } from './session.service';
@@ -53,10 +55,26 @@ export class AccountService {
     private readonly events: AccountEventService,
   ) {}
 
-  async updateProfile(context: RequestContext, name: string): Promise<void> {
+  /**
+   * Name, language, or both. A field left out is left alone; nothing at all
+   * is a 204 that writes nothing and records nothing, as the organization's
+   * settings are.
+   */
+  async updateProfile(
+    context: RequestContext,
+    input: UpdateProfileDto,
+  ): Promise<void> {
+    const changes = {
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      // Null is a choice too: back to following the browser (ADR-054).
+      ...(input.locale !== undefined ? { locale: input.locale } : {}),
+    };
+
+    if (Object.keys(changes).length === 0) return;
+
     await this.db
       .update(users)
-      .set({ name })
+      .set(changes)
       .where(eq(users.id, context.userId));
 
     await this.events.record(context.userId, 'account.profile_updated', {
@@ -92,7 +110,11 @@ export class AccountService {
     // password, so neither may change one this way; reset is the path.
     if (!user?.passwordHash) {
       throw new BadRequestException(
-        'This account has no password set. Use the reset link instead.',
+        t({
+          id: 'account.password.noneSet',
+          defaultMessage:
+            'This account has no password set. Use the reset link instead.',
+        }),
       );
     }
 
@@ -102,7 +124,12 @@ export class AccountService {
     );
 
     if (!matches) {
-      throw new UnauthorizedException('That password is not correct');
+      throw new UnauthorizedException(
+        t({
+          id: 'account.password.wrong',
+          defaultMessage: 'That password is not correct',
+        }),
+      );
     }
 
     const passwordHash = await this.passwords.hash(dto.newPassword);
@@ -195,7 +222,12 @@ export class AccountService {
     // while leaving a live cookie pointing at nothing. Logout exists for
     // that, and it clears the cookie in the right order.
     if (sessionId === context.sessionId) {
-      throw new BadRequestException('Use sign out to end the current session.');
+      throw new BadRequestException(
+        t({
+          id: 'account.sessions.useSignOut',
+          defaultMessage: 'Use sign out to end the current session.',
+        }),
+      );
     }
 
     const revoked = await this.sessions.revokeOwned(sessionId, context.userId);

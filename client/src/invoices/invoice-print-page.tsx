@@ -1,6 +1,8 @@
 import { Alert, Box, Skeleton, Stack, Typography } from '@mui/material';
+import { defineMessages, useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
+import { useDocumentText } from '../components/document-text';
 import {
   PrintBanner,
   PrintLines,
@@ -8,6 +10,7 @@ import {
   PrintSheet,
   PrintTotals,
 } from '../components/print-sheet';
+import { PRINTED } from '../components/printed-words';
 import { formatDay } from '../lib/format';
 import type { InvoiceDetail, InvoiceLine } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -26,7 +29,23 @@ import { useResource } from '../lib/use-resource';
  * customer's name. A voided invoice prints with VOID and the reason, as a
  * voided packing slip does.
  */
+const WORDS = defineMessages({
+  invoice: { id: 'documents.invoice', defaultMessage: 'Invoice' },
+  total: { id: 'documents.total', defaultMessage: 'Total' },
+  draft: { id: 'documents.draft', defaultMessage: 'DRAFT — not an invoice' },
+  draftDetail: {
+    id: 'documents.draft.detail',
+    defaultMessage:
+      'Not yet issued: it has no number and nothing is owed on it.',
+  },
+  void: {
+    id: 'documents.invoice.void',
+    defaultMessage: 'VOID — nothing is owed on this invoice',
+  },
+});
+
 export function InvoicePrintPage() {
+  const intl = useIntl();
   const { id } = useParams<{ id: string }>();
   const { data, error, loading } = useResource<{ invoice: InvoiceDetail }>(
     `/invoices/${id}`,
@@ -34,9 +53,16 @@ export function InvoicePrintPage() {
   const invoice = data?.invoice ?? null;
 
   const showSkeleton = useDelayedFlag(loading);
+  // A draft has no stored languages; the server sends the pair it would
+  // take today, so this always has one (ADR-054).
+  const doc = useDocumentText(
+    invoice?.language
+      ? { language: invoice.language, secondLanguage: invoice.secondLanguage }
+      : null,
+  );
 
   if (error) return <Alert severity="error">{error}</Alert>;
-  if (!invoice) return showSkeleton ? <Skeleton height={320} /> : null;
+  if (!invoice || !doc) return showSkeleton ? <Skeleton height={320} /> : null;
 
   const isDraft = invoice.status === 'draft';
 
@@ -49,30 +75,48 @@ export function InvoicePrintPage() {
   return (
     <PrintSheet
       backTo={`/invoices/${invoice.id}`}
-      backLabel="Back to the invoice"
+      backLabel={intl.formatMessage({
+        id: 'documents.backToInvoice',
+        defaultMessage: 'Back to the invoice',
+      })}
+      languages={doc.languages}
     >
       {isDraft && (
         <PrintBanner
-          title="DRAFT — not an invoice"
-          detail="Not yet issued: it has no number and nothing is owed on it."
+          title={doc.label(WORDS.draft)}
+          detail={doc.lines((words) => words.formatMessage(WORDS.draftDetail))}
         />
       )}
 
       {invoice.status === 'voided' && (
         <PrintBanner
-          title="VOID — nothing is owed on this invoice"
-          detail={`Voided${invoice.voidedAt ? ` ${formatDay(invoice.voidedAt)}` : ''}: ${invoice.voidReason ?? ''}${
-            invoice.creditNotes.length > 0
-              ? ` — reversed by ${invoice.creditNotes.map((note) => note.number).join(', ')}`
-              : ''
-          }`}
+          title={doc.label(WORDS.void)}
+          detail={doc.lines((words) =>
+            words.formatMessage(
+              {
+                id: 'documents.invoice.voidDetail',
+                defaultMessage:
+                  'Voided {date}: {reason}{credits, select, none {} other { — reversed by {credits}}}',
+              },
+              {
+                date: invoice.voidedAt
+                  ? formatDay(invoice.voidedAt, doc.locale)
+                  : '',
+                reason: invoice.voidReason ?? '',
+                credits:
+                  invoice.creditNotes.length > 0
+                    ? invoice.creditNotes.map((note) => note.number).join(', ')
+                    : 'none',
+              },
+            ),
+          )}
         />
       )}
 
       <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
         <Box>
           <Typography variant="h5" component="h1">
-            Invoice
+            {doc.label(WORDS.invoice)}
           </Typography>
           {invoice.number && (
             <Typography variant="h6" component="p">
@@ -84,17 +128,35 @@ export function InvoicePrintPage() {
         <Box sx={{ textAlign: 'right' }}>
           {invoice.invoiceDate && (
             <Typography variant="body2">
-              Date {formatDay(invoice.invoiceDate)}
+              {doc.join((words) =>
+                words.formatMessage(
+                  { id: 'documents.dateOn', defaultMessage: 'Date {date}' },
+                  { date: formatDay(invoice.invoiceDate!, doc.locale) },
+                ),
+              )}
             </Typography>
           )}
           {invoice.dueDate && (
             <Typography variant="body2">
-              Due {formatDay(invoice.dueDate)}
+              {doc.join((words) =>
+                words.formatMessage(
+                  { id: 'documents.dueOn', defaultMessage: 'Due {date}' },
+                  { date: formatDay(invoice.dueDate!, doc.locale) },
+                ),
+              )}
             </Typography>
           )}
           {invoice.orderReference && (
             <Typography variant="body2">
-              Your order {invoice.orderReference}
+              {doc.join((words) =>
+                words.formatMessage(
+                  {
+                    id: 'documents.yourOrder',
+                    defaultMessage: 'Your order {reference}',
+                  },
+                  { reference: invoice.orderReference },
+                ),
+              )}
             </Typography>
           )}
         </Box>
@@ -102,7 +164,7 @@ export function InvoicePrintPage() {
 
       <Stack direction="row" spacing={6}>
         <PrintParty
-          heading="From"
+          heading={doc.label(PRINTED.from)}
           name={invoice.sellerName}
           lines={[
             invoice.sellerLine1,
@@ -115,14 +177,22 @@ export function InvoicePrintPage() {
           extra={
             invoice.sellerTaxNumber && (
               <Typography variant="body2">
-                Tax registration {invoice.sellerTaxNumber}
+                {doc.join((words) =>
+                  words.formatMessage(
+                    {
+                      id: 'documents.taxRegistration',
+                      defaultMessage: 'Tax registration {number}',
+                    },
+                    { number: invoice.sellerTaxNumber },
+                  ),
+                )}
               </Typography>
             )
           }
         />
 
         <PrintParty
-          heading="Bill to"
+          heading={doc.label(PRINTED.billTo)}
           name={invoice.billToName ?? invoice.partnerName}
           lines={[
             invoice.billToLine1,
@@ -136,7 +206,7 @@ export function InvoicePrintPage() {
 
         {invoice.shipToLine1 && (
           <PrintParty
-            heading="Shipped to"
+            heading={doc.label(PRINTED.shippedTo)}
             name={invoice.shipToLabel}
             lines={[
               invoice.shipToLine1,
@@ -151,18 +221,20 @@ export function InvoicePrintPage() {
       </Stack>
 
       <PrintLines
+        doc={doc}
         currency={invoice.currency}
         lines={invoice.lines.map((line) => ({ ...line, amount: netOf(line) }))}
       />
 
       <PrintTotals
+        doc={doc}
         currency={invoice.currency}
         subtotal={
           isDraft ? (invoice.preview?.subtotal ?? null) : invoice.subtotal
         }
         taxes={(isDraft ? invoice.preview?.taxes : invoice.taxes) ?? []}
         total={isDraft ? (invoice.preview?.total ?? null) : invoice.total}
-        totalLabel="Total"
+        totalLabel={WORDS.total}
       />
 
       {invoice.note && <Typography variant="body2">{invoice.note}</Typography>}

@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
@@ -33,6 +34,7 @@ import { describeCharges } from './tax-rate';
  * changes what a customer is charged.
  */
 export function TaxCodesPage() {
+  const intl = useIntl();
   const can = useCan();
   const { data, error, loading, reload } = useResource<{ taxCodes: TaxCode[] }>(
     '/tax-codes',
@@ -50,21 +52,28 @@ export function TaxCodesPage() {
     <Stack spacing={3}>
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
         <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          Tax codes
+          {intl.formatMessage({
+            id: 'layout.menu.taxCodes',
+            defaultMessage: 'Tax codes',
+          })}
         </Typography>
 
         {canCreate && (
           <Button onClick={openDialog(() => setCreating(true))}>
-            Add tax code
+            {intl.formatMessage({
+              id: 'settings.tax.add',
+              defaultMessage: 'Add tax code',
+            })}
           </Button>
         )}
       </Stack>
 
       <Typography variant="body2" color="text.secondary">
-        Every invoice line carries one. A code can charge two taxes on the same
-        amount, like GST and PST together; a code that charges nothing is
-        Exempt. Changing a rate only affects invoices issued afterwards — issued
-        ones keep the rate they were issued with.
+        {intl.formatMessage({
+          id: 'settings.tax.intro',
+          defaultMessage:
+            'Every invoice line carries one. A code can charge two taxes on the same amount, like GST and PST together; a code that charges nothing is Exempt. Changing a rate only affects invoices issued afterwards — issued ones keep the rate they were issued with.',
+        })}
       </Typography>
 
       {error && <Alert severity="error">{error}</Alert>}
@@ -76,19 +85,42 @@ export function TaxCodesPage() {
           </Stack>
         ) : codes?.length === 0 ? (
           <Alert severity="info">
-            No tax codes yet. Invoices cannot be issued until each line has one
-            — add the taxes you charge, and an Exempt code for items you do not
-            tax.
+            {intl.formatMessage({
+              id: 'settings.tax.empty',
+              defaultMessage:
+                'No tax codes yet. Invoices cannot be issued until each line has one — add the taxes you charge, and an Exempt code for items you do not tax.',
+            })}
           </Alert>
         ) : (
           <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Charges</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right" aria-label="Actions" />
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.name',
+                      defaultMessage: 'Name',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'settings.tax.charges',
+                      defaultMessage: 'Charges',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.status',
+                      defaultMessage: 'Status',
+                    })}
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    aria-label={intl.formatMessage({
+                      id: 'orders.lines.actions',
+                      defaultMessage: 'Actions',
+                    })}
+                  />
                 </TableRow>
               </TableHead>
 
@@ -100,7 +132,17 @@ export function TaxCodesPage() {
                     <TableCell>
                       <Chip
                         size="small"
-                        label={code.isActive ? 'In use' : 'Retired'}
+                        label={
+                          code.isActive
+                            ? intl.formatMessage({
+                                id: 'locations.edit.inUse',
+                                defaultMessage: 'In use',
+                              })
+                            : intl.formatMessage({
+                                id: 'common.retired',
+                                defaultMessage: 'Retired',
+                              })
+                        }
                         color={code.isActive ? 'success' : 'default'}
                         variant={code.isActive ? 'filled' : 'outlined'}
                       />
@@ -115,7 +157,10 @@ export function TaxCodesPage() {
                           size="small"
                           onClick={openDialog(() => setEditing(code))}
                         >
-                          Edit
+                          {intl.formatMessage({
+                            id: 'common.edit',
+                            defaultMessage: 'Edit',
+                          })}
                         </Button>
                       )}
                     </TableCell>

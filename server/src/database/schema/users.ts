@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
+import type { Locale } from '../../common/locales';
 import { primaryKey, timestamps } from './columns';
 
 /**
@@ -18,6 +19,15 @@ export const users = pgTable(
     // Nullable: cleared on anonymisation, and absent for future SSO-only users.
     passwordHash: text('password_hash'),
     name: text('name').notNull(),
+
+    /**
+     * The language the app speaks to this person (ADR-054): screens,
+     * refusals, their emails and notifications. A BCP 47 tag from
+     * SUPPORTED_LOCALES, checked by the DTOs. Null follows the browser, and
+     * where there is no browser to ask, the request that caused the email,
+     * else English.
+     */
+    locale: text('locale').$type<Locale>(),
 
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
 

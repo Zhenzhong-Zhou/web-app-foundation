@@ -17,11 +17,17 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import {
+  formatQuantity,
+  groupedNumberMessage,
+  toApiDecimal,
+} from '../lib/format';
 import type {
   InvoicePage,
   InvoiceSummary,
@@ -29,11 +35,14 @@ import type {
   ReturnResolution,
 } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
-import { RESOLUTION_LABELS } from './rma-labels';
+import { resolutionLabel, RESOLUTIONS } from './rma-labels';
 
-/** A quantity of nothing, recognised as text rather than parsed (ADR-025). */
+/**
+ * A quantity of nothing, recognised as text rather than parsed (ADR-025):
+ * "0.00", or "0,00" as French writes it.
+ */
 function isNothing(quantity: string | undefined): boolean {
-  return /^\s*0*(\.0*)?\s*$/.test(quantity ?? '');
+  return /^\s*0*([.,]0*)?\s*$/.test(quantity ?? '');
 }
 
 /**
@@ -62,7 +71,10 @@ export function RaiseRmaDialog({
   canViewInvoices: boolean;
   onClose: () => void;
 }) {
+  const intl = useIntl();
   const navigate = useNavigate();
+  // Set when a quantity is typed with a thousands separator (ADR-054).
+  const [numberError, setNumberError] = useState<string | null>(null);
   const shipped = lines.filter((line) => line.quantityFulfilled !== '0.0000');
 
   const [reason, setReason] = useState('');
@@ -85,7 +97,12 @@ export function RaiseRmaDialog({
       close();
       navigate(`/return-authorizations/${createdId.current}`);
     },
-    { success: 'Return authorized' },
+    {
+      success: intl.formatMessage({
+        id: 'rmas.authorized',
+        defaultMessage: 'Return authorized',
+      }),
+    },
   );
 
   /**
@@ -114,6 +131,7 @@ export function RaiseRmaDialog({
   }, [open, orderId, canViewInvoices, isSample]);
 
   function close() {
+    setNumberError(null);
     reset();
     onClose();
   }
@@ -122,12 +140,19 @@ export function RaiseRmaDialog({
     .filter((line) => !isNothing(quantities[line.id]))
     .map((line) => ({
       lineId: line.id,
-      quantity: quantities[line.id].trim(),
+      // In the API's form; null where a thousands separator was typed.
+      quantity: toApiDecimal(quantities[line.id]),
       resolution: resolutions[line.id] ?? defaultResolution,
     }));
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
+
+    if (sending.some((line) => line.quantity === null)) {
+      setNumberError(groupedNumberMessage());
+      return;
+    }
+    setNumberError(null);
 
     void submit(async () => {
       const { returnAuthorization } = await api<{
@@ -155,20 +180,34 @@ export function RaiseRmaDialog({
       maxWidth="md"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Authorize a return</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'rmas.raise.title',
+            defaultMessage: 'Authorize a return',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            {error && <FormError message={error} />}
+            {(numberError ?? error) && (
+              <FormError message={(numberError ?? error)!} />
+            )}
 
             <TextField
               id="rma-reason"
-              label="Why is it coming back"
+              label={intl.formatMessage({
+                id: 'rmas.raise.why',
+                defaultMessage: 'Why is it coming back',
+              })}
               required
               fullWidth
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              helperText="What the customer said: cracked in transit, wrong item, expired on arrival."
+              helperText={intl.formatMessage({
+                id: 'rmas.raise.why.help',
+                defaultMessage:
+                  'What the customer said: cracked in transit, wrong item, expired on arrival.',
+              })}
               slotProps={{ htmlInput: { maxLength: 500 } }}
             />
 
@@ -176,11 +215,36 @@ export function RaiseRmaDialog({
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Item</TableCell>
-                    <TableCell align="right">Shipped</TableCell>
-                    <TableCell align="right">Already back</TableCell>
-                    <TableCell align="right">May come back</TableCell>
-                    <TableCell>Then</TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'inventory.item',
+                        defaultMessage: 'Item',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'inventory.trace.shipped',
+                        defaultMessage: 'Shipped',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'orders.return.alreadyBack',
+                        defaultMessage: 'Already back',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'rmas.raise.mayComeBack',
+                        defaultMessage: 'May come back',
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {intl.formatMessage({
+                        id: 'rmas.then',
+                        defaultMessage: 'Then',
+                      })}
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -193,10 +257,10 @@ export function RaiseRmaDialog({
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
-                        {line.quantityFulfilled}
+                        {formatQuantity(line.quantityFulfilled)}
                       </TableCell>
                       <TableCell align="right">
-                        {line.quantityReturned}
+                        {formatQuantity(line.quantityReturned)}
                       </TableCell>
                       <TableCell align="right" sx={{ width: 140 }}>
                         <TextField
@@ -212,7 +276,13 @@ export function RaiseRmaDialog({
                             htmlInput: {
                               inputMode: 'decimal',
                               maxLength: 19,
-                              'aria-label': `Authorize ${line.sku}`,
+                              'aria-label': intl.formatMessage(
+                                {
+                                  id: 'rmas.raise.authorizeLine',
+                                  defaultMessage: 'Authorize {sku}',
+                                },
+                                { sku: line.sku },
+                              ),
                             },
                           }}
                         />
@@ -230,19 +300,25 @@ export function RaiseRmaDialog({
                             }))
                           }
                           slotProps={{
-                            htmlInput: { 'aria-label': `Then for ${line.sku}` },
+                            htmlInput: {
+                              'aria-label': intl.formatMessage(
+                                {
+                                  id: 'rmas.raise.thenFor',
+                                  defaultMessage: 'Then for {sku}',
+                                },
+                                { sku: line.sku },
+                              ),
+                            },
                           }}
                         >
-                          {(
-                            Object.keys(RESOLUTION_LABELS) as ReturnResolution[]
-                          )
+                          {RESOLUTIONS
                             // Nothing on a sample was billed (ADR-042).
                             .filter(
                               (value) => !(isSample && value === 'credit'),
                             )
                             .map((value) => (
                               <MenuItem key={value} value={value}>
-                                {RESOLUTION_LABELS[value]}
+                                {resolutionLabel(value)}
                               </MenuItem>
                             ))}
                         </TextField>
@@ -255,7 +331,11 @@ export function RaiseRmaDialog({
 
             {shipped.length === 0 && (
               <Alert severity="info">
-                Nothing has shipped on this order, so nothing can come back.
+                {intl.formatMessage({
+                  id: 'orders.return.nothingShipped',
+                  defaultMessage:
+                    'Nothing has shipped on this order, so nothing can come back.',
+                })}
               </Alert>
             )}
 
@@ -266,12 +346,18 @@ export function RaiseRmaDialog({
                   onChange={(event) => setExpectsGoods(event.target.checked)}
                 />
               }
-              label="The customer is sending the goods back"
+              label={intl.formatMessage({
+                id: 'rmas.raise.expectsGoods',
+                defaultMessage: 'The customer is sending the goods back',
+              })}
             />
             {!expectsGoods && (
               <Typography variant="body2" color="text.secondary">
-                Told to keep or destroy them: credit then follows what is
-                authorized here, since no box will arrive to be received.
+                {intl.formatMessage({
+                  id: 'rmas.raise.keepOrDestroy',
+                  defaultMessage:
+                    'Told to keep or destroy them: credit then follows what is authorized here, since no box will arrive to be received.',
+                })}
               </Typography>
             )}
 
@@ -279,14 +365,25 @@ export function RaiseRmaDialog({
               <TextField
                 id="rma-invoice"
                 select
-                label="Invoice the customer quoted"
+                label={intl.formatMessage({
+                  id: 'rmas.raise.invoice',
+                  defaultMessage: 'Invoice the customer quoted',
+                })}
                 fullWidth
                 value={invoiceId}
                 onChange={(event) => setInvoiceId(event.target.value)}
-                helperText="Optional. The credit defaults to it."
+                helperText={intl.formatMessage({
+                  id: 'rmas.raise.invoice.help',
+                  defaultMessage: 'Optional. The credit defaults to it.',
+                })}
               >
                 <MenuItem value="">
-                  <em>None quoted</em>
+                  <em>
+                    {intl.formatMessage({
+                      id: 'rmas.raise.noInvoice',
+                      defaultMessage: 'None quoted',
+                    })}
+                  </em>
                 </MenuItem>
                 {invoices.map((invoice) => (
                   <MenuItem key={invoice.id} value={invoice.id}>
@@ -298,7 +395,10 @@ export function RaiseRmaDialog({
 
             <TextField
               id="rma-note"
-              label="Note"
+              label={intl.formatMessage({
+                id: 'inventory.note',
+                defaultMessage: 'Note',
+              })}
               fullWidth
               multiline
               minRows={2}
@@ -312,8 +412,14 @@ export function RaiseRmaDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Authorize"
-          pendingLabel="Authorizing…"
+          label={intl.formatMessage({
+            id: 'rmas.raise.action',
+            defaultMessage: 'Authorize',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'rmas.raise.pending',
+            defaultMessage: 'Authorizing…',
+          })}
           disabled={sending.length === 0 || !reason.trim()}
         />
       </form>

@@ -1,5 +1,6 @@
 import { Alert, Button, Stack, Typography } from '@mui/material';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { FormattedMessage } from 'react-intl';
 
 import { ApiError } from '../lib/api';
 
@@ -60,22 +61,38 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     return (
       <Stack spacing={2} sx={{ py: 4 }}>
         <Typography variant="h5" component="h1">
-          {isStaleChunk ? 'A new version is available' : 'Something went wrong'}
+          {isStaleChunk ? (
+            <FormattedMessage
+              id="components.errorBoundary.newVersion"
+              defaultMessage="A new version is available"
+            />
+          ) : (
+            <FormattedMessage
+              id="components.errorBoundary.title"
+              defaultMessage="Something went wrong"
+            />
+          )}
         </Typography>
 
         {isStaleChunk ? (
           // The browser's own message names a module URL and reads like a bug.
           // This is not one, and a reload is the whole fix.
           <Alert severity="info">
-            The app was updated while this tab was open. Reload to pick up the
-            new version — nothing is lost.
+            <FormattedMessage
+              id="components.errorBoundary.updated"
+              defaultMessage="The app was updated while this tab was open. Reload to pick up the new version — nothing is lost."
+            />
           </Alert>
         ) : (
           <Alert severity="error">
             {error.message}
             {requestId && (
               <Typography variant="caption" component="div" sx={{ mt: 1 }}>
-                Reference: {requestId}
+                <FormattedMessage
+                  id="components.errorBoundary.reference"
+                  defaultMessage="Reference: {requestId}"
+                  values={{ requestId }}
+                />
               </Typography>
             )}
           </Alert>
@@ -88,7 +105,10 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
           onClick={() => window.location.reload()}
           sx={{ alignSelf: 'flex-start' }}
         >
-          Reload
+          <FormattedMessage
+            id="components.errorBoundary.reload"
+            defaultMessage="Reload"
+          />
         </Button>
       </Stack>
     );

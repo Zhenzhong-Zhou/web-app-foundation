@@ -8,6 +8,7 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -36,6 +37,7 @@ export function AddressDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState({
     label: address?.label ?? '',
     line1: address?.line1 ?? '',
@@ -54,7 +56,12 @@ export function AddressDialog({
       close();
       await onSaved();
     },
-    { success: 'Address saved' },
+    {
+      success: intl.formatMessage({
+        id: 'partners.address.saved',
+        defaultMessage: 'Address saved',
+      }),
+    },
   );
 
   function close() {
@@ -118,7 +125,17 @@ export function AddressDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>{address ? 'Edit address' : 'Add an address'}</DialogTitle>
+        <DialogTitle>
+          {address
+            ? intl.formatMessage({
+                id: 'partners.address.editTitle',
+                defaultMessage: 'Edit address',
+              })
+            : intl.formatMessage({
+                id: 'partners.address.addTitle',
+                defaultMessage: 'Add an address',
+              })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -126,17 +143,27 @@ export function AddressDialog({
 
             <TextField
               id="address-label"
-              label="Label"
+              label={intl.formatMessage({
+                id: 'partners.address.label',
+                defaultMessage: 'Label',
+              })}
               fullWidth
               value={form.label}
               onChange={update('label')}
-              helperText="What you would call it out loud — Head office, Dock 3."
+              helperText={intl.formatMessage({
+                id: 'partners.address.label.help',
+                defaultMessage:
+                  'What you would call it out loud — Head office, Dock 3.',
+              })}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
             <TextField
               id="address-line1"
-              label="Street address"
+              label={intl.formatMessage({
+                id: 'partners.address.line1',
+                defaultMessage: 'Street address',
+              })}
               autoComplete="address-line1"
               required
               fullWidth
@@ -147,7 +174,10 @@ export function AddressDialog({
 
             <TextField
               id="address-line2"
-              label="Address line 2"
+              label={intl.formatMessage({
+                id: 'partners.address.line2',
+                defaultMessage: 'Address line 2',
+              })}
               autoComplete="address-line2"
               fullWidth
               value={form.line2}
@@ -158,7 +188,10 @@ export function AddressDialog({
             <Stack direction="row" spacing={2}>
               <TextField
                 id="address-city"
-                label="City"
+                label={intl.formatMessage({
+                  id: 'partners.address.city',
+                  defaultMessage: 'City',
+                })}
                 autoComplete="address-level2"
                 fullWidth
                 value={form.city}
@@ -168,7 +201,10 @@ export function AddressDialog({
 
               <TextField
                 id="address-region"
-                label="Province or state"
+                label={intl.formatMessage({
+                  id: 'partners.address.region',
+                  defaultMessage: 'Province or state',
+                })}
                 autoComplete="address-level1"
                 fullWidth
                 value={form.region}
@@ -180,7 +216,10 @@ export function AddressDialog({
             <Stack direction="row" spacing={2}>
               <TextField
                 id="address-postal-code"
-                label="Postal code"
+                label={intl.formatMessage({
+                  id: 'partners.address.postalCode',
+                  defaultMessage: 'Postal code',
+                })}
                 autoComplete="postal-code"
                 fullWidth
                 value={form.postalCode}
@@ -190,13 +229,19 @@ export function AddressDialog({
 
               <TextField
                 id="address-country"
-                label="Country"
+                label={intl.formatMessage({
+                  id: 'partners.address.country',
+                  defaultMessage: 'Country',
+                })}
                 autoComplete="country"
                 required
                 fullWidth
                 value={form.country}
                 onChange={update('country')}
-                helperText="Two letters — CA, US, DE."
+                helperText={intl.formatMessage({
+                  id: 'partners.address.country.help',
+                  defaultMessage: 'Two letters — CA, US, DE.',
+                })}
                 slotProps={{ htmlInput: { maxLength: 2 } }}
               />
             </Stack>
@@ -208,7 +253,10 @@ export function AddressDialog({
                   onChange={toggle('isShipping')}
                 />
               }
-              label="Deliveries go here"
+              label={intl.formatMessage({
+                id: 'partners.address.isShipping',
+                defaultMessage: 'Deliveries go here',
+              })}
             />
 
             <FormControlLabel
@@ -221,7 +269,10 @@ export function AddressDialog({
               // Both, often. One address usually serves invoices and
               // deliveries, which is why these are two switches rather than
               // one choice.
-              label="Invoices go here"
+              label={intl.formatMessage({
+                id: 'partners.address.isBilling',
+                defaultMessage: 'Invoices go here',
+              })}
             />
 
             <FormControlLabel
@@ -234,7 +285,10 @@ export function AddressDialog({
               // Turning this on demotes whichever address holds it — handled
               // server-side in one transaction, because the partial unique
               // index makes a second default a constraint violation.
-              label="Use this one by default"
+              label={intl.formatMessage({
+                id: 'partners.address.isDefault',
+                defaultMessage: 'Use this one by default',
+              })}
             />
           </Stack>
         </DialogContent>
@@ -242,8 +296,21 @@ export function AddressDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label={address ? 'Save' : 'Add address'}
-          pendingLabel="Saving…"
+          label={
+            address
+              ? intl.formatMessage({
+                  id: 'common.save',
+                  defaultMessage: 'Save',
+                })
+              : intl.formatMessage({
+                  id: 'partners.address.add',
+                  defaultMessage: 'Add address',
+                })
+          }
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

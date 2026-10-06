@@ -7,6 +7,7 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
@@ -29,6 +30,7 @@ export function CreatePriceListDialog({
   onClose: () => void;
   onCreated: (priceListId: string) => void;
 }) {
+  const intl = useIntl();
   const [name, setName] = useState('');
   const [direction, setDirection] = useState<PriceListDirection>('sale');
   const [currency, setCurrency] = useState('');
@@ -42,7 +44,12 @@ export function CreatePriceListDialog({
       close();
       if (id) onCreated(id);
     },
-    { success: 'Price list created' },
+    {
+      success: intl.formatMessage({
+        id: 'priceLists.created',
+        defaultMessage: 'Price list created',
+      }),
+    },
   );
 
   function close() {
@@ -80,7 +87,12 @@ export function CreatePriceListDialog({
       maxWidth="xs"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>New price list</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'priceLists.new',
+            defaultMessage: 'New price list',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -88,25 +100,45 @@ export function CreatePriceListDialog({
 
             <TextField
               id="price-list-name"
-              label="Name"
+              label={intl.formatMessage({
+                id: 'common.name',
+                defaultMessage: 'Name',
+              })}
               required
               value={name}
               onChange={(event) => setName(event.target.value)}
-              helperText="As people will pick it: Wholesale CAD, Cascade USD."
+              helperText={intl.formatMessage({
+                id: 'priceLists.name.help',
+                defaultMessage:
+                  'As people will pick it: Wholesale CAD, Cascade USD.',
+              })}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
             <TextField
               id="price-list-direction"
               select
-              label="Prices"
+              label={intl.formatMessage({
+                id: 'priceLists.prices',
+                defaultMessage: 'Prices',
+              })}
               value={direction}
               onChange={(event) =>
                 setDirection(event.target.value as PriceListDirection)
               }
             >
-              <MenuItem value="sale">What customers pay</MenuItem>
-              <MenuItem value="purchase">What a supplier charges</MenuItem>
+              <MenuItem value="sale">
+                {intl.formatMessage({
+                  id: 'priceLists.side.saleLong',
+                  defaultMessage: 'What customers pay',
+                })}
+              </MenuItem>
+              <MenuItem value="purchase">
+                {intl.formatMessage({
+                  id: 'priceLists.side.purchaseLong',
+                  defaultMessage: 'What a supplier charges',
+                })}
+              </MenuItem>
             </TextField>
 
             <CurrencyField
@@ -114,7 +146,11 @@ export function CreatePriceListDialog({
               required
               value={currency}
               onChange={setCurrency}
-              helperText="Every price on the list is in it. Neither this nor the side above can change later."
+              helperText={intl.formatMessage({
+                id: 'priceLists.currency.help',
+                defaultMessage:
+                  'Every price on the list is in it. Neither this nor the side above can change later.',
+              })}
             />
           </Stack>
         </DialogContent>
@@ -122,8 +158,14 @@ export function CreatePriceListDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Create"
-          pendingLabel="Creating…"
+          label={intl.formatMessage({
+            id: 'priceLists.create',
+            defaultMessage: 'Create',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'orders.shipments.creatingInvoice',
+            defaultMessage: 'Creating…',
+          })}
         />
       </form>
     </Dialog>

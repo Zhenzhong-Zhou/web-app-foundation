@@ -1,6 +1,7 @@
 import {
   Alert,
   Autocomplete,
+  Box,
   Chip,
   MenuItem,
   Paper,
@@ -16,30 +17,30 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { api } from '../lib/api';
-import { itemName, relativeTime } from '../lib/format';
+import {
+  formatMoment,
+  formatQuantity,
+  itemName,
+  relativeTime,
+} from '../lib/format';
 import type { Location, Movement, VariantOption } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { leavesOf } from '../locations/tree';
 import { describeMovement } from './describe-movement';
+import {
+  MOVEMENT_HEADINGS,
+  MOVEMENT_REASONS,
+  reasonDetailLabel,
+  reasonLabel,
+} from './movement-reasons';
 
 const PAGE_SIZE = 25;
-
-/** Matches MOVEMENT_REASONS. Kept as a list so the filter cannot drift from it. */
-const REASONS = [
-  'receipt',
-  'shipment',
-  'transfer',
-  'adjustment',
-  'production',
-  'consumption',
-  'sample',
-  'return',
-] as const;
 
 /**
  * Everything that has moved, newest first.
@@ -55,6 +56,7 @@ const REASONS = [
  * it.
  */
 export function MovementsPage() {
+  const intl = useIntl();
   const [variants, setVariants] = useState<VariantOption[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
 
@@ -112,8 +114,15 @@ export function MovementsPage() {
     <Stack spacing={3}>
       <PageHeader
         crumbs={[]}
-        title="Movements"
-        subtitle="Every quantity change, newest first. Movements are never edited or removed — a mistake is corrected by another movement."
+        title={intl.formatMessage({
+          id: 'layout.nav.movements',
+          defaultMessage: 'Movements',
+        })}
+        subtitle={intl.formatMessage({
+          id: 'inventory.movements.intro',
+          defaultMessage:
+            'Every quantity change, newest first. Movements are never edited or removed — a mistake is corrected by another movement.',
+        })}
       />
 
       {error && <Alert severity="error">{error}</Alert>}
@@ -127,17 +136,30 @@ export function MovementsPage() {
           }
           value={variant}
           onChange={(_event, value) => setVariant(value)}
-          renderInput={(params) => <TextField {...params} label="Item" />}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label={intl.formatMessage(MOVEMENT_HEADINGS.item)}
+            />
+          )}
         />
 
         <TextField
           select
-          label="Location"
+          label={intl.formatMessage({
+            id: 'inventory.location',
+            defaultMessage: 'Location',
+          })}
           value={locationId}
           onChange={(event) => setLocationId(event.target.value)}
           sx={{ minWidth: 200 }}
         >
-          <MenuItem value="">Everywhere</MenuItem>
+          <MenuItem value="">
+            {intl.formatMessage({
+              id: 'inventory.everywhere',
+              defaultMessage: 'Everywhere',
+            })}
+          </MenuItem>
           {leaves.map((location) => (
             <MenuItem key={location.id} value={location.id}>
               {location.name}
@@ -149,19 +171,24 @@ export function MovementsPage() {
             shelves is as much a fact about the source as the destination. */}
         <TextField
           select
-          label="Why"
+          label={intl.formatMessage(MOVEMENT_HEADINGS.why)}
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           sx={{ minWidth: 160 }}
         >
-          <MenuItem value="">Any reason</MenuItem>
-          {REASONS.map((value) => (
+          <MenuItem value="">
+            {intl.formatMessage({
+              id: 'inventory.movements.anyReason',
+              defaultMessage: 'Any reason',
+            })}
+          </MenuItem>
+          {MOVEMENT_REASONS.map((value) => (
             <MenuItem
               key={value}
               value={value}
               sx={{ textTransform: 'capitalize' }}
             >
-              {value}
+              {reasonLabel(value, intl)}
             </MenuItem>
           ))}
         </TextField>
@@ -183,12 +210,24 @@ export function MovementsPage() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>When</TableCell>
-                  <TableCell>Item</TableCell>
-                  <TableCell align="right">Change</TableCell>
-                  <TableCell>Where</TableCell>
-                  <TableCell>Why</TableCell>
-                  <TableCell>By</TableCell>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.when)}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.item)}
+                  </TableCell>
+                  <TableCell align="right">
+                    {intl.formatMessage(MOVEMENT_HEADINGS.change)}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.where)}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.why)}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage(MOVEMENT_HEADINGS.by)}
+                  </TableCell>
                 </TableRow>
               </TableHead>
 
@@ -199,9 +238,7 @@ export function MovementsPage() {
                   return (
                     <TableRow key={movement.id} hover>
                       <TableCell>
-                        <span
-                          title={new Date(movement.createdAt).toLocaleString()}
-                        >
+                        <span title={formatMoment(movement.createdAt)}>
                           {relativeTime(movement.createdAt)}
                         </span>
                       </TableCell>
@@ -219,19 +256,29 @@ export function MovementsPage() {
                         )}
                       </TableCell>
 
-                      {/* Rendered as it arrived. Formatting means parsing, and a
-                        numeric through a JS double is the precision loss
-                        ADR-025 exists to avoid. */}
+                      {/* Rendered as it arrived, with only its decimal
+                        separator the language's (formatQuantity). Parsing it
+                        would put a numeric through a JS double, the precision
+                        loss ADR-025 exists to avoid. */}
                       <TableCell align="right">
                         {sign}
-                        {movement.quantity}
+                        {formatQuantity(movement.quantity)}
                       </TableCell>
 
                       <TableCell>{where}</TableCell>
 
                       <TableCell>
-                        <Chip label={movement.reason} size="small" />
-                        {movement.reasonDetail && ` ${movement.reasonDetail}`}
+                        <Chip
+                          label={reasonLabel(movement.reason, intl)}
+                          size="small"
+                        />
+                        {/* A margin, not a space: a space would be text, and
+                          text here would be English (ADR-054). */}
+                        {movement.reasonDetail && (
+                          <Box component="span" sx={{ ml: 0.5 }}>
+                            {reasonDetailLabel(movement.reasonDetail, intl)}
+                          </Box>
+                        )}
                         {/* Required on an adjustment, because a person asserting
                           the system is wrong has to say what they found
                           (ADR-023). This is where it gets read. */}
@@ -250,7 +297,8 @@ export function MovementsPage() {
                         survives its author, which is what RESTRICT on actor_id
                         is for. */}
                       <TableCell>
-                        {movement.actorEmail ?? 'Deleted user'}
+                        {movement.actorEmail ??
+                          intl.formatMessage(MOVEMENT_HEADINGS.deletedUser)}
                       </TableCell>
                     </TableRow>
                   );
@@ -261,8 +309,15 @@ export function MovementsPage() {
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
             {variant || locationId || reason
-              ? 'Nothing matches those filters.'
-              : 'Nothing has moved yet. Receiving stock is what puts the first row here.'}
+              ? intl.formatMessage({
+                  id: 'inventory.movements.noMatch',
+                  defaultMessage: 'Nothing matches those filters.',
+                })
+              : intl.formatMessage({
+                  id: 'inventory.movements.empty',
+                  defaultMessage:
+                    'Nothing has moved yet. Receiving stock is what puts the first row here.',
+                })}
           </Typography>
         )}
       </Paper>

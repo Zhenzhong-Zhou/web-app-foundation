@@ -9,16 +9,19 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { api, messageFor } from '../lib/api';
+import { formatQuantity, nameAndCode } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { Bom, BomLine, ProductLicence, VariantOption } from '../lib/types';
 import { licenceStatus } from '../licences/licence-status';
 import { LicenceStatusChip } from '../licences/licence-status-chip';
 import type { Variant } from '../products/products-page';
 import { AddBomLineDialog } from './add-bom-line-dialog';
+import { bomStatusLabel } from './bom-status';
 import { CreateBomDialog } from './create-bom-dialog';
 import { EditBomLineDialog } from './edit-bom-line-dialog';
 import { RecipeLinesTable } from './recipe-lines-table';
@@ -42,6 +45,7 @@ const STATUS_COLOR = {
  * status rather than a single Edit that sometimes fails.
  */
 export function RecipePanel({ variants }: { variants: Variant[] }) {
+  const intl = useIntl();
   const can = useCan();
 
   const [variantId, setVariantId] = useState(variants[0]?.id ?? '');
@@ -179,7 +183,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
     if (!match) return componentVariantId;
 
     return match.variantName
-      ? `${match.sku} — ${match.variantName}`
+      ? [match.sku, match.variantName].join(' — ')
       : match.sku;
   }
 
@@ -195,7 +199,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
     const licence = licences.find((row) => row.id === licenceId);
     if (!licence) return null;
 
-    return `${licence.number} (${licence.authority})`;
+    return nameAndCode(licence.number, licence.authority);
   }
 
   function unitFor(componentVariantId: string): string {
@@ -215,13 +219,19 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
         sx={{ alignItems: 'center', flexWrap: 'wrap', columnGap: 2, rowGap: 1 }}
       >
         <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
-          Recipe
+          {intl.formatMessage({
+            id: 'production.recipe',
+            defaultMessage: 'Recipe',
+          })}
         </Typography>
 
         {variants.length > 1 && (
           <TextField
             id="recipe-variant"
-            label="For"
+            label={intl.formatMessage({
+              id: 'boms.for',
+              defaultMessage: 'For',
+            })}
             select
             size="small"
             value={variantId}
@@ -230,8 +240,9 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
           >
             {variants.map((variant) => (
               <MenuItem key={variant.id} value={variant.id}>
-                {variant.sku}
-                {variant.name ? ` — ${variant.name}` : ''}
+                {variant.name
+                  ? [variant.sku, variant.name].join(' — ')
+                  : variant.sku}
               </MenuItem>
             ))}
           </TextField>
@@ -247,7 +258,10 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
             onClick={openDialog(() => setCreating(true))}
             disabled={busy}
           >
-            New recipe
+            {intl.formatMessage({
+              id: 'boms.new',
+              defaultMessage: 'New recipe',
+            })}
           </Button>
         )}
       </Stack>
@@ -256,15 +270,21 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
 
       {versions.length === 0 && !error && (
         <Alert severity="info">
-          No recipe yet. A recipe is what makes a production run one click
-          instead of typing the components every time.
+          {intl.formatMessage({
+            id: 'boms.empty',
+            defaultMessage:
+              'No recipe yet. A recipe is what makes a production run one click instead of typing the components every time.',
+          })}
         </Alert>
       )}
 
       {versions.length > 1 && (
         <TextField
           id="recipe-version"
-          label="Version"
+          label={intl.formatMessage({
+            id: 'boms.version',
+            defaultMessage: 'Version',
+          })}
           select
           size="small"
           value={selected?.id ?? ''}
@@ -273,7 +293,16 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
         >
           {versions.map((version) => (
             <MenuItem key={version.id} value={version.id}>
-              v{version.version} — {version.status}
+              {intl.formatMessage(
+                {
+                  id: 'boms.versionOption',
+                  defaultMessage: 'v{version} — {status}',
+                },
+                {
+                  version: version.version,
+                  status: bomStatusLabel(version.status),
+                },
+              )}
             </MenuItem>
           ))}
         </TextField>
@@ -304,15 +333,31 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
               sx={{ alignItems: 'center', flex: '1 1 320px', minWidth: 0 }}
             >
               <Chip
-                label={selected.status}
+                label={bomStatusLabel(selected.status)}
                 size="small"
                 color={STATUS_COLOR[selected.status]}
               />
 
               <Typography variant="body2" color="text.secondary">
-                Makes {selected.outputQuantity} per batch
-                {licenceFor(selected.licenceId) &&
-                  ` · made under ${licenceFor(selected.licenceId)}`}
+                {licenceFor(selected.licenceId)
+                  ? intl.formatMessage(
+                      {
+                        id: 'boms.makesUnder',
+                        defaultMessage:
+                          'Makes {quantity} per batch · made under {licence}',
+                      },
+                      {
+                        quantity: formatQuantity(selected.outputQuantity),
+                        licence: licenceFor(selected.licenceId),
+                      },
+                    )
+                  : intl.formatMessage(
+                      {
+                        id: 'boms.makes',
+                        defaultMessage: 'Makes {quantity} per batch',
+                      },
+                      { quantity: formatQuantity(selected.outputQuantity) },
+                    )}
               </Typography>
 
               {/* Seen here, before a run is planned, rather than first at
@@ -346,7 +391,10 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
                     })
                   }
                 >
-                  Archive
+                  {intl.formatMessage({
+                    id: 'boms.archive',
+                    defaultMessage: 'Archive',
+                  })}
                 </Button>
               )}
 
@@ -356,22 +404,40 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
                   disabled={busy}
                   onClick={openDialog(() => setAddingLine(true))}
                 >
-                  Add component
+                  {intl.formatMessage({
+                    id: 'boms.line.add',
+                    defaultMessage: 'Add component',
+                  })}
                 </Button>
               )}
 
               {canCreate && !isDraft && (
-                <Tooltip title="An active recipe cannot be edited — this copies it to a new draft">
+                <Tooltip
+                  title={intl.formatMessage({
+                    id: 'boms.newVersion.tooltip',
+                    defaultMessage:
+                      'An active recipe cannot be edited — this copies it to a new draft',
+                  })}
+                >
                   <span>
                     <Button disabled={busy} onClick={() => void duplicate()}>
-                      New version
+                      {intl.formatMessage({
+                        id: 'boms.newVersion',
+                        defaultMessage: 'New version',
+                      })}
                     </Button>
                   </span>
                 </Tooltip>
               )}
 
               {canUpdate && isDraft && (
-                <Tooltip title="Makes this the recipe new runs use, and archives the current one">
+                <Tooltip
+                  title={intl.formatMessage({
+                    id: 'boms.promote.tooltip',
+                    defaultMessage:
+                      'Makes this the recipe new runs use, and archives the current one',
+                  })}
+                >
                   <span>
                     <Button
                       disabled={busy || selected.lines.length === 0}
@@ -382,7 +448,10 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
                         })
                       }
                     >
-                      Promote
+                      {intl.formatMessage({
+                        id: 'boms.promote',
+                        defaultMessage: 'Promote',
+                      })}
                     </Button>
                   </span>
                 </Tooltip>
@@ -397,7 +466,10 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
           {canUpdate && !selected.licenceLocked && licences.length > 0 && (
             <TextField
               id="recipe-licence"
-              label="Licence"
+              label={intl.formatMessage({
+                id: 'boms.licence',
+                defaultMessage: 'Licence',
+              })}
               select
               size="small"
               value={selected.licenceId ?? ''}
@@ -420,11 +492,24 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
               sx={{ maxWidth: 360 }}
               helperText={
                 isDraft
-                  ? 'What this formulation is registered under.'
-                  : 'Still changeable: nothing has been made against this version yet.'
+                  ? intl.formatMessage({
+                      id: 'boms.licence.help',
+                      defaultMessage:
+                        'What this formulation is registered under.',
+                    })
+                  : intl.formatMessage({
+                      id: 'boms.licence.stillChangeable',
+                      defaultMessage:
+                        'Still changeable: nothing has been made against this version yet.',
+                    })
               }
             >
-              <MenuItem value="">Not registered</MenuItem>
+              <MenuItem value="">
+                {intl.formatMessage({
+                  id: 'boms.licence.none',
+                  defaultMessage: 'Not registered',
+                })}
+              </MenuItem>
               {licences
                 .filter(
                   (licence) =>
@@ -433,7 +518,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
                 )
                 .map((licence) => (
                   <MenuItem key={licence.id} value={licence.id}>
-                    {licence.number} — {licence.authority}
+                    {[licence.number, licence.authority].join(' — ')}
                   </MenuItem>
                 ))}
             </TextField>
@@ -441,8 +526,11 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
 
           {isDraft && selected.lines.length === 0 && (
             <Alert severity="info">
-              A recipe with no components cannot be promoted — it would make
-              stock appear from nothing.
+              {intl.formatMessage({
+                id: 'boms.noComponents',
+                defaultMessage:
+                  'A recipe with no components cannot be promoted — it would make stock appear from nothing.',
+              })}
             </Alert>
           )}
 

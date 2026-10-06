@@ -6,6 +6,7 @@ import {
   Stack,
 } from '@mui/material';
 import { type ComponentType, type ReactNode, Suspense } from 'react';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { ForgotPasswordPage } from './auth/forgot-password-page';
@@ -106,6 +107,7 @@ function split(Page: ComponentType) {
 }
 
 export default function App() {
+  const intl = useIntl();
   const { loading, error, refresh } = useAuth();
   const showSpinner = useDelayedFlag(loading);
 
@@ -141,9 +143,17 @@ export default function App() {
           p: 4,
         }}
       >
-        <Alert severity="error">Could not reach the server.</Alert>
+        <Alert severity="error">
+          {intl.formatMessage({
+            id: 'common.serverUnreachable',
+            defaultMessage: 'Could not reach the server.',
+          })}
+        </Alert>
         <Button variant="contained" onClick={() => void refresh()}>
-          Try again
+          {intl.formatMessage({
+            id: 'common.tryAgain',
+            defaultMessage: 'Try again',
+          })}
         </Button>
       </Stack>
     );
@@ -259,9 +269,19 @@ export default function App() {
         path="*"
         element={
           <div>
-            <h1>Not found</h1>
+            <h1>
+              <FormattedMessage
+                id="app.notFound.title"
+                defaultMessage="Not found"
+              />
+            </h1>
             <p>
-              <Link to="/">Go home</Link>
+              <Link to="/">
+                <FormattedMessage
+                  id="app.notFound.goHome"
+                  defaultMessage="Go home"
+                />
+              </Link>
             </p>
           </div>
         }

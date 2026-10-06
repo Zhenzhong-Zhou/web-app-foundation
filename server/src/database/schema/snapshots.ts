@@ -1,9 +1,11 @@
 import { char, text, uuid } from 'drizzle-orm/pg-core';
 
+import type { Locale } from '../../common/locales';
 import { addresses } from './addresses';
 
 /**
- * Snapshot columns shared by invoices and credit notes (ADR-046).
+ * Snapshot columns shared by documents: the parties on invoices and credit
+ * notes (ADR-046), and the languages on those and on shipments (ADR-054).
  *
  * Not a table. Functions rather than objects, because Drizzle needs a fresh
  * column builder per table; spreading one shared object into two tables
@@ -48,4 +50,28 @@ export const billToSnapshot = () => ({
   billToRegion: text('bill_to_region'),
   billToPostalCode: text('bill_to_postal_code'),
   billToCountry: char('bill_to_country', { length: 2 }),
+});
+
+/**
+ * What the document is printed in (ADR-054): the partner's pair, else the
+ * organization's, resolved when it becomes a document. Stored so a reprint
+ * reads as the original did, whatever either setting says by then. Each
+ * table checks the pair with secondLanguageNeedsFirst and languagesDiffer
+ * (columns.ts).
+ *
+ * Nullable, for an invoice: a draft has none until it is issued, and the
+ * invoice's own checks say when it must.
+ */
+export const languageSnapshot = () => ({
+  language: text('language').$type<Locale>(),
+  secondLanguage: text('second_language').$type<Locale>(),
+});
+
+/**
+ * The same, for a document that is born complete — a shipment, a credit
+ * note — and so always has its first language.
+ */
+export const requiredLanguageSnapshot = () => ({
+  language: text('language').$type<Locale>().notNull(),
+  secondLanguage: text('second_language').$type<Locale>(),
 });

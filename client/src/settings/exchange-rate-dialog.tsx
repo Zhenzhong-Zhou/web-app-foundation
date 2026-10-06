@@ -6,11 +6,13 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import { groupedNumberMessage, toApiDecimal } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 
 /** Today in the browser's calendar, as the YYYY-MM-DD the server takes. */
@@ -39,7 +41,10 @@ export function ExchangeRateDialog({
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [currency, setCurrency] = useState(initial?.currency ?? '');
+  // Set when the rate is typed with a thousands separator (ADR-054).
+  const [rateError, setRateError] = useState<string | null>(null);
   const [rateDate, setRateDate] = useState(initial?.rateDate ?? today());
   const [rate, setRate] = useState(initial?.rate ?? '');
 
@@ -48,10 +53,16 @@ export function ExchangeRateDialog({
       close();
       await onSaved();
     },
-    { success: 'Rate saved' },
+    {
+      success: intl.formatMessage({
+        id: 'settings.rates.saved',
+        defaultMessage: 'Rate saved',
+      }),
+    },
   );
 
   function close() {
+    setRateError(null);
     reset();
     onClose();
   }
@@ -59,13 +70,20 @@ export function ExchangeRateDialog({
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
+    const value = toApiDecimal(rate);
+    if (value === null) {
+      setRateError(groupedNumberMessage());
+      return;
+    }
+    setRateError(null);
+
     void submit(() =>
       api('/costs/exchange-rates', {
         method: 'PUT',
         body: JSON.stringify({
           currency: currency.trim().toUpperCase(),
           rateDate,
-          rate: rate.trim(),
+          rate: value,
         }),
       }),
     );
@@ -79,7 +97,17 @@ export function ExchangeRateDialog({
       maxWidth="xs"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>{initial ? 'Correct a rate' : 'Set a rate'}</DialogTitle>
+        <DialogTitle>
+          {initial
+            ? intl.formatMessage({
+                id: 'settings.rates.correctTitle',
+                defaultMessage: 'Correct a rate',
+              })
+            : intl.formatMessage({
+                id: 'settings.rates.set',
+                defaultMessage: 'Set a rate',
+              })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -91,12 +119,21 @@ export function ExchangeRateDialog({
               value={currency}
               onChange={setCurrency}
               disabled={initial !== null}
-              helperText={`Converted into ${baseCurrency}.`}
+              helperText={intl.formatMessage(
+                {
+                  id: 'settings.rates.convertedInto',
+                  defaultMessage: 'Converted into {currency}.',
+                },
+                { currency: baseCurrency },
+              )}
             />
 
             <TextField
               id="exchange-rate-date"
-              label="Day"
+              label={intl.formatMessage({
+                id: 'settings.rates.day',
+                defaultMessage: 'Day',
+              })}
               type="date"
               required
               value={rateDate}
@@ -107,11 +144,36 @@ export function ExchangeRateDialog({
 
             <TextField
               id="exchange-rate-rate"
-              label="Rate"
+              label={intl.formatMessage({
+                id: 'settings.rates.rate',
+                defaultMessage: 'Rate',
+              })}
               required
               value={rate}
-              onChange={(event) => setRate(event.target.value)}
-              helperText={`How many ${baseCurrency} one ${currency || 'unit'} is worth that day.`}
+              onChange={(event) => {
+                setRateError(null);
+                setRate(event.target.value);
+              }}
+              error={!!rateError}
+              helperText={
+                rateError ??
+                intl.formatMessage(
+                  {
+                    id: 'settings.rates.howMany',
+                    defaultMessage:
+                      'How many {base} one {currency} is worth that day.',
+                  },
+                  {
+                    base: baseCurrency,
+                    currency:
+                      currency ||
+                      intl.formatMessage({
+                        id: 'costs.set.unit',
+                        defaultMessage: 'unit',
+                      }),
+                  },
+                )
+              }
               slotProps={{ htmlInput: { inputMode: 'decimal' } }}
             />
           </Stack>
@@ -120,8 +182,14 @@ export function ExchangeRateDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save rate"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'settings.rates.save',
+            defaultMessage: 'Save rate',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

@@ -1,11 +1,9 @@
-import {
-  INestApplication,
-  ValidationPipe,
-  VersioningType,
-} from '@nestjs/common';
+import { INestApplication, VersioningType } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import type { Express } from 'express';
 import helmet from 'helmet';
+
+import { TranslatingValidationPipe } from './i18n/validation';
 
 /**
  * Everything that turns a bare Nest app into *this* app.
@@ -27,7 +25,9 @@ export function configureApp(app: INestApplication): INestApplication {
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
   app.useGlobalPipes(
-    new ValidationPipe({
+    // ValidationPipe's options and English, with each message's id kept
+    // for the filter to render in the request's language (ADR-054).
+    new TranslatingValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,

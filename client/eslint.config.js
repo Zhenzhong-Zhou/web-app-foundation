@@ -5,6 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import formatjs from 'eslint-plugin-formatjs';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export default defineConfig([
@@ -27,6 +28,7 @@ export default defineConfig([
     },
     plugins: {
       'simple-import-sort': simpleImportSort,
+      formatjs,
     },
     rules: {
       /**
@@ -36,6 +38,48 @@ export default defineConfig([
        */
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
+
+      /**
+       * Every message carries its English beside its id, as a literal the
+       * extractor can read, and uses the placeholders it is given (ADR-054).
+       */
+      'formatjs/enforce-default-message': ['error', 'literal'],
+      'formatjs/enforce-placeholders': 'error',
+    },
+  },
+  {
+    /**
+     * No English typed straight into JSX (ADR-054). Switched on one folder
+     * at a time as each was converted; every screen is now, so a new file
+     * cannot gain a hard-coded label by accident.
+     */
+    files: ['src/**/*.tsx'],
+    // Specs render with made-up labels on purpose. The printed documents
+    // are covered too: their words come from the catalogues, in the
+    // customer's languages (ADR-054, step 5).
+    ignores: ['**/*.test.tsx'],
+    rules: {
+      /**
+       * The rule's defaults check JSX text, aria-* everywhere, and
+       * placeholder and title on HTML elements only — so MUI's `label`
+       * and `helperText`, a component's `title`, and this codebase's own
+       * `*Label` props would slip through, and they hold most of the copy.
+       * Listed explicitly; a prop that carries no words (variant, to, size)
+       * is never checked.
+       */
+      'formatjs/no-literal-string-in-jsx': [
+        'error',
+        {
+          props: {
+            include: [
+              [
+                '*',
+                '{label,*Label,helperText,title,heading,subtitle,placeholder,empty,message,detail,noOptionsText}',
+              ],
+            ],
+          },
+        },
+      ],
     },
   },
   {

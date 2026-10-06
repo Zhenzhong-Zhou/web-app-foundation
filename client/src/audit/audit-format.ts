@@ -1,4 +1,6 @@
-import { formatDay } from '../lib/format';
+import { intl } from '../i18n/intl';
+import { formatDay, NO_VALUE, SEPARATOR } from '../lib/format';
+import { AUDIT_ACTION_NAMES } from './audit-actions';
 
 /**
  * How an audit row reads, shared by the audit page and the history drawer.
@@ -41,21 +43,21 @@ export interface AuditRecord {
  * is the worst time to meet a raw key. `describe` derives instead, and this
  * holds the handful of exceptions.
  */
-const ACTION_LABELS: Record<string, string> = {
-  'user.created': 'Added a member',
-  'user.role_changed': "Changed a member's role",
-};
 
 /**
- * Human text for an action key.
+ * Human text for an action key, in the reader's language (ADR-054).
  *
- * Derived, because the keys are already structured: `order.line_closed_short`
- * carries its own words. A map of every action would be a second vocabulary to
- * keep in step with the server's, and the client cannot import that constant.
+ * Named from AUDIT_ACTION_NAMES, which a CI check holds to the server's
+ * list: a language cannot be derived from a key, so the old rule of
+ * spelling every key out stopped being enough. It remains the fallback, in
+ * English, for an action recorded before a client that knows its name.
  */
 export function describe(action: string): string {
-  const override = ACTION_LABELS[action];
-  if (override) return override;
+  if (action in AUDIT_ACTION_NAMES) {
+    return intl().formatMessage(
+      AUDIT_ACTION_NAMES[action as keyof typeof AUDIT_ACTION_NAMES],
+    );
+  }
 
   const [resource, ...rest] = action.split('.');
   const words = `${resource} ${rest.join('.')}`.replace(/_/g, ' ').trim();
@@ -77,10 +79,13 @@ const CALENDAR_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 
-const MOMENT = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
+/** A moment, in the reader's language. */
+function moment(value: string): string {
+  return intl().formatDate(new Date(value), {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
 
 /**
  * A value as it should read in the log.
@@ -96,16 +101,14 @@ const MOMENT = new Intl.DateTimeFormat(undefined, {
  * timestamp reads in the viewer's local time, because it was a moment.
  */
 function show(key: string, value: unknown): string {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return NO_VALUE;
 
   if (typeof value === 'string' && CALENDAR_DAY.test(value)) {
     return formatDay(value);
   }
 
   if (typeof value === 'string' && ISO_TIMESTAMP.test(value)) {
-    return CALENDAR_DAYS.has(key)
-      ? formatDay(value)
-      : MOMENT.format(new Date(value));
+    return CALENDAR_DAYS.has(key) ? formatDay(value) : moment(value);
   }
 
   return String(value);
@@ -157,6 +160,11 @@ export function summarise(
     }
   }
 
-  if (parts.length > 0) return parts.join(' · ');
-  return entries.length > 0 ? 'Saved with no changes' : null;
+  if (parts.length > 0) return parts.join(SEPARATOR);
+  return entries.length > 0
+    ? intl().formatMessage({
+        id: 'audit.noChanges',
+        defaultMessage: 'Saved with no changes',
+      })
+    : null;
 }

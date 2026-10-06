@@ -21,7 +21,14 @@ import {
   notifications,
   permissions,
   rolePermissions,
+  users,
 } from '../../database/schema';
+import { t } from '../../i18n/translate';
+import {
+  recipientLocale,
+  type Translatable,
+  translate,
+} from '../../i18n/translate';
 import type { NotificationType } from './notification-types';
 
 const DEFAULT_LIMIT = 20;
@@ -46,8 +53,9 @@ export interface Emission {
   /** Null for an account notification, which belongs to no organization. */
   organizationId?: string | null;
   type: NotificationType;
-  title: string;
-  body?: string;
+  /** Written once, in the recipient's language (ADR-054). */
+  title: string | Translatable;
+  body?: string | Translatable;
   resourceType?: string;
   resourceId?: string;
 }
@@ -86,7 +94,29 @@ export class NotificationsService {
     if (rows.length === 0) return;
 
     try {
-      await this.db.insert(notifications).values(rows);
+      // Each row in its recipient's language, read once for all of them.
+      const people = await this.db
+        .select({ id: users.id, locale: users.locale })
+        .from(users)
+        .where(inArray(users.id, [...new Set(rows.map((row) => row.userId))]));
+      const localeOf = new Map(
+        people.map((person) => [person.id, recipientLocale(person.locale)]),
+      );
+      const written = (
+        text: string | Translatable | undefined,
+        userId: string,
+      ) =>
+        text === undefined || typeof text === 'string'
+          ? text
+          : translate(text, localeOf.get(userId) ?? 'en');
+
+      await this.db.insert(notifications).values(
+        rows.map((row) => ({
+          ...row,
+          title: written(row.title, row.userId)!,
+          body: written(row.body, row.userId),
+        })),
+      );
     } catch (error) {
       this.logger.error(`Notification write failed: ${String(error)}`);
     }
@@ -223,7 +253,12 @@ export class NotificationsService {
       .returning({ id: notifications.id });
 
     if (updated.length === 0) {
-      throw new NotFoundException('No such notification');
+      throw new NotFoundException(
+        t({
+          id: 'notifications.notFound',
+          defaultMessage: 'No such notification',
+        }),
+      );
     }
   }
 

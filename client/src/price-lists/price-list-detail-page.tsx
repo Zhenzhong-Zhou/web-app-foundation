@@ -13,13 +13,14 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { defineMessages, useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
-import { formatUnitCost } from '../lib/format';
+import { formatUnitCost, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { PriceListDetail, PriceListItem } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -27,13 +28,20 @@ import { useResource } from '../lib/use-resource';
 import { EditPriceListDialog } from './edit-price-list-dialog';
 import { SetPriceDialog } from './set-price-dialog';
 
-const SIDE = {
-  sale: 'What customers pay',
-  purchase: 'What a supplier charges',
-} as const;
+const SIDE = defineMessages({
+  sale: {
+    id: 'priceLists.side.saleLong',
+    defaultMessage: 'What customers pay',
+  },
+  purchase: {
+    id: 'priceLists.side.purchaseLong',
+    defaultMessage: 'What a supplier charges',
+  },
+});
 
 /** One list and the price of every item on it (ADR-049). */
 export function PriceListDetailPage() {
+  const intl = useIntl();
   const { id = '' } = useParams();
   const can = useCan();
   const { data, error, setError, loading, reload } = useResource<{
@@ -75,12 +83,31 @@ export function PriceListDetailPage() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        crumbs={[{ label: 'Price lists', to: '/settings/price-lists' }]}
+        crumbs={[
+          {
+            label: intl.formatMessage({
+              id: 'layout.menu.priceLists',
+              defaultMessage: 'Price lists',
+            }),
+            to: '/settings/price-lists',
+          },
+        ]}
         title={list.name}
         status={
-          list.isActive ? undefined : { label: 'Retired', color: 'default' }
+          list.isActive
+            ? undefined
+            : {
+                label: intl.formatMessage({
+                  id: 'common.retired',
+                  defaultMessage: 'Retired',
+                }),
+                color: 'default',
+              }
         }
-        subtitle={`${SIDE[list.direction]} · ${list.currency}`}
+        subtitle={[
+          intl.formatMessage(SIDE[list.direction]),
+          list.currency,
+        ].join(SEPARATOR)}
         actions={
           <Stack direction="row" spacing={1}>
             <HistoryButton resourceId={list.id} />
@@ -89,12 +116,18 @@ export function PriceListDetailPage() {
                 variant="text"
                 onClick={openDialog(() => setEditing(true))}
               >
-                Edit
+                {intl.formatMessage({
+                  id: 'common.edit',
+                  defaultMessage: 'Edit',
+                })}
               </Button>
             )}
             {canUpdate && (
               <Button onClick={openDialog(() => setAdding(true))}>
-                Add a price
+                {intl.formatMessage({
+                  id: 'priceLists.addPrice',
+                  defaultMessage: 'Add a price',
+                })}
               </Button>
             )}
           </Stack>
@@ -105,16 +138,48 @@ export function PriceListDetailPage() {
 
       <Paper variant="outlined">
         {list.items.length === 0 ? (
-          <Alert severity="info">No prices on this list yet.</Alert>
+          <Alert severity="info">
+            {intl.formatMessage({
+              id: 'priceLists.noPrices',
+              defaultMessage: 'No prices on this list yet.',
+            })}
+          </Alert>
         ) : (
           <TableContainer>
-            <Table size="small" aria-label="Prices">
+            <Table
+              size="small"
+              aria-label={intl.formatMessage({
+                id: 'priceLists.prices',
+                defaultMessage: 'Prices',
+              })}
+            >
               <TableHead>
                 <TableRow>
-                  <TableCell>SKU</TableCell>
-                  <TableCell>Item</TableCell>
-                  <TableCell align="right">Unit price</TableCell>
-                  <TableCell align="right" aria-label="Actions" />
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'products.sku',
+                      defaultMessage: 'SKU',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'inventory.item',
+                      defaultMessage: 'Item',
+                    })}
+                  </TableCell>
+                  <TableCell align="right">
+                    {intl.formatMessage({
+                      id: 'orders.unitPrice',
+                      defaultMessage: 'Unit price',
+                    })}
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    aria-label={intl.formatMessage({
+                      id: 'orders.lines.actions',
+                      defaultMessage: 'Actions',
+                    })}
+                  />
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -138,7 +203,10 @@ export function PriceListDetailPage() {
                             disabled={working}
                             onClick={openDialog(() => setCorrecting(item))}
                           >
-                            Change
+                            {intl.formatMessage({
+                              id: 'priceLists.change',
+                              defaultMessage: 'Change',
+                            })}
                           </Button>
                           <Button
                             variant="text"
@@ -147,7 +215,10 @@ export function PriceListDetailPage() {
                             disabled={working}
                             onClick={() => void remove(item)}
                           >
-                            Remove
+                            {intl.formatMessage({
+                              id: 'priceLists.remove',
+                              defaultMessage: 'Remove',
+                            })}
                           </Button>
                         </Stack>
                       )}
@@ -161,8 +232,11 @@ export function PriceListDetailPage() {
       </Paper>
 
       <Typography variant="body2" color="text.secondary">
-        Prices are per unit, before tax. A change here prices lines added from
-        now on; orders already written keep what they were given.
+        {intl.formatMessage({
+          id: 'priceLists.detail.note',
+          defaultMessage:
+            'Prices are per unit, before tax. A change here prices lines added from now on; orders already written keep what they were given.',
+        })}
       </Typography>
 
       <EditPriceListDialog

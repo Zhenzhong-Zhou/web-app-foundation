@@ -52,6 +52,8 @@ export const creditNoteLines = pgTable(
 
     sku: text('sku').notNull(),
     description: text('description').notNull(),
+    /** Copied from the invoice line with `description` (ADR-054). */
+    secondDescription: text('second_description'),
 
     quantity: numeric('quantity', { precision: 18, scale: 4 }).notNull(),
     unitPrice: numeric('unit_price', { precision: 18, scale: 4 }).notNull(),

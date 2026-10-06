@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { type ReactNode, useEffect } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
 interface Crumb {
@@ -56,6 +57,8 @@ export function PageHeader({
   status?: { label: string; color: 'default' | 'primary' | 'success' };
   actions?: ReactNode;
 }) {
+  const intl = useIntl();
+  // The product's name, not a word: it stays as it is in every language.
   const section = crumbs[0]?.label ?? 'Foundation';
 
   const navigate = useNavigate();
@@ -93,13 +96,21 @@ export function PageHeader({
     };
   }, [title, section]);
 
+  const back = intl.formatMessage({
+    id: 'components.pageHeader.back',
+    defaultMessage: 'Back',
+  });
+
   return (
     <Stack spacing={1}>
       {/* No trail on a top-level page: the breadcrumb would be the title
           repeated, which is furniture rather than navigation. */}
       {crumbs.length > 0 && (
         <Breadcrumbs
-          aria-label="breadcrumb"
+          aria-label={intl.formatMessage({
+            id: 'components.pageHeader.breadcrumb',
+            defaultMessage: 'breadcrumb',
+          })}
           maxItems={4}
           itemsAfterCollapse={2}
         >
@@ -144,9 +155,9 @@ export function PageHeader({
           {/* Detail pages only: a top-level page is reached from the
               navigation, and has nowhere to go up to. */}
           {crumbs.length > 0 && (
-            <Tooltip title="Back">
+            <Tooltip title={back}>
               <IconButton
-                aria-label="Back"
+                aria-label={back}
                 size="small"
                 onClick={goBack}
                 sx={{ ml: -1 }}

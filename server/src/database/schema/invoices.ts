@@ -12,12 +12,18 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { isCurrencyCode, primaryKey, timestamps } from './columns';
+import {
+  isCurrencyCode,
+  languagesDiffer,
+  primaryKey,
+  secondLanguageNeedsFirst,
+  timestamps,
+} from './columns';
 import { orders } from './orders';
 import { organizations } from './organizations';
 import { partners } from './partners';
 import { shipments } from './shipments';
-import { billToSnapshot, sellerSnapshot } from './snapshots';
+import { billToSnapshot, languageSnapshot, sellerSnapshot } from './snapshots';
 import { users } from './users';
 
 /**
@@ -105,6 +111,13 @@ export const invoices = pgTable(
     ...billToSnapshot(),
 
     /**
+     * Written at issue (ADR-054), and required from then on by the issued
+     * shape check. A draft has none: it prints in what it would be issued
+     * in today.
+     */
+    ...languageSnapshot(),
+
+    /**
      * Where the goods went, copied from the order's own snapshot. Optional:
      * the order's ship-to may be empty, and an invoice is valid without one.
      */
@@ -152,12 +165,13 @@ export const invoices = pgTable(
       sql`${t.status} <> 'draft' or (
             ${t.number} is null and ${t.issuedAt} is null and ${t.issuedBy} is null
             and ${t.subtotal} is null and ${t.taxTotal} is null and ${t.total} is null
+            and ${t.language} is null and ${t.secondLanguage} is null
           )`,
     ),
 
     /**
-     * Anything past draft is complete: numbered, dated, totalled, and
-     * naming both parties. The service fills these in one statement; this
+     * Anything past draft is complete: numbered, dated, totalled, naming
+     * both parties, and in a language. The service fills these in one statement; this
      * catches the day one is forgotten.
      */
     check(
@@ -168,6 +182,7 @@ export const invoices = pgTable(
             and ${t.subtotal} is not null and ${t.taxTotal} is not null and ${t.total} is not null
             and ${t.sellerName} is not null and ${t.sellerLine1} is not null and ${t.sellerCountry} is not null
             and ${t.billToName} is not null and ${t.billToLine1} is not null and ${t.billToCountry} is not null
+            and ${t.language} is not null
           )`,
     ),
 
@@ -193,6 +208,15 @@ export const invoices = pgTable(
     check(
       'invoices_due_after_issue_check',
       sql`${t.dueDate} is null or ${t.invoiceDate} is null or ${t.dueDate} >= ${t.invoiceDate}`,
+    ),
+
+    check(
+      'invoices_second_language_needs_first_check',
+      secondLanguageNeedsFirst(t.language, t.secondLanguage),
+    ),
+    check(
+      'invoices_languages_differ_check',
+      languagesDiffer(t.language, t.secondLanguage),
     ),
 
     check(

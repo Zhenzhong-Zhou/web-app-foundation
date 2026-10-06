@@ -11,6 +11,7 @@ import { eq, sql } from 'drizzle-orm';
 import { isUniqueViolation } from '../../database/errors';
 import { memberships, roles, users } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t, type Translatable } from '../../i18n/translate';
 import { recordPrevious } from '../audit/audit-context';
 import { PasswordService } from '../auth/password.service';
 import { RequestContext } from '../auth/request-context';
@@ -69,7 +70,9 @@ export class UsersService {
     );
 
     if (!role) {
-      throw new BadRequestException('Unknown role');
+      throw new BadRequestException(
+        t({ id: 'users.unknownRole', defaultMessage: 'Unknown role' }),
+      );
     }
 
     const passwordHash = await this.passwords.hash(input.password);
@@ -86,7 +89,11 @@ export class UsersService {
         // their password or overwrite their name. Deferred with invitations.
         if (existing) {
           throw new ConflictException(
-            'That email address already belongs to an account',
+            t({
+              id: 'users.emailTaken',
+              defaultMessage:
+                'That email address already belongs to an account',
+            }),
           );
         }
 
@@ -110,7 +117,10 @@ export class UsersService {
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException(
-          'That email address already belongs to an account',
+          t({
+            id: 'users.emailTaken',
+            defaultMessage: 'That email address already belongs to an account',
+          }),
         );
       }
       throw error;
@@ -133,7 +143,10 @@ export class UsersService {
     // Scoped, so a role belonging to another organization simply is not found
     // — the same property create() relies on.
     const [role] = await this.tenantDb.select(roles, eq(roles.id, roleId));
-    if (!role) throw new NotFoundException('Unknown role');
+    if (!role)
+      throw new NotFoundException(
+        t({ id: 'users.unknownRole', defaultMessage: 'Unknown role' }),
+      );
 
     const { membership, callerRole, targetRole } = await this.loadMember(
       context,
@@ -146,15 +159,26 @@ export class UsersService {
       role.name === SYSTEM_ROLES.OWNER &&
       callerRole?.name !== SYSTEM_ROLES.OWNER
     ) {
-      throw new ForbiddenException('Only an Owner can assign the Owner role');
+      throw new ForbiddenException(
+        t({
+          id: 'users.ownerAssign',
+          defaultMessage: 'Only an Owner can assign the Owner role',
+        }),
+      );
     }
 
     // Owner to Owner takes nothing away; an Admin trying it was refused
     // just above.
     if (role.name !== SYSTEM_ROLES.OWNER) {
       await this.assertMayTakeOwner(callerRole, targetRole, membership, {
-        notOwner: "Only an Owner can change an Owner's role",
-        lastOwner: 'Transfer ownership before changing this role',
+        notOwner: t({
+          id: 'users.ownerChange',
+          defaultMessage: "Only an Owner can change an Owner's role",
+        }),
+        lastOwner: t({
+          id: 'users.lastOwnerChange',
+          defaultMessage: 'Transfer ownership before changing this role',
+        }),
       });
     }
 
@@ -185,7 +209,10 @@ export class UsersService {
     // be reachable by accident from a member list.
     if (userId === context.userId) {
       throw new BadRequestException(
-        'You cannot remove yourself from the organization',
+        t({
+          id: 'users.removeSelf',
+          defaultMessage: 'You cannot remove yourself from the organization',
+        }),
       );
     }
 
@@ -195,8 +222,14 @@ export class UsersService {
     );
 
     await this.assertMayTakeOwner(callerRole, targetRole, membership, {
-      notOwner: 'Only an Owner can remove an Owner',
-      lastOwner: 'Transfer ownership before removing this member',
+      notOwner: t({
+        id: 'users.ownerRemove',
+        defaultMessage: 'Only an Owner can remove an Owner',
+      }),
+      lastOwner: t({
+        id: 'users.lastOwnerRemove',
+        defaultMessage: 'Transfer ownership before removing this member',
+      }),
     });
 
     await this.tenantDb.delete(memberships, eq(memberships.id, membership.id));
@@ -214,7 +247,10 @@ export class UsersService {
       eq(memberships.userId, userId),
     );
 
-    if (!membership) throw new NotFoundException('No such member');
+    if (!membership)
+      throw new NotFoundException(
+        t({ id: 'users.notFound', defaultMessage: 'No such member' }),
+      );
 
     const [callerRole] = await this.tenantDb.select(
       roles,
@@ -244,7 +280,7 @@ export class UsersService {
     callerRole: { name: string } | undefined,
     targetRole: { name: string } | undefined,
     membership: { roleId: string },
-    refusals: { notOwner: string; lastOwner: string },
+    refusals: { notOwner: Translatable; lastOwner: Translatable },
   ): Promise<void> {
     if (targetRole?.name !== SYSTEM_ROLES.OWNER) return;
 

@@ -1,5 +1,6 @@
 import { Button, Paper, Stack, Typography } from '@mui/material';
 import type { ReactNode, SubmitEvent } from 'react';
+import { useIntl } from 'react-intl';
 
 import { FormError } from './form-error';
 
@@ -41,6 +42,8 @@ export function SettingsSection({
   notice?: ReactNode;
   children: ReactNode;
 }) {
+  const intl = useIntl();
+
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <form onSubmit={onSubmit}>
@@ -61,7 +64,12 @@ export function SettingsSection({
               disabled={submitting || saveDisabled}
               sx={{ alignSelf: 'flex-start' }}
             >
-              {submitting ? 'Saving…' : saveLabel}
+              {submitting
+                ? intl.formatMessage({
+                    id: 'common.saving',
+                    defaultMessage: 'Saving…',
+                  })
+                : saveLabel}
             </Button>
           )}
         </Stack>

@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -40,11 +41,15 @@ export function DuplicateOrderDialog({
   onClose: () => void;
   onDuplicated: (newOrderId: string) => void;
 }) {
+  const intl = useIntl();
   const [reference, setReference] = useState('');
   const [expectedAt, setExpectedAt] = useState('');
 
   const { submitting, error, reset, submit } = useSubmit(() => undefined, {
-    success: 'Order duplicated',
+    success: intl.formatMessage({
+      id: 'orders.duplicated',
+      defaultMessage: 'Order duplicated',
+    }),
   });
 
   function close() {
@@ -82,37 +87,61 @@ export function DuplicateOrderDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Duplicate this order</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'orders.duplicate.title',
+            defaultMessage: 'Duplicate this order',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
 
             <Typography variant="body2">
-              A new draft for {order.partnerName}, with the same{' '}
-              {order.lines.length === 1
-                ? 'item'
-                : `${order.lines.length} items`}{' '}
-              and quantities. This order is not changed.
+              {intl.formatMessage(
+                {
+                  id: 'orders.duplicate.intro',
+                  defaultMessage:
+                    'A new draft for {partner}, with the same {count, plural, one {item} other {# items}} and quantities. This order is not changed.',
+                },
+                { partner: order.partnerName, count: order.lines.length },
+              )}
             </Typography>
 
             <TextField
               id="duplicate-reference"
-              label="Reference"
+              label={intl.formatMessage({
+                id: 'orders.reference',
+                defaultMessage: 'Reference',
+              })}
               fullWidth
               value={reference}
               onChange={(event) => setReference(event.target.value)}
               helperText={
                 order.reference
-                  ? `The original used ${order.reference}. The copy needs its own.`
-                  : 'Optional — you can add it later.'
+                  ? intl.formatMessage(
+                      {
+                        id: 'orders.duplicate.reference.used',
+                        defaultMessage:
+                          'The original used {reference}. The copy needs its own.',
+                      },
+                      { reference: order.reference },
+                    )
+                  : intl.formatMessage({
+                      id: 'orders.duplicate.reference.optional',
+                      defaultMessage: 'Optional — you can add it later.',
+                    })
               }
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
             <TextField
               id="duplicate-expected"
-              label="Expected"
+              label={intl.formatMessage({
+                id: 'orders.expected',
+                defaultMessage: 'Expected',
+              })}
               type="date"
               fullWidth
               value={expectedAt}
@@ -124,13 +153,19 @@ export function DuplicateOrderDialog({
                 carries over, and the consequence — two orders claiming one PO
                 number — only shows up at reconciliation. */}
             <Alert severity="info">
-              The reference and expected date are not copied. A supplier's PO
-              number belongs to the order it was issued against.
+              {intl.formatMessage({
+                id: 'orders.duplicate.notCopied',
+                defaultMessage:
+                  "The reference and expected date are not copied. A supplier's PO number belongs to the order it was issued against.",
+              })}
             </Alert>
 
             <Typography variant="body2" color="text.secondary">
-              Fix the draft, confirm it, then cancel this one — that way nothing
-              is lost if something goes wrong.
+              {intl.formatMessage({
+                id: 'orders.duplicate.advice',
+                defaultMessage:
+                  'Fix the draft, confirm it, then cancel this one — that way nothing is lost if something goes wrong.',
+              })}
             </Typography>
           </Stack>
         </DialogContent>
@@ -138,8 +173,14 @@ export function DuplicateOrderDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Duplicate"
-          pendingLabel="Duplicating…"
+          label={intl.formatMessage({
+            id: 'orders.duplicate.action',
+            defaultMessage: 'Duplicate',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'orders.duplicate.pending',
+            defaultMessage: 'Duplicating…',
+          })}
         />
       </form>
     </Dialog>

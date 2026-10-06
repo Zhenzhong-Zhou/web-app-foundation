@@ -1,6 +1,7 @@
 import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 import { trim } from '../../../common/dto/trim';
+import { defineMessage, rule } from '../../../i18n/validation';
 
 /** One tax a code charges (ADR-046). */
 export class TaxCodeComponentDto {
@@ -19,8 +20,13 @@ export class TaxCodeComponentDto {
    */
   @IsString()
   @Matches(/^\d{1,3}(\.\d{1,4})?$/, {
-    message:
-      'rate must be a percentage with at most 4 decimal places, sent as a string',
+    message: rule(
+      defineMessage({
+        id: 'validation.taxRate',
+        defaultMessage:
+          'rate must be a percentage with at most 4 decimal places, sent as a string',
+      }),
+    ),
   })
   rate!: string;
 }

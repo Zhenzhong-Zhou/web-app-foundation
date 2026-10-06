@@ -1,12 +1,17 @@
 import { Alert, Button, Stack, TextField, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { api, messageFor } from '../lib/api';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../lib/validation';
 
 const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
+/** A blank helper line, so the field does not jump when the warning appears. */
+const RESERVED_LINE = ' ';
+
 export function ChangePasswordForm() {
+  const intl = useIntl();
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
@@ -41,11 +46,14 @@ export function ChangePasswordForm() {
       // Reported rather than hidden: "two other devices were signed out" is
       // how someone notices a session they did not create.
       setResult(
-        otherSessionsRevoked > 0
-          ? `Password changed. ${otherSessionsRevoked} other ${
-              otherSessionsRevoked === 1 ? 'device was' : 'devices were'
-            } signed out.`
-          : 'Password changed.',
+        intl.formatMessage(
+          {
+            id: 'account.password.changed',
+            defaultMessage:
+              'Password changed.{count, plural, =0 {} one { # other device was signed out.} other { # other devices were signed out.}}',
+          },
+          { count: otherSessionsRevoked },
+        ),
       );
 
       // Cleared on success only. A failed attempt should not make the user
@@ -58,10 +66,15 @@ export function ChangePasswordForm() {
     }
   }
 
+  const changePassword = intl.formatMessage({
+    id: 'account.password.title',
+    defaultMessage: 'Change password',
+  });
+
   return (
     <Stack component="form" onSubmit={handleSubmit} spacing={2}>
       <Typography variant="h6" component="h2">
-        Change password
+        {changePassword}
       </Typography>
 
       {error && <Alert severity="error">{error}</Alert>}
@@ -73,7 +86,10 @@ export function ChangePasswordForm() {
           secret. */}
       <TextField
         id="currentPassword"
-        label="Current password"
+        label={intl.formatMessage({
+          id: 'account.password.current',
+          defaultMessage: 'Current password',
+        })}
         type="password"
         autoComplete="current-password"
         required
@@ -85,14 +101,23 @@ export function ChangePasswordForm() {
 
       <TextField
         id="newPassword"
-        label="New password"
+        label={intl.formatMessage({
+          id: 'auth.reset.newPassword',
+          defaultMessage: 'New password',
+        })}
         type="password"
         autoComplete="new-password"
         required
         fullWidth
         value={form.newPassword}
         onChange={update('newPassword')}
-        helperText={`At least ${PASSWORD_MIN_LENGTH} characters.`}
+        helperText={intl.formatMessage(
+          {
+            id: 'auth.passwordMinimum',
+            defaultMessage: 'At least {count} characters.',
+          },
+          { count: PASSWORD_MIN_LENGTH },
+        )}
         slotProps={{
           htmlInput: {
             minLength: PASSWORD_MIN_LENGTH,
@@ -105,7 +130,10 @@ export function ChangePasswordForm() {
           read locks you out of an account you are currently inside. */}
       <TextField
         id="confirmPassword"
-        label="Confirm new password"
+        label={intl.formatMessage({
+          id: 'account.password.confirm',
+          defaultMessage: 'Confirm new password',
+        })}
         type="password"
         autoComplete="new-password"
         required
@@ -113,7 +141,14 @@ export function ChangePasswordForm() {
         value={form.confirmPassword}
         onChange={update('confirmPassword')}
         error={mismatch}
-        helperText={mismatch ? 'These do not match.' : ' '}
+        helperText={
+          mismatch
+            ? intl.formatMessage({
+                id: 'account.password.mismatch',
+                defaultMessage: 'These do not match.',
+              })
+            : RESERVED_LINE
+        }
         slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
       />
 
@@ -122,7 +157,12 @@ export function ChangePasswordForm() {
         disabled={submitting || mismatch || form.confirmPassword.length === 0}
         sx={{ alignSelf: 'flex-start' }}
       >
-        {submitting ? 'Changing…' : 'Change password'}
+        {submitting
+          ? intl.formatMessage({
+              id: 'account.password.changing',
+              defaultMessage: 'Changing…',
+            })
+          : changePassword}
       </Button>
     </Stack>
   );

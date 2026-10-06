@@ -1,5 +1,6 @@
 import { Alert, Button, Link, TextField } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 import {
   Link as RouterLink,
   useNavigate,
@@ -23,6 +24,7 @@ import { useAuth } from './use-auth';
  * there is no StrictMode hazard: nothing fires until a person clicks.
  */
 export function ResetPasswordPage() {
+  const intl = useIntl();
   const [params] = useSearchParams();
   const { refresh } = useAuth();
   const navigate = useNavigate();
@@ -60,29 +62,57 @@ export function ResetPasswordPage() {
 
   if (!looksLikeToken(token)) {
     return (
-      <AuthLayout title="That link did not work">
-        <Alert severity="error">The link is incomplete or has expired.</Alert>
+      <AuthLayout
+        title={intl.formatMessage({
+          id: 'auth.badLink',
+          defaultMessage: 'That link did not work',
+        })}
+      >
+        <Alert severity="error">
+          {intl.formatMessage({
+            id: 'auth.reset.badLink',
+            defaultMessage: 'The link is incomplete or has expired.',
+          })}
+        </Alert>
         <Link component={RouterLink} to="/forgot-password" variant="body2">
-          Request a new one
+          {intl.formatMessage({
+            id: 'auth.reset.requestNew',
+            defaultMessage: 'Request a new one',
+          })}
         </Link>
       </AuthLayout>
     );
   }
 
   return (
-    <AuthLayout title="Choose a new password" onSubmit={handleSubmit}>
+    <AuthLayout
+      title={intl.formatMessage({
+        id: 'auth.reset.title',
+        defaultMessage: 'Choose a new password',
+      })}
+      onSubmit={handleSubmit}
+    >
       {error && <Alert severity="error">{error}</Alert>}
 
       <TextField
         id="password"
-        label="New password"
+        label={intl.formatMessage({
+          id: 'auth.reset.newPassword',
+          defaultMessage: 'New password',
+        })}
         type="password"
         autoComplete="new-password"
         required
         fullWidth
         value={password}
         onChange={(event) => setPassword(event.target.value)}
-        helperText={`At least ${PASSWORD_MIN_LENGTH} characters.`}
+        helperText={intl.formatMessage(
+          {
+            id: 'auth.passwordMinimum',
+            defaultMessage: 'At least {count} characters.',
+          },
+          { count: PASSWORD_MIN_LENGTH },
+        )}
         slotProps={{
           htmlInput: {
             minLength: PASSWORD_MIN_LENGTH,
@@ -92,7 +122,15 @@ export function ResetPasswordPage() {
       />
 
       <Button type="submit" variant="contained" disabled={submitting}>
-        {submitting ? 'Saving…' : 'Set new password'}
+        {submitting
+          ? intl.formatMessage({
+              id: 'auth.reset.saving',
+              defaultMessage: 'Saving…',
+            })
+          : intl.formatMessage({
+              id: 'auth.reset.save',
+              defaultMessage: 'Set new password',
+            })}
       </Button>
     </AuthLayout>
   );

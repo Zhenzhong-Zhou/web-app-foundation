@@ -49,6 +49,11 @@ export class OrganizationController {
       'licenceNotInForcePolicy',
       'licenceExpiredPolicy',
       'licenceRequired',
+      // What documents print in (ADR-054): a change worth seeing in the log,
+      // since every document made after it carries the result.
+      'documentLanguage',
+      'documentSecondLanguage',
+      'requiredNameLanguages',
     ],
   })
   async update(@Body() dto: UpdateOrganizationDto): Promise<void> {

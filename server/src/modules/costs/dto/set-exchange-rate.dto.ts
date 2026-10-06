@@ -3,6 +3,7 @@ import { IsString, Matches } from 'class-validator';
 import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import { IsCurrencyCode } from '../../../common/dto/currency';
 import { trim } from '../../../common/dto/trim';
+import { defineMessage, rule } from '../../../i18n/validation';
 
 /**
  * Greater than zero, up to 10 digits before the point and 8 after, matching
@@ -26,8 +27,13 @@ export class SetExchangeRateDto {
 
   @IsString()
   @Matches(EXCHANGE_RATE, {
-    message:
-      'rate must be greater than zero with at most 8 decimal places, sent as a string',
+    message: rule(
+      defineMessage({
+        id: 'validation.rate',
+        defaultMessage:
+          'rate must be greater than zero with at most 8 decimal places, sent as a string',
+      }),
+    ),
   })
   rate!: string;
 }

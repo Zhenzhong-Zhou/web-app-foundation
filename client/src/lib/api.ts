@@ -1,3 +1,5 @@
+import { intl } from '../i18n/intl';
+
 const BASE = '/api/v1';
 
 export class ApiError extends Error {
@@ -32,7 +34,10 @@ export class ApiError extends Error {
 export function messageFor(caught: unknown): string {
   return caught instanceof ApiError
     ? caught.message
-    : 'Could not reach the server.';
+    : intl().formatMessage({
+        id: 'common.serverUnreachable',
+        defaultMessage: 'Could not reach the server.',
+      });
 }
 
 /**
@@ -52,6 +57,18 @@ function retryAfter(response: Response): number | undefined {
 }
 
 /** Narrower than RequestInit: a Headers instance spreads to nothing below. */
+/**
+ * The language the screens speak, sent with every request so the server
+ * answers in it (ADR-054): a refusal reads in the same language as the
+ * screen it lands on. Set by LanguageProvider when the language changes;
+ * the browser's own Accept-Language until then.
+ */
+let requestLanguage: string | null = null;
+
+export function setRequestLanguage(locale: string): void {
+  requestLanguage = locale;
+}
+
 type ApiInit = Omit<RequestInit, 'headers'> & {
   headers?: Record<string, string>;
 };
@@ -72,6 +89,7 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
     ...init,
     credentials: 'include',
     headers: {
+      ...(requestLanguage ? { 'Accept-Language': requestLanguage } : {}),
       'Content-Type': 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
       ...init.headers,
@@ -87,7 +105,14 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
 
     const message = Array.isArray(body?.message)
       ? body.message.join(', ')
-      : (body?.message ?? `Request failed (${response.status})`);
+      : (body?.message ??
+        intl().formatMessage(
+          {
+            id: 'common.requestFailed',
+            defaultMessage: 'Request failed ({status})',
+          },
+          { status: response.status },
+        ));
 
     throw new ApiError(
       message,

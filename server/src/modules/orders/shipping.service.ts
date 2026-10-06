@@ -7,9 +7,11 @@ import {
 import { eq, sql } from 'drizzle-orm';
 
 import { recordContext } from '../../core/audit/audit-context';
+import { documentLanguages } from '../../core/organizations/document-languages';
 import { isCheckViolation } from '../../database/errors';
 import { orderLines, shipments } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { assertTakeable, inVariantOrder } from '../stock/availability';
 import {
   allocateFefo,
@@ -133,7 +135,7 @@ export class ShippingService {
 
   async ship(orderId: string, input: ShipOrderDto, actorId: string) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      await this.loadShippable(tx, organizationId, orderId);
+      const order = await this.loadShippable(tx, organizationId, orderId);
 
       const ids = input.lines.map((line) => line.lineId);
 
@@ -142,7 +144,14 @@ export class ShippingService {
       for (const line of lines) {
         if (line.isClosedShort) {
           throw new ConflictException(
-            `${line.sku} was closed short, so nothing more ships against it`,
+            t(
+              {
+                id: 'orders.skuWasClosedShort',
+                defaultMessage:
+                  '{sku} was closed short, so nothing more ships against it',
+              },
+              { sku: line.sku },
+            ),
           );
         }
       }
@@ -151,6 +160,13 @@ export class ShippingService {
         tx,
         organizationId,
         lines.map((line) => line.variantId),
+      );
+
+      // The packing slip's languages, fixed as the box leaves (ADR-054).
+      const languages = await documentLanguages(
+        tx,
+        organizationId,
+        order.partnerId,
       );
 
       const [shipment] = await tx
@@ -162,6 +178,7 @@ export class ShippingService {
           carrier: input.carrier,
           trackingNumber: input.trackingNumber,
           note: input.note,
+          ...languages,
           createdBy: actorId,
         })
         .returning();
@@ -235,7 +252,18 @@ export class ShippingService {
             )
           ) {
             throw new ConflictException(
-              `That is more ${line.sku} than was ordered. ${line.quantityOrdered} ordered, ${line.quantityFulfilled} already shipped.`,
+              t(
+                {
+                  id: 'orders.moreSkuThanWas',
+                  defaultMessage:
+                    'That is more {sku} than was ordered. {quantityOrdered} ordered, {quantityFulfilled} already shipped.',
+                },
+                {
+                  sku: line.sku,
+                  quantityOrdered: line.quantityOrdered,
+                  quantityFulfilled: line.quantityFulfilled,
+                },
+              ),
             );
           }
           throw error;
@@ -267,7 +295,11 @@ export class ShippingService {
 
     if (order.direction !== 'sale') {
       throw new BadRequestException(
-        'Only a sales order is shipped. A purchase is received.',
+        t({
+          id: 'orders.salesOrderShippedPurchase',
+          defaultMessage:
+            'Only a sales order is shipped. A purchase is received.',
+        }),
       );
     }
 
@@ -278,7 +310,13 @@ export class ShippingService {
      */
     if (order.status !== 'confirmed') {
       throw new ConflictException(
-        `A ${order.status} order cannot be shipped against`,
+        t(
+          {
+            id: 'orders.statusOrderShippedAgainst',
+            defaultMessage: 'A {status} order cannot be shipped against',
+          },
+          { status: order.status },
+        ),
       );
     }
 

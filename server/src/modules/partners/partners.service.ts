@@ -6,9 +6,11 @@ import {
 } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
 
+import { assertLanguagePair } from '../../core/organizations/document-languages';
 import { isUniqueViolation } from '../../database/errors';
 import { addresses, contacts, partners } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { assertListAssignable } from '../price-lists/list-price';
 import type { CreatePartnerDto } from './dto/create-partner.dto';
 import type { UpdatePartnerDto } from './dto/update-partner.dto';
@@ -46,12 +48,20 @@ export class PartnersService {
       eq(partners.id, partnerId),
     );
 
-    if (!partner) throw new NotFoundException('No such partner');
+    if (!partner)
+      throw new NotFoundException(
+        t({ id: 'partners.suchPartner', defaultMessage: 'No such partner' }),
+      );
 
     return partner;
   }
 
   async create(input: CreatePartnerDto) {
+    assertLanguagePair(
+      input.documentLanguage ?? null,
+      input.documentSecondLanguage ?? null,
+    );
+
     try {
       const [partner] = await this.tenantDb
         .insert(partners, {
@@ -59,6 +69,8 @@ export class PartnersService {
           code: input.code,
           taxId: input.taxId,
           notes: input.notes,
+          documentLanguage: input.documentLanguage ?? null,
+          documentSecondLanguage: input.documentSecondLanguage ?? null,
         })
         .returning();
 
@@ -73,7 +85,13 @@ export class PartnersService {
          * "Acme (2)".
          */
         throw new ConflictException(
-          `Code ${input.code} is already used by another partner`,
+          t(
+            {
+              id: 'partners.codeCodeUsedAnother',
+              defaultMessage: 'Code {code} is already used by another partner',
+            },
+            { code: input.code },
+          ),
         );
       }
       throw error;
@@ -87,7 +105,20 @@ export class PartnersService {
       eq(partners.id, partnerId),
     );
 
-    if (!existing) throw new NotFoundException('No such partner');
+    if (!existing)
+      throw new NotFoundException(
+        t({ id: 'partners.suchPartner', defaultMessage: 'No such partner' }),
+      );
+
+    // The pair as it will stand (ADR-054): a side left out keeps its value.
+    assertLanguagePair(
+      input.documentLanguage !== undefined
+        ? input.documentLanguage
+        : existing.documentLanguage,
+      input.documentSecondLanguage !== undefined
+        ? input.documentSecondLanguage
+        : existing.documentSecondLanguage,
+    );
 
     // A named list must be this organization's, price the right side, and
     // still be in use (ADR-049). null clears, and needs no check.
@@ -117,7 +148,13 @@ export class PartnersService {
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException(
-          `Code ${input.code} is already used by another partner`,
+          t(
+            {
+              id: 'partners.codeCodeUsedAnother',
+              defaultMessage: 'Code {code} is already used by another partner',
+            },
+            { code: input.code },
+          ),
         );
       }
       throw error;

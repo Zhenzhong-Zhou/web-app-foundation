@@ -10,13 +10,13 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
-
-const UNITS = ['each', 'kg', 'g', 'litre', 'ml', 'case', 'box', 'pallet'];
+import { unitLabel, UNITS } from './units';
 
 const EMPTY = { sku: '', name: '', unitOfMeasure: 'each' };
 
@@ -40,6 +40,7 @@ export function AddVariantDialog({
   onClose: () => void;
   onCreated: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState(EMPTY);
   const [tracksLots, setTracksLots] = useState(false);
 
@@ -48,7 +49,12 @@ export function AddVariantDialog({
       close();
       await onCreated();
     },
-    { success: 'Variant added' },
+    {
+      success: intl.formatMessage({
+        id: 'products.variant.added',
+        defaultMessage: 'Variant added',
+      }),
+    },
   );
 
   function close() {
@@ -84,7 +90,12 @@ export function AddVariantDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Add a variant</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'products.variant.addTitle',
+            defaultMessage: 'Add a variant',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -92,7 +103,10 @@ export function AddVariantDialog({
 
             <TextField
               id="variant-sku"
-              label="SKU"
+              label={intl.formatMessage({
+                id: 'products.sku',
+                defaultMessage: 'SKU',
+              })}
               required
               fullWidth
               value={form.sku}
@@ -104,19 +118,28 @@ export function AddVariantDialog({
 
             <TextField
               id="variant-name"
-              label="Size or variation"
+              label={intl.formatMessage({
+                id: 'products.variation',
+                defaultMessage: 'Size or variation',
+              })}
               fullWidth
               value={form.name}
               onChange={(event) =>
                 setForm((current) => ({ ...current, name: event.target.value }))
               }
-              helperText="120ct, Large, Blue"
+              helperText={intl.formatMessage({
+                id: 'products.variation.examples',
+                defaultMessage: '120ct, Large, Blue',
+              })}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
             <TextField
               id="variant-unit"
-              label="Unit of measure"
+              label={intl.formatMessage({
+                id: 'products.unitOfMeasure',
+                defaultMessage: 'Unit of measure',
+              })}
               select
               required
               fullWidth
@@ -127,11 +150,14 @@ export function AddVariantDialog({
                   unitOfMeasure: event.target.value,
                 }))
               }
-              helperText="What stock is counted in."
+              helperText={intl.formatMessage({
+                id: 'products.unitOfMeasure.help',
+                defaultMessage: 'What stock is counted in.',
+              })}
             >
               {UNITS.map((unit) => (
                 <MenuItem key={unit} value={unit}>
-                  {unit}
+                  {unitLabel(unit, intl)}
                 </MenuItem>
               ))}
             </TextField>
@@ -143,7 +169,10 @@ export function AddVariantDialog({
                   onChange={(event) => setTracksLots(event.target.checked)}
                 />
               }
-              label="Track lot numbers and expiry"
+              label={intl.formatMessage({
+                id: 'products.tracksLots',
+                defaultMessage: 'Track lot numbers and expiry',
+              })}
             />
 
             {/* Stated here because the field does not appear on any edit form:
@@ -151,7 +180,10 @@ export function AddVariantDialog({
                 row violating the invariant in one direction or the other, so
                 it is set once (ADR-023). */}
             <Typography variant="caption" color="text.secondary">
-              Lot tracking cannot be changed later.
+              {intl.formatMessage({
+                id: 'products.tracksLots.fixed',
+                defaultMessage: 'Lot tracking cannot be changed later.',
+              })}
             </Typography>
           </Stack>
         </DialogContent>
@@ -159,8 +191,14 @@ export function AddVariantDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Add variant"
-          pendingLabel="Adding…"
+          label={intl.formatMessage({
+            id: 'products.variant.add',
+            defaultMessage: 'Add variant',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.adding',
+            defaultMessage: 'Adding…',
+          })}
         />
       </form>
     </Dialog>

@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 import {
   Link as RouterLink,
   useNavigate,
@@ -25,7 +26,12 @@ import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { api } from '../lib/api';
-import { formatDay, formatMoney } from '../lib/format';
+import {
+  formatDay,
+  formatMoney,
+  formatQuantity,
+  SEPARATOR,
+} from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
   InvoiceDetail,
@@ -56,6 +62,7 @@ import { VoidInvoiceDialog } from './void-invoice-dialog';
  * is to credit part of it or void the whole (ADR-047).
  */
 export function InvoiceDetailPage() {
+  const intl = useIntl();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -138,7 +145,15 @@ export function InvoiceDetailPage() {
   }
 
   if (!invoice) {
-    return <Alert severity="error">{error ?? 'No such invoice.'}</Alert>;
+    return (
+      <Alert severity="error">
+        {error ??
+          intl.formatMessage({
+            id: 'invoices.notFound',
+            defaultMessage: 'No such invoice.',
+          })}
+      </Alert>
+    );
   }
 
   const isDraft = invoice.status === 'draft';
@@ -162,17 +177,46 @@ export function InvoiceDetailPage() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        crumbs={[{ label: 'Invoices', to: '/invoices' }]}
-        title={invoice.number ?? 'Draft invoice'}
+        crumbs={[
+          {
+            label: intl.formatMessage({
+              id: 'layout.nav.invoices',
+              defaultMessage: 'Invoices',
+            }),
+            to: '/invoices',
+          },
+        ]}
+        title={
+          invoice.number ??
+          intl.formatMessage({
+            id: 'orders.shipments.draftInvoice',
+            defaultMessage: 'Draft invoice',
+          })
+        }
         subtitle={
           <>
-            {invoice.partnerName} ·{' '}
+            {invoice.partnerName}
+            {SEPARATOR}
             <Link component={RouterLink} to={`/orders/${invoice.orderId}`}>
               {invoice.orderReference
-                ? `Order ${invoice.orderReference}`
-                : 'Order'}
+                ? intl.formatMessage(
+                    {
+                      id: 'invoices.orderReference',
+                      defaultMessage: 'Order {reference}',
+                    },
+                    { reference: invoice.orderReference },
+                  )
+                : intl.formatMessage({
+                    id: 'inventory.trace.order',
+                    defaultMessage: 'Order',
+                  })}
             </Link>
-            {invoice.invoiceDate && ` · ${formatDay(invoice.invoiceDate)}`}
+            {invoice.invoiceDate && (
+              <>
+                {SEPARATOR}
+                {formatDay(invoice.invoiceDate)}
+              </>
+            )}
           </>
         }
         status={status}
@@ -185,7 +229,10 @@ export function InvoiceDetailPage() {
               component={RouterLink}
               to={`/invoices/${invoice.id}/print`}
             >
-              Print
+              {intl.formatMessage({
+                id: 'invoices.print',
+                defaultMessage: 'Print',
+              })}
             </Button>
 
             {isDraft && can('invoices.delete') && (
@@ -194,13 +241,19 @@ export function InvoiceDetailPage() {
                 color="error"
                 onClick={openDialog(() => setDeleting(true))}
               >
-                Delete draft
+                {intl.formatMessage({
+                  id: 'invoices.draft.delete',
+                  defaultMessage: 'Delete draft',
+                })}
               </Button>
             )}
 
             {isDraft && can('invoices.issue') && (
               <Button onClick={openDialog(() => setIssuing(true))}>
-                Issue
+                {intl.formatMessage({
+                  id: 'invoices.issue.action',
+                  defaultMessage: 'Issue',
+                })}
               </Button>
             )}
 
@@ -209,7 +262,10 @@ export function InvoiceDetailPage() {
                 variant="outlined"
                 onClick={openDialog(() => setCrediting(true))}
               >
-                Credit
+                {intl.formatMessage({
+                  id: 'invoices.credit',
+                  defaultMessage: 'Credit',
+                })}
               </Button>
             )}
 
@@ -223,7 +279,10 @@ export function InvoiceDetailPage() {
                   color="error"
                   onClick={openDialog(() => setVoiding(true))}
                 >
-                  Void
+                  {intl.formatMessage({
+                    id: 'orders.shipments.void',
+                    defaultMessage: 'Void',
+                  })}
                 </Button>
               )}
           </>
@@ -234,8 +293,26 @@ export function InvoiceDetailPage() {
 
       {invoice.status === 'voided' && (
         <Alert severity="warning">
-          Voided{invoice.voidedAt ? ` ${formatDay(invoice.voidedAt)}` : ''}:{' '}
-          {invoice.voidReason}. The credit note below reverses it in full.
+          {invoice.voidedAt
+            ? intl.formatMessage(
+                {
+                  id: 'invoices.voidedOn',
+                  defaultMessage:
+                    'Voided {date}: {reason}. The credit note below reverses it in full.',
+                },
+                {
+                  date: formatDay(invoice.voidedAt),
+                  reason: invoice.voidReason,
+                },
+              )
+            : intl.formatMessage(
+                {
+                  id: 'invoices.voidedNoDate',
+                  defaultMessage:
+                    'Voided: {reason}. The credit note below reverses it in full.',
+                },
+                { reason: invoice.voidReason },
+              )}
         </Alert>
       )}
 
@@ -253,13 +330,51 @@ export function InvoiceDetailPage() {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>SKU</TableCell>
-                <TableCell>Item</TableCell>
-                <TableCell align="right">Quantity</TableCell>
-                <TableCell align="right">Unit price</TableCell>
-                <TableCell>Tax</TableCell>
-                <TableCell align="right">Amount</TableCell>
-                {canEdit && <TableCell align="right" aria-label="Actions" />}
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'products.sku',
+                    defaultMessage: 'SKU',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'inventory.item',
+                    defaultMessage: 'Item',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'inventory.quantity',
+                    defaultMessage: 'Quantity',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'orders.unitPrice',
+                    defaultMessage: 'Unit price',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'invoices.tax',
+                    defaultMessage: 'Tax',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'invoices.amount',
+                    defaultMessage: 'Amount',
+                  })}
+                </TableCell>
+                {canEdit && (
+                  <TableCell
+                    align="right"
+                    aria-label={intl.formatMessage({
+                      id: 'orders.lines.actions',
+                      defaultMessage: 'Actions',
+                    })}
+                  />
+                )}
               </TableRow>
             </TableHead>
 
@@ -268,7 +383,11 @@ export function InvoiceDetailPage() {
                 <TableRow key={line.id}>
                   <TableCell>{line.sku}</TableCell>
                   <TableCell>{line.description}</TableCell>
-                  <TableCell align="right">{Number(line.quantity)}</TableCell>
+                  {/* Trailing zeros dropped, as before; the decimal
+                    separator the reader's (formatQuantity). */}
+                  <TableCell align="right">
+                    {formatQuantity(String(Number(line.quantity)))}
+                  </TableCell>
                   <TableCell align="right">
                     {formatMoney(line.unitPrice, invoice.currency)}
                   </TableCell>
@@ -279,7 +398,10 @@ export function InvoiceDetailPage() {
                         variant="body2"
                         color="warning.main"
                       >
-                        None yet
+                        {intl.formatMessage({
+                          id: 'invoices.tax.noneYet',
+                          defaultMessage: 'None yet',
+                        })}
                       </Typography>
                     )}
                   </TableCell>
@@ -293,7 +415,10 @@ export function InvoiceDetailPage() {
                         size="small"
                         onClick={openDialog(() => setEditingLine(line))}
                       >
-                        Edit
+                        {intl.formatMessage({
+                          id: 'common.edit',
+                          defaultMessage: 'Edit',
+                        })}
                       </Button>
                     </TableCell>
                   )}
@@ -305,30 +430,43 @@ export function InvoiceDetailPage() {
 
         <Stack spacing={0.5} sx={{ p: 2, alignItems: 'flex-end' }}>
           <TotalRow
-            label="Subtotal"
+            label={intl.formatMessage({
+              id: 'invoices.subtotal',
+              defaultMessage: 'Subtotal',
+            })}
             amount={formatMoney(subtotal ?? null, invoice.currency)}
           />
           {taxes.map((tax) => (
             <TotalRow
               key={`${tax.name}-${tax.rate}`}
-              label={`${tax.name} ${formatRate(tax.rate)}`}
+              label={[tax.name, formatRate(tax.rate)].join(' ')}
               amount={formatMoney(tax.amount, invoice.currency)}
             />
           ))}
           {taxes.length === 0 && (
             <TotalRow
-              label="Tax"
+              label={intl.formatMessage({
+                id: 'invoices.tax',
+                defaultMessage: 'Tax',
+              })}
               amount={formatMoney(taxTotal ?? null, invoice.currency)}
             />
           )}
           <TotalRow
-            label={`Total ${invoice.currency}`}
+            label={intl.formatMessage(
+              { id: 'invoices.totalIn', defaultMessage: 'Total {currency}' },
+              { currency: invoice.currency },
+            )}
             amount={formatMoney(total ?? null, invoice.currency)}
             strong
           />
           {isDraft && (
             <Typography variant="caption" color="text.secondary">
-              What issuing will store, calculated the same way.
+              {intl.formatMessage({
+                id: 'invoices.previewNote',
+                defaultMessage:
+                  'What issuing will store, calculated the same way.',
+              })}
             </Typography>
           )}
         </Stack>
@@ -338,7 +476,10 @@ export function InvoiceDetailPage() {
 
       {invoice.dueDate && (
         <Typography variant="body2">
-          Due {formatDay(invoice.dueDate)}
+          {intl.formatMessage(
+            { id: 'invoices.dueOn', defaultMessage: 'Due {date}' },
+            { date: formatDay(invoice.dueDate) },
+          )}
         </Typography>
       )}
       {!canEdit && invoice.note && (
@@ -350,17 +491,42 @@ export function InvoiceDetailPage() {
       {invoice.creditNotes.length > 0 && (
         <Paper variant="outlined" sx={{ p: 2 }}>
           <Typography variant="subtitle1" component="h2" gutterBottom>
-            Credit notes
+            {intl.formatMessage({
+              id: 'invoices.creditNotes',
+              defaultMessage: 'Credit notes',
+            })}
           </Typography>
           <Stack spacing={1}>
             {invoice.creditNotes.map((note) => (
               <Typography key={note.id} variant="body2">
                 <Link component={RouterLink} to={`/credit-notes/${note.id}`}>
                   {note.number}
-                </Link>{' '}
-                · {formatDay(note.creditDate)} ·{' '}
-                {formatMoney(note.total, invoice.currency)}
-                {note.isVoid ? ' · voids this invoice' : ''} — {note.reason}
+                </Link>
+                {SEPARATOR}
+                {note.isVoid
+                  ? intl.formatMessage(
+                      {
+                        id: 'invoices.creditNoteVoids',
+                        defaultMessage:
+                          '{date} · {amount} · voids this invoice — {reason}',
+                      },
+                      {
+                        date: formatDay(note.creditDate),
+                        amount: formatMoney(note.total, invoice.currency),
+                        reason: note.reason,
+                      },
+                    )
+                  : intl.formatMessage(
+                      {
+                        id: 'invoices.creditNoteLine',
+                        defaultMessage: '{date} · {amount} — {reason}',
+                      },
+                      {
+                        date: formatDay(note.creditDate),
+                        amount: formatMoney(note.total, invoice.currency),
+                        reason: note.reason,
+                      },
+                    )}
               </Typography>
             ))}
           </Stack>

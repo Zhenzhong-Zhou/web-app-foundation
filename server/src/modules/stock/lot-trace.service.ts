@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { itemName } from './item-name';
 import type { Tx } from './stock.service';
 
@@ -143,7 +144,10 @@ export class LotTraceService {
     }[];
 
     // Scoped by organization, so another tenant's lot is simply not found.
-    if (!row) throw new NotFoundException('No such lot');
+    if (!row)
+      throw new NotFoundException(
+        t({ id: 'stock.suchLot', defaultMessage: 'No such lot' }),
+      );
 
     return {
       id: row.id,

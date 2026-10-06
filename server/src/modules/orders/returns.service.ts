@@ -14,6 +14,7 @@ import {
   productVariants,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { ReturnAuthorizationReceiptsService } from '../return-authorizations/return-authorization-receipts.service';
 import { inVariantOrder } from '../stock/availability';
 import { StockService, type Tx } from '../stock/stock.service';
@@ -237,7 +238,18 @@ export class ReturnsService {
             )
           ) {
             throw new ConflictException(
-              `That is more ${line.sku} than was shipped. ${line.quantityFulfilled} shipped, ${line.quantityReturned} already returned.`,
+              t(
+                {
+                  id: 'orders.moreSkuThanWas2',
+                  defaultMessage:
+                    'That is more {sku} than was shipped. {quantityFulfilled} shipped, {quantityReturned} already returned.',
+                },
+                {
+                  sku: line.sku,
+                  quantityFulfilled: line.quantityFulfilled,
+                  quantityReturned: line.quantityReturned,
+                },
+              ),
             );
           }
           throw error;
@@ -297,13 +309,23 @@ export class ReturnsService {
 
     if (order.direction !== 'sale') {
       throw new BadRequestException(
-        'Only a sales order takes returns. Goods sent back to a supplier are an adjustment.',
+        t({
+          id: 'orders.salesOrderTakesReturns',
+          defaultMessage:
+            'Only a sales order takes returns. Goods sent back to a supplier are an adjustment.',
+        }),
       );
     }
 
     if (order.status !== 'confirmed' && order.status !== 'fulfilled') {
       throw new ConflictException(
-        `A ${order.status} order has shipped nothing to return`,
+        t(
+          {
+            id: 'orders.statusOrderShippedNothing',
+            defaultMessage: 'A {status} order has shipped nothing to return',
+          },
+          { status: order.status },
+        ),
       );
     }
 
@@ -326,7 +348,14 @@ export class ReturnsService {
   ): Promise<{ total: string; parts: { lotId: string; quantity: string }[] }> {
     if (!requested.lots || requested.quantity) {
       throw new BadRequestException(
-        `${line.sku} is tracked by lot: send the lots that came back, not a quantity`,
+        t(
+          {
+            id: 'orders.skuTrackedLotSend',
+            defaultMessage:
+              '{sku} is tracked by lot: send the lots that came back, not a quantity',
+          },
+          { sku: line.sku },
+        ),
       );
     }
 
@@ -334,7 +363,14 @@ export class ReturnsService {
 
     if (new Set(lotIds).size !== lotIds.length) {
       throw new BadRequestException(
-        `A lot appears twice for ${line.sku} — send its total once`,
+        t(
+          {
+            id: 'orders.lotAppearsTwiceSku',
+            defaultMessage:
+              'A lot appears twice for {sku} — send its total once',
+          },
+          { sku: line.sku },
+        ),
       );
     }
 
@@ -374,13 +410,27 @@ export class ReturnsService {
     for (const row of checked) {
       if (row.never_shipped) {
         throw new BadRequestException(
-          `Lot ${row.code} of ${line.sku} never shipped on this order, so it cannot come back against it`,
+          t(
+            {
+              id: 'orders.lotCodeSkuNever',
+              defaultMessage:
+                'Lot {code} of {sku} never shipped on this order, so it cannot come back against it',
+            },
+            { code: row.code, sku: line.sku },
+          ),
         );
       }
 
       if (row.exceeds) {
         throw new ConflictException(
-          `More of lot ${row.code} than was shipped. ${row.shipped} shipped, ${row.returned} already returned.`,
+          t(
+            {
+              id: 'orders.moreLotCodeThan',
+              defaultMessage:
+                'More of lot {code} than was shipped. {shipped} shipped, {returned} already returned.',
+            },
+            { code: row.code, shipped: row.shipped, returned: row.returned },
+          ),
         );
       }
     }
@@ -395,7 +445,14 @@ export class ReturnsService {
   ): { total: string; parts: { lotId: null; quantity: string }[] } {
     if (!requested.quantity || requested.lots) {
       throw new BadRequestException(
-        `${line.sku} is not tracked by lot: send a quantity, not lots`,
+        t(
+          {
+            id: 'orders.skuTrackedLotSend2',
+            defaultMessage:
+              '{sku} is not tracked by lot: send a quantity, not lots',
+          },
+          { sku: line.sku },
+        ),
       );
     }
 

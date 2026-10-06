@@ -9,7 +9,13 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { primaryKey, timestamps } from './columns';
+import type { Locale } from '../../common/locales';
+import {
+  languagesDiffer,
+  primaryKey,
+  secondLanguageNeedsFirst,
+  timestamps,
+} from './columns';
 import { organizations } from './organizations';
 import { priceLists } from './price-lists';
 
@@ -77,6 +83,15 @@ export const partners = pgTable(
       { onDelete: 'restrict' },
     ),
 
+    /**
+     * The languages this partner's documents print in (ADR-054), when they
+     * differ from the organization's. A whole pair or nothing: with the
+     * first null the partner takes the organization's pair, never half of
+     * each.
+     */
+    documentLanguage: text('document_language').$type<Locale>(),
+    documentSecondLanguage: text('document_second_language').$type<Locale>(),
+
     ...timestamps,
   },
   (t) => [
@@ -90,5 +105,14 @@ export const partners = pgTable(
     index('partners_org_name_idx').on(t.organizationId, t.name),
 
     check('partners_name_not_blank_check', sql`length(btrim(${t.name})) > 0`),
+
+    check(
+      'partners_document_second_language_needs_first_check',
+      secondLanguageNeedsFirst(t.documentLanguage, t.documentSecondLanguage),
+    ),
+    check(
+      'partners_document_languages_differ_check',
+      languagesDiffer(t.documentLanguage, t.documentSecondLanguage),
+    ),
   ],
 );

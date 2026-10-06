@@ -9,6 +9,7 @@ import {
   TextField,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -48,6 +49,11 @@ function eligibleParents(all: Location[], location: Location): Location[] {
   return all.filter((candidate) => !banned.has(candidate.id));
 }
 
+/** "Shelf 3 (A-01-03)": a parent's code beside its name, as on its label. */
+function nameAndCode(location: Location): string {
+  return location.code ? `${location.name} (${location.code})` : location.name;
+}
+
 export function EditLocationDialog({
   location,
   locations,
@@ -59,6 +65,7 @@ export function EditLocationDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState({
     name: location?.name ?? '',
     code: location?.code ?? '',
@@ -72,7 +79,12 @@ export function EditLocationDialog({
       close();
       await onSaved();
     },
-    { success: 'Location saved' },
+    {
+      success: intl.formatMessage({
+        id: 'locations.saved',
+        defaultMessage: 'Location saved',
+      }),
+    },
   );
 
   function close() {
@@ -120,7 +132,12 @@ export function EditLocationDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Edit {location?.name}</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage(
+            { id: 'locations.edit.title', defaultMessage: 'Edit {name}' },
+            { name: location?.name },
+          )}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -128,7 +145,10 @@ export function EditLocationDialog({
 
             <TextField
               id="edit-location-name"
-              label="Name"
+              label={intl.formatMessage({
+                id: 'common.name',
+                defaultMessage: 'Name',
+              })}
               required
               fullWidth
               value={form.name}
@@ -138,7 +158,10 @@ export function EditLocationDialog({
 
             <TextField
               id="edit-location-code"
-              label="Code"
+              label={intl.formatMessage({
+                id: 'locations.code',
+                defaultMessage: 'Code',
+              })}
               fullWidth
               value={form.code}
               onChange={update('code')}
@@ -147,19 +170,30 @@ export function EditLocationDialog({
 
             <TextField
               id="edit-location-parent"
-              label="Inside"
+              label={intl.formatMessage({
+                id: 'locations.edit.inside',
+                defaultMessage: 'Inside',
+              })}
               select
               fullWidth
               value={form.parentId}
               onChange={update('parentId')}
-              helperText="Its own descendants are not listed — moving a location inside itself would detach the subtree."
+              helperText={intl.formatMessage({
+                id: 'locations.edit.inside.help',
+                defaultMessage:
+                  'Its own descendants are not listed — moving a location inside itself would detach the subtree.',
+              })}
             >
-              <MenuItem value="">Top level</MenuItem>
+              <MenuItem value="">
+                {intl.formatMessage({
+                  id: 'locations.edit.topLevel',
+                  defaultMessage: 'Top level',
+                })}
+              </MenuItem>
               {location &&
                 eligibleParents(locations, location).map((candidate) => (
                   <MenuItem key={candidate.id} value={candidate.id}>
-                    {candidate.name}
-                    {candidate.code ? ` (${candidate.code})` : ''}
+                    {nameAndCode(candidate)}
                   </MenuItem>
                 ))}
             </TextField>
@@ -178,7 +212,10 @@ export function EditLocationDialog({
               }
               // Named available rather than sellable because raw materials are
               // consumed rather than sold (ADR-024).
-              label="Available for picking"
+              label={intl.formatMessage({
+                id: 'locations.edit.availableForPicking',
+                defaultMessage: 'Available for picking',
+              })}
             />
 
             <FormControlLabel
@@ -195,7 +232,10 @@ export function EditLocationDialog({
               }
               // Retired rather than deleted: a location referenced by movement
               // history cannot be removed without inventing gaps in the ledger.
-              label="In use"
+              label={intl.formatMessage({
+                id: 'locations.edit.inUse',
+                defaultMessage: 'In use',
+              })}
             />
           </Stack>
         </DialogContent>
@@ -203,8 +243,14 @@ export function EditLocationDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

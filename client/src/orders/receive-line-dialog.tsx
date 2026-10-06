@@ -8,14 +8,22 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { LotFields } from '../inventory/lot-fields';
 import { api } from '../lib/api';
+import {
+  formatQuantity,
+  groupedNumberMessage,
+  nameAndCode,
+  toApiDecimal,
+} from '../lib/format';
 import type { Location, OrderLine } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
+import { withUnit } from '../products/units';
 
 /**
  * Receiving against one line: a movement and a fulfilment in one transaction
@@ -41,6 +49,9 @@ export function ReceiveLineDialog({
   onClose: () => void;
   onReceived: () => Promise<void>;
 }) {
+  const intl = useIntl();
+  // Set when the quantity is typed with a thousands separator (ADR-054).
+  const [quantityError, setQuantityError] = useState<string | null>(null);
   const [form, setForm] = useState({
     locationId: '',
     quantity: '',
@@ -63,10 +74,16 @@ export function ReceiveLineDialog({
       close();
       await onReceived();
     },
-    { success: 'Received' },
+    {
+      success: intl.formatMessage({
+        id: 'orders.status.received',
+        defaultMessage: 'Received',
+      }),
+    },
   );
 
   function close() {
+    setQuantityError(null);
     reset();
     onClose();
   }
@@ -80,12 +97,19 @@ export function ReceiveLineDialog({
     event.preventDefault();
     if (!line) return;
 
+    const quantity = toApiDecimal(form.quantity);
+    if (quantity === null) {
+      setQuantityError(groupedNumberMessage());
+      return;
+    }
+    setQuantityError(null);
+
     void submit(() =>
       api(`/orders/${orderId}/lines/${line.id}/receipts`, {
         method: 'POST',
         body: JSON.stringify({
           toLocationId: form.locationId,
-          quantity: form.quantity,
+          quantity,
           // The lot is created with the movement — it arrives printed on the
           // box, not registered in advance.
           lot: variant?.tracksLots
@@ -109,43 +133,69 @@ export function ReceiveLineDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Receive {line?.sku}</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage(
+            { id: 'orders.receive.title', defaultMessage: 'Receive {sku}' },
+            { sku: line?.sku },
+          )}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
 
             <Typography variant="body2" color="text.secondary">
-              {line?.quantityFulfilled} of {line?.quantityOrdered} received so
-              far.
+              {line &&
+                intl.formatMessage(
+                  {
+                    id: 'orders.receive.soFar',
+                    defaultMessage: '{fulfilled} of {ordered} received so far.',
+                  },
+                  {
+                    fulfilled: formatQuantity(line.quantityFulfilled),
+                    ordered: formatQuantity(line.quantityOrdered),
+                  },
+                )}
             </Typography>
 
             <TextField
               id="receive-line-location"
-              label="Into"
+              label={intl.formatMessage({
+                id: 'inventory.into',
+                defaultMessage: 'Into',
+              })}
               select
               required
               fullWidth
               value={form.locationId}
               onChange={update('locationId')}
-              helperText="Only locations that hold stock directly are listed."
+              helperText={intl.formatMessage({
+                id: 'inventory.leavesOnly',
+                defaultMessage:
+                  'Only locations that hold stock directly are listed.',
+              })}
             >
               {locations.map((location) => (
                 <MenuItem key={location.id} value={location.id}>
-                  {location.code
-                    ? `${location.name} (${location.code})`
-                    : location.name}
+                  {nameAndCode(location.name, location.code)}
                 </MenuItem>
               ))}
             </TextField>
 
             <TextField
               id="receive-line-quantity"
-              label="Quantity"
+              label={intl.formatMessage({
+                id: 'inventory.quantity',
+                defaultMessage: 'Quantity',
+              })}
               required
               fullWidth
               value={form.quantity}
-              onChange={update('quantity')}
+              onChange={(event) => {
+                setQuantityError(null);
+                update('quantity')(event);
+              }}
+              error={!!quantityError}
               /**
                * inputMode rather than type="number". A number input coerces,
                * strips leading zeros, and hands back a value the browser has
@@ -157,10 +207,23 @@ export function ReceiveLineDialog({
               // 1111 look wrong before it is sent. The server's check stays
               // the guarantee; this is only so the typo is visible first.
               helperText={
-                line &&
-                `Up to ${line.quantityOutstanding}${
-                  variant ? ` ${variant.unitOfMeasure}` : ''
-                } still outstanding.`
+                quantityError ??
+                (line &&
+                  intl.formatMessage(
+                    {
+                      id: 'orders.receive.upTo',
+                      defaultMessage: 'Up to {amount} still outstanding.',
+                    },
+                    {
+                      amount: variant
+                        ? withUnit(
+                            line.quantityOutstanding,
+                            variant.unitOfMeasure,
+                            intl,
+                          )
+                        : formatQuantity(line.quantityOutstanding),
+                    },
+                  ))
               }
             />
 
@@ -184,11 +247,18 @@ export function ReceiveLineDialog({
 
             <TextField
               id="receive-line-note"
-              label="Note"
+              label={intl.formatMessage({
+                id: 'inventory.note',
+                defaultMessage: 'Note',
+              })}
               fullWidth
               value={form.note}
               onChange={update('note')}
-              helperText="Damage, a short count, anything the ledger should say."
+              helperText={intl.formatMessage({
+                id: 'orders.receive.note.help',
+                defaultMessage:
+                  'Damage, a short count, anything the ledger should say.',
+              })}
             />
           </Stack>
         </DialogContent>
@@ -196,8 +266,14 @@ export function ReceiveLineDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Receive"
-          pendingLabel="Receiving…"
+          label={intl.formatMessage({
+            id: 'inventory.receive.action',
+            defaultMessage: 'Receive',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'inventory.receive.pending',
+            defaultMessage: 'Receiving…',
+          })}
         />
       </form>
     </Dialog>

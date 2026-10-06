@@ -4,6 +4,7 @@ import { and, asc, eq } from 'drizzle-orm';
 import type { Transaction } from '../../database/database.module';
 import { contacts } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import type { CreateContactDto } from './dto/create-contact.dto';
 import type { UpdateContactDto } from './dto/update-contact.dto';
 import { PartnersService } from './partners.service';
@@ -113,7 +114,10 @@ export class PartnerContactsService {
       and(eq(contacts.id, contactId), eq(contacts.partnerId, partnerId)),
     );
 
-    if (!contact) throw new NotFoundException('No such contact');
+    if (!contact)
+      throw new NotFoundException(
+        t({ id: 'partners.suchContact', defaultMessage: 'No such contact' }),
+      );
 
     return contact;
   }

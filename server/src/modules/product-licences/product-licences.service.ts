@@ -11,6 +11,7 @@ import { recordPrevious } from '../../core/audit/audit-context';
 import { isCheckViolation, isUniqueViolation } from '../../database/errors';
 import { productLicences } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import type { CreateProductLicenceDto } from './dto/create-product-licence.dto';
 import type { UpdateProductLicenceDto } from './dto/update-product-licence.dto';
 
@@ -56,12 +57,19 @@ export class ProductLicencesService {
         isUniqueViolation(error, 'product_licences_org_authority_number_key')
       ) {
         throw new ConflictException(
-          'That number is already recorded for that authority',
+          t({
+            id: 'licences.numberRecordedAuthority',
+            defaultMessage:
+              'That number is already recorded for that authority',
+          }),
         );
       }
       if (isCheckViolation(error, 'product_licences_dates_ordered_check')) {
         throw new BadRequestException(
-          'A licence cannot expire before it was issued',
+          t({
+            id: 'licences.licenceExpireBeforeWas',
+            defaultMessage: 'A licence cannot expire before it was issued',
+          }),
         );
       }
       throw error;
@@ -80,7 +88,13 @@ export class ProductLicencesService {
       eq(productLicences.id, licenceId),
     );
 
-    if (!existing) throw new NotFoundException('No such product licence');
+    if (!existing)
+      throw new NotFoundException(
+        t({
+          id: 'licences.suchProductLicence',
+          defaultMessage: 'No such product licence',
+        }),
+      );
 
     // So the audit row reads "80012344 → 80012345" rather than the new value
     // alone: for a correction, what it used to say is the point (ADR-018).
@@ -105,12 +119,19 @@ export class ProductLicencesService {
         isUniqueViolation(error, 'product_licences_org_authority_number_key')
       ) {
         throw new ConflictException(
-          'That number is already recorded for that authority',
+          t({
+            id: 'licences.numberRecordedAuthority',
+            defaultMessage:
+              'That number is already recorded for that authority',
+          }),
         );
       }
       if (isCheckViolation(error, 'product_licences_dates_ordered_check')) {
         throw new BadRequestException(
-          'A licence cannot expire before it was issued',
+          t({
+            id: 'licences.licenceExpireBeforeWas',
+            defaultMessage: 'A licence cannot expire before it was issued',
+          }),
         );
       }
       throw error;

@@ -10,11 +10,15 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
+import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { api } from '../lib/api';
+import { groupedNumberMessage, nameAndCode, toApiDecimal } from '../lib/format';
 import type { Location, Partner, StockRow } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
+import { unitLabel, withUnit } from '../products/units';
+import { REASON_DETAILS, reasonDetailLabel } from './movement-reasons';
 
 export type MoveMode = 'ship' | 'sample' | 'transfer' | 'adjust';
 
@@ -34,51 +38,75 @@ export type MoveMode = 'ship' | 'sample' | 'transfer' | 'adjust';
 const MODES: Record<
   MoveMode,
   {
-    title: string;
-    verb: string;
+    title: MessageDescriptor;
+    verb: MessageDescriptor;
     reason: string;
     needsDestination: boolean;
     /** Stock leaves the business: refused from an unavailable location. */
     leaves: boolean;
     /** What the toast says once it has happened. */
-    done: string;
+    done: MessageDescriptor;
   }
 > = {
   ship: {
-    title: 'Ship out',
-    verb: 'Ship',
+    ...defineMessages({
+      title: { id: 'inventory.move.ship.title', defaultMessage: 'Ship out' },
+      verb: { id: 'inventory.move.ship.verb', defaultMessage: 'Ship' },
+      done: { id: 'inventory.move.ship.done', defaultMessage: 'Shipped' },
+    }),
     reason: 'shipment',
     needsDestination: false,
     leaves: true,
-    done: 'Shipped',
   },
   sample: {
-    title: 'Send a sample',
-    verb: 'Send',
+    ...defineMessages({
+      title: {
+        id: 'inventory.move.sample.title',
+        defaultMessage: 'Send a sample',
+      },
+      verb: { id: 'inventory.move.sample.verb', defaultMessage: 'Send' },
+      done: { id: 'inventory.move.sample.done', defaultMessage: 'Sample sent' },
+    }),
     reason: 'sample',
     needsDestination: false,
     leaves: true,
-    done: 'Sample sent',
   },
   transfer: {
-    title: 'Move to another location',
-    verb: 'Move',
+    ...defineMessages({
+      title: {
+        id: 'inventory.move.transfer.title',
+        defaultMessage: 'Move to another location',
+      },
+      verb: { id: 'inventory.move.transfer.verb', defaultMessage: 'Move' },
+      done: {
+        id: 'inventory.move.transfer.done',
+        defaultMessage: 'Stock moved',
+      },
+    }),
     reason: 'transfer',
     needsDestination: true,
     leaves: false,
-    done: 'Stock moved',
   },
   adjust: {
-    title: 'Correct the count',
-    verb: 'Save correction',
+    ...defineMessages({
+      title: {
+        id: 'inventory.move.adjust.title',
+        defaultMessage: 'Correct the count',
+      },
+      verb: {
+        id: 'inventory.move.adjust.verb',
+        defaultMessage: 'Save correction',
+      },
+      done: {
+        id: 'inventory.move.adjust.done',
+        defaultMessage: 'Count corrected',
+      },
+    }),
     reason: 'adjustment',
     needsDestination: false,
     leaves: false,
-    done: 'Count corrected',
   },
 };
-
-const REASON_DETAILS = ['miscount', 'damaged', 'expired', 'lost', 'found'];
 
 export function MoveStockDialog({
   mode,
@@ -93,7 +121,10 @@ export function MoveStockDialog({
   onClose: () => void;
   onMoved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const config = MODES[mode];
+  // Set when the quantity is typed with a thousands separator (ADR-054).
+  const [quantityError, setQuantityError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     quantity: '',
@@ -135,11 +166,12 @@ export function MoveStockDialog({
       close();
       await onMoved();
     },
-    { success: config.done },
+    { success: intl.formatMessage(config.done) },
   );
 
   function close() {
     setRecipient(null);
+    setQuantityError(null);
     setForm({
       quantity: '',
       toLocationId: '',
@@ -167,6 +199,15 @@ export function MoveStockDialog({
      */
     const adding = mode === 'adjust' && form.direction === 'add';
 
+    // The language's decimal comma becomes the point the API takes; a
+    // thousands separator is refused here rather than guessed at (ADR-054).
+    const quantity = toApiDecimal(form.quantity);
+    if (quantity === null) {
+      setQuantityError(groupedNumberMessage());
+      return;
+    }
+    setQuantityError(null);
+
     void submit(() =>
       api('/stock/movements', {
         method: 'POST',
@@ -177,7 +218,7 @@ export function MoveStockDialog({
           toLocationId: adding
             ? row.locationId
             : form.toLocationId || undefined,
-          quantity: form.quantity,
+          quantity,
           reason: config.reason,
           reasonDetail: mode === 'adjust' ? form.reasonDetail : undefined,
           recipientPartnerId:
@@ -187,6 +228,11 @@ export function MoveStockDialog({
       }),
     );
   }
+
+  // The unit by name, for the quantity's help line; "units" before a pile.
+  const unit = row
+    ? unitLabel(row.unitOfMeasure, intl)
+    : intl.formatMessage({ id: 'inventory.units', defaultMessage: 'units' });
 
   const elsewhere = locations.filter(
     (location) => location.id !== row?.locationId,
@@ -212,12 +258,18 @@ export function MoveStockDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>{config.title}</DialogTitle>
+        <DialogTitle>{intl.formatMessage(config.title)}</DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && (
-              <Alert severity="error" aria-label="Error">
+              <Alert
+                severity="error"
+                aria-label={intl.formatMessage({
+                  id: 'components.formError.label',
+                  defaultMessage: 'Error',
+                })}
+              >
                 {error}
               </Alert>
             )}
@@ -227,16 +279,45 @@ export function MoveStockDialog({
                 different one. */}
             {row && (
               <Typography variant="body2" color="text.secondary">
-                {row.sku}
-                {row.lotCode ? ` · lot ${row.lotCode}` : ''} at{' '}
-                {row.locationName} — {row.quantity} {row.unitOfMeasure} on hand
+                {row.lotCode
+                  ? intl.formatMessage(
+                      {
+                        id: 'inventory.move.pileWithLot',
+                        defaultMessage:
+                          '{sku} · lot {lot} at {location} — {amount} on hand',
+                      },
+                      {
+                        sku: row.sku,
+                        lot: row.lotCode,
+                        location: row.locationName,
+                        amount: withUnit(row.quantity, row.unitOfMeasure, intl),
+                      },
+                    )
+                  : intl.formatMessage(
+                      {
+                        id: 'inventory.move.pile',
+                        defaultMessage:
+                          '{sku} at {location} — {amount} on hand',
+                      },
+                      {
+                        sku: row.sku,
+                        location: row.locationName,
+                        amount: withUnit(row.quantity, row.unitOfMeasure, intl),
+                      },
+                    )}
               </Typography>
             )}
 
             {heldBack && (
               <Alert severity="warning">
-                {row?.locationName} is marked not available, so nothing can be
-                sent from it. Move the stock to an available location first.
+                {intl.formatMessage(
+                  {
+                    id: 'inventory.move.heldBack',
+                    defaultMessage:
+                      '{location} is marked not available, so nothing can be sent from it. Move the stock to an available location first.',
+                  },
+                  { location: row?.locationName },
+                )}
               </Alert>
             )}
 
@@ -244,15 +325,22 @@ export function MoveStockDialog({
               <Autocomplete
                 options={partners}
                 getOptionLabel={(option) =>
-                  option.code ? `${option.name} (${option.code})` : option.name
+                  nameAndCode(option.name, option.code)
                 }
                 value={recipient}
                 onChange={(_event, value) => setRecipient(value)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Given to"
-                    helperText="Optional. Recorded so a recall can find it."
+                    label={intl.formatMessage({
+                      id: 'inventory.move.givenTo',
+                      defaultMessage: 'Given to',
+                    })}
+                    helperText={intl.formatMessage({
+                      id: 'inventory.move.givenTo.help',
+                      defaultMessage:
+                        'Optional. Recorded so a recall can find it.',
+                    })}
                   />
                 )}
               />
@@ -261,34 +349,52 @@ export function MoveStockDialog({
             {mode === 'adjust' && (
               <TextField
                 id="move-direction"
-                label="The shelf has"
+                label={intl.formatMessage({
+                  id: 'inventory.move.shelfHas',
+                  defaultMessage: 'The shelf has',
+                })}
                 select
                 required
                 fullWidth
                 value={form.direction}
                 onChange={update('direction')}
               >
-                <MenuItem value="remove">Less than recorded</MenuItem>
-                <MenuItem value="add">More than recorded</MenuItem>
+                <MenuItem value="remove">
+                  {intl.formatMessage({
+                    id: 'inventory.move.less',
+                    defaultMessage: 'Less than recorded',
+                  })}
+                </MenuItem>
+                <MenuItem value="add">
+                  {intl.formatMessage({
+                    id: 'inventory.move.more',
+                    defaultMessage: 'More than recorded',
+                  })}
+                </MenuItem>
               </TextField>
             )}
 
             {config.needsDestination && (
               <TextField
                 id="move-destination"
-                label="To"
+                label={intl.formatMessage({
+                  id: 'inventory.move.to',
+                  defaultMessage: 'To',
+                })}
                 select
                 required
                 fullWidth
                 value={form.toLocationId}
                 onChange={update('toLocationId')}
-                helperText="Only locations that hold stock directly are listed."
+                helperText={intl.formatMessage({
+                  id: 'inventory.leavesOnly',
+                  defaultMessage:
+                    'Only locations that hold stock directly are listed.',
+                })}
               >
                 {elsewhere.map((location) => (
                   <MenuItem key={location.id} value={location.id}>
-                    {location.code
-                      ? `${location.name} (${location.code})`
-                      : location.name}
+                    {nameAndCode(location.name, location.code)}
                   </MenuItem>
                 ))}
               </TextField>
@@ -296,11 +402,25 @@ export function MoveStockDialog({
 
             <TextField
               id="move-quantity"
-              label={mode === 'adjust' ? 'Difference' : 'Quantity'}
+              label={
+                mode === 'adjust'
+                  ? intl.formatMessage({
+                      id: 'inventory.move.difference',
+                      defaultMessage: 'Difference',
+                    })
+                  : intl.formatMessage({
+                      id: 'inventory.quantity',
+                      defaultMessage: 'Quantity',
+                    })
+              }
               required
               fullWidth
               value={form.quantity}
-              onChange={update('quantity')}
+              onChange={(event) => {
+                setQuantityError(null);
+                update('quantity')(event);
+              }}
+              error={!!quantityError}
               slotProps={{ htmlInput: { inputMode: 'decimal' } }}
               /**
                * A difference, not a new total. The endpoint takes a delta, and
@@ -310,9 +430,23 @@ export function MoveStockDialog({
                * settled the form asks for what it actually sends.
                */
               helperText={
-                mode === 'adjust'
-                  ? `How many ${row?.unitOfMeasure ?? 'units'} out, not the new total.`
-                  : `In ${row?.unitOfMeasure ?? 'units'}. Up to 4 decimal places.`
+                quantityError ??
+                (mode === 'adjust'
+                  ? intl.formatMessage(
+                      {
+                        id: 'inventory.move.difference.help',
+                        defaultMessage:
+                          'How many {unit} out, not the new total.',
+                      },
+                      { unit },
+                    )
+                  : intl.formatMessage(
+                      {
+                        id: 'inventory.quantity.inUnit',
+                        defaultMessage: 'In {unit}. Up to 4 decimal places.',
+                      },
+                      { unit },
+                    ))
               }
             />
 
@@ -320,7 +454,10 @@ export function MoveStockDialog({
               <>
                 <TextField
                   id="move-reason-detail"
-                  label="Why"
+                  label={intl.formatMessage({
+                    id: 'inventory.why',
+                    defaultMessage: 'Why',
+                  })}
                   select
                   required
                   fullWidth
@@ -329,7 +466,7 @@ export function MoveStockDialog({
                 >
                   {REASON_DETAILS.map((detail) => (
                     <MenuItem key={detail} value={detail}>
-                      {detail}
+                      {reasonDetailLabel(detail, intl)}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -340,14 +477,21 @@ export function MoveStockDialog({
                     (ADR-023). */}
                 <TextField
                   id="move-note"
-                  label="What happened"
+                  label={intl.formatMessage({
+                    id: 'inventory.move.whatHappened',
+                    defaultMessage: 'What happened',
+                  })}
                   required
                   fullWidth
                   multiline
                   minRows={2}
                   value={form.note}
                   onChange={update('note')}
-                  helperText="Whoever reads this in six months was not there."
+                  helperText={intl.formatMessage({
+                    id: 'inventory.move.whatHappened.help',
+                    defaultMessage:
+                      'Whoever reads this in six months was not there.',
+                  })}
                   slotProps={{ htmlInput: { maxLength: 500 } }}
                 />
               </>
@@ -356,7 +500,10 @@ export function MoveStockDialog({
             {mode !== 'adjust' && (
               <TextField
                 id="move-note"
-                label="Note"
+                label={intl.formatMessage({
+                  id: 'inventory.note',
+                  defaultMessage: 'Note',
+                })}
                 fullWidth
                 value={form.note}
                 onChange={update('note')}
@@ -369,8 +516,11 @@ export function MoveStockDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label={config.verb}
-          pendingLabel="Saving…"
+          label={intl.formatMessage(config.verb)}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
           disabled={heldBack}
         />
       </form>

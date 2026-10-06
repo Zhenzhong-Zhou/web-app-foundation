@@ -1,5 +1,6 @@
 import { Alert, CircularProgress, Link, Typography } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { api, messageFor } from '../lib/api';
@@ -10,6 +11,7 @@ import { useAuth } from './use-auth';
 type Status = 'checking' | 'verified' | 'failed';
 
 export function VerifyEmailPage() {
+  const intl = useIntl();
   const [params, setParams] = useSearchParams();
   const { session, refresh } = useAuth();
 
@@ -51,18 +53,35 @@ export function VerifyEmailPage() {
     })();
   }, [token, setParams, session, refresh]);
 
+  const badLink = intl.formatMessage({
+    id: 'auth.badLink',
+    defaultMessage: 'That link did not work',
+  });
+  const signIn = intl.formatMessage({
+    id: 'auth.signIn',
+    defaultMessage: 'Sign in',
+  });
+
   if (!looksLikeToken(token)) {
     return (
-      <AuthLayout title="That link did not work">
+      <AuthLayout title={badLink}>
         <Alert severity="error">
-          The link is incomplete. Request a new one.
+          {intl.formatMessage({
+            id: 'auth.verify.incomplete',
+            defaultMessage: 'The link is incomplete. Request a new one.',
+          })}
         </Alert>
         <Link
           component={RouterLink}
           to={session ? '/' : '/login'}
           variant="body2"
         >
-          {session ? 'Go home' : 'Sign in'}
+          {session
+            ? intl.formatMessage({
+                id: 'auth.verify.goHome',
+                defaultMessage: 'Go home',
+              })
+            : signIn}
         </Link>
       </AuthLayout>
     );
@@ -70,7 +89,12 @@ export function VerifyEmailPage() {
 
   if (status === 'checking') {
     return (
-      <AuthLayout title="Confirming your address">
+      <AuthLayout
+        title={intl.formatMessage({
+          id: 'auth.verify.checking',
+          defaultMessage: 'Confirming your address',
+        })}
+      >
         <CircularProgress size={24} />
       </AuthLayout>
     );
@@ -78,7 +102,7 @@ export function VerifyEmailPage() {
 
   if (status === 'failed') {
     return (
-      <AuthLayout title="That link did not work">
+      <AuthLayout title={badLink}>
         <Alert severity="error">{message}</Alert>
         {/* No retry: the token is single-use, so the same one fails
             identically. A new link is the only remedy. */}
@@ -87,21 +111,41 @@ export function VerifyEmailPage() {
           to={session ? '/' : '/login'}
           variant="body2"
         >
-          {session ? 'Go home and request a new link' : 'Sign in'}
+          {session
+            ? intl.formatMessage({
+                id: 'auth.verify.goHomeForNewLink',
+                defaultMessage: 'Go home and request a new link',
+              })
+            : signIn}
         </Link>
       </AuthLayout>
     );
   }
 
   return (
-    <AuthLayout title="Address confirmed">
-      <Typography>Your email address has been verified.</Typography>
+    <AuthLayout
+      title={intl.formatMessage({
+        id: 'auth.verify.confirmed',
+        defaultMessage: 'Address confirmed',
+      })}
+    >
+      <Typography>
+        {intl.formatMessage({
+          id: 'auth.verify.verified',
+          defaultMessage: 'Your email address has been verified.',
+        })}
+      </Typography>
       <Link
         component={RouterLink}
         to={session ? '/' : '/login'}
         variant="body2"
       >
-        {session ? 'Continue' : 'Sign in'}
+        {session
+          ? intl.formatMessage({
+              id: 'auth.verify.continue',
+              defaultMessage: 'Continue',
+            })
+          : signIn}
       </Link>
     </AuthLayout>
   );

@@ -8,11 +8,17 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { formatDay } from '../lib/format';
+import {
+  formatDay,
+  formatQuantity,
+  groupedNumberMessage,
+  toApiDecimal,
+} from '../lib/format';
 import type { Lot, RunDetail } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -35,7 +41,10 @@ export function RecordOutputDialog({
   onClose: () => void;
   onRecorded: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [quantity, setQuantity] = useState('');
+  // Set when the quantity is typed with a thousands separator (ADR-054).
+  const [quantityError, setQuantityError] = useState<string | null>(null);
   const [lotChoice, setLotChoice] = useState('');
   const [newCode, setNewCode] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
@@ -46,7 +55,12 @@ export function RecordOutputDialog({
       close();
       await onRecorded();
     },
-    { success: 'Output recorded' },
+    {
+      success: intl.formatMessage({
+        id: 'production.output.recorded',
+        defaultMessage: 'Output recorded',
+      }),
+    },
   );
 
   /**
@@ -78,11 +92,25 @@ export function RecordOutputDialog({
    */
   function describeLot(lotId: string): string {
     const lot = lots.find((row) => row.id === lotId);
-    if (!lot) return 'An existing batch';
+    if (!lot) {
+      return intl.formatMessage({
+        id: 'production.output.existingBatch',
+        defaultMessage: 'An existing batch',
+      });
+    }
 
     return lot.expiresAt
-      ? `Batch ${lot.code}, expires ${formatDay(lot.expiresAt)}`
-      : `Batch ${lot.code}`;
+      ? intl.formatMessage(
+          {
+            id: 'production.output.batchExpiring',
+            defaultMessage: 'Batch {code}, expires {day}',
+          },
+          { code: lot.code, day: formatDay(lot.expiresAt) },
+        )
+      : intl.formatMessage(
+          { id: 'production.output.batch', defaultMessage: 'Batch {code}' },
+          { code: lot.code },
+        );
   }
 
   const openLot = run.outputLots[run.outputLots.length - 1] ?? '';
@@ -93,6 +121,7 @@ export function RecordOutputDialog({
     setLotChoice('');
     setNewCode('');
     setExpiresAt('');
+    setQuantityError(null);
     reset();
     onClose();
   }
@@ -100,11 +129,18 @@ export function RecordOutputDialog({
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
+    const amount = toApiDecimal(quantity);
+    if (amount === null) {
+      setQuantityError(groupedNumberMessage());
+      return;
+    }
+    setQuantityError(null);
+
     void submit(() =>
       api(`/production-orders/${run.id}/output`, {
         method: 'POST',
         body: JSON.stringify({
-          quantity,
+          quantity: amount,
           lotId: effective === 'new' ? undefined : effective || undefined,
           lot:
             effective === 'new' || !openLot
@@ -129,7 +165,12 @@ export function RecordOutputDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Record output</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'production.output.title',
+            defaultMessage: 'Record output',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -137,31 +178,69 @@ export function RecordOutputDialog({
 
             <TextField
               id="output-quantity"
-              label="Finished this time"
+              label={intl.formatMessage({
+                id: 'production.output.quantity',
+                defaultMessage: 'Finished this time',
+              })}
               required
               fullWidth
               value={quantity}
-              onChange={(event) => setQuantity(event.target.value)}
-              helperText={`${run.quantityProduced} recorded so far against a plan of ${run.quantityPlanned}.`}
+              onChange={(event) => {
+                setQuantityError(null);
+                setQuantity(event.target.value);
+              }}
+              error={!!quantityError}
+              helperText={
+                quantityError ??
+                intl.formatMessage(
+                  {
+                    id: 'production.output.soFar',
+                    defaultMessage:
+                      '{produced} recorded so far against a plan of {planned}.',
+                  },
+                  {
+                    produced: formatQuantity(run.quantityProduced),
+                    planned: formatQuantity(run.quantityPlanned),
+                  },
+                )
+              }
               slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 19 } }}
             />
 
             {openLot && (
               <TextField
                 id="output-lot"
-                label="Batch number"
+                label={intl.formatMessage({
+                  id: 'production.batchNumber',
+                  defaultMessage: 'Batch number',
+                })}
                 select
                 fullWidth
                 value={effective}
                 onChange={(event) => setLotChoice(event.target.value)}
-                helperText="Same batch unless this part was genuinely separate."
+                helperText={intl.formatMessage({
+                  id: 'production.output.sameBatch',
+                  defaultMessage:
+                    'Same batch unless this part was genuinely separate.',
+                })}
               >
                 {run.outputLots.map((lotId) => (
                   <MenuItem key={lotId} value={lotId}>
-                    Add to {describeLot(lotId)}
+                    {intl.formatMessage(
+                      {
+                        id: 'production.output.addTo',
+                        defaultMessage: 'Add to {batch}',
+                      },
+                      { batch: describeLot(lotId) },
+                    )}
                   </MenuItem>
                 ))}
-                <MenuItem value="new">Start a new batch</MenuItem>
+                <MenuItem value="new">
+                  {intl.formatMessage({
+                    id: 'production.output.newBatch',
+                    defaultMessage: 'Start a new batch',
+                  })}
+                </MenuItem>
               </TextField>
             )}
 
@@ -169,7 +248,10 @@ export function RecordOutputDialog({
               <>
                 <TextField
                   id="output-lot-code"
-                  label="Batch number"
+                  label={intl.formatMessage({
+                    id: 'production.batchNumber',
+                    defaultMessage: 'Batch number',
+                  })}
                   required
                   fullWidth
                   value={newCode}
@@ -179,7 +261,10 @@ export function RecordOutputDialog({
 
                 <TextField
                   id="output-expires"
-                  label="Expires"
+                  label={intl.formatMessage({
+                    id: 'inventory.lot.expires',
+                    defaultMessage: 'Expires',
+                  })}
                   type="date"
                   fullWidth
                   value={expiresAt}
@@ -190,8 +275,11 @@ export function RecordOutputDialog({
             )}
 
             <Typography variant="caption" color="text.secondary">
-              The run stays open until you close it, so a batch made over
-              several days is recorded a bit at a time.
+              {intl.formatMessage({
+                id: 'production.output.staysOpen',
+                defaultMessage:
+                  'The run stays open until you close it, so a batch made over several days is recorded a bit at a time.',
+              })}
             </Typography>
           </Stack>
         </DialogContent>
@@ -199,8 +287,14 @@ export function RecordOutputDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Record"
-          pendingLabel="Recording…"
+          label={intl.formatMessage({
+            id: 'production.output.action',
+            defaultMessage: 'Record',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'production.output.pending',
+            defaultMessage: 'Recording…',
+          })}
         />
       </form>
     </Dialog>

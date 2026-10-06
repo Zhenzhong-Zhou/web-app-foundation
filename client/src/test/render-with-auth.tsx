@@ -26,6 +26,7 @@ export function renderWithAuth(
         email: 'owner@alpha.example.com',
         name: 'Owner',
         emailVerified: true,
+        locale: null,
       },
       organization: {
         id: 'org-1',

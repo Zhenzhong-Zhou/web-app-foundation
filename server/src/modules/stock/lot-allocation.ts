@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { type SQL, sql } from 'drizzle-orm';
 
 import type { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 
@@ -132,8 +133,22 @@ export async function allocateFefo(
   if (shortBy !== null) {
     throw new ConflictException(
       query.fromRunId
-        ? `Not enough ${query.sku} was issued to this run to consume ${query.quantity}: ${shortBy} short. Move the missing units to the run's location first.`
-        : `Not enough ${query.sku} in lots at that location: ${query.quantity} needed, ${shortBy} short.`,
+        ? t(
+            {
+              id: 'stock.lots.runShort',
+              defaultMessage:
+                "Not enough {sku} was issued to this run to consume {quantity}: {shortBy} short. Move the missing units to the run's location first.",
+            },
+            { sku: query.sku, quantity: query.quantity, shortBy },
+          )
+        : t(
+            {
+              id: 'stock.lots.locationShort',
+              defaultMessage:
+                'Not enough {sku} in lots at that location: {quantity} needed, {shortBy} short.',
+            },
+            { sku: query.sku, quantity: query.quantity, shortBy },
+          ),
     );
   }
 
@@ -196,7 +211,14 @@ export async function assertPickedTotal(
 
   if (!check.matches) {
     throw new BadRequestException(
-      `The lots chosen for ${sku} add up to ${check.total}, but ${expected} is needed`,
+      t(
+        {
+          id: 'stock.lotsChosenSkuAdd',
+          defaultMessage:
+            'The lots chosen for {sku} add up to {total}, but {expected} is needed',
+        },
+        { sku, total: check.total, expected },
+      ),
     );
   }
 }

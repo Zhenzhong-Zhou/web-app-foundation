@@ -9,6 +9,7 @@ import type { Request } from 'express';
 import { getRequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { PermissionsService } from '../../core/authorization/permissions.service';
+import { t } from '../../i18n/translate';
 
 /**
  * production.override_licence, but only when a release carries an override
@@ -37,14 +38,21 @@ export class LicenceOverrideGuard implements CanActivate {
     if (body?.licenceOverride == null) return true;
 
     const ctx = getRequestContext(request);
-    if (!ctx?.roleId) throw new ForbiddenException('No role');
+    if (!ctx?.roleId)
+      throw new ForbiddenException(
+        t({ id: 'production.role', defaultMessage: 'No role' }),
+      );
 
     // Resolved per request, never cached (ADR-016).
     const held = await this.permissions.listForRole(ctx.roleId);
 
     if (!held.includes(PERMISSIONS.PRODUCTION_OVERRIDE_LICENCE)) {
       throw new ForbiddenException(
-        'Releasing under a licence the policy refuses needs production.override_licence',
+        t({
+          id: 'production.releasingUnderLicencePolicy',
+          defaultMessage:
+            'Releasing under a licence the policy refuses needs production.override_licence',
+        }),
       );
     }
 

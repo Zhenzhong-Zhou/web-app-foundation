@@ -8,14 +8,14 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import type { Variant } from './products-page';
-
-const UNITS = ['each', 'kg', 'g', 'litre', 'ml', 'case', 'box', 'pallet'];
+import { unitLabel, UNITS } from './units';
 
 const EMPTY = {
   name: '',
@@ -53,6 +53,7 @@ export function EditVariantDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const intl = useIntl();
   const [form, setForm] = useState(EMPTY);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
@@ -61,7 +62,12 @@ export function EditVariantDialog({
       close();
       await onSaved();
     },
-    { success: 'Variant saved' },
+    {
+      success: intl.formatMessage({
+        id: 'products.variant.saved',
+        defaultMessage: 'Variant saved',
+      }),
+    },
   );
 
   function close() {
@@ -125,7 +131,12 @@ export function EditVariantDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Edit {variant?.sku}</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage(
+            { id: 'products.variant.editTitle', defaultMessage: 'Edit {sku}' },
+            { sku: variant?.sku },
+          )}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -133,7 +144,10 @@ export function EditVariantDialog({
 
             <TextField
               id="edit-variant-name"
-              label="Size or variation"
+              label={intl.formatMessage({
+                id: 'products.variation',
+                defaultMessage: 'Size or variation',
+              })}
               fullWidth
               value={form.name}
               onChange={update('name')}
@@ -142,7 +156,10 @@ export function EditVariantDialog({
 
             <TextField
               id="edit-variant-unit"
-              label="Unit of measure"
+              label={intl.formatMessage({
+                id: 'products.unitOfMeasure',
+                defaultMessage: 'Unit of measure',
+              })}
               select
               required
               fullWidth
@@ -151,16 +168,24 @@ export function EditVariantDialog({
             >
               {UNITS.map((unit) => (
                 <MenuItem key={unit} value={unit}>
-                  {unit}
+                  {unitLabel(unit, intl)}
                 </MenuItem>
               ))}
             </TextField>
 
-            <Typography variant="subtitle2">The item</Typography>
+            <Typography variant="subtitle2">
+              {intl.formatMessage({
+                id: 'products.variant.theItem',
+                defaultMessage: 'The item',
+              })}
+            </Typography>
 
             <TextField
               id="edit-variant-weight"
-              label="Weight (g)"
+              label={intl.formatMessage({
+                id: 'products.variant.weightGrams',
+                defaultMessage: 'Weight (g)',
+              })}
               type="number"
               fullWidth
               value={form.weightGrams}
@@ -170,7 +195,10 @@ export function EditVariantDialog({
             <Stack direction="row" spacing={2}>
               <TextField
                 id="edit-variant-length"
-                label="Length (mm)"
+                label={intl.formatMessage({
+                  id: 'products.variant.lengthMm',
+                  defaultMessage: 'Length (mm)',
+                })}
                 type="number"
                 fullWidth
                 value={form.lengthMm}
@@ -178,7 +206,10 @@ export function EditVariantDialog({
               />
               <TextField
                 id="edit-variant-width"
-                label="Width (mm)"
+                label={intl.formatMessage({
+                  id: 'products.variant.widthMm',
+                  defaultMessage: 'Width (mm)',
+                })}
                 type="number"
                 fullWidth
                 value={form.widthMm}
@@ -186,7 +217,10 @@ export function EditVariantDialog({
               />
               <TextField
                 id="edit-variant-height"
-                label="Height (mm)"
+                label={intl.formatMessage({
+                  id: 'products.variant.heightMm',
+                  defaultMessage: 'Height (mm)',
+                })}
                 type="number"
                 fullWidth
                 value={form.heightMm}
@@ -194,16 +228,27 @@ export function EditVariantDialog({
               />
             </Stack>
 
-            <Typography variant="subtitle2">The case</Typography>
+            <Typography variant="subtitle2">
+              {intl.formatMessage({
+                id: 'products.variant.theCase',
+                defaultMessage: 'The case',
+              })}
+            </Typography>
 
             <TextField
               id="edit-variant-case-quantity"
-              label="Units per case"
+              label={intl.formatMessage({
+                id: 'products.variant.unitsPerCase',
+                defaultMessage: 'Units per case',
+              })}
               type="number"
               fullWidth
               value={form.caseQuantity}
               onChange={update('caseQuantity')}
-              helperText="How many of this variant ship in one case."
+              helperText={intl.formatMessage({
+                id: 'products.variant.unitsPerCase.help',
+                defaultMessage: 'How many of this variant ship in one case.',
+              })}
             />
           </Stack>
         </DialogContent>
@@ -211,8 +256,14 @@ export function EditVariantDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

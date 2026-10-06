@@ -6,6 +6,7 @@ import {
 import { sql } from 'drizzle-orm';
 
 import { recordPrevious } from '../../core/audit/audit-context';
+import { t } from '../../i18n/translate';
 import { baseCurrency, rateOnOrBefore } from './rates';
 import type { Tx } from './stock.service';
 import { lockPool } from './valuation';
@@ -240,23 +241,38 @@ function assertAcquisition(target: Target): void {
 
     if (target.reason === 'production') {
       throw new ConflictException(
-        "A batch's cost comes from its run, when the run closes",
+        t({
+          id: 'stock.batchSCostComes',
+          defaultMessage:
+            "A batch's cost comes from its run, when the run closes",
+        }),
       );
     }
 
     if (target.reason === 'return') {
       throw new ConflictException(
-        'A return comes back at the cost it shipped at',
+        t({
+          id: 'stock.returnComesBackCost',
+          defaultMessage: 'A return comes back at the cost it shipped at',
+        }),
       );
     }
 
     throw new ConflictException(
-      "Stock going out is valued at its pool's average. Set the cost of what came in instead.",
+      t({
+        id: 'stock.stockGoingOutValued',
+        defaultMessage:
+          "Stock going out is valued at its pool's average. Set the cost of what came in instead.",
+      }),
     );
   }
 
   throw new ConflictException(
-    'Only a receipt, an inbound adjustment or an opening balance takes a cost',
+    t({
+      id: 'stock.receiptInboundAdjustmentOpening',
+      defaultMessage:
+        'Only a receipt, an inbound adjustment or an opening balance takes a cost',
+    }),
   );
 }
 
@@ -291,7 +307,10 @@ export async function correctCost(
 
   const [target] = found.rows as unknown as Target[];
 
-  if (!target) throw new NotFoundException('No such valuation');
+  if (!target)
+    throw new NotFoundException(
+      t({ id: 'stock.suchValuation', defaultMessage: 'No such valuation' }),
+    );
 
   assertAcquisition(target);
 
@@ -299,7 +318,11 @@ export async function correctCost(
 
   if (!base) {
     throw new ConflictException(
-      'Set a base currency for the organization before costing stock',
+      t({
+        id: 'stock.setBaseCurrencyOrganization',
+        defaultMessage:
+          'Set a base currency for the organization before costing stock',
+      }),
     );
   }
 
@@ -308,7 +331,14 @@ export async function correctCost(
   if (input.currency === base) {
     if (input.exchangeRate !== undefined) {
       throw new BadRequestException(
-        `${base} is the base currency, so a price in it takes no rate`,
+        t(
+          {
+            id: 'stock.baseBaseCurrencySo',
+            defaultMessage:
+              '{base} is the base currency, so a price in it takes no rate',
+          },
+          { base },
+        ),
       );
     }
   } else if (input.exchangeRate !== undefined) {
@@ -323,7 +353,14 @@ export async function correctCost(
 
     if (!onFile) {
       throw new ConflictException(
-        `No ${input.currency} rate on or before ${target.day}. Enter one, or give the rate with the cost.`,
+        t(
+          {
+            id: 'stock.currencyRateBeforeDay',
+            defaultMessage:
+              'No {currency} rate on or before {day}. Enter one, or give the rate with the cost.',
+          },
+          { currency: input.currency, day: target.day },
+        ),
       );
     }
 

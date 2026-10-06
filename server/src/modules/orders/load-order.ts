@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
 import { orders } from '../../database/schema';
+import { t } from '../../i18n/translate';
 import type { Tx } from '../stock/stock.service';
 
 /**
@@ -28,7 +29,10 @@ export async function loadOrder(
       and(eq(orders.id, orderId), eq(orders.organizationId, organizationId)),
     );
 
-  if (!order) throw new NotFoundException('No such order');
+  if (!order)
+    throw new NotFoundException(
+      t({ id: 'orders.suchOrder', defaultMessage: 'No such order' }),
+    );
 
   return order;
 }

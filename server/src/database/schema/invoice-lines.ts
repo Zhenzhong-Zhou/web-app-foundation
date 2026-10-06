@@ -52,6 +52,12 @@ export const invoiceLines = pgTable(
     /** Snapshots, as the order line's: what the label said that day. */
     sku: text('sku').notNull(),
     description: text('description').notNull(),
+    /**
+     * The description in the invoice's second language, written at issue
+     * with `description` in its first (ADR-054). Null on a one-language
+     * invoice, and on a draft, which keeps the base name until then.
+     */
+    secondDescription: text('second_description'),
 
     quantity: numeric('quantity', { precision: 18, scale: 4 }).notNull(),
 

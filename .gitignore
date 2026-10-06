@@ -49,3 +49,7 @@ server/.flake-hunt/
 
 # NOTE: do NOT ignore prisma/migrations/ or any migration folder.
 # Migrations are source code and must be committed.
+
+# Translation review workbooks (scripts/i18n-review.mjs): working files,
+# the catalogues are the source of truth.
+/review/
