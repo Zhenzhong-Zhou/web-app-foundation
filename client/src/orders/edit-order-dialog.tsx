@@ -7,6 +7,7 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -48,12 +49,18 @@ export function EditOrderDialog({
   // YYYY-MM-DD both ways, as the date input wants it (ADR-052).
   const [expectedAt, setExpectedAt] = useState(order.expectedAt ?? '');
 
+  const intl = useIntl();
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
       close();
       await onSaved();
     },
-    { success: 'Order saved' },
+    {
+      success: intl.formatMessage({
+        id: 'orders.saved',
+        defaultMessage: 'Order saved',
+      }),
+    },
   );
 
   function close() {
@@ -89,7 +96,12 @@ export function EditOrderDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Edit order</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'orders.edit.title',
+            defaultMessage: 'Edit order',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -97,17 +109,27 @@ export function EditOrderDialog({
 
             <TextField
               id="order-reference"
-              label="Reference"
+              label={intl.formatMessage({
+                id: 'orders.reference',
+                defaultMessage: 'Reference',
+              })}
               fullWidth
               value={reference}
               onChange={(event) => setReference(event.target.value)}
-              helperText="The supplier's PO number, or your own. Shown in the orders list."
+              helperText={intl.formatMessage({
+                id: 'orders.edit.reference.help',
+                defaultMessage:
+                  "The supplier's PO number, or your own. Shown in the orders list.",
+              })}
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
 
             <TextField
               id="order-expected"
-              label="Expected"
+              label={intl.formatMessage({
+                id: 'orders.expected',
+                defaultMessage: 'Expected',
+              })}
               type="date"
               fullWidth
               value={expectedAt}
@@ -117,7 +139,10 @@ export function EditOrderDialog({
 
             <TextField
               id="order-note"
-              label="Note"
+              label={intl.formatMessage({
+                id: 'inventory.note',
+                defaultMessage: 'Note',
+              })}
               fullWidth
               multiline
               minRows={3}
@@ -127,8 +152,11 @@ export function EditOrderDialog({
             />
 
             <Typography variant="caption" color="text.secondary">
-              The supplier and direction cannot change — every line and every
-              receipt is recorded against them. Duplicate the order instead.
+              {intl.formatMessage({
+                id: 'orders.edit.fixed',
+                defaultMessage:
+                  'The supplier and direction cannot change — every line and every receipt is recorded against them. Duplicate the order instead.',
+              })}
             </Typography>
           </Stack>
         </DialogContent>
@@ -136,8 +164,14 @@ export function EditOrderDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Save"
-          pendingLabel="Saving…"
+          label={intl.formatMessage({
+            id: 'common.save',
+            defaultMessage: 'Save',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'common.saving',
+            defaultMessage: 'Saving…',
+          })}
         />
       </form>
     </Dialog>

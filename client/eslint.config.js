@@ -64,6 +64,18 @@ export default defineConfig([
       'src/products/**/*.tsx',
       'src/locations/**/*.tsx',
       'src/inventory/**/*.tsx',
+      // Orders arrive in two commits; listed by file until the second.
+      'src/orders/orders-page.tsx',
+      'src/orders/create-order-page.tsx',
+      'src/orders/order-detail-page.tsx',
+      'src/orders/order-lines-section.tsx',
+      'src/orders/order-status-actions.tsx',
+      'src/orders/edit-order-dialog.tsx',
+      'src/orders/duplicate-order-dialog.tsx',
+      'src/orders/close-order-dialog.tsx',
+      'src/orders/add-order-line-dialog.tsx',
+      'src/orders/edit-order-line-dialog.tsx',
+      'src/orders/close-line-dialog.tsx',
       'src/partners/**/*.tsx',
     ],
     // Specs render with made-up labels on purpose. The print sheet is a

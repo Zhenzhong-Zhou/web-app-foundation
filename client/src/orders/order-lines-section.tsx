@@ -14,11 +14,15 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useIntl } from 'react-intl';
 
-import { formatMoney } from '../lib/format';
+import { formatMoney, formatQuantity } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { LineHold, OrderDetail, OrderLine } from '../lib/types';
-import { DONE } from './status';
+import { doneLabel } from './status';
+
+/** The remove button's mark: a symbol, the same in every language. */
+const CROSS = '×';
 
 /**
  * An order's items: the table, what each line can do, and the totals.
@@ -68,13 +72,17 @@ export function OrderLinesSection({
   /** A line action with no form behind it: list price, reopen, remove. */
   onLineAction: (path: string, method: string) => Promise<void>;
 }) {
+  const intl = useIntl();
   const isDraft = order.status === 'draft';
 
   return (
     <Box>
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 1 }}>
         <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
-          Items
+          {intl.formatMessage({
+            id: 'orders.items',
+            defaultMessage: 'Items',
+          })}
         </Typography>
 
         {/* Draft only: adding to an order the supplier has already been sent
@@ -85,7 +93,10 @@ export function OrderLinesSection({
             disabled={working}
             onClick={openDialog(onAddLine)}
           >
-            Add item
+            {intl.formatMessage({
+              id: 'orders.lines.add',
+              defaultMessage: 'Add item',
+            })}
           </Button>
         )}
 
@@ -95,7 +106,10 @@ export function OrderLinesSection({
             disabled={working}
             onClick={openDialog(onAuthorize)}
           >
-            Authorize a return
+            {intl.formatMessage({
+              id: 'orders.lines.authorizeReturn',
+              defaultMessage: 'Authorize a return',
+            })}
           </Button>
         )}
 
@@ -105,13 +119,19 @@ export function OrderLinesSection({
             disabled={working}
             onClick={openDialog(onTakeReturn)}
           >
-            Take a return
+            {intl.formatMessage({
+              id: 'orders.lines.takeReturn',
+              defaultMessage: 'Take a return',
+            })}
           </Button>
         )}
 
         {shippable && (
           <Button disabled={working} onClick={openDialog(onShip)}>
-            Ship
+            {intl.formatMessage({
+              id: 'orders.lines.ship',
+              defaultMessage: 'Ship',
+            })}
           </Button>
         )}
       </Stack>
@@ -131,23 +151,66 @@ export function OrderLinesSection({
           >
             <TableHead>
               <TableRow>
-                <TableCell>SKU</TableCell>
-                <TableCell>Item</TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'products.sku',
+                    defaultMessage: 'SKU',
+                  })}
+                </TableCell>
+                <TableCell>
+                  {intl.formatMessage({
+                    id: 'inventory.item',
+                    defaultMessage: 'Item',
+                  })}
+                </TableCell>
                 {/* Right-aligned like the money: quantities are compared
                   down a column, and digits only line up on the right. */}
-                <TableCell align="right">Ordered</TableCell>
-                <TableCell align="right">{DONE[order.direction]}</TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'orders.lines.ordered',
+                    defaultMessage: 'Ordered',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  {doneLabel(order.direction)}
+                </TableCell>
                 {/* Beside shipped, never subtracted from it: that it
                     shipped is the history a recall reads (ADR-043). */}
                 {order.direction === 'sale' && (
-                  <TableCell align="right">Returned</TableCell>
+                  <TableCell align="right">
+                    {intl.formatMessage({
+                      id: 'inventory.trace.returned',
+                      defaultMessage: 'Returned',
+                    })}
+                  </TableCell>
                 )}
-                <TableCell align="right">Outstanding</TableCell>
-                <TableCell align="right">Unit price</TableCell>
-                <TableCell align="right">Total</TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'orders.lines.outstanding',
+                    defaultMessage: 'Outstanding',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'orders.unitPrice',
+                    defaultMessage: 'Unit price',
+                  })}
+                </TableCell>
+                <TableCell align="right">
+                  {intl.formatMessage({
+                    id: 'orders.lines.total',
+                    defaultMessage: 'Total',
+                  })}
+                </TableCell>
                 {/* No visible title — the buttons explain themselves —
                     but a screen reader announces the column by name. */}
-                <TableCell align="right" aria-label="Actions" />
+                <TableCell
+                  align="right"
+                  aria-label={intl.formatMessage({
+                    id: 'orders.lines.actions',
+                    defaultMessage: 'Actions',
+                  })}
+                />
               </TableRow>
             </TableHead>
 
@@ -156,10 +219,16 @@ export function OrderLinesSection({
                 <TableRow key={line.id} hover>
                   <TableCell>{line.sku}</TableCell>
                   <TableCell>{line.description}</TableCell>
-                  <TableCell align="right">{line.quantityOrdered}</TableCell>
-                  <TableCell align="right">{line.quantityFulfilled}</TableCell>
+                  <TableCell align="right">
+                    {formatQuantity(line.quantityOrdered)}
+                  </TableCell>
+                  <TableCell align="right">
+                    {formatQuantity(line.quantityFulfilled)}
+                  </TableCell>
                   {order.direction === 'sale' && (
-                    <TableCell align="right">{line.quantityReturned}</TableCell>
+                    <TableCell align="right">
+                      {formatQuantity(line.quantityReturned)}
+                    </TableCell>
                   )}
 
                   <TableCell align="right">
@@ -167,11 +236,17 @@ export function OrderLinesSection({
                       /* The reason in place of the number: outstanding is
                        zero, and why it is zero is the useful part. */
                       <Tooltip title={line.closedReason ?? ''}>
-                        <Chip label="Closed short" size="small" />
+                        <Chip
+                          label={intl.formatMessage({
+                            id: 'orders.lines.closedShort',
+                            defaultMessage: 'Closed short',
+                          })}
+                          size="small"
+                        />
                       </Tooltip>
                     ) : (
                       <>
-                        {line.quantityOutstanding}
+                        {formatQuantity(line.quantityOutstanding)}
                         {/* The backorder: needed, and not held because
                             earlier-confirmed orders came first (ADR-045).
                             '0.0000' is nothing, compared as text. */}
@@ -179,10 +254,25 @@ export function OrderLinesSection({
                           holds[line.id] &&
                           holds[line.id].short !== '0.0000' && (
                             <Tooltip
-                              title={`${holds[line.id].held} held for this order; the rest waits for stock`}
+                              title={intl.formatMessage(
+                                {
+                                  id: 'orders.lines.heldTooltip',
+                                  defaultMessage:
+                                    '{held} held for this order; the rest waits for stock',
+                                },
+                                { held: formatQuantity(holds[line.id].held) },
+                              )}
                             >
                               <Chip
-                                label={`${holds[line.id].short} short`}
+                                label={intl.formatMessage(
+                                  {
+                                    id: 'orders.lines.short',
+                                    defaultMessage: '{short} short',
+                                  },
+                                  {
+                                    short: formatQuantity(holds[line.id].short),
+                                  },
+                                )}
                                 size="small"
                                 color="warning"
                                 variant="outlined"
@@ -204,7 +294,13 @@ export function OrderLinesSection({
                         color="text.secondary"
                         component="div"
                       >
-                        from {line.priceListName}
+                        {intl.formatMessage(
+                          {
+                            id: 'orders.lines.fromList',
+                            defaultMessage: 'from {list}',
+                          },
+                          { list: line.priceListName },
+                        )}
                       </Typography>
                     )}
                   </TableCell>
@@ -224,7 +320,10 @@ export function OrderLinesSection({
                           size="small"
                           onClick={openDialog(() => onReceive(line))}
                         >
-                          Receive
+                          {intl.formatMessage({
+                            id: 'inventory.receive.action',
+                            defaultMessage: 'Receive',
+                          })}
                         </Button>
                       )}
 
@@ -235,7 +334,10 @@ export function OrderLinesSection({
                           disabled={working}
                           onClick={openDialog(() => onEditLine(line))}
                         >
-                          Edit
+                          {intl.formatMessage({
+                            id: 'common.edit',
+                            defaultMessage: 'Edit',
+                          })}
                         </Button>
                       )}
 
@@ -258,7 +360,10 @@ export function OrderLinesSection({
                               )
                             }
                           >
-                            Use list price
+                            {intl.formatMessage({
+                              id: 'orders.lines.useListPrice',
+                              defaultMessage: 'Use list price',
+                            })}
                           </Button>
                         )}
 
@@ -274,7 +379,10 @@ export function OrderLinesSection({
                             disabled={working}
                             onClick={openDialog(() => onCloseLine(line))}
                           >
-                            Close short
+                            {intl.formatMessage({
+                              id: 'orders.lines.closeShort',
+                              defaultMessage: 'Close short',
+                            })}
                           </Button>
                         )}
 
@@ -290,7 +398,10 @@ export function OrderLinesSection({
                             )
                           }
                         >
-                          Reopen
+                          {intl.formatMessage({
+                            id: 'orders.lines.reopen',
+                            defaultMessage: 'Reopen',
+                          })}
                         </Button>
                       )}
 
@@ -301,7 +412,13 @@ export function OrderLinesSection({
                       {canUpdate && isDraft && order.lines.length > 1 && (
                         <IconButton
                           size="small"
-                          aria-label={`Remove ${line.sku}`}
+                          aria-label={intl.formatMessage(
+                            {
+                              id: 'orders.lines.remove',
+                              defaultMessage: 'Remove {sku}',
+                            },
+                            { sku: line.sku },
+                          )}
                           disabled={working}
                           onClick={() =>
                             void onLineAction(
@@ -310,7 +427,7 @@ export function OrderLinesSection({
                             )
                           }
                         >
-                          ×
+                          {CROSS}
                         </IconButton>
                       )}
                     </Stack>
@@ -336,8 +453,15 @@ export function OrderLinesSection({
           {!order.totalsComplete && (
             <Typography variant="caption" color="text.secondary">
               {order.totals.length
-                ? 'Some lines have no price — this is not the full total'
-                : 'No prices recorded on this order'}
+                ? intl.formatMessage({
+                    id: 'orders.lines.partialTotal',
+                    defaultMessage:
+                      'Some lines have no price — this is not the full total',
+                  })
+                : intl.formatMessage({
+                    id: 'orders.lines.noPrices',
+                    defaultMessage: 'No prices recorded on this order',
+                  })}
             </Typography>
           )}
         </Stack>
@@ -347,14 +471,27 @@ export function OrderLinesSection({
           outstanding (ADR-043), which reads as a mismatch until said. */}
       {order.lines.some((line) => Number(line.quantityReturned) > 0) && (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-          Returns don't reopen an item. To send replacements, raise a new sale.
+          {intl.formatMessage({
+            id: 'orders.lines.returnsNote',
+            defaultMessage:
+              "Returns don't reopen an item. To send replacements, raise a new sale.",
+          })}
         </Typography>
       )}
 
       {order.status === 'draft' && (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-          Nothing can be {DONE[order.direction].toLowerCase()} against a draft.
-          Confirming is what says this order is real.
+          {order.direction === 'sale'
+            ? intl.formatMessage({
+                id: 'orders.lines.draftSale',
+                defaultMessage:
+                  'Nothing can be shipped against a draft. Confirming is what says this order is real.',
+              })
+            : intl.formatMessage({
+                id: 'orders.lines.draftPurchase',
+                defaultMessage:
+                  'Nothing can be received against a draft. Confirming is what says this order is real.',
+              })}
         </Typography>
       )}
     </Box>

@@ -9,6 +9,8 @@ import { intl } from '../i18n/intl';
  */
 export const NO_VALUE = '—';
 export const SEPARATOR = ' · ';
+/** A helper line kept blank, so a field does not jump when it fills. */
+export const BLANK_LINE = ' ';
 
 /**
  * The tag every formatter here uses (ADR-054): the chosen language, in the

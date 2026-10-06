@@ -8,10 +8,12 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import { formatQuantity } from '../lib/format';
 import type { OrderLine } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
@@ -35,6 +37,7 @@ export function CloseLineDialog({
   onClose: () => void;
   onClosed: () => Promise<void> | void;
 }) {
+  const intl = useIntl();
   const [reason, setReason] = useState('');
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -42,7 +45,12 @@ export function CloseLineDialog({
       close();
       await onClosed();
     },
-    { success: 'Line closed short' },
+    {
+      success: intl.formatMessage({
+        id: 'orders.lines.closedShortDone',
+        defaultMessage: 'Line closed short',
+      }),
+    },
   );
 
   function close() {
@@ -71,7 +79,12 @@ export function CloseLineDialog({
       maxWidth="sm"
     >
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Stop expecting the rest</DialogTitle>
+        <DialogTitle>
+          {intl.formatMessage({
+            id: 'orders.closeLine.title',
+            defaultMessage: 'Stop expecting the rest',
+          })}
+        </DialogTitle>
 
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
@@ -79,29 +92,47 @@ export function CloseLineDialog({
 
             {line && (
               <Typography variant="body2">
-                {line.sku}: {line.quantityFulfilled} of {line.quantityOrdered}{' '}
-                received.
+                {intl.formatMessage(
+                  {
+                    id: 'orders.closeLine.progress',
+                    defaultMessage: '{sku}: {fulfilled} of {ordered} received.',
+                  },
+                  {
+                    sku: line.sku,
+                    fulfilled: formatQuantity(line.quantityFulfilled),
+                    ordered: formatQuantity(line.quantityOrdered),
+                  },
+                )}
               </Typography>
             )}
 
             {/* The number people expect this to change, and the reason it
                 does not. */}
             <Alert severity="info">
-              The ordered quantity stays as it is. Nothing further will be
-              expected, but the shortfall remains visible — otherwise a short
-              delivery would look the same as an accurate one.
+              {intl.formatMessage({
+                id: 'orders.closeLine.notice',
+                defaultMessage:
+                  'The ordered quantity stays as it is. Nothing further will be expected, but the shortfall remains visible — otherwise a short delivery would look the same as an accurate one.',
+              })}
             </Alert>
 
             <TextField
               id="close-line-reason"
-              label="Why"
+              label={intl.formatMessage({
+                id: 'inventory.why',
+                defaultMessage: 'Why',
+              })}
               required
               fullWidth
               multiline
               minRows={2}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              helperText="Discontinued, backordered indefinitely, ordered by mistake."
+              helperText={intl.formatMessage({
+                id: 'orders.closeLine.why.help',
+                defaultMessage:
+                  'Discontinued, backordered indefinitely, ordered by mistake.',
+              })}
               slotProps={{ htmlInput: { maxLength: 500 } }}
             />
           </Stack>
@@ -110,8 +141,14 @@ export function CloseLineDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
-          label="Close line"
-          pendingLabel="Closing…"
+          label={intl.formatMessage({
+            id: 'orders.closeLine.action',
+            defaultMessage: 'Close line',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'orders.closeLine.pending',
+            defaultMessage: 'Closing…',
+          })}
         />
       </form>
     </Dialog>

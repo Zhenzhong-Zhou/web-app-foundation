@@ -17,15 +17,17 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
-import { formatDay } from '../lib/format';
+import { formatDay, formatQuantity, NO_VALUE } from '../lib/format';
 import type { OrderStatus, OrderSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { orderStatusLabel } from './status';
 
 /**
  * `status` is the document's lifecycle and says nothing about how much has
@@ -41,15 +43,36 @@ const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
 };
 
 const FILTERS = [
-  { value: 'open', label: 'Open' },
-  { value: 'fulfilled', label: 'Fulfilled' },
-  { value: 'cancelled', label: 'Cancelled' },
-  { value: 'all', label: 'All' },
+  {
+    value: 'open',
+    ...defineMessages({
+      label: { id: 'orders.filter.open', defaultMessage: 'Open' },
+    }),
+  },
+  {
+    value: 'fulfilled',
+    ...defineMessages({
+      label: { id: 'orders.filter.fulfilled', defaultMessage: 'Fulfilled' },
+    }),
+  },
+  {
+    value: 'cancelled',
+    ...defineMessages({
+      label: { id: 'orders.filter.cancelled', defaultMessage: 'Cancelled' },
+    }),
+  },
+  {
+    value: 'all',
+    ...defineMessages({
+      label: { id: 'orders.filter.all', defaultMessage: 'All' },
+    }),
+  },
 ] as const;
 
 type Filter = (typeof FILTERS)[number]['value'];
 
 export function OrdersPage() {
+  const intl = useIntl();
   const can = useCan();
 
   const [filter, setFilter] = useState<Filter>('open');
@@ -71,11 +94,17 @@ export function OrdersPage() {
     <Stack spacing={3}>
       <PageHeader
         crumbs={[]}
-        title="Orders"
+        title={intl.formatMessage({
+          id: 'layout.nav.orders',
+          defaultMessage: 'Orders',
+        })}
         actions={
           canCreate && (
             <Button component={RouterLink} to="/orders/new">
-              Raise an order
+              {intl.formatMessage({
+                id: 'orders.raise',
+                defaultMessage: 'Raise an order',
+              })}
             </Button>
           )
         }
@@ -90,14 +119,17 @@ export function OrdersPage() {
           id="order-filter"
           select
           size="small"
-          label="Show"
+          label={intl.formatMessage({
+            id: 'orders.filter.label',
+            defaultMessage: 'Show',
+          })}
           value={filter}
           onChange={(event) => setFilter(event.target.value as Filter)}
           sx={{ minWidth: 160 }}
         >
           {FILTERS.map((option) => (
             <MenuItem key={option.value} value={option.value}>
-              {option.label}
+              {intl.formatMessage(option.label)}
             </MenuItem>
           ))}
         </TextField>
@@ -120,12 +152,42 @@ export function OrdersPage() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Partner</TableCell>
-                  <TableCell>Direction</TableCell>
-                  <TableCell>Reference</TableCell>
-                  <TableCell>Expected</TableCell>
-                  <TableCell>Fulfilled</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'orders.partner',
+                      defaultMessage: 'Partner',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'orders.direction',
+                      defaultMessage: 'Direction',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'orders.reference',
+                      defaultMessage: 'Reference',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'orders.expected',
+                      defaultMessage: 'Expected',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'orders.fulfilled',
+                      defaultMessage: 'Fulfilled',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'common.status',
+                      defaultMessage: 'Status',
+                    })}
+                  </TableCell>
                 </TableRow>
               </TableHead>
 
@@ -141,12 +203,23 @@ export function OrdersPage() {
                     {/* Which way the goods go, in a person's words — the first
                       thing anyone scanning this list wants to know. */}
                     <TableCell>
-                      {order.direction === 'purchase' ? 'Buying' : 'Selling'}
+                      {order.direction === 'purchase'
+                        ? intl.formatMessage({
+                            id: 'orders.direction.buying',
+                            defaultMessage: 'Buying',
+                          })
+                        : intl.formatMessage({
+                            id: 'orders.direction.selling',
+                            defaultMessage: 'Selling',
+                          })}
                       {/* Beside the direction rather than instead of it: a
                         sample is still stock leaving (ADR-042). */}
                       {order.isSample && (
                         <Chip
-                          label="Sample"
+                          label={intl.formatMessage({
+                            id: 'orders.sample',
+                            defaultMessage: 'Sample',
+                          })}
                           size="small"
                           variant="outlined"
                           sx={{ ml: 1 }}
@@ -156,28 +229,34 @@ export function OrdersPage() {
 
                     {/* Their number, not ours. Nullable, because an order placed
                       by phone has none. */}
-                    <TableCell>{order.reference ?? '—'}</TableCell>
+                    <TableCell>{order.reference ?? NO_VALUE}</TableCell>
 
                     <TableCell>
-                      {order.expectedAt ? formatDay(order.expectedAt) : '—'}
+                      {order.expectedAt
+                        ? formatDay(order.expectedAt)
+                        : NO_VALUE}
                     </TableCell>
 
-                    {/* Rendered as Postgres computed them. Parsing a
-                      numeric(18,4) into a JS number to make a percentage is
-                      how a quantity loses its last decimal place (ADR-025). */}
+                    {/* Rendered as Postgres computed them, only the decimal
+                      separator the language's. Parsing a numeric(18,4) into a
+                      JS number to make a percentage is how a quantity loses
+                      its last decimal place (ADR-025). */}
                     <TableCell>
-                      {order.quantityFulfilled} / {order.quantityOrdered}
+                      {intl.formatMessage(
+                        {
+                          id: 'orders.fulfilledOfOrdered',
+                          defaultMessage: '{fulfilled} / {ordered}',
+                        },
+                        {
+                          fulfilled: formatQuantity(order.quantityFulfilled),
+                          ordered: formatQuantity(order.quantityOrdered),
+                        },
+                      )}
                     </TableCell>
 
                     <TableCell>
                       <Chip
-                        label={
-                          order.status === 'fulfilled'
-                            ? order.direction === 'sale'
-                              ? 'Shipped'
-                              : 'Received'
-                            : order.status
-                        }
+                        label={orderStatusLabel(order.status, order.direction)}
                         size="small"
                         color={STATUS_COLOUR[order.status]}
                         sx={{ textTransform: 'capitalize' }}
@@ -191,8 +270,15 @@ export function OrdersPage() {
         ) : (
           <Typography color="text.secondary" sx={{ p: 3 }}>
             {filter === 'open'
-              ? 'Nothing open. Raising an order records what you asked a partner for — receiving against it is what puts the stock on a shelf.'
-              : 'No orders match that filter.'}
+              ? intl.formatMessage({
+                  id: 'orders.empty.open',
+                  defaultMessage:
+                    'Nothing open. Raising an order records what you asked a partner for — receiving against it is what puts the stock on a shelf.',
+                })
+              : intl.formatMessage({
+                  id: 'orders.empty.filtered',
+                  defaultMessage: 'No orders match that filter.',
+                })}
           </Typography>
         )}
       </Paper>

@@ -340,7 +340,9 @@ folder by folder; these check what is already in place.
   list, the movements page, the history. Typing 1 234 or 1.234,5 is refused
   on the field itself, before anything is sent, with an example written
   1234,5. In English, 2.5 behaves exactly as before, and 1,234 is refused
-  the same way.
+  the same way. The same holds for an order's quantities and prices: raising
+  one, adding a line, editing a line, which also opens showing its numbers
+  the reader's way.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -366,7 +368,10 @@ folder by folder; these check what is already in place.
       each location type by name;
     - inventory: the stock list and what is promised, the action menu, the
       receive, move, sample, correct and lot dialogs, a pile's history,
-      the movements page with its reasons, and tracing a lot.
+      the movements page with its reasons, and tracing a lot;
+    - orders: the list with its filter and statuses, raising an order,
+      the order page with its lines, and the edit, duplicate, close, add,
+      edit and close-short dialogs.
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -425,3 +430,4 @@ first.
 - 2026-10-04: ADR-054, a partner's document languages: MC-1409.
 - 2026-10-05: ADR-054, locations: MC-1406 extended.
 - 2026-10-05: ADR-054, inventory: MC-1406 extended, MC-1410.
+- 2026-10-05: ADR-054, orders and their lines: MC-1406, MC-1410 extended.

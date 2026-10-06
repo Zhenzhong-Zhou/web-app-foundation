@@ -15,13 +15,21 @@ import {
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
 import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import {
+  BLANK_LINE,
+  groupedNumberMessage,
+  nameAndCode,
+  toApiDecimal,
+} from '../lib/format';
 import type { OrderDirection, Partner, VariantOption } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
+import { unitLabel } from '../products/units';
 
 interface LineDraft {
   /** Local only — React needs a stable key before the row has a variant. */
@@ -57,7 +65,10 @@ export function CreateOrderPage() {
 
   const [partners, setPartners] = useState<Partner[]>([]);
   const [variants, setVariants] = useState<VariantOption[]>([]);
+  const intl = useIntl();
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Set when a quantity or price is typed with a thousands separator.
+  const [numberError, setNumberError] = useState<string | null>(null);
 
   const [partner, setPartner] = useState<Partner | null>(null);
   const [direction, setDirection] = useState<OrderDirection>('purchase');
@@ -79,7 +90,12 @@ export function CreateOrderPage() {
     () => {
       // Nothing to reset — the page unmounts on success.
     },
-    { success: 'Order raised' },
+    {
+      success: intl.formatMessage({
+        id: 'orders.raised',
+        defaultMessage: 'Order raised',
+      }),
+    },
   );
 
   useEffect(() => {
@@ -95,7 +111,14 @@ export function CreateOrderPage() {
         setVariants(variantRows);
       })
       .catch(() => {
-        if (!ignore) setLoadError('Could not load partners and products.');
+        if (!ignore) {
+          setLoadError(
+            intl.formatMessage({
+              id: 'orders.create.loadFailed',
+              defaultMessage: 'Could not load partners and products.',
+            }),
+          );
+        }
       });
 
     return () => {
@@ -144,6 +167,18 @@ export function CreateOrderPage() {
     event.preventDefault();
     if (!partner) return;
 
+    // Each number as the API takes it: the language's decimal comma made a
+    // point, a thousands separator refused rather than guessed (ADR-054).
+    const numbers = complete.map((line) => ({
+      quantity: toApiDecimal(line.quantityOrdered),
+      price: line.unitPrice.trim() ? toApiDecimal(line.unitPrice) : '',
+    }));
+    if (numbers.some((row) => row.quantity === null || row.price === null)) {
+      setNumberError(groupedNumberMessage());
+      return;
+    }
+    setNumberError(null);
+
     void submit(async () => {
       const created = await api<{ order: { id: string } }>('/orders', {
         method: 'POST',
@@ -166,13 +201,13 @@ export function CreateOrderPage() {
            * sees it (ADR-025), and 2.75 kg of raw material is ordinary — as is a
            * price like 0.0125.
            */
-          lines: complete.map((line) => ({
+          lines: complete.map((line, index) => ({
             variantId: line.variant!.id,
-            quantityOrdered: line.quantityOrdered.trim(),
+            quantityOrdered: numbers[index].quantity!,
             // Both or neither: the server refuses half a price, and a blank
             // field means this line simply has none yet.
-            unitPrice: line.unitPrice.trim() || undefined,
-            currency: line.unitPrice.trim() ? currency : undefined,
+            unitPrice: numbers[index].price || undefined,
+            currency: numbers[index].price ? currency : undefined,
           })),
         }),
       });
@@ -185,29 +220,42 @@ export function CreateOrderPage() {
     <form onSubmit={handleSubmit}>
       <Stack spacing={3}>
         <Typography variant="h5" component="h1">
-          Raise an order
+          {intl.formatMessage({
+            id: 'orders.raise',
+            defaultMessage: 'Raise an order',
+          })}
         </Typography>
 
         {loadError && <Alert severity="error">{loadError}</Alert>}
-        {error && <FormError message={error} />}
+        {(numberError ?? error) && (
+          <FormError message={(numberError ?? error)!} />
+        )}
 
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Stack spacing={2}>
             <Autocomplete
               options={selectablePartners}
-              getOptionLabel={(option) =>
-                option.code ? `${option.name} (${option.code})` : option.name
-              }
+              getOptionLabel={(option) => nameAndCode(option.name, option.code)}
               value={partner}
               onChange={(_event, value) => setPartner(value)}
               renderInput={(params) => (
-                <TextField {...params} label="Partner" required />
+                <TextField
+                  {...params}
+                  label={intl.formatMessage({
+                    id: 'orders.partner',
+                    defaultMessage: 'Partner',
+                  })}
+                  required
+                />
               )}
             />
 
             <TextField
               select
-              label="Direction"
+              label={intl.formatMessage({
+                id: 'orders.direction',
+                defaultMessage: 'Direction',
+              })}
               value={direction}
               onChange={(event) => {
                 const next = event.target.value as OrderDirection;
@@ -220,12 +268,30 @@ export function CreateOrderPage() {
               // two values the service branches on, carrying no attributes.
               helperText={
                 direction === 'purchase'
-                  ? 'Stock arrives, and is received against this order.'
-                  : 'Stock leaves. Receiving does not apply to a sale.'
+                  ? intl.formatMessage({
+                      id: 'orders.direction.purchase.help',
+                      defaultMessage:
+                        'Stock arrives, and is received against this order.',
+                    })
+                  : intl.formatMessage({
+                      id: 'orders.direction.sale.help',
+                      defaultMessage:
+                        'Stock leaves. Receiving does not apply to a sale.',
+                    })
               }
             >
-              <MenuItem value="purchase">Buying from them</MenuItem>
-              <MenuItem value="sale">Selling to them</MenuItem>
+              <MenuItem value="purchase">
+                {intl.formatMessage({
+                  id: 'orders.direction.purchase',
+                  defaultMessage: 'Buying from them',
+                })}
+              </MenuItem>
+              <MenuItem value="sale">
+                {intl.formatMessage({
+                  id: 'orders.direction.sale',
+                  defaultMessage: 'Selling to them',
+                })}
+              </MenuItem>
             </TextField>
 
             {/* A sample ships, prints and traces exactly like a sale — the
@@ -240,22 +306,36 @@ export function CreateOrderPage() {
                     onChange={(event) => setIsSample(event.target.checked)}
                   />
                 }
-                label="This is a sample — price it at zero if it is free"
+                label={intl.formatMessage({
+                  id: 'orders.create.isSample',
+                  defaultMessage:
+                    'This is a sample — price it at zero if it is free',
+                })}
               />
             )}
 
             <Stack direction="row" spacing={2}>
               <TextField
-                label="Their reference"
+                label={intl.formatMessage({
+                  id: 'orders.theirReference',
+                  defaultMessage: 'Their reference',
+                })}
                 fullWidth
                 value={reference}
                 onChange={(event) => setReference(event.target.value)}
-                helperText="Their number for this order, not ours. Optional."
+                helperText={intl.formatMessage({
+                  id: 'orders.theirReference.help',
+                  defaultMessage:
+                    'Their number for this order, not ours. Optional.',
+                })}
                 slotProps={{ htmlInput: { maxLength: 100 } }}
               />
 
               <TextField
-                label="Expected"
+                label={intl.formatMessage({
+                  id: 'orders.expected',
+                  defaultMessage: 'Expected',
+                })}
                 type="date"
                 fullWidth
                 value={expectedAt}
@@ -267,13 +347,19 @@ export function CreateOrderPage() {
                 id="order-currency"
                 value={currency}
                 onChange={setCurrency}
-                helperText="For any prices below"
+                helperText={intl.formatMessage({
+                  id: 'orders.create.currency.help',
+                  defaultMessage: 'For any prices below',
+                })}
                 sx={{ width: 160, flexShrink: 0 }}
               />
             </Stack>
 
             <TextField
-              label="Note"
+              label={intl.formatMessage({
+                id: 'inventory.note',
+                defaultMessage: 'Note',
+              })}
               fullWidth
               multiline
               minRows={2}
@@ -286,7 +372,10 @@ export function CreateOrderPage() {
 
         <Box>
           <Typography variant="h6" component="h2" sx={{ mb: 1 }}>
-            Items
+            {intl.formatMessage({
+              id: 'orders.items',
+              defaultMessage: 'Items',
+            })}
           </Typography>
 
           <Paper variant="outlined">
@@ -313,12 +402,21 @@ export function CreateOrderPage() {
                       updateLine(line.key, { variant: value })
                     }
                     renderInput={(params) => (
-                      <TextField {...params} label="Item" />
+                      <TextField
+                        {...params}
+                        label={intl.formatMessage({
+                          id: 'inventory.item',
+                          defaultMessage: 'Item',
+                        })}
+                      />
                     )}
                   />
 
                   <TextField
-                    label="Quantity"
+                    label={intl.formatMessage({
+                      id: 'inventory.quantity',
+                      defaultMessage: 'Quantity',
+                    })}
                     value={line.quantityOrdered}
                     onChange={(event) =>
                       updateLine(line.key, {
@@ -328,18 +426,31 @@ export function CreateOrderPage() {
                     // Text, not number. A number input coerces through a
                     // double and strips a trailing zero that matters in a
                     // unit of measure.
-                    helperText={line.variant?.unitOfMeasure ?? ' '}
+                    helperText={
+                      line.variant
+                        ? unitLabel(line.variant.unitOfMeasure, intl)
+                        : BLANK_LINE
+                    }
                     sx={{ width: 140 }}
                   />
 
                   <TextField
-                    label="Unit price"
+                    label={intl.formatMessage({
+                      id: 'orders.unitPrice',
+                      defaultMessage: 'Unit price',
+                    })}
                     value={line.unitPrice}
                     disabled={!currency}
                     onChange={(event) =>
                       updateLine(line.key, { unitPrice: event.target.value })
                     }
-                    helperText={currency || 'Set a currency first'}
+                    helperText={
+                      currency ||
+                      intl.formatMessage({
+                        id: 'orders.create.currencyFirst',
+                        defaultMessage: 'Set a currency first',
+                      })
+                    }
                     sx={{ width: 140 }}
                     slotProps={{
                       htmlInput: { inputMode: 'decimal', maxLength: 19 },
@@ -347,7 +458,10 @@ export function CreateOrderPage() {
                   />
 
                   <IconButton
-                    aria-label="Remove item"
+                    aria-label={intl.formatMessage({
+                      id: 'orders.create.removeItem',
+                      defaultMessage: 'Remove item',
+                    })}
                     disabled={lines.length === 1}
                     onClick={() => removeLine(line.key)}
                     sx={{ mt: 1 }}
@@ -363,7 +477,10 @@ export function CreateOrderPage() {
                 variant="text"
                 onClick={() => setLines((current) => [...current, emptyLine()])}
               >
-                Add another item
+                {intl.formatMessage({
+                  id: 'orders.create.addItem',
+                  defaultMessage: 'Add another item',
+                })}
               </Button>
             </Box>
           </Paper>
@@ -375,14 +492,25 @@ export function CreateOrderPage() {
             disabled={submitting}
             onClick={() => void navigate('/orders')}
           >
-            Cancel
+            {intl.formatMessage({
+              id: 'common.cancel',
+              defaultMessage: 'Cancel',
+            })}
           </Button>
 
           {/* Created as a draft. Confirming is a separate decision, made on
               the order itself — and nothing can be received against a draft
               (ADR-027). */}
           <Button type="submit" disabled={!canSubmit}>
-            {submitting ? 'Raising…' : 'Raise as draft'}
+            {submitting
+              ? intl.formatMessage({
+                  id: 'orders.create.raising',
+                  defaultMessage: 'Raising…',
+                })
+              : intl.formatMessage({
+                  id: 'orders.create.raiseAsDraft',
+                  defaultMessage: 'Raise as draft',
+                })}
           </Button>
         </Stack>
       </Stack>
