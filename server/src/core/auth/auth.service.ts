@@ -11,13 +11,18 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { asc, eq, sql } from 'drizzle-orm';
 
-import type { Locale } from '../../common/locales';
+import { DEFAULT_LOCALE, type Locale } from '../../common/locales';
 import type { Env } from '../../config/env';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { organizations } from '../../database/schema';
 import { memberships, users } from '../../database/schema';
-import { t } from '../../i18n/translate';
+import {
+  recipientLocale,
+  t,
+  type Translatable,
+  translate,
+} from '../../i18n/translate';
 import { escapeHtml } from '../../shared/mail/escape-html';
 import { MailService } from '../../shared/mail/mail.service';
 import type { Permission } from '../authorization/permissions';
@@ -100,7 +105,7 @@ export class AuthService implements OnModuleInit {
 
   async register(
     input: RegisterDto,
-    meta: { ip?: string; userAgent?: string } = {},
+    meta: { ip?: string; userAgent?: string; language?: string } = {},
   ): Promise<{ user: AuthenticatedUser; session: NewSession }> {
     // Hashed before the transaction opens. argon2 takes ~100ms by design, and
     // holding a transaction open across it would keep locks for the duration
@@ -178,7 +183,13 @@ export class AuthService implements OnModuleInit {
      */
     await this.events.record(user.id, 'account.registered', meta);
 
-    await this.sendVerificationEmail(user.id, user.email, user.name);
+    // Their own choice of language if they made one, else the page's.
+    await this.sendVerificationEmail(
+      user.id,
+      user.email,
+      user.name,
+      recipientLocale(input.locale, meta.language),
+    );
 
     return {
       user: { ...user, emailVerified: false },
@@ -188,7 +199,7 @@ export class AuthService implements OnModuleInit {
 
   async login(
     input: LoginDto,
-    meta: { ip?: string; userAgent?: string } = {},
+    meta: { ip?: string; userAgent?: string; language?: string } = {},
     previousToken?: string,
   ): Promise<{ user: AuthenticatedUser; session: NewSession }> {
     const [row] = await this.db
@@ -374,17 +385,40 @@ export class AuthService implements OnModuleInit {
    * and the resend endpoint is the remedy. Password reset takes the opposite
    * position — see requestPasswordReset().
    */
-  async sendVerificationEmail(userId: string, email: string, name: string) {
+  async sendVerificationEmail(
+    userId: string,
+    email: string,
+    name: string,
+    locale: Locale = DEFAULT_LOCALE,
+  ) {
     try {
       const { token } = await this.tokens.issue(userId, 'email_verification');
       const clientUrl = this.config.get('CLIENT_URL', { infer: true });
       const link = `${clientUrl}/verify-email?token=${token}`;
 
+      // In the recipient's language (ADR-054); the English is unchanged.
+      const say = (message: Translatable) => translate(message, locale);
+      const hi = (who: string) =>
+        say(t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name: who }));
+      const confirm = say(
+        t({
+          id: 'mail.verify.confirm',
+          defaultMessage: 'Confirm your email address',
+        }),
+      );
+      const expires = say(
+        t({
+          id: 'mail.verify.expires',
+          defaultMessage:
+            'The link expires in 24 hours. If you did not sign up, ignore this message.',
+        }),
+      );
+
       await this.mail.send({
         to: email,
-        subject: 'Confirm your email address',
-        text: `Hi ${name},\n\nConfirm your email address:\n${link}\n\nThe link expires in 24 hours. If you did not sign up, ignore this message.`,
-        html: `<p>Hi ${escapeHtml(name)},</p><p><a href="${link}">Confirm your email address</a></p><p>The link expires in 24 hours. If you did not sign up, ignore this message.</p>`,
+        subject: confirm,
+        text: `${hi(name)}\n\n${say(t({ id: 'mail.verify.lead', defaultMessage: 'Confirm your email address:' }))}\n${link}\n\n${expires}`,
+        html: `<p>${hi(escapeHtml(name))}</p><p><a href="${link}">${confirm}</a></p><p>${expires}</p>`,
       });
     } catch (error) {
       // Broad by design: registration must survive a dead SMTP connection.
@@ -406,7 +440,7 @@ export class AuthService implements OnModuleInit {
    */
   async verifyEmail(
     token: string,
-    meta: { ip?: string; userAgent?: string } = {},
+    meta: { ip?: string; userAgent?: string; language?: string } = {},
   ): Promise<boolean> {
     const userId = await this.tokens.consume(token, 'email_verification');
     if (!userId) return false;
@@ -423,11 +457,15 @@ export class AuthService implements OnModuleInit {
   }
 
   /** Re-sends verification for an already-authenticated caller. */
-  async resendVerification(context: RequestContext): Promise<void> {
+  async resendVerification(
+    context: RequestContext,
+    language?: string,
+  ): Promise<void> {
     const [user] = await this.db
       .select({
         email: users.email,
         name: users.name,
+        locale: users.locale,
         emailVerifiedAt: users.emailVerifiedAt,
       })
       .from(users)
@@ -436,7 +474,12 @@ export class AuthService implements OnModuleInit {
     // Already verified: nothing to send, and no reason to tell them otherwise.
     if (!user || user.emailVerifiedAt !== null) return;
 
-    await this.sendVerificationEmail(context.userId, user.email, user.name);
+    await this.sendVerificationEmail(
+      context.userId,
+      user.email,
+      user.name,
+      recipientLocale(user.locale, language),
+    );
 
     // Only when a link actually went out. A resend is the one step of
     // verification that was missing from the account's own history, and "I
@@ -461,13 +504,14 @@ export class AuthService implements OnModuleInit {
    * coming, and their only recourse is to try again — which produces the same
    * silence.
    */
-  async requestPasswordReset(email: string): Promise<void> {
+  async requestPasswordReset(email: string, language?: string): Promise<void> {
     const [user] = await this.db
       .select({
         id: users.id,
         name: users.name,
         email: users.email,
         deletedAt: users.deletedAt,
+        locale: users.locale,
       })
       .from(users)
       .where(eq(sql`lower(${users.email})`, email));
@@ -482,11 +526,27 @@ export class AuthService implements OnModuleInit {
     const clientUrl = this.config.get('CLIENT_URL', { infer: true });
     const link = `${clientUrl}/reset-password?token=${token}`;
 
+    // Their own language, else the forgot-password page's (ADR-054).
+    const locale = recipientLocale(user.locale, language);
+    const say = (message: Translatable) => translate(message, locale);
+    const hi = (who: string) =>
+      say(t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name: who }));
+    const reset = say(
+      t({ id: 'mail.reset.action', defaultMessage: 'Reset your password' }),
+    );
+    const expires = say(
+      t({
+        id: 'mail.reset.expires',
+        defaultMessage:
+          'The link expires in one hour and can be used once. If you did not request this, ignore this message — your password has not changed.',
+      }),
+    );
+
     await this.mail.send({
       to: user.email,
-      subject: 'Reset your password',
-      text: `Hi ${user.name},\n\nReset your password:\n${link}\n\nThe link expires in one hour and can be used once. If you did not request this, ignore this message — your password has not changed.`,
-      html: `<p>Hi ${escapeHtml(user.name)},</p><p><a href="${link}">Reset your password</a></p><p>The link expires in one hour and can be used once. If you did not request this, ignore this message — your password has not changed.</p>`,
+      subject: reset,
+      text: `${hi(user.name)}\n\n${say(t({ id: 'mail.reset.lead', defaultMessage: 'Reset your password:' }))}\n${link}\n\n${expires}`,
+      html: `<p>${hi(escapeHtml(user.name))}</p><p><a href="${link}">${reset}</a></p><p>${expires}</p>`,
     });
 
     this.logger.log(`Password reset link sent for ${user.id}`);
@@ -511,7 +571,7 @@ export class AuthService implements OnModuleInit {
   async resetPassword(
     token: string,
     password: string,
-    meta: { ip?: string; userAgent?: string } = {},
+    meta: { ip?: string; userAgent?: string; language?: string } = {},
   ): Promise<boolean> {
     const userId = await this.tokens.consume(token, 'password_reset');
     if (!userId) return false;

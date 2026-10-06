@@ -384,6 +384,13 @@ folder by folder; these check what is already in place.
   `Accept-Language: fr-CA`, names the field as the API does
   (lines.0.quantity) in a French sentence. The same requests with no
   Accept-Language answer in English word for word.
+- **MC-1414** With the account's language set to Français, request a
+  password reset: the email (Mailpit) is French, subject included. Sign
+  out, switch the page to 简体中文, and request one for an account with
+  no language chosen: Chinese. Sign in from a new browser: the security
+  email and the bell's notification are in the account's language. Close
+  an order line short: a member set to English reads "will not be
+  delivered in full" while a member set to Français reads it in French.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -521,6 +528,8 @@ first.
 - 2026-10-06: ADR-054, printed documents: MC-1412; step 5 complete.
 - 2026-10-06: ADR-054 step 6 begins: the server answers in the request's
   language, sign-in and account first: MC-1413.
+- 2026-10-06: ADR-054, emails and notifications in the recipient's
+  language: MC-1414.
 - 2026-10-06: ADR-054, `seed:demo` sets up a French-and-English and a
   Chinese customer with an issued invoice each, so MC-1407 to MC-1412
   start from a fresh database.

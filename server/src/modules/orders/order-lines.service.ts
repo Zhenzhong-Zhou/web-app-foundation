@@ -395,8 +395,20 @@ export class OrderLinesService {
         userId,
         organizationId,
         type: NOTIFICATION_TYPES.ORDER_LINE_CLOSED_SHORT,
-        title: `${sku} will not be delivered in full`,
-        body: `${fulfilled} of ${ordered} received. ${input.reason}`,
+        title: t(
+          {
+            id: 'notifications.closedShort.title',
+            defaultMessage: '{sku} will not be delivered in full',
+          },
+          { sku },
+        ),
+        body: t(
+          {
+            id: 'notifications.closedShort.body',
+            defaultMessage: '{fulfilled} of {ordered} received. {reason}',
+          },
+          { fulfilled, ordered, reason: input.reason },
+        ),
         resourceType: 'order',
         resourceId: orderId,
       })),

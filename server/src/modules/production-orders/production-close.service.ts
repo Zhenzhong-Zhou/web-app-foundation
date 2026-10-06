@@ -249,8 +249,22 @@ export class ProductionCloseService {
         // The yield leads when it is off, because it is the run's own result;
         // the components explain it underneath.
         const title = outputVariance
-          ? `A production run made ${run.quantityProduced} against a plan of ${run.quantityPlanned}`
-          : `A production run closed with ${variances.length} line${variances.length === 1 ? '' : 's'} off plan`;
+          ? t(
+              {
+                id: 'notifications.variance.output',
+                defaultMessage:
+                  'A production run made {produced} against a plan of {planned}',
+              },
+              { produced: run.quantityProduced, planned: run.quantityPlanned },
+            )
+          : t(
+              {
+                id: 'notifications.variance.lines',
+                defaultMessage:
+                  'A production run closed with {count, plural, one {# line} other {# lines}} off plan',
+              },
+              { count: variances.length },
+            );
 
         await this.notifications.emit(
           recipients.map((userId) => ({

@@ -137,8 +137,10 @@ Then tag v0.4.0.
    converted (252 messages); a status or verb passed in as a value is
    named in each language through an ICU select. Validation messages too
    (TranslatingValidationPipe: Nest's English unchanged, an id beside
-   each). Still English: emails and notifications, and the two developer
-   errors (a missing tenant context, a misused @CurrentUser). The audit log spells out
+   each). Emails and notifications are written in the recipient's
+   language (`recipientLocale`: their choice, else the request's, else
+   English), a notification once per recipient. Still English: the two
+   developer errors (a missing tenant context, a misused @CurrentUser). The audit log spells out
    most action and field names from the server's keys, in English until
    step 6. The packing slip's item names are the products' own names; only
    the invoice and credit note carry names in other languages.

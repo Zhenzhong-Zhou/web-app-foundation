@@ -1,4 +1,4 @@
-import { localeOf, t, translate } from './translate';
+import { localeOf, recipientLocale, t, translate } from './translate';
 
 /**
  * The server's language rules (ADR-054): which language a request asks
@@ -60,5 +60,18 @@ describe('t and translate', () => {
       defaultMessage: 'Only in English',
     });
     expect(translate(unknown, 'fr-CA')).toBe('Only in English');
+  });
+});
+
+describe('recipientLocale', () => {
+  it('takes the person’s own choice first', () => {
+    expect(recipientLocale('zh-Hans', 'fr-CA')).toBe('zh-Hans');
+  });
+
+  it('falls back to the request that caused it, then English', () => {
+    expect(recipientLocale(null, 'fr-FR,fr;q=0.9')).toBe('fr-CA');
+    expect(recipientLocale(null, undefined)).toBe('en');
+    // A stored tag the app no longer speaks is no choice at all.
+    expect(recipientLocale('de', undefined)).toBe('en');
   });
 });

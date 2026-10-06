@@ -10,6 +10,7 @@ import {
   accountEvents,
   users,
 } from '../../database/schema';
+import { recipientLocale, t, type Translatable } from '../../i18n/translate';
 import { MailService } from '../../shared/mail/mail.service';
 import {
   NOTIFICATION_TYPES,
@@ -21,6 +22,8 @@ import { buildSecurityMail } from './security-mail';
 export interface EventMeta {
   ip?: string;
   userAgent?: string;
+  /** The request's Accept-Language, for an email to someone with no choice. */
+  language?: string;
 }
 
 /** 90 days. See ADR-022 for why this is not audit_log's 24 months. */
@@ -39,19 +42,28 @@ const RETENTION_MS = 90 * 24 * 60 * 60_000;
  * per-caller emit could.
  */
 const NOTIFIABLE: Partial<
-  Record<AccountEventAction, { type: NotificationType; title: string }>
+  Record<AccountEventAction, { type: NotificationType; title: Translatable }>
 > = {
   'session.created': {
     type: NOTIFICATION_TYPES.SESSION_CREATED,
-    title: 'A new sign-in to your account',
+    title: t({
+      id: 'notifications.account.signIn',
+      defaultMessage: 'A new sign-in to your account',
+    }),
   },
   'account.password_changed': {
     type: NOTIFICATION_TYPES.PASSWORD_CHANGED,
-    title: 'Your password was changed',
+    title: t({
+      id: 'notifications.account.passwordChanged',
+      defaultMessage: 'Your password was changed',
+    }),
   },
   'account.password_reset': {
     type: NOTIFICATION_TYPES.PASSWORD_RESET,
-    title: 'Your password was reset',
+    title: t({
+      id: 'notifications.account.passwordReset',
+      defaultMessage: 'Your password was reset',
+    }),
   },
 };
 
@@ -193,7 +205,12 @@ export class AccountEventService {
         type: notifiable.type,
         title: notifiable.title,
         // What makes "was that me?" answerable. No resource to link to.
-        body: meta.ip ? `From ${meta.ip}` : undefined,
+        body: meta.ip
+          ? t(
+              { id: 'notifications.account.from', defaultMessage: 'From {ip}' },
+              { ip: meta.ip },
+            )
+          : undefined,
       },
     ]);
 
@@ -220,13 +237,14 @@ export class AccountEventService {
     meta: EventMeta,
   ): Promise<void> {
     const [user] = await this.db
-      .select({ email: users.email, name: users.name })
+      .select({ email: users.email, name: users.name, locale: users.locale })
       .from(users)
       .where(and(eq(users.id, userId), isNull(users.deletedAt)));
 
     if (!user) return;
 
     const mail = buildSecurityMail(action, {
+      locale: recipientLocale(user.locale, meta.language),
       to: user.email,
       name: user.name,
       ip: meta.ip,

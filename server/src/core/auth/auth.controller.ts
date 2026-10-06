@@ -4,6 +4,7 @@ import {
   ConflictException,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Post,
@@ -82,6 +83,7 @@ export class AuthController {
       const { user, session } = await this.auth.register(dto, {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
+        language: req.headers['accept-language'],
       });
 
       const isProduction =
@@ -135,7 +137,11 @@ export class AuthController {
   ) {
     const { user, session } = await this.auth.login(
       dto,
-      { ip: req.ip, userAgent: req.headers['user-agent'] },
+      {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        language: req.headers['accept-language'],
+      },
       readSessionCookie(req),
     );
 
@@ -200,6 +206,7 @@ export class AuthController {
     const verified = await this.auth.verifyEmail(dto.token, {
       ip: req.ip,
       userAgent: req.headers['user-agent'],
+      language: req.headers['accept-language'],
     });
 
     if (!verified) {
@@ -227,8 +234,11 @@ export class AuthController {
   @AllowNoOrganization()
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle({ default: { limit: 3, ttl: 300_000 } })
-  async resendVerification(@CurrentUser() user: RequestContext) {
-    await this.auth.resendVerification(user);
+  async resendVerification(
+    @CurrentUser() user: RequestContext,
+    @Headers('accept-language') language?: string,
+  ) {
+    await this.auth.resendVerification(user, language);
     return { sent: true };
   }
 
@@ -253,8 +263,11 @@ export class AuthController {
       getTracker: loginTracker,
     },
   })
-  async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    await this.auth.requestPasswordReset(dto.email);
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+    @Headers('accept-language') language?: string,
+  ) {
+    await this.auth.requestPasswordReset(dto.email, language);
     return { sent: true };
   }
 
@@ -276,6 +289,7 @@ export class AuthController {
     const reset = await this.auth.resetPassword(dto.token, dto.password, {
       ip: req.ip,
       userAgent: req.headers['user-agent'],
+      language: req.headers['accept-language'],
     });
 
     if (!reset) {

@@ -165,3 +165,16 @@ export function localeOf(header: string | undefined): Locale {
 
   return DEFAULT_LOCALE;
 }
+
+/**
+ * The language to write to someone in where no browser is asking (ADR-054):
+ * an email, a notification. Their own choice, else the language of the
+ * request that caused it, else English.
+ */
+export function recipientLocale(
+  chosen: string | null | undefined,
+  acceptLanguage?: string,
+): Locale {
+  const own = SUPPORTED_LOCALES.find((locale) => locale === chosen);
+  return own ?? localeOf(acceptLanguage);
+}
