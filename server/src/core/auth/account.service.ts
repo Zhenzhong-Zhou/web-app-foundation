@@ -11,6 +11,7 @@ import { UAParser } from 'ua-parser-js';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { users } from '../../database/schema';
+import { t } from '../../i18n/translate';
 import { AccountEventService } from './account-event.service';
 import { AuthTokenService } from './auth-token.service';
 import type { ChangePasswordDto } from './dto/change-password.dto';
@@ -109,7 +110,11 @@ export class AccountService {
     // password, so neither may change one this way; reset is the path.
     if (!user?.passwordHash) {
       throw new BadRequestException(
-        'This account has no password set. Use the reset link instead.',
+        t({
+          id: 'account.password.noneSet',
+          defaultMessage:
+            'This account has no password set. Use the reset link instead.',
+        }),
       );
     }
 
@@ -119,7 +124,12 @@ export class AccountService {
     );
 
     if (!matches) {
-      throw new UnauthorizedException('That password is not correct');
+      throw new UnauthorizedException(
+        t({
+          id: 'account.password.wrong',
+          defaultMessage: 'That password is not correct',
+        }),
+      );
     }
 
     const passwordHash = await this.passwords.hash(dto.newPassword);
@@ -212,7 +222,12 @@ export class AccountService {
     // while leaving a live cookie pointing at nothing. Logout exists for
     // that, and it clears the cookie in the right order.
     if (sessionId === context.sessionId) {
-      throw new BadRequestException('Use sign out to end the current session.');
+      throw new BadRequestException(
+        t({
+          id: 'account.sessions.useSignOut',
+          defaultMessage: 'Use sign out to end the current session.',
+        }),
+      );
     }
 
     const revoked = await this.sessions.revokeOwned(sessionId, context.userId);

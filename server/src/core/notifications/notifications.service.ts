@@ -22,6 +22,7 @@ import {
   permissions,
   rolePermissions,
 } from '../../database/schema';
+import { t } from '../../i18n/translate';
 import type { NotificationType } from './notification-types';
 
 const DEFAULT_LIMIT = 20;
@@ -223,7 +224,12 @@ export class NotificationsService {
       .returning({ id: notifications.id });
 
     if (updated.length === 0) {
-      throw new NotFoundException('No such notification');
+      throw new NotFoundException(
+        t({
+          id: 'notifications.notFound',
+          defaultMessage: 'No such notification',
+        }),
+      );
     }
   }
 

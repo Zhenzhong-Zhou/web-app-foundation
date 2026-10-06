@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import type { Locale } from '../../common/locales';
 import type { Transaction } from '../../database/database.module';
 import { organizations, partners } from '../../database/schema';
+import { t } from '../../i18n/translate';
 
 /** What a document prints in: one language, or two on a bilingual sheet. */
 export interface DocumentLanguages {
@@ -45,7 +46,13 @@ export async function documentLanguages(
     )
     .where(eq(organizations.id, organizationId));
 
-  if (!row) throw new NotFoundException('No such organization');
+  if (!row)
+    throw new NotFoundException(
+      t({
+        id: 'organizations.notFound',
+        defaultMessage: 'No such organization',
+      }),
+    );
 
   if (row.partnerLanguage !== null) {
     return { language: row.partnerLanguage, secondLanguage: row.partnerSecond };
@@ -73,13 +80,20 @@ export function assertLanguagePair(
 
   if (language === null) {
     throw new BadRequestException(
-      'A second document language needs a first one',
+      t({
+        id: 'organizations.secondNeedsFirst',
+        defaultMessage: 'A second document language needs a first one',
+      }),
     );
   }
 
   if (secondLanguage === language) {
     throw new BadRequestException(
-      'The second document language must differ from the first',
+      t({
+        id: 'organizations.languagesDiffer',
+        defaultMessage:
+          'The second document language must differ from the first',
+      }),
     );
   }
 }

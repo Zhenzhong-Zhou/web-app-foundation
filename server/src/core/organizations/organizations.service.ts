@@ -12,6 +12,7 @@ import {
   stockValuations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { t } from '../../i18n/translate';
 import { assertListAssignable } from '../../modules/price-lists/list-price';
 import { recordPrevious } from '../audit/audit-context';
 import { assertLanguagePair } from './document-languages';
@@ -54,7 +55,13 @@ export class OrganizationsService {
         .from(organizations)
         .where(eq(organizations.id, organizationId));
 
-      if (!organization) throw new NotFoundException('No such organization');
+      if (!organization)
+        throw new NotFoundException(
+          t({
+            id: 'organizations.notFound',
+            defaultMessage: 'No such organization',
+          }),
+        );
 
       const address = await registeredAddress(tx, organizationId);
 
@@ -79,7 +86,13 @@ export class OrganizationsService {
         .from(organizations)
         .where(eq(organizations.id, organizationId));
 
-      if (!existing) throw new NotFoundException('No such organization');
+      if (!existing)
+        throw new NotFoundException(
+          t({
+            id: 'organizations.notFound',
+            defaultMessage: 'No such organization',
+          }),
+        );
 
       // The pair as it will stand, so one side sent alone is checked against
       // the other as stored (ADR-054).
@@ -140,7 +153,14 @@ export class OrganizationsService {
 
         if (valued) {
           throw new ConflictException(
-            `Stock is already valued in ${existing.baseCurrency}, so the base currency cannot change`,
+            t(
+              {
+                id: 'organizations.baseCurrencyFixed',
+                defaultMessage:
+                  'Stock is already valued in {baseCurrency}, so the base currency cannot change',
+              },
+              { baseCurrency: existing.baseCurrency },
+            ),
           );
         }
       }

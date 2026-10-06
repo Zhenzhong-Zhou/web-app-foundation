@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { type IntlShape, RawIntlProvider } from 'react-intl';
 
+import { setRequestLanguage } from '../lib/api';
 import { setFormatLocale } from '../lib/format';
 import {
   browserLocale,
@@ -51,6 +52,9 @@ function apply(locale: Locale, messages: Messages): Active {
 
   setFormatLocale(tag);
   setIntl(intl);
+  // The language itself, not the regional tag: the server matches it to
+  // its own catalogues (ADR-054).
+  setRequestLanguage(locale);
   document.documentElement.lang = tag;
 
   return { locale, intl };

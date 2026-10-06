@@ -129,8 +129,14 @@ Then tag v0.4.0.
    (`useDocumentText`), whatever the reader reads, with item names in both
    from the invoice's copy. Step 4, the fluent review (MC-1405), is
    outstanding and best done once after step 6, through an export and
-   import script still to write. Next: step 6, the server's own messages
-   and emails. The audit log spells out
+   import script still to write. Step 6 is under way: the server throws
+   `t({ id, defaultMessage }, values)` and AllExceptionsFilter renders it
+   in the request's Accept-Language, which `api()` sets to the chosen
+   language; catalogues in `server/src/i18n/`, checked by `npm run
+   i18n:check` as the client's are. Converted so far: sign-in, account,
+   members, organization (24 messages). Still English: the feature
+   modules' refusals (about 245), validation messages, emails and
+   notifications. The audit log spells out
    most action and field names from the server's keys, in English until
    step 6. The packing slip's item names are the products' own names; only
    the invoice and credit note carry names in other languages.

@@ -152,6 +152,11 @@ jobs:
         run: node scripts/check-client-locales.js
         working-directory: server
 
+      # The server's own catalogues against its t() calls (ADR-054).
+      - name: Check server catalogues
+        run: npm run i18n:check
+        working-directory: server
+
       # From an empty database every time, which is the path production takes
       # and the one that rarely gets exercised locally.
       - name: Migrate

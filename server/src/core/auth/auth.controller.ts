@@ -16,6 +16,7 @@ import type { Request, Response } from 'express';
 
 import type { Env } from '../../config/env';
 import { isUniqueViolation } from '../../database/errors';
+import { t } from '../../i18n/translate';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
@@ -98,7 +99,12 @@ export class AuthController {
       return { user };
     } catch (error) {
       if (isUniqueViolation(error, 'users_email_lower_key')) {
-        throw new ConflictException('That email address is already registered');
+        throw new ConflictException(
+          t({
+            id: 'auth.emailTaken',
+            defaultMessage: 'That email address is already registered',
+          }),
+        );
       }
       throw error;
     }
@@ -198,7 +204,11 @@ export class AuthController {
 
     if (!verified) {
       throw new BadRequestException(
-        'That link is invalid or has expired. Request a new one.',
+        t({
+          id: 'auth.linkInvalid',
+          defaultMessage:
+            'That link is invalid or has expired. Request a new one.',
+        }),
       );
     }
 
@@ -270,7 +280,11 @@ export class AuthController {
 
     if (!reset) {
       throw new BadRequestException(
-        'That link is invalid or has expired. Request a new one.',
+        t({
+          id: 'auth.linkInvalid',
+          defaultMessage:
+            'That link is invalid or has expired. Request a new one.',
+        }),
       );
     }
   }

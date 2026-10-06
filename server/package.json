@@ -38,7 +38,9 @@
     "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json --runInBand",
     "fix": "npm run format && npm run lint",
     "verify": "npm run format:check && npm run lint:ci && npm run build && npm test && npm run test:e2e",
-    "pretest:e2e": "npm run migrate:test"
+    "pretest:e2e": "npm run migrate:test",
+    "i18n:extract": "formatjs extract \"src/**/*.ts\" --ignore \"src/**/*.spec.ts\" --ignore src/i18n/translate.ts --additional-function-names t --format simple --throws --out-file src/i18n/en.json",
+    "i18n:check": "node scripts/check-catalogues.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.7",
@@ -52,6 +54,7 @@
     "cookie-parser": "^1.4.7",
     "drizzle-orm": "^0.45.2",
     "helmet": "^8.3.0",
+    "intl-messageformat": "^10.7.18",
     "nestjs-pino": "^5.3.0",
     "nodemailer": "^10.0.13",
     "pg": "^8.23.1",
@@ -65,6 +68,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^10.0.1",
+    "@formatjs/cli": "^6.16.33",
+    "@formatjs/icu-messageformat-parser": "^3.5.21",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.2.7",

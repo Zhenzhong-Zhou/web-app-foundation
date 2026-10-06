@@ -373,6 +373,11 @@ folder by folder; these check what is already in place.
   French and English, as its invoice was. A partner in 简体中文 alone
   prints Chinese only, glyphs Chinese rather than Japanese forms. Paper
   shows no Back link or Print button, in any language.
+- **MC-1413** Signed out, in 简体中文, sign in with a wrong password: the
+  banner reads 邮箱或密码错误, not English; in Français, Courriel ou mot de
+  passe invalide. Signed in, in Français, try to remove yourself from
+  Members: the refusal is French. The same request from curl, with no
+  Accept-Language, answers in English word for word.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -508,6 +513,8 @@ first.
 - 2026-10-06: ADR-054, members: MC-1406 extended.
 - 2026-10-06: ADR-054, audit: MC-1406 extended; step 3 complete.
 - 2026-10-06: ADR-054, printed documents: MC-1412; step 5 complete.
+- 2026-10-06: ADR-054 step 6 begins: the server answers in the request's
+  language, sign-in and account first: MC-1413.
 - 2026-10-06: ADR-054, `seed:demo` sets up a French-and-English and a
   Chinese customer with an issued invoice each, so MC-1407 to MC-1412
   start from a fresh database.

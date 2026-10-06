@@ -17,6 +17,7 @@ import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { organizations } from '../../database/schema';
 import { memberships, users } from '../../database/schema';
+import { t } from '../../i18n/translate';
 import { escapeHtml } from '../../shared/mail/escape-html';
 import { MailService } from '../../shared/mail/mail.service';
 import type { Permission } from '../authorization/permissions';
@@ -62,7 +63,10 @@ export interface CurrentSession {
  * indistinguishable, or the endpoint answers "is this address registered?"
  * for anyone who asks.
  */
-const INVALID_CREDENTIALS = 'Invalid email or password';
+const INVALID_CREDENTIALS = t({
+  id: 'auth.invalidCredentials',
+  defaultMessage: 'Invalid email or password',
+});
 
 /**
  * Registration is the only onboarding path in V1 (ADR-006).
@@ -112,7 +116,12 @@ export class AuthService implements OnModuleInit {
         .where(eq(sql`lower(${users.email})`, input.email));
 
       if (existing.length > 0) {
-        throw new ConflictException('That email address is already registered');
+        throw new ConflictException(
+          t({
+            id: 'auth.emailTaken',
+            defaultMessage: 'That email address is already registered',
+          }),
+        );
       }
 
       const [created] = await tx
