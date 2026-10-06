@@ -361,6 +361,18 @@ folder by folder; these check what is already in place.
   invoices: checking and unchecking back leaves Save off; checking 简体中文
   and saving survives a reload. A role without organizations.update sees
   both sections but cannot save them.
+- **MC-1412** Printed documents follow the customer, not the reader.
+  With the screens in English, a partner set to Français then English:
+  ship, print the packing slip — every heading reads "French / English"
+  at the same size, figures once with a decimal comma, the unit named in
+  both. Invoice it: the draft's printout is already French and English,
+  with no item names in French yet; issue it with a French name on one
+  product, and the printed line shows the French name and the English
+  under it at the same weight, the other product's name once. Credit it,
+  change the partner to 简体中文 alone, and print the credit note: still
+  French and English, as its invoice was. A partner in 简体中文 alone
+  prints Chinese only, glyphs Chinese rather than Japanese forms. Paper
+  shows no Back link or Print button, in any language.
 - **MC-1405** Before a release offers French or Chinese, someone fluent in
   it has read every screen already converted, and `docs/glossary.md`, and
   their corrections are in the catalogues.
@@ -495,3 +507,4 @@ first.
 - 2026-10-05: ADR-054, the organization's languages: MC-1411, MC-1408 reworded.
 - 2026-10-06: ADR-054, members: MC-1406 extended.
 - 2026-10-06: ADR-054, audit: MC-1406 extended; step 3 complete.
+- 2026-10-06: ADR-054, printed documents: MC-1412; step 5 complete.

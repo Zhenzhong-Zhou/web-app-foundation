@@ -12,11 +12,14 @@ import {
   Typography,
 } from '@mui/material';
 import type { ReactNode } from 'react';
+import { type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { formatMoney } from '../lib/format';
+import { formatMoney, formatQuantity, NO_VALUE } from '../lib/format';
 import type { InvoiceTax } from '../lib/types';
 import { formatRate } from '../settings/tax-rate';
+import type { DocumentText } from './document-text';
+import { PRINTED } from './printed-words';
 
 /**
  * What every printed document shares (ADR-041): the browser's own Print
@@ -30,15 +33,26 @@ import { formatRate } from '../settings/tax-rate';
  * holding an invoice and its credit note should see the same layout
  * reversed, not two designs.
  */
+/**
+ * A printable page. The link back and the Print button are the reader's,
+ * in the reader's language and hidden on paper; everything inside is the
+ * document's, in its customer's (ADR-054). `languages` marks the sheet with
+ * them, so a screen reader and the browser's font choice follow the
+ * document rather than the page around it.
+ */
 export function PrintSheet({
   backTo,
   backLabel,
+  languages,
   children,
 }: {
   backTo: string;
   backLabel: string;
+  languages: string[];
   children: ReactNode;
 }) {
+  const intl = useIntl();
+
   return (
     <Stack spacing={3} sx={{ maxWidth: 800 }}>
       <GlobalStyles
@@ -61,10 +75,17 @@ export function PrintSheet({
           {backLabel}
         </Link>
         <Box sx={{ flexGrow: 1 }} />
-        <Button onClick={() => window.print()}>Print</Button>
+        <Button onClick={() => window.print()}>
+          {intl.formatMessage({
+            id: 'invoices.print',
+            defaultMessage: 'Print',
+          })}
+        </Button>
       </Stack>
 
-      {children}
+      <Stack spacing={3} lang={languages[0]}>
+        {children}
+      </Stack>
     </Stack>
   );
 }
@@ -75,19 +96,24 @@ export function PrintSheet({
  * printer drops, and a voided invoice found in a drawer later must not
  * pass for one that is owed.
  */
+/** A warning across the top of a sheet; each line is one language's. */
 export function PrintBanner({
   title,
   detail,
 }: {
   title: string;
-  detail?: ReactNode;
+  detail?: string[];
 }) {
   return (
     <Box sx={{ border: 2, borderColor: 'error.main', p: 2 }}>
       <Typography variant="h6" component="p" color="error">
         {title}
       </Typography>
-      {detail && <Typography variant="body2">{detail}</Typography>}
+      {detail?.map((line) => (
+        <Typography key={line} variant="body2">
+          {line}
+        </Typography>
+      ))}
     </Box>
   );
 }
@@ -128,6 +154,8 @@ export type PrintLine = {
   id: string;
   sku: string;
   description: string;
+  /** The name in the second language, copied at issue; null for one. */
+  secondDescription: string | null;
   quantity: string;
   unitPrice: string;
   taxCodeName: string | null;
@@ -140,9 +168,11 @@ export type PrintLine = {
  * order on both, so a credit reads as the invoice it reverses.
  */
 export function PrintLines({
+  doc,
   currency,
   lines,
 }: {
+  doc: DocumentText;
   currency: string;
   lines: PrintLine[];
 }) {
@@ -150,26 +180,41 @@ export function PrintLines({
     <Table size="small">
       <TableHead>
         <TableRow>
-          <TableCell>SKU</TableCell>
-          <TableCell>Item</TableCell>
-          <TableCell align="right">Quantity</TableCell>
-          <TableCell align="right">Unit price</TableCell>
-          <TableCell>Tax</TableCell>
-          <TableCell align="right">Amount</TableCell>
+          <TableCell>{doc.label(PRINTED.sku)}</TableCell>
+          <TableCell>{doc.label(PRINTED.item)}</TableCell>
+          <TableCell align="right">{doc.label(PRINTED.quantity)}</TableCell>
+          <TableCell align="right">{doc.label(PRINTED.unitPrice)}</TableCell>
+          <TableCell>{doc.label(PRINTED.tax)}</TableCell>
+          <TableCell align="right">{doc.label(PRINTED.amount)}</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
         {lines.map((line) => (
           <TableRow key={line.id}>
             <TableCell>{line.sku}</TableCell>
-            <TableCell>{line.description}</TableCell>
-            <TableCell align="right">{Number(line.quantity)}</TableCell>
-            <TableCell align="right">
-              {formatMoney(line.unitPrice, currency)}
+            <TableCell>
+              {/* Each language's name on its own line, the same weight:
+                  the second is not a footnote to the first. */}
+              <Typography variant="inherit" lang={doc.languages[0]}>
+                {line.description}
+              </Typography>
+              {line.secondDescription &&
+                line.secondDescription !== line.description && (
+                  <Typography variant="inherit" lang={doc.languages[1]}>
+                    {line.secondDescription}
+                  </Typography>
+                )}
             </TableCell>
-            <TableCell>{line.taxCodeName ?? '—'}</TableCell>
+            {/* Trailing zeros dropped, the separator the document's. */}
             <TableCell align="right">
-              {formatMoney(line.amount, currency)}
+              {formatQuantity(String(Number(line.quantity)), doc.locale)}
+            </TableCell>
+            <TableCell align="right">
+              {formatMoney(line.unitPrice, currency, doc.locale)}
+            </TableCell>
+            <TableCell>{line.taxCodeName ?? NO_VALUE}</TableCell>
+            <TableCell align="right">
+              {formatMoney(line.amount, currency, doc.locale)}
             </TableCell>
           </TableRow>
         ))}
@@ -184,18 +229,24 @@ export function PrintLines({
  * total, because "$" alone is five currencies.
  */
 export function PrintTotals({
+  doc,
   currency,
   subtotal,
   taxes,
   total,
   totalLabel,
 }: {
+  doc: DocumentText;
   currency: string;
   subtotal: string | null;
   taxes: InvoiceTax[];
   total: string | null;
-  totalLabel: string;
+  /** "Total" or "Total credited", put in each of the document's languages. */
+  totalLabel: MessageDescriptor;
 }) {
+  const money = (amount: string | null) =>
+    formatMoney(amount, currency, doc.locale);
+
   const row = (label: string, amount: string, strong = false) => (
     <Stack
       key={label}
@@ -214,14 +265,38 @@ export function PrintTotals({
 
   return (
     <Stack spacing={0.5} sx={{ alignItems: 'flex-end' }}>
-      {row('Subtotal', formatMoney(subtotal, currency))}
+      {row(doc.label(PRINTED.subtotal), money(subtotal))}
       {taxes.map((tax) =>
         row(
-          `${tax.name} ${formatRate(tax.rate)} on ${formatMoney(tax.taxableAmount, currency)}`,
-          formatMoney(tax.amount, currency),
+          doc.join((intl) =>
+            intl.formatMessage(
+              {
+                id: 'documents.taxOn',
+                defaultMessage: '{tax} {rate} on {amount}',
+              },
+              {
+                tax: tax.name,
+                rate: formatRate(tax.rate, intl),
+                amount: money(tax.taxableAmount),
+              },
+            ),
+          ),
+          money(tax.amount),
         ),
       )}
-      {row(`${totalLabel} (${currency})`, formatMoney(total, currency), true)}
+      {row(
+        doc.join((intl) =>
+          intl.formatMessage(
+            {
+              id: 'documents.totalIn',
+              defaultMessage: '{total} ({currency})',
+            },
+            { total: intl.formatMessage(totalLabel), currency },
+          ),
+        ),
+        money(total),
+        true,
+      )}
     </Stack>
   );
 }

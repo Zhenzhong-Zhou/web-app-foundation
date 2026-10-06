@@ -17,6 +17,8 @@ const SLIP: PackingSlip = {
   voidReason: null,
   fromLocationName: 'Main warehouse',
   organizationName: 'Acme Botanicals',
+  language: 'en',
+  secondLanguage: null,
   order: { id: 'order-1', reference: 'PO-1001', partnerName: 'Northwind' },
   shipTo: null,
   items: [
@@ -79,5 +81,20 @@ describe('PackingSlipPage', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/^Voided /)).not.toHaveTextContent('null');
     expect(screen.queryByText(/Received by:/)).not.toBeInTheDocument();
+  });
+
+  it('prints in the customer languages, both at the same weight, whatever the reader reads', async () => {
+    renderSlip({ ...SLIP, language: 'fr-CA', secondLanguage: 'en' });
+
+    // The reader is in English here; the slip is the customer's.
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Bordereau d’expédition / Packing slip',
+      }),
+    ).toBeInTheDocument();
+    // The figure once, the French way, and the unit by name in each.
+    expect(screen.getByText(/^12,0000 /)).toBeInTheDocument();
+    // The page around it stays the reader's.
+    expect(screen.getByRole('button', { name: 'Print' })).toBeInTheDocument();
   });
 });

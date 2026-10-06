@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, desc, eq, sql } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import { shipments } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { lotItemsOf, withLotItems } from './lot-items';
@@ -64,6 +65,8 @@ export class ShipmentsService {
             s.note,
             s.voided_at,
             s.void_reason,
+            s.language,
+            s.second_language,
             o.reference,
             o.direction,
             o.ship_to_label,
@@ -93,6 +96,8 @@ export class ShipmentsService {
         note: string | null;
         voided_at: Date | null;
         void_reason: string | null;
+        language: Locale;
+        second_language: Locale | null;
         reference: string | null;
         direction: string;
         ship_to_label: string | null;
@@ -125,6 +130,9 @@ export class ShipmentsService {
         // drawer later cannot pass for goods that left.
         voidedAt: row.voided_at,
         voidReason: row.void_reason,
+        // What the slip prints in, fixed when it shipped (ADR-054).
+        language: row.language,
+        secondLanguage: row.second_language,
         fromLocationName: row.from_location_name,
         organizationName: row.organization_name,
         order: {

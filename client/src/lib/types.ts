@@ -349,6 +349,8 @@ export interface InvoiceLine {
   taxCodeName: string | null;
   /** Stored at issue; null on a draft, whose figures are in `preview`. */
   netAmount: string | null;
+  /** The name in the second language, copied at issue (ADR-054). */
+  secondDescription: string | null;
 }
 
 /** One tax line: summed per component and rounded once (ADR-046). */
@@ -428,6 +430,12 @@ export interface InvoiceDetail extends DocumentParties {
   /** A draft's figures; null once issued. */
   preview: InvoiceAmounts | null;
   creditNotes: CreditNoteSummary[];
+  /**
+   * What it prints in (ADR-054): stored at issue, and for a draft the pair
+   * it would take today, so a draft's printout is the issued one's.
+   */
+  language: Locale;
+  secondLanguage: Locale | null;
 }
 
 export interface CreditNoteDetail extends DocumentParties {
@@ -448,12 +456,16 @@ export interface CreditNoteDetail extends DocumentParties {
     invoiceLineId: string;
     sku: string;
     description: string;
+    secondDescription: string | null;
     quantity: string;
     unitPrice: string;
     taxCodeName: string | null;
     netAmount: string;
   }[];
   taxes: InvoiceTax[];
+  /** Its invoice's languages, copied when it was issued (ADR-054). */
+  language: Locale;
+  secondLanguage: Locale | null;
 }
 
 export interface Bom {
@@ -644,6 +656,9 @@ export interface PackingSlip {
   voidReason: string | null;
   fromLocationName: string;
   organizationName: string;
+  /** What it prints in, fixed when it shipped (ADR-054). */
+  language: Locale;
+  secondLanguage: Locale | null;
   order: { id: string; reference: string | null; partnerName: string };
   /** The order's snapshot; null when it was raised without a destination. */
   shipTo: {

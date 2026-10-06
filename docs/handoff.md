@@ -124,12 +124,16 @@ Then tag v0.4.0.
    English, French and Chinese, each folder translated as its strings
    moved (glossary first, `docs/glossary.md`), with the organization's
    and each partner's document languages and the required product names
-   on screens of their own. Step 4, the fluent review (MC-1405), is
-   outstanding. Next is step 5, printed documents: the print sheet, the
-   packing slip, the invoice and the credit note are the only pages still
-   in English, and the lint rule's ignore list names them. The audit log
-   spells out most action and field names from the server's keys, in
-   English until step 6.
+   on screens of their own. Step 5 is done too: the packing slip, invoice
+   and credit note print in their customer's one or two languages
+   (`useDocumentText`), whatever the reader reads, with item names in both
+   from the invoice's copy. Step 4, the fluent review (MC-1405), is
+   outstanding and best done once after step 6, through an export and
+   import script still to write. Next: the `seed:demo` commit below, then
+   step 6, the server's own messages and emails. The audit log spells out
+   most action and field names from the server's keys, in English until
+   step 6. The packing slip's item names are the products' own names; only
+   the invoice and credit note carry names in other languages.
 
    Added to the plan while building, not in the ADR's list:
    - **`seed:demo`**, after step 5: a Quebec customer printing French and

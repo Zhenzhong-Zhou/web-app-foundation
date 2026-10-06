@@ -484,6 +484,14 @@ describe('Languages (e2e)', () => {
         second: 'en',
       });
 
+      // And the slip says so, for the printed page to follow.
+      const slip = body<{ language: string; secondLanguage: string | null }>(
+        await alpha.agent
+          .get(`/v1/orders/${quebec.orderId}/shipments/${quebec.shipmentId}`)
+          .expect(200),
+      );
+      expect(slip).toMatchObject({ language: 'fr-CA', secondLanguage: 'en' });
+
       // A partner with its own choice is printed in it, whole.
       const beta = await registerOrganization(app, 'beta');
       await beta.agent
@@ -864,6 +872,82 @@ describe('Languages (e2e)', () => {
         .from(creditNoteLines);
       expect(credited).toEqual([
         { first: 'Capsules Focus', second: 'FOCUS-60CT' },
+      ]);
+    });
+
+    it('serves each document with its languages and both names, to print', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const draft = await draftInvoice(alpha);
+
+      await alpha.agent
+        .patch(`/v1/partners/${draft.partnerId}`)
+        .send({ documentLanguage: 'fr-CA', documentSecondLanguage: 'en' })
+        .expect(204);
+
+      type Read = {
+        language: string | null;
+        secondLanguage: string | null;
+        lines: {
+          sku: string;
+          description: string;
+          secondDescription: string | null;
+        }[];
+      };
+      const read = async (path: string, key: 'invoice' | 'creditNote') =>
+        body<Record<string, Read>>(await alpha.agent.get(path).expect(200))[
+          key
+        ];
+
+      // A draft stores no language, so it reads the pair it would take
+      // today, and prints as issuing would.
+      expect(
+        await read(`/v1/invoices/${draft.invoiceId}`, 'invoice'),
+      ).toMatchObject({
+        language: 'fr-CA',
+        secondLanguage: 'en',
+      });
+
+      await alpha.agent
+        .put(`/v1/products/${await productOf('FOCUS-60CT')}/translations`)
+        .send({ translations: [{ locale: 'fr-CA', name: 'Capsules Focus' }] })
+        .expect(204);
+      await alpha.agent
+        .post(`/v1/invoices/${draft.invoiceId}/issue`)
+        .send({ invoiceDate: TODAY })
+        .expect(200);
+
+      const issued = await read(`/v1/invoices/${draft.invoiceId}`, 'invoice');
+      expect(issued).toMatchObject({ language: 'fr-CA', secondLanguage: 'en' });
+      expect(issued.lines).toContainEqual(
+        expect.objectContaining({
+          sku: 'FOCUS-60CT',
+          description: 'Capsules Focus',
+          secondDescription: 'FOCUS-60CT',
+        }),
+      );
+
+      const [line] = await db
+        .select({ id: invoiceLines.id })
+        .from(invoiceLines)
+        .where(eq(invoiceLines.sku, 'FOCUS-60CT'));
+      const note = body<{ creditNote: { id: string } }>(
+        await alpha.agent
+          .post(`/v1/invoices/${draft.invoiceId}/credit-notes`)
+          .send({
+            reason: 'Two arrived cracked',
+            creditDate: TODAY,
+            lines: [{ invoiceLineId: line.id, quantity: '1' }],
+          })
+          .expect(201),
+      ).creditNote;
+
+      const credit = await read(`/v1/credit-notes/${note.id}`, 'creditNote');
+      expect(credit).toMatchObject({ language: 'fr-CA', secondLanguage: 'en' });
+      expect(credit.lines).toEqual([
+        expect.objectContaining({
+          description: 'Capsules Focus',
+          secondDescription: 'FOCUS-60CT',
+        }),
       ]);
     });
   });

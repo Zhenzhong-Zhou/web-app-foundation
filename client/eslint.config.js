@@ -54,17 +54,10 @@ export default defineConfig([
      * cannot gain a hard-coded label by accident.
      */
     files: ['src/**/*.tsx'],
-    // Specs render with made-up labels on purpose. The print sheet and the
-    // printed packing slip, invoice and credit note are documents, in the
-    // customer's language rather than the reader's, and move with the
-    // printed documents (ADR-054, step 5).
-    ignores: [
-      '**/*.test.tsx',
-      'src/components/print-sheet.tsx',
-      'src/orders/packing-slip-page.tsx',
-      'src/invoices/invoice-print-page.tsx',
-      'src/invoices/credit-note-print-page.tsx',
-    ],
+    // Specs render with made-up labels on purpose. The printed documents
+    // are covered too: their words come from the catalogues, in the
+    // customer's languages (ADR-054, step 5).
+    ignores: ['**/*.test.tsx'],
     rules: {
       /**
        * The rule's defaults check JSX text, aria-* everywhere, and

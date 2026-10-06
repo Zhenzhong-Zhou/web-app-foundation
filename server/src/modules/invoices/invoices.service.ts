@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
+import { documentLanguages } from '../../core/organizations/document-languages';
 import {
   creditNoteLines,
   creditNotes,
@@ -96,6 +97,8 @@ export class InvoicesService {
           variantId: invoiceLines.variantId,
           sku: invoiceLines.sku,
           description: invoiceLines.description,
+          // The name in the second language, copied at issue (ADR-054).
+          secondDescription: invoiceLines.secondDescription,
           quantity: invoiceLines.quantity,
           unitPrice: invoiceLines.unitPrice,
           taxCodeId: invoiceLines.taxCodeId,
@@ -151,6 +154,13 @@ export class InvoicesService {
       if (invoice.invoice.status === 'draft') {
         return {
           ...base,
+          // Not stored until issue: a draft previews in the languages it
+          // would take today, so its printout is what issuing would print.
+          ...(await documentLanguages(
+            tx,
+            organizationId,
+            invoice.invoice.partnerId,
+          )),
           taxes: null,
           preview: await computeAmounts(
             tx,
@@ -207,6 +217,7 @@ export class InvoicesService {
           invoiceLineId: creditNoteLines.invoiceLineId,
           sku: creditNoteLines.sku,
           description: creditNoteLines.description,
+          secondDescription: creditNoteLines.secondDescription,
           quantity: creditNoteLines.quantity,
           unitPrice: creditNoteLines.unitPrice,
           taxCodeName: creditNoteLines.taxCodeName,
