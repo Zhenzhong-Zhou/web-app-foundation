@@ -338,7 +338,7 @@ export class ProductionExecutionService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const run = await loadWithin(tx, organizationId, runId);
 
-      assertStatus(run.status, 'released', 'credited with output');
+      assertStatus(run.status, 'released', 'creditedWithOutput');
 
       const movement = await this.stock.recordWithin(
         tx,

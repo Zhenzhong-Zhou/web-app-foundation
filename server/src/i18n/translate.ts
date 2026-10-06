@@ -35,11 +35,19 @@ import chinese from './zh-Hans.json';
  */
 
 /**
- * A value a message can carry: data, or a whole message of its own, which
- * is rendered in the same language as the sentence around it.
+ * A value a message can carry: data; a list of data, joined the way the
+ * language joins a list ("CAD and USD", "CAD et USD", "CAD和USD"); or a
+ * whole message of its own, rendered in the same language as the sentence
+ * around it.
  */
 export type MessageValue =
-  string | number | boolean | null | undefined | Translatable;
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | readonly string[]
+  | Translatable;
 
 /**
  * What a translatable exception carries as its response body. `message` is
@@ -80,7 +88,11 @@ function render(
         ? locale === DEFAULT_LOCALE
           ? value.message
           : translate(value, locale)
-        : value,
+        : Array.isArray(value)
+          ? new Intl.ListFormat(locale, { type: 'conjunction' }).format(
+              value as string[],
+            )
+          : value,
     ]),
   );
   return String(formatter.format(flat));

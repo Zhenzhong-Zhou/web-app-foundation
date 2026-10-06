@@ -183,7 +183,7 @@
   "priceLists.suchItem": "未找到该物品",
   "priceLists.suchPriceList": "未找到该价目表",
   "priceLists.unknownPriceList": "未知的价目表",
-  "production.actualRunVerbRequired": "{actual, select, draft {已计划} released {已下达} completed {已完成} cancelled {已取消} other {{actual}}}的生产订单不能{verb, select, released {下达} edited {编辑} closed {关闭} other {{verb}}}——必须为{required, select, draft {已计划} released {已下达} completed {已完成} cancelled {已取消} other {{required}}}",
+  "production.actualRunVerbRequired": "{actual, select, draft {已计划} released {已下达} completed {已完成} cancelled {已取消} other {{actual}}}的生产订单不能{verb, select, creditedWithOutput {记录产出} released {下达} edited {编辑} closed {关闭} other {{verb}}}——必须为{required, select, draft {已计划} released {已下达} completed {已完成} cancelled {已取消} other {{required}}}",
   "production.bomLinesSoRun": "该配方没有物料行，因此此生产订单不会消耗任何物料",
   "production.bomMakesDifferentVariant": "该配方产出的规格与此生产订单不同",
   "production.bomidDoesExist": "bomId 不存在",

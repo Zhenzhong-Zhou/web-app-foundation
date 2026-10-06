@@ -27,8 +27,10 @@ export function assertStatus(
       t(
         {
           id: 'production.actualRunVerbRequired',
+          // A select key cannot hold a space, so the one verb with
+          // spaces travels as a key and is worded here.
           defaultMessage:
-            'A {actual} run cannot be {verb} — it must be {required}',
+            'A {actual} run cannot be {verb, select, creditedWithOutput {credited with output} other {{verb}}} — it must be {required}',
         },
         { actual, verb, required },
       ),

@@ -75,3 +75,37 @@ describe('recipientLocale', () => {
     expect(recipientLocale('de', undefined)).toBe('en');
   });
 });
+
+describe('values', () => {
+  it('joins a list the way each language joins one', () => {
+    const mixed = t(
+      {
+        id: 'orders.saleInvoicedOneCurrency',
+        defaultMessage:
+          'A sale is invoiced in one currency, and this one has {currencies}. Price every item in one of them',
+      },
+      { currencies: ['CAD', 'USD'] },
+    );
+
+    expect(mixed.message).toContain('this one has CAD and USD.');
+    expect(translate(mixed, 'fr-CA')).toContain('CAD et USD');
+    expect(translate(mixed, 'zh-Hans')).toContain('CAD和USD');
+  });
+
+  it('words a verb with spaces in every language, the English unchanged', () => {
+    const refused = t(
+      {
+        id: 'production.actualRunVerbRequired',
+        defaultMessage:
+          'A {actual} run cannot be {verb, select, creditedWithOutput {credited with output} other {{verb}}} — it must be {required}',
+      },
+      { actual: 'draft', verb: 'creditedWithOutput', required: 'released' },
+    );
+
+    expect(refused.message).toBe(
+      'A draft run cannot be credited with output — it must be released',
+    );
+    expect(translate(refused, 'fr-CA')).toContain('crédité d’une production');
+    expect(translate(refused, 'zh-Hans')).toContain('记录产出');
+  });
+});

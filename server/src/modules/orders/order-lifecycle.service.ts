@@ -430,7 +430,9 @@ export class OrderLifecycleService {
             defaultMessage:
               'A sale is invoiced in one currency, and this one has {currencies}. Price every item in one of them',
           },
-          { currencies: currencies.join(' and ') },
+          // A list, joined the way each language joins one. Every line
+          // here has a currency: an unpriced one was refused above.
+          { currencies: currencies.filter((code) => code !== null) },
         ),
       );
     }

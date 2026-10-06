@@ -183,7 +183,7 @@
   "priceLists.suchItem": "Article introuvable",
   "priceLists.suchPriceList": "Liste de prix introuvable",
   "priceLists.unknownPriceList": "Liste de prix inconnue",
-  "production.actualRunVerbRequired": "Un ordre {actual, select, draft {planifié} released {lancé} completed {terminé} cancelled {annulé} other {{actual}}} ne peut pas être {verb, select, released {lancé} edited {modifié} closed {clos} other {{verb}}} — il doit être {required, select, draft {planifié} released {lancé} completed {terminé} cancelled {annulé} other {{required}}}",
+  "production.actualRunVerbRequired": "Un ordre {actual, select, draft {planifié} released {lancé} completed {terminé} cancelled {annulé} other {{actual}}} ne peut pas être {verb, select, creditedWithOutput {crédité d’une production} released {lancé} edited {modifié} closed {clos} other {{verb}}} — il doit être {required, select, draft {planifié} released {lancé} completed {terminé} cancelled {annulé} other {{required}}}",
   "production.bomLinesSoRun": "Cette recette n’a pas de lignes; cet ordre ne consommerait donc rien",
   "production.bomMakesDifferentVariant": "Cette recette produit une autre variante que cet ordre",
   "production.bomidDoesExist": "bomId n’existe pas",

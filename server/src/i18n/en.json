@@ -183,7 +183,7 @@
   "priceLists.suchItem": "No such item",
   "priceLists.suchPriceList": "No such price list",
   "priceLists.unknownPriceList": "Unknown price list",
-  "production.actualRunVerbRequired": "A {actual} run cannot be {verb} — it must be {required}",
+  "production.actualRunVerbRequired": "A {actual} run cannot be {verb, select, creditedWithOutput {credited with output} other {{verb}}} — it must be {required}",
   "production.bomLinesSoRun": "That BOM has no lines, so this run would consume nothing",
   "production.bomMakesDifferentVariant": "That BOM makes a different variant than this run",
   "production.bomidDoesExist": "bomId does not exist",
