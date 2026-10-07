@@ -670,6 +670,12 @@ Paper is checked first because it must not change at all.
   the error appears and the password is dots again. The same on Change
   password when the current password is wrong: every field shown goes back to
   dots.
+- **MC-1552** Inventory's quick filters read Expiring soon, Needs a cost and
+  Show emptied, each with its count. Pressing Needs a cost shows THE-0915's
+  L-theanine, received with no price (PO-DEMO-5), and the count matches the
+  rows; set its cost on Stock value, come back, and it is gone and the count
+  is one lower. Stock value has a page header with its explanation under it,
+  Provisional is an amber chip, and quantities read without padding zeros.
 
 ## Regressions
 
@@ -785,3 +791,4 @@ first.
 - 2026-10-07: ADR-055 step 5, the order closer to the mockup: MC-1549.
 - 2026-10-07: show and hide on password fields: MC-1550.
 - 2026-10-07: a password shown hides again on submit: MC-1551.
+- 2026-10-07: ADR-055 step 5, needs a cost and Stock value: MC-1552.

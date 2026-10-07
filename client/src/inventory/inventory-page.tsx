@@ -93,6 +93,9 @@ export function InventoryPage() {
   // "Expiring soon": lots within the amber threshold, the expired included.
   const [expiring, setExpiring] = useState(false);
   const [expiringCount, setExpiringCount] = useState<number | null>(null);
+  // "Needs a cost": stock whose value is still provisional (ADR-048).
+  const [needsCost, setNeedsCost] = useState(false);
+  const [needsCostCount, setNeedsCostCount] = useState<number | null>(null);
   /** Bumped by Refresh and by every dialog that moves stock. */
   const [changes, setChanges] = useState(0);
   const [editingLot, setEditingLot] = useState<StockRow | null>(null);
@@ -125,8 +128,9 @@ export function InventoryPage() {
     if (includeEmpty) params.set('includeEmpty', 'true');
     if (search) params.set('search', search);
     if (expiring) params.set('expiringWithin', String(EXPIRY_DAYS.warning));
+    if (needsCost) params.set('needsCost', 'true');
     return `/stock?${params.toString()}`;
-  }, [locationId, includeEmpty, search, expiring]);
+  }, [locationId, includeEmpty, search, expiring, needsCost]);
 
   /**
    * The count beside "Expiring soon", with the list's other filters, so it
@@ -141,9 +145,13 @@ export function InventoryPage() {
     if (includeEmpty) params.set('includeEmpty', 'true');
     if (search) params.set('search', search);
 
-    void api<{ expiring: number }>(`/stock/counts?${params.toString()}`)
+    void api<{ expiring: number; needsCost: number }>(
+      `/stock/counts?${params.toString()}`,
+    )
       .then((counts) => {
-        if (!ignore) setExpiringCount(counts.expiring);
+        if (ignore) return;
+        setExpiringCount(counts.expiring);
+        setNeedsCostCount(counts.needsCost);
       })
       // Silent: without a count the button still works.
       .catch(() => undefined);
@@ -295,6 +303,16 @@ export function InventoryPage() {
             onToggle: () => setExpiring((on) => !on),
           },
           {
+            id: 'needs-cost',
+            label: intl.formatMessage({
+              id: 'inventory.quick.needsCost',
+              defaultMessage: 'Needs a cost',
+            }),
+            count: needsCostCount ?? undefined,
+            pressed: needsCost,
+            onToggle: () => setNeedsCost((on) => !on),
+          },
+          {
             id: 'emptied',
             label: intl.formatMessage({
               id: 'inventory.showEmptied',
@@ -438,23 +456,28 @@ export function InventoryPage() {
           </TableContainer>
         ) : (
           <EmptyState>
-            {expiring
-              ? intl.formatMessage(
-                  {
-                    id: 'inventory.noneExpiring',
-                    defaultMessage: 'No lot here expires within {days} days.',
-                  },
-                  { days: EXPIRY_DAYS.warning },
-                )
-              : search
-                ? intl.formatMessage({
-                    id: 'inventory.noMatch',
-                    defaultMessage: 'Nothing matches that search.',
-                  })
-                : intl.formatMessage({
-                    id: 'inventory.empty',
-                    defaultMessage: 'Nothing here yet.',
-                  })}
+            {needsCost && !expiring
+              ? intl.formatMessage({
+                  id: 'inventory.noneNeedsCost',
+                  defaultMessage: 'Everything here has a cost.',
+                })
+              : expiring
+                ? intl.formatMessage(
+                    {
+                      id: 'inventory.noneExpiring',
+                      defaultMessage: 'No lot here expires within {days} days.',
+                    },
+                    { days: EXPIRY_DAYS.warning },
+                  )
+                : search
+                  ? intl.formatMessage({
+                      id: 'inventory.noMatch',
+                      defaultMessage: 'Nothing matches that search.',
+                    })
+                  : intl.formatMessage({
+                      id: 'inventory.empty',
+                      defaultMessage: 'Nothing here yet.',
+                    })}
           </EmptyState>
         )}
       </Paper>

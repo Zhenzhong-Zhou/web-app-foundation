@@ -1,7 +1,6 @@
 import {
   Alert,
   Button,
-  Chip,
   Link,
   Paper,
   Skeleton,
@@ -25,11 +24,13 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { LoadMoreButton } from '../components/load-more-button';
+import { PageHeader } from '../components/page-header';
+import { StatusChip } from '../components/status-chip';
 import { api, messageFor } from '../lib/api';
 import {
+  displayQuantity,
   formatDate,
   formatMoney,
-  formatQuantity,
   formatUnitCost,
   NO_VALUE,
 } from '../lib/format';
@@ -175,20 +176,18 @@ export function StockValuePage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h5" component="h1">
-        {intl.formatMessage({
+      <PageHeader
+        crumbs={[]}
+        title={intl.formatMessage({
           id: 'layout.menu.stockValue',
           defaultMessage: 'Stock value',
         })}
-      </Typography>
-
-      <Typography variant="body2" color="text.secondary">
-        {intl.formatMessage({
+        subtitle={intl.formatMessage({
           id: 'costs.intro',
           defaultMessage:
             'Each lot carries what it cost; stock without lots carries a running average. Values are material cost only — what was bought and what went into a batch — in the base currency.',
         })}
-      </Typography>
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -230,13 +229,12 @@ export function StockValuePage() {
                 {formatMoney(valuation?.total ?? null, currency)}
               </Typography>
               {valuation?.provisional && (
-                <Chip
-                  size="small"
+                <StatusChip
+                  tone="warning"
                   label={intl.formatMessage({
                     id: 'costs.provisional',
                     defaultMessage: 'Provisional',
                   })}
-                  color="warning"
                 />
               )}
             </Stack>
@@ -308,7 +306,7 @@ export function StockValuePage() {
                         <TableCell>{entry.sku}</TableCell>
                         <TableCell>{entry.lotCode ?? NO_VALUE}</TableCell>
                         <TableCell align="right">
-                          {formatQuantity(entry.quantity)}
+                          {displayQuantity(entry.quantity)}
                         </TableCell>
                         <TableCell>{whyWaiting(entry, intl)}</TableCell>
                         <TableCell>{formatDate(entry.createdAt)}</TableCell>
@@ -434,7 +432,7 @@ export function StockValuePage() {
                           )}
                         </TableCell>
                         <TableCell align="right">
-                          {formatQuantity(pool.quantity)}
+                          {displayQuantity(pool.quantity)}
                         </TableCell>
                         <TableCell align="right">
                           {formatUnitCost(pool.unitCost, currency)}
@@ -444,14 +442,12 @@ export function StockValuePage() {
                         </TableCell>
                         <TableCell>
                           {pool.provisional && (
-                            <Chip
-                              size="small"
+                            <StatusChip
+                              tone="warning"
                               label={intl.formatMessage({
                                 id: 'costs.provisional',
                                 defaultMessage: 'Provisional',
                               })}
-                              color="warning"
-                              variant="outlined"
                             />
                           )}
                         </TableCell>
