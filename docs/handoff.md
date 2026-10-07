@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-052 and ADR-053 merged, ADR-054 built and in review
+# web-app-foundation — handoff, v0.5.0 tagged, the UI pass (ADR-055) under way
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -30,6 +30,7 @@ and price lists proposing the price of a new line.
   amendments for what was settled while building; ADR-046 carries one (one
   currency per sale from the first priced line). **ADR-054** (languages)
   is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
+  ADR-055 (the look) is written on `ui-design-pass`. Next is **ADR-056**.
 - Tests at the last local run (ADR-050 branch, 2 October 2026): server e2e
   627 in 33 suites (`npm run test:e2e`); server unit 36 in 6 files
   (`npm test`); client vitest 160 in 35 files; Playwright 63. CI also runs
@@ -67,6 +68,26 @@ it:
 - the timed recall drill on BF-2609.
 
 Then tag v0.4.0.
+
+## Now: the UI pass (ADR-055), branch `ui-design-pass`
+
+- **Decided:** ADR-055, from mockups on a Claude Design canvas (Bob's,
+  private): three directions, then a refined one in English and Chinese, light
+  and dark, desktop and phone, with two example organizations. A
+  Chinese-reading accountant with no UI background compared two of them and
+  shaped the summary panel, the expiry chips and the money labels.
+- **On the branch already:** a range of demo data around the first product
+  (`server/src/database/seed-demo-variety.ts`) and `npm run screenshots`
+  (`client/screenshots/`, README), which pictures every screen in three
+  languages, both modes, at desktop and phone width.
+- **Next:** retake the whole screenshot set as the "before", then ADR-055's
+  steps 1 to 6 in order, each its own commits.
+- **Words checked by that reviewer:** 贷项通知单 for a credit note, 开票净额（含税）,
+  未开票金额（税前）, 5 个退货尚未处理. The same person could do MC-1405, the fluent review of
+  the Chinese catalogue that v0.5 skipped.
+- **To file as an issue:** the unsaved-changes guard. The create-order page
+  loses a half-built order when someone follows a link; React Router's
+  `useBlocker` covers it, and `conventions.md` gains a line for the pattern.
 
 ## Now: v0.5, maintainability and languages
 
@@ -518,6 +539,13 @@ Rules, still in force:
     - FIFO;
     - export to the books;
     - confirming the weighted-average method with the accountant.
+- User guides and a glossary: raised, not decided. Markdown under
+  `docs/user/`, a getting-started order, task guides by job, the rules in
+  plain words, and a glossary that also holds the translation terms (ADR-054).
+  Screenshots for them come from `npm run screenshots`.
+- Client speed: unmeasured. Lighthouse on the Render static site, warm and
+  just woken, and the bundle sizes `vite build` prints; measure first and set
+  a budget only if something is slow, as ADR-051 did for the server.
 - The `ubuntu-latest` runner moves to Ubuntu 26 from 19 October 2026. Pin
   `ubuntu-24.04` in `ci.yml` if you'd rather choose when.
 
