@@ -5,8 +5,8 @@
 # failed.
 #
 #   scripts/verify.sh            everything, about as long as CI takes
-#   scripts/verify.sh --quick    format, lint, checks, build and unit tests;
-#                                no end-to-end suites
+#   scripts/verify.sh --quick    format, lint, types, checks, build and unit
+#                                tests; no end-to-end suites
 #
 # Needs what each suite needs on its own: the database up
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
@@ -30,14 +30,14 @@ fi
 step() { printf '\n== %s\n\n' "$*"; }
 
 if $quick; then
-  step 'Server: format, lint, checks, build, unit tests'
-  (cd server && npm run format:check && npm run lint:ci && npm run checks \
-    && npm run build && npm test)
+  step 'Server: format, lint, types, checks, build, unit tests'
+  (cd server && npm run format:check && npm run lint:ci && npm run typecheck \
+    && npm run checks && npm run build && npm test)
 
   step 'Client: format, lint, catalogues, build, unit tests'
   (cd client && npm run verify)
 else
-  step 'Server: format, lint, checks, build, unit and e2e tests'
+  step 'Server: format, lint, types, checks, build, unit and e2e tests'
   (cd server && npm run verify)
 
   step 'Client: format, lint, catalogues, build, unit tests, Playwright'

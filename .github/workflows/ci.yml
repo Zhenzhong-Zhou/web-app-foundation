@@ -131,6 +131,12 @@ jobs:
       - run: npm run format:check
         working-directory: server
 
+      # The source and the tests: build reads tsconfig.build.json, which
+      # leaves the tests out, so a type error in a spec showed only when it
+      # ran.
+      - run: npm run typecheck
+        working-directory: server
+
       - run: npm run build
         working-directory: server
 
