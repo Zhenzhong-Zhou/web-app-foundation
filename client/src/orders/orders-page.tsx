@@ -249,19 +249,9 @@ export function OrdersPage() {
             </Table>
           </TableContainer>
         ) : (
-          <EmptyState
-            action={
-              filter === 'open' &&
-              canCreate && (
-                <Button component={RouterLink} to="/orders/new">
-                  {intl.formatMessage({
-                    id: 'orders.raise',
-                    defaultMessage: 'Raise an order',
-                  })}
-                </Button>
-              )
-            }
-          >
+          // No Raise an order here: the page header already offers it, and
+          // a second button for the same act is one too many.
+          <EmptyState>
             {filter === 'open'
               ? intl.formatMessage({
                   id: 'orders.empty.open',

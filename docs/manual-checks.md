@@ -570,8 +570,9 @@ Paper is checked first because it must not change at all.
   quiet blue, Fulfilled green, Cancelled grey, in every language, with no CSS
   capitals. Fulfilled reads "400 / 600", right-aligned, without padding zeros.
 - **MC-1527** In an organization with no open orders, the list shows the empty
-  message with Raise an order under it; with Fulfilled pressed and none
-  fulfilled, only "No orders match that filter."
+  message, and Raise an order stays where it always is, in the page header;
+  with Fulfilled pressed and none fulfilled, only "No orders match that
+  filter."
 
 ## Regressions
 
