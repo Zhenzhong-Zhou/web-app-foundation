@@ -20,9 +20,10 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0038** (`calendar_days`, ADR-052), on `main`;
-  Render runs it on deploy (confirm in the deploy log, *In flight* below).
-  Next is **0039**.
+- Migrations: through **0040** (`document_languages`, ADR-054) on
+  `main`; **0041** (`notification_messages`, ADR-054 amended) on
+  `notifications-language`. Render runs them on deploy (confirm in the
+  deploy log, *In flight* below). Next is **0042**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -82,7 +83,7 @@ Then tag v0.4.0.
   pieces (StatusChip, ExpiryChip, DetailLayout and useTab, FilterRow,
   EmptyState, PasswordField), the order's money summary on the server, every
   screen folder moved onto them, and `accessibility.spec` (axe, WCAG 2.2 AA,
-  twenty screens, both modes). No migration: still through **0038**.
+  twenty screens, both modes). No migration of its own.
 - **Server reads added:** the order's money, counts, summed quantities and
   documents (`GET /v1/orders/:id`); `expiringWithin` and `needsCost` on
   `GET /v1/stock`, with `GET /v1/stock/counts`.
@@ -98,10 +99,43 @@ Then tag v0.4.0.
   `.env` (default `web-app-foundation`); `index.html` asks 360, QQ and
   Sogou for their Chromium engine. Nothing loads from another site, so the
   app works in mainland China; `conventions.md` lists what is supported.
-- **Next, on its own branch:** notifications in the reader's current
-  language (message id and values stored, rendered on read), an ADR-054
-  amendment and migration **0039**; and a notification's quantities
-  without padding zeros ("30 of 40", not "30.0000 of 40.0000").
+- **Then, on `notifications-language`:** the bell written in the
+  reader's current language (each notification's message kept, the
+  sentence written on read), ADR-054 amended, migration **0041**; and a
+  notification's quantities without padding zeros ("30 of 40", not
+  "30.0000 of 40.0000"). Emails are unchanged; old rows show as stored.
+- **First, before features: protect the data.** Note the date Render's free
+  database expires (30 days after creation, and its data goes with it).
+  Turn backups on for real, ADR-053's last step, setup and no code: a
+  bucket with versioning and object lock and write-only keys (Backblaze
+  B2, or AWS S3 in Canada if residency matters), the `BACKUP_S3_*` and
+  `BACKUP_BUCKET` secrets in GitHub, `BACKUP_DESTINATION=s3`, one nightly
+  run, one restore drill by hand. If real data is coming within a month
+  (Bob's mother's business, a first customer), add the paid database plan
+  (ADR-053 phase 2) and the v0.4.0 walkthrough and BF-2609 recall drill
+  before any feature.
+- **After that:** ADR-056 onward, each with its ADR before code: **search
+  and lookup** in the top bar, then a **home page** of what needs attention
+  (expiring lots, unsettled returns, costs waiting, orders to ship), then
+  **file storage** (one ADR for every file, below), then **organization
+  branding** (logo, accent with a contrast check, expiry thresholds), the
+  first feature that uploads one. Bob may reorder.
+- **File storage, one ADR for all of it.** Backups (ADR-053), the
+  organization's logo (ADR-055 *Open decisions*) and product images (the
+  catalogue note in *Open decisions*) each point at "the bucket question";
+  certificates of analysis per lot, licence documents and label versions
+  (ADR-029), supplier documents on a purchase and photos on a return will
+  too. The ADR settles: provider and buckets (backups never share a bucket
+  or keys with anything else); upload checks (type, size, an SVG never
+  served as uploaded); files served through the app's own domain, never a
+  provider's public URL, which mainland China may block; and how files are
+  backed up. Free allowances to start with, terms to check when signing
+  up: Cloudflare R2 (no egress fees; check its versioning against ADR-053)
+  for files, Backblaze B2 or AWS S3 Canada for backups. A logo of at most
+  500 KB could live in the database instead, and needs no bucket.
+- **A free development database** past Render's 30 days: Neon and Supabase
+  have free Postgres plans; check for Postgres 18 and their sleep and
+  expiry rules.
 - **Words checked by the reviewer:** 贷项通知单 for a credit note, 开票净额（含税）,
   未开票金额（税前）, 待定成本. The same person could do MC-1405, the fluent review of
   the Chinese catalogue that v0.5 skipped.
@@ -568,6 +602,33 @@ Rules, still in force:
   a budget only if something is slow, as ADR-051 did for the server.
 - The `ubuntu-latest` runner moves to Ubuntu 26 from 19 October 2026. Pin
   `ubuntu-24.04` in `ci.yml` if you'd rather choose when.
+- From the UI pass (ADR-055), small:
+    - **Firefox on Bob's Mac:** Playwright's build cannot open its profile
+      there ("Could not find profile folder"; reinstalling, clearing
+      quarantine and moving TMPDIR did not help). CI runs it on Linux, and
+      `E2E_FIREFOX=1` runs it locally. Not a work item: retry after a
+      Playwright update, or from Terminal rather than WebStorm.
+    - **Page titles per screen:** the tab reads the product's name
+      everywhere; "SO-DEMO-1 · web-app-foundation" helps with several open.
+    - **The "after" screenshots** for the UI pass, kept with its release,
+      and a release tag for it and the notifications work (`v0.6.0-rc.1`?).
+    - **Full workflows in WebKit and Firefox:** only specs that make their
+      own organization or change nothing run in more than one browser.
+      Each spec on its own organization would let all of them; worth it if
+      a Safari user hits a workflow bug.
+    - **A notification's decimal point:** quantities lose their padding
+      zeros but keep "." in French ("1.5", not "1,5"); a notification is
+      written before anyone reads it. Fix by formatting the value when the
+      sentence is written on read, if a reader minds.
+    - `.github/workflows/ci.yml` is outside every `format:check` and not
+      Prettier-formatted; harmless.
+- Before customers, by hand rather than code:
+    - **Real devices:** Android with WeChat (its engine is Tencent's, and
+      nothing automated covers it), and 360 or QQ on Windows in 极速模式.
+    - **One email to a QQ or 163.com address:** verification and reset
+      mail can be delayed or filtered there.
+    - **Serving China:** a Hong Kong or Singapore region with our own
+      domain; hosting inside mainland China needs an ICP filing.
 
 ## Working agreements (for Claude)
 

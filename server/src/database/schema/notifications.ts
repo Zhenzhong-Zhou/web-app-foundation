@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   check,
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -19,6 +20,18 @@ import { users } from './users';
  * recipients is three rows. A shared event with a separate reads table is the
  * normalised shape and machinery for a scale that does not exist here.
  */
+/**
+ * A message as the server's i18n writes it (src/i18n/translate.ts): kept
+ * whole so a sentence can be written again in another language.
+ */
+export interface StoredMessage {
+  messageId: string;
+  /** The English, as written when the message was made. */
+  message: string;
+  /** Strings, numbers, lists or nested messages: whatever JSON keeps. */
+  values?: Record<string, unknown>;
+}
+
 export const notifications = pgTable(
   'notifications',
   {
@@ -61,6 +74,15 @@ export const notifications = pgTable(
 
     /** The detail, when there is any worth a second line. */
     body: text('body'),
+
+    /**
+     * The messages the title and body were written from: id, values and the
+     * English (ADR-054, amended). The bell writes each again in the reader's
+     * language. Null on a row written before, and on a body that is plain
+     * text; then title and body are shown as stored.
+     */
+    titleMessage: jsonb('title_message').$type<StoredMessage>(),
+    bodyMessage: jsonb('body_message').$type<StoredMessage>(),
 
     /**
      * Null until read. A timestamp rather than a boolean, because "when did

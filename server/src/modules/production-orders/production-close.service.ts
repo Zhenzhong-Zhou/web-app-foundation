@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
 
+import { readableQuantity } from '../../common/readable-quantity';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
 import { NotificationsService } from '../../core/notifications/notifications.service';
@@ -255,7 +256,10 @@ export class ProductionCloseService {
                 defaultMessage:
                   'A production run made {produced} against a plan of {planned}',
               },
-              { produced: run.quantityProduced, planned: run.quantityPlanned },
+              {
+                produced: readableQuantity(run.quantityProduced),
+                planned: readableQuantity(run.quantityPlanned),
+              },
             )
           : t(
               {
