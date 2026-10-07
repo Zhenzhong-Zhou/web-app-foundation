@@ -4370,6 +4370,13 @@ needed. Where it differs from the decision above, and what stands in:
   login still cannot plant a backup.
 - **Retention is two lifecycle rules:** `production/daily/` deleted after
   31 days, `production/monthly/` after 366, each after the lock lets go.
+- **An alarm outside GitHub.** GitHub stops running a repository's
+  scheduled workflows after 60 days without activity in it, and the
+  26-hour check and the monthly drill are scheduled workflows, so they stop
+  with the backup and nothing fails. After each backup the job calls
+  `BACKUP_HEALTHCHECK_URL`, a check at a monitor outside GitHub
+  (healthchecks.io's free plan) that emails when a day passes without a
+  call. Unset, the step is skipped.
 
 ---
 
