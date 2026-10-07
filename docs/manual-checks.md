@@ -630,6 +630,14 @@ Paper is checked first because it must not change at all.
 - **MC-1543** With the keyboard alone, on an order: Tab reaches the tabs, the
   arrow keys move between them and Enter opens one; the address changes and
   Back leaves the page. Focus is always visible.
+- **MC-1544** In the summary, Ship, then Close order, each full width, then
+  Edit and Duplicate as two equal halves; nothing reaches past the panel's
+  edge, at 1440px and at 375px. A member who may edit but not duplicate sees
+  Edit full width.
+- **MC-1545** In English and French at 1440px, SO-DEMO-1's ⋮ is visible at the
+  right of its row without scrolling; scroll the table sideways and it stays
+  put, the columns passing under it. A tab with nothing in it (SO-DEMO-QC's
+  Returns) shows no 0, and Returned 0 carries no note.
 
 ## Regressions
 
@@ -737,3 +745,5 @@ first.
 - 2026-10-07: ADR-055 step 5, production: MC-1536 and MC-1537.
 - 2026-10-07: ADR-055 step 6, dark mode, narrow screens, touch and keyboard:
   MC-1538 to MC-1543. Contrast and names are checked by accessibility.spec.
+- 2026-10-07: ADR-055 step 5, orders polish from the first screenshots:
+  MC-1544 and MC-1545.

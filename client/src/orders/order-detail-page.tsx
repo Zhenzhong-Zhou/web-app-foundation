@@ -298,11 +298,20 @@ export function OrderDetailPage() {
           order={order}
           working={working}
           quiet={!!primary}
+          stacked
           onMove={moveTo}
           onCloseOrder={() => setClosing(true)}
         />
       )}
-      <Stack direction="row" spacing={1}>
+      {/* Two equal halves, or one full width. A grid rather than a row of
+          full-width buttons, which overflowed the panel. */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(0, 1fr))',
+          gap: 1,
+        }}
+      >
         {canUpdate && (
           <Button
             variant="outlined"
@@ -329,7 +338,7 @@ export function OrderDetailPage() {
             })}
           </Button>
         )}
-      </Stack>
+      </Box>
     </>
   );
 
@@ -481,7 +490,8 @@ export function OrderDetailPage() {
                     id: 'orders.shipments.title',
                     defaultMessage: 'Shipments',
                   }),
-                  count: order.counts.shipments,
+                  // None reads better as no number than as a 0.
+                  count: order.counts.shipments || undefined,
                   content: (
                     <Box sx={{ p: 2 }}>
                       <ShipmentsList
@@ -513,7 +523,7 @@ export function OrderDetailPage() {
                     id: 'layout.nav.returns',
                     defaultMessage: 'Returns',
                   }),
-                  count: order.counts.returns,
+                  count: order.counts.returns || undefined,
                   content: (
                     <Box sx={{ p: 2 }}>
                       <ReturnsList orderId={order.id} refreshKey={returns} />
@@ -530,7 +540,7 @@ export function OrderDetailPage() {
                     id: 'orders.tab.documents',
                     defaultMessage: 'Invoices and credits',
                   }),
-                  count: order.counts.documents,
+                  count: order.counts.documents || undefined,
                   content: (
                     <Box sx={{ p: 2 }}>
                       <OrderDocuments order={order} />

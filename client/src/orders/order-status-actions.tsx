@@ -17,6 +17,7 @@ export function OrderStatusActions({
   onMove,
   onCloseOrder,
   quiet = false,
+  stacked = false,
 }: {
   order: OrderDetail;
   /** A request is out: no second move until it answers. */
@@ -28,11 +29,20 @@ export function OrderStatusActions({
    * main act (Ship, ADR-055): one filled button says what comes next.
    */
   quiet?: boolean;
+  /**
+   * One above the other, each full width: in the summary panel, where a
+   * row of buttons pushed to the right reads as an afterthought.
+   */
+  stacked?: boolean;
 }) {
   if (NEXT_STATUSES[order.status].length === 0) return null;
 
   return (
-    <Stack direction="row" spacing={2} sx={{ justifyContent: 'flex-end' }}>
+    <Stack
+      direction={stacked ? 'column' : 'row'}
+      spacing={stacked ? 1 : 2}
+      sx={{ justifyContent: 'flex-end' }}
+    >
       {/* Cancel first, Confirm last: the rightmost position is where
           "proceed" lives, and the destructive one should not be where a
           thumb lands by default. */}
@@ -47,6 +57,7 @@ export function OrderStatusActions({
             key={next}
             variant="text"
             color="error"
+            fullWidth={stacked}
             disabled={working}
             onClick={() => void onMove(next)}
           >
@@ -60,6 +71,7 @@ export function OrderStatusActions({
           <Button
             key={next}
             variant={quiet ? 'outlined' : 'contained'}
+            fullWidth={stacked}
             disabled={working}
             onClick={(event) => {
               // Only this branch opens a dialog, so only it needs the

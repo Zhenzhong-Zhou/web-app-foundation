@@ -27,6 +27,15 @@ import type { LineHold, OrderDetail, OrderLine } from '../lib/types';
 import { doneLabel } from './status';
 
 /**
+ * The actions column, held at the table's right edge (ADR-055). With the
+ * summary beside it the table is often wider than its panel, longer
+ * column names in English and French most of all, and a menu found only
+ * by scrolling sideways is a menu nobody finds. The head keeps its own
+ * tint; a body cell is given the panel's colour so rows pass beneath it.
+ */
+const PINNED = { position: 'sticky', right: 0, zIndex: 1 } as const;
+
+/**
  * An order's items: the table, what each line can do, and the totals.
  *
  * What the viewer may do arrives as flags the page has already worked out,
@@ -202,9 +211,12 @@ export function OrderLinesSection({
                   })}
                 </TableCell>
                 {/* No visible title — the buttons explain themselves —
-                    but a screen reader announces the column by name. */}
+                    but a screen reader announces the column by name.
+                    Pinned to the right edge, as its cells are, so the ⋮
+                    stays in view when the table scrolls sideways. */}
                 <TableCell
                   align="right"
+                  sx={PINNED}
                   aria-label={intl.formatMessage({
                     id: 'orders.lines.actions',
                     defaultMessage: 'Actions',
@@ -323,7 +335,10 @@ export function OrderLinesSection({
                     {formatMoney(line.lineTotal, line.currency)}
                   </TableCell>
 
-                  <TableCell align="right">
+                  <TableCell
+                    align="right"
+                    sx={{ ...PINNED, bgcolor: 'background.paper' }}
+                  >
                     <LineActions
                       order={order}
                       line={line}

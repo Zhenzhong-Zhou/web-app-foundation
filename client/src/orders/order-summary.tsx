@@ -173,10 +173,15 @@ export function OrderSummary({
                 id: 'inventory.trace.returned',
                 defaultMessage: 'Returned',
               })}
-              note={intl.formatMessage({
-                id: 'orders.summary.returnedNote',
-                defaultMessage: 'does not add to still to ship',
-              })}
+              note={
+                // Said only when there is something it could be added to.
+                quantities.returned === '0.0000'
+                  ? undefined
+                  : intl.formatMessage({
+                      id: 'orders.summary.returnedNote',
+                      defaultMessage: 'does not add to still to ship',
+                    })
+              }
             >
               {inUnit(quantities.returned)}
             </Fact>
