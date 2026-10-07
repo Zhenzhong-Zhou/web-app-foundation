@@ -33,8 +33,9 @@ and price lists proposing the price of a new line.
   ADR-055 (the look) is built on `ui-design-pass`, with an amendment.
   Next is **ADR-056**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
-  client vitest 210 in 44 files and Playwright 67, `accessibility.spec`
-  among them; the server's as of the ADR-050 branch (2 October 2026), e2e
+  client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
+  (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot
+  start on his macOS); the server's as of the ADR-050 branch (2 October 2026), e2e
   627 in 33 suites (`npm run test:e2e`) and unit 36 in 6 files (`npm
   test`), and more since in stock and orders. CI also runs `seed:demo`.
 - `npm run seed:demo`: BF-2609 valued at 1900.00 CAD, run FOC-2609-01 costed
@@ -92,6 +93,15 @@ Then tag v0.4.0.
 - **Checks:** `npm run typecheck` on both sides; the server's runs in its
   `verify`, in `verify.sh --quick` and in CI, since its build leaves the
   tests out. Manual checks MC-1501 to MC-1555 cover what tests cannot.
+- **Browsers:** every spec in Chromium; `accessibility.spec` in WebKit and
+  Firefox; `mobile.spec` on an iPhone. The tab shows `VITE_APP_NAME` from
+  `.env` (default `web-app-foundation`); `index.html` asks 360, QQ and
+  Sogou for their Chromium engine. Nothing loads from another site, so the
+  app works in mainland China; `conventions.md` lists what is supported.
+- **Next, on its own branch:** notifications in the reader's current
+  language (message id and values stored, rendered on read), an ADR-054
+  amendment and migration **0039**; and a notification's quantities
+  without padding zeros ("30 of 40", not "30.0000 of 40.0000").
 - **Words checked by the reviewer:** 贷项通知单 for a credit note, 开票净额（含税）,
   未开票金额（税前）, 待定成本. The same person could do MC-1405, the fluent review of
   the Chinese catalogue that v0.5 skipped.
