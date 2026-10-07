@@ -330,3 +330,23 @@ and the tokens lack becomes a token first.
   in both modes; a new token adds its pair there.
 - **Paper** renders in `PrintSheet`'s own theme (`theme/paper.ts`) and never
   uses the screen's tokens. A printed document changes only on purpose.
+
+### Shared pieces for screens (ADR-055)
+
+Use these rather than writing the thing again on a page:
+
+- **`StatusChip`** with a tone from `STATUS_TONES` (`theme/status.ts`). A new
+  status adds its row to that table.
+- **`ExpiryChip`** for any lot's expiry: days left within 90 days (amber, red
+  within 30 or past) with the date beside it; the date alone further off. The
+  thresholds are `EXPIRY_DAYS` in `lib/expiry.ts`.
+- **`displayQuantity`** for a quantity people read: no padding zeros, grouped.
+  **`formatQuantity`** for a quantity in a field, which must stay what
+  `toApiDecimal` accepts.
+- **`useTab`** and **`DetailLayout`** for a record with three or more sections
+  of different kinds: tabs kept in the address, a summary beside them. Fewer
+  sections stay one page.
+- **`FilterRow`** above a list: search, the list's selects, quick filters with
+  counts. Never a column of full-width fields.
+- **`EmptyState`** inside the list's panel when it is empty: the first-time
+  message with no filter, "nothing matches" with one.
