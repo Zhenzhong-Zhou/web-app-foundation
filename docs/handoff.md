@@ -604,8 +604,9 @@ Rules, still in force:
 - Client speed: unmeasured. Lighthouse on the Render static site, warm and
   just woken, and the bundle sizes `vite build` prints; measure first and set
   a budget only if something is slow, as ADR-051 did for the server.
-- The `ubuntu-latest` runner moves to Ubuntu 26 from 19 October 2026. Pin
-  `ubuntu-24.04` in `ci.yml` if you'd rather choose when.
+- Every workflow runs on `ubuntu-24.04`, pinned, so `ubuntu-latest` moving
+  to Ubuntu 26 on 19 October 2026 changes nothing. Moving is a choice: one
+  line per job, CI as the test.
 - From the UI pass (ADR-055), small:
     - **Firefox on Bob's Mac:** Playwright's build cannot open its profile
       there ("Could not find profile folder"; reinstalling, clearing
