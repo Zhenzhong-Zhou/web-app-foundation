@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDay, formatQuantity, toApiDecimal } from './format';
+import {
+  displayQuantity,
+  formatDay,
+  formatQuantity,
+  toApiDecimal,
+} from './format';
 
 describe('formatDay', () => {
   /**
@@ -49,5 +54,37 @@ describe('toApiDecimal', () => {
     expect(toApiDecimal('1 234', 'fr-CA')).toBeNull();
     expect(toApiDecimal('1 234,5', 'fr-CA')).toBeNull();
     expect(toApiDecimal('1.234,5', 'fr-CA')).toBeNull();
+  });
+});
+
+describe('displayQuantity', () => {
+  it('drops padding zeros, and the point with them', () => {
+    expect(displayQuantity('600.0000', 'en')).toBe('600');
+    expect(displayQuantity('15.5000', 'en')).toBe('15.5');
+    expect(displayQuantity('0.0000', 'en')).toBe('0');
+    expect(displayQuantity('0.0125', 'en')).toBe('0.0125');
+  });
+
+  it('groups the whole number the language’s way', () => {
+    expect(displayQuantity('1000.0000', 'en')).toBe('1,000');
+    expect(displayQuantity('2175.0000', 'en')).toBe('2,175');
+    expect(displayQuantity('1234567.2500', 'en')).toBe('1,234,567.25');
+    expect(displayQuantity('999.0000', 'en')).toBe('999');
+    // Intl's own grouping and decimal for French, whichever space it uses.
+    expect(displayQuantity('1234.5000', 'fr-CA')).toBe(
+      new Intl.NumberFormat('fr-CA').format(1234.5),
+    );
+  });
+
+  it('keeps the sign', () => {
+    expect(displayQuantity('-6.2500', 'en')).toBe('-6.25');
+    expect(displayQuantity('-1500.0000', 'en')).toBe('-1,500');
+  });
+
+  /** The digits are never parsed, so none is lost past what JS can hold. */
+  it('keeps every digit of a value too long for a JavaScript number', () => {
+    expect(displayQuantity('12345678901234.0001', 'en')).toBe(
+      '12,345,678,901,234.0001',
+    );
   });
 });

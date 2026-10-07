@@ -4807,7 +4807,9 @@ organization they wait with the branding decision.
 - Quantities show no padding zeros and are grouped in the reader's language:
   "600", "1,000", "15.5 kg", "1 234,5" in French. The value stays a string
   end to end (ADR-025): trimming and grouping are string operations in
-  `formatQuantity`. This brings in ADR-054's deferred grouped digits.
+  `displayQuantity`, for reading. Fields keep `formatQuantity`, since a
+  field shows what `toApiDecimal` accepts back, which refuses grouped
+  digits. This brings in ADR-054's deferred grouped digits.
 - Every money figure says what it is and whether tax is in it. On an order,
   amounts are before tax, because tax is decided when the invoice is issued:
   the items table's column is "Value, before tax" and its total row "Order
@@ -4864,7 +4866,7 @@ decision.
   scrolls: the actions the record allows, then its figures in groups (on an
   order, quantities and money). Quantities that need explaining say so in a
   grey line beneath ("not counting 1 voided shipment (100)", "doesn't add to
-  still to ship"). Below 1000px the panel moves above the tabs.
+  still to ship"). Below 900px (`md`) the panel moves above the tabs.
 
 **Decision — lists.** One filter row above each list: search, then quick
 filters with counts ("Expiring soon 2", "Needs a cost 1"). One empty state:

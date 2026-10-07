@@ -225,6 +225,30 @@ export function formatQuantity(
 }
 
 /**
+ * A quantity to read (ADR-055): no padding zeros, and grouped the
+ * language's way. "600.0000" reads "600", "1000.0000" "1,000",
+ * "1234.5000" "1 234,5" in French.
+ *
+ * String work only, like formatQuantity: no JavaScript number, so nothing
+ * is rounded (ADR-025). For reading, never for a field: a field shows what
+ * toApiDecimal accepts back, and it refuses grouped digits, so fields keep
+ * formatQuantity.
+ */
+export function displayQuantity(
+  value: string,
+  locale: string | undefined = current,
+): string {
+  const { decimal, group } = separators(locale);
+  const negative = value.startsWith('-');
+  const [whole, fraction = ''] = (negative ? value.slice(1) : value).split('.');
+
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, group);
+  const kept = fraction.replace(/0+$/, '');
+
+  return `${negative ? '-' : ''}${grouped}${kept ? decimal + kept : ''}`;
+}
+
+/**
  * What a quantity or price field says when toApiDecimal refuses what was
  * typed, with an example written the language's way ("1234,5" in French).
  */
