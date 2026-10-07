@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.5.0 tagged, the UI pass (ADR-055) under way
+# web-app-foundation — handoff, v0.5.0 tagged, the UI pass (ADR-055) built
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -30,11 +30,13 @@ and price lists proposing the price of a new line.
   amendments for what was settled while building; ADR-046 carries one (one
   currency per sale from the first priced line). **ADR-054** (languages)
   is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
-  ADR-055 (the look) is written on `ui-design-pass`. Next is **ADR-056**.
-- Tests at the last local run (ADR-050 branch, 2 October 2026): server e2e
-  627 in 33 suites (`npm run test:e2e`); server unit 36 in 6 files
-  (`npm test`); client vitest 160 in 35 files; Playwright 63. CI also runs
-  `seed:demo`.
+  ADR-055 (the look) is built on `ui-design-pass`, with an amendment.
+  Next is **ADR-056**.
+- Tests at the last local run: on `ui-design-pass` (7 October 2026),
+  client vitest 210 in 44 files and Playwright 67, `accessibility.spec`
+  among them; the server's as of the ADR-050 branch (2 October 2026), e2e
+  627 in 33 suites (`npm run test:e2e`) and unit 36 in 6 files (`npm
+  test`), and more since in stock and orders. CI also runs `seed:demo`.
 - `npm run seed:demo`: BF-2609 valued at 1900.00 CAD, run FOC-2609-01 costed
   at 1292.00 over 980 bottles (1.318367 each), SO-DEMO-2 priced from the
   Wholesale CAD list (the organization default). It also leaves an RMA
@@ -69,21 +71,29 @@ it:
 
 Then tag v0.4.0.
 
-## Now: the UI pass (ADR-055), branch `ui-design-pass`
+## The UI pass (ADR-055) — built, branch `ui-design-pass`
 
 - **Decided:** ADR-055, from mockups on a Claude Design canvas (Bob's,
-  private): three directions, then a refined one in English and Chinese, light
-  and dark, desktop and phone, with two example organizations. A
-  Chinese-reading accountant with no UI background compared two of them and
-  shaped the summary panel, the expiry chips and the money labels.
-- **On the branch already:** a range of demo data around the first product
-  (`server/src/database/seed-demo-variety.ts`) and `npm run screenshots`
-  (`client/screenshots/`, README), which pictures every screen in three
-  languages, both modes, at desktop and phone width.
-- **Next:** retake the whole screenshot set as the "before", then ADR-055's
-  steps 1 to 6 in order, each its own commits.
-- **Words checked by that reviewer:** 贷项通知单 for a credit note, 开票净额（含税）,
-  未开票金额（税前）, 5 个退货尚未处理. The same person could do MC-1405, the fluent review of
+  private), compared by a Chinese-reading accountant with no UI background,
+  who shaped the summary panel, the expiry chips and the money labels.
+  ADR-055 carries an amendment for what was settled while building.
+- **Built, steps 1 to 6:** tokens and theme, the side rail, the shared
+  pieces (StatusChip, ExpiryChip, DetailLayout and useTab, FilterRow,
+  EmptyState, PasswordField), the order's money summary on the server, every
+  screen folder moved onto them, and `accessibility.spec` (axe, WCAG 2.2 AA,
+  twenty screens, both modes). No migration: still through **0038**.
+- **Server reads added:** the order's money, counts, summed quantities and
+  documents (`GET /v1/orders/:id`); `expiringWithin` and `needsCost` on
+  `GET /v1/stock`, with `GET /v1/stock/counts`.
+- **Demo:** `seed-demo-variety.ts` gives every state the screens draw one
+  example, a voided invoice (SO-DEMO-6), a line closed short (PO-DEMO-6)
+  and a closed RMA among them. It now issues numbered documents after the
+  main demo's, so INV-000001, CN-000001 and RMA-000001 are unchanged.
+- **Checks:** `npm run typecheck` on both sides; the server's runs in its
+  `verify`, in `verify.sh --quick` and in CI, since its build leaves the
+  tests out. Manual checks MC-1501 to MC-1555 cover what tests cannot.
+- **Words checked by the reviewer:** 贷项通知单 for a credit note, 开票净额（含税）,
+  未开票金额（税前）, 待定成本. The same person could do MC-1405, the fluent review of
   the Chinese catalogue that v0.5 skipped.
 - **To file as an issue:** the unsaved-changes guard. The create-order page
   loses a half-built order when someone follows a link; React Router's
