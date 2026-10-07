@@ -225,6 +225,8 @@
   "components.errorBoundary.reload": "Recharger",
   "components.errorBoundary.title": "Une erreur s’est produite",
   "components.errorBoundary.updated": "L’application a été mise à jour pendant que cet onglet était ouvert. Rechargez pour obtenir la nouvelle version — rien n’est perdu.",
+  "components.expiry.expired": "{days, plural, one {Expiré depuis # jour} other {Expiré depuis # jours}}",
+  "components.expiry.inDays": "{days, plural, =0 {Expire aujourd’hui} one {Expire dans # jour} other {Expire dans # jours}}",
   "components.formError.label": "Erreur",
   "components.loadMore": "Charger plus",
   "components.pageHeader.back": "Retour",

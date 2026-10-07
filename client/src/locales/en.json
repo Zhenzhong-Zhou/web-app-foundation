@@ -225,6 +225,8 @@
   "components.errorBoundary.reload": "Reload",
   "components.errorBoundary.title": "Something went wrong",
   "components.errorBoundary.updated": "The app was updated while this tab was open. Reload to pick up the new version — nothing is lost.",
+  "components.expiry.expired": "{days, plural, one {Expired # day ago} other {Expired # days ago}}",
+  "components.expiry.inDays": "{days, plural, =0 {Expires today} one {Expires in # day} other {Expires in # days}}",
   "components.formError.label": "Error",
   "components.loadMore": "Load more",
   "components.pageHeader.back": "Back",

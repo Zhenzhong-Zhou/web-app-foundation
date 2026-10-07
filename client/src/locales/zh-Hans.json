@@ -225,6 +225,8 @@
   "components.errorBoundary.reload": "重新加载",
   "components.errorBoundary.title": "出错了",
   "components.errorBoundary.updated": "此标签页打开期间应用已更新。请重新加载以使用新版本——不会丢失任何内容。",
+  "components.expiry.expired": "{days, plural, other {已过期 # 天}}",
+  "components.expiry.inDays": "{days, plural, =0 {今天过期} other {# 天后过期}}",
   "components.formError.label": "错误",
   "components.loadMore": "加载更多",
   "components.pageHeader.back": "返回",
