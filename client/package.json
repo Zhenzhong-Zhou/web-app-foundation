@@ -47,6 +47,7 @@
     "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@eslint/js": "^10.0.1",
     "@formatjs/cli": "^6.16.32",
     "@formatjs/icu-messageformat-parser": "^3.5.20",

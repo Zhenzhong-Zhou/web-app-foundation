@@ -611,6 +611,25 @@ Paper is checked first because it must not change at all.
   run, Produced so far, each component's planned and consumed ("30 kg"), and
   the lots used ("EARLY-LOT: 20") read the same way. With a status that has no
   runs, the list shows the empty message in its panel.
+- **MC-1538** Dark mode, through the account menu: on Inventory, Orders, an
+  order (each tab), Invoices, Returns and Production, every status chip,
+  expiry chip and quick filter is readable, no panel shows a white edge, and
+  the rail and top bar stay distinct from the page. accessibility.spec checks
+  contrast in both modes; this is for what it cannot see.
+- **MC-1539** Dark mode, then print INV-000001: the printout is black on
+  white, as in light mode.
+- **MC-1540** At 375px wide (a phone, or the browser's device toolbar): ☰
+  opens the navigation, and choosing a page closes it. Inventory's filter row
+  wraps onto two lines without scrolling sideways; its table scrolls inside
+  its panel.
+- **MC-1541** At 375px, an order: the summary sits above the tabs, Ship is
+  full width, and the tabs scroll sideways when they do not fit, the open one
+  still visible. A line's ⋮ menu opens fully on screen.
+- **MC-1542** On a touch screen (or with touch emulation), buttons, filters
+  and table actions are at least 44px tall; with a mouse, 36px.
+- **MC-1543** With the keyboard alone, on an order: Tab reaches the tabs, the
+  arrow keys move between them and Enter opens one; the address changes and
+  Back leaves the page. Focus is always visible.
 
 ## Regressions
 
@@ -716,3 +735,5 @@ first.
 - 2026-10-07: ADR-055 step 5, invoices: MC-1531 to MC-1533.
 - 2026-10-07: ADR-055 step 5, returns and RMAs: MC-1534 and MC-1535.
 - 2026-10-07: ADR-055 step 5, production: MC-1536 and MC-1537.
+- 2026-10-07: ADR-055 step 6, dark mode, narrow screens, touch and keyboard:
+  MC-1538 to MC-1543. Contrast and names are checked by accessibility.spec.

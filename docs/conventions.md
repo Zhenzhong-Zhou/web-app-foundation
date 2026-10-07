@@ -350,3 +350,7 @@ Use these rather than writing the thing again on a page:
   counts. Never a column of full-width fields.
 - **`EmptyState`** inside the list's panel when it is empty: the first-time
   message with no filter, "nothing matches" with one.
+
+A new screen gets a line in SCREENS in client/e2e/accessibility.spec.ts, which
+runs axe for WCAG 2.2 AA in light and dark mode (ADR-055). A violation is
+fixed, not excluded: no rule is turned off.
