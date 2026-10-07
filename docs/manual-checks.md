@@ -522,6 +522,9 @@ first.
   answers late never shows the previous variant's recipe.
 - **MC-R03** *(v0.5 round 2)* The credit calculation was moved into
   `credit-amounts.ts`: MC-709 and MC-710 are its check.
+- **MC-R06** *(ADR-055)* Signed in with an unconfirmed email, print
+  an invoice: the "Confirm your email address" banner is on screen and not
+  on the paper or in the print preview.
 
 ---
 
@@ -585,3 +588,4 @@ first.
 - 2026-10-07: ADR-055 step 1, the tokens and the theme built from them:
   MC-1502 to MC-1506. Covers dark mode and narrow screens, which the
   list lacked.
+- 2026-10-07: the email banner no longer prints: MC-R06.

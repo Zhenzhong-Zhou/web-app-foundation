@@ -460,6 +460,8 @@ function UnverifiedBanner() {
   return (
     <Alert
       severity="warning"
+      // Screen only: on a printed invoice it read as part of the document.
+      className="no-print"
       action={
         // 202 whether or not a message went out, so there is nothing to
         // report but that we tried.
