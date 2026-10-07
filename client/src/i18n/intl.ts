@@ -33,10 +33,21 @@ export function makeIntl(tag: string, messages: Messages): IntlShape {
  * never disagree about the language. English until then, which is also
  * what a unit test calling a helper directly gets.
  */
-let current: IntlShape = makeIntl('en', ENGLISH);
+/**
+ * Kept in Vite's hot data as well as here. In development, a catalogue or a
+ * module this one imports changing makes Vite run this file again, and a
+ * plain module value would start over in English while React still showed
+ * the chosen language: status chips and dates in English among Chinese
+ * labels until a reload. Production has no hot reload: import.meta.hot is
+ * undefined there. Vitest defines it but without data, hence ?. twice.
+ */
+let current: IntlShape =
+  (import.meta.hot?.data?.intl as IntlShape | undefined) ??
+  makeIntl('en', ENGLISH);
 
 export function setIntl(next: IntlShape): void {
   current = next;
+  if (import.meta.hot?.data) import.meta.hot.data.intl = next;
 }
 
 export function intl(): IntlShape {

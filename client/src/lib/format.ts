@@ -22,10 +22,12 @@ export const BLANK_LINE = ' ';
  * called from render, from column definitions and from handlers alike. A
  * print page passes the document's language explicitly instead.
  */
-let current: string | undefined;
+let current = import.meta.hot?.data?.locale as string | undefined;
 
+/** Kept in Vite's hot data too, for the reason given in i18n/intl.ts. */
 export function setFormatLocale(locale: string): void {
   current = locale;
+  if (import.meta.hot?.data) import.meta.hot.data.locale = locale;
 }
 
 /** Intl formatters are costly to build and cheap to keep: one per key. */
