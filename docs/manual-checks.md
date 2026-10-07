@@ -46,6 +46,13 @@ The demo leaves known numbers to check against:
 - A voided shipment.
 - **PO-DEMO-2**, bought in USD at a rate of **1.37**.
 
+Around those, for the screens rather than the figures: a dozen more items,
+lot **ELD-24A** expiring in 20 days, **THE-0915** waiting for a cost
+(PO-DEMO-5), **PO-DEMO-4** partly received, run **CALM-RUN-01** released
+and **CALM-RUN-02** planned, **SO-DEMO-3** a draft, **SO-DEMO-4**
+cancelled, **SO-DEMO-5** shipped with its invoice in draft, a discontinued
+product and a retired partner.
+
 Keep a second browser profile, or a private window, for a second user and a
 second organization.
 
@@ -545,3 +552,6 @@ first.
 - 2026-10-06: ADR-054, `seed:demo` sets up a French-and-English and a
   Chinese customer with an issued invoice each, so MC-1407 to MC-1412
   start from a fresh database.
+- 2026-10-06: `seed:demo` adds a range around the first product for the
+  screens (`seed-demo-variety.ts`); the figures listed under *Before you
+  start* are unchanged.

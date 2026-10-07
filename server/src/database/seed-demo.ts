@@ -29,10 +29,12 @@ import { StockService } from '../modules/stock/stock.service';
 import { TaxCodesService } from '../modules/tax-codes/tax-codes.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
 import { lots, memberships, productVariants, users } from './schema';
+import { addVariety, daysFromNow } from './seed-demo-variety';
 import { runInTenantContext } from './tenant-context';
 
 /**
- * One product, made once, through the same services the API calls.
+ * One product, made once, through the same services the API calls, and a
+ * range of others around it for the screens (seed-demo-variety.ts).
  *
  * Not part of `seed`, deliberately. That one runs on every deploy, production
  * included, and its job is the permission vocabulary — demo products written
@@ -773,9 +775,28 @@ async function seedDemo(): Promise<void> {
 
         await orders.update(second.id, { status: 'confirmed' });
 
+        /**
+         * Breadth for the screens: a fuller catalogue, a run in progress, an
+         * order in every status and an invoice in draft. Last, and on items
+         * of its own, so every figure above stays what the manual checks
+         * say.
+         */
+        const variety = await addVariety(app, {
+          actorId: actor,
+          siteId: site.id,
+          shelfId: shelf.id,
+          blendingId: blending.id,
+          supplierId: supplier.id,
+          usSupplierId: usSupplier.id,
+          customerId: customer.id,
+          secondCustomerId: secondCustomer.id,
+          gstId: gst.id,
+        });
+
         logger.log(
           `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s); SO-DEMO-1 shipped 400 of 600, invoiced as ${invoice.number}, with 5 returned, ${rma.number} received and credited as ${creditNote.number}, and a shipment of 100 voided; 4 retained, 2 sampled; PO-DEMO-2 bought in USD at 1.37; SO-DEMO-2 confirmed for 500 and partly backordered; ${quebecInvoice.number} printing in French and English for Pharmacie Saint-Laurent, ${chineseInvoice.number} in Chinese for 明德药房`,
         );
+        logger.log(variety);
       },
     );
   } finally {
@@ -833,16 +854,6 @@ async function freshAccount(auth: AuthService): Promise<DemoAccount> {
   );
 
   return { userId: user.id, organizationId: user.organizationId, email };
-}
-
-/**
- * A plain calendar day, sent the way a date input sends one. Relative to the
- * day the seed runs, so the page reads the same whenever it is seeded.
- */
-function daysFromNow(days: number): string {
-  const date = new Date();
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
 }
 
 void seedDemo();
