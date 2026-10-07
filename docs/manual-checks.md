@@ -686,6 +686,10 @@ Paper is checked first because it must not change at all.
   it, and the page's action at the right (History on Organization). An empty
   list shows the shared empty state rather than a blue notice. Tax codes read
   In use in quiet blue and Retired in grey; a retired price list is grey.
+- **MC-1555** On SO-DEMO-2 in 中文 at 1440px, the 未完成 column reads 500 with 短缺
+  162 in amber under it, not beside it; the Total column is in view without
+  scrolling sideways, and the pinned ⋮ covers nothing. Hovering the chip still
+  says how much is held.
 
 ## Regressions
 
@@ -804,3 +808,4 @@ first.
 - 2026-10-07: ADR-055 step 5, needs a cost and Stock value: MC-1552.
 - 2026-10-07: units take their plural in every language: MC-1553.
 - 2026-10-07: ADR-055 step 5, the settings pages: MC-1554.
+- 2026-10-07: the short chip under the outstanding figure: MC-1555.

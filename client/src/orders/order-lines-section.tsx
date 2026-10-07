@@ -274,38 +274,43 @@ export function OrderLinesSection({
                         {displayQuantity(line.quantityOutstanding)}
                         {/* The backorder: needed, and not held because
                             earlier-confirmed orders came first (ADR-045).
-                            '0.0000' is nothing, compared as text. */}
+                            '0.0000' is nothing, compared as text. Under the
+                            figure rather than beside it, so the column is
+                            as wide as its number, not number and chip. */}
                         {order.status === 'confirmed' &&
                           holds[line.id] &&
                           holds[line.id].short !== '0.0000' && (
-                            <Tooltip
-                              title={intl.formatMessage(
-                                {
-                                  id: 'orders.lines.heldTooltip',
-                                  defaultMessage:
-                                    '{held} held for this order; the rest waits for stock',
-                                },
-                                { held: displayQuantity(holds[line.id].held) },
-                              )}
-                            >
-                              <Chip
-                                label={intl.formatMessage(
+                            <Box sx={{ mt: 0.5 }}>
+                              <Tooltip
+                                title={intl.formatMessage(
                                   {
-                                    id: 'orders.lines.short',
-                                    defaultMessage: '{short} short',
+                                    id: 'orders.lines.heldTooltip',
+                                    defaultMessage:
+                                      '{held} held for this order; the rest waits for stock',
                                   },
                                   {
-                                    short: displayQuantity(
-                                      holds[line.id].short,
-                                    ),
+                                    held: displayQuantity(holds[line.id].held),
                                   },
                                 )}
-                                size="small"
-                                color="warning"
-                                variant="outlined"
-                                sx={{ ml: 1 }}
-                              />
-                            </Tooltip>
+                              >
+                                <Box component="span">
+                                  <StatusChip
+                                    tone="warning"
+                                    label={intl.formatMessage(
+                                      {
+                                        id: 'orders.lines.short',
+                                        defaultMessage: '{short} short',
+                                      },
+                                      {
+                                        short: displayQuantity(
+                                          holds[line.id].short,
+                                        ),
+                                      },
+                                    )}
+                                  />
+                                </Box>
+                              </Tooltip>
+                            </Box>
                           )}
                       </>
                     )}
