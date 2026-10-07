@@ -1,15 +1,7 @@
-import { Chip, type ChipProps } from '@mui/material';
+import { Chip } from '@mui/material';
 
+import { COLOR_OF_TONE } from '../theme/status';
 import type { ToneName } from '../theme/tokens';
-
-/** The chip colour the theme draws each tone with (theme/index.ts). */
-const COLOR_OF_TONE: Record<ToneName, ChipProps['color']> = {
-  neutral: 'default',
-  info: 'info',
-  positive: 'success',
-  warning: 'warning',
-  critical: 'error',
-};
 
 /**
  * A status, in its tone (ADR-055). The words carry the meaning and the tone

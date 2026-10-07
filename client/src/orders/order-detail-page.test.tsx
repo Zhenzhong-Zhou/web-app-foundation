@@ -55,9 +55,12 @@ function serve(detail: OrderDetail) {
   );
 }
 
-function renderPage(permissions = ALL) {
+/** The order page, at its Shipments tab: where invoices and voids are. */
+const SHIPMENTS_TAB = '/orders/order-1?tab=shipments';
+
+function renderPage(permissions = ALL, entry = '/orders/order-1') {
   return renderWithAuth(
-    <MemoryRouter initialEntries={['/orders/order-1']}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/orders/:id" element={<OrderDetailPage />} />
       </Routes>
@@ -431,7 +434,7 @@ describe('OrderDetailPage lines', () => {
 
     it('offers an invoice for a shipment that has none', async () => {
       serveSale();
-      renderPage(SALE_PERMISSIONS);
+      renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
 
       expect(
         await screen.findByRole('button', { name: 'Create invoice' }),
@@ -445,7 +448,7 @@ describe('OrderDetailPage lines', () => {
      */
     it('links to the standing invoice, and offers no void', async () => {
       serveSale([invoice()]);
-      renderPage(SALE_PERMISSIONS);
+      renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
 
       expect(
         await screen.findByRole('link', { name: 'Invoice INV-000001' }),
@@ -461,7 +464,7 @@ describe('OrderDetailPage lines', () => {
     // A voided invoice no longer bills the shipment; it can be billed again.
     it('ignores a voided invoice', async () => {
       serveSale([invoice({ status: 'voided' })]);
-      renderPage(SALE_PERMISSIONS);
+      renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
 
       expect(
         await screen.findByRole('button', { name: 'Create invoice' }),
@@ -471,7 +474,7 @@ describe('OrderDetailPage lines', () => {
     // Samples ship and trace like sales, but are never invoiced (ADR-042).
     it('offers no invoice on a sample', async () => {
       serveSale([], { isSample: true });
-      renderPage(SALE_PERMISSIONS);
+      renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
 
       expect(
         await screen.findByRole('heading', { name: 'Shipments' }),
@@ -512,7 +515,7 @@ describe('OrderDetailPage lines', () => {
         'return_authorizations.create',
       ]);
 
-      await screen.findByRole('heading', { name: 'Shipments' });
+      await screen.findByRole('tab', { name: /Shipments/ });
       expect(
         screen.queryByRole('button', { name: 'Authorize a return' }),
       ).not.toBeInTheDocument();
@@ -529,7 +532,7 @@ describe('OrderDetailPage lines', () => {
       });
       renderPage(SALE_PERMISSIONS);
 
-      await screen.findByRole('heading', { name: 'Shipments' });
+      await screen.findByRole('tab', { name: /Shipments/ });
       expect(
         screen.queryByRole('button', { name: 'Authorize a return' }),
       ).not.toBeInTheDocument();

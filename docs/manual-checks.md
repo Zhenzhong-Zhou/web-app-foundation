@@ -513,6 +513,25 @@ Paper is checked first because it must not change at all.
 - **MC-1511** The account menu holds the email, Account, Devices, the colour
   mode, the language and Sign out, and no settings. In Français and 简体中文 the
   rail's headings and Collapse/Expand read in that language.
+- **MC-1512** Open SO-DEMO-1: its title is SO-DEMO-1, Confirmed beside it in a
+  quiet blue, and "Selling · Northside Pharmacy" under it. The sections are
+  tabs (Items, Shipments, Returns) beside a summary that stays in view while
+  the page scrolls.
+- **MC-1513** The summary holds the order's actions (Close order, Edit,
+  Duplicate, History), then Complete 0 of 1, then Money (CAD): order value
+  14,994.00 before tax, invoiced 10,495.80 and credited 52.48 including tax,
+  net invoiced 10,443.32, not yet invoiced 4,998.00 before tax. Each label
+  says whether tax is in it.
+- **MC-1514** "1 return not yet settled" is amber under the items figures;
+  choosing it opens the Returns tab, where the crushed carton offers Link to
+  RMA.
+- **MC-1515** Choose Shipments, then refresh: still on Shipments, and the
+  address ends ?tab=shipments. Go to INV-000001 from there and press Back:
+  Shipments again. Press Back once more: the page before the order, not the
+  Items tab. Type ?tab=nonsense on the address: Items opens and the address
+  loses it.
+- **MC-1516** A purchase (PO-DEMO-4) has no tab bar, only its items, and no
+  money group. Below 900px the summary sits above the tabs.
 
 ## Regressions
 
@@ -607,3 +626,5 @@ first.
 - 2026-10-07: the email banner no longer prints: MC-R06.
 - 2026-10-07: ADR-055 step 2, the rail, the drawer and the slim top bar:
   MC-1507 to MC-1511.
+- 2026-10-07: ADR-055 step 5, the order page: tabs, the summary and its
+  money: MC-1512 to MC-1516.

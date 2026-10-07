@@ -51,44 +51,48 @@ export function DetailLayout<T extends string>({
       }}
     >
       <Paper variant="outlined" sx={{ minWidth: 0 }}>
-        <Tabs
-          value={open.id}
-          onChange={(_, tab: T) => onChange(tab)}
-          aria-label={label}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
-          sx={{ borderBottom: 1, borderColor: 'divider', px: 1 }}
-        >
-          {tabs.map((tab) => (
-            <Tab
-              key={tab.id}
-              value={tab.id}
-              id={`tab-${tab.id}`}
-              aria-controls={`tabpanel-${tab.id}`}
-              label={
-                tab.count === undefined ? (
-                  tab.label
-                ) : (
-                  <Stack
-                    component="span"
-                    direction="row"
-                    spacing={0.75}
-                    sx={{ alignItems: 'center' }}
-                  >
-                    <span>{tab.label}</span>
-                    <Chip component="span" size="small" label={tab.count} />
-                  </Stack>
-                )
-              }
-            />
-          ))}
-        </Tabs>
+        {/* One section needs no tab bar: a single tab is a heading that
+            looks clickable. */}
+        {tabs.length > 1 && (
+          <Tabs
+            value={open.id}
+            onChange={(_, tab: T) => onChange(tab)}
+            aria-label={label}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{ borderBottom: 1, borderColor: 'divider', px: 1 }}
+          >
+            {tabs.map((tab) => (
+              <Tab
+                key={tab.id}
+                value={tab.id}
+                id={`tab-${tab.id}`}
+                aria-controls={`tabpanel-${tab.id}`}
+                label={
+                  tab.count === undefined ? (
+                    tab.label
+                  ) : (
+                    <Stack
+                      component="span"
+                      direction="row"
+                      spacing={0.75}
+                      sx={{ alignItems: 'center' }}
+                    >
+                      <span>{tab.label}</span>
+                      <Chip component="span" size="small" label={tab.count} />
+                    </Stack>
+                  )
+                }
+              />
+            ))}
+          </Tabs>
+        )}
 
         <Box
-          role="tabpanel"
+          role={tabs.length > 1 ? 'tabpanel' : undefined}
           id={`tabpanel-${open.id}`}
-          aria-labelledby={`tab-${open.id}`}
+          aria-labelledby={tabs.length > 1 ? `tab-${open.id}` : undefined}
         >
           {open.content}
         </Box>

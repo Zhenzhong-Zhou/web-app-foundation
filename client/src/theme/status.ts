@@ -1,3 +1,5 @@
+import type { ChipProps } from '@mui/material';
+
 import type {
   BomStatus,
   InvoiceStatus,
@@ -43,4 +45,18 @@ export const STATUS_TONES: {
     cancelled: 'neutral',
   },
   recipe: { draft: 'neutral', active: 'info', archived: 'neutral' },
+};
+
+/**
+ * The chip colour the theme draws each tone with (theme/index.ts), for
+ * StatusChip and for anything else that takes a chip colour, such as
+ * PageHeader's status. Here rather than beside StatusChip: a component
+ * file that also exports a constant breaks React's fast refresh.
+ */
+export const COLOR_OF_TONE: Record<ToneName, ChipProps['color']> = {
+  neutral: 'default',
+  info: 'info',
+  positive: 'success',
+  warning: 'warning',
+  critical: 'error',
 };

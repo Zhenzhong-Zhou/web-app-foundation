@@ -204,6 +204,8 @@ test('receives a return against an RMA from the order', async ({
   await expect(dialog).toBeHidden();
 
   // The order's returns say which RMA the box counted against …
+  // Returns are on their own tab (ADR-055).
+  await page.getByRole('tab', { name: /Returns/ }).click();
   await expect(
     page.getByRole('link', { name: 'Against RMA-000001' }),
   ).toBeVisible();
