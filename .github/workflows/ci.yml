@@ -260,8 +260,10 @@ jobs:
       - run: npm ci
         working-directory: client
 
+      # Chromium for the suite; WebKit (Safari, iPhone) and Firefox for the
+      # projects that check every screen in each (playwright.config.ts).
       - name: Install browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit firefox
         working-directory: client
 
       # One script, not four steps. pretest:e2e already migrates and seeds
