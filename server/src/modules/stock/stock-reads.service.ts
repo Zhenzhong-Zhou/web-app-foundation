@@ -25,6 +25,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { openNeedsCost } from '../costs/open-needs-cost';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
 
@@ -95,6 +96,15 @@ function filtersOf(query: ListStockDto, organizationId: string): SQL[] {
     scope.push(
       sql`${lots.expiresAt} <= current_date + ${query.expiringWithin}::int`,
     );
+  }
+
+  // The same pool as a waiting cost row: its variant, and its lot or none.
+  if (query.needsCost === 'true') {
+    scope.push(sql`exists (
+      select 1 from (${openNeedsCost(organizationId)}) waiting
+      where waiting.variant_id = ${stockLevels.variantId}
+        and waiting.lot_id is not distinct from ${stockLevels.lotId}
+    )`);
   }
 
   return scope;
@@ -226,33 +236,39 @@ export class StockReadsService {
   }
 
   /**
-   * How many rows a quick filter would show (ADR-055): "Expiring soon 2"
-   * beside the button, counted with the list's own filters so the number
-   * and the rows agree. Within 90 days unless asked otherwise, the
-   * threshold the expiry chips turn amber at.
+   * How many rows each quick filter would show (ADR-055), beside its
+   * button: "Expiring soon 2", "Needs a cost 1". Each is counted with the
+   * list's own filters and the others' left off, so the number is the
+   * rows pressing that one shows. Expiring means within 90 days unless
+   * asked otherwise, the threshold the expiry chips turn amber at.
    */
   counts(query: ListStockDto = {}) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [row] = await tx
-        .select({ expiring: sql<number>`count(*)::int` })
-        .from(stockLevels)
-        .innerJoin(
-          productVariants,
-          eq(productVariants.id, stockLevels.variantId),
-        )
-        .innerJoin(products, eq(products.id, productVariants.productId))
-        .innerJoin(locations, eq(locations.id, stockLevels.locationId))
-        .leftJoin(lots, lotJoin(organizationId))
-        .where(
-          and(
-            ...filtersOf(
-              { ...query, expiringWithin: query.expiringWithin ?? 90 },
-              organizationId,
-            ),
-          ),
-        );
+      const { expiringWithin, ...rest } = query;
+      const unfiltered = { ...rest, needsCost: undefined };
 
-      return { expiring: row.expiring };
+      const count = async (filters: ListStockDto) => {
+        const [row] = await tx
+          .select({ count: sql<number>`count(*)::int` })
+          .from(stockLevels)
+          .innerJoin(
+            productVariants,
+            eq(productVariants.id, stockLevels.variantId),
+          )
+          .innerJoin(products, eq(products.id, productVariants.productId))
+          .innerJoin(locations, eq(locations.id, stockLevels.locationId))
+          .leftJoin(lots, lotJoin(organizationId))
+          .where(and(...filtersOf(filters, organizationId)));
+        return row.count;
+      };
+
+      return {
+        expiring: await count({
+          ...unfiltered,
+          expiringWithin: expiringWithin ?? 90,
+        }),
+        needsCost: await count({ ...unfiltered, needsCost: 'true' }),
+      };
     });
   }
 

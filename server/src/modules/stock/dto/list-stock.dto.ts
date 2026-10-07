@@ -43,4 +43,13 @@ export class ListStockDto extends KeysetQueryDto {
   @Min(1)
   @Max(3650)
   expiringWithin?: number;
+
+  /**
+   * Only stock whose cost is still waiting (ADR-048): received with no
+   * price, or a batch whose run has not closed. The inventory's "Needs a
+   * cost" (ADR-055), meaning exactly what Stock value lists.
+   */
+  @IsOptional()
+  @IsBooleanString()
+  needsCost?: string;
 }

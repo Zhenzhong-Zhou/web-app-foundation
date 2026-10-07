@@ -732,17 +732,58 @@ describe('Stock (e2e)', () => {
       expect(rows.map((row) => row.lotCode)).toEqual(['SOON']);
 
       const counts = async (filters: string) =>
-        body<{ expiring: number }>(
+        body<{ expiring: number; needsCost: number }>(
           await org.agent.get(`/v1/stock/counts${filters}`).expect(200),
         );
 
       // 90 days unless asked, the chips' amber threshold.
-      expect(await counts('')).toEqual({ expiring: 1 });
-      expect(await counts('?expiringWithin=500')).toEqual({ expiring: 2 });
+      expect(await counts('')).toMatchObject({ expiring: 1 });
+      expect(await counts('?expiringWithin=500')).toMatchObject({
+        expiring: 2,
+      });
       // The list's other filters apply to the count too.
-      expect(await counts('?search=FOCUS')).toEqual({ expiring: 0 });
+      expect(await counts('?search=FOCUS')).toMatchObject({ expiring: 0 });
 
       await org.agent.get('/v1/stock?expiringWithin=0').expect(400);
+    });
+
+    /**
+     * "Needs a cost" (ADR-055): stock whose cost is still waiting, exactly
+     * what Stock value lists. A receipt with no price waits; the count
+     * agrees with the rows, under the list's other filters.
+     */
+    it('narrows to stock waiting for a cost, and counts it alike', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const shelf = await createLocation(org.agent);
+      const focus = await createVariant(org.agent, { sku: 'FOCUS-60' });
+      const calm = await createVariant(org.agent, { sku: 'CALM-30' });
+
+      // Received with no price: both wait for a cost.
+      for (const variant of [focus, calm]) {
+        await org.agent
+          .post('/v1/stock/movements')
+          .send(receipt(variant.id, shelf, '10'))
+          .expect(201);
+      }
+
+      const waiting = await stockRows(org.agent, '?needsCost=true');
+      expect(waiting.map((row) => row.sku).sort()).toEqual([
+        'CALM-30',
+        'FOCUS-60',
+      ]);
+
+      const counts = async (filters: string) =>
+        body<{ expiring: number; needsCost: number }>(
+          await org.agent.get(`/v1/stock/counts${filters}`).expect(200),
+        );
+
+      expect(await counts('')).toMatchObject({ needsCost: 2 });
+      expect(await counts('?search=FOCUS')).toMatchObject({ needsCost: 1 });
+      expect(
+        await stockRows(org.agent, '?needsCost=true&search=FOCUS'),
+      ).toHaveLength(1);
+
+      await org.agent.get('/v1/stock?needsCost=maybe').expect(400);
     });
 
     it('names the product, since most variants have no name of their own', async () => {
