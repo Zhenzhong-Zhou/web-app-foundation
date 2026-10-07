@@ -188,6 +188,65 @@ describe('Notifications (e2e)', () => {
    * The same decision on a second channel (ADR-037). The bell arrives where
    * the attacker is; the inbox is the one place they probably are not.
    */
+  /**
+   * The bell in the language it is read in (ADR-054, amended): the same
+   * row, written again for each request from the message it was made from.
+   */
+  describe('language', () => {
+    async function listIn(org: Org, language: string) {
+      return body<NotificationPage>(
+        await org.agent
+          .get('/v1/notifications')
+          .set('Accept-Language', language)
+          .expect(200),
+      ).entries;
+    }
+
+    it('writes each notification in the language it is read in', async () => {
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
+      await signInFromNewBrowser(alpha);
+
+      expect((await listIn(alpha, 'en'))[0].title).toBe(
+        'A new sign-in to your account',
+      );
+      expect((await listIn(alpha, 'zh-Hans'))[0].title).toBe(
+        '您的账户有新的登录',
+      );
+      expect((await listIn(alpha, 'fr-CA'))[0].title).toBe(
+        'Une nouvelle connexion à votre compte',
+      );
+    });
+
+    it('shows a notification written before as it was stored', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+
+      // As every row was before migration 0041: text, and no message.
+      await db.insert(notifications).values({
+        userId: alpha.userId,
+        type: 'account.session_created',
+        title: 'A new sign-in to your account',
+        body: 'From ::1',
+      });
+
+      const [entry] = await listIn(alpha, 'zh-Hans');
+      expect(entry.title).toBe('A new sign-in to your account');
+      expect(entry.body).toBe('From ::1');
+    });
+
+    it('keeps the messages out of what the bell receives', async () => {
+      const alpha = await registerOrganization(app, 'alpha', {
+        userAgent: BROWSER,
+      });
+      await signInFromNewBrowser(alpha);
+
+      const [entry] = await listIn(alpha, 'en');
+      expect(entry).not.toHaveProperty('titleMessage');
+      expect(entry).not.toHaveProperty('bodyMessage');
+    });
+  });
+
   describe('security emails', () => {
     const SIGN_IN_SUBJECT = 'New sign-in to your account';
 

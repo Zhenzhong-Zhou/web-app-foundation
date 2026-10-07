@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -9,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 
+import { localeOf } from '../../i18n/translate';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
 import { ListNotificationsDto } from './dto/list-notifications.dto';
@@ -47,12 +49,22 @@ export class NotificationsController {
     return { count: await this.notifications.unreadCount(user.userId) };
   }
 
+  /**
+   * In the language the request asks for, which the client sets to the
+   * screen's (ADR-054, amended): switching language rewrites the bell.
+   */
   @Get()
   list(
     @CurrentUser() user: RequestContext,
     @Query() query: ListNotificationsDto,
+    @Headers('accept-language') acceptLanguage?: string,
   ) {
-    return this.notifications.list(user.userId, query.before, query.limit);
+    return this.notifications.list(
+      user.userId,
+      localeOf(acceptLanguage),
+      query.before,
+      query.limit,
+    );
   }
 
   @Post(':id/read')

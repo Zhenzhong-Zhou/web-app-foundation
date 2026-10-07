@@ -288,6 +288,13 @@
       "when": 1791225203305,
       "tag": "0040_document_languages",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791404558615,
+      "tag": "0041_notification_messages",
+      "breakpoints": true
     }
   ]
 }

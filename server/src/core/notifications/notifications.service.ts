@@ -12,6 +12,7 @@ import {
 } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
+import type { Locale } from '../../common/locales';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -53,7 +54,10 @@ export interface Emission {
   /** Null for an account notification, which belongs to no organization. */
   organizationId?: string | null;
   type: NotificationType;
-  /** Written once, in the recipient's language (ADR-054). */
+  /**
+   * A message, written again in the reader's language on every read, or
+   * plain text, shown as given (ADR-054, amended).
+   */
   title: string | Translatable;
   body?: string | Translatable;
   resourceType?: string;
@@ -71,6 +75,14 @@ export interface Emission {
  * addressed to somebody else is not theirs to read whichever tenant they are
  * in.
  */
+/**
+ * The message to keep beside a sentence: a Translatable as it is, plain
+ * text as nothing, since there is no other language to write it in.
+ */
+function messageOf(text: string | Translatable | undefined) {
+  return text === undefined || typeof text === 'string' ? null : text;
+}
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -113,8 +125,12 @@ export class NotificationsService {
       await this.db.insert(notifications).values(
         rows.map((row) => ({
           ...row,
+          // Also written now, in the recipient's language: what a reader
+          // sees if the message ever cannot be written again.
           title: written(row.title, row.userId)!,
           body: written(row.body, row.userId),
+          titleMessage: messageOf(row.title),
+          bodyMessage: messageOf(row.body),
         })),
       );
     } catch (error) {
@@ -220,8 +236,19 @@ export class NotificationsService {
     return row?.count ?? 0;
   }
 
-  /** Read and unread together: the bell shows recent history, not a queue. */
-  async list(userId: string, before?: string, limit = DEFAULT_LIMIT) {
+  /**
+   * Read and unread together: the bell shows recent history, not a queue.
+   *
+   * Each sentence written in the language asked for (ADR-054, amended),
+   * from the message it was made from; a row without one, written before or
+   * plain text, as it was stored.
+   */
+  async list(
+    userId: string,
+    locale: Locale,
+    before?: string,
+    limit = DEFAULT_LIMIT,
+  ) {
     const filters = [
       eq(notifications.userId, userId),
       before ? lt(notifications.id, before) : undefined,
@@ -236,7 +263,19 @@ export class NotificationsService {
       .orderBy(desc(notifications.id))
       .limit(limit + 1);
 
-    return pageOf(rows, limit);
+    // Stored as t() made it, so read back as one.
+    return pageOf(
+      rows.map(({ titleMessage, bodyMessage, ...row }) => ({
+        ...row,
+        title: titleMessage
+          ? translate(titleMessage as Translatable, locale)
+          : row.title,
+        body: bodyMessage
+          ? translate(bodyMessage as Translatable, locale)
+          : row.body,
+      })),
+      limit,
+    );
   }
 
   /**
