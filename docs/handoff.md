@@ -177,9 +177,13 @@ Then tag v0.4.0.
    merged: `scripts/backup.sh`, `restore.sh`,
    `backup-latest.sh`; `.github/workflows/backup.yml` (10:00 UTC, plus a
    26-hour freshness check) and `restore-drill.yml` (the 1st); the runbook
-   `docs/runbooks/restore.md`; MC-1301 to MC-1304. Testing with
-   `BACKUP_DESTINATION` unset (Actions artifacts); `s3` and a paid database
-   plan before real customers' data.
+   `docs/runbooks/restore.md`; MC-1301 to MC-1304. **Live since 7 October
+   2026:** `BACKUP_DESTINATION=s3` to Cloudflare R2, bucket `waf-backups`
+   (ADR-053 amended: Eastern North America hint, a 30-day bucket lock on
+   `production/`, lifecycle daily 31 days and monthly 366, a read-and-write
+   key for the job and a read-only one for the drill). The first backup was
+   220 KB; the first drill restored 2 organizations and 42 migrations. A
+   paid database plan still comes before real customers' data.
 7. **ADR-054, languages** — built on `adr-054-languages`, tested, and
    ready to merge. `en`, `fr-CA` and
    `zh-Hans`, all seven steps of the ADR:

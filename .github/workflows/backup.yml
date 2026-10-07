@@ -80,6 +80,20 @@ jobs:
           # Already compressed by pg_dump and encrypted by age.
           compression-level: 0
 
+      # A check-in with a monitor outside GitHub (healthchecks.io, or any
+      # service that alerts when a URL stops being called). It is the one
+      # alarm that still rings if GitHub stops scheduling this workflow,
+      # which it does after 60 days without activity in the repository:
+      # the check below and the monthly drill are schedules too, and stop
+      # with it. Skipped while the secret is unset.
+      - name: Check in
+        env:
+          BACKUP_HEALTHCHECK_URL: ${{ secrets.BACKUP_HEALTHCHECK_URL }}
+        run: |
+          if [ -n "$BACKUP_HEALTHCHECK_URL" ]; then
+            curl -fsS -m 10 --retry 5 -o /dev/null "$BACKUP_HEALTHCHECK_URL"
+          fi
+
   freshness:
     name: Newest backup is under 26 hours old
     if: github.event.schedule == '30 16 * * *'
@@ -88,10 +102,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Fails, and so emails, when today's backup did not happen. Also
-      # covers GitHub pausing scheduled workflows after 60 days without
-      # activity in the repository: the check stops too, and the drill on
-      # the 1st finds a stale backup.
+      # Fails, and so emails, when today's backup did not happen. It cannot
+      # notice GitHub pausing scheduled workflows after 60 days without
+      # activity in the repository, since it is one of them; the check-in
+      # above, with a monitor outside GitHub, is what does.
       - name: Check
         env:
           GH_TOKEN: ${{ github.token }}
