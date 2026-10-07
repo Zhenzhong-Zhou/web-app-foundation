@@ -563,6 +563,15 @@ Paper is checked first because it must not change at all.
 - **MC-1524** History is a tab, listing the order's changes with Load more and
   Open in audit log; a member without audit.view has no History tab. The
   History button no longer appears on the order.
+- **MC-1525** On Orders, Open, Fulfilled, Cancelled and All are a row of
+  buttons above the list, Open pressed. Pressing Cancelled shows SO-DEMO-4
+  alone and presses only Cancelled; pressing it again keeps it.
+- **MC-1526** Statuses are tinted by the one table: Draft grey, Confirmed
+  quiet blue, Fulfilled green, Cancelled grey, in every language, with no CSS
+  capitals. Fulfilled reads "400 / 600", right-aligned, without padding zeros.
+- **MC-1527** In an organization with no open orders, the list shows the empty
+  message with Raise an order under it; with Fulfilled pressed and none
+  fulfilled, only "No orders match that filter."
 
 ## Regressions
 
@@ -663,3 +672,4 @@ first.
   to read, Credited, the line menu, expiry: MC-1517 to MC-1519.
 - 2026-10-07: ADR-055 step 5, orders part 3: Ship in the summary, its
   quantities, the Invoices and credits and History tabs: MC-1520 to MC-1524.
+- 2026-10-07: ADR-055 step 5, the orders list: MC-1525 to MC-1527.
