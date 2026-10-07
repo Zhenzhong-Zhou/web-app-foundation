@@ -14,6 +14,8 @@ import {
   LIGHT,
   ON_ACCENT,
   RADIUS,
+  type Rail,
+  RAILS,
   type Scheme,
   type Tone,
   type ToneName,
@@ -29,18 +31,21 @@ declare module '@mui/material/styles' {
   interface Palette {
     tone: Record<ToneName, Tone>;
     surface: { head: string; line: string };
+    rail: Rail;
   }
   interface PaletteOptions {
     tone?: Record<ToneName, Tone>;
     surface?: { head: string; line: string };
+    rail?: Rail;
   }
 }
 
 /** px to rem against the browser's 16px, as MUI sizes its type. */
 const rem = (px: number) => `${px / 16}rem`;
 
-function palette(scheme: Scheme, accent: string, onAccent: string) {
+function palette(scheme: Scheme, accent: string, onAccent: string, rail: Rail) {
   return {
+    rail,
     primary: { main: accent, contrastText: onAccent },
     success: { main: scheme.intents.success },
     warning: { main: scheme.intents.warning },
@@ -91,12 +96,20 @@ const TOUCH = '@media (pointer: coarse)';
 const options: ThemeOptions = {
   cssVariables: { colorSchemeSelector: 'class' },
   colorSchemes: {
-    light: { palette: palette(LIGHT, BRAND.accent, ON_ACCENT.light) },
+    light: {
+      palette: palette(
+        LIGHT,
+        BRAND.accent,
+        ON_ACCENT.light,
+        RAILS[BRAND.rail].light,
+      ),
+    },
     dark: {
       palette: palette(
         DARK,
         towardWhite(BRAND.accent, DARK_ACCENT_WEIGHT),
         ON_ACCENT.dark,
+        RAILS[BRAND.rail].dark,
       ),
     },
   },

@@ -6,6 +6,7 @@ import {
   DARK_ACCENT_WEIGHT,
   LIGHT,
   ON_ACCENT,
+  RAILS,
   type Scheme,
   towardWhite,
 } from './tokens';
@@ -69,6 +70,16 @@ describe('tokens (ADR-055)', () => {
   it.each(SCHEMES)('keeps %s coloured text readable on panels', (_, s) => {
     for (const colour of Object.values(s.intents)) {
       expect(contrast(colour, s.surface)).toBeGreaterThanOrEqual(AA);
+    }
+  });
+
+  it('keeps every sidebar readable, in both shades and both modes', () => {
+    for (const shade of Object.values(RAILS)) {
+      for (const rail of [shade.light, shade.dark]) {
+        expect(contrast(rail.text, rail.bg)).toBeGreaterThanOrEqual(AA);
+        expect(contrast(rail.strong, rail.bg)).toBeGreaterThanOrEqual(AA);
+        expect(contrast(rail.muted, rail.bg)).toBeGreaterThanOrEqual(AA);
+      }
     }
   });
 });

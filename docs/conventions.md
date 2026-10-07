@@ -281,13 +281,18 @@ MUI's breakpoint props (`sx={{ py: { xs: 3, sm: 8 } }}`), applied where a
 layout actually breaks — not pre-emptively. A rule added for a width nobody
 checked is a rule nobody can safely remove later.
 
-Nav is a top bar from `lg` up. Daily destinations sit in it; account and admin
-screens live behind the avatar menu at every width. Below `lg` the same links
-move into a left drawer behind a menu button — the bar measures a little over
-1000px, and letting it wrap made the header change height with the window and
-drag every page with it. Which elements show is CSS `display` at the
+Navigation is a rail beside the page from `lg` up (ADR-055), in three groups
+defined once in `layout/navigation.ts`: the work, the records and places to look
+something up, and the organization's settings. It folds to its icons, each named
+in a tooltip, and each device remembers that. Below `lg` the same groups open in
+a left drawer behind a menu button: narrowing the window moves the links and
+never hides one. The person's own things (profile, devices, language, colour
+mode, sign out) stay behind the avatar at every width. The top bar is slim and
+sticky and never hides on scroll: the organization's name, where its logo will
+go, then the bell and the avatar. Which elements show is CSS `display` at the
 breakpoint, not a `useMediaQuery` branch, so the first paint is right; the hook
-is used only to close an open drawer when the window widens past `lg`.
+is used only to close an open drawer when the window widens past `lg`. A new
+destination goes into a group in `navigation.ts`, never into the bar.
 
 Rows that mix a label with actions (page headers, the recipe status row) are
 two flex groups that wrap as wholes: the text group takes the remaining space

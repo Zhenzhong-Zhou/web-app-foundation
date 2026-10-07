@@ -15,8 +15,73 @@
  * tokens.test.ts; a new token adds its pair there.
  */
 
-/** What a rebrand changes. Primary buttons, links, the selected tab. */
-export const BRAND = { accent: '#5546B8' } as const;
+/**
+ * What a rebrand changes: the accent (primary buttons, links, the selected
+ * tab) and the sidebar's shade.
+ */
+export const BRAND = { accent: '#5546B8', rail: 'dark' } as const;
+
+/**
+ * The sidebar's colours (ADR-055). Dark by default, which the people who
+ * compared the mockups preferred; the light rail is the brand's other
+ * choice, for a logo or a brand that wants it. The rail keeps its shade in
+ * both colour modes, slightly deeper in dark so it still reads as a rail.
+ */
+export interface Rail {
+  bg: string;
+  /** Labels and icons. */
+  text: string;
+  /** The current page's label, and labels under the pointer. */
+  strong: string;
+  /** Group headings: quieter than the labels. */
+  muted: string;
+  hover: string;
+  active: string;
+  divider: string;
+}
+
+export const RAILS: Record<'dark' | 'light', { light: Rail; dark: Rail }> = {
+  dark: {
+    light: {
+      bg: '#1C2230',
+      text: '#C9D0DC',
+      strong: '#FFFFFF',
+      muted: '#98A1B0',
+      hover: 'rgba(255, 255, 255, 0.06)',
+      active: 'rgba(255, 255, 255, 0.12)',
+      divider: 'rgba(255, 255, 255, 0.08)',
+    },
+    dark: {
+      bg: '#101318',
+      text: '#C9D0DC',
+      strong: '#FFFFFF',
+      muted: '#98A1B0',
+      hover: 'rgba(255, 255, 255, 0.06)',
+      active: 'rgba(255, 255, 255, 0.12)',
+      divider: 'rgba(255, 255, 255, 0.08)',
+    },
+  },
+  light: {
+    light: {
+      bg: '#FFFFFF',
+      text: '#3A4352',
+      strong: '#141A24',
+      muted: '#5B6575',
+      hover: 'rgba(20, 26, 36, 0.05)',
+      active: 'rgba(20, 26, 36, 0.09)',
+      divider: '#E1E4EA',
+    },
+    dark: {
+      bg: '#1E232C',
+      text: '#C9D0DC',
+      strong: '#FFFFFF',
+      muted: '#A3ACBA',
+      hover: 'rgba(255, 255, 255, 0.06)',
+      active: 'rgba(255, 255, 255, 0.12)',
+      divider: '#2E3440',
+    },
+  },
+};
 
 /** Controls, then panels. Chips are round. */
 export const RADIUS = { control: 6, panel: 8, dialog: 10 } as const;

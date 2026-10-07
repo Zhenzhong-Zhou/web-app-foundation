@@ -497,6 +497,22 @@ Paper is checked first because it must not change at all.
   lines than in English.
 - **MC-1506** On a phone or tablet, buttons, icon buttons and table rows are at
   least a fingertip tall; with a mouse they are compact.
+- **MC-1507** From 1200px wide the navigation is a dark rail beside the page:
+  the daily work first (Inventory to Production), then Records (Products,
+  Partners, Locations, Trace a lot, Stock value, Audit log), then Settings
+  (Organization, Members, Tax codes, Exchange rates, Price lists). The current
+  page is highlighted, and the rail stays put while the page scrolls.
+- **MC-1508** Fold the rail with the arrows at its top: only icons remain,
+  each naming itself when pointed at, and following one still works. Reload:
+  it stays folded. Unfold it again.
+- **MC-1509** Below 1200px the rail is gone and a menu button opens the same
+  three groups in a drawer; choosing a page closes it. Widen the window past
+  1200px with the drawer open: it closes and the rail appears.
+- **MC-1510** As a Viewer, groups with nothing the role may see are left out
+  entirely, heading and all; nothing in the rail leads to a refusal.
+- **MC-1511** The account menu holds the email, Account, Devices, the colour
+  mode, the language and Sign out, and no settings. In Français and 简体中文 the
+  rail's headings and Collapse/Expand read in that language.
 
 ## Regressions
 
@@ -589,3 +605,5 @@ first.
   MC-1502 to MC-1506. Covers dark mode and narrow screens, which the
   list lacked.
 - 2026-10-07: the email banner no longer prints: MC-R06.
+- 2026-10-07: ADR-055 step 2, the rail, the drawer and the slim top bar:
+  MC-1507 to MC-1511.
