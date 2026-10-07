@@ -4346,6 +4346,31 @@ this ADR changes when it does.
 - **Size against the previous backup** is compared in `local` and `s3`. As
   an artifact each run starts empty, so the comparison is skipped there.
 
+**Amendment — the bucket is Cloudflare R2.** Bob chose R2 for backups, and
+for the app's files when they come (in their own bucket, with their own
+keys). R2 speaks the S3 API, so the scripts are unchanged: the endpoint is
+`https://<account id>.r2.cloudflarestorage.com` and the region `auto`. It
+has no egress fees, which matters most on the day a large restore is
+needed. Where it differs from the decision above, and what stands in:
+
+- **Not in a Canadian region.** R2 offers location hints, not Canada; the
+  bucket is created with the hint *Eastern North America*. The backups are
+  encrypted before upload (`age`), so the provider holds ciphertext.
+  Trigger to move: a customer or regulation that requires Canadian
+  residency for backups. Moving is the paragraph above: a bucket in AWS
+  `ca-central-1`, new values, and the old bucket's backups expire.
+- **No object versioning; a bucket lock instead.** A lock rule on the
+  backups' prefix keeps every object for 30 days: it cannot be deleted or
+  overwritten in that time, which is what versioning and object lock were
+  for. Uploads never reuse a name, so there is nothing to version.
+- **No write-only key.** R2's narrowest key that can write can also read
+  and list. The backup job's key is *Object Read & Write* on the backups
+  bucket alone; what it can read is ciphertext, and what it could delete
+  the lock keeps. The drill's key is *Object Read only*, so a stolen drill
+  login still cannot plant a backup.
+- **Retention is two lifecycle rules:** `production/daily/` deleted after
+  31 days, `production/monthly/` after 366, each after the lock lets go.
+
 ---
 
 ## ADR-054 — Languages: the person's language for the app, the customer's for documents
