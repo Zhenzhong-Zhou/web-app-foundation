@@ -638,6 +638,11 @@ Paper is checked first because it must not change at all.
   right of its row without scrolling; scroll the table sideways and it stays
   put, the columns passing under it. A tab with nothing in it (SO-DEMO-QC's
   Returns) shows no 0, and Returned 0 carries no note.
+- **MC-1546** Products has a page header (Licences, Refresh, Add product),
+  then Search and a Discontinued quick filter with its count. Typing part of a
+  name narrows the list as you type; pressing Discontinued shows only those
+  (ZINC-60's product). Discontinued reads as a grey chip; a search that
+  matches nothing says so, and Add product stays in the header only.
 
 ## Regressions
 
@@ -747,3 +752,4 @@ first.
   MC-1538 to MC-1543. Contrast and names are checked by accessibility.spec.
 - 2026-10-07: ADR-055 step 5, orders polish from the first screenshots:
   MC-1544 and MC-1545.
+- 2026-10-07: ADR-055 step 5, products: MC-1546.
