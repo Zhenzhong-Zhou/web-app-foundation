@@ -25,8 +25,10 @@ test('signs in with valid credentials and lands in the app', async ({
 
   await page.goto('/login');
 
+  // The field's label starts with Password (a required field adds " *");
+  // its Show password button's name does not, so this finds the field alone.
   await page.getByLabel(/email/i).fill(credentials.email);
-  await page.getByLabel(/password/i).fill(credentials.password);
+  await page.getByLabel(/^password/i).fill(credentials.password);
   await page.getByRole('button', { name: /sign in|log in/i }).click();
 
   await expect(page).not.toHaveURL(/\/login/);
@@ -67,7 +69,7 @@ test('rejects a wrong password without revealing whether the account exists', as
   await page.goto('/login');
 
   await page.getByLabel(/email/i).fill(credentials.email);
-  await page.getByLabel(/password/i).fill('definitely-the-wrong-password');
+  await page.getByLabel(/^password/i).fill('definitely-the-wrong-password');
   await page.getByRole('button', { name: /sign in|log in/i }).click();
 
   await expect(page.getByRole('alert')).toBeVisible();

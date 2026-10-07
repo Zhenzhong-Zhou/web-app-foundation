@@ -659,6 +659,13 @@ Paper is checked first because it must not change at all.
   and credits tab ends with "1 return not yet settled" and its note, as the
   summary does. On SO-DEMO-2, with nothing invoiced or returned, no links and
   no warning appear.
+- **MC-1550** On Sign in, Register, Reset password, Account's Change password
+  and Add member's temporary password, each password field has an eye button
+  at its end. It starts hidden; pressing it shows the text and the button's
+  name becomes "Hide password" (显示密码 / 隐藏密码 in Chinese); pressing again hides
+  it. On Change password, showing the new password leaves the current one
+  hidden. Leave the page and come back: hidden again. A password manager still
+  fills the sign-in fields.
 
 ## Regressions
 
@@ -772,3 +779,4 @@ first.
 - 2026-10-07: ADR-055 step 5, partners: MC-1547.
 - 2026-10-07: ADR-055 step 5, locations: MC-1548.
 - 2026-10-07: ADR-055 step 5, the order closer to the mockup: MC-1549.
+- 2026-10-07: show and hide on password fields: MC-1550.

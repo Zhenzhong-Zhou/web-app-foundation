@@ -1,7 +1,8 @@
-import { Alert, Button, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Button, Stack, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import { PasswordField } from '../components/password-field';
 import { api, messageFor } from '../lib/api';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../lib/validation';
 
@@ -84,13 +85,12 @@ export function ChangePasswordForm() {
           session converts into a permanent takeover. The session proves
           someone is using this browser; this proves someone knows the
           secret. */}
-      <TextField
+      <PasswordField
         id="currentPassword"
         label={intl.formatMessage({
           id: 'account.password.current',
           defaultMessage: 'Current password',
         })}
-        type="password"
         autoComplete="current-password"
         required
         fullWidth
@@ -99,13 +99,12 @@ export function ChangePasswordForm() {
         slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
       />
 
-      <TextField
+      <PasswordField
         id="newPassword"
         label={intl.formatMessage({
           id: 'auth.reset.newPassword',
           defaultMessage: 'New password',
         })}
-        type="password"
         autoComplete="new-password"
         required
         fullWidth
@@ -128,13 +127,12 @@ export function ChangePasswordForm() {
 
       {/* Client-side only, and worth having: a typo in a field you cannot
           read locks you out of an account you are currently inside. */}
-      <TextField
+      <PasswordField
         id="confirmPassword"
         label={intl.formatMessage({
           id: 'account.password.confirm',
           defaultMessage: 'Confirm new password',
         })}
-        type="password"
         autoComplete="new-password"
         required
         fullWidth

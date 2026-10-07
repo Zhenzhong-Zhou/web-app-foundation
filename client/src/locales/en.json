@@ -132,6 +132,8 @@
   "auth.forgot.tooManyRequests": "Too many requests. Try again later.",
   "auth.login.forgotPassword": "Forgot your password?",
   "auth.login.signingIn": "Signing in…",
+  "auth.password.hide": "Hide password",
+  "auth.password.show": "Show password",
   "auth.passwordMinimum": "At least {count} characters.",
   "auth.register.companyName": "Company name",
   "auth.register.create": "Create account",

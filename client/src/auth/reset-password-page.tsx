@@ -1,4 +1,4 @@
-import { Alert, Button, Link, TextField } from '@mui/material';
+import { Alert, Button, Link } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 import {
@@ -7,6 +7,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import { PasswordField } from '../components/password-field';
 import { api, messageFor } from '../lib/api';
 import {
   looksLikeToken,
@@ -94,13 +95,12 @@ export function ResetPasswordPage() {
     >
       {error && <Alert severity="error">{error}</Alert>}
 
-      <TextField
+      <PasswordField
         id="password"
         label={intl.formatMessage({
           id: 'auth.reset.newPassword',
           defaultMessage: 'New password',
         })}
-        type="password"
         autoComplete="new-password"
         required
         fullWidth

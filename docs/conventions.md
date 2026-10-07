@@ -360,3 +360,7 @@ underline="always": colour alone does not tell it from the words around it.
 Links standing alone, in a table cell or a list, keep the theme's underline on
 hover. A control without visible text of its own, such as a switch in a table
 row, gets an aria-label naming what it acts on.
+
+A password is typed into PasswordField, never a TextField with
+type="password": it adds the show and hide button, starts hidden, and keeps
+autoComplete for password managers.

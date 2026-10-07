@@ -3,6 +3,7 @@ import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
+import { PasswordField } from '../components/password-field';
 import { api } from '../lib/api';
 import { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
@@ -76,13 +77,12 @@ export function LoginPage() {
         slotProps={{ htmlInput: { maxLength: EMAIL_MAX_LENGTH } }}
       />
 
-      <TextField
+      <PasswordField
         id="password"
         label={intl.formatMessage({
           id: 'auth.field.password',
           defaultMessage: 'Password',
         })}
-        type="password"
         autoComplete="current-password"
         required
         fullWidth
