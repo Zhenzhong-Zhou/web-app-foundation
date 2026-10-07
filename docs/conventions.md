@@ -380,5 +380,7 @@ browser's IE mode, is not supported.
   optional.
 - Playwright runs every spec in Chromium, accessibility.spec in WebKit and
   Firefox, and mobile.spec on an iPhone's screen and engine. A spec that
-  shares the owner's organization runs in Chromium only.
+  shares the owner's organization runs in Chromium only. Firefox runs in CI
+  and with E2E_FIREFOX=1; Playwright's build of it cannot start on some
+  macOS versions.
 - The product's name in the tab is VITE_APP_NAME in the repository's .env.
