@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   displayQuantity,
+  formatCredit,
   formatDay,
   formatQuantity,
   toApiDecimal,
@@ -86,5 +87,11 @@ describe('displayQuantity', () => {
     expect(displayQuantity('12345678901234.0001', 'en')).toBe(
       '12,345,678,901,234.0001',
     );
+  });
+});
+
+describe('formatCredit', () => {
+  it('puts a true minus before the amount, in the currency’s format', () => {
+    expect(formatCredit('52.4800', 'CAD', 'en-CA')).toBe('\u2212$52.48');
   });
 });

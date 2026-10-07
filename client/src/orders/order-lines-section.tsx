@@ -41,13 +41,11 @@ export function OrderLinesSection({
   canUpdate,
   receivable,
   amendable,
-  shippable,
   returnable,
   authorizable,
   onAddLine,
   onAuthorize,
   onTakeReturn,
-  onShip,
   onReceive,
   onEditLine,
   onCloseLine,
@@ -61,13 +59,11 @@ export function OrderLinesSection({
   canUpdate: boolean;
   receivable: boolean;
   amendable: boolean;
-  shippable: boolean;
   returnable: boolean;
   authorizable: boolean;
   onAddLine: () => void;
   onAuthorize: () => void;
   onTakeReturn: () => void;
-  onShip: () => void;
   onReceive: (line: OrderLine) => void;
   onEditLine: (line: OrderLine) => void;
   onCloseLine: (line: OrderLine) => void;
@@ -124,15 +120,6 @@ export function OrderLinesSection({
             {intl.formatMessage({
               id: 'orders.lines.takeReturn',
               defaultMessage: 'Take a return',
-            })}
-          </Button>
-        )}
-
-        {shippable && (
-          <Button disabled={working} onClick={openDialog(onShip)}>
-            {intl.formatMessage({
-              id: 'orders.lines.ship',
-              defaultMessage: 'Ship',
             })}
           </Button>
         )}

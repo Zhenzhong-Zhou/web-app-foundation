@@ -3,30 +3,55 @@ import type { ReactNode } from 'react';
 import { useIntl } from 'react-intl';
 
 import { StatusChip } from '../components/status-chip';
-import { formatMoney, NO_VALUE } from '../lib/format';
+import {
+  displayQuantity,
+  formatCredit,
+  formatMoney,
+  NO_VALUE,
+} from '../lib/format';
 import type { OrderDetail } from '../lib/types';
+import { unitLabel } from '../products/units';
+import { doneLabel } from './status';
 
 /** A label and its figure on one line, the figure right-aligned. */
-function Fact({ label, children }: { label: string; children: ReactNode }) {
+function Fact({
+  label,
+  note,
+  children,
+}: {
+  label: string;
+  /** A word on what the figure leaves out, under it. */
+  note?: string;
+  children: ReactNode;
+}) {
   return (
-    <Stack
-      direction="row"
+    <Box
       sx={{
-        justifyContent: 'space-between',
-        gap: 2,
         py: 0.75,
         borderBottom: 1,
         borderColor: 'surface.line',
         '&:last-of-type': { borderBottom: 0 },
       }}
     >
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body2" sx={{ textAlign: 'right' }}>
-        {children}
-      </Typography>
-    </Stack>
+      <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}>
+        <Typography variant="body2" color="text.secondary">
+          {label}
+        </Typography>
+        <Typography variant="body2" sx={{ textAlign: 'right' }}>
+          {children}
+        </Typography>
+      </Stack>
+      {note && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          component="p"
+          sx={{ textAlign: 'right' }}
+        >
+          {note}
+        </Typography>
+      )}
+    </Box>
   );
 }
 
@@ -43,27 +68,34 @@ function Heading({ children }: { children: ReactNode }) {
 }
 
 /**
- * The order's summary beside its tabs (ADR-055): what can be done to it,
- * then how far it has got, then, on a sale, its money, every figure saying
- * whether tax is in it. An accountant asked which figure "Total" was; each
- * one here says.
+ * The order's summary beside its tabs (ADR-055): the next act and the
+ * order's own actions, then its quantities, then, on a sale, its money,
+ * every figure saying whether tax is in it. An accountant asked which
+ * figure "Total" was; each one here says.
  *
- * Progress is counted in items, not summed in quantities: an order's lines
- * can be in different units, and 600 bottles plus 15 kg is not a number.
- * The quantities themselves are in the Items tab.
+ * Quantities are summed by the server, and only when every item counts in
+ * one unit: 600 bottles and 15 kg add up to nothing. A mixed order says how
+ * many of its items are complete instead, and its quantities stay in the
+ * Items tab.
  *
  * Every amount comes from the server (step 4): nothing is added up here.
  */
 export function OrderSummary({
   order,
+  primary,
   actions,
   onShowReturns,
+  onShowDocuments,
 }: {
   order: OrderDetail;
-  /** The order's own actions: edit, duplicate, confirm, close, history. */
+  /** The one thing to do next, full width at the top: Ship. */
+  primary?: ReactNode;
+  /** The order's own actions: confirm or close, edit, duplicate. */
   actions: ReactNode;
   /** Opens the Returns tab, where an unsettled return is linked to an RMA. */
   onShowReturns: () => void;
+  /** Opens the Invoices and credits tab, or nothing without it. */
+  onShowDocuments?: () => void;
 }) {
   const intl = useIntl();
 
@@ -71,31 +103,109 @@ export function OrderSummary({
   const money = order.money;
   const total = order.totals[0];
 
+  const quantities = order.quantities;
+  const sale = order.direction === 'sale';
+  const inUnit = (quantity: string) =>
+    quantities
+      ? `${displayQuantity(quantity)} ${unitLabel(quantities.unit, intl)}`
+      : displayQuantity(quantity);
+
   return (
     <Stack>
-      <Stack spacing={1} sx={{ mb: 1 }}>
+      <Stack spacing={1} sx={{ mb: 1.5 }}>
+        {primary}
         {actions}
       </Stack>
 
       <Divider />
 
-      <Heading>
-        {intl.formatMessage({ id: 'orders.items', defaultMessage: 'Items' })}
-      </Heading>
-      <Fact
-        label={intl.formatMessage({
-          id: 'orders.summary.complete',
-          defaultMessage: 'Complete',
-        })}
-      >
-        {intl.formatMessage(
-          {
-            id: 'orders.summary.completeOf',
-            defaultMessage: '{done} of {total}',
-          },
-          { done, total: order.lines.length },
-        )}
-      </Fact>
+      {quantities ? (
+        <>
+          <Heading>
+            {intl.formatMessage({
+              id: 'orders.summary.quantities',
+              defaultMessage: 'Quantities',
+            })}
+          </Heading>
+          <Fact
+            label={intl.formatMessage({
+              id: 'orders.lines.ordered',
+              defaultMessage: 'Ordered',
+            })}
+          >
+            {inUnit(quantities.ordered)}
+          </Fact>
+          <Fact
+            label={doneLabel(order.direction)}
+            note={
+              order.counts.voidedShipments > 0
+                ? intl.formatMessage(
+                    {
+                      id: 'orders.summary.voidedNote',
+                      defaultMessage:
+                        '{count, plural, one {not counting # voided shipment} other {not counting # voided shipments}}',
+                    },
+                    { count: order.counts.voidedShipments },
+                  )
+                : undefined
+            }
+          >
+            {inUnit(quantities.fulfilled)}
+          </Fact>
+          <Fact
+            label={
+              sale
+                ? intl.formatMessage({
+                    id: 'orders.summary.toShip',
+                    defaultMessage: 'Still to ship',
+                  })
+                : intl.formatMessage({
+                    id: 'orders.summary.toReceive',
+                    defaultMessage: 'Still to receive',
+                  })
+            }
+          >
+            <strong>{inUnit(quantities.outstanding)}</strong>
+          </Fact>
+          {sale && (
+            <Fact
+              label={intl.formatMessage({
+                id: 'inventory.trace.returned',
+                defaultMessage: 'Returned',
+              })}
+              note={intl.formatMessage({
+                id: 'orders.summary.returnedNote',
+                defaultMessage: 'does not add to still to ship',
+              })}
+            >
+              {inUnit(quantities.returned)}
+            </Fact>
+          )}
+        </>
+      ) : (
+        <>
+          <Heading>
+            {intl.formatMessage({
+              id: 'orders.items',
+              defaultMessage: 'Items',
+            })}
+          </Heading>
+          <Fact
+            label={intl.formatMessage({
+              id: 'orders.summary.complete',
+              defaultMessage: 'Complete',
+            })}
+          >
+            {intl.formatMessage(
+              {
+                id: 'orders.summary.completeOf',
+                defaultMessage: '{done} of {total}',
+              },
+              { done, total: order.lines.length },
+            )}
+          </Fact>
+        </>
+      )}
 
       {order.unsettledReturns > 0 && (
         <Box sx={{ mt: 1 }}>
@@ -160,7 +270,9 @@ export function OrderSummary({
               defaultMessage: 'Credited, incl. tax',
             })}
           >
-            {formatMoney(money.credited, money.currency)}
+            {money.credited === '0.0000'
+              ? formatMoney(money.credited, money.currency)
+              : formatCredit(money.credited, money.currency)}
           </Fact>
           <Fact
             label={intl.formatMessage({
@@ -178,6 +290,20 @@ export function OrderSummary({
           >
             {formatMoney(money.notInvoiced, money.currency)}
           </Fact>
+          {onShowDocuments && (
+            <Link
+              component="button"
+              type="button"
+              variant="body2"
+              onClick={onShowDocuments}
+              sx={{ alignSelf: 'flex-start', mt: 1 }}
+            >
+              {intl.formatMessage({
+                id: 'orders.summary.seeDocuments',
+                defaultMessage: 'See invoices and credits',
+              })}
+            </Link>
+          )}
           {!order.totalsComplete && (
             <Typography variant="caption" color="text.secondary" component="p">
               {intl.formatMessage({

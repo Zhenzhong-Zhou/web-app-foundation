@@ -16,12 +16,18 @@ export function OrderStatusActions({
   working,
   onMove,
   onCloseOrder,
+  quiet = false,
 }: {
   order: OrderDetail;
   /** A request is out: no second move until it answers. */
   working: boolean;
   onMove: (next: OrderStatus) => Promise<void>;
   onCloseOrder: () => void;
+  /**
+   * Outlined rather than filled, when something else on the page is the
+   * main act (Ship, ADR-055): one filled button says what comes next.
+   */
+  quiet?: boolean;
 }) {
   if (NEXT_STATUSES[order.status].length === 0) return null;
 
@@ -53,7 +59,7 @@ export function OrderStatusActions({
         .map((next) => (
           <Button
             key={next}
-            variant="contained"
+            variant={quiet ? 'outlined' : 'contained'}
             disabled={working}
             onClick={(event) => {
               // Only this branch opens a dialog, so only it needs the

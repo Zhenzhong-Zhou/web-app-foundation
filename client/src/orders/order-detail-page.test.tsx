@@ -42,6 +42,9 @@ function order(over: Partial<OrderDetail> = {}): OrderDetail {
     totalsComplete: false,
     money: null,
     unsettledReturns: 0,
+    counts: { shipments: 0, voidedShipments: 0, returns: 0, documents: 0 },
+    quantities: null,
+    documents: null,
     lines: [orderLine()],
     ...over,
   };

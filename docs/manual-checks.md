@@ -543,6 +543,26 @@ Paper is checked first because it must not change at all.
 - **MC-1519** On the Shipments and Returns tabs, a lot's quantity reads "400
   each", and a lot within 90 days of expiry shows its days left beside the
   date (FOC-2609-01 is two years off, so the date alone).
+- **MC-1520** On SO-DEMO-1, Ship is the one filled button, full width at the
+  top of the summary, with Close order outlined under it and Edit and
+  Duplicate side by side. On an order with nothing left to ship, Close order
+  is the filled one.
+- **MC-1521** The summary's Quantities read 600 each ordered, 400 shipped, 200
+  still to ship in bold, and 7 returned with "does not add to still to ship"
+  under it. Void a shipment on another order: "not counting 1 voided shipment"
+  appears under its shipped figure. An order mixing units (a blend in kg with
+  bottles) shows "Complete 0 of 2" instead.
+- **MC-1522** The tabs carry counts: Shipments 2, Returns 2, Invoices and
+  credits 2. That tab lists INV-000001 (Issued, 400, Shipment of its date,
+  10,495.80) and CN-000001 (2, its reason, −52.48), net invoiced in bold under
+  them, and the not yet invoiced amount below. Both numbers open their
+  documents.
+- **MC-1523** Credited reads −CA$52.48 in the summary, and "See invoices and
+  credits" opens that tab. A member without invoices.view has neither the tab
+  nor the link.
+- **MC-1524** History is a tab, listing the order's changes with Load more and
+  Open in audit log; a member without audit.view has no History tab. The
+  History button no longer appears on the order.
 
 ## Regressions
 
@@ -641,3 +661,5 @@ first.
   money: MC-1512 to MC-1516.
 - 2026-10-07: ADR-055 step 5, the order page's items and lots: quantities
   to read, Credited, the line menu, expiry: MC-1517 to MC-1519.
+- 2026-10-07: ADR-055 step 5, orders part 3: Ship in the summary, its
+  quantities, the Invoices and credits and History tabs: MC-1520 to MC-1524.

@@ -176,6 +176,20 @@ export function formatMoney(
 }
 
 /**
+ * A credit, as money going back: a minus sign before the amount, in the
+ * currency's format (ADR-055). On credit notes and an order's credited
+ * figure, so a reader never mistakes a credit for something more owed. A
+ * true minus (U+2212), not a hyphen.
+ */
+export function formatCredit(
+  amount: string | null,
+  currency: string | null,
+  locale: string | undefined = current,
+): string {
+  return `\u2212${formatMoney(amount, currency, locale)}`;
+}
+
+/**
  * A unit cost, with the places a currency's minor units would hide: a
  * capsule at 0.0123 is not 0.01. Up to four, never fewer than the currency's
  * own. Display only, as formatMoney is.

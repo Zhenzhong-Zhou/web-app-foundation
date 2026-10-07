@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
-import { HistoryButton } from '../audit/history-button';
+import { HistoryEntries } from '../audit/history-entries';
 import { useCan } from '../auth/permissions';
 import { DetailLayout } from '../components/detail-layout';
 import { PageHeader } from '../components/page-header';
@@ -37,6 +37,7 @@ import { CloseOrderDialog } from './close-order-dialog';
 import { DuplicateOrderDialog } from './duplicate-order-dialog';
 import { EditOrderDialog } from './edit-order-dialog';
 import { EditOrderLineDialog } from './edit-order-line-dialog';
+import { OrderDocuments } from './order-documents';
 import { OrderLinesSection } from './order-lines-section';
 import { OrderStatusActions } from './order-status-actions';
 import { OrderSummary } from './order-summary';
@@ -48,11 +49,11 @@ import { ShipmentsList } from './shipments-list';
 import { orderStatusLabel } from './status';
 
 /**
- * The order's sections, in the order they happen (ADR-055). A purchase has
- * only its items: shipments and returns are a sale's.
+ * The order's sections, in the order they happen (ADR-055). Shipments,
+ * returns and documents are a sale's; History needs audit.view. The page
+ * passes the ones this order and member have.
  */
-const SALE_TABS = ['items', 'shipments', 'returns'] as const;
-type OrderTab = (typeof SALE_TABS)[number];
+type OrderTab = 'items' | 'shipments' | 'returns' | 'documents' | 'history';
 
 export function OrderDetailPage() {
   const intl = useIntl();
@@ -93,8 +94,20 @@ export function OrderDetailPage() {
 
   const [authorizing, setAuthorizing] = useState(false);
 
-  // Before any early return: a hook's place in the order must not move.
-  const [tab, setTab] = useTab<OrderTab>(SALE_TABS);
+  /**
+   * Every tab this member could see, before the order has loaded: a hook
+   * must run before any early return. Which of them this order has is
+   * settled once it arrives, below.
+   */
+  const canHistory = can('audit.view');
+  const possibleTabs: OrderTab[] = [
+    'items',
+    'shipments',
+    'returns',
+    'documents',
+    ...(canHistory ? (['history'] as const) : []),
+  ];
+  const [tab, setTab] = useTab<OrderTab>(possibleTabs);
 
   const canUpdate = can('orders.update');
   const canReceive = can('orders.receive');
@@ -253,23 +266,47 @@ export function OrderDetailPage() {
   const amendable = canUpdate && (isDraft || order.status === 'confirmed');
 
   const sale = order.direction === 'sale';
-  const open: OrderTab = sale ? tab : 'items';
+  const hasDocuments = sale && !!order.documents && canViewInvoices;
+  const tabs: OrderTab[] = [
+    'items',
+    ...(sale ? (['shipments', 'returns'] as const) : []),
+    ...(hasDocuments ? (['documents'] as const) : []),
+    ...(canHistory ? (['history'] as const) : []),
+  ];
+  // A tab this order lacks (a purchase's ?tab=shipments) opens Items.
+  const open: OrderTab = tabs.includes(tab) ? tab : 'items';
 
-  /** The order's own actions, at the top of its summary. */
+  /** Ship, when anything can: the page's main act (ADR-055). */
+  const primary = shippable ? (
+    <Button
+      fullWidth
+      disabled={working}
+      onClick={openDialog(() => setShipping(true))}
+    >
+      {intl.formatMessage({
+        id: 'orders.lines.ship',
+        defaultMessage: 'Ship',
+      })}
+    </Button>
+  ) : undefined;
+
+  /** The order's own actions, under Ship in its summary. */
   const actions = (
     <>
       {canUpdate && (
         <OrderStatusActions
           order={order}
           working={working}
+          quiet={!!primary}
           onMove={moveTo}
           onCloseOrder={() => setClosing(true)}
         />
       )}
-      <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 1 }}>
+      <Stack direction="row" spacing={1}>
         {canUpdate && (
           <Button
             variant="outlined"
+            fullWidth
             disabled={working}
             onClick={openDialog(() => setEditing(true))}
           >
@@ -282,6 +319,7 @@ export function OrderDetailPage() {
         {canCreate && (
           <Button
             variant="outlined"
+            fullWidth
             disabled={working}
             onClick={openDialog(() => setDuplicating(true))}
           >
@@ -291,7 +329,6 @@ export function OrderDetailPage() {
             })}
           </Button>
         )}
-        <HistoryButton resourceId={order.id} />
       </Stack>
     </>
   );
@@ -399,8 +436,12 @@ export function OrderDetailPage() {
         summary={
           <OrderSummary
             order={order}
+            primary={primary}
             actions={actions}
             onShowReturns={() => setTab('returns')}
+            onShowDocuments={
+              hasDocuments ? () => setTab('documents') : undefined
+            }
           />
         }
         tabs={[
@@ -419,13 +460,11 @@ export function OrderDetailPage() {
                   canUpdate={canUpdate}
                   receivable={receivable}
                   amendable={amendable}
-                  shippable={shippable}
                   returnable={returnable}
                   authorizable={authorizable}
                   onAddLine={() => setAddingLine(true)}
                   onAuthorize={() => setAuthorizing(true)}
                   onTakeReturn={() => setReturning(true)}
-                  onShip={() => setShipping(true)}
                   onReceive={setReceiving}
                   onEditLine={setEditingLine}
                   onCloseLine={setClosingLine}
@@ -442,6 +481,7 @@ export function OrderDetailPage() {
                     id: 'orders.shipments.title',
                     defaultMessage: 'Shipments',
                   }),
+                  count: order.counts.shipments,
                   content: (
                     <Box sx={{ p: 2 }}>
                       <ShipmentsList
@@ -473,11 +513,42 @@ export function OrderDetailPage() {
                     id: 'layout.nav.returns',
                     defaultMessage: 'Returns',
                   }),
+                  count: order.counts.returns,
                   content: (
                     <Box sx={{ p: 2 }}>
                       <ReturnsList orderId={order.id} refreshKey={returns} />
                     </Box>
                   ),
+                },
+              ]
+            : []),
+          ...(hasDocuments
+            ? [
+                {
+                  id: 'documents' as const,
+                  label: intl.formatMessage({
+                    id: 'orders.tab.documents',
+                    defaultMessage: 'Invoices and credits',
+                  }),
+                  count: order.counts.documents,
+                  content: (
+                    <Box sx={{ p: 2 }}>
+                      <OrderDocuments order={order} />
+                    </Box>
+                  ),
+                },
+              ]
+            : []),
+          ...(canHistory
+            ? [
+                {
+                  id: 'history' as const,
+                  label: intl.formatMessage({
+                    id: 'inventory.actions.history',
+                    defaultMessage: 'History',
+                  }),
+                  // Mounted only while open, so it fetches fresh each time.
+                  content: <HistoryEntries resourceId={order.id} />,
                 },
               ]
             : []),

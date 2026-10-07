@@ -202,6 +202,34 @@ export interface OrderMoney {
   notInvoiced: string;
 }
 
+/** An invoice on a sale, as its "Invoices and credits" tab lists it. */
+export interface OrderInvoiceRow {
+  id: string;
+  /** Null on a draft: a number is given at issue (ADR-046). */
+  number: string | null;
+  status: InvoiceStatus;
+  date: CalendarDay | null;
+  total: string | null;
+  currency: string;
+  /** When the shipment it bills left. */
+  shippedAt: string;
+  quantity: string;
+}
+
+/** A credit note on a sale's invoice, for the same tab. Always issued. */
+export interface OrderCreditRow {
+  id: string;
+  number: string;
+  date: CalendarDay;
+  total: string;
+  currency: string;
+  reason: string;
+  /** The full credit that voided an invoice (ADR-046). */
+  isVoid: boolean;
+  invoiceNumber: string | null;
+  quantity: string;
+}
+
 /** What GET /orders/:id returns — the order with its lines. */
 export interface OrderDetail {
   id: string;
@@ -223,6 +251,29 @@ export interface OrderDetail {
   money: OrderMoney | null;
   /** Returns received with no RMA, nobody yet deciding what they settle. */
   unsettledReturns: number;
+  /** How many records each tab holds; voided shipments included. */
+  counts: {
+    shipments: number;
+    voidedShipments: number;
+    returns: number;
+    documents: number;
+  };
+  /**
+   * The quantities summed, when every line counts in one unit. Null when
+   * they differ: bottles and kilograms add up to nothing.
+   */
+  quantities: {
+    unit: string;
+    ordered: string;
+    fulfilled: string;
+    returned: string;
+    outstanding: string;
+  } | null;
+  /** A sale's invoices and credit notes; null on a purchase or sample. */
+  documents: {
+    invoices: OrderInvoiceRow[];
+    creditNotes: OrderCreditRow[];
+  } | null;
   note: string | null;
   lines: OrderLine[];
 }
