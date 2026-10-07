@@ -6,7 +6,7 @@ import {
   TextField,
   type TextFieldProps,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 /**
@@ -22,13 +22,28 @@ import { useIntl } from 'react-intl';
  *
  * The button's name says what pressing it does, "Show password" or "Hide
  * password"; its icon is the state it would move to.
+ *
+ * Submitting the form hides it again. A sign-in that fails, or a change
+ * the server refuses, leaves the person on the page, and a password left
+ * showing while they read the error is one anybody nearby can read too.
  */
 export function PasswordField({
   slotProps,
   ...props
-}: Omit<TextFieldProps, 'type'>) {
+}: Omit<TextFieldProps, 'type' | 'inputRef'>) {
   const intl = useIntl();
   const [shown, setShown] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // The form is found through the input, so no caller has to pass it.
+  useEffect(() => {
+    const form = inputRef.current?.form;
+    if (!form) return;
+
+    const hide = () => setShown(false);
+    form.addEventListener('submit', hide);
+    return () => form.removeEventListener('submit', hide);
+  }, []);
 
   const label = shown
     ? intl.formatMessage({
@@ -43,6 +58,7 @@ export function PasswordField({
   return (
     <TextField
       {...props}
+      inputRef={inputRef}
       type={shown ? 'text' : 'password'}
       slotProps={{
         ...slotProps,

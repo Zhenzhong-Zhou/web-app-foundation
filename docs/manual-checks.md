@@ -666,6 +666,10 @@ Paper is checked first because it must not change at all.
   it. On Change password, showing the new password leaves the current one
   hidden. Leave the page and come back: hidden again. A password manager still
   fills the sign-in fields.
+- **MC-1551** On Sign in, show the password, then sign in with a wrong one:
+  the error appears and the password is dots again. The same on Change
+  password when the current password is wrong: every field shown goes back to
+  dots.
 
 ## Regressions
 
@@ -780,3 +784,4 @@ first.
 - 2026-10-07: ADR-055 step 5, locations: MC-1548.
 - 2026-10-07: ADR-055 step 5, the order closer to the mockup: MC-1549.
 - 2026-10-07: show and hide on password fields: MC-1550.
+- 2026-10-07: a password shown hides again on submit: MC-1551.

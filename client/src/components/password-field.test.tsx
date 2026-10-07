@@ -44,4 +44,22 @@ describe('PasswordField', () => {
       screen.getByLabelText('New password', { selector: 'input' }),
     ).toHaveAttribute('type', 'password');
   });
+
+  it('hides again when its form is submitted', async () => {
+    const user = userEvent.setup();
+    render(
+      <form onSubmit={(event) => event.preventDefault()}>
+        <PasswordField id="pw" label="Password" />
+        <button type="submit">Sign in</button>
+      </form>,
+      { wrapper: TestProviders },
+    );
+
+    const field = screen.getByLabelText('Password', { selector: 'input' });
+    await user.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(field).toHaveAttribute('type', 'text');
+
+    await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(field).toHaveAttribute('type', 'password');
+  });
 });
