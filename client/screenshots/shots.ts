@@ -31,26 +31,18 @@ function at(id: string | null, path: (id: string) => string): string | null {
 }
 
 /**
- * A MUI select, by its label and the option's words.
- *
- * By keyboard, not by clicking. A select's id is on MUI's hidden input, not
- * the combobox people click, and a click works out where to land from the
- * page's coordinates: on a phone-width page that is wider than the screen,
- * the click missed and the list never opened. Arrow-down opens the list
- * and Enter picks the option, as a keyboard user would, with no
- * coordinates involved.
+ * A quick filter on the filter row (ADR-055), by its words: a button, so a
+ * click, then a wait for the list the filter asked for. Its count, when it
+ * has one, is part of the button's name, so the match is not exact.
  */
-async function choose(page: Page, label: string, option: string) {
-  await page.getByRole('combobox', { name: label }).press('ArrowDown');
-
-  // A filter reads its list again. Wait for that answer, not for the
-  // network to go quiet: Playwright's "network idle" counts only the first
-  // page load, so after a filter it passed at once and the picture caught
-  // the list still loading.
+async function press(page: Page, filter: string) {
+  // Wait for the list's answer, not for the network to go quiet:
+  // Playwright's "network idle" counts only the first page load, so after a
+  // filter it passed at once and the picture caught the list still loading.
   const answered = page.waitForResponse((response) =>
     response.url().includes('/api/v1/'),
   );
-  await page.getByRole('option', { name: option, exact: true }).press('Enter');
+  await page.getByRole('button', { name: filter }).first().click();
   await answered;
 }
 
@@ -86,8 +78,7 @@ export const SHOTS: Shot[] = [
     // Every status, so every chip colour is on one screen.
     name: '05-orders-list',
     path: () => '/orders',
-    prepare: (page, words) =>
-      choose(page, words('orders.filter.label'), words('orders.filter.all')),
+    prepare: (page, words) => press(page, words('orders.filter.all')),
   },
   {
     name: '06-invoice',
@@ -109,12 +100,7 @@ export const SHOTS: Shot[] = [
     // The demo cancels no run, so this filter shows the empty state.
     name: '10-empty-list',
     path: () => '/production',
-    prepare: (page, words) =>
-      choose(
-        page,
-        words('orders.filter.label'),
-        words('orders.status.cancelled'),
-      ),
+    prepare: (page, words) => press(page, words('orders.status.cancelled')),
   },
   { name: '11-products', path: () => '/products' },
   {
