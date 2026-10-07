@@ -364,3 +364,21 @@ row, gets an aria-label naming what it acts on.
 A password is typed into PasswordField, never a TextField with
 type="password": it adds the show and hide button, starts hidden, and keeps
 autoComplete for password managers.
+
+## Supported browsers
+
+What the build targets (Vite's default, "baseline widely available"):
+Chrome and Edge 107 and later, Firefox 104 and later, Safari 16 and later,
+on desktop and phone. In China that includes Edge, the Chromium engines of
+360, QQ and Sogou (index.html asks for them, never their old IE engine) and
+WeChat's in-app browser on a recent phone. Internet Explorer, and any
+browser's IE mode, is not supported.
+
+- Nothing loads from another site: the font is bundled, Chinese uses the
+  system's, and no analytics, CDN or Google service is called. A page that
+  needs one would fail in mainland China; keep it that way, or make it
+  optional.
+- Playwright runs every spec in Chromium, accessibility.spec in WebKit and
+  Firefox, and mobile.spec on an iPhone's screen and engine. A spec that
+  shares the owner's organization runs in Chromium only.
+- The product's name in the tab is VITE_APP_NAME in the repository's .env.
