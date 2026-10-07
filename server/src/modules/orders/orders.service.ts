@@ -3,12 +3,18 @@ import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
 import {
+  creditNoteLines,
+  creditNotes,
+  invoiceLines,
+  invoices,
   orderLines,
+  orderReturns,
   orders,
   partners,
   priceLists,
   products,
   productVariants,
+  stockMovements,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
@@ -182,6 +188,83 @@ export class OrdersService {
           where ${orderLines.orderId} = ${orders.id}
             and ${orderLines.unitPrice} is null
         )`,
+
+          /**
+           * What a sale has billed and given back (ADR-055), summed here so
+           * the browser never adds up money. Including tax, from issued
+           * documents only: a draft bills nothing yet.
+           *
+           * A voided invoice counts in both, through the full credit note
+           * voiding issued for it (ADR-046), so it nets to nothing and the
+           * shipment's new invoice is not counted twice.
+           */
+          invoiced: sql<string>`coalesce((
+            select sum(${invoices.total}) from ${invoices}
+            where ${invoices.orderId} = ${orders.id}
+              and ${invoices.status} in ('issued', 'voided')
+          ), 0)::numeric(18,4)::text`,
+          credited: sql<string>`coalesce((
+            select sum(${creditNotes.total})
+            from ${creditNotes}
+            join ${invoices} on ${invoices.id} = ${creditNotes.invoiceId}
+            where ${invoices.orderId} = ${orders.id}
+          ), 0)::numeric(18,4)::text`,
+
+          // The two above, subtracted here: in JavaScript it would mean
+          // parsing both into doubles (ADR-025).
+          netInvoiced: sql<string>`(
+            coalesce((
+              select sum(${invoices.total}) from ${invoices}
+              where ${invoices.orderId} = ${orders.id}
+                and ${invoices.status} in ('issued', 'voided')
+            ), 0)
+            - coalesce((
+              select sum(${creditNotes.total})
+              from ${creditNotes}
+              join ${invoices} on ${invoices.id} = ${creditNotes.invoiceId}
+              where ${invoices.orderId} = ${orders.id}
+            ), 0)
+          )::numeric(18,4)::text`,
+
+          /**
+           * What is still to be invoiced, before tax: each priced line's
+           * price times what will be billed and is on no standing invoice.
+           * What will be billed is the ordered quantity, or what shipped on
+           * a line closed short (ADR-034). A credit note does not add to
+           * it: those goods were billed, and the credit is their own figure.
+           *
+           * Unrounded, as `totals` are: rounding belongs to the currency,
+           * which the client formats with.
+           */
+          notInvoiced: sql<string>`coalesce((
+            select sum(${orderLines.unitPrice} * greatest(
+              case when ${orderLines.isClosedShort}
+                then ${orderLines.quantityFulfilled}
+                else ${orderLines.quantityOrdered}
+              end - coalesce((
+                select sum(${invoiceLines.quantity})
+                from ${invoiceLines}
+                join ${invoices} on ${invoices.id} = ${invoiceLines.invoiceId}
+                where ${invoiceLines.orderLineId} = ${orderLines.id}
+                  and ${invoices.status} = 'issued'
+              ), 0),
+              0
+            ))
+            from ${orderLines}
+            where ${orderLines.orderId} = ${orders.id}
+              and ${orderLines.unitPrice} is not null
+          ), 0)::text`,
+
+          /**
+           * Returns received with no RMA (ADR-047): nobody has yet decided
+           * on a credit, a replacement or nothing for them, so they are the
+           * loose end an accountant looks for.
+           */
+          unsettledReturns: sql<number>`(
+            select count(*)::int from ${orderReturns}
+            where ${orderReturns.orderId} = ${orders.id}
+              and ${orderReturns.returnAuthorizationId} is null
+          )`,
         })
         .from(orders)
         .innerJoin(partners, eq(partners.id, orders.partnerId))
@@ -266,6 +349,38 @@ export class OrdersService {
           ${orderLines.quantityFulfilled} >= ${orderLines.quantityOrdered}
           or ${orderLines.isClosedShort}
         `,
+
+          /**
+           * Credited on a credit note against this line's invoices (ADR-047),
+           * beside Returned: 7 returned and 2 credited shows the 5 nobody
+           * has settled. Voiding's full credit notes are left out; they
+           * reverse an invoice, not goods that came back.
+           */
+          quantityCredited: sql<string>`coalesce((
+            select sum(${creditNoteLines.quantity})
+            from ${creditNoteLines}
+            join ${creditNotes}
+              on ${creditNotes.id} = ${creditNoteLines.creditNoteId}
+            join ${invoiceLines}
+              on ${invoiceLines.id} = ${creditNoteLines.invoiceLineId}
+            where ${invoiceLines.orderLineId} = ${orderLines.id}
+              and not ${creditNotes.isVoid}
+          ), 0)::numeric(18,4)::text`,
+
+          /**
+           * This line's goods on returns with no RMA, matched by variant: an
+           * order holds one line per variant.
+           */
+          quantityUnsettled: sql<string>`coalesce((
+            select sum(${stockMovements.quantity})
+            from ${stockMovements}
+            join ${orderReturns}
+              on ${orderReturns.id} = ${stockMovements.referenceId}
+            where ${stockMovements.referenceType} = 'order_return'
+              and ${orderReturns.orderId} = ${orderLines.orderId}
+              and ${orderReturns.returnAuthorizationId} is null
+              and ${stockMovements.variantId} = ${orderLines.variantId}
+          ), 0)::numeric(18,4)::text`,
         })
         .from(orderLines)
         .innerJoin(
@@ -282,14 +397,44 @@ export class OrdersService {
         )
         .orderBy(desc(orderLines.createdAt));
 
+      /**
+       * Money and settling are a sale's (ADR-055). A purchase records no
+       * supplier invoices and a sample is never invoiced, so for them the
+       * summary is null rather than a row of zeros that would read as
+       * "nothing owed".
+       */
+      const {
+        invoiced,
+        credited,
+        netInvoiced,
+        notInvoiced,
+        unsettledReturns,
+        ...rest
+      } = order;
+      const sale = order.direction === 'sale' && !order.isSample;
+
       // Named from the catalogue beside the snapshot SKU, as the packing slip
       // does: read by a person, not kept as a record.
       return {
-        ...order,
-        lines: lines.map(({ productName, variantName, ...line }) => ({
-          ...line,
-          description: itemName(productName, variantName),
-        })),
+        ...rest,
+        money: sale
+          ? {
+              // One currency per sale (ADR-046 amendment): the totals' one.
+              currency: order.totals[0]?.currency ?? null,
+              invoiced,
+              credited,
+              netInvoiced,
+              notInvoiced,
+            }
+          : null,
+        unsettledReturns: sale ? unsettledReturns : 0,
+        lines: lines.map(
+          ({ productName, variantName, quantityUnsettled, ...line }) => ({
+            ...line,
+            quantityUnsettled: sale ? quantityUnsettled : '0.0000',
+            description: itemName(productName, variantName),
+          }),
+        ),
       };
     });
   }
