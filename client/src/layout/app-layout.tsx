@@ -106,55 +106,62 @@ export function AppLayout() {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100dvh' }}>
-      {/* The rail: beside the page from `lg`, its own scroll, still while
-          the page scrolls. Not on paper. */}
+      {/* The rail: beside the page from `lg`. The outer box runs the page's
+          full height so its colour does too; the inner one stays in view,
+          with its own scroll, while the page scrolls. Not on paper. */}
       <Box
         component="aside"
         className="no-print"
         sx={{
-          display: { xs: 'none', [BAR]: 'flex' },
-          flexDirection: 'column',
-          gap: 0.5,
+          display: { xs: 'none', [BAR]: 'block' },
           flexShrink: 0,
           width: folded ? RAIL_FOLDED_WIDTH : RAIL_WIDTH,
-          position: 'sticky',
-          top: 0,
-          height: '100dvh',
-          overflowY: 'auto',
-          overflowX: 'hidden',
           bgcolor: 'rail.bg',
-          px: 1,
-          py: 1.5,
         }}
       >
-        <IconButton
-          aria-label={
-            folded
-              ? intl.formatMessage({
-                  id: 'layout.expandNavigation',
-                  defaultMessage: 'Expand navigation',
-                })
-              : intl.formatMessage({
-                  id: 'layout.collapseNavigation',
-                  defaultMessage: 'Collapse navigation',
-                })
-          }
-          aria-expanded={!folded}
-          onClick={toggleFolded}
+        <Box
           sx={{
-            alignSelf: folded ? 'center' : 'flex-end',
-            color: 'rail.text',
-            '&:hover': { color: 'rail.strong', bgcolor: 'rail.hover' },
+            position: 'sticky',
+            top: 0,
+            height: '100dvh',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.5,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            px: 1,
+            py: 1.5,
           }}
         >
-          {folded ? (
-            <KeyboardDoubleArrowRight fontSize="small" />
-          ) : (
-            <KeyboardDoubleArrowLeft fontSize="small" />
-          )}
-        </IconButton>
+          <IconButton
+            aria-label={
+              folded
+                ? intl.formatMessage({
+                    id: 'layout.expandNavigation',
+                    defaultMessage: 'Expand navigation',
+                  })
+                : intl.formatMessage({
+                    id: 'layout.collapseNavigation',
+                    defaultMessage: 'Collapse navigation',
+                  })
+            }
+            aria-expanded={!folded}
+            onClick={toggleFolded}
+            sx={{
+              alignSelf: folded ? 'center' : 'flex-end',
+              color: 'rail.text',
+              '&:hover': { color: 'rail.strong', bgcolor: 'rail.hover' },
+            }}
+          >
+            {folded ? (
+              <KeyboardDoubleArrowRight fontSize="small" />
+            ) : (
+              <KeyboardDoubleArrowLeft fontSize="small" />
+            )}
+          </IconButton>
 
-        <SideNav folded={folded} />
+          <SideNav folded={folded} />
+        </Box>
       </Box>
 
       <Box sx={{ flex: 1, minWidth: 0 }}>
