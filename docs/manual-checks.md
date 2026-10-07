@@ -47,11 +47,15 @@ The demo leaves known numbers to check against:
 - **PO-DEMO-2**, bought in USD at a rate of **1.37**.
 
 Around those, for the screens rather than the figures: a dozen more items,
-lot **ELD-24A** expiring in 20 days, **THE-0915** waiting for a cost
-(PO-DEMO-5), **PO-DEMO-4** partly received, run **CALM-RUN-01** released
-and **CALM-RUN-02** planned, **SO-DEMO-3** a draft, **SO-DEMO-4**
-cancelled, **SO-DEMO-5** shipped with its invoice in draft, a discontinued
-product and a retired partner.
+lot **ELD-24A** expiring in 20 days and **PRB-0731** in 60 (red and amber
+expiry chips), **THE-0915** waiting for a cost (PO-DEMO-5), **PO-DEMO-4**
+partly received and mixing kilograms with bottles, run **CALM-RUN-01**
+released and **CALM-RUN-02** planned, **SO-DEMO-3** a draft, **SO-DEMO-4**
+cancelled, **SO-DEMO-5** shipped with its invoice in draft and a closed
+RMA, **SO-DEMO-6** with a voided invoice and its full credit note,
+**PO-DEMO-6** with a line closed short, a discontinued product and a
+retired partner. Every state the redesigned screens draw (ADR-055) has
+one example among them.
 
 Keep a second browser profile, or a private window, for a second user and a
 second organization.

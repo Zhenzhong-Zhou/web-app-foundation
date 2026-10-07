@@ -2,8 +2,10 @@ import type { INestApplicationContext } from '@nestjs/common';
 
 import { BomsService } from '../modules/boms/boms.service';
 import { InvoiceDraftsService } from '../modules/invoices/invoice-drafts.service';
+import { InvoiceIssuingService } from '../modules/invoices/invoice-issuing.service';
 import { LocationsService } from '../modules/locations/locations.service';
 import { OrderLifecycleService } from '../modules/orders/order-lifecycle.service';
+import { OrderLinesService } from '../modules/orders/order-lines.service';
 import { OrderReceiptsService } from '../modules/orders/order-receipts.service';
 import { ShippingService } from '../modules/orders/shipping.service';
 import { PartnersService } from '../modules/partners/partners.service';
@@ -11,6 +13,7 @@ import { ProductLicencesService } from '../modules/product-licences/product-lice
 import { ProductionExecutionService } from '../modules/production-orders/production-execution.service';
 import { ProductionOrdersService } from '../modules/production-orders/production-orders.service';
 import { ProductsService } from '../modules/products/products.service';
+import { ReturnAuthorizationsService } from '../modules/return-authorizations/return-authorizations.service';
 import type { ProductType } from './schema';
 
 /**
@@ -54,12 +57,15 @@ export function daysFromNow(days: number): string {
  * - a second recipe, with one run released and not yet made and one planned;
  * - an order in every status, and an invoice still in draft;
  * - a receipt waiting for a cost, a discontinued product, a retired partner,
- *   and names long enough to test wrapping in French.
+ *   and names long enough to test wrapping in French;
+ * - a voided invoice, a purchase line closed short and a closed RMA, so
+ *   every state the screens can draw has one example (ADR-055).
  *
  * Run after everything in seed-demo.ts and kept off its items: nothing here
- * moves BF-2609, FOC-2609-01 or FOCUS-60CT, issues a numbered document, or
- * names a lot with "2609", which the recall drill searches for. The figures
- * the manual checks give stay what they were.
+ * moves BF-2609, FOC-2609-01 or FOCUS-60CT, or names a lot with "2609",
+ * which the recall drill searches for. The numbered documents it issues
+ * come after seed-demo's own, so INV-000001, CN-000001 and RMA-000001, the
+ * ones the manual checks name, stay what they were.
  *
  * Through the services, like the rest of the demo, so it is a smoke test of
  * the same paths as well as data.
@@ -79,6 +85,9 @@ export async function addVariety(
   const runs = app.get(ProductionOrdersService);
   const execution = app.get(ProductionExecutionService);
   const invoiceDrafts = app.get(InvoiceDraftsService);
+  const issuing = app.get(InvoiceIssuingService);
+  const orderLines = app.get(OrderLinesService);
+  const rmas = app.get(ReturnAuthorizationsService);
 
   const actor = anchors.actorId;
 
@@ -467,11 +476,98 @@ export async function addVariety(
 
   await orders.update(shipped.id, { status: 'fulfilled' });
 
+  /**
+   * A dented carton SO-DEMO-5's customer kept: authorized with nothing to
+   * come back and nothing to credit, then closed. The Returns list's
+   * Closed, grey beside the open ones.
+   */
+  const kept = await rmas.create(
+    {
+      orderId: shipped.id,
+      reason: 'Carton dented in transit; customer kept the goods',
+      expectsGoods: false,
+      lines: [
+        {
+          lineId: lineOf(shipped, omega.variantId),
+          quantity: '2',
+          resolution: 'none',
+        },
+      ],
+    },
+    actor,
+  );
+  await rmas.close(kept.id, actor);
+
+  /**
+   * Billed at the wrong price and voided: the invoice red, its full credit
+   * note marked as voiding it, net invoiced back to nothing and the
+   * shipment free to invoice again, which it has not been yet. To the
+   * demo's first customer: issuing needs a billing address, which the
+   * cooperative, made here for its long name, does not have.
+   */
+  const rebilled = await orders.create(
+    {
+      partnerId: anchors.customerId,
+      direction: 'sale',
+      reference: 'SO-DEMO-6',
+      lines: [cad(omega.variantId, '12', '18.9900')],
+    },
+    actor,
+  );
+  await orders.update(rebilled.id, { status: 'confirmed' });
+
+  const rebilledShipment = await shipping.ship(
+    rebilled.id,
+    {
+      fromLocationId: anchors.shelfId,
+      carrier: 'Canada Post',
+      lines: [{ lineId: lineOf(rebilled, omega.variantId), quantity: '12' }],
+    },
+    actor,
+  );
+  const wrongPrice = await invoiceDrafts.createDraft(
+    { shipmentId: rebilledShipment.id, taxCodeId: anchors.gstId },
+    actor,
+  );
+  await invoiceDrafts.update(wrongPrice.id, { dueDate: daysFromNow(30) });
+  await issuing.issue(wrongPrice.id, { invoiceDate: daysFromNow(0) }, actor);
+  await issuing.void(
+    wrongPrice.id,
+    {
+      reason: 'Billed at last year’s price list',
+      creditDate: daysFromNow(0),
+    },
+    actor,
+  );
+
+  /**
+   * Gloves ordered by the box, 40, and the supplier sent 30 and no more:
+   * the line closed short, so it offers Reopen in its menu and the order
+   * no longer waits for the rest.
+   */
+  const shortGloves = await orders.create(
+    {
+      partnerId: anchors.supplierId,
+      direction: 'purchase',
+      reference: 'PO-DEMO-6',
+      lines: [cad(gloves.variantId, '40', '11.5000')],
+    },
+    actor,
+  );
+  await orders.update(shortGloves.id, { status: 'confirmed' });
+  await receive(shortGloves, gloves.variantId, '30', anchors.shelfId);
+  await orderLines.closeLineShort(
+    shortGloves.id,
+    lineOf(shortGloves, gloves.variantId),
+    { reason: 'Supplier discontinued this box size' },
+  );
+
   return (
     'Variety added: 12 more items, ELD-24A expiring in 20 days, ' +
     'THE-0915 waiting for a cost (PO-DEMO-5), PO-DEMO-4 partly received, ' +
     'CALM-RUN-01 released and CALM-RUN-02 planned, SO-DEMO-3 a draft, ' +
-    'SO-DEMO-4 cancelled, SO-DEMO-5 shipped with a draft invoice; ' +
+    'SO-DEMO-4 cancelled, SO-DEMO-5 shipped with a draft invoice and a ' +
+    'closed RMA, SO-DEMO-6 with a voided invoice, PO-DEMO-6 closed short; ' +
     'ZINC-60 discontinued, Old Mill Herbs retired'
   );
 }
