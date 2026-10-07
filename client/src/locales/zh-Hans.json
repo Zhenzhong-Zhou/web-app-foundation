@@ -1097,6 +1097,7 @@
   "products.unit.pallet": "托盘",
   "products.unitOfMeasure": "计量单位",
   "products.unitOfMeasure.help": "库存按此单位计数。",
+  "products.variant.activeFor": "启用：{sku}",
   "products.variant.add": "添加规格",
   "products.variant.addTitle": "添加规格",
   "products.variant.added": "规格已添加",

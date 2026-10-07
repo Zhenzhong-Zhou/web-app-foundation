@@ -189,8 +189,31 @@ const options: ThemeOptions = {
       },
     },
     // One link style: the colour says it is a link, the underline comes
-    // on hover. Underlined everywhere, a list of names read as noise.
+    // on hover. Underlined everywhere, a list of names read as noise. A
+    // link inside a sentence is the exception, underline="always", since
+    // colour alone does not tell it from the words around it (WCAG 1.4.1).
     MuiLink: { defaultProps: { underline: 'hover' } },
+    /**
+     * The quick filters' unpressed text in the muted tone rather than MUI's
+     * 54% black, which on the tinted page is 4.4:1, under AA's 4.5.
+     */
+    MuiToggleButton: {
+      styleOverrides: {
+        root: ({ theme }) => ({ color: paletteOf(theme).text.secondary }),
+      },
+    },
+    /**
+     * A disabled field's helper text says why it cannot be changed, so it
+     * stays readable rather than fading with the field: the field itself is
+     * exempt from contrast, its explanation is not.
+     */
+    MuiFormHelperText: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          '&.Mui-disabled': { color: paletteOf(theme).text.secondary },
+        }),
+      },
+    },
     /**
      * Flat: panels are told apart by a border on the tinted page, and
      * shadows are left to what floats — menus, dialogs and drawers pass

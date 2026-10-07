@@ -136,11 +136,24 @@ export function VariantRow({
         </TableCell>
 
         <TableCell align="center">
+          {/* The column head says Active; a screen reader on the switch
+              alone hears nothing without its own name. */}
           <Switch
             size="small"
             checked={variant.isActive}
             disabled={!canEdit || saving !== null}
             onChange={onToggleActive}
+            slotProps={{
+              input: {
+                'aria-label': intl.formatMessage(
+                  {
+                    id: 'products.variant.activeFor',
+                    defaultMessage: 'Active: {sku}',
+                  },
+                  { sku: variant.sku },
+                ),
+              },
+            }}
           />
         </TableCell>
 

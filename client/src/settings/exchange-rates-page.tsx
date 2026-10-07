@@ -134,7 +134,11 @@ export function ExchangeRatesPage() {
             defaultMessage="Set a base currency on the <link>Organization</link> page first — a rate converts into it."
             values={{
               link: (chunks: ReactNode[]) => (
-                <Link component={RouterLink} to="/settings/organization">
+                <Link
+                  underline="always"
+                  component={RouterLink}
+                  to="/settings/organization"
+                >
                   {chunks}
                 </Link>
               ),

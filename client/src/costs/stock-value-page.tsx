@@ -199,7 +199,11 @@ export function StockValuePage() {
             defaultMessage="No base currency yet, so nothing can be valued. Set one on the <link>Organization</link> page."
             values={{
               link: (chunks: ReactNode[]) => (
-                <Link component={RouterLink} to="/settings/organization">
+                <Link
+                  underline="always"
+                  component={RouterLink}
+                  to="/settings/organization"
+                >
                   {chunks}
                 </Link>
               ),

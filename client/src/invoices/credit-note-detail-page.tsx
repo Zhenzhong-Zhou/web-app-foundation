@@ -54,7 +54,11 @@ export function CreditNoteDetailPage() {
 
   /** The invoice's number as a link, in whichever sentence names it. */
   const link = (chunks: ReactNode[]) => (
-    <Link component={RouterLink} to={`/invoices/${note.invoiceId}`}>
+    <Link
+      underline="always"
+      component={RouterLink}
+      to={`/invoices/${note.invoiceId}`}
+    >
       {chunks}
     </Link>
   );

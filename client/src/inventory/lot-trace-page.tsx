@@ -547,7 +547,11 @@ function SourceText({
         defaultMessage: 'without a reference',
       });
     const run = (chunks: ReactNode[]) => (
-      <Link component={RouterLink} to={`/production/${source.runId!}`}>
+      <Link
+        underline="always"
+        component={RouterLink}
+        to={`/production/${source.runId!}`}
+      >
         {chunks}
       </Link>
     );
@@ -587,7 +591,11 @@ function SourceText({
               defaultMessage: 'an order',
             }),
           order: (chunks: ReactNode[]) => (
-            <Link component={RouterLink} to={`/orders/${source.orderId}`}>
+            <Link
+              underline="always"
+              component={RouterLink}
+              to={`/orders/${source.orderId}`}
+            >
               {chunks}
             </Link>
           ),

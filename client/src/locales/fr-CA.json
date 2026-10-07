@@ -1097,6 +1097,7 @@
   "products.unit.pallet": "palette",
   "products.unitOfMeasure": "Unité de mesure",
   "products.unitOfMeasure.help": "L’unité dans laquelle le stock est compté.",
+  "products.variant.activeFor": "Actif : {sku}",
   "products.variant.add": "Ajouter une variante",
   "products.variant.addTitle": "Ajouter une variante",
   "products.variant.added": "Variante ajoutée",
