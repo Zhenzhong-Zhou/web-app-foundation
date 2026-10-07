@@ -532,6 +532,17 @@ Paper is checked first because it must not change at all.
   loses it.
 - **MC-1516** A purchase (PO-DEMO-4) has no tab bar, only its items, and no
   money group. Below 900px the summary sits above the tabs.
+- **MC-1517** On SO-DEMO-1's Items tab, quantities read without padding zeros
+  (600, 400, 7, 200), and Credited shows 2 in amber, since 5 of the 7 returned
+  are not settled. In Français, 1 234,5 reads with the French separators.
+- **MC-1518** A line's corrections are in its ⋮ menu (Edit, Use list price,
+  Close short; Reopen on a line closed short; Remove on a draft with more than
+  one line), and each opens or does what its button did. On a purchase,
+  Receive stays on the row. With a keyboard, Tab reaches ⋮, Enter opens it and
+  the arrow keys move through it.
+- **MC-1519** On the Shipments and Returns tabs, a lot's quantity reads "400
+  each", and a lot within 90 days of expiry shows its days left beside the
+  date (FOC-2609-01 is two years off, so the date alone).
 
 ## Regressions
 
@@ -628,3 +639,5 @@ first.
   MC-1507 to MC-1511.
 - 2026-10-07: ADR-055 step 5, the order page: tabs, the summary and its
   money: MC-1512 to MC-1516.
+- 2026-10-07: ADR-055 step 5, the order page's items and lots: quantities
+  to read, Credited, the line menu, expiry: MC-1517 to MC-1519.

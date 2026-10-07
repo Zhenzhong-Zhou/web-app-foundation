@@ -1,8 +1,11 @@
+import MoreVert from '@mui/icons-material/MoreVert';
 import {
   Box,
   Button,
   Chip,
   IconButton,
+  Menu,
+  MenuItem,
   Paper,
   Stack,
   Table,
@@ -14,15 +17,14 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import { formatMoney, formatQuantity } from '../lib/format';
+import { StatusChip } from '../components/status-chip';
+import { displayQuantity, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { LineHold, OrderDetail, OrderLine } from '../lib/types';
 import { doneLabel } from './status';
-
-/** The remove button's mark: a symbol, the same in every language. */
-const CROSS = '×';
 
 /**
  * An order's items: the table, what each line can do, and the totals.
@@ -184,6 +186,16 @@ export function OrderLinesSection({
                     })}
                   </TableCell>
                 )}
+                {/* What a credit note gave back for those returns (ADR-055):
+                    beside Returned, the gap is what nobody has settled. */}
+                {order.direction === 'sale' && !order.isSample && (
+                  <TableCell align="right">
+                    {intl.formatMessage({
+                      id: 'orders.lines.credited',
+                      defaultMessage: 'Credited',
+                    })}
+                  </TableCell>
+                )}
                 <TableCell align="right">
                   {intl.formatMessage({
                     id: 'orders.lines.outstanding',
@@ -220,14 +232,28 @@ export function OrderLinesSection({
                   <TableCell>{line.sku}</TableCell>
                   <TableCell>{line.description}</TableCell>
                   <TableCell align="right">
-                    {formatQuantity(line.quantityOrdered)}
+                    {displayQuantity(line.quantityOrdered)}
                   </TableCell>
                   <TableCell align="right">
-                    {formatQuantity(line.quantityFulfilled)}
+                    {displayQuantity(line.quantityFulfilled)}
                   </TableCell>
                   {order.direction === 'sale' && (
                     <TableCell align="right">
-                      {formatQuantity(line.quantityReturned)}
+                      {displayQuantity(line.quantityReturned)}
+                    </TableCell>
+                  )}
+                  {order.direction === 'sale' && !order.isSample && (
+                    <TableCell align="right">
+                      {/* Amber while some of this line's returns wait for
+                          a decision, so the gap is seen where it is. */}
+                      {line.quantityUnsettled === '0.0000' ? (
+                        displayQuantity(line.quantityCredited)
+                      ) : (
+                        <StatusChip
+                          tone="warning"
+                          label={displayQuantity(line.quantityCredited)}
+                        />
+                      )}
                     </TableCell>
                   )}
 
@@ -246,7 +272,7 @@ export function OrderLinesSection({
                       </Tooltip>
                     ) : (
                       <>
-                        {formatQuantity(line.quantityOutstanding)}
+                        {displayQuantity(line.quantityOutstanding)}
                         {/* The backorder: needed, and not held because
                             earlier-confirmed orders came first (ADR-045).
                             '0.0000' is nothing, compared as text. */}
@@ -260,7 +286,7 @@ export function OrderLinesSection({
                                   defaultMessage:
                                     '{held} held for this order; the rest waits for stock',
                                 },
-                                { held: formatQuantity(holds[line.id].held) },
+                                { held: displayQuantity(holds[line.id].held) },
                               )}
                             >
                               <Chip
@@ -270,7 +296,9 @@ export function OrderLinesSection({
                                     defaultMessage: '{short} short',
                                   },
                                   {
-                                    short: formatQuantity(holds[line.id].short),
+                                    short: displayQuantity(
+                                      holds[line.id].short,
+                                    ),
                                   },
                                 )}
                                 size="small"
@@ -309,128 +337,18 @@ export function OrderLinesSection({
                   </TableCell>
 
                   <TableCell align="right">
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      sx={{ justifyContent: 'flex-end' }}
-                    >
-                      {receivable && !line.isComplete && (
-                        <Button
-                          variant="text"
-                          size="small"
-                          onClick={openDialog(() => onReceive(line))}
-                        >
-                          {intl.formatMessage({
-                            id: 'inventory.receive.action',
-                            defaultMessage: 'Receive',
-                          })}
-                        </Button>
-                      )}
-
-                      {amendable && !line.isClosedShort && !line.isComplete && (
-                        <Button
-                          variant="text"
-                          size="small"
-                          disabled={working}
-                          onClick={openDialog(() => onEditLine(line))}
-                        >
-                          {intl.formatMessage({
-                            id: 'common.edit',
-                            defaultMessage: 'Edit',
-                          })}
-                        </Button>
-                      )}
-
-                      {/* Prices the line from the order's list again —
-                        the explicit act for a list corrected after the
-                        line was added, never done in the background
-                        (ADR-049). The server says why when it cannot. */}
-                      {amendable &&
-                        !order.isSample &&
-                        !line.isClosedShort &&
-                        !line.isComplete && (
-                          <Button
-                            variant="text"
-                            size="small"
-                            disabled={working}
-                            onClick={() =>
-                              void onLineAction(
-                                `/orders/${order.id}/lines/${line.id}/list-price`,
-                                'POST',
-                              )
-                            }
-                          >
-                            {intl.formatMessage({
-                              id: 'orders.lines.useListPrice',
-                              defaultMessage: 'Use list price',
-                            })}
-                          </Button>
-                        )}
-
-                      {/* Confirmed only, and only while something is still
-                        outstanding — a draft has promised nothing, so
-                        removing the line is the right act there. */}
-                      {canUpdate &&
-                        order.status === 'confirmed' &&
-                        !line.isComplete && (
-                          <Button
-                            variant="text"
-                            size="small"
-                            disabled={working}
-                            onClick={openDialog(() => onCloseLine(line))}
-                          >
-                            {intl.formatMessage({
-                              id: 'orders.lines.closeShort',
-                              defaultMessage: 'Close short',
-                            })}
-                          </Button>
-                        )}
-
-                      {canUpdate && line.isClosedShort && (
-                        <Button
-                          variant="text"
-                          size="small"
-                          disabled={working}
-                          onClick={() =>
-                            void onLineAction(
-                              `/orders/${order.id}/lines/${line.id}/reopen`,
-                              'POST',
-                            )
-                          }
-                        >
-                          {intl.formatMessage({
-                            id: 'orders.lines.reopen',
-                            defaultMessage: 'Reopen',
-                          })}
-                        </Button>
-                      )}
-
-                      {/* Draft only, and never the last one — an order with no
-                        lines orders nothing (ADR-033). The server refuses
-                        both and those 409s render, but a control that always
-                        fails is worth not offering. */}
-                      {canUpdate && isDraft && order.lines.length > 1 && (
-                        <IconButton
-                          size="small"
-                          aria-label={intl.formatMessage(
-                            {
-                              id: 'orders.lines.remove',
-                              defaultMessage: 'Remove {sku}',
-                            },
-                            { sku: line.sku },
-                          )}
-                          disabled={working}
-                          onClick={() =>
-                            void onLineAction(
-                              `/orders/${order.id}/lines/${line.id}`,
-                              'DELETE',
-                            )
-                          }
-                        >
-                          {CROSS}
-                        </IconButton>
-                      )}
-                    </Stack>
+                    <LineActions
+                      order={order}
+                      line={line}
+                      working={working}
+                      canUpdate={canUpdate}
+                      receivable={receivable}
+                      amendable={amendable}
+                      onReceive={onReceive}
+                      onEditLine={onEditLine}
+                      onCloseLine={onCloseLine}
+                      onLineAction={onLineAction}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -495,5 +413,184 @@ export function OrderLinesSection({
         </Typography>
       )}
     </Box>
+  );
+}
+
+/** One thing a line's menu can do, and how. */
+interface LineAction {
+  key: string;
+  label: string;
+  run: () => void;
+}
+
+/**
+ * A line's actions (ADR-055): the one a person comes to the line for —
+ * Receive, on a purchase still expecting goods — as a button, and the
+ * corrections (edit, use list price, close short, reopen, remove) in a ⋮
+ * menu. Five buttons on every row pushed the totals out of view beside
+ * the summary, and made the figures, which people came to read, the
+ * hardest thing to find.
+ *
+ * Each action shows on the same conditions as before; the server's
+ * refusals are the real rules (ADR-033, ADR-034, ADR-049).
+ */
+function LineActions({
+  order,
+  line,
+  working,
+  canUpdate,
+  receivable,
+  amendable,
+  onReceive,
+  onEditLine,
+  onCloseLine,
+  onLineAction,
+}: {
+  order: OrderDetail;
+  line: OrderLine;
+  working: boolean;
+  canUpdate: boolean;
+  receivable: boolean;
+  amendable: boolean;
+  onReceive: (line: OrderLine) => void;
+  onEditLine: (line: OrderLine) => void;
+  onCloseLine: (line: OrderLine) => void;
+  onLineAction: (path: string, method: string) => Promise<void>;
+}) {
+  const intl = useIntl();
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [pending, setPending] = useState<LineAction | null>(null);
+
+  const open = !line.isClosedShort && !line.isComplete;
+  const path = `/orders/${order.id}/lines/${line.id}`;
+  const actions: LineAction[] = [];
+
+  if (amendable && open) {
+    actions.push({
+      key: 'edit',
+      label: intl.formatMessage({ id: 'common.edit', defaultMessage: 'Edit' }),
+      run: () => onEditLine(line),
+    });
+  }
+
+  // Prices the line from the order's list again: the explicit act for a
+  // list corrected after the line was added, never done in the background
+  // (ADR-049). The server says why when it cannot.
+  if (amendable && open && !order.isSample) {
+    actions.push({
+      key: 'list-price',
+      label: intl.formatMessage({
+        id: 'orders.lines.useListPrice',
+        defaultMessage: 'Use list price',
+      }),
+      run: () => void onLineAction(`${path}/list-price`, 'POST'),
+    });
+  }
+
+  // Confirmed only, and only while something is still outstanding: a draft
+  // has promised nothing, so removing the line is the right act there.
+  if (canUpdate && order.status === 'confirmed' && !line.isComplete) {
+    actions.push({
+      key: 'close-short',
+      label: intl.formatMessage({
+        id: 'orders.lines.closeShort',
+        defaultMessage: 'Close short',
+      }),
+      run: () => onCloseLine(line),
+    });
+  }
+
+  if (canUpdate && line.isClosedShort) {
+    actions.push({
+      key: 'reopen',
+      label: intl.formatMessage({
+        id: 'orders.lines.reopen',
+        defaultMessage: 'Reopen',
+      }),
+      run: () => void onLineAction(`${path}/reopen`, 'POST'),
+    });
+  }
+
+  // Draft only, and never the last one: an order with no lines orders
+  // nothing (ADR-033).
+  if (canUpdate && order.status === 'draft' && order.lines.length > 1) {
+    actions.push({
+      key: 'remove',
+      label: intl.formatMessage(
+        { id: 'orders.lines.remove', defaultMessage: 'Remove {sku}' },
+        { sku: line.sku },
+      ),
+      run: () => void onLineAction(path, 'DELETE'),
+    });
+  }
+
+  /**
+   * The chosen action runs once the menu has finished closing, as the
+   * stock actions do: a dialog opened at once would mark the page hidden
+   * while focus was still returning to the ⋮ button.
+   */
+  function choose(action: LineAction) {
+    setPending(action);
+    setAnchor(null);
+  }
+
+  return (
+    <Stack
+      direction="row"
+      spacing={0.5}
+      sx={{ justifyContent: 'flex-end', alignItems: 'center' }}
+    >
+      {receivable && !line.isComplete && (
+        <Button
+          variant="text"
+          size="small"
+          onClick={openDialog(() => onReceive(line))}
+        >
+          {intl.formatMessage({
+            id: 'inventory.receive.action',
+            defaultMessage: 'Receive',
+          })}
+        </Button>
+      )}
+
+      {actions.length > 0 && (
+        <>
+          <IconButton
+            size="small"
+            disabled={working}
+            aria-label={intl.formatMessage(
+              {
+                id: 'orders.lines.actionsFor',
+                defaultMessage: 'Actions for {sku}',
+              },
+              { sku: line.sku },
+            )}
+            onClick={(event) => setAnchor(event.currentTarget)}
+          >
+            <MoreVert fontSize="small" />
+          </IconButton>
+
+          <Menu
+            anchorEl={anchor}
+            open={!!anchor}
+            onClose={() => setAnchor(null)}
+            slotProps={{
+              transition: {
+                onExited: () => {
+                  pending?.run();
+                  setPending(null);
+                },
+              },
+            }}
+          >
+            {actions.map((action) => (
+              <MenuItem key={action.key} onClick={() => choose(action)}>
+                {action.label}
+              </MenuItem>
+            ))}
+          </Menu>
+        </>
+      )}
+    </Stack>
   );
 }

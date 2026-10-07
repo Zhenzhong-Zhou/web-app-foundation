@@ -7,12 +7,22 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { useIntl } from 'react-intl';
+import { type IntlShape, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { formatDay, NO_VALUE } from '../lib/format';
+import { ExpiryChip } from '../components/expiry-chip';
+import { displayQuantity, NO_VALUE } from '../lib/format';
 import type { Shipment } from '../lib/types';
-import { withUnit } from '../products/units';
+import { unitLabel } from '../products/units';
+
+/** "400 each": read without padding zeros (ADR-055), the unit in words. */
+function quantityWithUnit(
+  quantity: string,
+  unit: string,
+  intl: IntlShape,
+): string {
+  return `${displayQuantity(quantity)} ${unitLabel(unit, intl)}`;
+}
 
 /**
  * What a shipment carried, or what a return brought back: one row per SKU and
@@ -80,10 +90,12 @@ export function LotItemsTable({ items }: { items: Shipment['items'] }) {
                 )}
               </TableCell>
               <TableCell>
-                {item.expiresAt ? formatDay(item.expiresAt) : NO_VALUE}
+                {/* Days left when it is close (ADR-055): a shipment of
+                    a lot about to expire is what a customer complains of. */}
+                <ExpiryChip expiresAt={item.expiresAt} />
               </TableCell>
               <TableCell align="right">
-                {withUnit(item.quantity, item.unitOfMeasure, intl)}
+                {quantityWithUnit(item.quantity, item.unitOfMeasure, intl)}
               </TableCell>
             </TableRow>
           ))}

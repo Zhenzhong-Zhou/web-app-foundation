@@ -59,9 +59,14 @@ test('raises an order, receives against it, and moves the stock', async ({
   await dialog.getByRole('button', { name: 'Receive' }).click();
 
   // Partial, and the line says so rather than the order advancing on its own.
+  // Received and outstanding, read without padding zeros (ADR-055).
   const line = page.getByRole('row', { name: /E2E-ORD-1/ });
-  await expect(line).toContainText('15.0000');
-  await expect(line).toContainText('25.0000');
+  await expect(
+    line.getByRole('cell', { name: '15', exact: true }),
+  ).toBeVisible();
+  await expect(
+    line.getByRole('cell', { name: '25', exact: true }),
+  ).toBeVisible();
 
   /**
    * The point of the whole vertical: receiving wrote a movement and the stock
