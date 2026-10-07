@@ -648,6 +648,7 @@
   "members.role.owner": "所有者",
   "members.role.unknown": "未知",
   "members.role.viewer": "查看者",
+  "members.roleOf": "{name} 的角色",
   "members.tempPassword": "临时密码",
   "members.tempPassword.help": "至少 {count} 个字符。请告诉对方，并请其修改。",
   "members.you": "你",

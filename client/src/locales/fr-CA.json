@@ -648,6 +648,7 @@
   "members.role.owner": "Propriétaire",
   "members.role.unknown": "Inconnu",
   "members.role.viewer": "Lecteur",
+  "members.roleOf": "Rôle de {name}",
   "members.tempPassword": "Mot de passe temporaire",
   "members.tempPassword.help": "Au moins {count} caractères. Communiquez-le à la personne et demandez-lui de le changer.",
   "members.you": "vous",

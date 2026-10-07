@@ -648,6 +648,7 @@
   "members.role.owner": "Owner",
   "members.role.unknown": "Unknown",
   "members.role.viewer": "Viewer",
+  "members.roleOf": "Role of {name}",
   "members.tempPassword": "Temporary password",
   "members.tempPassword.help": "At least {count} characters. Share it with them and ask them to change it.",
   "members.you": "you",
