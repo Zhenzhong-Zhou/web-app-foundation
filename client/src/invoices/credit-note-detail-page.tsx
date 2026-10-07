@@ -19,9 +19,9 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { PageHeader } from '../components/page-header';
 import {
+  displayQuantity,
   formatDay,
   formatMoney,
-  formatQuantity,
   NO_VALUE,
   SEPARATOR,
 } from '../lib/format';
@@ -201,7 +201,7 @@ export function CreditNoteDetailPage() {
                   <TableCell>{line.sku}</TableCell>
                   <TableCell>{line.description}</TableCell>
                   <TableCell align="right">
-                    {formatQuantity(String(Number(line.quantity)))}
+                    {displayQuantity(line.quantity)}
                   </TableCell>
                   <TableCell align="right">
                     {formatMoney(line.unitPrice, note.currency)}

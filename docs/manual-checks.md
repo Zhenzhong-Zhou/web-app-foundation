@@ -586,6 +586,16 @@ Paper is checked first because it must not change at all.
   days: the list and the Expiring soon count both update without a reload.
   With Expiring soon pressed and none due, the list says no lot here expires
   within 90 days.
+- **MC-1531** Invoices has a page title with its one-line explanation under
+  it, then All, Drafts, Issued and Voided as a row of buttons where the tabs
+  were, All pressed. Draft reads grey, Issued quiet blue, Voided red, on the
+  list and on each invoice's header.
+- **MC-1532** On INV-000001 the quantity reads 400, and Credit notes is a
+  table: CN-000001 linked, its date, its reason wrapping when long, and
+  −CA$52.48 right-aligned. Void an invoice: its full credit note shows a red
+  "Voids invoice" chip beside its number.
+- **MC-1533** CN-000001's lines read 2, not 2.0000. With Voided pressed and
+  nothing voided, the list says only "Nothing here."
 
 ## Regressions
 
@@ -688,3 +698,4 @@ first.
   quantities, the Invoices and credits and History tabs: MC-1520 to MC-1524.
 - 2026-10-07: ADR-055 step 5, the orders list: MC-1525 to MC-1527.
 - 2026-10-07: ADR-055 step 5, inventory: MC-1528 to MC-1530.
+- 2026-10-07: ADR-055 step 5, invoices: MC-1531 to MC-1533.

@@ -25,11 +25,13 @@ import {
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
+import { StatusChip } from '../components/status-chip';
 import { api } from '../lib/api';
 import {
+  displayQuantity,
+  formatCredit,
   formatDay,
   formatMoney,
-  formatQuantity,
   SEPARATOR,
 } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -383,10 +385,10 @@ export function InvoiceDetailPage() {
                 <TableRow key={line.id}>
                   <TableCell>{line.sku}</TableCell>
                   <TableCell>{line.description}</TableCell>
-                  {/* Trailing zeros dropped, as before; the decimal
-                    separator the reader's (formatQuantity). */}
+                  {/* Read without padding zeros, grouped the reader's way,
+                    and never parsed (displayQuantity, ADR-025, ADR-055). */}
                   <TableCell align="right">
-                    {formatQuantity(String(Number(line.quantity)))}
+                    {displayQuantity(line.quantity)}
                   </TableCell>
                   <TableCell align="right">
                     {formatMoney(line.unitPrice, invoice.currency)}
@@ -496,40 +498,78 @@ export function InvoiceDetailPage() {
               defaultMessage: 'Credit notes',
             })}
           </Typography>
-          <Stack spacing={1}>
-            {invoice.creditNotes.map((note) => (
-              <Typography key={note.id} variant="body2">
-                <Link component={RouterLink} to={`/credit-notes/${note.id}`}>
-                  {note.number}
-                </Link>
-                {SEPARATOR}
-                {note.isVoid
-                  ? intl.formatMessage(
-                      {
-                        id: 'invoices.creditNoteVoids',
-                        defaultMessage:
-                          '{date} · {amount} · voids this invoice — {reason}',
-                      },
-                      {
-                        date: formatDay(note.creditDate),
-                        amount: formatMoney(note.total, invoice.currency),
-                        reason: note.reason,
-                      },
-                    )
-                  : intl.formatMessage(
-                      {
-                        id: 'invoices.creditNoteLine',
-                        defaultMessage: '{date} · {amount} — {reason}',
-                      },
-                      {
-                        date: formatDay(note.creditDate),
-                        amount: formatMoney(note.total, invoice.currency),
-                        reason: note.reason,
-                      },
-                    )}
-              </Typography>
-            ))}
-          </Stack>
+          {/* A table rather than a sentence per note (ADR-055): the
+              amounts line up, and each reads as money going back. */}
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'invoices.number',
+                      defaultMessage: 'Number',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'orders.documents.date',
+                      defaultMessage: 'Date',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'orders.documents.details',
+                      defaultMessage: 'Details',
+                    })}
+                  </TableCell>
+                  <TableCell align="right">
+                    {intl.formatMessage({
+                      id: 'orders.documents.amount',
+                      defaultMessage: 'Amount, incl. tax',
+                    })}
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {invoice.creditNotes.map((note) => (
+                  <TableRow key={note.id}>
+                    <TableCell>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{ alignItems: 'center' }}
+                      >
+                        <Link
+                          component={RouterLink}
+                          to={`/credit-notes/${note.id}`}
+                        >
+                          {note.number}
+                        </Link>
+                        {/* The full credit voiding issues (ADR-046), told
+                            apart from a credit for goods. */}
+                        {note.isVoid && (
+                          <StatusChip
+                            tone="critical"
+                            label={intl.formatMessage({
+                              id: 'invoices.creditNote.voids',
+                              defaultMessage: 'Voids invoice',
+                            })}
+                          />
+                        )}
+                      </Stack>
+                    </TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                      {formatDay(note.creditDate)}
+                    </TableCell>
+                    <TableCell>{note.reason}</TableCell>
+                    <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                      {formatCredit(note.total, invoice.currency)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Paper>
       )}
 

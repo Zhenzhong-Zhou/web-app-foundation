@@ -1,29 +1,30 @@
 import {
   Alert,
-  Chip,
   Link,
   Paper,
   Skeleton,
   Stack,
-  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Tabs,
-  Typography,
 } from '@mui/material';
 import { useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { EmptyState } from '../components/empty-state';
+import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
+import { PageHeader } from '../components/page-header';
+import { StatusChip } from '../components/status-chip';
 import { formatDay, formatMoney, NO_VALUE } from '../lib/format';
 import type { InvoiceStatus, InvoiceSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { STATUS_TONES } from '../theme/status';
 import { invoiceStatus } from './invoice-status';
 
 type Filter = InvoiceStatus | 'all';
@@ -74,37 +75,29 @@ export function InvoicesPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h5" component="h1">
-        {intl.formatMessage({
+      <PageHeader
+        crumbs={[]}
+        title={intl.formatMessage({
           id: 'layout.nav.invoices',
           defaultMessage: 'Invoices',
         })}
-      </Typography>
-
-      <Typography variant="body2" color="text.secondary">
-        {intl.formatMessage({
+        subtitle={intl.formatMessage({
           id: 'invoices.intro',
           defaultMessage:
             'An invoice bills one shipment, and is created from it on the order. Once issued it never changes — a mistake is voided with a credit note and invoiced again.',
         })}
-      </Typography>
+      />
 
-      <Tabs
-        value={filter}
-        onChange={(_event, value: Filter) => setFilter(value)}
-        aria-label={intl.formatMessage({
-          id: 'invoices.filter.label',
-          defaultMessage: 'Invoice status',
-        })}
-      >
-        {FILTERS.map((option) => (
-          <Tab
-            key={option.value}
-            value={option.value}
-            label={intl.formatMessage(option.label)}
-          />
-        ))}
-      </Tabs>
+      {/* The one filter row (ADR-055): which invoices, as buttons. Tabs
+          were for sections of one thing, not for narrowing a list. */}
+      <FilterRow
+        quick={FILTERS.map((option) => ({
+          id: option.value,
+          label: intl.formatMessage(option.label),
+          pressed: filter === option.value,
+          onToggle: () => setFilter(option.value),
+        }))}
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -114,7 +107,7 @@ export function InvoicesPage() {
             {showSkeleton ? <Skeleton height={48} /> : null}
           </Stack>
         ) : rows?.length === 0 ? (
-          <Alert severity="info">
+          <EmptyState>
             {filter === 'all'
               ? intl.formatMessage({
                   id: 'invoices.empty',
@@ -125,7 +118,7 @@ export function InvoicesPage() {
                   id: 'invoices.emptyFiltered',
                   defaultMessage: 'Nothing here.',
                 })}
-          </Alert>
+          </EmptyState>
         ) : (
           <TableContainer>
             <Table size="small">
@@ -171,45 +164,36 @@ export function InvoicesPage() {
               </TableHead>
 
               <TableBody>
-                {rows?.map((row) => {
-                  const status = invoiceStatus(row.status);
-                  return (
-                    <TableRow key={row.id} hover>
-                      <TableCell>
-                        <Link component={RouterLink} to={`/invoices/${row.id}`}>
-                          {row.number ??
-                            intl.formatMessage({
-                              id: 'orders.status.draft',
-                              defaultMessage: 'Draft',
-                            })}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{row.partnerName}</TableCell>
-                      <TableCell>
-                        {row.invoiceDate
-                          ? formatDay(row.invoiceDate)
-                          : NO_VALUE}
-                      </TableCell>
-                      <TableCell>
-                        {row.dueDate ? formatDay(row.dueDate) : NO_VALUE}
-                      </TableCell>
-                      <TableCell align="right">
-                        {/* Stored at issue; a draft's total is on its page. */}
-                        {formatMoney(row.total, row.currency)}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={status.label}
-                          color={status.color}
-                          variant={
-                            row.status === 'voided' ? 'outlined' : 'filled'
-                          }
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {rows?.map((row) => (
+                  <TableRow key={row.id} hover>
+                    <TableCell>
+                      <Link component={RouterLink} to={`/invoices/${row.id}`}>
+                        {row.number ??
+                          intl.formatMessage({
+                            id: 'orders.status.draft',
+                            defaultMessage: 'Draft',
+                          })}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{row.partnerName}</TableCell>
+                    <TableCell>
+                      {row.invoiceDate ? formatDay(row.invoiceDate) : NO_VALUE}
+                    </TableCell>
+                    <TableCell>
+                      {row.dueDate ? formatDay(row.dueDate) : NO_VALUE}
+                    </TableCell>
+                    <TableCell align="right">
+                      {/* Stored at issue; a draft's total is on its page. */}
+                      {formatMoney(row.total, row.currency)}
+                    </TableCell>
+                    <TableCell>
+                      <StatusChip
+                        tone={STATUS_TONES.invoice[row.status]}
+                        label={invoiceStatus(row.status).label}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </TableContainer>
