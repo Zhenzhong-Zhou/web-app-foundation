@@ -1,9 +1,13 @@
+import { Type } from 'class-transformer';
 import {
   IsBooleanString,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
+  Min,
 } from 'class-validator';
 
 import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
@@ -27,4 +31,16 @@ export class ListStockDto extends KeysetQueryDto {
   @IsString()
   @MaxLength(100)
   search?: string;
+
+  /**
+   * Only lots expiring within this many days, the expired included: the
+   * inventory's "Expiring soon" (ADR-055). Untracked stock has no expiry
+   * and never matches. Counted from the database's today.
+   */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(3650)
+  expiringWithin?: number;
 }

@@ -691,6 +691,60 @@ describe('Stock (e2e)', () => {
       expect(await skus('%25')).toEqual([]);
     });
 
+    /**
+     * The inventory's "Expiring soon" (ADR-055): lots within the days asked,
+     * and a count of them with the same filters, so the number beside the
+     * button is the rows pressing it shows.
+     */
+    it('narrows to lots expiring soon, and counts them alike', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const shelf = await createLocation(org.agent);
+      const focus = await createVariant(org.agent, { sku: 'FOCUS-60' });
+      const calm = await createVariant(org.agent, {
+        sku: 'CALM-30',
+        tracksLots: true,
+      });
+
+      // Far enough from both ends of 90 days that the clock cannot matter.
+      const inDays = (days: number) =>
+        new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+
+      await org.agent
+        .post('/v1/stock/movements')
+        .send(receipt(focus.id, shelf, '10'))
+        .expect(201);
+      await org.agent
+        .post('/v1/stock/movements')
+        .send({
+          ...receipt(calm.id, shelf, '10'),
+          lot: { code: 'SOON', expiresAt: inDays(20) },
+        })
+        .expect(201);
+      await org.agent
+        .post('/v1/stock/movements')
+        .send({
+          ...receipt(calm.id, shelf, '10'),
+          lot: { code: 'LATER', expiresAt: inDays(400) },
+        })
+        .expect(201);
+
+      const rows = await stockRows(org.agent, '?expiringWithin=90');
+      expect(rows.map((row) => row.lotCode)).toEqual(['SOON']);
+
+      const counts = async (filters: string) =>
+        body<{ expiring: number }>(
+          await org.agent.get(`/v1/stock/counts${filters}`).expect(200),
+        );
+
+      // 90 days unless asked, the chips' amber threshold.
+      expect(await counts('')).toEqual({ expiring: 1 });
+      expect(await counts('?expiringWithin=500')).toEqual({ expiring: 2 });
+      // The list's other filters apply to the count too.
+      expect(await counts('?search=FOCUS')).toEqual({ expiring: 0 });
+
+      await org.agent.get('/v1/stock?expiringWithin=0').expect(400);
+    });
+
     it('names the product, since most variants have no name of their own', async () => {
       const ctx = await setup('alpha');
 
