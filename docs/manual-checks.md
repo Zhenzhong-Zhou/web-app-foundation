@@ -676,6 +676,11 @@ Paper is checked first because it must not change at all.
   rows; set its cost on Stock value, come back, and it is gone and the count
   is one lower. Stock value has a page header with its explanation under it,
   Provisional is an amber chip, and quantities read without padding zeros.
+- **MC-1553** A quantity with its unit takes the unit's form for that quantity
+  in each language: in English 1 box and 600 boxes, 2 cases, 1 litre and 3
+  litres, while each, kg, g and ml stay as they are; in Français 1 unité, 600
+  unités, 1,5 litre (singular below two); in 中文 one form, 600 个. Check
+  SO-DEMO-1's summary (600 unités in French) and a shipment's lot table.
 
 ## Regressions
 
@@ -792,3 +797,4 @@ first.
 - 2026-10-07: show and hide on password fields: MC-1550.
 - 2026-10-07: a password shown hides again on submit: MC-1551.
 - 2026-10-07: ADR-055 step 5, needs a cost and Stock value: MC-1552.
+- 2026-10-07: units take their plural in every language: MC-1553.

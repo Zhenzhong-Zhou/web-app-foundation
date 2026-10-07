@@ -7,22 +7,13 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { type IntlShape, useIntl } from 'react-intl';
+import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { ExpiryChip } from '../components/expiry-chip';
-import { displayQuantity, NO_VALUE } from '../lib/format';
+import { NO_VALUE } from '../lib/format';
 import type { Shipment } from '../lib/types';
-import { unitLabel } from '../products/units';
-
-/** "400 each": read without padding zeros (ADR-055), the unit in words. */
-function quantityWithUnit(
-  quantity: string,
-  unit: string,
-  intl: IntlShape,
-): string {
-  return `${displayQuantity(quantity)} ${unitLabel(unit, intl)}`;
-}
+import { displayWithUnit } from '../products/units';
 
 /**
  * What a shipment carried, or what a return brought back: one row per SKU and
@@ -95,7 +86,7 @@ export function LotItemsTable({ items }: { items: Shipment['items'] }) {
                 <ExpiryChip expiresAt={item.expiresAt} />
               </TableCell>
               <TableCell align="right">
-                {quantityWithUnit(item.quantity, item.unitOfMeasure, intl)}
+                {displayWithUnit(item.quantity, item.unitOfMeasure, intl)}
               </TableCell>
             </TableRow>
           ))}

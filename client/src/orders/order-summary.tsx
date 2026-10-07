@@ -12,7 +12,7 @@ import {
   SEPARATOR,
 } from '../lib/format';
 import type { OrderDetail } from '../lib/types';
-import { unitLabel } from '../products/units';
+import { displayWithUnit } from '../products/units';
 import { doneLabel } from './status';
 
 /** A label and its figure on one line, the figure right-aligned. */
@@ -132,7 +132,7 @@ export function OrderSummary({
   const sale = order.direction === 'sale';
   const inUnit = (quantity: string) =>
     quantities
-      ? `${displayQuantity(quantity)} ${unitLabel(quantities.unit, intl)}`
+      ? displayWithUnit(quantity, quantities.unit, intl)
       : displayQuantity(quantity);
 
   return (
