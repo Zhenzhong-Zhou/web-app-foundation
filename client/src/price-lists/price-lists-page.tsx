@@ -1,7 +1,6 @@
 import {
   Alert,
   Button,
-  Chip,
   Link,
   Paper,
   Skeleton,
@@ -12,13 +11,15 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
 } from '@mui/material';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { EmptyState } from '../components/empty-state';
+import { PageHeader } from '../components/page-header';
+import { StatusChip } from '../components/status-chip';
 import { openDialog } from '../lib/open-dialog';
 import type { PriceList } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -45,30 +46,30 @@ export function PriceListsPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          {intl.formatMessage({
-            id: 'layout.menu.priceLists',
-            defaultMessage: 'Price lists',
-          })}
-        </Typography>
-        {can('price_lists.create') && (
-          <Button onClick={openDialog(() => setCreating(true))}>
-            {intl.formatMessage({
-              id: 'priceLists.new',
-              defaultMessage: 'New price list',
-            })}
-          </Button>
-        )}
-      </Stack>
-
-      <Typography variant="body2" color="text.secondary">
-        {intl.formatMessage({
+      <PageHeader
+        crumbs={[]}
+        title={intl.formatMessage({
+          id: 'layout.menu.priceLists',
+          defaultMessage: 'Price lists',
+        })}
+        subtitle={intl.formatMessage({
           id: 'priceLists.intro',
           defaultMessage:
             'A line added without a price takes one from its customer’s or supplier’s list, and keeps it. Changing a list never changes an order already written.',
         })}
-      </Typography>
+        actions={
+          <Stack direction="row" spacing={1}>
+            {can('price_lists.create') && (
+              <Button onClick={openDialog(() => setCreating(true))}>
+                {intl.formatMessage({
+                  id: 'priceLists.new',
+                  defaultMessage: 'New price list',
+                })}
+              </Button>
+            )}
+          </Stack>
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -78,12 +79,12 @@ export function PriceListsPage() {
             <Skeleton height={120} sx={{ m: 2 }} />
           ) : null
         ) : lists.length === 0 ? (
-          <Alert severity="info">
+          <EmptyState>
             {intl.formatMessage({
               id: 'priceLists.empty',
               defaultMessage: 'No price lists yet.',
             })}
-          </Alert>
+          </EmptyState>
         ) : (
           <TableContainer>
             <Table size="small">
@@ -137,8 +138,8 @@ export function PriceListsPage() {
                     <TableCell align="right">{list.itemCount}</TableCell>
                     <TableCell>
                       {!list.isActive && (
-                        <Chip
-                          size="small"
+                        <StatusChip
+                          tone="neutral"
                           label={intl.formatMessage({
                             id: 'common.retired',
                             defaultMessage: 'Retired',

@@ -18,6 +18,7 @@ import { useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
+import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
 import { formatUnitCost, SEPARATOR } from '../lib/format';
@@ -138,12 +139,12 @@ export function PriceListDetailPage() {
 
       <Paper variant="outlined">
         {list.items.length === 0 ? (
-          <Alert severity="info">
+          <EmptyState>
             {intl.formatMessage({
               id: 'priceLists.noPrices',
               defaultMessage: 'No prices on this list yet.',
             })}
-          </Alert>
+          </EmptyState>
         ) : (
           <TableContainer>
             <Table

@@ -11,13 +11,14 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
 } from '@mui/material';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { EmptyState } from '../components/empty-state';
+import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
 import { formatDay, formatQuantity } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -99,31 +100,30 @@ export function ExchangeRatesPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          {intl.formatMessage({
-            id: 'layout.menu.exchangeRates',
-            defaultMessage: 'Exchange rates',
-          })}
-        </Typography>
-
-        {canUpdate && baseCurrency && (
-          <Button onClick={openDialog(() => setCreating(true))}>
-            {intl.formatMessage({
-              id: 'settings.rates.set',
-              defaultMessage: 'Set a rate',
-            })}
-          </Button>
-        )}
-      </Stack>
-
-      <Typography variant="body2" color="text.secondary">
-        {intl.formatMessage({
+      <PageHeader
+        crumbs={[]}
+        title={intl.formatMessage({
+          id: 'layout.menu.exchangeRates',
+          defaultMessage: 'Exchange rates',
+        })}
+        subtitle={intl.formatMessage({
           id: 'settings.rates.intro',
           defaultMessage:
             'What one unit of another currency is worth in your base currency, day by day. A purchase priced in that currency is valued at the latest rate on or before the day it arrived. Correcting a rate changes nothing already valued.',
         })}
-      </Typography>
+        actions={
+          <Stack direction="row" spacing={1}>
+            {canUpdate && baseCurrency && (
+              <Button onClick={openDialog(() => setCreating(true))}>
+                {intl.formatMessage({
+                  id: 'settings.rates.set',
+                  defaultMessage: 'Set a rate',
+                })}
+              </Button>
+            )}
+          </Stack>
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -153,12 +153,12 @@ export function ExchangeRatesPage() {
             {showSkeleton ? <Skeleton height={48} /> : null}
           </Stack>
         ) : loaded?.rates.length === 0 ? (
-          <Alert severity="info">
+          <EmptyState>
             {intl.formatMessage({
               id: 'settings.rates.empty',
               defaultMessage: 'No rates yet.',
             })}
-          </Alert>
+          </EmptyState>
         ) : (
           <TableContainer>
             <Table size="small">

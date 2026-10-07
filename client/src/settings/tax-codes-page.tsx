@@ -1,7 +1,6 @@
 import {
   Alert,
   Button,
-  Chip,
   Paper,
   Skeleton,
   Stack,
@@ -11,13 +10,15 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
 } from '@mui/material';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
+import { EmptyState } from '../components/empty-state';
+import { PageHeader } from '../components/page-header';
+import { StatusChip } from '../components/status-chip';
 import { openDialog } from '../lib/open-dialog';
 import type { TaxCode } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -50,31 +51,30 @@ export function TaxCodesPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          {intl.formatMessage({
-            id: 'layout.menu.taxCodes',
-            defaultMessage: 'Tax codes',
-          })}
-        </Typography>
-
-        {canCreate && (
-          <Button onClick={openDialog(() => setCreating(true))}>
-            {intl.formatMessage({
-              id: 'settings.tax.add',
-              defaultMessage: 'Add tax code',
-            })}
-          </Button>
-        )}
-      </Stack>
-
-      <Typography variant="body2" color="text.secondary">
-        {intl.formatMessage({
+      <PageHeader
+        crumbs={[]}
+        title={intl.formatMessage({
+          id: 'layout.menu.taxCodes',
+          defaultMessage: 'Tax codes',
+        })}
+        subtitle={intl.formatMessage({
           id: 'settings.tax.intro',
           defaultMessage:
             'Every invoice line carries one. A code can charge two taxes on the same amount, like GST and PST together; a code that charges nothing is Exempt. Changing a rate only affects invoices issued afterwards — issued ones keep the rate they were issued with.',
         })}
-      </Typography>
+        actions={
+          <Stack direction="row" spacing={1}>
+            {canCreate && (
+              <Button onClick={openDialog(() => setCreating(true))}>
+                {intl.formatMessage({
+                  id: 'settings.tax.add',
+                  defaultMessage: 'Add tax code',
+                })}
+              </Button>
+            )}
+          </Stack>
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -84,13 +84,13 @@ export function TaxCodesPage() {
             {showSkeleton ? <Skeleton height={48} /> : null}
           </Stack>
         ) : codes?.length === 0 ? (
-          <Alert severity="info">
+          <EmptyState>
             {intl.formatMessage({
               id: 'settings.tax.empty',
               defaultMessage:
                 'No tax codes yet. Invoices cannot be issued until each line has one — add the taxes you charge, and an Exempt code for items you do not tax.',
             })}
-          </Alert>
+          </EmptyState>
         ) : (
           <TableContainer>
             <Table size="small">
@@ -130,8 +130,8 @@ export function TaxCodesPage() {
                     <TableCell>{code.name}</TableCell>
                     <TableCell>{describeCharges(code)}</TableCell>
                     <TableCell>
-                      <Chip
-                        size="small"
+                      <StatusChip
+                        tone={code.isActive ? 'info' : 'neutral'}
                         label={
                           code.isActive
                             ? intl.formatMessage({
@@ -143,8 +143,6 @@ export function TaxCodesPage() {
                                 defaultMessage: 'Retired',
                               })
                         }
-                        color={code.isActive ? 'success' : 'default'}
-                        variant={code.isActive ? 'filled' : 'outlined'}
                       />
                     </TableCell>
                     <TableCell align="right">

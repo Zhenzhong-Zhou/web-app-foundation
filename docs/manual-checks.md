@@ -681,6 +681,11 @@ Paper is checked first because it must not change at all.
   litres, while each, kg, g and ml stay as they are; in Français 1 unité, 600
   unités, 1,5 litre (singular below two); in 中文 one form, 600 个. Check
   SO-DEMO-1's summary (600 unités in French) and a shipment's lot table.
+- **MC-1554** Organization, Tax codes, Exchange rates and Price lists open
+  with the same page header as every list: the title, its explanation under
+  it, and the page's action at the right (History on Organization). An empty
+  list shows the shared empty state rather than a blue notice. Tax codes read
+  In use in quiet blue and Retired in grey; a retired price list is grey.
 
 ## Regressions
 
@@ -798,3 +803,4 @@ first.
 - 2026-10-07: a password shown hides again on submit: MC-1551.
 - 2026-10-07: ADR-055 step 5, needs a cost and Stock value: MC-1552.
 - 2026-10-07: units take their plural in every language: MC-1553.
+- 2026-10-07: ADR-055 step 5, the settings pages: MC-1554.

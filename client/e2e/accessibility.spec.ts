@@ -67,6 +67,19 @@ const SCREENS: Screen[] = [
   { name: 'stock value', path: () => '/costs', ready: heading },
   { name: 'audit log', path: () => '/audit', ready: heading },
   { name: 'account', path: () => '/account', ready: heading },
+  {
+    name: 'organization',
+    path: () => '/settings/organization',
+    ready: heading,
+  },
+  { name: 'members', path: () => '/members', ready: heading },
+  { name: 'tax codes', path: () => '/settings/tax-codes', ready: heading },
+  {
+    name: 'exchange rates',
+    path: () => '/settings/exchange-rates',
+    ready: heading,
+  },
+  { name: 'price lists', path: () => '/settings/price-lists', ready: heading },
 ];
 
 /**
@@ -129,7 +142,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     test.use({ colorScheme });
 
     test('the main screens meet WCAG 2.2 AA', async ({ page, freshOrg }) => {
-      // Fifteen screens and an axe pass each: longer than one flow.
+      // Twenty screens and an axe pass each: longer than one flow.
       test.setTimeout(120_000);
 
       const data = await seed(freshOrg.api);
