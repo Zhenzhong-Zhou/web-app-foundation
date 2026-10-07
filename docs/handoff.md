@@ -104,6 +104,11 @@ Then tag v0.4.0.
   sentence written on read), ADR-054 amended, migration **0041**; and a
   notification's quantities without padding zeros ("30 of 40", not
   "30.0000 of 40.0000"). Emails are unchanged; old rows show as stored.
+- **After that:** ADR-056 onward, from ADR-055's *Open decisions*, each with
+  its ADR before code: **search and lookup** in the top bar, then a **home
+  page** of what needs attention (expiring lots, unsettled returns, costs
+  waiting, orders to ship), then **organization branding** (logo, accent
+  with a contrast check, expiry thresholds). Bob may reorder.
 - **Words checked by the reviewer:** 贷项通知单 for a credit note, 开票净额（含税）,
   未开票金额（税前）, 待定成本. The same person could do MC-1405, the fluent review of
   the Chinese catalogue that v0.5 skipped.
@@ -570,6 +575,33 @@ Rules, still in force:
   a budget only if something is slow, as ADR-051 did for the server.
 - The `ubuntu-latest` runner moves to Ubuntu 26 from 19 October 2026. Pin
   `ubuntu-24.04` in `ci.yml` if you'd rather choose when.
+- From the UI pass (ADR-055), small:
+    - **Firefox on Bob's Mac:** Playwright's build cannot open its profile
+      there ("Could not find profile folder"; reinstalling, clearing
+      quarantine and moving TMPDIR did not help). CI runs it on Linux, and
+      `E2E_FIREFOX=1` runs it locally. Not a work item: retry after a
+      Playwright update, or from Terminal rather than WebStorm.
+    - **Page titles per screen:** the tab reads the product's name
+      everywhere; "SO-DEMO-1 · web-app-foundation" helps with several open.
+    - **The "after" screenshots** for the UI pass, kept with its release,
+      and a release tag for it and the notifications work (`v0.6.0-rc.1`?).
+    - **Full workflows in WebKit and Firefox:** only specs that make their
+      own organization or change nothing run in more than one browser.
+      Each spec on its own organization would let all of them; worth it if
+      a Safari user hits a workflow bug.
+    - **A notification's decimal point:** quantities lose their padding
+      zeros but keep "." in French ("1.5", not "1,5"); a notification is
+      written before anyone reads it. Fix by formatting the value when the
+      sentence is written on read, if a reader minds.
+    - `.github/workflows/ci.yml` is outside every `format:check` and not
+      Prettier-formatted; harmless.
+- Before customers, by hand rather than code:
+    - **Real devices:** Android with WeChat (its engine is Tencent's, and
+      nothing automated covers it), and 360 or QQ on Windows in 极速模式.
+    - **One email to a QQ or 163.com address:** verification and reset
+      mail can be delayed or filtered there.
+    - **Serving China:** a Hong Kong or Singapore region with our own
+      domain; hosting inside mainland China needs an ICP filing.
 
 ## Working agreements (for Claude)
 
