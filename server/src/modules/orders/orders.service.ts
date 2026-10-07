@@ -14,6 +14,7 @@ import {
   priceLists,
   products,
   productVariants,
+  shipments,
   stockMovements,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -22,6 +23,19 @@ import { itemName } from '../stock/item-name';
 import { ListOrdersDto } from './dto/list-orders.dto';
 
 const DEFAULT_LIMIT = 25;
+
+/**
+ * An order's quantities summed, all its lines counting in one unit.
+ * Exported because findById's return type names it, and the controller
+ * returning that type has to be able to name it too (TS4053).
+ */
+export interface OrderQuantities {
+  unit: string;
+  ordered: string;
+  fulfilled: string;
+  returned: string;
+  outstanding: string;
+}
 
 /** Draft and confirmed: the documents somebody still has to do something about. */
 const OPEN_STATUSES = ['draft', 'confirmed'] as const;
@@ -265,6 +279,53 @@ export class OrdersService {
             where ${orderReturns.orderId} = ${orders.id}
               and ${orderReturns.returnAuthorizationId} is null
           )`,
+
+          /**
+           * How many records each of the order's tabs holds (ADR-055), for
+           * the counts beside their names. Voided shipments are counted:
+           * they stay on the record, struck through.
+           */
+          shipmentCount: sql<number>`(
+            select count(*)::int from ${shipments}
+            where ${shipments.orderId} = ${orders.id}
+          )`,
+          voidedShipmentCount: sql<number>`(
+            select count(*)::int from ${shipments}
+            where ${shipments.orderId} = ${orders.id}
+              and ${shipments.voidedAt} is not null
+          )`,
+          returnCount: sql<number>`(
+            select count(*)::int from ${orderReturns}
+            where ${orderReturns.orderId} = ${orders.id}
+          )`,
+
+          /**
+           * The order's quantities summed, when every line counts in the same
+           * unit (ADR-055): 600 bottles ordered reads as one figure. Null when
+           * the units differ, since 600 bottles and 15 kg add up to nothing.
+           * Summed here, as everything quantity is (ADR-025).
+           */
+          quantities: sql<OrderQuantities | null>`(
+            select case when count(distinct ${productVariants.unitOfMeasure}) = 1
+              then json_build_object(
+                'unit', min(${productVariants.unitOfMeasure}),
+                'ordered', sum(${orderLines.quantityOrdered})::text,
+                'fulfilled', sum(${orderLines.quantityFulfilled})::text,
+                'returned', sum(${orderLines.quantityReturned})::text,
+                'outstanding', sum(case
+                  when ${orderLines.isClosedShort} then 0
+                  else greatest(
+                    ${orderLines.quantityOrdered} - ${orderLines.quantityFulfilled},
+                    0
+                  )
+                end)::numeric(18,4)::text
+              )
+            end
+            from ${orderLines}
+            join ${productVariants}
+              on ${productVariants.id} = ${orderLines.variantId}
+            where ${orderLines.orderId} = ${orders.id}
+          )`,
         })
         .from(orders)
         .innerJoin(partners, eq(partners.id, orders.partnerId))
@@ -398,6 +459,69 @@ export class OrdersService {
         .orderBy(desc(orderLines.createdAt));
 
       /**
+       * A sale's invoices and credit notes (ADR-055), for its "Invoices and
+       * credits" tab: what was billed and given back, as documents, each
+       * with what it covered. Drafts included, marked as such; a credit
+       * note is always issued.
+       */
+      const invoiceRows =
+        order.direction === 'sale' && !order.isSample
+          ? await tx
+              .select({
+                id: invoices.id,
+                number: invoices.number,
+                status: invoices.status,
+                date: invoices.invoiceDate,
+                total: invoices.total,
+                currency: invoices.currency,
+                shippedAt: shipments.createdAt,
+                quantity: sql<string>`coalesce((
+                  select sum(${invoiceLines.quantity})
+                  from ${invoiceLines}
+                  where ${invoiceLines.invoiceId} = ${invoices.id}
+                ), 0)::numeric(18,4)::text`,
+              })
+              .from(invoices)
+              .innerJoin(shipments, eq(shipments.id, invoices.shipmentId))
+              .where(
+                and(
+                  eq(invoices.orderId, orderId),
+                  eq(invoices.organizationId, organizationId),
+                ),
+              )
+              .orderBy(invoices.createdAt)
+          : [];
+
+      const creditRows =
+        order.direction === 'sale' && !order.isSample
+          ? await tx
+              .select({
+                id: creditNotes.id,
+                number: creditNotes.number,
+                date: creditNotes.creditDate,
+                total: creditNotes.total,
+                currency: creditNotes.currency,
+                reason: creditNotes.reason,
+                isVoid: creditNotes.isVoid,
+                invoiceNumber: invoices.number,
+                quantity: sql<string>`coalesce((
+                  select sum(${creditNoteLines.quantity})
+                  from ${creditNoteLines}
+                  where ${creditNoteLines.creditNoteId} = ${creditNotes.id}
+                ), 0)::numeric(18,4)::text`,
+              })
+              .from(creditNotes)
+              .innerJoin(invoices, eq(invoices.id, creditNotes.invoiceId))
+              .where(
+                and(
+                  eq(invoices.orderId, orderId),
+                  eq(creditNotes.organizationId, organizationId),
+                ),
+              )
+              .orderBy(creditNotes.createdAt)
+          : [];
+
+      /**
        * Money and settling are a sale's (ADR-055). A purchase records no
        * supplier invoices and a sample is never invoiced, so for them the
        * summary is null rather than a row of zeros that would read as
@@ -409,6 +533,9 @@ export class OrdersService {
         netInvoiced,
         notInvoiced,
         unsettledReturns,
+        shipmentCount,
+        voidedShipmentCount,
+        returnCount,
         ...rest
       } = order;
       const sale = order.direction === 'sale' && !order.isSample;
@@ -428,6 +555,15 @@ export class OrdersService {
             }
           : null,
         unsettledReturns: sale ? unsettledReturns : 0,
+        counts: {
+          shipments: shipmentCount,
+          voidedShipments: voidedShipmentCount,
+          returns: returnCount,
+          documents: invoiceRows.length + creditRows.length,
+        },
+        documents: sale
+          ? { invoices: invoiceRows, creditNotes: creditRows }
+          : null,
         lines: lines.map(
           ({ productName, variantName, quantityUnsettled, ...line }) => ({
             ...line,

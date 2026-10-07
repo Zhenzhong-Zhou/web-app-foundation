@@ -538,6 +538,12 @@ describe('Credit notes (e2e)', () => {
         notInvoiced: string;
       } | null;
       unsettledReturns: number;
+      counts: Record<string, number>;
+      quantities: Record<string, string> | null;
+      documents: {
+        invoices: { number: string | null; status: string; quantity: string }[];
+        creditNotes: { number: string; quantity: string; isVoid: boolean }[];
+      } | null;
       lines: {
         sku: string;
         quantityCredited: string;
@@ -580,6 +586,30 @@ describe('Credit notes (e2e)', () => {
 
       expect(line(order, 'FOCUS-60CT').quantityCredited).toBe('2.0000');
       expect(line(order, 'SCOOP').quantityCredited).toBe('0.0000');
+
+      // Its tabs' counts, and the documents the Invoices and credits tab
+      // lists: the invoice for the 11 shipped, the credit for 2.
+      expect(order.counts).toEqual({
+        shipments: 1,
+        voidedShipments: 0,
+        returns: 0,
+        documents: 2,
+      });
+      expect(order.documents?.invoices).toMatchObject([
+        { number: 'INV-000001', status: 'issued', quantity: '11.0000' },
+      ]);
+      expect(order.documents?.creditNotes).toMatchObject([
+        { number: 'CN-000001', quantity: '2.0000', isVoid: false },
+      ]);
+
+      // Both items count in "each", so the quantities sum (ADR-055).
+      expect(order.quantities).toEqual({
+        unit: 'each',
+        ordered: '15.0000',
+        fulfilled: '11.0000',
+        returned: '0.0000',
+        outstanding: '4.0000',
+      });
     });
 
     it('counts a return with no RMA as not settled, by line', async () => {
