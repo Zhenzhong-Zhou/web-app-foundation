@@ -170,6 +170,13 @@ From `client/`: `npm run dev`, `npm run build`, `npm run lint`, `npm test`
 ports 3100/5273, never the dev server; it migrates and seeds the e2e database
 first), and `npm run verify`.
 
+`DEMO_EMAIL=<the account seed:demo printed> npm run screenshots`, also from
+`client/`, pictures every screen of the demo in English, French and Chinese,
+light and dark, at desktop and phone width, into `client/screenshots/out/`.
+It starts its own API and client on ports 3200/5373 against the dev database,
+so the dev servers can stay as they are; compare a run before and after a
+visual change.
+
 `docs/manual-checks.md` is the list to walk through by hand before a release and
 after a feature lands; every change that alters what a person sees or a rule they
 work under updates it.

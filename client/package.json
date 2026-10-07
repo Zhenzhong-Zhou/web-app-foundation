@@ -30,6 +30,7 @@
     "test:e2e": "dotenv -e ../.env -- playwright test",
     "test:e2e:ui": "dotenv -e ../.env -- playwright test --ui",
     "test:e2e:report": "playwright show-report",
+    "screenshots": "playwright test -c playwright.screenshots.config.ts",
     "fix": "npm run format && npm run lint",
     "verify": "npm run format:check && npm run lint:ci && npm run i18n:check && npm run build && npm test",
     "verify:all": "npm run verify && npm run test:e2e"
