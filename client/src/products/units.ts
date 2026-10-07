@@ -1,6 +1,6 @@
 import { defineMessages, type IntlShape } from 'react-intl';
 
-import { formatQuantity } from '../lib/format';
+import { displayQuantity, formatQuantity } from '../lib/format';
 
 /**
  * What a variant's stock is counted in. Stored as these keys, so a unit is
@@ -49,4 +49,17 @@ export function withUnit(
   intl: IntlShape,
 ): string {
   return `${formatQuantity(quantity)} ${unitLabel(unit, intl)}`;
+}
+
+/**
+ * A quantity to read, with its unit: "400 each", no padding zeros, grouped
+ * the language's way (displayQuantity, ADR-055). withUnit stays for where
+ * the exact four places matter.
+ */
+export function displayWithUnit(
+  quantity: string,
+  unit: string,
+  intl: IntlShape,
+): string {
+  return `${displayQuantity(quantity)} ${unitLabel(unit, intl)}`;
 }

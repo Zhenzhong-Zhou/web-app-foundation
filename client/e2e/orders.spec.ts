@@ -73,9 +73,12 @@ test('raises an order, receives against it, and moves the stock', async ({
    * level moved, in the same transaction. One ledger, no receipts table.
    */
   await page.goto('/inventory');
-  await expect(page.getByRole('row', { name: /E2E-ORD-1/ })).toContainText(
-    '15.0000',
-  );
+  await expect(
+    page.getByRole('row', { name: /E2E-ORD-1/ }).getByRole('cell', {
+      name: '15 each',
+      exact: true,
+    }),
+  ).toBeVisible();
 });
 
 test('asks before closing an order that is short', async ({

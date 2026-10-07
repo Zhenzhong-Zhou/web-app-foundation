@@ -573,6 +573,19 @@ Paper is checked first because it must not change at all.
   message, and Raise an order stays where it always is, in the page header;
   with Fulfilled pressed and none fulfilled, only "No orders match that
   filter."
+- **MC-1528** Inventory's filters are one row: Search, Location, then Expiring
+  soon with its count and Show emptied. Pressing Expiring soon shows only lots
+  within 90 days, ELD-24A among them, and nothing untracked; the count is the
+  number of rows it shows. With a search that matches none of them, the count
+  drops to 0.
+- **MC-1529** Expires shows days left within 90 days, amber, and within 30
+  days red (ELD-24A: "20 days left"), the date beside each; a lot two years
+  off shows only its date. Quantities read "400 each", and the Promised to
+  customers table reads without padding zeros too.
+- **MC-1530** Receive stock, Ship out or Correct the count on a lot within 90
+  days: the list and the Expiring soon count both update without a reload.
+  With Expiring soon pressed and none due, the list says no lot here expires
+  within 90 days.
 
 ## Regressions
 
@@ -674,3 +687,4 @@ first.
 - 2026-10-07: ADR-055 step 5, orders part 3: Ship in the summary, its
   quantities, the Invoices and credits and History tabs: MC-1520 to MC-1524.
 - 2026-10-07: ADR-055 step 5, the orders list: MC-1525 to MC-1527.
+- 2026-10-07: ADR-055 step 5, inventory: MC-1528 to MC-1530.
