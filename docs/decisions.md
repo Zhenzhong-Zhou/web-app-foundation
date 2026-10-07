@@ -4948,6 +4948,42 @@ Playwright spec (a new development dependency).
 - **Brand colour on status.** One organization's red would make every action
   look like a warning.
 
+**Amendment (built).** Steps 1 to 6 are built on `ui-design-pass`. What
+was settled while building, against the decisions above; the method is
+unchanged.
+
+- **The summary counts items, and sums quantities only in one unit.** The
+  server sends ordered, shipped, returned and still to ship summed when
+  every line counts in one unit, and null otherwise: 600 bottles and 15 kg
+  add up to nothing. A mixed order says how many items are complete. The
+  same read carries the tabs' counts and a sale's invoices and credit
+  notes, for an **Invoices and credits** tab beside a **History** tab.
+- **Ship leads the summary**, full width; the status moves (Close order,
+  Cancel order) come last and turn outlined beside it. A line's
+  corrections are in a ⋮ menu, its actions column pinned to the table's
+  right edge, so the menu is never found only by scrolling sideways.
+- **Credits read with a minus** (`formatCredit`, U+2212) on the summary,
+  the documents tab and an invoice's credit notes, which became a table.
+- **Quick filters count on the server**, with the list's own filters:
+  inventory's Expiring soon and Needs a cost (`GET /v1/stock/counts`), the
+  latter through the one definition of a cost still waiting
+  (`openNeedsCost`). Lists loaded whole (products, partners) narrow in the
+  browser. Status filters are quick filters, never tabs or a select.
+- **Not every page takes tabs or a filter row.** An RMA is one table and
+  its notes; Locations is a tree, where a search would need a different
+  design. Both keep their layout and take the tones and empty state.
+- **Units take their plural** in every language, from the quantity
+  (`displayWithUnit`, `withUnit`); the number is read only to choose the
+  word's form, the figure shown is still the string (ADR-025).
+- **Password fields show and hide** (`PasswordField`): hidden at the
+  start, per field, and hidden again on submit and on leaving the page.
+- **Accessibility is enforced, not hoped for.** `accessibility.spec` runs
+  axe for WCAG 2.2 AA on twenty screens in both modes; its first runs
+  found and fixed contrast on quick filters and disabled helper text, a
+  link told by colour alone, and two controls without names. A link
+  inside a sentence is always underlined; a control with no visible label
+  carries one naming what it acts on.
+
 ---
 
 # Open decisions
