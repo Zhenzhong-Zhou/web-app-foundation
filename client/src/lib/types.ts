@@ -167,6 +167,13 @@ export interface OrderLine {
   quantityFulfilled: string;
   /** Customer returns, beside fulfilled rather than subtracted (ADR-043). */
   quantityReturned: string;
+  /**
+   * Credited on a credit note, voiding's left out (ADR-055): beside
+   * Returned, the gap is what nobody has settled. Zero on a purchase.
+   */
+  quantityCredited: string;
+  /** On returns with no RMA yet (ADR-047). Zero on a purchase or sample. */
+  quantityUnsettled: string;
   quantityOutstanding: string;
   unitPrice: string | null;
   currency: string | null;
@@ -180,6 +187,47 @@ export interface OrderLine {
   /** No more is coming (ADR-034). The quantities above stay as they were. */
   isClosedShort: boolean;
   closedReason: string | null;
+}
+
+/**
+ * A sale's money (ADR-055), summed by the server: never added up here.
+ * Invoiced and credited include tax and count issued documents only;
+ * not yet invoiced is before tax and unrounded, for formatMoney to round.
+ */
+export interface OrderMoney {
+  currency: string | null;
+  invoiced: string;
+  credited: string;
+  netInvoiced: string;
+  notInvoiced: string;
+}
+
+/** An invoice on a sale, as its "Invoices and credits" tab lists it. */
+export interface OrderInvoiceRow {
+  id: string;
+  /** Null on a draft: a number is given at issue (ADR-046). */
+  number: string | null;
+  status: InvoiceStatus;
+  date: CalendarDay | null;
+  total: string | null;
+  currency: string;
+  /** When the shipment it bills left. */
+  shippedAt: string;
+  quantity: string;
+}
+
+/** A credit note on a sale's invoice, for the same tab. Always issued. */
+export interface OrderCreditRow {
+  id: string;
+  number: string;
+  date: CalendarDay;
+  total: string;
+  currency: string;
+  reason: string;
+  /** The full credit that voided an invoice (ADR-046). */
+  isVoid: boolean;
+  invoiceNumber: string | null;
+  quantity: string;
 }
 
 /** What GET /orders/:id returns — the order with its lines. */
@@ -199,6 +247,33 @@ export interface OrderDetail {
   expectedAt: CalendarDay | null;
   totals: { currency: string; amount: string }[];
   totalsComplete: boolean;
+  /** Null on a purchase or a sample: neither is invoiced here. */
+  money: OrderMoney | null;
+  /** Returns received with no RMA, nobody yet deciding what they settle. */
+  unsettledReturns: number;
+  /** How many records each tab holds; voided shipments included. */
+  counts: {
+    shipments: number;
+    voidedShipments: number;
+    returns: number;
+    documents: number;
+  };
+  /**
+   * The quantities summed, when every line counts in one unit. Null when
+   * they differ: bottles and kilograms add up to nothing.
+   */
+  quantities: {
+    unit: string;
+    ordered: string;
+    fulfilled: string;
+    returned: string;
+    outstanding: string;
+  } | null;
+  /** A sale's invoices and credit notes; null on a purchase or sample. */
+  documents: {
+    invoices: OrderInvoiceRow[];
+    creditNotes: OrderCreditRow[];
+  } | null;
   note: string | null;
   lines: OrderLine[];
 }

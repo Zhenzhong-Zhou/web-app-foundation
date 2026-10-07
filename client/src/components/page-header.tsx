@@ -2,6 +2,7 @@ import ArrowBack from '@mui/icons-material/ArrowBack';
 import {
   Breadcrumbs,
   Chip,
+  type ChipProps,
   IconButton,
   Link,
   Stack,
@@ -54,7 +55,7 @@ export function PageHeader({
   /** When the title itself points somewhere — an order's partner, say. */
   titleTo?: string;
   subtitle?: ReactNode;
-  status?: { label: string; color: 'default' | 'primary' | 'success' };
+  status?: { label: string; color: ChipProps['color'] };
   actions?: ReactNode;
 }) {
   const intl = useIntl();

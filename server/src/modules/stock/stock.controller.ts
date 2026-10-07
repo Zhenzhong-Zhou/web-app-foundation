@@ -78,6 +78,13 @@ export class StockController {
     return { movement: await this.stock.record(dto, user.userId) };
   }
 
+  /** Counts beside the inventory's quick filters (ADR-055). */
+  @Get('counts')
+  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
+  counts(@Query() query: ListStockDto) {
+    return this.reads.counts(query);
+  }
+
   @Get('movements')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
   listMovements(@Query() query: ListMovementsDto) {

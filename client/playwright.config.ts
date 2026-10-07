@@ -23,6 +23,16 @@ loadEnv({ path: '../.env', quiet: true });
 const CLIENT_URL = process.env.E2E_CLIENT_URL ?? 'http://localhost:5273';
 const API_URL = process.env.E2E_API_URL ?? 'http://localhost:3100';
 
+/**
+ * Firefox runs in CI, on Linux, and on a machine that asks for it with
+ * E2E_FIREFOX=1. Playwright's Firefox build cannot open its profile on some
+ * macOS versions ("Could not find profile folder", "Operation not
+ * permitted"), whatever the temporary folder, while Chromium and WebKit
+ * start there; off by default, it no longer stops verify.sh on such a Mac,
+ * and CI still checks every screen in it.
+ */
+const FIREFOX = Boolean(process.env.CI || process.env.E2E_FIREFOX);
+
 const E2E_DATABASE_URL = process.env.DATABASE_URL_E2E;
 
 if (!E2E_DATABASE_URL) {
@@ -86,7 +96,43 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
 
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  /**
+   * Every spec in Chromium. In WebKit (Safari, and every browser on an
+   * iPhone, WeChat's included) and Firefox, the accessibility spec: twenty
+   * screens rendered and checked, in both modes, which is where an engine's
+   * difference in layout, focus or contrast shows. On an iPhone's screen
+   * and engine, mobile.spec.
+   *
+   * Only specs that make their own organization, or change nothing, run in
+   * more than one project: the rest share the owner's organization and fixed
+   * SKUs, and two browsers running them at once would collide.
+   */
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /mobile\.spec\.ts/,
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+      testMatch: /accessibility\.spec\.ts/,
+    },
+    ...(FIREFOX
+      ? [
+          {
+            name: 'firefox',
+            use: { ...devices['Desktop Firefox'] },
+            testMatch: /accessibility\.spec\.ts/,
+          },
+        ]
+      : []),
+    {
+      name: 'iphone',
+      use: { ...devices['iPhone 15'] },
+      testMatch: /mobile\.spec\.ts/,
+    },
+  ],
 
   /**
    * `reuseExistingServer` means a normal day is unaffected: if the dev server

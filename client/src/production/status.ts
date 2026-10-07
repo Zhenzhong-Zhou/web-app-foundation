@@ -29,13 +29,3 @@ export const RUN_STATUSES: RunStatus[] = [
 export function runStatusLabel(status: RunStatus): string {
   return intl().formatMessage(LABELS[status]);
 }
-
-export const STATUS_COLOUR: Record<
-  RunStatus,
-  'default' | 'primary' | 'success'
-> = {
-  draft: 'default',
-  released: 'primary',
-  completed: 'success',
-  cancelled: 'default',
-};

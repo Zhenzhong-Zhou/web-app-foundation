@@ -3,6 +3,7 @@ import { type SubmitEvent, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
+import { PasswordField } from '../components/password-field';
 import { useLanguage } from '../i18n/use-language';
 import { api } from '../lib/api';
 import {
@@ -122,13 +123,12 @@ export function RegisterPage() {
         slotProps={{ htmlInput: { maxLength: EMAIL_MAX_LENGTH } }}
       />
 
-      <TextField
+      <PasswordField
         id="password"
         label={intl.formatMessage({
           id: 'auth.field.password',
           defaultMessage: 'Password',
         })}
-        type="password"
         // new-password, not current-password: this is what prompts a manager
         // to offer a generated one (ADR-017).
         autoComplete="new-password"

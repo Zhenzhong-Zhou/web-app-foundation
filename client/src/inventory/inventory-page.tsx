@@ -2,12 +2,10 @@ import {
   Alert,
   Button,
   Chip,
-  FormControlLabel,
   MenuItem,
   Paper,
   Skeleton,
   Stack,
-  Switch,
   Table,
   TableBody,
   TableCell,
@@ -22,12 +20,15 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { EmptyState } from '../components/empty-state';
+import { ExpiryChip } from '../components/expiry-chip';
+import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
+import { EXPIRY_DAYS } from '../lib/expiry';
 import {
-  formatDay,
-  formatQuantity,
+  displayQuantity,
   itemName,
   nameAndCode,
   NO_VALUE,
@@ -36,7 +37,7 @@ import { openDialog } from '../lib/open-dialog';
 import type { Availability, Location, StockRow } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
-import { withUnit } from '../products/units';
+import { displayWithUnit } from '../products/units';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { MovementHistoryDialog } from './movement-history-dialog';
@@ -89,6 +90,14 @@ export function InventoryPage() {
   } | null>(null);
   const [viewing, setViewing] = useState<StockRow | null>(null);
   const [includeEmpty, setIncludeEmpty] = useState(false);
+  // "Expiring soon": lots within the amber threshold, the expired included.
+  const [expiring, setExpiring] = useState(false);
+  const [expiringCount, setExpiringCount] = useState<number | null>(null);
+  // "Needs a cost": stock whose value is still provisional (ADR-048).
+  const [needsCost, setNeedsCost] = useState(false);
+  const [needsCostCount, setNeedsCostCount] = useState<number | null>(null);
+  /** Bumped by Refresh and by every dialog that moves stock. */
+  const [changes, setChanges] = useState(0);
   const [editingLot, setEditingLot] = useState<StockRow | null>(null);
 
   /**
@@ -118,8 +127,39 @@ export function InventoryPage() {
     if (locationId) params.set('locationId', locationId);
     if (includeEmpty) params.set('includeEmpty', 'true');
     if (search) params.set('search', search);
+    if (expiring) params.set('expiringWithin', String(EXPIRY_DAYS.warning));
+    if (needsCost) params.set('needsCost', 'true');
     return `/stock?${params.toString()}`;
-  }, [locationId, includeEmpty, search]);
+  }, [locationId, includeEmpty, search, expiring, needsCost]);
+
+  /**
+   * The count beside "Expiring soon", with the list's other filters, so it
+   * is the number of rows pressing it shows (GET /stock/counts).
+   */
+  useEffect(() => {
+    let ignore = false;
+    const params = new URLSearchParams({
+      expiringWithin: String(EXPIRY_DAYS.warning),
+    });
+    if (locationId) params.set('locationId', locationId);
+    if (includeEmpty) params.set('includeEmpty', 'true');
+    if (search) params.set('search', search);
+
+    void api<{ expiring: number; needsCost: number }>(
+      `/stock/counts?${params.toString()}`,
+    )
+      .then((counts) => {
+        if (ignore) return;
+        setExpiringCount(counts.expiring);
+        setNeedsCostCount(counts.needsCost);
+      })
+      // Silent: without a count the button still works.
+      .catch(() => undefined);
+
+    return () => {
+      ignore = true;
+    };
+  }, [locationId, includeEmpty, search, changes]);
 
   const {
     entries: rows,
@@ -154,6 +194,7 @@ export function InventoryPage() {
    */
   const refresh = useCallback(async () => {
     reload();
+    setChanges((count) => count + 1);
     await loadAvailability();
   }, [reload, loadAvailability]);
 
@@ -236,66 +277,77 @@ export function InventoryPage() {
         </Alert>
       )}
 
-      <TextField
-        id="stock-location"
-        label={intl.formatMessage({
-          id: 'inventory.location',
-          defaultMessage: 'Location',
-        })}
-        select
-        fullWidth
-        value={locationId}
-        onChange={(event) => setLocationId(event.target.value)}
-        helperText={intl.formatMessage({
-          id: 'inventory.leavesOnly',
-          defaultMessage: 'Only locations that hold stock directly are listed.',
-        })}
+      {/* The one filter row (ADR-055). Search reaches the SKU, the product
+          name and the lot code; Location lists only places that hold stock
+          directly. "Show emptied" reaches zero rows, which are kept, never
+          deleted: a shelf that emptied yesterday is a fact, and its
+          movements are the only record of where the stock went. */}
+      <FilterRow
+        search={{
+          label: intl.formatMessage({
+            id: 'inventory.search',
+            defaultMessage: 'Search',
+          }),
+          value: searchText,
+          onChange: setSearchText,
+        }}
+        quick={[
+          {
+            id: 'expiring',
+            label: intl.formatMessage({
+              id: 'inventory.quick.expiring',
+              defaultMessage: 'Expiring soon',
+            }),
+            count: expiringCount ?? undefined,
+            pressed: expiring,
+            onToggle: () => setExpiring((on) => !on),
+          },
+          {
+            id: 'needs-cost',
+            label: intl.formatMessage({
+              id: 'inventory.quick.needsCost',
+              defaultMessage: 'Needs a cost',
+            }),
+            count: needsCostCount ?? undefined,
+            pressed: needsCost,
+            onToggle: () => setNeedsCost((on) => !on),
+          },
+          {
+            id: 'emptied',
+            label: intl.formatMessage({
+              id: 'inventory.showEmptied',
+              defaultMessage: 'Show emptied',
+            }),
+            pressed: includeEmpty,
+            onToggle: () => setIncludeEmpty((on) => !on),
+          },
+        ]}
       >
-        <MenuItem value="">
-          {intl.formatMessage({
-            id: 'inventory.everywhere',
-            defaultMessage: 'Everywhere',
+        <TextField
+          id="stock-location"
+          size="small"
+          label={intl.formatMessage({
+            id: 'inventory.location',
+            defaultMessage: 'Location',
           })}
-        </MenuItem>
-        {leaves.map((location) => (
-          <MenuItem key={location.id} value={location.id}>
-            {nameAndCode(location.name, location.code)}
+          select
+          value={locationId}
+          onChange={(event) => setLocationId(event.target.value)}
+          sx={{ minWidth: 200 }}
+        >
+          <MenuItem value="">
+            {intl.formatMessage({
+              id: 'inventory.everywhere',
+              defaultMessage: 'Everywhere',
+            })}
           </MenuItem>
-        ))}
-      </TextField>
-
-      {/* Zero rows are kept, never deleted — a shelf that emptied yesterday is
-          a fact, and its movements are the only record of where the stock
-          went. Hidden by default because "what is on this shelf" means what is
-          there, but reachable, or that history has no route. */}
-      <TextField
-        id="stock-search"
-        label={intl.formatMessage({
-          id: 'inventory.search',
-          defaultMessage: 'Search',
-        })}
-        fullWidth
-        value={searchText}
-        onChange={(event) => setSearchText(event.target.value)}
-        helperText={intl.formatMessage({
-          id: 'inventory.search.help',
-          defaultMessage:
-            'Anywhere in the SKU, the product name or the lot code.',
-        })}
-      />
-
-      <FormControlLabel
-        control={
-          <Switch
-            checked={includeEmpty}
-            onChange={(event) => setIncludeEmpty(event.target.checked)}
-          />
-        }
-        label={intl.formatMessage({
-          id: 'inventory.showEmptied',
-          defaultMessage: 'Show emptied',
-        })}
-      />
+          {leaves.map((location) => (
+            <MenuItem key={location.id} value={location.id}>
+              {nameAndCode(location.name, location.code)}
+            </MenuItem>
+          ))}
+        </TextField>
+      </FilterRow>
 
       <Paper variant="outlined">
         {loading ? (
@@ -372,17 +424,16 @@ export function InventoryPage() {
                         NO_VALUE
                       )}
                     </TableCell>
+                    {/* Days left within 90 days, red within 30, the date
+                        beside it (ADR-055). */}
                     <TableCell>
-                      {row.lotExpiresAt
-                        ? formatDay(row.lotExpiresAt)
-                        : NO_VALUE}
+                      <ExpiryChip expiresAt={row.lotExpiresAt} />
                     </TableCell>
-                    {/* Rendered as it arrived, with only its decimal separator
-                      the language's (withUnit, through formatQuantity).
-                      Parsing it would put a numeric through a JS double, the
-                      precision loss ADR-025 exists to avoid. */}
+                    {/* Read without padding zeros, grouped the language's way
+                      (displayQuantity), but never parsed: a numeric through
+                      a JS double is the loss ADR-025 exists to avoid. */}
                     <TableCell align="right">
-                      {withUnit(row.quantity, row.unitOfMeasure, intl)}
+                      {displayWithUnit(row.quantity, row.unitOfMeasure, intl)}
                     </TableCell>
 
                     <TableCell padding="checkbox">
@@ -404,17 +455,30 @@ export function InventoryPage() {
             </Table>
           </TableContainer>
         ) : (
-          <Typography color="text.secondary" sx={{ p: 3 }}>
-            {search
+          <EmptyState>
+            {needsCost && !expiring
               ? intl.formatMessage({
-                  id: 'inventory.noMatch',
-                  defaultMessage: 'Nothing matches that search.',
+                  id: 'inventory.noneNeedsCost',
+                  defaultMessage: 'Everything here has a cost.',
                 })
-              : intl.formatMessage({
-                  id: 'inventory.empty',
-                  defaultMessage: 'Nothing here yet.',
-                })}
-          </Typography>
+              : expiring
+                ? intl.formatMessage(
+                    {
+                      id: 'inventory.noneExpiring',
+                      defaultMessage: 'No lot here expires within {days} days.',
+                    },
+                    { days: EXPIRY_DAYS.warning },
+                  )
+                : search
+                  ? intl.formatMessage({
+                      id: 'inventory.noMatch',
+                      defaultMessage: 'Nothing matches that search.',
+                    })
+                  : intl.formatMessage({
+                      id: 'inventory.empty',
+                      defaultMessage: 'Nothing here yet.',
+                    })}
+          </EmptyState>
         )}
       </Paper>
 
@@ -493,13 +557,13 @@ export function InventoryPage() {
                       <TableRow key={row.variantId}>
                         <TableCell>{row.sku}</TableCell>
                         <TableCell align="right">
-                          {withUnit(row.onHand, row.unitOfMeasure, intl)}
+                          {displayWithUnit(row.onHand, row.unitOfMeasure, intl)}
                         </TableCell>
                         <TableCell align="right">
-                          {formatQuantity(row.held)}
+                          {displayQuantity(row.held)}
                         </TableCell>
                         <TableCell align="right">
-                          {formatQuantity(row.free)}
+                          {displayQuantity(row.free)}
                         </TableCell>
                         <TableCell
                           align="right"
@@ -509,7 +573,7 @@ export function InventoryPage() {
                               : undefined
                           }
                         >
-                          {formatQuantity(row.backordered)}
+                          {displayQuantity(row.backordered)}
                         </TableCell>
                       </TableRow>
                     ))}

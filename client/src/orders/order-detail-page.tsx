@@ -1,5 +1,6 @@
 import {
   Alert,
+  Box,
   Button,
   Link,
   Paper,
@@ -11,8 +12,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
-import { HistoryButton } from '../audit/history-button';
+import { HistoryEntries } from '../audit/history-entries';
 import { useCan } from '../auth/permissions';
+import { DetailLayout } from '../components/detail-layout';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
 import { formatDay, SEPARATOR } from '../lib/format';
@@ -25,29 +27,33 @@ import type {
   OrderStatus,
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useTab } from '../lib/use-tab';
 import { leavesOf } from '../locations/tree';
 import { RaiseRmaDialog } from '../rmas/raise-rma-dialog';
+import { COLOR_OF_TONE, STATUS_TONES } from '../theme/status';
 import { AddOrderLineDialog } from './add-order-line-dialog';
 import { CloseLineDialog } from './close-line-dialog';
 import { CloseOrderDialog } from './close-order-dialog';
 import { DuplicateOrderDialog } from './duplicate-order-dialog';
 import { EditOrderDialog } from './edit-order-dialog';
 import { EditOrderLineDialog } from './edit-order-line-dialog';
+import { OrderDocuments } from './order-documents';
 import { OrderLinesSection } from './order-lines-section';
 import { OrderStatusActions } from './order-status-actions';
+import { OrderSummary } from './order-summary';
 import { ReceiveLineDialog } from './receive-line-dialog';
 import { ReturnOrderDialog } from './return-order-dialog';
 import { ReturnsList } from './returns-list';
 import { ShipOrderDialog } from './ship-order-dialog';
 import { ShipmentsList } from './shipments-list';
-import { NEXT_STATUSES, orderStatusLabel } from './status';
+import { orderStatusLabel } from './status';
 
-const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
-  draft: 'default',
-  confirmed: 'primary',
-  fulfilled: 'success',
-  cancelled: 'default',
-};
+/**
+ * The order's sections, in the order they happen (ADR-055). Shipments,
+ * returns and documents are a sale's; History needs audit.view. The page
+ * passes the ones this order and member have.
+ */
+type OrderTab = 'items' | 'shipments' | 'returns' | 'documents' | 'history';
 
 export function OrderDetailPage() {
   const intl = useIntl();
@@ -87,6 +93,21 @@ export function OrderDetailPage() {
   const [holds, setHolds] = useState<Record<string, LineHold>>({});
 
   const [authorizing, setAuthorizing] = useState(false);
+
+  /**
+   * Every tab this member could see, before the order has loaded: a hook
+   * must run before any early return. Which of them this order has is
+   * settled once it arrives, below.
+   */
+  const canHistory = can('audit.view');
+  const possibleTabs: OrderTab[] = [
+    'items',
+    'shipments',
+    'returns',
+    'documents',
+    ...(canHistory ? (['history'] as const) : []),
+  ];
+  const [tab, setTab] = useTab<OrderTab>(possibleTabs);
 
   const canUpdate = can('orders.update');
   const canReceive = can('orders.receive');
@@ -244,6 +265,87 @@ export function OrderDetailPage() {
   const isDraft = order.status === 'draft';
   const amendable = canUpdate && (isDraft || order.status === 'confirmed');
 
+  const sale = order.direction === 'sale';
+  const hasDocuments = sale && !!order.documents && canViewInvoices;
+  const tabs: OrderTab[] = [
+    'items',
+    ...(sale ? (['shipments', 'returns'] as const) : []),
+    ...(hasDocuments ? (['documents'] as const) : []),
+    ...(canHistory ? (['history'] as const) : []),
+  ];
+  // A tab this order lacks (a purchase's ?tab=shipments) opens Items.
+  const open: OrderTab = tabs.includes(tab) ? tab : 'items';
+
+  /** Ship, when anything can: the page's main act (ADR-055). */
+  const primary = shippable ? (
+    <Button
+      fullWidth
+      disabled={working}
+      onClick={openDialog(() => setShipping(true))}
+    >
+      {intl.formatMessage({
+        id: 'orders.lines.ship',
+        defaultMessage: 'Ship',
+      })}
+    </Button>
+  ) : undefined;
+
+  /**
+   * The order's own actions, under Ship in its summary: Edit and Duplicate,
+   * then the status moves (Close order, Cancel order), as the reviewed
+   * mockup had them, the one that ends the order last.
+   */
+  const actions = (
+    <>
+      {/* Two equal halves, or one full width. A grid rather than a row of
+          full-width buttons, which overflowed the panel. */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(0, 1fr))',
+          gap: 1,
+        }}
+      >
+        {canUpdate && (
+          <Button
+            variant="outlined"
+            fullWidth
+            disabled={working}
+            onClick={openDialog(() => setEditing(true))}
+          >
+            {intl.formatMessage({
+              id: 'common.edit',
+              defaultMessage: 'Edit',
+            })}
+          </Button>
+        )}
+        {canCreate && (
+          <Button
+            variant="outlined"
+            fullWidth
+            disabled={working}
+            onClick={openDialog(() => setDuplicating(true))}
+          >
+            {intl.formatMessage({
+              id: 'orders.duplicate.action',
+              defaultMessage: 'Duplicate',
+            })}
+          </Button>
+        )}
+      </Box>
+      {canUpdate && (
+        <OrderStatusActions
+          order={order}
+          working={working}
+          quiet={!!primary}
+          stacked
+          onMove={moveTo}
+          onCloseOrder={() => setClosing(true)}
+        />
+      )}
+    </>
+  );
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -256,45 +358,17 @@ export function OrderDetailPage() {
             to: '/orders',
           },
         ]}
-        title={order.partnerName}
-        titleTo={`/partners/${order.partnerId}`}
+        // The order's own number when it has one, which is what people
+        // quote; the partner's name for an order placed by phone without.
+        title={order.reference ?? order.partnerName}
+        titleTo={order.reference ? undefined : `/partners/${order.partnerId}`}
         status={{
           // What the order is, by name, rather than relying on CSS
-          // capitalisation of the stored status.
+          // capitalisation of the stored status; its tone from the one
+          // table (ADR-055).
           label: orderStatusLabel(order.status, order.direction),
-          color: STATUS_COLOUR[order.status],
+          color: COLOR_OF_TONE[STATUS_TONES.order[order.status]],
         }}
-        actions={
-          <Stack direction="row" spacing={1}>
-            <HistoryButton resourceId={order.id} />
-            {canUpdate && (
-              <Button
-                variant="text"
-                disabled={working}
-                onClick={openDialog(() => setEditing(true))}
-              >
-                {intl.formatMessage({
-                  id: 'common.edit',
-                  defaultMessage: 'Edit',
-                })}
-              </Button>
-            )}
-            {canCreate && (
-              <Button
-                variant={
-                  NEXT_STATUSES[order.status].length === 0 ? 'outlined' : 'text'
-                }
-                disabled={working}
-                onClick={openDialog(() => setDuplicating(true))}
-              >
-                {intl.formatMessage({
-                  id: 'orders.duplicate.action',
-                  defaultMessage: 'Duplicate',
-                })}
-              </Button>
-            )}
-          </Stack>
-        }
         subtitle={
           <>
             {[
@@ -312,7 +386,6 @@ export function OrderDetailPage() {
                   id: 'orders.subtitle.sample',
                   defaultMessage: 'sample',
                 }),
-              order.reference,
               order.expectedAt &&
                 intl.formatMessage(
                   {
@@ -324,6 +397,19 @@ export function OrderDetailPage() {
             ]
               .filter(Boolean)
               .join(SEPARATOR)}
+            {/* The partner, linked, when the reference is the title: the
+                one name on the page that leads to its other orders. */}
+            {order.reference && (
+              <>
+                {SEPARATOR}
+                <Link
+                  component={RouterLink}
+                  to={`/partners/${order.partnerId}`}
+                >
+                  {order.partnerName}
+                </Link>
+              </>
+            )}
             {order.duplicatedFromId && (
               <>
                 {SEPARATOR}
@@ -360,58 +446,139 @@ export function OrderDetailPage() {
         </Paper>
       )}
 
-      <OrderLinesSection
-        order={order}
-        holds={holds}
-        working={working}
-        canUpdate={canUpdate}
-        receivable={receivable}
-        amendable={amendable}
-        shippable={shippable}
-        returnable={returnable}
-        authorizable={authorizable}
-        onAddLine={() => setAddingLine(true)}
-        onAuthorize={() => setAuthorizing(true)}
-        onTakeReturn={() => setReturning(true)}
-        onShip={() => setShipping(true)}
-        onReceive={setReceiving}
-        onEditLine={setEditingLine}
-        onCloseLine={setClosingLine}
-        onLineAction={lineAction}
+      <DetailLayout<OrderTab>
+        label={intl.formatMessage({
+          id: 'orders.sections',
+          defaultMessage: 'Order sections',
+        })}
+        summaryLabel={intl.formatMessage({
+          id: 'orders.summary.label',
+          defaultMessage: 'Summary',
+        })}
+        current={open}
+        onChange={setTab}
+        summary={
+          <OrderSummary
+            order={order}
+            primary={primary}
+            actions={actions}
+            onShowReturns={() => setTab('returns')}
+            onShowDocuments={
+              hasDocuments ? () => setTab('documents') : undefined
+            }
+          />
+        }
+        tabs={[
+          {
+            id: 'items',
+            label: intl.formatMessage({
+              id: 'orders.items',
+              defaultMessage: 'Items',
+            }),
+            content: (
+              <Box sx={{ p: 2 }}>
+                <OrderLinesSection
+                  order={order}
+                  holds={holds}
+                  working={working}
+                  canUpdate={canUpdate}
+                  receivable={receivable}
+                  amendable={amendable}
+                  returnable={returnable}
+                  authorizable={authorizable}
+                  onAddLine={() => setAddingLine(true)}
+                  onAuthorize={() => setAuthorizing(true)}
+                  onTakeReturn={() => setReturning(true)}
+                  onReceive={setReceiving}
+                  onEditLine={setEditingLine}
+                  onCloseLine={setClosingLine}
+                  onLineAction={lineAction}
+                />
+              </Box>
+            ),
+          },
+          ...(sale
+            ? [
+                {
+                  id: 'shipments' as const,
+                  label: intl.formatMessage({
+                    id: 'orders.shipments.title',
+                    defaultMessage: 'Shipments',
+                  }),
+                  // None reads better as no number than as a 0.
+                  count: order.counts.shipments || undefined,
+                  content: (
+                    <Box sx={{ p: 2 }}>
+                      <ShipmentsList
+                        orderId={order.id}
+                        refreshKey={shipments}
+                        // Closed too: voiding a shipment that never left
+                        // reopens the order.
+                        canVoid={
+                          canShip &&
+                          (order.status === 'confirmed' ||
+                            order.status === 'fulfilled')
+                        }
+                        orderClosed={order.status === 'fulfilled'}
+                        canViewInvoices={canViewInvoices}
+                        canInvoice={canInvoice && !order.isSample}
+                        onVoided={async () => {
+                          // The order changed too: fulfilled quantities,
+                          // outstanding and holds.
+                          await load();
+                          setShipments((count) => count + 1);
+                        }}
+                      />
+                    </Box>
+                  ),
+                },
+                {
+                  id: 'returns' as const,
+                  label: intl.formatMessage({
+                    id: 'layout.nav.returns',
+                    defaultMessage: 'Returns',
+                  }),
+                  count: order.counts.returns || undefined,
+                  content: (
+                    <Box sx={{ p: 2 }}>
+                      <ReturnsList orderId={order.id} refreshKey={returns} />
+                    </Box>
+                  ),
+                },
+              ]
+            : []),
+          ...(hasDocuments
+            ? [
+                {
+                  id: 'documents' as const,
+                  label: intl.formatMessage({
+                    id: 'orders.tab.documents',
+                    defaultMessage: 'Invoices and credits',
+                  }),
+                  count: order.counts.documents || undefined,
+                  content: (
+                    <Box sx={{ p: 2 }}>
+                      <OrderDocuments order={order} />
+                    </Box>
+                  ),
+                },
+              ]
+            : []),
+          ...(canHistory
+            ? [
+                {
+                  id: 'history' as const,
+                  label: intl.formatMessage({
+                    id: 'inventory.actions.history',
+                    defaultMessage: 'History',
+                  }),
+                  // Mounted only while open, so it fetches fresh each time.
+                  content: <HistoryEntries resourceId={order.id} />,
+                },
+              ]
+            : []),
+        ]}
       />
-
-      {order.direction === 'sale' && (
-        <ShipmentsList
-          orderId={order.id}
-          refreshKey={shipments}
-          // Closed too: voiding a shipment that never left reopens the order.
-          canVoid={
-            canShip &&
-            (order.status === 'confirmed' || order.status === 'fulfilled')
-          }
-          orderClosed={order.status === 'fulfilled'}
-          canViewInvoices={canViewInvoices}
-          canInvoice={canInvoice && !order.isSample}
-          onVoided={async () => {
-            // The order changed too: fulfilled quantities, outstanding and holds.
-            await load();
-            setShipments((count) => count + 1);
-          }}
-        />
-      )}
-
-      {order.direction === 'sale' && (
-        <ReturnsList orderId={order.id} refreshKey={returns} />
-      )}
-
-      {canUpdate && (
-        <OrderStatusActions
-          order={order}
-          working={working}
-          onMove={moveTo}
-          onCloseOrder={() => setClosing(true)}
-        />
-      )}
 
       {/* Keyed on the line, so the form is seeded at mount and never needs an
           effect to resync. */}

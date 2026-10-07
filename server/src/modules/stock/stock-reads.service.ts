@@ -25,6 +25,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { openNeedsCost } from '../costs/open-needs-cost';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
 
@@ -39,6 +40,84 @@ const STOCK_PAGE_SIZE = 50;
  * ledger (ADR-023), injected by every module that moves stock, while only
  * the stock controller calls these two reads.
  */
+/**
+ * The stock list's filters as conditions (ADR-051), shared by the list and
+ * by its counts, so "Expiring soon 2" counts exactly the rows pressing it
+ * shows.
+ */
+function filtersOf(query: ListStockDto, organizationId: string): SQL[] {
+  /**
+   * The organization on every joined table, not only on stock_levels.
+   * Redundant for correctness, but without it Postgres joins this
+   * tenant's stock to every tenant's lots, variants and products, which
+   * is what ADR-051's plan check found: a cost that grows with the whole
+   * database rather than with one organization.
+   */
+  const scope: SQL[] = [
+    eq(stockLevels.organizationId, organizationId),
+    eq(productVariants.organizationId, organizationId),
+    eq(products.organizationId, organizationId),
+    eq(locations.organizationId, organizationId),
+  ];
+
+  if (query.locationId) {
+    scope.push(eq(stockLevels.locationId, query.locationId));
+  }
+
+  if (query.variantId) {
+    scope.push(eq(stockLevels.variantId, query.variantId));
+  }
+
+  /**
+   * Zero rows are kept, not deleted — a shelf that emptied yesterday is a
+   * fact worth having, and `LocationsService` depends on the row surviving
+   * so an emptied leaf can still gain children. But "what is on this shelf"
+   * means what is there, so they are hidden unless asked for.
+   */
+  if (query.includeEmpty !== 'true') {
+    scope.push(gt(stockLevels.quantity, '0'));
+  }
+
+  // Anywhere in the SKU, the product name or the lot code: what someone
+  // looking for stock types is any of the three. % and _ match themselves.
+  if (query.search) {
+    const escaped = query.search.replace(/[\\%_]/g, (char) => `\\${char}`);
+    const pattern = `%${escaped}%`;
+    scope.push(
+      or(
+        ilike(productVariants.sku, pattern),
+        ilike(products.name, pattern),
+        ilike(lots.code, pattern),
+      )!,
+    );
+  }
+
+  if (query.expiringWithin) {
+    scope.push(
+      sql`${lots.expiresAt} <= current_date + ${query.expiringWithin}::int`,
+    );
+  }
+
+  // The same pool as a waiting cost row: its variant, and its lot or none.
+  if (query.needsCost === 'true') {
+    scope.push(sql`exists (
+      select 1 from (${openNeedsCost(organizationId)}) waiting
+      where waiting.variant_id = ${stockLevels.variantId}
+        and waiting.lot_id is not distinct from ${stockLevels.lotId}
+    )`);
+  }
+
+  return scope;
+}
+
+/** A stock row's lot, in the same organization. Left-joined by callers. */
+function lotJoin(organizationId: string) {
+  return and(
+    eq(lots.id, stockLevels.lotId),
+    eq(lots.organizationId, organizationId),
+  );
+}
+
 @Injectable()
 export class StockReadsService {
   constructor(private readonly tenantDb: TenantDb) {}
@@ -67,55 +146,8 @@ export class StockReadsService {
     const limit = query.limit ?? STOCK_PAGE_SIZE;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      /**
-       * The organization on every joined table, not only on stock_levels.
-       * Redundant for correctness, but without it Postgres joins this
-       * tenant's stock to every tenant's lots, variants and products, which
-       * is what ADR-051's plan check found: a cost that grows with the whole
-       * database rather than with one organization.
-       */
-      const scope: SQL[] = [
-        eq(stockLevels.organizationId, organizationId),
-        eq(productVariants.organizationId, organizationId),
-        eq(products.organizationId, organizationId),
-        eq(locations.organizationId, organizationId),
-      ];
-      const lotOf = and(
-        eq(lots.id, stockLevels.lotId),
-        eq(lots.organizationId, organizationId),
-      );
-
-      if (query.locationId) {
-        scope.push(eq(stockLevels.locationId, query.locationId));
-      }
-
-      if (query.variantId) {
-        scope.push(eq(stockLevels.variantId, query.variantId));
-      }
-
-      /**
-       * Zero rows are kept, not deleted — a shelf that emptied yesterday is a
-       * fact worth having, and `LocationsService` depends on the row surviving
-       * so an emptied leaf can still gain children. But "what is on this shelf"
-       * means what is there, so they are hidden unless asked for.
-       */
-      if (query.includeEmpty !== 'true') {
-        scope.push(gt(stockLevels.quantity, '0'));
-      }
-
-      // Anywhere in the SKU, the product name or the lot code: what someone
-      // looking for stock types is any of the three. % and _ match themselves.
-      if (query.search) {
-        const escaped = query.search.replace(/[\\%_]/g, (char) => `\\${char}`);
-        const pattern = `%${escaped}%`;
-        scope.push(
-          or(
-            ilike(productVariants.sku, pattern),
-            ilike(products.name, pattern),
-            ilike(lots.code, pattern),
-          )!,
-        );
-      }
+      const scope = filtersOf(query, organizationId);
+      const lotOf = lotJoin(organizationId);
 
       const order = sql`(${locations.name}, ${productVariants.sku}, coalesce(${lots.code}, ''), ${stockLevels.id})`;
 
@@ -200,6 +232,43 @@ export class StockReadsService {
         .limit(limit + 1);
 
       return pageOf(rows, limit);
+    });
+  }
+
+  /**
+   * How many rows each quick filter would show (ADR-055), beside its
+   * button: "Expiring soon 2", "Needs a cost 1". Each is counted with the
+   * list's own filters and the others' left off, so the number is the
+   * rows pressing that one shows. Expiring means within 90 days unless
+   * asked otherwise, the threshold the expiry chips turn amber at.
+   */
+  counts(query: ListStockDto = {}) {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const { expiringWithin, ...rest } = query;
+      const unfiltered = { ...rest, needsCost: undefined };
+
+      const count = async (filters: ListStockDto) => {
+        const [row] = await tx
+          .select({ count: sql<number>`count(*)::int` })
+          .from(stockLevels)
+          .innerJoin(
+            productVariants,
+            eq(productVariants.id, stockLevels.variantId),
+          )
+          .innerJoin(products, eq(products.id, productVariants.productId))
+          .innerJoin(locations, eq(locations.id, stockLevels.locationId))
+          .leftJoin(lots, lotJoin(organizationId))
+          .where(and(...filtersOf(filters, organizationId)));
+        return row.count;
+      };
+
+      return {
+        expiring: await count({
+          ...unfiltered,
+          expiringWithin: expiringWithin ?? 90,
+        }),
+        needsCost: await count({ ...unfiltered, needsCost: 'true' }),
+      };
     });
   }
 

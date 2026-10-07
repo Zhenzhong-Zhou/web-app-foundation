@@ -3,7 +3,6 @@ import {
   Button,
   Chip,
   Link,
-  MenuItem,
   Paper,
   Skeleton,
   Stack,
@@ -13,20 +12,22 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
-  Typography,
 } from '@mui/material';
 import { useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { EmptyState } from '../components/empty-state';
+import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
-import { formatDay, formatQuantity, NO_VALUE } from '../lib/format';
-import type { OrderStatus, OrderSummary } from '../lib/types';
+import { StatusChip } from '../components/status-chip';
+import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
+import type { OrderSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { STATUS_TONES } from '../theme/status';
 import { orderStatusLabel } from './status';
 
 /**
@@ -35,13 +36,6 @@ import { orderStatusLabel } from './status';
  * a short shipment somebody closed (ADR-027). The Fulfilled column is the
  * arithmetic; this is the decision.
  */
-const STATUS_COLOUR: Record<OrderStatus, 'default' | 'primary' | 'success'> = {
-  draft: 'default',
-  confirmed: 'primary',
-  fulfilled: 'success',
-  cancelled: 'default',
-};
-
 const FILTERS = [
   {
     value: 'open',
@@ -110,30 +104,17 @@ export function OrdersPage() {
         }
       />
 
-      {/* Its own row, as on the audit page: the header holds what the page
-          is and what you can do on it, and a filter is neither. It is also
-          where the next filter goes — partner and direction are the obvious
-          ones — without crowding the title. */}
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <TextField
-          id="order-filter"
-          select
-          size="small"
-          label={intl.formatMessage({
-            id: 'orders.filter.label',
-            defaultMessage: 'Show',
-          })}
-          value={filter}
-          onChange={(event) => setFilter(event.target.value as Filter)}
-          sx={{ minWidth: 160 }}
-        >
-          {FILTERS.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {intl.formatMessage(option.label)}
-            </MenuItem>
-          ))}
-        </TextField>
-      </Stack>
+      {/* The one filter row (ADR-055): which orders, as buttons rather
+          than a select, so the choice is visible before it is made. One is
+          always pressed; pressing another moves to it. */}
+      <FilterRow
+        quick={FILTERS.map((option) => ({
+          id: option.value,
+          label: intl.formatMessage(option.label),
+          pressed: filter === option.value,
+          onToggle: () => setFilter(option.value),
+        }))}
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -176,7 +157,7 @@ export function OrdersPage() {
                       defaultMessage: 'Expected',
                     })}
                   </TableCell>
-                  <TableCell>
+                  <TableCell align="right">
                     {intl.formatMessage({
                       id: 'orders.fulfilled',
                       defaultMessage: 'Fulfilled',
@@ -241,25 +222,25 @@ export function OrdersPage() {
                       separator the language's. Parsing a numeric(18,4) into a
                       JS number to make a percentage is how a quantity loses
                       its last decimal place (ADR-025). */}
-                    <TableCell>
+                    <TableCell align="right">
                       {intl.formatMessage(
                         {
                           id: 'orders.fulfilledOfOrdered',
                           defaultMessage: '{fulfilled} / {ordered}',
                         },
                         {
-                          fulfilled: formatQuantity(order.quantityFulfilled),
-                          ordered: formatQuantity(order.quantityOrdered),
+                          fulfilled: displayQuantity(order.quantityFulfilled),
+                          ordered: displayQuantity(order.quantityOrdered),
                         },
                       )}
                     </TableCell>
 
                     <TableCell>
-                      <Chip
+                      {/* Its tone from the one table (ADR-055), its words
+                          from the catalogue rather than CSS capitalisation. */}
+                      <StatusChip
+                        tone={STATUS_TONES.order[order.status]}
                         label={orderStatusLabel(order.status, order.direction)}
-                        size="small"
-                        color={STATUS_COLOUR[order.status]}
-                        sx={{ textTransform: 'capitalize' }}
                       />
                     </TableCell>
                   </TableRow>
@@ -268,7 +249,9 @@ export function OrdersPage() {
             </Table>
           </TableContainer>
         ) : (
-          <Typography color="text.secondary" sx={{ p: 3 }}>
+          // No Raise an order here: the page header already offers it, and
+          // a second button for the same act is one too many.
+          <EmptyState>
             {filter === 'open'
               ? intl.formatMessage({
                   id: 'orders.empty.open',
@@ -279,7 +262,7 @@ export function OrdersPage() {
                   id: 'orders.empty.filtered',
                   defaultMessage: 'No orders match that filter.',
                 })}
-          </Typography>
+          </EmptyState>
         )}
       </Paper>
 

@@ -40,6 +40,11 @@ function order(over: Partial<OrderDetail> = {}): OrderDetail {
     isSample: false,
     totals: [],
     totalsComplete: false,
+    money: null,
+    unsettledReturns: 0,
+    counts: { shipments: 0, voidedShipments: 0, returns: 0, documents: 0 },
+    quantities: null,
+    documents: null,
     lines: [orderLine()],
     ...over,
   };
@@ -53,9 +58,12 @@ function serve(detail: OrderDetail) {
   );
 }
 
-function renderPage(permissions = ALL) {
+/** The order page, at its Shipments tab: where invoices and voids are. */
+const SHIPMENTS_TAB = '/orders/order-1?tab=shipments';
+
+function renderPage(permissions = ALL, entry = '/orders/order-1') {
   return renderWithAuth(
-    <MemoryRouter initialEntries={['/orders/order-1']}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/orders/:id" element={<OrderDetailPage />} />
       </Routes>
@@ -67,6 +75,39 @@ function renderPage(permissions = ALL) {
 /** The row for a SKU, so an assertion cannot match a control on another. */
 async function rowFor(sku: string) {
   return (await screen.findByText(sku)).closest('tr')!;
+}
+
+/**
+ * Everything a row offers (ADR-055): its own buttons, and the entries of its
+ * ⋮ menu, opened and closed again. Names, so an assertion reads like the
+ * screen rather than like the markup.
+ */
+async function actionsOf(sku: string): Promise<string[]> {
+  const row = within(await rowFor(sku));
+  const menu = row.queryByRole('button', { name: `Actions for ${sku}` });
+  const buttons = row
+    .queryAllByRole('button')
+    .filter((button) => button !== menu)
+    .map((button) => button.textContent ?? '');
+
+  if (!menu) return buttons;
+
+  await userEvent.click(menu);
+  const entries = screen
+    .getAllByRole('menuitem')
+    .map((item) => item.textContent ?? '');
+  await userEvent.keyboard('{Escape}');
+
+  return [...buttons, ...entries];
+}
+
+/** Opens a row's ⋮ menu and chooses an entry. */
+async function chooseFrom(sku: string, action: string) {
+  const row = within(await rowFor(sku));
+  await userEvent.click(
+    row.getByRole('button', { name: `Actions for ${sku}` }),
+  );
+  await userEvent.click(screen.getByRole('menuitem', { name: action }));
 }
 
 describe('OrderDetailPage lines', () => {
@@ -96,20 +137,14 @@ describe('OrderDetailPage lines', () => {
         await screen.findByRole('button', { name: 'Add item' }),
       ).toBeInTheDocument();
 
-      const row = within(await rowFor('WIDGET-1'));
-      expect(row.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
-      expect(
-        row.getByRole('button', { name: 'Remove WIDGET-1' }),
-      ).toBeInTheDocument();
+      const actions = await actionsOf('WIDGET-1');
+      expect(actions).toContain('Edit');
+      expect(actions).toContain('Remove WIDGET-1');
 
       // Nothing can be received against a draft, and a draft has promised
       // nothing to close short (ADR-033).
-      expect(
-        row.queryByRole('button', { name: 'Receive' }),
-      ).not.toBeInTheDocument();
-      expect(
-        row.queryByRole('button', { name: 'Close short' }),
-      ).not.toBeInTheDocument();
+      expect(actions).not.toContain('Receive');
+      expect(actions).not.toContain('Close short');
     });
 
     /**
@@ -120,10 +155,7 @@ describe('OrderDetailPage lines', () => {
       serve(order());
       renderPage();
 
-      const row = within(await rowFor('WIDGET-1'));
-      expect(
-        row.queryByRole('button', { name: 'Remove WIDGET-1' }),
-      ).not.toBeInTheDocument();
+      expect(await actionsOf('WIDGET-1')).not.toContain('Remove WIDGET-1');
     });
   });
 
@@ -134,12 +166,12 @@ describe('OrderDetailPage lines', () => {
       serve(order(confirmed));
       renderPage();
 
+      // Receive on the row, the corrections in its menu.
       const row = within(await rowFor('WIDGET-1'));
       expect(row.getByRole('button', { name: 'Receive' })).toBeInTheDocument();
-      expect(row.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
-      expect(
-        row.getByRole('button', { name: 'Close short' }),
-      ).toBeInTheDocument();
+      expect(await actionsOf('WIDGET-1')).toEqual(
+        expect.arrayContaining(['Receive', 'Edit', 'Close short']),
+      );
     });
 
     it('does not offer add or remove', async () => {
@@ -153,10 +185,7 @@ describe('OrderDetailPage lines', () => {
 
       // Adding is a new agreement and removing is a partial cancellation —
       // neither is a correction (ADR-033).
-      const row = within(await rowFor('WIDGET-1'));
-      expect(
-        row.getByRole('button', { name: 'Close short' }),
-      ).toBeInTheDocument();
+      expect(await actionsOf('WIDGET-1')).toContain('Close short');
 
       expect(
         screen.queryByRole('button', { name: 'Add item' }),
@@ -182,13 +211,9 @@ describe('OrderDetailPage lines', () => {
       );
       renderPage();
 
-      const row = within(await rowFor('WIDGET-1'));
-      expect(
-        row.queryByRole('button', { name: 'Receive' }),
-      ).not.toBeInTheDocument();
-      expect(
-        row.queryByRole('button', { name: 'Close short' }),
-      ).not.toBeInTheDocument();
+      const actions = await actionsOf('WIDGET-1');
+      expect(actions).not.toContain('Receive');
+      expect(actions).not.toContain('Close short');
     });
   });
 
@@ -217,9 +242,10 @@ describe('OrderDetailPage lines', () => {
       serve(closed);
       renderPage();
 
+      // Without padding zeros, as quantities read (ADR-055).
       const row = within(await rowFor('WIDGET-1'));
-      expect(row.getByText('40.0000')).toBeInTheDocument();
-      expect(row.getByText('10.0000')).toBeInTheDocument();
+      expect(row.getByText('40')).toBeInTheDocument();
+      expect(row.getByText('10')).toBeInTheDocument();
     });
 
     it('shows that it is closed instead of an outstanding quantity', async () => {
@@ -234,13 +260,11 @@ describe('OrderDetailPage lines', () => {
       serve(closed);
       renderPage();
 
-      const row = within(await rowFor('WIDGET-1'));
-      expect(row.getByRole('button', { name: 'Reopen' })).toBeInTheDocument();
+      const actions = await actionsOf('WIDGET-1');
+      expect(actions).toContain('Reopen');
       // The server refuses a receipt until it is reopened, so the reversal is
       // deliberate rather than implied by a delivery (ADR-034).
-      expect(
-        row.queryByRole('button', { name: 'Receive' }),
-      ).not.toBeInTheDocument();
+      expect(actions).not.toContain('Receive');
     });
   });
 
@@ -261,22 +285,17 @@ describe('OrderDetailPage lines', () => {
       renderPage(['orders.view']);
 
       const row = within(await rowFor('WIDGET-1'));
-      expect(row.getByText('35.0000')).toBeInTheDocument();
-
-      for (const name of ['Receive', 'Edit', 'Close short']) {
-        expect(row.queryByRole('button', { name })).not.toBeInTheDocument();
-      }
+      expect(row.getByText('35')).toBeInTheDocument();
+      expect(await actionsOf('WIDGET-1')).toEqual([]);
     });
 
     it('can receive without being able to amend', async () => {
       serve(order({ status: 'confirmed' }));
       renderPage(['orders.view', 'orders.receive']);
 
-      const row = within(await rowFor('WIDGET-1'));
-      expect(row.getByRole('button', { name: 'Receive' })).toBeInTheDocument();
-      expect(
-        row.queryByRole('button', { name: 'Edit' }),
-      ).not.toBeInTheDocument();
+      const actions = await actionsOf('WIDGET-1');
+      expect(actions).toContain('Receive');
+      expect(actions).not.toContain('Edit');
     });
 
     /**
@@ -300,8 +319,7 @@ describe('OrderDetailPage lines', () => {
 
       renderPage();
 
-      const row = within(await rowFor('WIDGET-1'));
-      await userEvent.click(row.getByRole('button', { name: 'Reopen' }));
+      await chooseFrom('WIDGET-1', 'Reopen');
 
       expect(
         await screen.findByText('That line is not closed'),
@@ -429,7 +447,7 @@ describe('OrderDetailPage lines', () => {
 
     it('offers an invoice for a shipment that has none', async () => {
       serveSale();
-      renderPage(SALE_PERMISSIONS);
+      renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
 
       expect(
         await screen.findByRole('button', { name: 'Create invoice' }),
@@ -443,7 +461,7 @@ describe('OrderDetailPage lines', () => {
      */
     it('links to the standing invoice, and offers no void', async () => {
       serveSale([invoice()]);
-      renderPage(SALE_PERMISSIONS);
+      renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
 
       expect(
         await screen.findByRole('link', { name: 'Invoice INV-000001' }),
@@ -459,7 +477,7 @@ describe('OrderDetailPage lines', () => {
     // A voided invoice no longer bills the shipment; it can be billed again.
     it('ignores a voided invoice', async () => {
       serveSale([invoice({ status: 'voided' })]);
-      renderPage(SALE_PERMISSIONS);
+      renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
 
       expect(
         await screen.findByRole('button', { name: 'Create invoice' }),
@@ -469,7 +487,7 @@ describe('OrderDetailPage lines', () => {
     // Samples ship and trace like sales, but are never invoiced (ADR-042).
     it('offers no invoice on a sample', async () => {
       serveSale([], { isSample: true });
-      renderPage(SALE_PERMISSIONS);
+      renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
 
       expect(
         await screen.findByRole('heading', { name: 'Shipments' }),
@@ -510,7 +528,7 @@ describe('OrderDetailPage lines', () => {
         'return_authorizations.create',
       ]);
 
-      await screen.findByRole('heading', { name: 'Shipments' });
+      await screen.findByRole('tab', { name: /Shipments/ });
       expect(
         screen.queryByRole('button', { name: 'Authorize a return' }),
       ).not.toBeInTheDocument();
@@ -527,7 +545,7 @@ describe('OrderDetailPage lines', () => {
       });
       renderPage(SALE_PERMISSIONS);
 
-      await screen.findByRole('heading', { name: 'Shipments' });
+      await screen.findByRole('tab', { name: /Shipments/ });
       expect(
         screen.queryByRole('button', { name: 'Authorize a return' }),
       ).not.toBeInTheDocument();
@@ -591,7 +609,8 @@ describe('OrderDetailPage prices', () => {
     renderPage();
 
     const row = within(await rowFor('WIDGET-1'));
-    await user.click(row.getByRole('button', { name: 'Use list price' }));
+    await user.click(row.getByRole('button', { name: 'Actions for WIDGET-1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Use list price' }));
 
     expect(
       await screen.findByText('No price list applies to this order'),
@@ -602,9 +621,6 @@ describe('OrderDetailPage prices', () => {
     serve(order({ direction: 'sale', isSample: true }));
     renderPage();
 
-    const row = within(await rowFor('WIDGET-1'));
-    expect(
-      row.queryByRole('button', { name: 'Use list price' }),
-    ).not.toBeInTheDocument();
+    expect(await actionsOf('WIDGET-1')).not.toContain('Use list price');
   });
 });

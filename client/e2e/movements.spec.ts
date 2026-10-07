@@ -16,10 +16,18 @@ import { createLocation, createProduct, signInAs } from './support/api';
  * and transfer helpers; they move to their own file the moment either half
  * grows.
  *
- * Quantities are asserted as the strings the server returned. A test that
- * normalised 6.0000 to 6 would be doing the parse ADR-025 forbids in
- * production, and would keep passing if the column became a float.
+ * The inventory shows quantities to read, "6 each" (displayQuantity,
+ * ADR-055): the server's string trimmed and grouped, never parsed, so a
+ * column turned float would still show here as its digits changed. Each is
+ * matched as its whole cell, since "6 each" is inside "16 each".
  */
+
+/** A row's whole cell holding exactly this text, such as "6 each". */
+function cellOf(page: Page, row: RegExp, text: string) {
+  return page
+    .getByRole('row', { name: row })
+    .getByRole('cell', { name: text, exact: true });
+}
 
 async function receive(
   api: Parameters<typeof createProduct>[0],
@@ -97,9 +105,7 @@ test('ships stock out and reduces the count', async ({ page, api }) => {
   await dialog.getByLabel('Quantity').fill('4');
   await dialog.getByRole('button', { name: 'Ship' }).click();
 
-  await expect(
-    page.getByRole('row', { name: new RegExp(product.sku) }),
-  ).toContainText('6.0000');
+  await expect(cellOf(page, new RegExp(product.sku), '6 each')).toBeVisible();
 });
 
 test('refuses to ship more than the shelf holds', async ({ page, api }) => {
@@ -126,9 +132,7 @@ test('refuses to ship more than the shelf holds', async ({ page, api }) => {
   // Nothing moved. A ledger row for a shipment that did not happen is worse
   // than no row.
   await dialog.getByRole('button', { name: 'Cancel' }).click();
-  await expect(
-    page.getByRole('row', { name: new RegExp(product.sku) }),
-  ).toContainText('5.0000');
+  await expect(cellOf(page, new RegExp(product.sku), '5 each')).toBeVisible();
 });
 
 test('moves stock between locations without changing the total', async ({
@@ -155,11 +159,11 @@ test('moves stock between locations without changing the total', async ({
    * deterministic lock ordering in StockService runs from a browser.
    */
   await expect(
-    page.getByRole('row', { name: new RegExp(`${product.sku}.*E2E Shelf A`) }),
-  ).toContainText('25.0000');
+    cellOf(page, new RegExp(`${product.sku}.*E2E Shelf A`), '25 each'),
+  ).toBeVisible();
   await expect(
-    page.getByRole('row', { name: new RegExp(`${product.sku}.*E2E Shelf B`) }),
-  ).toContainText('15.0000');
+    cellOf(page, new RegExp(`${product.sku}.*E2E Shelf B`), '15 each'),
+  ).toBeVisible();
 });
 
 test('corrects a count and requires an explanation', async ({ page, api }) => {
@@ -181,9 +185,7 @@ test('corrects a count and requires an explanation', async ({ page, api }) => {
   await dialog.getByLabel('What happened').fill('Three broken in the box');
   await dialog.getByRole('button', { name: 'Save correction' }).click();
 
-  await expect(
-    page.getByRole('row', { name: new RegExp(product.sku) }),
-  ).toContainText('17.0000');
+  await expect(cellOf(page, new RegExp(product.sku), '17 each')).toBeVisible();
 });
 
 test('shows emptied rows when asked', async ({ page, api }) => {
@@ -212,11 +214,10 @@ test('shows emptied rows when asked', async ({ page, api }) => {
    * record of where the stock went — so it has to be reachable. Two fetches
    * racing here would leave the toggle looking dead.
    */
-  await page.getByLabel('Show emptied').click();
+  // A quick filter on the inventory's filter row (ADR-055).
+  await page.getByRole('button', { name: 'Show emptied' }).click();
 
-  await expect(
-    page.getByRole('row', { name: new RegExp(product.sku) }),
-  ).toContainText('0.0000');
+  await expect(cellOf(page, new RegExp(product.sku), '0 each')).toBeVisible();
 });
 
 test('narrows the ledger by reason', async ({ page, freshOrg }) => {

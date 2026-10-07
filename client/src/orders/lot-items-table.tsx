@@ -10,9 +10,10 @@ import {
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { formatDay, NO_VALUE } from '../lib/format';
+import { ExpiryChip } from '../components/expiry-chip';
+import { NO_VALUE } from '../lib/format';
 import type { Shipment } from '../lib/types';
-import { withUnit } from '../products/units';
+import { displayWithUnit } from '../products/units';
 
 /**
  * What a shipment carried, or what a return brought back: one row per SKU and
@@ -80,10 +81,12 @@ export function LotItemsTable({ items }: { items: Shipment['items'] }) {
                 )}
               </TableCell>
               <TableCell>
-                {item.expiresAt ? formatDay(item.expiresAt) : NO_VALUE}
+                {/* Days left when it is close (ADR-055): a shipment of
+                    a lot about to expire is what a customer complains of. */}
+                <ExpiryChip expiresAt={item.expiresAt} />
               </TableCell>
               <TableCell align="right">
-                {withUnit(item.quantity, item.unitOfMeasure, intl)}
+                {displayWithUnit(item.quantity, item.unitOfMeasure, intl)}
               </TableCell>
             </TableRow>
           ))}

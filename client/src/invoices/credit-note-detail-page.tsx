@@ -19,9 +19,9 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import { PageHeader } from '../components/page-header';
 import {
+  displayQuantity,
   formatDay,
   formatMoney,
-  formatQuantity,
   NO_VALUE,
   SEPARATOR,
 } from '../lib/format';
@@ -54,7 +54,11 @@ export function CreditNoteDetailPage() {
 
   /** The invoice's number as a link, in whichever sentence names it. */
   const link = (chunks: ReactNode[]) => (
-    <Link component={RouterLink} to={`/invoices/${note.invoiceId}`}>
+    <Link
+      underline="always"
+      component={RouterLink}
+      to={`/invoices/${note.invoiceId}`}
+    >
       {chunks}
     </Link>
   );
@@ -201,7 +205,7 @@ export function CreditNoteDetailPage() {
                   <TableCell>{line.sku}</TableCell>
                   <TableCell>{line.description}</TableCell>
                   <TableCell align="right">
-                    {formatQuantity(String(Number(line.quantity)))}
+                    {displayQuantity(line.quantity)}
                   </TableCell>
                   <TableCell align="right">
                     {formatMoney(line.unitPrice, note.currency)}

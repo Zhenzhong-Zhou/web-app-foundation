@@ -1,6 +1,7 @@
 import { Button, Chip, Stack, Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
 
+import { StatusChip } from '../components/status-chip';
 import { SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { Location } from '../lib/types';
@@ -71,26 +72,24 @@ export function LocationNode({
             the chip disappearing the moment a child is added is that invariant
             rendered. */}
         {!children.length && (
-          <Chip
+          <StatusChip
+            tone="info"
             label={intl.formatMessage({
               id: 'locations.holdsStock',
               defaultMessage: 'Holds stock',
             })}
-            size="small"
-            color="primary"
           />
         )}
 
         {/* Quarantine, Returns, and WIP are locations rather than a status on
             the stock row, so the distinction has to be visible somewhere. */}
         {!location.isAvailable && (
-          <Chip
+          <StatusChip
+            tone="warning"
             label={intl.formatMessage({
               id: 'locations.notAvailable',
               defaultMessage: 'Not available',
             })}
-            size="small"
-            color="warning"
           />
         )}
 

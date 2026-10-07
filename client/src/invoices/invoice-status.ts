@@ -1,7 +1,9 @@
+import type { ChipProps } from '@mui/material';
 import { defineMessages } from 'react-intl';
 
 import { intl } from '../i18n/intl';
 import type { InvoiceStatus } from '../lib/types';
+import { COLOR_OF_TONE, STATUS_TONES } from '../theme/status';
 
 const LABELS = defineMessages({
   draft: { id: 'orders.status.draft', defaultMessage: 'Draft' },
@@ -10,16 +12,16 @@ const LABELS = defineMessages({
 });
 
 /**
- * How a status reads on a chip, in the reader's language (ADR-054). Issued
- * is the one that matters day to day — it is what the customer owes — so it
- * is the only one in colour.
+ * How a status reads on a chip, in the reader's language (ADR-054), in its
+ * tone from the one table (ADR-055): Draft neutral, Issued quiet blue,
+ * Voided red.
  */
 export function invoiceStatus(status: InvoiceStatus): {
   label: string;
-  color: 'default' | 'primary' | 'success';
+  color: ChipProps['color'];
 } {
   return {
     label: intl().formatMessage(LABELS[status]),
-    color: status === 'issued' ? 'primary' : 'default',
+    color: COLOR_OF_TONE[STATUS_TONES.invoice[status]],
   };
 }

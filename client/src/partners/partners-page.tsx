@@ -1,7 +1,6 @@
 import {
   Alert,
   Button,
-  Chip,
   Link,
   Paper,
   Skeleton,
@@ -12,14 +11,16 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { EmptyState } from '../components/empty-state';
+import { FilterRow } from '../components/filter-row';
 import { PageHeader } from '../components/page-header';
+import { StatusChip } from '../components/status-chip';
 import { NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { Partner } from '../lib/types';
@@ -56,6 +57,26 @@ export function PartnersPage() {
   const canCreate = can('partners.create');
   const canEdit = can('partners.update');
   const showSkeleton = useDelayedFlag(loading);
+  const [search, setSearch] = useState('');
+  const [retiredOnly, setRetiredOnly] = useState(false);
+
+  /**
+   * Narrowed here, as on Products: the list arrives whole. The search
+   * reaches the name, the code and the tax ID, the three things a person
+   * is likely to have in hand. Retired partners stay listed by default.
+   */
+  const retired = (items ?? []).filter((partner) => !partner.isActive).length;
+  const shown = useMemo(() => {
+    const needle = search.trim().toLocaleLowerCase();
+    return (items ?? []).filter(
+      (partner) =>
+        (!retiredOnly || !partner.isActive) &&
+        (!needle ||
+          [partner.name, partner.code, partner.taxId].some((field) =>
+            field?.toLocaleLowerCase().includes(needle),
+          )),
+    );
+  }, [items, search, retiredOnly]);
 
   return (
     <Stack spacing={3}>
@@ -89,6 +110,29 @@ export function PartnersPage() {
         }
       />
 
+      <FilterRow
+        search={{
+          label: intl.formatMessage({
+            id: 'inventory.search',
+            defaultMessage: 'Search',
+          }),
+          value: search,
+          onChange: setSearch,
+        }}
+        quick={[
+          {
+            id: 'retired',
+            label: intl.formatMessage({
+              id: 'common.retired',
+              defaultMessage: 'Retired',
+            }),
+            count: retired,
+            pressed: retiredOnly,
+            onToggle: () => setRetiredOnly((on) => !on),
+          },
+        ]}
+      />
+
       {error && <Alert severity="error">{error}</Alert>}
 
       <Paper variant="outlined">
@@ -101,7 +145,7 @@ export function PartnersPage() {
               </>
             ) : null}
           </Stack>
-        ) : items?.length ? (
+        ) : shown.length ? (
           <TableContainer>
             <Table size="small">
               <TableHead>
@@ -144,7 +188,7 @@ export function PartnersPage() {
               </TableHead>
 
               <TableBody>
-                {items.map((partner) => (
+                {shown.map((partner) => (
                   <TableRow key={partner.id} hover>
                     <TableCell>
                       <Link
@@ -170,12 +214,12 @@ export function PartnersPage() {
                         // Retired rather than deleted: a partner referenced by
                         // an order cannot be removed without inventing gaps in
                         // the history the order exists to record.
-                        <Chip
+                        <StatusChip
+                          tone="neutral"
                           label={intl.formatMessage({
                             id: 'common.retired',
                             defaultMessage: 'Retired',
                           })}
-                          size="small"
                         />
                       )}
                     </TableCell>
@@ -200,13 +244,18 @@ export function PartnersPage() {
             </Table>
           </TableContainer>
         ) : (
-          <Typography color="text.secondary" sx={{ p: 3 }}>
-            {intl.formatMessage({
-              id: 'partners.empty',
-              defaultMessage:
-                'No partners yet. Add the firms you buy from and sell to — an order needs one before it can be raised. The same partner can be both.',
-            })}
-          </Typography>
+          <EmptyState>
+            {items?.length
+              ? intl.formatMessage({
+                  id: 'inventory.noMatch',
+                  defaultMessage: 'Nothing matches that search.',
+                })
+              : intl.formatMessage({
+                  id: 'partners.empty',
+                  defaultMessage:
+                    'No partners yet. Add the firms you buy from and sell to — an order needs one before it can be raised. The same partner can be both.',
+                })}
+          </EmptyState>
         )}
       </Paper>
 

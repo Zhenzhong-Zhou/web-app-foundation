@@ -27,7 +27,12 @@ import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
 import { api } from '../lib/api';
-import { formatDate, formatQuantity, NO_VALUE, SEPARATOR } from '../lib/format';
+import {
+  displayQuantity,
+  formatDate,
+  NO_VALUE,
+  SEPARATOR,
+} from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type {
   InvoicePage,
@@ -290,16 +295,16 @@ export function RmaDetailPage() {
                   <TableCell>{line.sku}</TableCell>
                   <TableCell>{resolutionLabel(line.resolution)}</TableCell>
                   <TableCell align="right">
-                    {formatQuantity(line.quantity)}
+                    {displayQuantity(line.quantity)}
                   </TableCell>
                   <TableCell align="right">
                     {rma.expectsGoods
-                      ? formatQuantity(line.quantityReceived)
+                      ? displayQuantity(line.quantityReceived)
                       : NO_VALUE}
                   </TableCell>
                   <TableCell align="right">
                     {line.resolution === 'credit'
-                      ? formatQuantity(line.quantityCredited)
+                      ? displayQuantity(line.quantityCredited)
                       : NO_VALUE}
                   </TableCell>
                 </TableRow>

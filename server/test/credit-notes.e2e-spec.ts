@@ -523,4 +523,150 @@ describe('Credit notes (e2e)', () => {
       });
     });
   });
+  /**
+   * The sale's money on its own page (ADR-055): what was invoiced, credited
+   * and is still to invoice, and what came back that nobody has settled.
+   * Summed by the server, so the browser never adds up money.
+   */
+  describe("the order's money summary", () => {
+    interface Summary {
+      money: {
+        currency: string | null;
+        invoiced: string;
+        credited: string;
+        netInvoiced: string;
+        notInvoiced: string;
+      } | null;
+      unsettledReturns: number;
+      counts: Record<string, number>;
+      quantities: Record<string, string> | null;
+      documents: {
+        invoices: { number: string | null; status: string; quantity: string }[];
+        creditNotes: { number: string; quantity: string; isVoid: boolean }[];
+      } | null;
+      lines: {
+        sku: string;
+        quantityCredited: string;
+        quantityUnsettled: string;
+      }[];
+    }
+
+    async function summary(org: Org, orderId: string) {
+      return body<Summary>(
+        await org.agent.get(`/v1/orders/${orderId}`).expect(200),
+      );
+    }
+
+    const line = (order: Summary, sku: string) =>
+      order.lines.find((each) => each.sku === sku)!;
+
+    it('sums what was invoiced and credited, and what is still to invoice', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const inv = await invoiced(org);
+
+      await credit(org, inv, [
+        { invoiceLineId: inv.capsules, quantity: '2' },
+      ]).expect(201);
+
+      const order = await summary(org, inv.orderId);
+
+      // 6 capsules and 5 scoops shipped at 12.50: 137.50, GST 6.88, 144.38.
+      // Two capsules credited: 25.00, GST 1.25, 26.25.
+      expect(order.money).toMatchObject({
+        currency: 'CAD',
+        invoiced: '144.3800',
+        credited: '26.2500',
+        netInvoiced: '118.1300',
+      });
+
+      // The 4 capsules not yet shipped, at 12.50, before tax. Unrounded
+      // like the order's totals, so its scale is Postgres's; the value is
+      // what is claimed.
+      expect(Number(order.money!.notInvoiced)).toBe(50);
+
+      expect(line(order, 'FOCUS-60CT').quantityCredited).toBe('2.0000');
+      expect(line(order, 'SCOOP').quantityCredited).toBe('0.0000');
+
+      // Its tabs' counts, and the documents the Invoices and credits tab
+      // lists: the invoice for the 11 shipped, the credit for 2.
+      expect(order.counts).toEqual({
+        shipments: 1,
+        voidedShipments: 0,
+        returns: 0,
+        documents: 2,
+      });
+      expect(order.documents?.invoices).toMatchObject([
+        { number: 'INV-000001', status: 'issued', quantity: '11.0000' },
+      ]);
+      expect(order.documents?.creditNotes).toMatchObject([
+        { number: 'CN-000001', quantity: '2.0000', isVoid: false },
+      ]);
+
+      // Both items count in "each", so the quantities sum (ADR-055).
+      expect(order.quantities).toEqual({
+        unit: 'each',
+        ordered: '15.0000',
+        fulfilled: '11.0000',
+        returned: '0.0000',
+        outstanding: '4.0000',
+      });
+    });
+
+    it('counts a return with no RMA as not settled, by line', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const inv = await invoiced(org);
+
+      await org.agent
+        .post(`/v1/orders/${inv.orderId}/returns`)
+        .send({
+          toLocationId: inv.shelf,
+          reason: 'damaged',
+          lines: [{ lineId: inv.scoopOrderLine, quantity: '1' }],
+        })
+        .expect(201);
+
+      const order = await summary(org, inv.orderId);
+
+      expect(order.unsettledReturns).toBe(1);
+      expect(line(order, 'SCOOP').quantityUnsettled).toBe('1.0000');
+      expect(line(order, 'FOCUS-60CT').quantityUnsettled).toBe('0.0000');
+    });
+
+    /**
+     * Voiding issues a full credit note and frees the shipment (ADR-046),
+     * so the void nets to nothing and everything is to invoice again.
+     */
+    it('nets a voided invoice to nothing', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const inv = await invoiced(org);
+
+      await org.agent
+        .post(`/v1/invoices/${inv.invoiceId}/void`)
+        .send({ reason: 'Billed twice', creditDate: TODAY })
+        .expect(200);
+
+      const order = await summary(org, inv.orderId);
+
+      expect(order.money).toMatchObject({
+        invoiced: '144.3800',
+        credited: '144.3800',
+        netInvoiced: '0.0000',
+      });
+      // All 15 at 12.50: nothing stands invoiced.
+      expect(Number(order.money!.notInvoiced)).toBe(187.5);
+
+      // The void's credit note is not goods coming back.
+      expect(line(order, 'FOCUS-60CT').quantityCredited).toBe('0.0000');
+    });
+
+    it('has no money summary on a sample, which is never invoiced', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const sample = await shippedSale(org.agent, { isSample: true });
+
+      const order = await summary(org, sample.orderId);
+
+      expect(order.money).toBeNull();
+      expect(order.unsettledReturns).toBe(0);
+    });
+  });
 });

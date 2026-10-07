@@ -281,13 +281,18 @@ MUI's breakpoint props (`sx={{ py: { xs: 3, sm: 8 } }}`), applied where a
 layout actually breaks — not pre-emptively. A rule added for a width nobody
 checked is a rule nobody can safely remove later.
 
-Nav is a top bar from `lg` up. Daily destinations sit in it; account and admin
-screens live behind the avatar menu at every width. Below `lg` the same links
-move into a left drawer behind a menu button — the bar measures a little over
-1000px, and letting it wrap made the header change height with the window and
-drag every page with it. Which elements show is CSS `display` at the
+Navigation is a rail beside the page from `lg` up (ADR-055), in three groups
+defined once in `layout/navigation.ts`: the work, the records and places to look
+something up, and the organization's settings. It folds to its icons, each named
+in a tooltip, and each device remembers that. Below `lg` the same groups open in
+a left drawer behind a menu button: narrowing the window moves the links and
+never hides one. The person's own things (profile, devices, language, colour
+mode, sign out) stay behind the avatar at every width. The top bar is slim and
+sticky and never hides on scroll: the organization's name, where its logo will
+go, then the bell and the avatar. Which elements show is CSS `display` at the
 breakpoint, not a `useMediaQuery` branch, so the first paint is right; the hook
-is used only to close an open drawer when the window widens past `lg`.
+is used only to close an open drawer when the window widens past `lg`. A new
+destination goes into a group in `navigation.ts`, never into the bar.
 
 Rows that mix a label with actions (page headers, the recipe status row) are
 two flex groups that wrap as wholes: the text group takes the remaining space
@@ -295,3 +300,87 @@ down to a floor, and below it the action group drops to its own line,
 right-aligned. Button labels never wrap (set once on `MuiButton`). One filled
 button per group at most — the action the current state is waiting for; the
 rest are text weight.
+
+---
+
+## The look (ADR-055)
+
+Colours, sizes and corners come from `client/src/theme/tokens.ts` through the
+theme. A component asks the palette by name (`color: 'text.secondary'`,
+`bgcolor: 'background.paper'`, `<Chip color="warning">`) and never writes a hex
+value, a font size or a radius the tokens already name. A value the design needs
+and the tokens lack becomes a token first.
+
+- **Two layers.** Brand (the accent, the radius) is what a rebrand, and later an
+  organization, changes. Semantic (surfaces, text, borders, the five status
+  tones) never takes the brand's colour.
+- **Status is a tone, not a colour.** A chip's colour prop names one: default
+  neutral, primary info, success positive, warning warning, error critical. The
+  words on the chip carry the meaning, so nothing is told by colour alone.
+- **Five type sizes:** `h5` for a page title, `h6` for a section, `body1`,
+  `body2` and `caption`. No others, and no capitals: `overline` is sentence
+  case.
+- **Links** take the accent and underline on hover. **Buttons**: one filled per
+  group, as above; the rest text weight.
+- **Density** is the theme's: compact with a mouse, 44px targets under a finger
+  (`pointer: coarse`). Don't set a control's height on the page.
+- **Focus** is one ring, drawn by the theme on everything that takes focus.
+  Never remove an outline.
+- **Contrast.** `tokens.test.ts` checks WCAG AA for every pair a reader reads,
+  in both modes; a new token adds its pair there.
+- **Paper** renders in `PrintSheet`'s own theme (`theme/paper.ts`) and never
+  uses the screen's tokens. A printed document changes only on purpose.
+
+### Shared pieces for screens (ADR-055)
+
+Use these rather than writing the thing again on a page:
+
+- **`StatusChip`** with a tone from `STATUS_TONES` (`theme/status.ts`). A new
+  status adds its row to that table.
+- **`ExpiryChip`** for any lot's expiry: days left within 90 days (amber, red
+  within 30 or past) with the date beside it; the date alone further off. The
+  thresholds are `EXPIRY_DAYS` in `lib/expiry.ts`.
+- **`displayQuantity`** for a quantity people read: no padding zeros, grouped.
+  **`formatQuantity`** for a quantity in a field, which must stay what
+  `toApiDecimal` accepts.
+- **`useTab`** and **`DetailLayout`** for a record with three or more sections
+  of different kinds: tabs kept in the address, a summary beside them. Fewer
+  sections stay one page.
+- **`FilterRow`** above a list: search, the list's selects, quick filters with
+  counts. Never a column of full-width fields.
+- **`EmptyState`** inside the list's panel when it is empty: the first-time
+  message with no filter, "nothing matches" with one.
+
+A new screen gets a line in SCREENS in client/e2e/accessibility.spec.ts, which
+runs axe for WCAG 2.2 AA in light and dark mode (ADR-055). A violation is
+fixed, not excluded: no rule is turned off.
+
+A link inside a sentence (a FormattedMessage <link> chunk) is
+underline="always": colour alone does not tell it from the words around it.
+Links standing alone, in a table cell or a list, keep the theme's underline on
+hover. A control without visible text of its own, such as a switch in a table
+row, gets an aria-label naming what it acts on.
+
+A password is typed into PasswordField, never a TextField with
+type="password": it adds the show and hide button, starts hidden, and keeps
+autoComplete for password managers.
+
+## Supported browsers
+
+What the build targets (Vite's default, "baseline widely available"):
+Chrome and Edge 107 and later, Firefox 104 and later, Safari 16 and later,
+on desktop and phone. In China that includes Edge, the Chromium engines of
+360, QQ and Sogou (index.html asks for them, never their old IE engine) and
+WeChat's in-app browser on a recent phone. Internet Explorer, and any
+browser's IE mode, is not supported.
+
+- Nothing loads from another site: the font is bundled, Chinese uses the
+  system's, and no analytics, CDN or Google service is called. A page that
+  needs one would fail in mainland China; keep it that way, or make it
+  optional.
+- Playwright runs every spec in Chromium, accessibility.spec in WebKit and
+  Firefox, and mobile.spec on an iPhone's screen and engine. A spec that
+  shares the owner's organization runs in Chromium only. Firefox runs in CI
+  and with E2E_FIREFOX=1; Playwright's build of it cannot start on some
+  macOS versions.
+- The product's name in the tab is VITE_APP_NAME in the repository's .env.

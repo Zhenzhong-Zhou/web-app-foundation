@@ -28,6 +28,9 @@ dist-ssr
 /e2e/.output/
 /playwright-report/
 /test-results/
+/screenshots/.state/
+/screenshots/.output/
+/screenshots/out/
 
 # Catalogues compiled from src/locales by npm run i18n:compile (ADR-054)
 /src/i18n/compiled/

@@ -216,8 +216,19 @@ export function MembersPage() {
                           users.update. That is display only — the 403 from
                           the server is the actual control (ADR-016). */}
                         {can('users.update') ? (
+                          // Its own name, as no visible label sits on it:
+                          // the column says Role, the row says whose.
                           <Select
                             size="small"
+                            inputProps={{
+                              'aria-label': intl.formatMessage(
+                                {
+                                  id: 'members.roleOf',
+                                  defaultMessage: 'Role of {name}',
+                                },
+                                { name: member.name || member.email },
+                              ),
+                            }}
                             value={member.roleId}
                             disabled={saving !== null}
                             onChange={(event) =>

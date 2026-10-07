@@ -11,6 +11,7 @@ import { useIntl } from 'react-intl';
 
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
+import { PasswordField } from '../components/password-field';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import {
@@ -141,13 +142,12 @@ export function CreateMemberDialog({
               slotProps={{ htmlInput: { maxLength: EMAIL_MAX_LENGTH } }}
             />
 
-            <TextField
+            <PasswordField
               id="member-password"
               label={intl.formatMessage({
                 id: 'members.tempPassword',
                 defaultMessage: 'Temporary password',
               })}
-              type="password"
               // Not new-password: this is not the signed-in admin's
               // credential, and prompting a manager to save it would file
               // someone else's password under the admin's account.

@@ -40,15 +40,17 @@ test('receives stock and shows it in the inventory table', async ({
   await dialog.getByRole('button', { name: 'Receive' }).click();
 
   /**
-   * Asserted as the string the server returned. numeric(18, 4) renders as
-   * 40.5000, and a test that normalised that would be doing the parse ADR-025
-   * forbids in production — and would keep passing if the column were ever
-   * changed to a float.
+   * The server's 40.5000, read without padding zeros (displayQuantity,
+   * ADR-055): trimmed as text, never parsed, so a column turned float would
+   * still show here as its digits changed. Matched as the whole cell, since
+   * "40.5 each" is inside "140.5 each".
    */
   const row = page.getByRole('row', { name: new RegExp(product.sku) });
 
   await expect(row).toBeVisible();
-  await expect(row).toContainText('40.5000');
+  await expect(
+    row.getByRole('cell', { name: '40.5 each', exact: true }),
+  ).toBeVisible();
   await expect(row).toContainText(location.name);
 });
 
@@ -85,7 +87,9 @@ test('requires a lot for a lot-tracked variant', async ({ page, api }) => {
 
   await expect(row).toBeVisible();
   await expect(row).toContainText('L2024-A');
-  await expect(row).toContainText('12.0000');
+  await expect(
+    row.getByRole('cell', { name: '12 each', exact: true }),
+  ).toBeVisible();
 });
 
 test('refuses to ship more than the shelf holds', async ({ page, api }) => {
@@ -121,5 +125,7 @@ test('refuses to ship more than the shelf holds', async ({ page, api }) => {
 
   await page.goto('/inventory');
   const row = page.getByRole('row', { name: new RegExp(product.sku) });
-  await expect(row).toContainText('5.0000');
+  await expect(
+    row.getByRole('cell', { name: '5 each', exact: true }),
+  ).toBeVisible();
 });

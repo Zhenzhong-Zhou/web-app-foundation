@@ -25,8 +25,10 @@ test('signs in with valid credentials and lands in the app', async ({
 
   await page.goto('/login');
 
+  // The field's label starts with Password (a required field adds " *");
+  // its Show password button's name does not, so this finds the field alone.
   await page.getByLabel(/email/i).fill(credentials.email);
-  await page.getByLabel(/password/i).fill(credentials.password);
+  await page.getByLabel(/^password/i).fill(credentials.password);
   await page.getByRole('button', { name: /sign in|log in/i }).click();
 
   await expect(page).not.toHaveURL(/\/login/);
@@ -44,11 +46,17 @@ test('signs in with valid credentials and lands in the app', async ({
   await expect(banner).toContainText(credentials.organizationName);
 
   /**
-   * A nav destination rather than Account, which now lives behind the account
+   * A nav destination rather than Account, which lives behind the account
    * menu. The organisation name above already proves the session resolved;
-   * this proves the signed-in chrome rendered with it.
+   * this proves the signed-in chrome rendered with it. Since ADR-055 the
+   * links are in the rail beside the page, a navigation landmark named
+   * Main, not in the banner.
    */
-  await expect(banner.getByRole('link', { name: 'Inventory' })).toBeVisible();
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('link', { name: 'Inventory' }),
+  ).toBeVisible();
 });
 
 test('rejects a wrong password without revealing whether the account exists', async ({
@@ -61,7 +69,7 @@ test('rejects a wrong password without revealing whether the account exists', as
   await page.goto('/login');
 
   await page.getByLabel(/email/i).fill(credentials.email);
-  await page.getByLabel(/password/i).fill('definitely-the-wrong-password');
+  await page.getByLabel(/^password/i).fill('definitely-the-wrong-password');
   await page.getByRole('button', { name: /sign in|log in/i }).click();
 
   await expect(page.getByRole('alert')).toBeVisible();

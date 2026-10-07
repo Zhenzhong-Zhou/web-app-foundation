@@ -46,6 +46,17 @@ The demo leaves known numbers to check against:
 - A voided shipment.
 - **PO-DEMO-2**, bought in USD at a rate of **1.37**.
 
+Around those, for the screens rather than the figures: a dozen more items,
+lot **ELD-24A** expiring in 20 days and **PRB-0731** in 60 (red and amber
+expiry chips), **THE-0915** waiting for a cost (PO-DEMO-5), **PO-DEMO-4**
+partly received and mixing kilograms with bottles, run **CALM-RUN-01**
+released and **CALM-RUN-02** planned, **SO-DEMO-3** a draft, **SO-DEMO-4**
+cancelled, **SO-DEMO-5** shipped with its invoice in draft and a closed
+RMA, **SO-DEMO-6** with a voided invoice and its full credit note,
+**PO-DEMO-6** with a line closed short, a discontinued product and a
+retired partner. Every state the redesigned screens draw (ADR-055) has
+one example among them.
+
 Keep a second browser profile, or a private window, for a second user and a
 second organization.
 
@@ -466,6 +477,220 @@ folder by folder; these check what is already in place.
   English until the server translates (ADR-054, step 6), and so do
   notifications written before that.
 
+## 15. The look (ADR-055)
+
+The screens are being redesigned in steps; these check what is in place.
+Paper is checked first because it must not change at all.
+
+- **MC-1501** Open the demo's INV-000001 and choose Print, in light mode
+  and again in dark. On screen the document is a white sheet, padded, with
+  the app around it; the print preview is black on white with nothing of
+  the app, and reads exactly as it did before ADR-055. The packing slip
+  and the credit note the same.
+- **MC-1502** In light and in dark, walk Inventory, SO-DEMO-1 and INV-000001.
+  Every word is readable; the page is tinted and its panels white (dark grey in
+  dark), with borders rather than shadows; table heads are tinted and quieter
+  than the rows; figures line up down their columns.
+- **MC-1503** The orders list with Show set to All: Confirmed is a quiet blue
+  tint, Draft and Cancelled grey, Shipped and Received green, each chip with
+  dark text in light mode and light text in dark.
+- **MC-1504** Press Tab through a page: every button, link, field and menu shows
+  the same ring as it takes focus, in both modes.
+- **MC-1505** In 简体中文 the text is the system's Chinese font (PingFang on a Mac,
+  Microsoft YaHei on Windows), never a serif fallback, with more room between
+  lines than in English.
+- **MC-1506** On a phone or tablet, buttons, icon buttons and table rows are at
+  least a fingertip tall; with a mouse they are compact.
+- **MC-1507** From 1200px wide the navigation is a dark rail beside the page:
+  the daily work first (Inventory to Production), then Records (Products,
+  Partners, Locations, Trace a lot, Stock value, Audit log), then Settings
+  (Organization, Members, Tax codes, Exchange rates, Price lists). The current
+  page is highlighted, and the rail stays put while the page scrolls.
+- **MC-1508** Fold the rail with the arrows at its top: only icons remain,
+  each naming itself when pointed at, and following one still works. Reload:
+  it stays folded. Unfold it again.
+- **MC-1509** Below 1200px the rail is gone and a menu button opens the same
+  three groups in a drawer; choosing a page closes it. Widen the window past
+  1200px with the drawer open: it closes and the rail appears.
+- **MC-1510** As a Viewer, groups with nothing the role may see are left out
+  entirely, heading and all; nothing in the rail leads to a refusal.
+- **MC-1511** The account menu holds the email, Account, Devices, the colour
+  mode, the language and Sign out, and no settings. In Français and 简体中文 the
+  rail's headings and Collapse/Expand read in that language.
+- **MC-1512** Open SO-DEMO-1: its title is SO-DEMO-1, Confirmed beside it in a
+  quiet blue, and "Selling · Northside Pharmacy" under it. The sections are
+  tabs (Items, Shipments, Returns) beside a summary that stays in view while
+  the page scrolls.
+- **MC-1513** The summary holds the order's actions (Close order, Edit,
+  Duplicate, History), then Complete 0 of 1, then Money (CAD): order value
+  14,994.00 before tax, invoiced 10,495.80 and credited 52.48 including tax,
+  net invoiced 10,443.32, not yet invoiced 4,998.00 before tax. Each label
+  says whether tax is in it.
+- **MC-1514** "1 return not yet settled" is amber under the items figures;
+  choosing it opens the Returns tab, where the crushed carton offers Link to
+  RMA.
+- **MC-1515** Choose Shipments, then refresh: still on Shipments, and the
+  address ends ?tab=shipments. Go to INV-000001 from there and press Back:
+  Shipments again. Press Back once more: the page before the order, not the
+  Items tab. Type ?tab=nonsense on the address: Items opens and the address
+  loses it.
+- **MC-1516** A purchase (PO-DEMO-4) has no tab bar, only its items, and no
+  money group. Below 900px the summary sits above the tabs.
+- **MC-1517** On SO-DEMO-1's Items tab, quantities read without padding zeros
+  (600, 400, 7, 200), and Credited shows 2 in amber, since 5 of the 7 returned
+  are not settled. In Français, 1 234,5 reads with the French separators.
+- **MC-1518** A line's corrections are in its ⋮ menu (Edit, Use list price,
+  Close short; Reopen on a line closed short; Remove on a draft with more than
+  one line), and each opens or does what its button did. On a purchase,
+  Receive stays on the row. With a keyboard, Tab reaches ⋮, Enter opens it and
+  the arrow keys move through it.
+- **MC-1519** On the Shipments and Returns tabs, a lot's quantity reads "400
+  each", and a lot within 90 days of expiry shows its days left beside the
+  date (FOC-2609-01 is two years off, so the date alone).
+- **MC-1520** On SO-DEMO-1, Ship is the one filled button, full width at the
+  top of the summary, with Close order outlined under it and Edit and
+  Duplicate side by side. On an order with nothing left to ship, Close order
+  is the filled one.
+- **MC-1521** The summary's Quantities read 600 each ordered, 400 shipped, 200
+  still to ship in bold, and 7 returned with "does not add to still to ship"
+  under it. Void a shipment on another order: "not counting 1 voided shipment"
+  appears under its shipped figure. An order mixing units (a blend in kg with
+  bottles) shows "Complete 0 of 2" instead.
+- **MC-1522** The tabs carry counts: Shipments 2, Returns 2, Invoices and
+  credits 2. That tab lists INV-000001 (Issued, 400, Shipment of its date,
+  10,495.80) and CN-000001 (2, its reason, −52.48), net invoiced in bold under
+  them, and the not yet invoiced amount below. Both numbers open their
+  documents.
+- **MC-1523** Credited reads −CA$52.48 in the summary, and "See invoices and
+  credits" opens that tab. A member without invoices.view has neither the tab
+  nor the link.
+- **MC-1524** History is a tab, listing the order's changes with Load more and
+  Open in audit log; a member without audit.view has no History tab. The
+  History button no longer appears on the order.
+- **MC-1525** On Orders, Open, Fulfilled, Cancelled and All are a row of
+  buttons above the list, Open pressed. Pressing Cancelled shows SO-DEMO-4
+  alone and presses only Cancelled; pressing it again keeps it.
+- **MC-1526** Statuses are tinted by the one table: Draft grey, Confirmed
+  quiet blue, Fulfilled green, Cancelled grey, in every language, with no CSS
+  capitals. Fulfilled reads "400 / 600", right-aligned, without padding zeros.
+- **MC-1527** In an organization with no open orders, the list shows the empty
+  message, and Raise an order stays where it always is, in the page header;
+  with Fulfilled pressed and none fulfilled, only "No orders match that
+  filter."
+- **MC-1528** Inventory's filters are one row: Search, Location, then Expiring
+  soon with its count and Show emptied. Pressing Expiring soon shows only lots
+  within 90 days, ELD-24A among them, and nothing untracked; the count is the
+  number of rows it shows. With a search that matches none of them, the count
+  drops to 0.
+- **MC-1529** Expires shows days left within 90 days, amber, and within 30
+  days red (ELD-24A: "20 days left"), the date beside each; a lot two years
+  off shows only its date. Quantities read "400 each", and the Promised to
+  customers table reads without padding zeros too.
+- **MC-1530** Receive stock, Ship out or Correct the count on a lot within 90
+  days: the list and the Expiring soon count both update without a reload.
+  With Expiring soon pressed and none due, the list says no lot here expires
+  within 90 days.
+- **MC-1531** Invoices has a page title with its one-line explanation under
+  it, then All, Drafts, Issued and Voided as a row of buttons where the tabs
+  were, All pressed. Draft reads grey, Issued quiet blue, Voided red, on the
+  list and on each invoice's header.
+- **MC-1532** On INV-000001 the quantity reads 400, and Credit notes is a
+  table: CN-000001 linked, its date, its reason wrapping when long, and
+  −CA$52.48 right-aligned. Void an invoice: its full credit note shows a red
+  "Voids invoice" chip beside its number.
+- **MC-1533** CN-000001's lines read 2, not 2.0000. With Voided pressed and
+  nothing voided, the list says only "Nothing here."
+- **MC-1534** Returns has a page title with its explanation under it, then its
+  statuses as a row of buttons where the tabs were, Open pressed. Open reads
+  quiet blue, Closed and Cancelled grey, on the list and on RMA-000001's
+  header.
+- **MC-1535** On RMA-000001, Authorized, Received and Credited read 2, not
+  2.0000. With a filter that matches nothing, the list says "Nothing here." in
+  the shared empty state.
+- **MC-1536** Production's statuses are a row of buttons (All, Planned, In
+  progress, Finished, Cancelled) where the Show select was, All pressed.
+  Planned reads grey, In progress quiet blue, Finished green, on the list and
+  on a run's header; CALM-RUN-01 shows In progress.
+- **MC-1537** Quantity and Produced read 1,000 and 980, not 1000.0000; on a
+  run, Produced so far, each component's planned and consumed ("30 kg"), and
+  the lots used ("EARLY-LOT: 20") read the same way. With a status that has no
+  runs, the list shows the empty message in its panel.
+- **MC-1538** Dark mode, through the account menu: on Inventory, Orders, an
+  order (each tab), Invoices, Returns and Production, every status chip,
+  expiry chip and quick filter is readable, no panel shows a white edge, and
+  the rail and top bar stay distinct from the page. accessibility.spec checks
+  contrast in both modes; this is for what it cannot see.
+- **MC-1539** Dark mode, then print INV-000001: the printout is black on
+  white, as in light mode.
+- **MC-1540** At 375px wide (a phone, or the browser's device toolbar): ☰
+  opens the navigation, and choosing a page closes it. Inventory's filter row
+  wraps onto two lines without scrolling sideways; its table scrolls inside
+  its panel.
+- **MC-1541** At 375px, an order: the summary sits above the tabs, Ship is
+  full width, and the tabs scroll sideways when they do not fit, the open one
+  still visible. A line's ⋮ menu opens fully on screen.
+- **MC-1542** On a touch screen (or with touch emulation), buttons, filters
+  and table actions are at least 44px tall; with a mouse, 36px.
+- **MC-1543** With the keyboard alone, on an order: Tab reaches the tabs, the
+  arrow keys move between them and Enter opens one; the address changes and
+  Back leaves the page. Focus is always visible.
+- **MC-1544** In the summary, Ship, then Close order, each full width, then
+  Edit and Duplicate as two equal halves; nothing reaches past the panel's
+  edge, at 1440px and at 375px. A member who may edit but not duplicate sees
+  Edit full width.
+- **MC-1545** In English and French at 1440px, SO-DEMO-1's ⋮ is visible at the
+  right of its row without scrolling; scroll the table sideways and it stays
+  put, the columns passing under it. A tab with nothing in it (SO-DEMO-QC's
+  Returns) shows no 0, and Returned 0 carries no note.
+- **MC-1546** Products has a page header (Licences, Refresh, Add product),
+  then Search and a Discontinued quick filter with its count. Typing part of a
+  name narrows the list as you type; pressing Discontinued shows only those
+  (ZINC-60's product). Discontinued reads as a grey chip; a search that
+  matches nothing says so, and Add product stays in the header only.
+- **MC-1547** Partners has Search and a Retired quick filter with its count.
+  The search finds a partner by part of its name, its code or its tax ID.
+  Pressing Retired shows only Old Mill Herbs. Retired reads as a grey chip.
+- **MC-1548** On Locations, Holds stock is a quiet blue chip rather than a
+  filled accent one, and Not available amber; an organization with no
+  locations shows the empty message in the shared empty state.
+- **MC-1549** On SO-DEMO-1, the summary reads Ship, then Edit and Duplicate,
+  then Close order. INV-000001 is linked under Invoiced and CN-000001 under
+  Credited; the subtitle's Northside Pharmacy opens the partner. The Invoices
+  and credits tab ends with "1 return not yet settled" and its note, as the
+  summary does. On SO-DEMO-2, with nothing invoiced or returned, no links and
+  no warning appear.
+- **MC-1550** On Sign in, Register, Reset password, Account's Change password
+  and Add member's temporary password, each password field has an eye button
+  at its end. It starts hidden; pressing it shows the text and the button's
+  name becomes "Hide password" (显示密码 / 隐藏密码 in Chinese); pressing again hides
+  it. On Change password, showing the new password leaves the current one
+  hidden. Leave the page and come back: hidden again. A password manager still
+  fills the sign-in fields.
+- **MC-1551** On Sign in, show the password, then sign in with a wrong one:
+  the error appears and the password is dots again. The same on Change
+  password when the current password is wrong: every field shown goes back to
+  dots.
+- **MC-1552** Inventory's quick filters read Expiring soon, Needs a cost and
+  Show emptied, each with its count. Pressing Needs a cost shows THE-0915's
+  L-theanine, received with no price (PO-DEMO-5), and the count matches the
+  rows; set its cost on Stock value, come back, and it is gone and the count
+  is one lower. Stock value has a page header with its explanation under it,
+  Provisional is an amber chip, and quantities read without padding zeros.
+- **MC-1553** A quantity with its unit takes the unit's form for that quantity
+  in each language: in English 1 box and 600 boxes, 2 cases, 1 litre and 3
+  litres, while each, kg, g and ml stay as they are; in Français 1 unité, 600
+  unités, 1,5 litre (singular below two); in 中文 one form, 600 个. Check
+  SO-DEMO-1's summary (600 unités in French) and a shipment's lot table.
+- **MC-1554** Organization, Tax codes, Exchange rates and Price lists open
+  with the same page header as every list: the title, its explanation under
+  it, and the page's action at the right (History on Organization). An empty
+  list shows the shared empty state rather than a blue notice. Tax codes read
+  In use in quiet blue and Retired in grey; a retired price list is grey.
+- **MC-1555** On SO-DEMO-2 in 中文 at 1440px, the 未完成 column reads 500 with 短缺
+  162 in amber under it, not beside it; the Total column is in view without
+  scrolling sideways, and the pinned ⋮ covers nothing. Hovering the chip still
+  says how much is held.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -490,6 +715,9 @@ first.
   answers late never shows the previous variant's recipe.
 - **MC-R03** *(v0.5 round 2)* The credit calculation was moved into
   `credit-amounts.ts`: MC-709 and MC-710 are its check.
+- **MC-R06** *(ADR-055)* Signed in with an unconfirmed email, print
+  an invoice: the "Confirm your email address" banner is on screen and not
+  on the paper or in the print preview.
 
 ---
 
@@ -545,3 +773,39 @@ first.
 - 2026-10-06: ADR-054, `seed:demo` sets up a French-and-English and a
   Chinese customer with an issued invoice each, so MC-1407 to MC-1412
   start from a fresh database.
+- 2026-10-06: `seed:demo` adds a range around the first product for the
+  screens (`seed-demo-variety.ts`); the figures listed under *Before you
+  start* are unchanged.
+- 2026-10-07: ADR-055 step 1 begins: printed documents on their own
+  theme, section 15, MC-1501.
+- 2026-10-07: ADR-055 step 1, the tokens and the theme built from them:
+  MC-1502 to MC-1506. Covers dark mode and narrow screens, which the
+  list lacked.
+- 2026-10-07: the email banner no longer prints: MC-R06.
+- 2026-10-07: ADR-055 step 2, the rail, the drawer and the slim top bar:
+  MC-1507 to MC-1511.
+- 2026-10-07: ADR-055 step 5, the order page: tabs, the summary and its
+  money: MC-1512 to MC-1516.
+- 2026-10-07: ADR-055 step 5, the order page's items and lots: quantities
+  to read, Credited, the line menu, expiry: MC-1517 to MC-1519.
+- 2026-10-07: ADR-055 step 5, orders part 3: Ship in the summary, its
+  quantities, the Invoices and credits and History tabs: MC-1520 to MC-1524.
+- 2026-10-07: ADR-055 step 5, the orders list: MC-1525 to MC-1527.
+- 2026-10-07: ADR-055 step 5, inventory: MC-1528 to MC-1530.
+- 2026-10-07: ADR-055 step 5, invoices: MC-1531 to MC-1533.
+- 2026-10-07: ADR-055 step 5, returns and RMAs: MC-1534 and MC-1535.
+- 2026-10-07: ADR-055 step 5, production: MC-1536 and MC-1537.
+- 2026-10-07: ADR-055 step 6, dark mode, narrow screens, touch and keyboard:
+  MC-1538 to MC-1543. Contrast and names are checked by accessibility.spec.
+- 2026-10-07: ADR-055 step 5, orders polish from the first screenshots:
+  MC-1544 and MC-1545.
+- 2026-10-07: ADR-055 step 5, products: MC-1546.
+- 2026-10-07: ADR-055 step 5, partners: MC-1547.
+- 2026-10-07: ADR-055 step 5, locations: MC-1548.
+- 2026-10-07: ADR-055 step 5, the order closer to the mockup: MC-1549.
+- 2026-10-07: show and hide on password fields: MC-1550.
+- 2026-10-07: a password shown hides again on submit: MC-1551.
+- 2026-10-07: ADR-055 step 5, needs a cost and Stock value: MC-1552.
+- 2026-10-07: units take their plural in every language: MC-1553.
+- 2026-10-07: ADR-055 step 5, the settings pages: MC-1554.
+- 2026-10-07: the short chip under the outstanding figure: MC-1555.

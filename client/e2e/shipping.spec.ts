@@ -137,14 +137,16 @@ test('ships a sale in two parts, by lot, and closes the order', async ({
   await expect(ship).toBeHidden();
   await expect(page.getByRole('status')).toContainText('Shipped');
 
-  // The shipment is listed with its lots: the packing-slip view.
-  const shipments = page
-    .getByRole('heading', { name: 'Shipments' })
-    .locator('..');
+  // The shipment is listed with its lots, on the Shipments tab (ADR-055):
+  // the packing-slip view.
+  await page.getByRole('tab', { name: /Shipments/ }).click();
+  const shipments = page.getByRole('tabpanel');
   await expect(shipments).toContainText('EARLY-SHIP');
   await expect(shipments).toContainText('LATE-SHIP');
 
   // --- Second shipment: what was left behind --------------------------------
+  // Ship is with the items it ships.
+  await page.getByRole('tab', { name: /Items/ }).click();
   await page.getByRole('button', { name: 'Ship', exact: true }).click();
 
   const rest = page.getByRole('dialog');

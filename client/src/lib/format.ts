@@ -22,10 +22,12 @@ export const BLANK_LINE = ' ';
  * called from render, from column definitions and from handlers alike. A
  * print page passes the document's language explicitly instead.
  */
-let current: string | undefined;
+let current = import.meta.hot?.data?.locale as string | undefined;
 
+/** Kept in Vite's hot data too, for the reason given in i18n/intl.ts. */
 export function setFormatLocale(locale: string): void {
   current = locale;
+  if (import.meta.hot?.data) import.meta.hot.data.locale = locale;
 }
 
 /** Intl formatters are costly to build and cheap to keep: one per key. */
@@ -176,6 +178,20 @@ export function formatMoney(
 }
 
 /**
+ * A credit, as money going back: a minus sign before the amount, in the
+ * currency's format (ADR-055). On credit notes and an order's credited
+ * figure, so a reader never mistakes a credit for something more owed. A
+ * true minus (U+2212), not a hyphen.
+ */
+export function formatCredit(
+  amount: string | null,
+  currency: string | null,
+  locale: string | undefined = current,
+): string {
+  return `\u2212${formatMoney(amount, currency, locale)}`;
+}
+
+/**
  * A unit cost, with the places a currency's minor units would hide: a
  * capsule at 0.0123 is not 0.01. Up to four, never fewer than the currency's
  * own. Display only, as formatMoney is.
@@ -222,6 +238,30 @@ export function formatQuantity(
 ): string {
   const { decimal } = separators(locale);
   return decimal === '.' ? value : value.replace('.', decimal);
+}
+
+/**
+ * A quantity to read (ADR-055): no padding zeros, and grouped the
+ * language's way. "600.0000" reads "600", "1000.0000" "1,000",
+ * "1234.5000" "1 234,5" in French.
+ *
+ * String work only, like formatQuantity: no JavaScript number, so nothing
+ * is rounded (ADR-025). For reading, never for a field: a field shows what
+ * toApiDecimal accepts back, and it refuses grouped digits, so fields keep
+ * formatQuantity.
+ */
+export function displayQuantity(
+  value: string,
+  locale: string | undefined = current,
+): string {
+  const { decimal, group } = separators(locale);
+  const negative = value.startsWith('-');
+  const [whole, fraction = ''] = (negative ? value.slice(1) : value).split('.');
+
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, group);
+  const kept = fraction.replace(/0+$/, '');
+
+  return `${negative ? '-' : ''}${grouped}${kept ? decimal + kept : ''}`;
 }
 
 /**

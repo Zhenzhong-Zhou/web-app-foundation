@@ -300,7 +300,8 @@ test('creates an invoice from a shipment on its order', async ({
 }) => {
   const { orderId } = await seedShipment(freshOrg.api);
   await signInAs(page, freshOrg.api);
-  await page.goto(`/orders/${orderId}`);
+  // The order's Shipments tab (ADR-055), where each shipment is invoiced.
+  await page.goto(`/orders/${orderId}?tab=shipments`);
 
   // An invoice starts from the shipment it bills, and opens as a draft.
   await page.getByRole('button', { name: 'Create invoice' }).click();
@@ -311,7 +312,7 @@ test('creates an invoice from a shipment on its order', async ({
 
   // Back on the order, the shipment links to its invoice, and offers no
   // Void: the invoice is voided or deleted first (ADR-046).
-  await page.goto(`/orders/${orderId}`);
+  await page.goto(`/orders/${orderId}?tab=shipments`);
   await expect(page.getByRole('link', { name: 'Draft invoice' })).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Create invoice' }),
@@ -389,5 +390,5 @@ test('credits from an RMA, prefilled with what it authorized', async ({
   // Settled on the RMA.
   await page.goto(`/return-authorizations/${returnAuthorization.id}`);
   const row = page.getByRole('row', { name: /FOCUS-60CT/ });
-  await expect(row.getByRole('cell').nth(4)).toHaveText('2.0000');
+  await expect(row.getByRole('cell').nth(4)).toHaveText('2');
 });

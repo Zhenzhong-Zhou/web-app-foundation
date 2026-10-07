@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, v0.5.0-rc.1 tagged, ADR-052 and ADR-053 merged, ADR-054 built and in review
+# web-app-foundation — handoff, v0.5.0 tagged, the UI pass (ADR-055) built
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -30,10 +30,14 @@ and price lists proposing the price of a new line.
   amendments for what was settled while building; ADR-046 carries one (one
   currency per sale from the first priced line). **ADR-054** (languages)
   is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
-- Tests at the last local run (ADR-050 branch, 2 October 2026): server e2e
-  627 in 33 suites (`npm run test:e2e`); server unit 36 in 6 files
-  (`npm test`); client vitest 160 in 35 files; Playwright 63. CI also runs
-  `seed:demo`.
+  ADR-055 (the look) is built on `ui-design-pass`, with an amendment.
+  Next is **ADR-056**.
+- Tests at the last local run: on `ui-design-pass` (7 October 2026),
+  client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
+  (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot
+  start on his macOS); the server's as of the ADR-050 branch (2 October 2026), e2e
+  627 in 33 suites (`npm run test:e2e`) and unit 36 in 6 files (`npm
+  test`), and more since in stock and orders. CI also runs `seed:demo`.
 - `npm run seed:demo`: BF-2609 valued at 1900.00 CAD, run FOC-2609-01 costed
   at 1292.00 over 980 bottles (1.318367 each), SO-DEMO-2 priced from the
   Wholesale CAD list (the organization default). It also leaves an RMA
@@ -67,6 +71,43 @@ it:
 - the timed recall drill on BF-2609.
 
 Then tag v0.4.0.
+
+## The UI pass (ADR-055) — built, branch `ui-design-pass`
+
+- **Decided:** ADR-055, from mockups on a Claude Design canvas (Bob's,
+  private), compared by a Chinese-reading accountant with no UI background,
+  who shaped the summary panel, the expiry chips and the money labels.
+  ADR-055 carries an amendment for what was settled while building.
+- **Built, steps 1 to 6:** tokens and theme, the side rail, the shared
+  pieces (StatusChip, ExpiryChip, DetailLayout and useTab, FilterRow,
+  EmptyState, PasswordField), the order's money summary on the server, every
+  screen folder moved onto them, and `accessibility.spec` (axe, WCAG 2.2 AA,
+  twenty screens, both modes). No migration: still through **0038**.
+- **Server reads added:** the order's money, counts, summed quantities and
+  documents (`GET /v1/orders/:id`); `expiringWithin` and `needsCost` on
+  `GET /v1/stock`, with `GET /v1/stock/counts`.
+- **Demo:** `seed-demo-variety.ts` gives every state the screens draw one
+  example, a voided invoice (SO-DEMO-6), a line closed short (PO-DEMO-6)
+  and a closed RMA among them. It now issues numbered documents after the
+  main demo's, so INV-000001, CN-000001 and RMA-000001 are unchanged.
+- **Checks:** `npm run typecheck` on both sides; the server's runs in its
+  `verify`, in `verify.sh --quick` and in CI, since its build leaves the
+  tests out. Manual checks MC-1501 to MC-1555 cover what tests cannot.
+- **Browsers:** every spec in Chromium; `accessibility.spec` in WebKit and
+  Firefox; `mobile.spec` on an iPhone. The tab shows `VITE_APP_NAME` from
+  `.env` (default `web-app-foundation`); `index.html` asks 360, QQ and
+  Sogou for their Chromium engine. Nothing loads from another site, so the
+  app works in mainland China; `conventions.md` lists what is supported.
+- **Next, on its own branch:** notifications in the reader's current
+  language (message id and values stored, rendered on read), an ADR-054
+  amendment and migration **0039**; and a notification's quantities
+  without padding zeros ("30 of 40", not "30.0000 of 40.0000").
+- **Words checked by the reviewer:** 贷项通知单 for a credit note, 开票净额（含税）,
+  未开票金额（税前）, 待定成本. The same person could do MC-1405, the fluent review of
+  the Chinese catalogue that v0.5 skipped.
+- **To file as an issue:** the unsaved-changes guard. The create-order page
+  loses a half-built order when someone follows a link; React Router's
+  `useBlocker` covers it, and `conventions.md` gains a line for the pattern.
 
 ## Now: v0.5, maintainability and languages
 
@@ -518,6 +559,13 @@ Rules, still in force:
     - FIFO;
     - export to the books;
     - confirming the weighted-average method with the accountant.
+- User guides and a glossary: raised, not decided. Markdown under
+  `docs/user/`, a getting-started order, task guides by job, the rules in
+  plain words, and a glossary that also holds the translation terms (ADR-054).
+  Screenshots for them come from `npm run screenshots`.
+- Client speed: unmeasured. Lighthouse on the Render static site, warm and
+  just woken, and the bundle sizes `vite build` prints; measure first and set
+  a budget only if something is slow, as ADR-051 did for the server.
 - The `ubuntu-latest` runner moves to Ubuntu 26 from 19 October 2026. Pin
   `ubuntu-24.04` in `ci.yml` if you'd rather choose when.
 
@@ -575,9 +623,10 @@ Rules, still in force:
   wrapped paragraphs.
 - To reorder unpushed commits: `git reset --soft <base>`, restage per commit,
   and `git commit -C <old-hash>` to reuse each message.
-- Before pushing, run what CI runs: `npm run lint:ci` and
-  `npm run format:check` (both sides), `npx tsc -b` (client), build,
-  tests. Editor auto-imports in the wrong quote style fail CI.
+- Before pushing, run what CI runs: `scripts/verify.sh` from the repo
+  root (both sides, CI's order, stops at the first failure; `--quick`
+  skips the end-to-end suites). Editor auto-imports in the wrong quote
+  style fail CI.
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
 

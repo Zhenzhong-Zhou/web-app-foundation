@@ -137,7 +137,7 @@ export function LotCostPanel({ lotId }: { lotId: string }) {
             defaultMessage="Part of this lot is still waiting for a cost. Set it on the <link>Stock value</link> page."
             values={{
               link: (chunks: ReactNode[]) => (
-                <Link component={RouterLink} to="/costs">
+                <Link underline="always" component={RouterLink} to="/costs">
                   {chunks}
                 </Link>
               ),

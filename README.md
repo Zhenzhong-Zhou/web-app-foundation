@@ -159,7 +159,8 @@ Run from `server/`.
 | `npm test`                          | Unit tests                                                                           |
 | `npm run test:e2e`                  | Integration tests; migrates the test database first                                  |
 | `npm run lint` / `lint:ci`          | Lint and fix / lint only, as CI runs it                                              |
-| `npm run verify`                    | What CI runs: format, lint, build, unit and integration tests                        |
+| `npm run checks`                    | The snapshot, client-list and catalogue checks CI runs                               |
+| `npm run verify`                    | What CI runs: format, lint, checks, build, unit and integration tests                |
 
 A schema change touches three databases — dev, the one Jest uses and the one
 Playwright uses — and `npm run migrate:all` applies it to all three. A failing
@@ -169,6 +170,16 @@ From `client/`: `npm run dev`, `npm run build`, `npm run lint`, `npm test`
 (Vitest), `npm run test:e2e` for the browser suite (Playwright, on its own stack on
 ports 3100/5273, never the dev server; it migrates and seeds the e2e database
 first), and `npm run verify`.
+
+`scripts/verify.sh`, from the repo root, runs both sides in CI's order and stops
+at the first failure; `--quick` leaves out the two end-to-end suites.
+
+`DEMO_EMAIL=<the account seed:demo printed> npm run screenshots`, also from
+`client/`, pictures every screen of the demo in English, French and Chinese,
+light and dark, at desktop and phone width, into `client/screenshots/out/`.
+It starts its own API and client on ports 3200/5373 against the dev database,
+so the dev servers can stay as they are; compare a run before and after a
+visual change.
 
 `docs/manual-checks.md` is the list to walk through by hand before a release and
 after a feature lands; every change that alters what a person sees or a rule they

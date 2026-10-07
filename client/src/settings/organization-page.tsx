@@ -14,6 +14,7 @@ import { defineMessages, useIntl } from 'react-intl';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { CurrencyField } from '../components/currency-field';
+import { PageHeader } from '../components/page-header';
 import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
 import type { LicencePolicy, OrganizationProfile } from '../lib/types';
@@ -48,24 +49,26 @@ export function OrganizationPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}>
-          {organization?.name ??
-            intl.formatMessage({
-              id: 'layout.menu.organization',
-              defaultMessage: 'Organization',
-            })}
-        </Typography>
-        {organization && <HistoryButton resourceId={organization.id} />}
-      </Stack>
-
-      <Typography variant="body2" color="text.secondary">
-        {intl.formatMessage({
+      <PageHeader
+        crumbs={[]}
+        title={
+          organization?.name ??
+          intl.formatMessage({
+            id: 'layout.menu.organization',
+            defaultMessage: 'Organization',
+          })
+        }
+        subtitle={intl.formatMessage({
           id: 'settings.org.intro',
           defaultMessage:
             'Every invoice prints these as the seller, copied on the day it is issued — changing them here never changes an invoice already sent. Invoices cannot be issued until the registered address is set.',
         })}
-      </Typography>
+        actions={
+          <Stack direction="row" spacing={1}>
+            {organization && <HistoryButton resourceId={organization.id} />}
+          </Stack>
+        }
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
