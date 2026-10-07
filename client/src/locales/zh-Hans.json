@@ -704,7 +704,6 @@
   "orders.filter.all": "全部",
   "orders.filter.cancelled": "已取消",
   "orders.filter.fulfilled": "已完成",
-  "orders.filter.label": "显示",
   "orders.filter.open": "未完成",
   "orders.fulfilled": "已完成",
   "orders.fulfilledOfOrdered": "{fulfilled} / {ordered}",

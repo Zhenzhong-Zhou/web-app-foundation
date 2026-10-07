@@ -603,6 +603,14 @@ Paper is checked first because it must not change at all.
 - **MC-1535** On RMA-000001, Authorized, Received and Credited read 2, not
   2.0000. With a filter that matches nothing, the list says "Nothing here." in
   the shared empty state.
+- **MC-1536** Production's statuses are a row of buttons (All, Planned, In
+  progress, Finished, Cancelled) where the Show select was, All pressed.
+  Planned reads grey, In progress quiet blue, Finished green, on the list and
+  on a run's header; CALM-RUN-01 shows In progress.
+- **MC-1537** Quantity and Produced read 1,000 and 980, not 1000.0000; on a
+  run, Produced so far, each component's planned and consumed ("30 kg"), and
+  the lots used ("EARLY-LOT: 20") read the same way. With a status that has no
+  runs, the list shows the empty message in its panel.
 
 ## Regressions
 
@@ -707,3 +715,4 @@ first.
 - 2026-10-07: ADR-055 step 5, inventory: MC-1528 to MC-1530.
 - 2026-10-07: ADR-055 step 5, invoices: MC-1531 to MC-1533.
 - 2026-10-07: ADR-055 step 5, returns and RMAs: MC-1534 and MC-1535.
+- 2026-10-07: ADR-055 step 5, production: MC-1536 and MC-1537.

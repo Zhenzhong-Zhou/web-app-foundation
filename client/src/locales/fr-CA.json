@@ -704,7 +704,6 @@
   "orders.filter.all": "Toutes",
   "orders.filter.cancelled": "Annulées",
   "orders.filter.fulfilled": "Exécutées",
-  "orders.filter.label": "Afficher",
   "orders.filter.open": "Ouvertes",
   "orders.fulfilled": "Exécuté",
   "orders.fulfilledOfOrdered": "{fulfilled} / {ordered}",

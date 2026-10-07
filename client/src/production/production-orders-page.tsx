@@ -1,9 +1,7 @@
 import {
   Alert,
   Button,
-  Chip,
   Link,
-  MenuItem,
   Paper,
   Skeleton,
   Stack,
@@ -12,22 +10,25 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  TextField,
 } from '@mui/material';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { EmptyState } from '../components/empty-state';
+import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
-import { formatDate, formatQuantity, NO_VALUE } from '../lib/format';
+import { StatusChip } from '../components/status-chip';
+import { displayQuantity, formatDate, NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { ProductionRun, RunStatus } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { STATUS_TONES } from '../theme/status';
 import { CreateRunDialog } from './create-run-dialog';
-import { RUN_STATUSES, runStatusLabel, STATUS_COLOUR } from './status';
+import { RUN_STATUSES, runStatusLabel } from './status';
 
 /** The first page for a filter; '' is every status. */
 function query(filter: RunStatus | ''): string {
@@ -75,52 +76,41 @@ export function ProductionOrdersPage() {
         }
       />
 
-      {/* Its own row, as on the orders and audit pages (see OrdersPage). */}
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <TextField
-          id="run-filter"
-          label={intl.formatMessage({
-            id: 'orders.filter.label',
-            defaultMessage: 'Show',
-          })}
-          select
-          size="small"
-          value={filter}
-          onChange={(event) => setFilter(event.target.value as RunStatus | '')}
-          // '' is "All", and MUI renders an empty value as blank unless told
-          // otherwise. The label shrinks so it does not sit over the text.
-          slotProps={{
-            select: { displayEmpty: true },
-            inputLabel: { shrink: true },
-          }}
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="">
-            {intl.formatMessage({
+      {/* The one filter row (ADR-055): All and each status, as buttons. */}
+      <FilterRow
+        quick={[
+          {
+            id: 'all',
+            label: intl.formatMessage({
               id: 'invoices.filter.all',
               defaultMessage: 'All',
-            })}
-          </MenuItem>
-          {RUN_STATUSES.map((status) => (
-            <MenuItem key={status} value={status}>
-              {runStatusLabel(status)}
-            </MenuItem>
-          ))}
-        </TextField>
-      </Stack>
+            }),
+            pressed: filter === '',
+            onToggle: () => setFilter(''),
+          },
+          ...RUN_STATUSES.map((status) => ({
+            id: status,
+            label: runStatusLabel(status),
+            pressed: filter === status,
+            onToggle: () => setFilter(status),
+          })),
+        ]}
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
       {loading && showSkeleton && <Skeleton height={160} />}
 
       {items?.length === 0 && (
-        <Alert severity="info">
-          {intl.formatMessage({
-            id: 'production.empty',
-            defaultMessage:
-              'Nothing here. A run consumes components and produces a finished item — it needs a recipe first, which lives on the product.',
-          })}
-        </Alert>
+        <Paper variant="outlined">
+          <EmptyState>
+            {intl.formatMessage({
+              id: 'production.empty',
+              defaultMessage:
+                'Nothing here. A run consumes components and produces a finished item — it needs a recipe first, which lives on the product.',
+            })}
+          </EmptyState>
+        </Paper>
       )}
 
       {!!items?.length && (
@@ -175,21 +165,20 @@ export function ProductionOrdersPage() {
                     <TableCell>{formatDate(run.createdAt)}</TableCell>
                     <TableCell>{run.reference ?? NO_VALUE}</TableCell>
                     <TableCell>
-                      <Chip
+                      <StatusChip
+                        tone={STATUS_TONES.run[run.status]}
                         label={runStatusLabel(run.status)}
-                        size="small"
-                        color={STATUS_COLOUR[run.status]}
                       />
                     </TableCell>
                     <TableCell align="right">
-                      {formatQuantity(run.quantityPlanned)}
+                      {displayQuantity(run.quantityPlanned)}
                     </TableCell>
                     {/* Produced is not a percentage of planned. A batch
                         yielding 980 against 1000 is finished, not 98% done
                         (ADR-032), so showing a bar would imply a shortfall
                         that is not one. */}
                     <TableCell align="right">
-                      {formatQuantity(run.quantityProduced)}
+                      {displayQuantity(run.quantityProduced)}
                     </TableCell>
                     <TableCell>
                       {run.partnerId

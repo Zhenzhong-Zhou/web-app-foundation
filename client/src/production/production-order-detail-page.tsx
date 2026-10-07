@@ -24,18 +24,19 @@ import { useCan } from '../auth/permissions';
 import { LabelledValue } from '../components/labelled-value';
 import { PageHeader } from '../components/page-header';
 import { RunCostPanel } from '../costs/run-cost-panel';
-import { formatQuantity, NO_VALUE, SEPARATOR } from '../lib/format';
+import { displayQuantity, NO_VALUE, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { LineVariance, OutputVariance, RunDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { LicenceAtRelease } from '../licences/licence-at-release';
-import { withUnit } from '../products/units';
+import { displayWithUnit } from '../products/units';
+import { COLOR_OF_TONE, STATUS_TONES } from '../theme/status';
 import { CancelRunDialog } from './cancel-run-dialog';
 import { CloseRunDialog } from './close-run-dialog';
 import { RecordOutputDialog } from './record-output-dialog';
 import { ReleaseRunDialog } from './release-run-dialog';
-import { runStatusLabel, STATUS_COLOUR } from './status';
+import { runStatusLabel } from './status';
 
 export function ProductionOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -117,11 +118,11 @@ export function ProductionOrderDetailPage() {
                 id: 'production.lot.used',
                 defaultMessage: ': {quantity} used',
               },
-              { quantity: formatQuantity(lot.consumed) },
+              { quantity: displayQuantity(lot.consumed) },
             )
           : intl.formatMessage(
               { id: 'production.lot.issued', defaultMessage: ': {quantity}' },
-              { quantity: formatQuantity(lot.issued) },
+              { quantity: displayQuantity(lot.issued) },
             )}
       </Fragment>
     ));
@@ -146,12 +147,12 @@ export function ProductionOrderDetailPage() {
               id: 'production.plannedTitle',
               defaultMessage: '{quantity} planned',
             },
-            { quantity: formatQuantity(run.quantityPlanned) },
+            { quantity: displayQuantity(run.quantityPlanned) },
           )
         }
         status={{
           label: runStatusLabel(run.status),
-          color: STATUS_COLOUR[run.status],
+          color: COLOR_OF_TONE[STATUS_TONES.run[run.status]],
         }}
         actions={
           <Stack direction="row" spacing={1}>
@@ -256,8 +257,8 @@ export function ProductionOrderDetailPage() {
                 'This run made {produced} against a plan of {planned} — {percent} off. Worth checking the yield on the recipe, or whether output was recorded twice.',
             },
             {
-              produced: formatQuantity(outputVariance.quantityProduced),
-              planned: formatQuantity(outputVariance.quantityPlanned),
+              produced: displayQuantity(outputVariance.quantityProduced),
+              planned: displayQuantity(outputVariance.quantityPlanned),
               percent: percent(outputVariance.variance),
             },
           )}
@@ -273,8 +274,8 @@ export function ProductionOrderDetailPage() {
                 'Finished. {produced} produced against a plan of {planned}.',
             },
             {
-              produced: formatQuantity(run.quantityProduced),
-              planned: formatQuantity(run.quantityPlanned),
+              produced: displayQuantity(run.quantityProduced),
+              planned: displayQuantity(run.quantityPlanned),
             },
           )}
         </Alert>
@@ -297,7 +298,7 @@ export function ProductionOrderDetailPage() {
             id: 'production.producedSoFar',
             defaultMessage: 'Produced so far',
           })}
-          value={formatQuantity(run.quantityProduced)}
+          value={displayQuantity(run.quantityProduced)}
         />
         <LabelledValue
           label={intl.formatMessage({
@@ -433,7 +434,7 @@ export function ProductionOrderDetailPage() {
                         )}
                       </TableCell>
                       <TableCell align="right">
-                        {withUnit(
+                        {displayWithUnit(
                           line.quantityPlanned,
                           line.unitOfMeasure,
                           intl,
@@ -445,7 +446,7 @@ export function ProductionOrderDetailPage() {
                       >
                         {line.supplyType === 'external'
                           ? NO_VALUE
-                          : withUnit(
+                          : displayWithUnit(
                               line.quantityConsumed,
                               line.unitOfMeasure,
                               intl,
