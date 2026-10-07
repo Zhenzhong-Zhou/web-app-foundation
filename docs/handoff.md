@@ -20,9 +20,10 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0038** (`calendar_days`, ADR-052), on `main`;
-  Render runs it on deploy (confirm in the deploy log, *In flight* below).
-  Next is **0039**.
+- Migrations: through **0040** (`document_languages`, ADR-054) on
+  `main`; **0041** (`notification_messages`, ADR-054 amended) on
+  `notifications-language`. Render runs them on deploy (confirm in the
+  deploy log, *In flight* below). Next is **0042**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -82,7 +83,7 @@ Then tag v0.4.0.
   pieces (StatusChip, ExpiryChip, DetailLayout and useTab, FilterRow,
   EmptyState, PasswordField), the order's money summary on the server, every
   screen folder moved onto them, and `accessibility.spec` (axe, WCAG 2.2 AA,
-  twenty screens, both modes). No migration: still through **0038**.
+  twenty screens, both modes). No migration of its own.
 - **Server reads added:** the order's money, counts, summed quantities and
   documents (`GET /v1/orders/:id`); `expiringWithin` and `needsCost` on
   `GET /v1/stock`, with `GET /v1/stock/counts`.
@@ -98,10 +99,11 @@ Then tag v0.4.0.
   `.env` (default `web-app-foundation`); `index.html` asks 360, QQ and
   Sogou for their Chromium engine. Nothing loads from another site, so the
   app works in mainland China; `conventions.md` lists what is supported.
-- **Next, on its own branch:** notifications in the reader's current
-  language (message id and values stored, rendered on read), an ADR-054
-  amendment and migration **0039**; and a notification's quantities
-  without padding zeros ("30 of 40", not "30.0000 of 40.0000").
+- **Then, on `notifications-language`:** the bell written in the
+  reader's current language (each notification's message kept, the
+  sentence written on read), ADR-054 amended, migration **0041**; and a
+  notification's quantities without padding zeros ("30 of 40", not
+  "30.0000 of 40.0000"). Emails are unchanged; old rows show as stored.
 - **Words checked by the reviewer:** 贷项通知单 for a credit note, 开票净额（含税）,
   未开票金额（税前）, 待定成本. The same person could do MC-1405, the fluent review of
   the Chinese catalogue that v0.5 skipped.
