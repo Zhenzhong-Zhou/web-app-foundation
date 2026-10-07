@@ -31,12 +31,18 @@ function at(id: string | null, path: (id: string) => string): string | null {
 }
 
 /**
- * A MUI select, by its id and the option's words. Two steps, because MUI
- * draws a select as a button that opens a list.
+ * A MUI select, by its label and the option's words.
+ *
+ * By keyboard, not by clicking. A select's id is on MUI's hidden input, not
+ * the combobox people click, and a click works out where to land from the
+ * page's coordinates: on a phone-width page that is wider than the screen,
+ * the click missed and the list never opened. Arrow-down opens the list
+ * and Enter picks the option, as a keyboard user would, with no
+ * coordinates involved.
  */
-async function choose(page: Page, selectId: string, option: string) {
-  await page.locator(`#${selectId}`).click();
-  await page.getByRole('option', { name: option, exact: true }).click();
+async function choose(page: Page, label: string, option: string) {
+  await page.getByRole('combobox', { name: label }).press('ArrowDown');
+  await page.getByRole('option', { name: option, exact: true }).press('Enter');
 }
 
 /**
@@ -72,7 +78,7 @@ export const SHOTS: Shot[] = [
     name: '05-orders-list',
     path: () => '/orders',
     prepare: (page, words) =>
-      choose(page, 'order-filter', words('orders.filter.all')),
+      choose(page, words('orders.filter.label'), words('orders.filter.all')),
   },
   {
     name: '06-invoice',
@@ -95,7 +101,11 @@ export const SHOTS: Shot[] = [
     name: '10-empty-list',
     path: () => '/production',
     prepare: (page, words) =>
-      choose(page, 'run-filter', words('orders.status.cancelled')),
+      choose(
+        page,
+        words('orders.filter.label'),
+        words('orders.status.cancelled'),
+      ),
   },
   { name: '11-products', path: () => '/products' },
   {
