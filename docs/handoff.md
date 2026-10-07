@@ -104,11 +104,38 @@ Then tag v0.4.0.
   sentence written on read), ADR-054 amended, migration **0041**; and a
   notification's quantities without padding zeros ("30 of 40", not
   "30.0000 of 40.0000"). Emails are unchanged; old rows show as stored.
-- **After that:** ADR-056 onward, from ADR-055's *Open decisions*, each with
-  its ADR before code: **search and lookup** in the top bar, then a **home
-  page** of what needs attention (expiring lots, unsettled returns, costs
-  waiting, orders to ship), then **organization branding** (logo, accent
-  with a contrast check, expiry thresholds). Bob may reorder.
+- **First, before features: protect the data.** Note the date Render's free
+  database expires (30 days after creation, and its data goes with it).
+  Turn backups on for real, ADR-053's last step, setup and no code: a
+  bucket with versioning and object lock and write-only keys (Backblaze
+  B2, or AWS S3 in Canada if residency matters), the `BACKUP_S3_*` and
+  `BACKUP_BUCKET` secrets in GitHub, `BACKUP_DESTINATION=s3`, one nightly
+  run, one restore drill by hand. If real data is coming within a month
+  (Bob's mother's business, a first customer), add the paid database plan
+  (ADR-053 phase 2) and the v0.4.0 walkthrough and BF-2609 recall drill
+  before any feature.
+- **After that:** ADR-056 onward, each with its ADR before code: **search
+  and lookup** in the top bar, then a **home page** of what needs attention
+  (expiring lots, unsettled returns, costs waiting, orders to ship), then
+  **file storage** (one ADR for every file, below), then **organization
+  branding** (logo, accent with a contrast check, expiry thresholds), the
+  first feature that uploads one. Bob may reorder.
+- **File storage, one ADR for all of it.** Backups (ADR-053), the
+  organization's logo (ADR-055 *Open decisions*) and product images (the
+  catalogue note in *Open decisions*) each point at "the bucket question";
+  certificates of analysis per lot, licence documents and label versions
+  (ADR-029), supplier documents on a purchase and photos on a return will
+  too. The ADR settles: provider and buckets (backups never share a bucket
+  or keys with anything else); upload checks (type, size, an SVG never
+  served as uploaded); files served through the app's own domain, never a
+  provider's public URL, which mainland China may block; and how files are
+  backed up. Free allowances to start with, terms to check when signing
+  up: Cloudflare R2 (no egress fees; check its versioning against ADR-053)
+  for files, Backblaze B2 or AWS S3 Canada for backups. A logo of at most
+  500 KB could live in the database instead, and needs no bucket.
+- **A free development database** past Render's 30 days: Neon and Supabase
+  have free Postgres plans; check for Postgres 18 and their sleep and
+  expiry rules.
 - **Words checked by the reviewer:** 贷项通知单 for a credit note, 开票净额（含税）,
   未开票金额（税前）, 待定成本. The same person could do MC-1405, the fluent review of
   the Chinese catalogue that v0.5 skipped.
