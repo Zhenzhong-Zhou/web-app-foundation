@@ -646,6 +646,9 @@ Paper is checked first because it must not change at all.
 - **MC-1547** Partners has Search and a Retired quick filter with its count.
   The search finds a partner by part of its name, its code or its tax ID.
   Pressing Retired shows only Old Mill Herbs. Retired reads as a grey chip.
+- **MC-1548** On Locations, Holds stock is a quiet blue chip rather than a
+  filled accent one, and Not available amber; an organization with no
+  locations shows the empty message in the shared empty state.
 
 ## Regressions
 
@@ -757,3 +760,4 @@ first.
   MC-1544 and MC-1545.
 - 2026-10-07: ADR-055 step 5, products: MC-1546.
 - 2026-10-07: ADR-055 step 5, partners: MC-1547.
+- 2026-10-07: ADR-055 step 5, locations: MC-1548.

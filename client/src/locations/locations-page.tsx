@@ -1,16 +1,9 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Paper,
-  Skeleton,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, Paper, Skeleton, Stack } from '@mui/material';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import { useCan } from '../auth/permissions';
+import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { openDialog } from '../lib/open-dialog';
 import type { Location } from '../lib/types';
@@ -111,13 +104,13 @@ export function LocationsPage() {
             ))}
           </Box>
         ) : (
-          <Typography color="text.secondary" sx={{ p: 3 }}>
+          <EmptyState>
             {intl.formatMessage({
               id: 'locations.empty',
               defaultMessage:
                 'No locations yet. Start with a site — a building or an address. You can add zones, aisles, and bins inside it later, or leave it as one room.',
             })}
-          </Typography>
+          </EmptyState>
         )}
       </Paper>
 
