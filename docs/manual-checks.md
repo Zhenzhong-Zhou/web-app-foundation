@@ -643,6 +643,9 @@ Paper is checked first because it must not change at all.
   name narrows the list as you type; pressing Discontinued shows only those
   (ZINC-60's product). Discontinued reads as a grey chip; a search that
   matches nothing says so, and Add product stays in the header only.
+- **MC-1547** Partners has Search and a Retired quick filter with its count.
+  The search finds a partner by part of its name, its code or its tax ID.
+  Pressing Retired shows only Old Mill Herbs. Retired reads as a grey chip.
 
 ## Regressions
 
@@ -753,3 +756,4 @@ first.
 - 2026-10-07: ADR-055 step 5, orders polish from the first screenshots:
   MC-1544 and MC-1545.
 - 2026-10-07: ADR-055 step 5, products: MC-1546.
+- 2026-10-07: ADR-055 step 5, partners: MC-1547.
