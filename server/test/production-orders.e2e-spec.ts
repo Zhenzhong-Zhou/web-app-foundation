@@ -1085,9 +1085,9 @@ describe('Production orders (e2e)', () => {
         .from(notifications)
         .where(eq(notifications.type, 'production.variance'));
 
-      // The yield leads the title; components, if any, explain it in the body.
-      expect(row.title).toContain('100.0000');
-      expect(row.title).toContain('500.0000');
+      // The yield leads the title; components, if any, explain it in the
+      // body. Quantities as a person reads them, without padding zeros.
+      expect(row.title).toBe('A production run made 100 against a plan of 500');
     });
 
     it('tells everyone who can close a run about a variance', async () => {

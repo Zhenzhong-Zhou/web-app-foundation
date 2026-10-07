@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
+import { readableQuantity } from '../../common/readable-quantity';
 import { recordPrevious } from '../../core/audit/audit-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
@@ -407,7 +408,11 @@ export class OrderLinesService {
             id: 'notifications.closedShort.body',
             defaultMessage: '{fulfilled} of {ordered} received. {reason}',
           },
-          { fulfilled, ordered, reason: input.reason },
+          {
+            fulfilled: readableQuantity(fulfilled),
+            ordered: readableQuantity(ordered),
+            reason: input.reason,
+          },
         ),
         resourceType: 'order',
         resourceId: orderId,
