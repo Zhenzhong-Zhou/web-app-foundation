@@ -13,7 +13,7 @@ import { config as loadEnv } from 'dotenv';
  *     DEMO_EMAIL=demo-…@example.com npm run screenshots
  *
  * Every page in English, French and Chinese, light and dark, at desktop and
- * phone width (the top bar also at 1280), into screenshots/out/ as
+ * phone width (the top bar also at 1200), into screenshots/out/ as
  * `<order>-<page>.<language>.<mode>.<width>.png`. The order is how much the
  * page matters, so the lowest numbers are the ones to look at first.
  * `npm run screenshots -- --grep 02-order` takes one page.
@@ -68,12 +68,13 @@ export default defineConfig({
       },
     },
     {
-      // Just above the 1200px breakpoint where the links move into the
-      // drawer: where the top bar is narrowest, and French longest.
+      // The 1200px breakpoint itself, where the links move into the
+      // drawer below it: the narrowest the full bar is ever drawn, and
+      // where French, the longest, is likeliest to run out of room.
       name: 'laptop',
       use: {
         ...devices['Desktop Chrome'],
-        viewport: { width: 1280, height: 800 },
+        viewport: { width: 1200, height: 800 },
       },
     },
     {

@@ -42,7 +42,16 @@ function at(id: string | null, path: (id: string) => string): string | null {
  */
 async function choose(page: Page, label: string, option: string) {
   await page.getByRole('combobox', { name: label }).press('ArrowDown');
+
+  // A filter reads its list again. Wait for that answer, not for the
+  // network to go quiet: Playwright's "network idle" counts only the first
+  // page load, so after a filter it passed at once and the picture caught
+  // the list still loading.
+  const answered = page.waitForResponse((response) =>
+    response.url().includes('/api/v1/'),
+  );
   await page.getByRole('option', { name: option, exact: true }).press('Enter');
+  await answered;
 }
 
 /**
