@@ -4703,6 +4703,37 @@ languages; which are required is the organization's setting.**
   be a new value and a new catalogue; two columns hold any pair of the
   catalogues that already exist.
 
+**Amendment — a notification is written when it is read.** Reverses
+"written once, in that person's language, and stored as now" above, for
+notifications only; emails are unchanged.
+
+A notification is read again, often days later; an email is read once.
+Stored as a finished sentence, the bell stays in whatever language the
+account had when the event happened: a person who switches to Chinese
+keeps a bell of English, and so does anyone who chose their language after
+`seed:demo` or an import wrote theirs. Every place that emits one already
+passes a message id and its values (`t()`); only the stored text threw
+them away.
+
+- `notifications` keeps the message each sentence was written from,
+  `title_message` and `body_message` (jsonb: the id, the values and the
+  English), beside `title` and `body`. Migration 0041.
+- `GET /v1/notifications` writes each sentence in the language the request
+  asks for (Accept-Language, which the client sets to the screen's
+  language), falling back to English where a catalogue lacks the id, as an
+  error does.
+- `title` and `body` stay, still written in the recipient's language at
+  emit: a row written before this has no message and is shown as it was
+  stored, and a body that is not a message (the variance list, "SKU: 13%")
+  stays text.
+- Quantities in a notification read without padding zeros, as on screen
+  (ADR-055): "30 of 40 received", not "30.0000 of 40.0000". Trimmed as
+  text, never parsed (ADR-025).
+
+Considered and not done: rewriting old rows into messages. Their sentences
+cannot be parsed back into ids and values reliably, and they age out under
+retention (ADR-036) within weeks.
+
 ---
 
 ## ADR-055 — The look: tokens, a side rail, tabs and a summary beside the work (amends ADR-021)
