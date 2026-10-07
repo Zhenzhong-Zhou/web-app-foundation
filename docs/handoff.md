@@ -603,9 +603,10 @@ Rules, still in force:
   wrapped paragraphs.
 - To reorder unpushed commits: `git reset --soft <base>`, restage per commit,
   and `git commit -C <old-hash>` to reuse each message.
-- Before pushing, run what CI runs: `npm run lint:ci` and
-  `npm run format:check` (both sides), `npx tsc -b` (client), build,
-  tests. Editor auto-imports in the wrong quote style fail CI.
+- Before pushing, run what CI runs: `scripts/verify.sh` from the repo
+  root (both sides, CI's order, stops at the first failure; `--quick`
+  skips the end-to-end suites). Editor auto-imports in the wrong quote
+  style fail CI.
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
 

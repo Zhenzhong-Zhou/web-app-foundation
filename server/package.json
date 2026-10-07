@@ -37,7 +37,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json --runInBand",
     "fix": "npm run format && npm run lint",
-    "verify": "npm run format:check && npm run lint:ci && npm run build && npm test && npm run test:e2e",
+    "checks": "node scripts/check-snapshots.js && node scripts/check-client-permissions.js && node scripts/check-client-locales.js && node scripts/check-client-audit-actions.js && npm run i18n:check",
+    "verify": "npm run format:check && npm run lint:ci && npm run checks && npm run build && npm test && npm run test:e2e",
     "pretest:e2e": "npm run migrate:test",
     "i18n:extract": "formatjs extract \"src/**/*.ts\" --ignore \"src/**/*.spec.ts\" --ignore src/i18n/translate.ts --additional-function-names t --format simple --throws --out-file src/i18n/en.json",
     "i18n:check": "node scripts/check-catalogues.mjs"
