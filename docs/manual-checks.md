@@ -596,6 +596,13 @@ Paper is checked first because it must not change at all.
   "Voids invoice" chip beside its number.
 - **MC-1533** CN-000001's lines read 2, not 2.0000. With Voided pressed and
   nothing voided, the list says only "Nothing here."
+- **MC-1534** Returns has a page title with its explanation under it, then its
+  statuses as a row of buttons where the tabs were, Open pressed. Open reads
+  quiet blue, Closed and Cancelled grey, on the list and on RMA-000001's
+  header.
+- **MC-1535** On RMA-000001, Authorized, Received and Credited read 2, not
+  2.0000. With a filter that matches nothing, the list says "Nothing here." in
+  the shared empty state.
 
 ## Regressions
 
@@ -699,3 +706,4 @@ first.
 - 2026-10-07: ADR-055 step 5, the orders list: MC-1525 to MC-1527.
 - 2026-10-07: ADR-055 step 5, inventory: MC-1528 to MC-1530.
 - 2026-10-07: ADR-055 step 5, invoices: MC-1531 to MC-1533.
+- 2026-10-07: ADR-055 step 5, returns and RMAs: MC-1534 and MC-1535.

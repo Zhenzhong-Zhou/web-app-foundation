@@ -118,7 +118,8 @@ test('authorizes a return from the sale, and closes it', async ({
   await expect(page.getByRole('heading', { name: 'RMA-000001' })).toBeVisible();
   const row = page.getByRole('row', { name: /FOCUS-60CT/ });
   await expect(row).toContainText('Credit');
-  await expect(row).toContainText('2.0000');
+  // Authorized, read without padding zeros (ADR-055).
+  await expect(row.getByRole('cell').nth(2)).toHaveText('2');
 
   await page.getByRole('button', { name: 'Close RMA' }).click();
   await page.getByRole('button', { name: 'Close it' }).click();
@@ -175,7 +176,7 @@ test('links a return that arrived before the RMA', async ({
 
   // Now counted as received against this RMA.
   const row = page.getByRole('row', { name: /FOCUS-60CT/ });
-  await expect(row.getByRole('cell').nth(3)).toHaveText('2.0000');
+  await expect(row.getByRole('cell').nth(3)).toHaveText('2');
 });
 
 test('receives a return against an RMA from the order', async ({
@@ -213,5 +214,5 @@ test('receives a return against an RMA from the order', async ({
   // … and the RMA counts it as received.
   await page.goto(`/return-authorizations/${rmaId}`);
   const row = page.getByRole('row', { name: /FOCUS-60CT/ });
-  await expect(row.getByRole('cell').nth(3)).toHaveText('2.0000');
+  await expect(row.getByRole('cell').nth(3)).toHaveText('2');
 });

@@ -1,25 +1,25 @@
 import {
   Alert,
-  Chip,
   Link,
   Paper,
   Skeleton,
   Stack,
-  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Tabs,
-  Typography,
 } from '@mui/material';
 import { useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { EmptyState } from '../components/empty-state';
+import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
+import { PageHeader } from '../components/page-header';
+import { StatusChip } from '../components/status-chip';
 import { formatDate } from '../lib/format';
 import type {
   ReturnAuthorizationStatus,
@@ -27,6 +27,7 @@ import type {
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { STATUS_TONES } from '../theme/status';
 import { rmaStatus } from './rma-labels';
 
 type Filter = ReturnAuthorizationStatus | 'all';
@@ -74,37 +75,28 @@ export function RmasPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h5" component="h1">
-        {intl.formatMessage({
+      <PageHeader
+        crumbs={[]}
+        title={intl.formatMessage({
           id: 'layout.nav.returns',
           defaultMessage: 'Returns',
         })}
-      </Typography>
-
-      <Typography variant="body2" color="text.secondary">
-        {intl.formatMessage({
+        subtitle={intl.formatMessage({
           id: 'rmas.intro',
           defaultMessage:
             'Return authorizations: what a customer may send back, and whether it is credited, replaced or neither. Raise one from the sale it concerns.',
         })}
-      </Typography>
+      />
 
-      <Tabs
-        value={filter}
-        onChange={(_event, value: Filter) => setFilter(value)}
-        aria-label={intl.formatMessage({
-          id: 'rmas.filter.label',
-          defaultMessage: 'Return authorization status',
-        })}
-      >
-        {FILTERS.map((option) => (
-          <Tab
-            key={option.value}
-            value={option.value}
-            label={intl.formatMessage(option.label)}
-          />
-        ))}
-      </Tabs>
+      {/* The one filter row (ADR-055), as on Orders and Invoices. */}
+      <FilterRow
+        quick={FILTERS.map((option) => ({
+          id: option.value,
+          label: intl.formatMessage(option.label),
+          pressed: filter === option.value,
+          onToggle: () => setFilter(option.value),
+        }))}
+      />
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -114,7 +106,7 @@ export function RmasPage() {
             {showSkeleton ? <Skeleton height={48} /> : null}
           </Stack>
         ) : rows?.length === 0 ? (
-          <Alert severity="info">
+          <EmptyState>
             {filter === 'open'
               ? intl.formatMessage({
                   id: 'rmas.empty',
@@ -124,7 +116,7 @@ export function RmasPage() {
                   id: 'invoices.emptyFiltered',
                   defaultMessage: 'Nothing here.',
                 })}
-          </Alert>
+          </EmptyState>
         ) : (
           <TableContainer>
             <Table size="small">
@@ -169,43 +161,39 @@ export function RmasPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows?.map((row) => {
-                  const status = rmaStatus(row.status);
-                  return (
-                    <TableRow key={row.id} hover>
-                      <TableCell>
-                        <Link
-                          component={RouterLink}
-                          to={`/return-authorizations/${row.id}`}
-                        >
-                          {row.number}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{row.partnerName}</TableCell>
-                      <TableCell>
-                        <Link
-                          component={RouterLink}
-                          to={`/orders/${row.orderId}`}
-                        >
-                          {row.orderReference ??
-                            intl.formatMessage({
-                              id: 'inventory.trace.order',
-                              defaultMessage: 'Order',
-                            })}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{row.reason}</TableCell>
-                      <TableCell>{formatDate(row.createdAt)}</TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={status.label}
-                          color={status.color}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {rows?.map((row) => (
+                  <TableRow key={row.id} hover>
+                    <TableCell>
+                      <Link
+                        component={RouterLink}
+                        to={`/return-authorizations/${row.id}`}
+                      >
+                        {row.number}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{row.partnerName}</TableCell>
+                    <TableCell>
+                      <Link
+                        component={RouterLink}
+                        to={`/orders/${row.orderId}`}
+                      >
+                        {row.orderReference ??
+                          intl.formatMessage({
+                            id: 'inventory.trace.order',
+                            defaultMessage: 'Order',
+                          })}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{row.reason}</TableCell>
+                    <TableCell>{formatDate(row.createdAt)}</TableCell>
+                    <TableCell>
+                      <StatusChip
+                        tone={STATUS_TONES.returnAuthorization[row.status]}
+                        label={rmaStatus(row.status).label}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </TableContainer>

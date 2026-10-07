@@ -1,7 +1,9 @@
+import type { ChipProps } from '@mui/material';
 import { defineMessages } from 'react-intl';
 
 import { intl } from '../i18n/intl';
 import type { ReturnAuthorizationStatus, ReturnResolution } from '../lib/types';
+import { COLOR_OF_TONE, STATUS_TONES } from '../theme/status';
 
 const STATUS = defineMessages({
   open: { id: 'orders.filter.open', defaultMessage: 'Open' },
@@ -28,11 +30,12 @@ export const RESOLUTIONS: ReturnResolution[] = ['credit', 'replace', 'none'];
  */
 export function rmaStatus(status: ReturnAuthorizationStatus): {
   label: string;
-  color: 'default' | 'primary' | 'success';
+  color: ChipProps['color'];
 } {
   return {
     label: intl().formatMessage(STATUS[status]),
-    color: status === 'open' ? 'primary' : 'default',
+    // Its tone from the one table (ADR-055): open is the one in colour.
+    color: COLOR_OF_TONE[STATUS_TONES.returnAuthorization[status]],
   };
 }
 

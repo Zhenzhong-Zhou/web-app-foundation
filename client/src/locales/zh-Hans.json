@@ -1135,7 +1135,6 @@
   "rmas.creditOn": "在 {number} 上开具贷项",
   "rmas.credited": "已贷项",
   "rmas.empty": "没有未完成的退货。",
-  "rmas.filter.label": "退货授权状态",
   "rmas.goodsComeBack": "货物通过订单上的“办理退货”退回，并注明 {rma}。",
   "rmas.intro": "退货授权：客户可以退回哪些货物，以及是开具贷项、换货还是都不做。请从相关的销售订单创建。",
   "rmas.keepOrDestroy": "已告知客户自行保留或销毁货物，因此不会收到任何货物。贷项按授权数量开具。",

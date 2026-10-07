@@ -1135,7 +1135,6 @@
   "rmas.creditOn": "Créditer sur {number}",
   "rmas.credited": "Crédité",
   "rmas.empty": "Aucun retour ouvert.",
-  "rmas.filter.label": "Statut de l’autorisation de retour",
   "rmas.goodsComeBack": "La marchandise revient par Recevoir un retour sur la commande, en indiquant {rma}.",
   "rmas.intro": "Autorisations de retour : ce qu’un client peut renvoyer, et si c’est crédité, remplacé ou ni l’un ni l’autre. Créez-en une à partir de la vente concernée.",
   "rmas.keepOrDestroy": "On a dit au client de garder ou de détruire la marchandise; rien ne sera donc reçu. Le crédit suit ce qui est autorisé.",

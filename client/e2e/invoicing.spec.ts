@@ -390,5 +390,5 @@ test('credits from an RMA, prefilled with what it authorized', async ({
   // Settled on the RMA.
   await page.goto(`/return-authorizations/${returnAuthorization.id}`);
   const row = page.getByRole('row', { name: /FOCUS-60CT/ });
-  await expect(row.getByRole('cell').nth(4)).toHaveText('2.0000');
+  await expect(row.getByRole('cell').nth(4)).toHaveText('2');
 });
