@@ -1,6 +1,7 @@
 import { Box, Divider, Link, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 import { useIntl } from 'react-intl';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { StatusChip } from '../components/status-chip';
 import {
@@ -8,6 +9,7 @@ import {
   formatCredit,
   formatMoney,
   NO_VALUE,
+  SEPARATOR,
 } from '../lib/format';
 import type { OrderDetail } from '../lib/types';
 import { unitLabel } from '../products/units';
@@ -20,8 +22,8 @@ function Fact({
   children,
 }: {
   label: string;
-  /** A word on what the figure leaves out, under it. */
-  note?: string;
+  /** A word on what the figure leaves out, or where it comes from. */
+  note?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -53,6 +55,29 @@ function Fact({
       )}
     </Box>
   );
+}
+
+/**
+ * The documents a figure comes from, for under it (ADR-055), each a link:
+ * an accountant checking a total goes to the document next. Up to three;
+ * past that, the Invoices and credits tab lists them all. Nothing when
+ * there are none, so no empty line is drawn.
+ */
+function documentLinks(
+  documents: { id: string; number: string | null }[],
+  to: (id: string) => string,
+): ReactNode {
+  const shown = documents.filter((document) => document.number).slice(0, 3);
+  if (shown.length === 0) return undefined;
+
+  return shown.map((document, index) => (
+    <span key={document.id}>
+      {index > 0 && SEPARATOR}
+      <Link component={RouterLink} to={to(document.id)}>
+        {document.number}
+      </Link>
+    </span>
+  ));
 }
 
 function Heading({ children }: { children: ReactNode }) {
@@ -266,6 +291,13 @@ export function OrderSummary({
               id: 'orders.summary.invoiced',
               defaultMessage: 'Invoiced, incl. tax',
             })}
+            // Issued and voided: the figure counts both (step 4).
+            note={documentLinks(
+              (order.documents?.invoices ?? []).filter(
+                (invoice) => invoice.status !== 'draft',
+              ),
+              (id) => `/invoices/${id}`,
+            )}
           >
             {formatMoney(money.invoiced, money.currency)}
           </Fact>
@@ -274,6 +306,10 @@ export function OrderSummary({
               id: 'orders.summary.credited',
               defaultMessage: 'Credited, incl. tax',
             })}
+            note={documentLinks(
+              order.documents?.creditNotes ?? [],
+              (id) => `/credit-notes/${id}`,
+            )}
           >
             {money.credited === '0.0000'
               ? formatMoney(money.credited, money.currency)

@@ -649,6 +649,12 @@ Paper is checked first because it must not change at all.
 - **MC-1548** On Locations, Holds stock is a quiet blue chip rather than a
   filled accent one, and Not available amber; an organization with no
   locations shows the empty message in the shared empty state.
+- **MC-1549** On SO-DEMO-1, the summary reads Ship, then Edit and Duplicate,
+  then Close order. INV-000001 is linked under Invoiced and CN-000001 under
+  Credited; the subtitle's Northside Pharmacy opens the partner. The Invoices
+  and credits tab ends with "1 return not yet settled" and its note, as the
+  summary does. On SO-DEMO-2, with nothing invoiced or returned, no links and
+  no warning appear.
 
 ## Regressions
 
@@ -761,3 +767,4 @@ first.
 - 2026-10-07: ADR-055 step 5, products: MC-1546.
 - 2026-10-07: ADR-055 step 5, partners: MC-1547.
 - 2026-10-07: ADR-055 step 5, locations: MC-1548.
+- 2026-10-07: ADR-055 step 5, the order closer to the mockup: MC-1549.

@@ -193,6 +193,32 @@ export function OrderDocuments({ order }: { order: OrderDetail }) {
           { amount: formatMoney(money.notInvoiced, money.currency) },
         )}
       </Typography>
+
+      {/* What the documents do not settle yet: returns with no RMA, the
+          same note the summary carries, since this is where an accountant
+          reconciles. */}
+      {order.unsettledReturns > 0 && (
+        <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
+          <StatusChip
+            tone="warning"
+            label={intl.formatMessage(
+              {
+                id: 'orders.summary.unsettled',
+                defaultMessage:
+                  '{count, plural, one {# return not yet settled} other {# returns not yet settled}}',
+              },
+              { count: order.unsettledReturns },
+            )}
+          />
+          <Typography variant="caption" color="text.secondary">
+            {intl.formatMessage({
+              id: 'orders.summary.unsettled.help',
+              defaultMessage:
+                'No RMA yet: decide on a credit, a replacement or no action.',
+            })}
+          </Typography>
+        </Stack>
+      )}
     </Stack>
   );
 }

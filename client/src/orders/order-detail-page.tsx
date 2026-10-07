@@ -290,19 +290,13 @@ export function OrderDetailPage() {
     </Button>
   ) : undefined;
 
-  /** The order's own actions, under Ship in its summary. */
+  /**
+   * The order's own actions, under Ship in its summary: Edit and Duplicate,
+   * then the status moves (Close order, Cancel order), as the reviewed
+   * mockup had them, the one that ends the order last.
+   */
   const actions = (
     <>
-      {canUpdate && (
-        <OrderStatusActions
-          order={order}
-          working={working}
-          quiet={!!primary}
-          stacked
-          onMove={moveTo}
-          onCloseOrder={() => setClosing(true)}
-        />
-      )}
       {/* Two equal halves, or one full width. A grid rather than a row of
           full-width buttons, which overflowed the panel. */}
       <Box
@@ -339,6 +333,16 @@ export function OrderDetailPage() {
           </Button>
         )}
       </Box>
+      {canUpdate && (
+        <OrderStatusActions
+          order={order}
+          working={working}
+          quiet={!!primary}
+          stacked
+          onMove={moveTo}
+          onCloseOrder={() => setClosing(true)}
+        />
+      )}
     </>
   );
 
@@ -382,8 +386,6 @@ export function OrderDetailPage() {
                   id: 'orders.subtitle.sample',
                   defaultMessage: 'sample',
                 }),
-              // The reference is the title when there is one.
-              order.reference && order.partnerName,
               order.expectedAt &&
                 intl.formatMessage(
                   {
@@ -395,6 +397,19 @@ export function OrderDetailPage() {
             ]
               .filter(Boolean)
               .join(SEPARATOR)}
+            {/* The partner, linked, when the reference is the title: the
+                one name on the page that leads to its other orders. */}
+            {order.reference && (
+              <>
+                {SEPARATOR}
+                <Link
+                  component={RouterLink}
+                  to={`/partners/${order.partnerId}`}
+                >
+                  {order.partnerName}
+                </Link>
+              </>
+            )}
             {order.duplicatedFromId && (
               <>
                 {SEPARATOR}
