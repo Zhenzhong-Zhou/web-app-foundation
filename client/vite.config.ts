@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import path from 'node:path';
 
 import react from '@vitejs/plugin-react';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 /**
  * Recompiles the catalogues while `npm run dev` runs (ADR-054).
@@ -79,8 +79,31 @@ function recompileCatalogues(): Plugin {
   };
 }
 
-export default defineConfig(({ command }) => ({
-  plugins: [react(), recompileCatalogues()],
+/**
+ * The product's name in the browser's tab and bookmarks: VITE_APP_NAME from
+ * the repository's .env, read here once at start, so renaming the product
+ * (or one deployment of it, for a customer) is a setting, not an edit.
+ * Escaped, since it lands in HTML.
+ */
+const DEFAULT_APP_NAME = 'web-app-foundation';
+
+function appName(mode: string): Plugin {
+  const name =
+    loadEnv(mode, '..', 'VITE_APP_NAME').VITE_APP_NAME || DEFAULT_APP_NAME;
+  const escaped = name
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+
+  return {
+    name: 'app-name',
+    transformIndexHtml: (html) => html.replaceAll('%APP_NAME%', escaped),
+  };
+}
+
+export default defineConfig(({ command, mode }) => ({
+  plugins: [react(), recompileCatalogues(), appName(mode)],
   resolve: {
     /**
      * In a production build, the ICU parser is swapped for its stub (ADR-054).

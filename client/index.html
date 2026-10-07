@@ -4,7 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+    <!--
+      360, QQ and Sogou browsers, common in China, carry a second engine, an
+      old Internet Explorer, and may open a site in it; this app would show a
+      blank page there. "renderer" asks them for their Chromium engine;
+      X-UA-Compatible asks anything still IE-based for its newest mode.
+    -->
+    <meta name="renderer" content="webkit" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- VITE_APP_NAME in the repository's .env; see vite.config.ts. -->
+    <title>%APP_NAME%</title>
   </head>
   <body>
     <div id="root"></div>
