@@ -1,3 +1,9 @@
+// The app's font (ADR-055), hosted with the app: no request to a font
+// service, and Latin Extended for French. Chinese uses the system's own.
+import '@fontsource/source-sans-3/400.css';
+import '@fontsource/source-sans-3/600.css';
+import '@fontsource/source-sans-3/700.css';
+
 import CssBaseline from '@mui/material/CssBaseline';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

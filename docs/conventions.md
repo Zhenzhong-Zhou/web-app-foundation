@@ -295,3 +295,33 @@ down to a floor, and below it the action group drops to its own line,
 right-aligned. Button labels never wrap (set once on `MuiButton`). One filled
 button per group at most — the action the current state is waiting for; the
 rest are text weight.
+
+---
+
+## The look (ADR-055)
+
+Colours, sizes and corners come from `client/src/theme/tokens.ts` through the
+theme. A component asks the palette by name (`color: 'text.secondary'`,
+`bgcolor: 'background.paper'`, `<Chip color="warning">`) and never writes a hex
+value, a font size or a radius the tokens already name. A value the design needs
+and the tokens lack becomes a token first.
+
+- **Two layers.** Brand (the accent, the radius) is what a rebrand, and later an
+  organization, changes. Semantic (surfaces, text, borders, the five status
+  tones) never takes the brand's colour.
+- **Status is a tone, not a colour.** A chip's colour prop names one: default
+  neutral, primary info, success positive, warning warning, error critical. The
+  words on the chip carry the meaning, so nothing is told by colour alone.
+- **Five type sizes:** `h5` for a page title, `h6` for a section, `body1`,
+  `body2` and `caption`. No others, and no capitals: `overline` is sentence
+  case.
+- **Links** take the accent and underline on hover. **Buttons**: one filled per
+  group, as above; the rest text weight.
+- **Density** is the theme's: compact with a mouse, 44px targets under a finger
+  (`pointer: coarse`). Don't set a control's height on the page.
+- **Focus** is one ring, drawn by the theme on everything that takes focus.
+  Never remove an outline.
+- **Contrast.** `tokens.test.ts` checks WCAG AA for every pair a reader reads,
+  in both modes; a new token adds its pair there.
+- **Paper** renders in `PrintSheet`'s own theme (`theme/paper.ts`) and never
+  uses the screen's tokens. A printed document changes only on purpose.

@@ -483,6 +483,20 @@ Paper is checked first because it must not change at all.
   the app around it; the print preview is black on white with nothing of
   the app, and reads exactly as it did before ADR-055. The packing slip
   and the credit note the same.
+- **MC-1502** In light and in dark, walk Inventory, SO-DEMO-1 and INV-000001.
+  Every word is readable; the page is tinted and its panels white (dark grey in
+  dark), with borders rather than shadows; table heads are tinted and quieter
+  than the rows; figures line up down their columns.
+- **MC-1503** The orders list with Show set to All: Confirmed is a quiet blue
+  tint, Draft and Cancelled grey, Shipped and Received green, each chip with
+  dark text in light mode and light text in dark.
+- **MC-1504** Press Tab through a page: every button, link, field and menu shows
+  the same ring as it takes focus, in both modes.
+- **MC-1505** In 简体中文 the text is the system's Chinese font (PingFang on a Mac,
+  Microsoft YaHei on Windows), never a serif fallback, with more room between
+  lines than in English.
+- **MC-1506** On a phone or tablet, buttons, icon buttons and table rows are at
+  least a fingertip tall; with a mouse they are compact.
 
 ## Regressions
 
@@ -568,3 +582,6 @@ first.
   start* are unchanged.
 - 2026-10-07: ADR-055 step 1 begins: printed documents on their own
   theme, section 15, MC-1501.
+- 2026-10-07: ADR-055 step 1, the tokens and the theme built from them:
+  MC-1502 to MC-1506. Covers dark mode and narrow screens, which the
+  list lacked.
