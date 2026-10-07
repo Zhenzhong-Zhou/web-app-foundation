@@ -40,6 +40,8 @@ function order(over: Partial<OrderDetail> = {}): OrderDetail {
     isSample: false,
     totals: [],
     totalsComplete: false,
+    money: null,
+    unsettledReturns: 0,
     lines: [orderLine()],
     ...over,
   };

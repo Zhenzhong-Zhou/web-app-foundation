@@ -167,6 +167,13 @@ export interface OrderLine {
   quantityFulfilled: string;
   /** Customer returns, beside fulfilled rather than subtracted (ADR-043). */
   quantityReturned: string;
+  /**
+   * Credited on a credit note, voiding's left out (ADR-055): beside
+   * Returned, the gap is what nobody has settled. Zero on a purchase.
+   */
+  quantityCredited: string;
+  /** On returns with no RMA yet (ADR-047). Zero on a purchase or sample. */
+  quantityUnsettled: string;
   quantityOutstanding: string;
   unitPrice: string | null;
   currency: string | null;
@@ -180,6 +187,19 @@ export interface OrderLine {
   /** No more is coming (ADR-034). The quantities above stay as they were. */
   isClosedShort: boolean;
   closedReason: string | null;
+}
+
+/**
+ * A sale's money (ADR-055), summed by the server: never added up here.
+ * Invoiced and credited include tax and count issued documents only;
+ * not yet invoiced is before tax and unrounded, for formatMoney to round.
+ */
+export interface OrderMoney {
+  currency: string | null;
+  invoiced: string;
+  credited: string;
+  netInvoiced: string;
+  notInvoiced: string;
 }
 
 /** What GET /orders/:id returns — the order with its lines. */
@@ -199,6 +219,10 @@ export interface OrderDetail {
   expectedAt: CalendarDay | null;
   totals: { currency: string; amount: string }[];
   totalsComplete: boolean;
+  /** Null on a purchase or a sample: neither is invoiced here. */
+  money: OrderMoney | null;
+  /** Returns received with no RMA, nobody yet deciding what they settle. */
+  unsettledReturns: number;
   note: string | null;
   lines: OrderLine[];
 }

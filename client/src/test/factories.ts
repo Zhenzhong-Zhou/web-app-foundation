@@ -21,6 +21,8 @@ export function orderLine(over: Partial<OrderLine> = {}): OrderLine {
     quantityFulfilled: '0.0000',
     quantityOutstanding: '40.0000',
     quantityReturned: '0.0000',
+    quantityCredited: '0.0000',
+    quantityUnsettled: '0.0000',
     unitPrice: null,
     currency: null,
     priceSource: null,
