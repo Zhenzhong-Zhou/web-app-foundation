@@ -473,6 +473,17 @@ folder by folder; these check what is already in place.
   English until the server translates (ADR-054, step 6), and so do
   notifications written before that.
 
+## 15. The look (ADR-055)
+
+The screens are being redesigned in steps; these check what is in place.
+Paper is checked first because it must not change at all.
+
+- **MC-1501** Open the demo's INV-000001 and choose Print, in light mode
+  and again in dark. On screen the document is a white sheet, padded, with
+  the app around it; the print preview is black on white with nothing of
+  the app, and reads exactly as it did before ADR-055. The packing slip
+  and the credit note the same.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -555,3 +566,5 @@ first.
 - 2026-10-06: `seed:demo` adds a range around the first product for the
   screens (`seed-demo-variety.ts`); the figures listed under *Before you
   start* are unchanged.
+- 2026-10-07: ADR-055 step 1 begins: printed documents on their own
+  theme, section 15, MC-1501.

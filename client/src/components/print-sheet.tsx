@@ -11,6 +11,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
@@ -18,6 +19,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { formatMoney, formatQuantity, NO_VALUE } from '../lib/format';
 import type { InvoiceTax } from '../lib/types';
 import { formatRate } from '../settings/tax-rate';
+import { PAPER_THEME } from '../theme/paper';
 import type { DocumentText } from './document-text';
 import { PRINTED } from './printed-words';
 
@@ -83,9 +85,26 @@ export function PrintSheet({
         </Button>
       </Stack>
 
-      <Stack spacing={3} lang={languages[0]}>
-        {children}
-      </Stack>
+      {/*
+       * The document in its own theme (ADR-055), so the screen's look
+       * never reaches paper. A white sheet on screen too: in dark mode the
+       * page around it is dark, and the document is what prints.
+       */}
+      <ThemeProvider theme={PAPER_THEME}>
+        <Stack
+          spacing={3}
+          lang={languages[0]}
+          sx={{
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            p: { xs: 2, sm: 4 },
+            borderRadius: 1,
+            '@media print': { p: 0 },
+          }}
+        >
+          {children}
+        </Stack>
+      </ThemeProvider>
     </Stack>
   );
 }
