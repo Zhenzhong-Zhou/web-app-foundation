@@ -36,6 +36,7 @@ import {
   SEPARATOR,
 } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { useRecordOpened } from '../lib/recent';
 import type {
   InvoiceDetail,
   InvoiceLine,
@@ -74,6 +75,8 @@ export function InvoiceDetailPage() {
     invoice: InvoiceDetail;
   }>(`/invoices/${id}`);
   const invoice = data?.invoice ?? null;
+  // Remembered as recently opened, once loaded (ADR-058).
+  useRecordOpened('invoice', id, invoice !== null);
   const [taxCodes, setTaxCodes] = useState<TaxCode[]>([]);
   const [editingLine, setEditingLine] = useState<InvoiceLine | null>(null);
   const [issuing, setIssuing] = useState(false);

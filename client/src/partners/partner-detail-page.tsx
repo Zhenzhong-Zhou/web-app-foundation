@@ -19,6 +19,7 @@ import { PageHeader } from '../components/page-header';
 import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
+import { useRecordOpened } from '../lib/recent';
 import type { Address, Contact, PartnerDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
@@ -63,6 +64,8 @@ export function PartnerDetailPage() {
     loading,
     reload,
   } = useResource<PartnerDetail>(`/partners/${id}`);
+  // Remembered as recently opened, once loaded (ADR-058).
+  useRecordOpened('partner', id, partner !== null && partner !== undefined);
   const [editingPartner, setEditingPartner] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [addingAddress, setAddingAddress] = useState(false);

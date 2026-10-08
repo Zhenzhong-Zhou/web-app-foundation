@@ -18,6 +18,8 @@ import { useNavigate } from 'react-router-dom';
 import { ExpiryChip } from '../components/expiry-chip';
 import { OPEN_LOOKUP } from '../errors/open-lookup';
 import { api } from '../lib/api';
+import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
+import { RECENT_KIND_LABELS, recentTitle } from '../lib/recent-labels';
 import type { LookupKind, LookupResponse, LookupResult } from '../lib/types';
 import { KIND_LABELS, listOf, pathOf } from './lookup-kinds';
 
@@ -26,10 +28,15 @@ const MIN_LENGTH = 2;
 /** Waits this long after the last key before asking. */
 const DELAY_MS = 200;
 
-/** One row in the list: a record, or a group's "Show all". */
+/** One row in the list: a record, a group's "Show all", or one recently
+ * opened, offered before anything is typed (ADR-058). */
 type Option =
   | { type: 'result'; kind: LookupKind; result: LookupResult }
-  | { type: 'all'; kind: LookupKind; to: string };
+  | { type: 'all'; kind: LookupKind; to: string }
+  | { type: 'recent'; entry: RecentEntry };
+
+/** The search's recently opened, before typing (ADR-058). */
+const RECENT_IN_SEARCH = 5;
 
 /**
  * The top bar's lookup (ADR-056): type a lot code, a number, a SKU or a
@@ -125,7 +132,27 @@ function LookupField({
   const [text, setText] = useState('');
   const [options, setOptions] = useState<Option[]>([]);
   const [loading, setLoading] = useState(false);
+  const [recent, setRecent] = useState<Option[]>([]);
   const latest = useRef(0);
+
+  // Before anything is typed, the last records opened: `/` then Enter
+  // reopens the last one. Read each time the field is focused, so it is
+  // as fresh as the last page opened.
+  function loadRecent() {
+    api<{ recent: RecentEntry[] }>(`/recent?limit=${RECENT_IN_SEARCH}`)
+      .then((response) =>
+        setRecent(
+          response.recent.map((entry) => ({ type: 'recent', entry }) as Option),
+        ),
+      )
+      .catch(() => setRecent([]));
+  }
+
+  // Read once when the box appears too, so the list is ready to open on
+  // the first focus rather than after it.
+  useEffect(() => {
+    loadRecent();
+  }, []);
 
   // Fetches after the pause; the state that shows it is waiting, or that
   // the text is too short, is set where the typing happens (onInputChange).
@@ -154,7 +181,11 @@ function LookupField({
 
   function go(option: Option) {
     navigate(
-      option.type === 'all' ? option.to : pathOf(option.kind, option.result),
+      option.type === 'recent'
+        ? RECENT_PATHS[option.entry.kind](option.entry.id)
+        : option.type === 'all'
+          ? option.to
+          : pathOf(option.kind, option.result),
     );
     latest.current += 1;
     setText('');
@@ -164,13 +195,25 @@ function LookupField({
   }
 
   const short = text.trim().length < MIN_LENGTH;
+  const empty = text.trim() === '';
 
   return (
     <Autocomplete<Option, false, false, false>
-      options={options}
-      groupBy={(option) => intl.formatMessage(KIND_LABELS[option.kind])}
+      options={empty ? recent : options}
+      groupBy={(option) =>
+        option.type === 'recent'
+          ? intl.formatMessage({
+              id: 'recent.title',
+              defaultMessage: 'Recently opened',
+            })
+          : intl.formatMessage(KIND_LABELS[option.kind])
+      }
       getOptionLabel={(option) =>
-        option.type === 'result' ? option.result.title : option.to
+        option.type === 'recent'
+          ? (option.entry.title ?? '')
+          : option.type === 'result'
+            ? option.result.title
+            : option.to
       }
       // The server has matched and ranked them; nothing to filter here.
       filterOptions={(all) => all}
@@ -193,7 +236,9 @@ function LookupField({
       }}
       loading={loading}
       autoHighlight
-      openOnFocus={false}
+      // Opens on focus only to offer what was recently opened.
+      openOnFocus={recent.length > 0}
+      onFocus={loadRecent}
       noOptionsText={
         short
           ? intl.formatMessage({
@@ -211,7 +256,9 @@ function LookupField({
       })}
       renderOption={({ key, ...props }, option) => (
         <li key={key} {...props}>
-          {option.type === 'all' ? (
+          {option.type === 'recent' ? (
+            <RecentOption entry={option.entry} />
+          ) : option.type === 'all' ? (
             <Typography variant="body2" color="primary">
               {intl.formatMessage(
                 {
@@ -303,4 +350,33 @@ function optionsOf(response: LookupResponse, query: string): Option[] {
     const to = listOf(kind, query);
     return to ? [...rows, { type: 'all', kind, to }] : rows;
   });
+}
+
+/** A recently opened record: its name, and what kind it is and when. */
+function RecentOption({ entry }: { entry: RecentEntry }) {
+  const intl = useIntl();
+  return (
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{ justifyContent: 'space-between', width: '100%', minWidth: 0 }}
+    >
+      <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+        {recentTitle(intl, entry)}
+        {entry.detail && (
+          <Typography
+            component="span"
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontWeight: 400, ml: 1 }}
+          >
+            {entry.detail}
+          </Typography>
+        )}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" noWrap>
+        {intl.formatMessage(RECENT_KIND_LABELS[entry.kind])}
+      </Typography>
+    </Stack>
+  );
 }

@@ -25,6 +25,7 @@ import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import { formatUnitCost, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { useRecordOpened } from '../lib/recent';
 import type { PriceListDetail, PriceListItem } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
@@ -51,6 +52,8 @@ export function PriceListDetailPage() {
     priceList: PriceListDetail;
   }>(`/price-lists/${id}`);
   const list = data?.priceList ?? null;
+  // Remembered as recently opened, once loaded (ADR-058).
+  useRecordOpened('priceList', id, list !== null);
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [correcting, setCorrecting] = useState<PriceListItem | null>(null);
