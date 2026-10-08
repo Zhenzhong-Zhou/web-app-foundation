@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
@@ -80,8 +80,10 @@ export function InventoryPage() {
 
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [locationId, setLocationId] = useState('');
-  const [searchText, setSearchText] = useState('');
-  const [search, setSearch] = useState('');
+  // From the address too: the lookup's "Show all" opens it narrowed.
+  const [params] = useSearchParams();
+  const [searchText, setSearchText] = useState(params.get('search') ?? '');
+  const [search, setSearch] = useState((params.get('search') ?? '').trim());
   const [setupError, setSetupError] = useState<string | null>(null);
   const [receiving, setReceiving] = useState(false);
   const [moving, setMoving] = useState<{

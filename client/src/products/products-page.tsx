@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
@@ -68,7 +68,9 @@ export function ProductsPage() {
     reload,
   } = useResource<Product[]>('/products');
   const [creating, setCreating] = useState(false);
-  const [search, setSearch] = useState('');
+  // From the address too: the lookup's "Show all" opens it narrowed.
+  const [params] = useSearchParams();
+  const [search, setSearch] = useState(params.get('search') ?? '');
   const [discontinuedOnly, setDiscontinuedOnly] = useState(false);
 
   const showSkeleton = useDelayedFlag(loading);

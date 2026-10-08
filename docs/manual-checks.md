@@ -696,6 +696,12 @@ Paper is checked first because it must not change at all.
   `fokus` shows Focus 60ct marked close match; `mdyf` or 明德 finds 明德药房; `INV-`
   puts Invoices first. In 中文 and Français the headings and messages are
   translated. At 375px the search is a button that opens it full screen.
+- **MC-1557** Orders, Invoices, Returns and Production each have a Search box
+  in their filter row: part of a number or reference, or a partner's name
+  (without accents, or a Chinese name by pinyin), narrows the list as you
+  type, with the status buttons still applying. "Show all in Orders" from the
+  top bar opens Orders already narrowed, as do the Items, Lots and Partners
+  links.
 
 ## Regressions
 
@@ -816,3 +822,4 @@ first.
 - 2026-10-07: ADR-055 step 5, the settings pages: MC-1554.
 - 2026-10-07: the short chip under the outstanding figure: MC-1555.
 - 2026-10-07: ADR-056 step 6, the lookup in the top bar: MC-1556.
+- 2026-10-07: ADR-056 step 6, search on the lists: MC-1557.
