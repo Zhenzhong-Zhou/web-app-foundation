@@ -33,7 +33,8 @@ and price lists proposing the price of a new line.
   currency per sale from the first priced line). **ADR-054** (languages)
   is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
   ADR-055 (the look) is built on `ui-design-pass`, with an amendment.
-  Next is **ADR-057**.
+  ADR-057 (dates, sorting, export) is written for review. Next is
+  **ADR-058**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot
@@ -604,9 +605,8 @@ Rules, still in force:
   `pg_stat_statements` from the first day of real use. Compression is
   already done by Render's edge (Brotli). The rest wait for their
   triggers.
-- CSV/Excel export and import: raised, not decided. Export is low-risk
-  (read-only, reuses the lists' permissions and tenant scoping); import and
-  bulk insert need an ADR first (validation, partial failure, audit,
+- CSV import: raised, not decided; export is ADR-057. Import and bulk
+  insert need an ADR first (validation, partial failure, audit,
   duplicates, tenant checks). Decide from what users actually need.
 - ADR-048 deferrals worth remembering:
     - propagating corrections through closed runs;
