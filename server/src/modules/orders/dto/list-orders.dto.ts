@@ -1,6 +1,6 @@
 import { IsIn, IsOptional, IsUUID } from 'class-validator';
 
-import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
+import { SearchableKeysetQueryDto } from '../../../common/dto/searchable-keyset-query.dto';
 import { ORDER_STATUSES, type OrderStatus } from '../../../database/schema';
 
 /**
@@ -11,7 +11,7 @@ import { ORDER_STATUSES, type OrderStatus } from '../../../database/schema';
  * be simpler and wrong for the same reason it is wrong for the audit log: new
  * rows arriving mid-scroll shift every page down and the reader misses rows.
  */
-export class ListOrdersDto extends KeysetQueryDto {
+export class ListOrdersDto extends SearchableKeysetQueryDto {
   /**
    * Absent means open orders only — draft and confirmed.
    *

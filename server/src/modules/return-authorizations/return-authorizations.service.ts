@@ -5,9 +5,15 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, lt, or, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
+import {
+  codeMatches,
+  nameMatches,
+  pinyinMatches,
+  searchTerms,
+} from '../../common/search';
 import type { Transaction } from '../../database/database.module';
 import {
   creditNoteLines,
@@ -57,6 +63,16 @@ export class ReturnAuthorizationsService {
       }
       if (query.orderId) {
         scope.push(eq(returnAuthorizations.orderId, query.orderId));
+      }
+      // Its number or its partner's name (ADR-056).
+      if (query.search) {
+        const terms = searchTerms(query.search);
+        const match = or(
+          codeMatches(returnAuthorizations.number, terms),
+          nameMatches(partners.name, terms),
+          pinyinMatches(partners.namePinyin, terms),
+        );
+        if (match) scope.push(match);
       }
 
       const rows = await tx

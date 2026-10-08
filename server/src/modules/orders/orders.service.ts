@@ -1,7 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
+import {
+  codeMatches,
+  nameMatches,
+  pinyinMatches,
+  searchTerms,
+} from '../../common/search';
 import {
   creditNoteLines,
   creditNotes,
@@ -82,6 +88,16 @@ export class OrdersService {
 
       if (query.before) scope.push(lt(orders.id, query.before));
       if (query.partnerId) scope.push(eq(orders.partnerId, query.partnerId));
+      // Its reference or its partner's name (ADR-056).
+      if (query.search) {
+        const terms = searchTerms(query.search);
+        const match = or(
+          codeMatches(orders.reference, terms),
+          nameMatches(partners.name, terms),
+          pinyinMatches(partners.namePinyin, terms),
+        );
+        if (match) scope.push(match);
+      }
 
       if (!query.status || query.status === 'open') {
         scope.push(inArray(orders.status, [...OPEN_STATUSES]));

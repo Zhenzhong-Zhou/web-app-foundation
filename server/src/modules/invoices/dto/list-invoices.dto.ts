@@ -1,10 +1,10 @@
 import { IsIn, IsOptional, IsUUID } from 'class-validator';
 
-import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
+import { SearchableKeysetQueryDto } from '../../../common/dto/searchable-keyset-query.dto';
 import { INVOICE_STATUSES, type InvoiceStatus } from '../../../database/schema';
 
 /** Paged like every list, by KeysetQueryDto; these are the invoice filters. */
-export class ListInvoicesDto extends KeysetQueryDto {
+export class ListInvoicesDto extends SearchableKeysetQueryDto {
   /**
    * Absent means every status. Unlike orders, there is no "open" default:
    * a voided invoice is still a document someone asks about, and issued

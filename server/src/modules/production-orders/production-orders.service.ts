@@ -8,6 +8,7 @@ import {
 import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
+import { codeMatches, searchTerms } from '../../common/search';
 import { isForeignKeyViolation } from '../../database/errors';
 import {
   boms,
@@ -119,6 +120,10 @@ export class ProductionOrdersService {
         ? eq(productionOrders.partnerId, query.partnerId)
         : undefined,
       query.before ? lt(productionOrders.id, query.before) : undefined,
+      // Its reference (ADR-056).
+      query.search
+        ? codeMatches(productionOrders.reference, searchTerms(query.search))
+        : undefined,
     ].filter((f): f is NonNullable<typeof f> => f !== undefined);
 
     const rows = await this.tenantDb.select(
