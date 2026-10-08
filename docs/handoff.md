@@ -21,9 +21,9 @@ and price lists proposing the price of a new line.
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
 - Migrations: through **0044** (`sort_indexes`, ADR-057) on `main`;
-  **0045** (`getting_started`, ADR-058) on `adr-058-home`. Render runs them
-  on deploy (confirm in the deploy log, *In flight* below). Next is
-  **0046**.
+  **0045** (`getting_started`, ADR-058) and **0046** (`sort_indexes_desc`,
+  ADR-057 amended) on `adr-058-home`. Render runs them on deploy (confirm in
+  the deploy log, *In flight* below). Next is **0047**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,

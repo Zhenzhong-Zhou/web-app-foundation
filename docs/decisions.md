@@ -5323,6 +5323,11 @@ amount, voided, with the date range and search (ADR-056) like the rest.
   with no expected date) come last in either order.
 - **Each sort has an index** on `(organization_id, value, id)`, added by
   migration, and a plan probe in `perf/` (ADR-051).
+  *Amended:* a btree read backwards gives `DESC NULLS FIRST`, and the lists
+  put blanks last both ways, so a descending sort could not read the
+  ascending index and sorted the whole organization instead; the plan check
+  caught it on invoices by total. Each sort now has a second index built
+  `value DESC NULLS LAST, id DESC` (migration 0046), one per direction.
 - Any other column is refused, not ignored: a sort that cannot be paged
   correctly is worse than none.
 

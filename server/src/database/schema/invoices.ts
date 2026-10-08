@@ -264,6 +264,23 @@ export const invoices = pgTable(
       t.id,
     ),
     index('invoices_org_total_id_idx').on(t.organizationId, t.total, t.id),
+    // Descending sorts (ADR-057) read their own index: a btree scanned
+    // backwards gives DESC NULLS FIRST, and the lists put blanks last both
+    // ways, so "desc nulls last" needs an index built that way.
+    index('invoices_org_invoice_date_desc_idx').on(
+      t.organizationId,
+      t.invoiceDate.desc().nullsLast(),
+      // id as `desc` alone sorts it, nulls first; id is never null, but
+      // the index must say the same for the planner to read it in order.
+      t.id.desc().nullsFirst(),
+    ),
+    index('invoices_org_total_desc_idx').on(
+      t.organizationId,
+      t.total.desc().nullsLast(),
+      // id as `desc` alone sorts it, nulls first; id is never null, but
+      // the index must say the same for the planner to read it in order.
+      t.id.desc().nullsFirst(),
+    ),
 
     // An order's invoices, on its page.
     index('invoices_org_order_idx').on(t.organizationId, t.orderId),
