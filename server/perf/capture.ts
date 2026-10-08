@@ -69,7 +69,9 @@ export class QueryCapture {
         ? { text: config, values }
         : (config as { text?: string; values?: unknown } | null);
 
-    if (!query?.text || !/^\s*(select|with)\b/i.test(query.text)) return;
+    // A union of parenthesised selects opens with "(", as Home's totals
+    // do; read as a select, or the plan check would never see it.
+    if (!query?.text || !/^[\s(]*(select|with)\b/i.test(query.text)) return;
     if (/pg_advisory/i.test(query.text)) return;
 
     // Drizzle passes the parameters as query()'s second argument, beside a
