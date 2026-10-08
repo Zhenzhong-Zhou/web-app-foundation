@@ -5352,7 +5352,28 @@ amount, voided, with the date range and search (ADR-056) like the rest.
       currency, total before tax;
     - stock movements: when, reason, SKU, item, lot, quantity, unit,
       from and to location, reference;
-    - inventory: SKU, item, lot, expiry, location, quantity, unit, cost.
+    - inventory: SKU, item, lot, expiry, location, quantity, unit, cost;
+    - products: SKU, product, variant, type, unit, tracks lots, discontinued,
+      and the names in each language the product has;
+    - partners: name, code, tax ID, document language, retired, and the
+      billing address;
+    - a price list: its items, SKU, item, unit, price, currency; one export
+      per list;
+    - stock value (the costs page): SKU, item, lot, quantity, unit cost,
+      value, currency, provisional, as at the moment of export;
+    - the audit log: when, who, action, resource, and the summary the page
+      shows, under `audit.view` like the page, filtered by its own date
+      range and action.
+
+  Products, partners, price lists, stock value and the audit log were
+  added before step 5 was built: once one CSV writer exists, each is a
+  choice of columns, not new work, and each answers a request an
+  accountant or an auditor makes (a catalogue to check, a contact list,
+  prices to send a customer, month-end valuation, who changed what). The
+  audit log and partners hold personal data, which is one more reason
+  every export is itself audited. Members, roles, tax codes, locations and
+  settings are not exported: small, read on screen, and asked for by
+  nobody yet.
 
 **Decision — in the browser.**
 
