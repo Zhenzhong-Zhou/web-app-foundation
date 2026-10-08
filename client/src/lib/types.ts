@@ -1095,3 +1095,48 @@ export interface CreditNoteSummary {
   total: string;
   isVoid: boolean;
 }
+
+/** Home's cards (ADR-058), in the order of a working day. */
+export type HomeKind =
+  | 'toShip'
+  | 'toReceive'
+  | 'expiring'
+  | 'costsWaiting'
+  | 'invoicesToIssue'
+  | 'returnsOpen'
+  | 'production'
+  | 'licences';
+
+export interface HomeRow {
+  id: string;
+  title: string;
+  detail: string | null;
+  due: CalendarDay | null;
+  late: boolean;
+}
+
+export interface HomeCard {
+  kind: HomeKind;
+  count: number;
+  late: number;
+  rows: HomeRow[];
+}
+
+export type GettingStartedStep =
+  | 'organization'
+  | 'location'
+  | 'product'
+  | 'partner'
+  | 'receipt'
+  | 'invoice'
+  | 'team';
+
+export interface HomeResponse {
+  gettingStarted: {
+    steps: Record<GettingStartedStep, boolean>;
+    teamSkipped: boolean;
+    dismissed: boolean;
+    complete: boolean;
+  };
+  cards: HomeCard[];
+}

@@ -40,6 +40,7 @@ interface Seed {
 const heading = (page: Page) => page.getByRole('heading', { level: 1 });
 
 const SCREENS: Screen[] = [
+  { name: 'home', path: () => '/', ready: heading },
   { name: 'inventory', path: () => '/inventory', ready: heading },
   { name: 'movements', path: () => '/movements', ready: heading },
   { name: 'orders', path: () => '/orders', ready: heading },

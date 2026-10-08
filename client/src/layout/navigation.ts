@@ -9,6 +9,7 @@ import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
 import GroupOutlined from '@mui/icons-material/GroupOutlined';
 import HandshakeOutlined from '@mui/icons-material/HandshakeOutlined';
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined';
+import HomeOutlined from '@mui/icons-material/HomeOutlined';
 import Inventory2Outlined from '@mui/icons-material/Inventory2Outlined';
 import PercentOutlined from '@mui/icons-material/PercentOutlined';
 import PlaceOutlined from '@mui/icons-material/PlaceOutlined';
@@ -43,6 +44,7 @@ const labels = defineMessages({
   main: { id: 'layout.mainNavigation', defaultMessage: 'Main' },
   records: { id: 'layout.group.records', defaultMessage: 'Records' },
   settings: { id: 'layout.group.settings', defaultMessage: 'Settings' },
+  home: { id: 'layout.nav.home', defaultMessage: 'Home' },
   inventory: { id: 'layout.nav.inventory', defaultMessage: 'Inventory' },
   movements: { id: 'layout.nav.movements', defaultMessage: 'Movements' },
   orders: { id: 'layout.nav.orders', defaultMessage: 'Orders' },
@@ -82,6 +84,12 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: labels.main,
     items: [
+      // Home first (ADR-058): what needs attention, for everyone.
+      {
+        label: labels.home,
+        to: '/',
+        icon: HomeOutlined,
+      },
       {
         label: labels.inventory,
         to: '/inventory',

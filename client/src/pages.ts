@@ -142,6 +142,8 @@ export const InvoiceDetailPage = lazyNamed(
   'InvoiceDetailPage',
 );
 
+export const HomePage = lazyNamed(() => import('./home/home-page'), 'HomePage');
+
 export const CreditNotesPage = lazyNamed(
   () => import('./invoices/credit-notes-page'),
   'CreditNotesPage',
