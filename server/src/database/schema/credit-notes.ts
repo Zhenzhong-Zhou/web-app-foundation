@@ -161,6 +161,23 @@ export const creditNotes = pgTable(
       t.id,
     ),
     index('credit_notes_org_total_id_idx').on(t.organizationId, t.total, t.id),
+    // Descending sorts (ADR-057) read their own index: a btree scanned
+    // backwards gives DESC NULLS FIRST, and the lists put blanks last both
+    // ways, so "desc nulls last" needs an index built that way.
+    index('credit_notes_org_credit_date_desc_idx').on(
+      t.organizationId,
+      t.creditDate.desc().nullsLast(),
+      // id as `desc` alone sorts it, nulls first; id is never null, but
+      // the index must say the same for the planner to read it in order.
+      t.id.desc().nullsFirst(),
+    ),
+    index('credit_notes_org_total_desc_idx').on(
+      t.organizationId,
+      t.total.desc().nullsLast(),
+      // id as `desc` alone sorts it, nulls first; id is never null, but
+      // the index must say the same for the planner to read it in order.
+      t.id.desc().nullsFirst(),
+    ),
 
     // A customer's credits, newest first.
     index('credit_notes_org_partner_date_idx').on(

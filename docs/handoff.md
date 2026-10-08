@@ -20,10 +20,10 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0043** (`search_text`, ADR-056) on `main`;
-  **0044** (`sort_indexes`, ADR-057) on `adr-057-dates-export`. Render runs
-  them on deploy (confirm in the deploy log, *In flight* below). Next is
-  **0045**.
+- Migrations: through **0044** (`sort_indexes`, ADR-057) on `main`;
+  **0045** (`getting_started`, ADR-058) and **0046** (`sort_indexes_desc`,
+  ADR-057 amended) on `adr-058-home`. Render runs them on deploy (confirm in
+  the deploy log, *In flight* below). Next is **0047**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -33,7 +33,7 @@ and price lists proposing the price of a new line.
   is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
   ADR-055 (the look) is built on `ui-design-pass`, with an amendment.
   ADR-057 (dates, sorting, export) is built on `adr-057-dates-export`.
-  Next is **ADR-058**.
+  ADR-058 (Home) is built on `adr-058-home`. Next is **ADR-059**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot
@@ -123,11 +123,25 @@ Then tag v0.4.0.
   (ADR-057) are built on `adr-057-dates-export`, all seven steps: date ranges
   on six lists, a credit notes list, sorts on four with (value, id) cursors
   and migration 0044, ten CSV exports through one writer, audited, the
-  screens, and perf probes. Then a **home page** of what needs attention
-  (expiring lots, unsettled returns, costs waiting, orders to ship); then
-  **file storage** (one ADR for every file, below); then **organization
-  branding** (logo, accent with a contrast check, expiry thresholds), the
-  first feature that uploads one. Bob may reorder.
+  screens, and perf probes. **Home** (ADR-058) is built on `adr-058-home`, all
+  five steps: `GET /v1/home` and its cards read through each list's own
+  service, the lists opening from the address, Getting started with migration
+  0045, the page to the canvas at
+  https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ, and its perf probes. Then
+  **status pages** (below); then **file storage** (one ADR for every file,
+  below); then **organization branding** (logo, accent with a contrast check,
+  expiry thresholds), the first feature that uploads one. Bob may reorder.
+- **Status pages, after Home.** Today an unknown address shows a bare "Not
+  found" outside the layout, and a record that does not exist or a page the
+  role cannot open shows the server's raw error. One shared design for all
+  of them, in a feature folder `client/src/errors/`: an icon, a short title
+  ("Page not found", "This order doesn't exist", "You don't have access to
+  this", "Something went wrong"), one sentence, one or two actions (Go home,
+  Search everything, Reload) and a reference number after a crash, in three
+  languages. Signed in, it shows inside the app with the rail and the
+  lookup; signed out, alone and centred, offering to sign in. No ADR: a
+  `conventions.md` rule (a missing or forbidden record shows the status
+  page, not a raw error). Designed on the same canvas as Home.
 - **Dates, sorting and export, one ADR.** Only the audit log filters by date
   today, and every list is newest first, fixed, because keyset paging
   (ADR-051) relies on one order. Date ranges are cheap, one more filter

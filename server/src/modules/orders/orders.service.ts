@@ -115,6 +115,7 @@ export class OrdersService {
       });
       if (paging.where) scope.push(paging.where);
       if (query.partnerId) scope.push(eq(orders.partnerId, query.partnerId));
+      if (query.direction) scope.push(eq(orders.direction, query.direction));
       // By expected date (ADR-057); an order without one is left out.
       scope.push(...calendarRange(orders.expectedAt, query));
       // Its reference or its partner's name (ADR-056).

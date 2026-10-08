@@ -31,6 +31,6 @@ import { StockReadsService } from './stock-reads.service';
     LotTraceService,
     AvailabilityService,
   ],
-  exports: [StockService],
+  exports: [StockService, StockReadsService],
 })
 export class StockModule {}

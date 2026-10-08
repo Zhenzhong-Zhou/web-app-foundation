@@ -25,6 +25,7 @@ import {
   CreditNotePrintPage,
   CreditNotesPage,
   ExchangeRatesPage,
+  HomePage,
   InventoryPage,
   InvoiceDetailPage,
   InvoicePrintPage,
@@ -205,7 +206,7 @@ export default function App() {
           </Protected>
         }
       >
-        <Route path="/" element={<Navigate to="/products" replace />} />
+        <Route path="/" element={split(HomePage)} />
         <Route path="/account" element={split(AccountPage)} />
         <Route path="/account/sessions" element={split(SessionsPage)} />
         <Route path="/members" element={split(MembersPage)} />

@@ -5323,6 +5323,11 @@ amount, voided, with the date range and search (ADR-056) like the rest.
   with no expected date) come last in either order.
 - **Each sort has an index** on `(organization_id, value, id)`, added by
   migration, and a plan probe in `perf/` (ADR-051).
+  *Amended:* a btree read backwards gives `DESC NULLS FIRST`, and the lists
+  put blanks last both ways, so a descending sort could not read the
+  ascending index and sorted the whole organization instead; the plan check
+  caught it on invoices by total. Each sort now has a second index built
+  `value DESC NULLS LAST, id DESC` (migration 0046), one per direction.
 - Any other column is refused, not ignored: a sort that cannot be paged
   correctly is worse than none.
 
@@ -5437,6 +5442,209 @@ amount, voided, with the date range and search (ADR-056) like the rest.
   Trigger: an accountant asking to stop re-keying.
 - **More sortable columns.** Trigger: asked for, one at a time, each with
   its index.
+
+---
+
+## ADR-058 — Home: what needs attention, first
+
+**Context.** Signing in lands on Products (`/` redirects there), the page a
+person needs least often. What needs doing today is spread over six lists,
+each found by knowing where to look and which filter to press: orders to
+ship and to receive, lots near expiry, receipts waiting for a cost, draft
+invoices, returns not settled, runs under way, licences running out. The
+organization's name in the top bar already links to `/`, and ADR-055 kept
+the corner as "the way home", with nowhere for it to lead yet.
+
+The counts behind most of this exist (ADR-055's quick filters,
+`GET /v1/stock/counts`); what does not is one place that shows them
+together, with the most urgent few of each.
+
+**Decision — `/` is Home, a page of cards, each something to do.**
+
+| Card | Shows | Order | Opens | Permission |
+|---|---|---|---|---|
+| To ship | confirmed sales with lines still to ship | overdue first, then by expected date | Orders, sales, open | `orders.view` |
+| To receive | confirmed purchases with lines still to come | overdue first, then by expected date | Orders, purchases, open | `orders.view` |
+| Expiring soon | lots with stock expiring within 90 days, or expired | soonest first, expired red | Inventory, Expiring soon | `stock.view` |
+| Costs waiting | receipts with no cost yet | oldest first | Inventory, Needs a cost | `costs.view` |
+| Invoices to issue | draft invoices | newest first, as the list | Invoices, drafts | `invoices.view` |
+| Returns open | returns still open | newest first, as the list | Returns, open | `return_authorizations.view` |
+| Production | runs in progress (released) | newest first, as the list | Production, in progress | `production.view` |
+| Licences | licences expiring within 60 days, or expired | soonest first | Licences | `product_licences.view` |
+
+**Decision — a welcome, a sentence and a row of counts, above the cards.**
+Home is read first and in three languages, by people who are not
+designers; before any card, three things say where the day stands:
+
+- **A greeting:** good morning, afternoon or evening by the reader's clock,
+  and their name; beside it the date in their language and the
+  organization's name. Words, not decoration, and the page's one heading.
+- **One sentence:** how much needs attention and how much of it is late,
+  "9 things need attention, 2 of them overdue", or "Nothing needs
+  attention today" when every card is empty. Counted from the cards the
+  reader can see, so it never mentions what their role hides.
+- **A row of big numbers:** one per card the reader can see, its icon,
+  name and count, tinted only when something in it is late or close to
+  spoiling (red overdue or expired, amber within the warning days), and
+  each a link to its card further down. This is the page's visualization:
+  the counts at a glance, no charts.
+- **Quick actions,** under the row of counts: the few things people start
+  from Home, Raise an order, Receive stock, Trace a lot, Plan a run, each
+  shown only when the member's role may do it, as buttons that open where
+  the work is done. Not a map of every page: the rail lists those on every
+  screen and the lookup finds any record, and a second copy here would push
+  the to-dos down.
+
+- **Each card: a count, the five most urgent rows, and a link** to the list
+  already filtered to the same rows ("See all 12"). A row opens its record.
+- **A card with nothing to do says so** ("Nothing to ship"), in a quiet tone,
+  rather than disappearing: an empty Home should read as all done, not as
+  broken. A card the member may not view is not shown, and its query never
+  runs (as the lookup, ADR-056).
+- **Overdue** means an expected date before today in the reader's calendar;
+  the thresholds are the screens' own (ADR-055: expiry 90 and 30 days), until
+  branding makes them the organization's (Open decisions).
+- **No money and no charts.** A figure like "invoiced this month" needs one
+  currency or one per currency and a decision about what it counts; charts
+  are an open decision of their own. Both stay out until asked for.
+
+*Amended while building:* each card reads its rows through its list's own
+service with the card's filters, so its five rows are exactly that list's
+first five, in the list's order; a card ordered differently from its list
+would have needed its own query and could drift from it. Shipments not yet
+invoiced, credits not yet issued and planned runs are left out for now:
+none has a list filter for "See all" to open, and a card must open its own
+rows. Each comes back with its filter. Lateness follows the reader's day
+(`?today=`); the expiring count's 90 days are the server's, as the
+inventory's own filter counts them.
+
+**Decision — the lists open where Home points.** A card's link must land
+on exactly its rows, so the lists read their quick filters and range from
+the address, as they already read `?search=` (ADR-056):
+`/orders?direction=sale&status=open`, `/inventory?expiring=1`,
+`/inventory?needsCost=1`, `/invoices?status=draft`,
+`/return-authorizations?status=open`. Orders gain a direction filter, which
+To ship and To receive need. Changing a filter on the page does not rewrite
+the address; arriving with one sets it.
+
+**Decision — one endpoint, the cards together.** `GET /v1/home` answers every
+card the member may see in one request, each its own query in one transaction,
+scoped to the organization: `{ cards: [{ kind, count, late, rows }] }` with up
+to five rows each, `late` counting the overdue or expired ones the summary
+sentence and the counts' tint need. The counts come from the same conditions
+as the lists' filters, through the same functions, so "See all 12" opens
+twelve.
+
+**Decision — a new organization gets a start, not a page of zeros.** Until
+it is set up, Home leads with *Getting started*: seven steps in the order
+they depend on each other, each with a button to where it is done and a
+progress bar over them.
+
+1. **Your organization:** its address, tax number and base currency, which
+   the first invoice needs.
+2. **Add a location:** where stock is kept.
+3. **Add a product.**
+4. **Add a partner:** a customer or a supplier.
+5. **Receive stock:** the first receipt.
+6. **Raise and ship an order, and issue its invoice:** the whole flow
+   once.
+7. **Add your team:** members and their roles, in Settings → Members.
+
+- **Ticked by what exists, never by hand:** each step is done when the
+  organization holds what it asks for (details filled in, a location, a
+  product, a partner, a receipt, an issued invoice, a second member), so
+  it cannot be ticked without being done and never needs ticking.
+- **Only the team step can be skipped.** A one-person business has no team;
+  without Skip that step would stay open and Getting started never end.
+  Steps 1 to 6 cannot be skipped: each is something the app needs before it
+  is of use.
+- **The whole card can be dismissed,** steps left or not, for someone who
+  set things up another way and does not want it every day; a small "Show
+  Getting started" brings it back. It goes away by itself once every step is
+  done or skipped.
+- **Skip and Dismiss belong to the organization,** not one person: setting
+  up is the organization's, and one dismiss hides it for everyone. Both are
+  stored on the organization (migration), and only a member who may change
+  its settings (`organizations.update`) sees the two controls.
+
+**Decision — in the browser.**
+
+- Home is the first item in the rail's Main group, and `/` stops redirecting
+  to Products. The page title is the organization's name.
+- Cards in a responsive grid: two or three across on a desktop, one on a
+  phone, in the order of the table above, which is the order of a working
+  day (out the door, in the door, what spoils, what is unpriced, what to
+  bill).
+- Each row is the record's number or name, a short second line (partner,
+  SKU), and the chip that says why it is here (overdue, expires in 12 days).
+- Read when the page opens, with a refresh button, as every list is; not
+  live.
+
+**Decision — a budget before it ships.** ADR-051's perf run gains
+`GET /v1/home`, and the plan check a probe for each card's query; Home is
+the page everyone opens first, so it is held to the read budget like any
+list.
+
+**Consequences.**
+
+- Built in this order, each its own commit:
+    1. The shared conditions: each card's filter defined once on the
+       server, used by its list and by Home (orders to ship and receive,
+       expiring, needs a cost, drafts and uninvoiced shipments, open
+       returns, active runs, expiring licences).
+    2. `GET /v1/home`, cards by permission, with e2e cases: each card's
+       count matching its list, the five rows' order, a card hidden without
+       its permission, another organization's records never counted.
+    3. The lists reading their filters from the address, with unit tests.
+    4. The page: the greeting, the sentence, the row of counts, the
+       quick actions, Getting started's seven steps with Skip and Dismiss
+       (and their migration), the cards, the rail item, `/` as Home,
+       with unit tests, an e2e flow (a card's "See all" opening its list
+       with the same count), and Home in `accessibility.spec`.
+    5. The perf scenario and probes; a manual check in Chinese and on a
+       phone.
+- ADR-055's "the way home" in the top bar now leads somewhere. The
+  Licences card uses issue #17's 60 days; the issue's notification stays its
+  own work.
+
+**Considered and not done.**
+
+- **A dashboard of figures and charts.** What people asked for was what to
+  do next, not how the month went; figures need currency rules and charts an
+  ADR of their own (Open decisions).
+- **Landing on the last page visited.** Useful to a person mid-task, and
+  hides what is overdue from one who is not; the browser's Back and the
+  lookup cover the first.
+- **A home per role** (the warehouse sees shipping, the accountant
+  invoices). Permissions already do most of this: a member sees only the
+  cards for what they may view. Roles are the organization's to define
+  (ADR-016), so fixed role pages would not fit them.
+- **Cards that hide when empty.** An empty page reads as broken; a quiet
+  "Nothing to ship" reads as done.
+
+**Deferred — each with what brings it in.**
+
+- **Choosing and ordering cards per person.** Trigger: someone asking to
+  hide one they never need.
+- **Recently opened:** the last few records a person opened (orders, lots,
+  products), on Home, for the thing they were working on yesterday. Kept
+  on the server per person, so it follows them across devices, which a
+  browser's own storage would not; a small table, a row written when a
+  record's page opens, the oldest dropped past a few dozen. Trigger: people
+  going back to the same records often, seen in use or asked for.
+- **Figures** (invoiced this month, stock value, per currency). Trigger:
+  asked for, with the currency rule decided.
+- **Live updates.** Trigger: two people working the same queue at once and
+  colliding.
+- **Thresholds per organization** (expiry days, overdue grace), with
+  branding. Trigger: that ADR.
+- **Try it with sample data:** a filled-in organization to click around
+  before entering real data, from the demo seed. Trigger: a prospective
+  customer asking to explore first; it needs its own decision on where the
+  sample lives and how it is cleared.
+- **User guides,** linked from each Getting started step and each empty
+  list: short Markdown under `docs/user/`, already raised in the handoff.
+  Trigger: the first customer onboarded without someone beside them.
 
 ---
 

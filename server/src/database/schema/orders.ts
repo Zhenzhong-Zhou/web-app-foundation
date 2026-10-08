@@ -234,6 +234,16 @@ export const orders = pgTable(
       t.expectedAt,
       t.id,
     ),
+    // Descending sorts (ADR-057) read their own index: a btree scanned
+    // backwards gives DESC NULLS FIRST, and the lists put blanks last both
+    // ways, so "desc nulls last" needs an index built that way.
+    index('orders_org_expected_at_desc_idx').on(
+      t.organizationId,
+      t.expectedAt.desc().nullsLast(),
+      // id as `desc` alone sorts it, nulls first; id is never null, but
+      // the index must say the same for the planner to read it in order.
+      t.id.desc().nullsFirst(),
+    ),
 
     // "What replaced this one", and the lookup the RESTRICT foreign key runs
     // on every delete. Partial because almost no order is a duplicate.

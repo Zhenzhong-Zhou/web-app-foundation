@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
@@ -23,6 +23,7 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
+import { fromAddress } from '../lib/address-filter';
 import { type DayRange, withDays } from '../lib/date-range';
 import { formatDay, formatMoney, NO_VALUE } from '../lib/format';
 import type { InvoiceStatus, InvoiceSummary } from '../lib/types';
@@ -42,6 +43,8 @@ const LABELS = defineMessages({
   issued: { id: 'invoices.status.issued', defaultMessage: 'Issued' },
   voided: { id: 'orders.shipments.voided', defaultMessage: 'Voided' },
 });
+
+const FILTER_VALUES: readonly Filter[] = ['all', 'draft', 'issued', 'voided'];
 
 const FILTERS: { value: Filter; label: MessageDescriptor }[] = [
   { value: 'all', label: LABELS.all },
@@ -69,7 +72,11 @@ function query(filter: Filter): string {
  */
 export function InvoicesPage() {
   const intl = useIntl();
-  const [filter, setFilter] = useState<Filter>('all');
+  // Home's card opens drafts: ?status=draft (ADR-058).
+  const [params] = useSearchParams();
+  const [filter, setFilter] = useState<Filter>(() =>
+    fromAddress(params, 'status', FILTER_VALUES, 'all'),
+  );
   const { text, setText, search } = useListSearch();
   // By invoice date, sortable by date and total (ADR-057); the export
   // takes the same query.
