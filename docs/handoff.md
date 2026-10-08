@@ -20,11 +20,10 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0040** (`document_languages`, ADR-054) on
-  `main`; **0041** (`notification_messages`, ADR-054 amended) on
-  `notifications-language`, **0042** (`search_indexes`) and **0043**
-  (`search_text`), ADR-056, on `adr-056-search`. Render runs them on deploy
-  (confirm in the deploy log, *In flight* below). Next is **0044**.
+- Migrations: through **0043** (`search_text`, ADR-056) on `main`;
+  **0044** (`sort_indexes`, ADR-057) on `adr-057-dates-export`. Render runs
+  them on deploy (confirm in the deploy log, *In flight* below). Next is
+  **0045**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -33,8 +32,8 @@ and price lists proposing the price of a new line.
   currency per sale from the first priced line). **ADR-054** (languages)
   is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
   ADR-055 (the look) is built on `ui-design-pass`, with an amendment.
-  ADR-057 (dates, sorting, export) is written for review. Next is
-  **ADR-058**.
+  ADR-057 (dates, sorting, export) is built on `adr-057-dates-export`.
+  Next is **ADR-058**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot
@@ -117,16 +116,18 @@ Then tag v0.4.0.
   (ADR-053 phase 2) and the v0.4.0 walkthrough and BF-2609 recall drill
   before any feature.
 - **After that:** each with its ADR before code. **Search and lookup**
-  (ADR-056) is built on `adr-056-search`, all seven steps: migrations 0042 and
-  0043, pinyin written on save, one way of matching, list search, the lookup
-  endpoint, the top bar and list boxes, and the perf budget. After deploying
-  it, run `npm run backfill:pinyin` once against each database with data,
-  since Render runs migrations but not that script. Next, **list filters by
-  date, sorting where it helps, and CSV export** (below); then a **home page**
-  of what needs attention (expiring lots, unsettled returns, costs waiting,
-  orders to ship); then **file storage** (one ADR for every file, below); then
-  **organization branding** (logo, accent with a contrast check, expiry
-  thresholds), the first feature that uploads one. Bob may reorder.
+  (ADR-056) is merged; after any deploy that carries it to a database with
+  data, run `npm run backfill:pinyin` once against it, since Render runs
+  migrations but not that script (Render's own database: still to do, with the
+  External URL and `?sslmode=no-verify`). **Dates, sorting and export**
+  (ADR-057) are built on `adr-057-dates-export`, all seven steps: date ranges
+  on six lists, a credit notes list, sorts on four with (value, id) cursors
+  and migration 0044, ten CSV exports through one writer, audited, the
+  screens, and perf probes. Then a **home page** of what needs attention
+  (expiring lots, unsettled returns, costs waiting, orders to ship); then
+  **file storage** (one ADR for every file, below); then **organization
+  branding** (logo, accent with a contrast check, expiry thresholds), the
+  first feature that uploads one. Bob may reorder.
 - **Dates, sorting and export, one ADR.** Only the audit log filters by date
   today, and every list is newest first, fixed, because keyset paging
   (ADR-051) relies on one order. Date ranges are cheap, one more filter
