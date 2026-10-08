@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
 
+import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
 import {
@@ -84,6 +85,8 @@ export class OrdersService {
 
       if (query.before) scope.push(lt(orders.id, query.before));
       if (query.partnerId) scope.push(eq(orders.partnerId, query.partnerId));
+      // By expected date (ADR-057); an order without one is left out.
+      scope.push(...calendarRange(orders.expectedAt, query));
       // Its reference or its partner's name (ADR-056).
       if (query.search) {
         const terms = searchTerms(query.search);

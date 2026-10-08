@@ -5284,8 +5284,9 @@ what gets exported.
 
 - **Calendar days** (`date` columns, ADR-052) take `from` and `to`, both
   included, as `YYYY-MM-DD`: `from=2026-09-01&to=2026-09-30` is September.
-- **Instants** (`timestamptz`) take `from` and `before`, as ISO instants,
-  `before` excluded. The client turns the reader's days into instants in the
+- **Instants** (`timestamptz`) take `from` and `until`, as ISO instants,
+  `until` excluded (not `before`, which every list already takes as its
+  keyset cursor). The client turns the reader's days into instants in the
   reader's time zone, so "7 October" means the 7th where the person is, as
   the screens already show times.
 - Either end may be left open. A range combines with the list's other

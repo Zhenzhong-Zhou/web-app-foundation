@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, gt, lt, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
+import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
 import {
@@ -292,6 +293,7 @@ export class StockReadsService {
             )
           : undefined,
         query.reason ? eq(stockMovements.reason, query.reason) : undefined,
+        ...instantRange(stockMovements.createdAt, query),
       ].filter((f): f is SQL => f !== undefined);
 
       // One more than asked for, so the presence of a next page is known

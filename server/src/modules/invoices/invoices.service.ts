@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, desc, eq, lt, or, sql } from 'drizzle-orm';
 
+import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
 import { documentLanguages } from '../../core/organizations/document-languages';
@@ -46,6 +47,9 @@ export class InvoicesService {
       if (query.status) scope.push(eq(invoices.status, query.status));
       if (query.partnerId) scope.push(eq(invoices.partnerId, query.partnerId));
       if (query.orderId) scope.push(eq(invoices.orderId, query.orderId));
+      // By invoice date (ADR-057); a draft has none yet, so a range leaves
+      // drafts out.
+      scope.push(...calendarRange(invoices.invoiceDate, query));
       // Its number or its partner's name (ADR-056). A draft has no number
       // yet, so only its partner finds it.
       if (query.search) {

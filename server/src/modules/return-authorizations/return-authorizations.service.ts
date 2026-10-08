@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { and, desc, eq, lt, or, sql } from 'drizzle-orm';
 
+import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
 import type { Transaction } from '../../database/database.module';
@@ -60,6 +61,8 @@ export class ReturnAuthorizationsService {
       if (query.orderId) {
         scope.push(eq(returnAuthorizations.orderId, query.orderId));
       }
+      // When raised (ADR-057).
+      scope.push(...instantRange(returnAuthorizations.createdAt, query));
       // Its number or its partner's name (ADR-056).
       if (query.search) {
         const terms = searchTerms(query.search);

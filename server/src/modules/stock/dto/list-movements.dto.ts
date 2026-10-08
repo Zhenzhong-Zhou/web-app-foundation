@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsUUID } from 'class-validator';
+import { IsIn, IsISO8601, IsOptional, IsUUID } from 'class-validator';
 
 import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
 import { MOVEMENT_REASONS } from '../../../database/schema';
@@ -30,4 +30,17 @@ export class ListMovementsDto extends KeysetQueryDto {
   @IsOptional()
   @IsIn([...MOVEMENT_REASONS])
   reason?: (typeof MOVEMENT_REASONS)[number];
+
+  /**
+   * When recorded, from (included) until (excluded), as ISO instants
+   * (ADR-057): the client turns the reader's days into them. Not `before`,
+   * which is the cursor.
+   */
+  @IsOptional()
+  @IsISO8601({ strict: true })
+  from?: string;
+
+  @IsOptional()
+  @IsISO8601({ strict: true })
+  until?: string;
 }
