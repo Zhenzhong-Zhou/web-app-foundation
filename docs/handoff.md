@@ -155,9 +155,9 @@ Then tag v0.4.0.
 - **Words checked by the reviewer:** 贷项通知单 for a credit note, 开票净额（含税）,
   未开票金额（税前）, 待定成本. The same person could do MC-1405, the fluent review of
   the Chinese catalogue that v0.5 skipped.
-- **To file as an issue:** the unsaved-changes guard. The create-order page
-  loses a half-built order when someone follows a link; React Router's
-  `useBlocker` covers it, and `conventions.md` gains a line for the pattern.
+- **Issue #54:** the unsaved-changes guard. The create-order page loses a
+  half-built order when someone follows a link; React Router's `useBlocker`
+  covers it, and `conventions.md` gains a line for the pattern.
 
 ## Now: v0.5, maintainability and languages
 
@@ -575,6 +575,8 @@ Rules, still in force:
 - #25 show what the customer kept (shipped − returned)
 - #26 cancel check and update are not one transaction
 - #28 run-close top-up ignores holds and the lots picked at release
+- #54 unsaved changes lost silently when leaving the create-order page
+  (`useBlocker` and `beforeunload`; raised in the UI pass)
 
 ## Left over, small
 
