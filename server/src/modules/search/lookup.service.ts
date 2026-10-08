@@ -97,9 +97,13 @@ const NONE = {
  * found by what they have in hand, in one request.
  *
  * For each kind, the exact matches first, ranked exact, then at the start,
- * then anywhere, most recent first among equals; then, while fewer than
- * LOOKUP_LIMIT were found, close matches for a typo, best first, marked as
- * such. A kind the member may not view is never queried, so nothing says
+ * then anywhere, most recent first among equals. Then, only when the
+ * whole lookup found fewer than LOOKUP_LIMIT records, close matches for a
+ * typo in each kind, best first, after its exact ones and marked as such: a
+ * typo is a search that finds (almost) nothing, and a lot code that finds
+ * five lots is not one. Skipping the close pass then is what keeps a code's
+ * lookup inside its budget (ADR-051): word similarity across every kind's
+ * numbers is the costliest query here, and was all noise. A kind the member may not view is never queried, so nothing says
  * a record exists that its list would hide. Every query is scoped to the
  * organization in context.
  */
@@ -114,15 +118,44 @@ export class LookupService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       await tx.execute(closeMatchSetting);
 
+      const queries = visible.map(({ kind }) => ({
+        kind,
+        query: this.find(tx, kind, terms, organizationId, locale),
+      }));
+
+      // Exact matches first, every kind.
+      const exact = new Map<LookupKind, Row[]>();
+      for (const { kind, query } of queries) {
+        exact.set(kind, await query([], false, LOOKUP_LIMIT));
+      }
+
+      // Close matches only when the lookup as a whole found next to nothing.
+      const found = [...exact.values()].reduce(
+        (sum, rows) => sum + rows.length,
+        0,
+      );
+      const near = new Map<LookupKind, Row[]>();
+      if (found < LOOKUP_LIMIT) {
+        for (const { kind, query } of queries) {
+          const rows = exact.get(kind) ?? [];
+          if (rows.length >= LOOKUP_LIMIT) continue;
+          near.set(
+            kind,
+            await query(
+              rows.map((row) => row.id),
+              true,
+              LOOKUP_LIMIT - rows.length,
+            ),
+          );
+        }
+      }
+
       const groups: LookupGroup[] = [];
-      for (const { kind } of visible) {
-        const results = await this.find(
-          tx,
-          kind,
-          terms,
-          organizationId,
-          locale,
-        );
+      for (const { kind } of queries) {
+        const results = [
+          ...(exact.get(kind) ?? []).map((row) => ({ ...row, close: false })),
+          ...(near.get(kind) ?? []).map((row) => ({ ...row, close: true })),
+        ];
         if (results.length > 0) groups.push({ kind, results });
       }
 
@@ -136,10 +169,10 @@ export class LookupService {
     terms: SearchTerms,
     organizationId: string,
     locale: Locale,
-  ): Promise<LookupResult[]> {
+  ): KindQuery {
     switch (kind) {
       case 'order':
-        return twoPass((exclude, close, limit) =>
+        return pass((exclude, close, limit) =>
           tx
             .select({
               id: orders.id,
@@ -184,7 +217,7 @@ export class LookupService {
         );
 
       case 'invoice':
-        return twoPass((exclude, close, limit) =>
+        return pass((exclude, close, limit) =>
           tx
             .select({
               id: invoices.id,
@@ -216,7 +249,7 @@ export class LookupService {
         );
 
       case 'creditNote':
-        return twoPass((exclude, close, limit) =>
+        return pass((exclude, close, limit) =>
           tx
             .select({
               id: creditNotes.id,
@@ -247,7 +280,7 @@ export class LookupService {
         );
 
       case 'lot':
-        return twoPass((exclude, close, limit) =>
+        return pass((exclude, close, limit) =>
           tx
             .select({
               id: lots.id,
@@ -278,7 +311,7 @@ export class LookupService {
         );
 
       case 'item':
-        return twoPass((exclude, close, limit) =>
+        return pass((exclude, close, limit) =>
           tx
             .select({
               id: productVariants.id,
@@ -319,7 +352,7 @@ export class LookupService {
         );
 
       case 'partner':
-        return twoPass((exclude, close, limit) =>
+        return pass((exclude, close, limit) =>
           tx
             .select({
               id: partners.id,
@@ -354,7 +387,7 @@ export class LookupService {
         );
 
       case 'productionRun':
-        return twoPass((exclude, close, limit) =>
+        return pass((exclude, close, limit) =>
           tx
             .select({
               id: productionOrders.id,
@@ -388,7 +421,7 @@ export class LookupService {
         );
 
       case 'returnAuthorization':
-        return twoPass((exclude, close, limit) =>
+        return pass((exclude, close, limit) =>
           tx
             .select({
               id: returnAuthorizations.id,
@@ -430,30 +463,24 @@ function excluding(column: Parameters<typeof notInArray>[0], ids: string[]) {
 }
 
 /**
- * The exact matches, then close ones to fill up to LOOKUP_LIMIT: a typo's
- * results never push out a real match, and never repeat one.
+ * One kind's query, run exact (close false) or for close matches, leaving
+ * out the ids already found, so a typo's results never repeat a real match.
  */
-async function twoPass(
+type KindQuery = (
+  exclude: string[],
+  close: boolean,
+  limit: number,
+) => Promise<Row[]>;
+
+/** A kind's query builder, typed as a KindQuery. */
+function pass(
   query: (
     exclude: string[],
     close: boolean,
     limit: number,
   ) => PromiseLike<Row[]>,
-): Promise<LookupResult[]> {
-  const exact = await query([], false, LOOKUP_LIMIT);
-  if (exact.length >= LOOKUP_LIMIT) {
-    return exact.map((row) => ({ ...row, close: false }));
-  }
-
-  const near = await query(
-    exact.map((row) => row.id),
-    true,
-    LOOKUP_LIMIT - exact.length,
-  );
-  return [
-    ...exact.map((row) => ({ ...row, close: false })),
-    ...near.map((row) => ({ ...row, close: true })),
-  ];
+): KindQuery {
+  return async (exclude, close, limit) => query(exclude, close, limit);
 }
 
 /**
