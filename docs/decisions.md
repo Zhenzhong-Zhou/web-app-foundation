@@ -5109,7 +5109,7 @@ their own pages.
   "鱼油" finds "深海鱼油".
 - **Chinese by pinyin as well.** A Chinese name is also found by its pinyin,
   typed without tones or spaces: "yuyou", "shenhaiyuyou", and its initials
-  "shhyy", all find "深海鱼油". The server writes each name's pinyin when the
+  "shyy", all find "深海鱼油". The server writes each name's pinyin when the
   name is saved (below); a query of Latin letters matches it as it matches
   any name, anywhere in the text. Names with no Chinese have no pinyin.
 - **Typos forgiven, after exact matches.** When a kind finds nothing, or
@@ -5133,7 +5133,7 @@ Chinese into pinyin, so the server does, with `pinyin-pro` (MIT, widely used,
 no network): a new dependency. Each table with a searched name
 (`products`, `product_variants`, the two translation tables, `partners`)
 gains `name_pinyin`, text holding the full pinyin and the initials, lower
-case, no tones or spaces: `shenhaiyuyou shhyy`. Written on every insert and
+case, no tones or spaces: `shenhaiyuyou shyy`. Written on every insert and
 update of the name, through one helper the services call, and null when the
 name has no Chinese characters. Characters with two readings (多音字) take the
 library's choice for the word; a wrong reading is a miss, not an error.
