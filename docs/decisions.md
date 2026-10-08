@@ -5531,9 +5531,36 @@ as the lists' filters, through the same functions, so "See all 12" opens
 twelve.
 
 **Decision — a new organization gets a start, not a page of zeros.** Until
-it has a product, a location and a partner, Home leads with *Getting
-started*: those three, then a first order, each ticked when done and linked
-to where it is done. It goes away by itself once all four exist.
+it is set up, Home leads with *Getting started*: seven steps in the order
+they depend on each other, each with a button to where it is done and a
+progress bar over them.
+
+1. **Your organization:** its address, tax number and base currency, which
+   the first invoice needs.
+2. **Add a location:** where stock is kept.
+3. **Add a product.**
+4. **Add a partner:** a customer or a supplier.
+5. **Receive stock:** the first receipt.
+6. **Raise and ship an order, and issue its invoice:** the whole flow
+   once.
+7. **Add your team:** members and their roles, in Settings → Members.
+
+- **Ticked by what exists, never by hand:** each step is done when the
+  organization holds what it asks for (details filled in, a location, a
+  product, a partner, a receipt, an issued invoice, a second member), so
+  it cannot be ticked without being done and never needs ticking.
+- **Only the team step can be skipped.** A one-person business has no team;
+  without Skip that step would stay open and Getting started never end.
+  Steps 1 to 6 cannot be skipped: each is something the app needs before it
+  is of use.
+- **The whole card can be dismissed,** steps left or not, for someone who
+  set things up another way and does not want it every day; a small "Show
+  Getting started" brings it back. It goes away by itself once every step is
+  done or skipped.
+- **Skip and Dismiss belong to the organization,** not one person: setting
+  up is the organization's, and one dismiss hides it for everyone. Both are
+  stored on the organization (migration), and only a member who may change
+  its settings (`organizations.update`) sees the two controls.
 
 **Decision — in the browser.**
 
@@ -5565,8 +5592,8 @@ list.
        its permission, another organization's records never counted.
     3. The lists reading their filters from the address, with unit tests.
     4. The page: the greeting, the sentence, the row of counts, the
-       quick actions,
-       Getting started, the cards, the rail item, `/` as Home,
+       quick actions, Getting started's seven steps with Skip and Dismiss
+       (and their migration), the cards, the rail item, `/` as Home,
        with unit tests, an e2e flow (a card's "See all" opening its list
        with the same count), and Home in `accessibility.spec`.
     5. The perf scenario and probes; a manual check in Chinese and on a
@@ -5606,6 +5633,13 @@ list.
   colliding.
 - **Thresholds per organization** (expiry days, overdue grace), with
   branding. Trigger: that ADR.
+- **Try it with sample data:** a filled-in organization to click around
+  before entering real data, from the demo seed. Trigger: a prospective
+  customer asking to explore first; it needs its own decision on where the
+  sample lives and how it is cleared.
+- **User guides,** linked from each Getting started step and each empty
+  list: short Markdown under `docs/user/`, already raised in the handoff.
+  Trigger: the first customer onboarded without someone beside them.
 
 ---
 
