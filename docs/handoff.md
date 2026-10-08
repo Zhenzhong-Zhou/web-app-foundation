@@ -114,12 +114,23 @@ Then tag v0.4.0.
   (Bob's mother's business, a first customer), add the paid database plan
   (ADR-053 phase 2) and the v0.4.0 walkthrough and BF-2609 recall drill
   before any feature.
-- **After that:** ADR-056 onward, each with its ADR before code: **search
-  and lookup** in the top bar, then a **home page** of what needs attention
-  (expiring lots, unsettled returns, costs waiting, orders to ship), then
-  **file storage** (one ADR for every file, below), then **organization
-  branding** (logo, accent with a contrast check, expiry thresholds), the
-  first feature that uploads one. Bob may reorder.
+- **After that:** each with its ADR before code. **Search and lookup**
+  (ADR-056, being built on `adr-056-search`); then **list filters by date,
+  sorting where it helps, and CSV export** (below); then a **home page** of
+  what needs attention (expiring lots, unsettled returns, costs waiting,
+  orders to ship); then **file storage** (one ADR for every file, below);
+  then **organization branding** (logo, accent with a contrast check,
+  expiry thresholds), the first feature that uploads one. Bob may reorder.
+- **Dates, sorting and export, one ADR.** Only the audit log filters by date
+  today, and every list is newest first, fixed, because keyset paging
+  (ADR-051) relies on one order. Date ranges are cheap, one more filter
+  that pages as before: invoices and credit notes by their date, orders by
+  expected date, movements and production by date, the accountant's "this
+  month". Sorting is not: each sortable column needs its own cursor and an
+  index, so only where people ask for it (invoices by amount, orders by
+  expected date, inventory by expiry, soonest first). CSV export, raised
+  under *Left over*, belongs in the same ADR, since a filtered month is
+  what an accountant exports.
 - **File storage, one ADR for all of it.** Backups (ADR-053), the
   organization's logo (ADR-055 *Open decisions*) and product images (the
   catalogue note in *Open decisions*) each point at "the bucket question";
