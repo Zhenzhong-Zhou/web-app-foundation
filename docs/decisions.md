@@ -5467,6 +5467,23 @@ together, with the most urgent few of each.
 | Production | runs planned or in progress | planned overdue first | Production | `production.view` |
 | Licences | licences expiring within 60 days, or expired | soonest first | Licences | `product_licences.view` |
 
+**Decision — a welcome, a sentence and a row of counts, above the cards.**
+Home is read first and in three languages, by people who are not
+designers; before any card, three things say where the day stands:
+
+- **A greeting:** good morning, afternoon or evening by the reader's clock,
+  and their name; beside it the date in their language and the
+  organization's name. Words, not decoration, and the page's one heading.
+- **One sentence:** how much needs attention and how much of it is late,
+  "9 things need attention, 2 of them overdue", or "Nothing needs
+  attention today" when every card is empty. Counted from the cards the
+  reader can see, so it never mentions what their role hides.
+- **A row of big numbers:** one per card the reader can see, its icon,
+  name and count, tinted only when something in it is late or close to
+  spoiling (red overdue or expired, amber within the warning days), and
+  each a link to its card further down. This is the page's visualization:
+  the counts at a glance, no charts.
+
 - **Each card: a count, the five most urgent rows, and a link** to the list
   already filtered to the same rows ("See all 12"). A row opens its record.
 - **A card with nothing to do says so** ("Nothing to ship"), in a quiet tone,
@@ -5489,11 +5506,13 @@ the address, as they already read `?search=` (ADR-056):
 To ship and To receive need. Changing a filter on the page does not rewrite
 the address; arriving with one sets it.
 
-**Decision — one endpoint, the cards together.** `GET /v1/home` answers
-every card the member may see in one request, each its own query in one
-transaction, scoped to the organization: `{ cards: [{ kind, count, rows }] }`
-with up to five rows each. The counts come from the same conditions as the
-lists' filters, through the same functions, so "See all 12" opens twelve.
+**Decision — one endpoint, the cards together.** `GET /v1/home` answers every
+card the member may see in one request, each its own query in one transaction,
+scoped to the organization: `{ cards: [{ kind, count, late, rows }] }` with up
+to five rows each, `late` counting the overdue or expired ones the summary
+sentence and the counts' tint need. The counts come from the same conditions
+as the lists' filters, through the same functions, so "See all 12" opens
+twelve.
 
 **Decision — a new organization gets a start, not a page of zeros.** Until
 it has a product, a location and a partner, Home leads with *Getting
@@ -5529,7 +5548,8 @@ list.
        count matching its list, the five rows' order, a card hidden without
        its permission, another organization's records never counted.
     3. The lists reading their filters from the address, with unit tests.
-    4. The page: Getting started, the cards, the rail item, `/` as Home,
+    4. The page: the greeting, the sentence and the row of counts,
+       Getting started, the cards, the rail item, `/` as Home,
        with unit tests, an e2e flow (a card's "See all" opening its list
        with the same count), and Home in `accessibility.spec`.
     5. The perf scenario and probes; a manual check in Chinese and on a
