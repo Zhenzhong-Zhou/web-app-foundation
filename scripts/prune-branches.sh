@@ -20,13 +20,21 @@
 # it by hand, because an unmerged branch may be the only copy of the work.
 #
 # Compared against origin/main after a fetch, so a local main that is behind
-# cannot hide a merge. main, the current branch and anything in PROTECT
-# (space-separated, e.g. PROTECT="release/v1 spike") are never touched.
+# cannot hide a merge.
+#
+# Never touched: main, every release/* branch, the current branch, and
+# anything in PROTECT (space-separated names or patterns, e.g.
+# PROTECT="spike hotfix/*"). A release branch with no fixes on it yet sits on
+# a commit main already has, so it looks merged; without this rule the first
+# run deleted release branches that were waiting for their fixes.
 #
 # Written for the bash that ships with macOS (3.2): no mapfile, no
 # associative arrays.
 
 set -euo pipefail
+# No filename expansion: release/* and PROTECT's patterns are matched against
+# branch names, never against files in the working tree.
+set -f
 
 REMOTE=origin
 BASE_NAME=main
@@ -62,10 +70,16 @@ if ! git rev-parse --verify --quiet "$BASE" >/dev/null; then
 fi
 
 CURRENT="$(git symbolic-ref --quiet --short HEAD || true)"
-PROTECTED=" $BASE_NAME $CURRENT ${PROTECT:-} "
+PROTECTED_PATTERNS="$BASE_NAME release/* ${PROTECT:-}"
 
 is_protected() {
-  case "$PROTECTED" in *" $1 "*) return 0 ;; esac
+  local name="$1" pattern
+  [ "$name" = "$CURRENT" ] && return 0
+  for pattern in $PROTECTED_PATTERNS; do
+    # Unquoted on purpose: the pattern is a pattern.
+    # shellcheck disable=SC2254
+    case "$name" in $pattern) return 0 ;; esac
+  done
   return 1
 }
 
@@ -113,6 +127,7 @@ if [ "$DO_LOCAL" -eq 1 ]; then
   echo "Local branches"
   while IFS='|' read -r name track; do
     if is_protected "$name"; then
+      printf '  keep    %-40s %s\n' "$name" "protected"
       continue
     fi
     if how="$(how_merged "refs/heads/$name")"; then
@@ -131,7 +146,11 @@ if [ "$DO_REMOTE" -eq 1 ]; then
   echo
   echo "Branches on $REMOTE"
   while read -r name; do
-    if [ "$name" = "HEAD" ] || is_protected "$name"; then
+    if [ "$name" = "HEAD" ]; then
+      continue
+    fi
+    if is_protected "$name"; then
+      printf '  keep    %-40s %s\n' "$name" "protected"
       continue
     fi
     if how="$(how_merged "refs/remotes/$REMOTE/$name")"; then
