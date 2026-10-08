@@ -6,6 +6,7 @@ import {
   check,
   pgTable,
   text,
+  timestamp,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -124,6 +125,19 @@ export const organizations = pgTable(
       .$type<Locale[]>()
       .notNull()
       .default(sql`'{}'::text[]`),
+
+    /**
+     * Home's Getting started (ADR-058), the organization's and not one
+     * person's: when it was dismissed (null: shown), and when its team step
+     * was skipped (null: not), each set by a member who may change these
+     * settings. The other steps are ticked by what exists, never stored.
+     */
+    gettingStartedDismissedAt: timestamp('getting_started_dismissed_at', {
+      withTimezone: true,
+    }),
+    teamStepSkippedAt: timestamp('team_step_skipped_at', {
+      withTimezone: true,
+    }),
 
     ...timestamps,
   },

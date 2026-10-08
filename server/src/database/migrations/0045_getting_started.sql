@@ -1,0 +1,2 @@
+ALTER TABLE "organizations" ADD COLUMN "getting_started_dismissed_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "organizations" ADD COLUMN "team_step_skipped_at" timestamp with time zone;

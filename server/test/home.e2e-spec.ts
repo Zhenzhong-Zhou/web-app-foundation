@@ -18,6 +18,12 @@ import {
 import { resetDatabase } from './utils/reset-db';
 
 interface HomeResponse {
+  gettingStarted: {
+    steps: Record<string, boolean>;
+    teamSkipped: boolean;
+    dismissed: boolean;
+    complete: boolean;
+  };
   cards: {
     kind: string;
     count: number;
@@ -195,6 +201,70 @@ describe('Home (e2e)', () => {
 
     const kinds = (await home({ agent: member })).map((entry) => entry.kind);
     expect(kinds).toEqual(['toShip', 'toReceive', 'expiring']);
+  });
+
+  describe('Getting started', () => {
+    async function started(org: { agent: Org['agent'] }) {
+      return body<HomeResponse>(await org.agent.get('/v1/home').expect(200))
+        .gettingStarted;
+    }
+
+    it('ticks each step by what the organization holds', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+
+      const before = await started(alpha);
+      expect(before).toMatchObject({
+        teamSkipped: false,
+        dismissed: false,
+        complete: false,
+      });
+      expect(before.steps).toMatchObject({
+        location: false,
+        product: false,
+        partner: false,
+        receipt: false,
+        invoice: false,
+        team: false,
+      });
+
+      await createLocation(alpha.agent, { type: 'site', name: 'Main' });
+      await createPartner(alpha.agent, { name: 'Northside' });
+
+      const after = await started(alpha);
+      expect(after.steps).toMatchObject({
+        location: true,
+        partner: true,
+        product: false,
+      });
+    });
+
+    it('lets the team step be skipped, and the card dismissed and shown', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+
+      await alpha.agent.post('/v1/home/getting-started/skip-team').expect(204);
+      expect((await started(alpha)).teamSkipped).toBe(true);
+
+      await alpha.agent.post('/v1/home/getting-started/dismiss').expect(204);
+      expect((await started(alpha)).dismissed).toBe(true);
+
+      await alpha.agent.delete('/v1/home/getting-started/dismiss').expect(204);
+      expect((await started(alpha)).dismissed).toBe(false);
+    });
+
+    it('leaves Skip and Dismiss to those who may change the settings', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const viewer = await addMember(
+        app,
+        alpha,
+        'viewer@example.com',
+        'Viewer',
+      );
+
+      await viewer.post('/v1/home/getting-started/dismiss').expect(403);
+      await viewer.post('/v1/home/getting-started/skip-team').expect(403);
+      // A second member: the team step is done for everyone.
+      expect((await started(alpha)).steps.team).toBe(true);
+    });
   });
 
   it('refuses a day that is not a day', async () => {

@@ -6,6 +6,7 @@ import {
   invoices,
   lots,
   orders,
+  organizations,
   productionOrders,
   productLicences,
   returnAuthorizations,
@@ -54,6 +55,26 @@ export interface HomeCard {
   rows: HomeRow[];
 }
 
+/** Getting started's steps, in the order they depend on each other. */
+export const GETTING_STARTED_STEPS = [
+  'organization',
+  'location',
+  'product',
+  'partner',
+  'receipt',
+  'invoice',
+  'team',
+] as const;
+export type GettingStartedStep = (typeof GETTING_STARTED_STEPS)[number];
+
+export interface GettingStarted {
+  steps: Record<GettingStartedStep, boolean>;
+  teamSkipped: boolean;
+  dismissed: boolean;
+  /** Every step done, the team's or its skip. */
+  complete: boolean;
+}
+
 /** The cards in the order of a working day, and who may see each. */
 const CARDS: { kind: HomeKind; permission: Permission }[] = [
   { kind: 'toShip', permission: 'orders.view' },
@@ -96,7 +117,80 @@ export class HomeService {
     for (const { kind, permission } of CARDS) {
       if (held.has(permission)) cards.push(await this.card(kind, today));
     }
-    return { cards };
+    return { gettingStarted: await this.gettingStarted(), cards };
+  }
+
+  /**
+   * Getting started (ADR-058): each step ticked by what the organization
+   * holds, read in one query, never stored; only Skip (the team step) and
+   * Dismiss (the card) are, on the organization. `complete` once steps 1
+   * to 6 are done and the team is added or skipped.
+   */
+  gettingStarted(): Promise<GettingStarted> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const result = await tx.execute(sql`
+        select
+          (o.tax_registration_number is not null
+            and o.base_currency is not null
+            and exists (select 1 from addresses a
+                        where a.owner_organization_id = o.id)) as organization,
+          exists (select 1 from locations l
+                  where l.organization_id = o.id) as location,
+          exists (select 1 from products p
+                  where p.organization_id = o.id) as product,
+          exists (select 1 from partners p
+                  where p.organization_id = o.id) as partner,
+          exists (select 1 from stock_movements m
+                  where m.organization_id = o.id
+                    and m.reason = 'receipt') as receipt,
+          exists (select 1 from invoices i
+                  where i.organization_id = o.id
+                    and i.status <> 'draft') as invoice,
+          (select count(*) from memberships m
+           where m.organization_id = o.id) > 1 as team,
+          o.team_step_skipped_at is not null as "teamSkipped",
+          o.getting_started_dismissed_at is not null as dismissed
+        from organizations o
+        where o.id = ${organizationId}::uuid
+      `);
+      const row = result.rows[0] as Record<
+        GettingStartedStep | 'teamSkipped' | 'dismissed',
+        boolean
+      >;
+      const steps = Object.fromEntries(
+        GETTING_STARTED_STEPS.map((step) => [step, row[step]]),
+      ) as Record<GettingStartedStep, boolean>;
+      const complete =
+        GETTING_STARTED_STEPS.every((step) => step === 'team' || steps[step]) &&
+        (steps.team || row.teamSkipped);
+
+      return {
+        steps,
+        teamSkipped: row.teamSkipped,
+        dismissed: row.dismissed,
+        complete,
+      };
+    });
+  }
+
+  /** Dismiss the card for everyone, or bring it back (`at` null). */
+  async setGettingStartedDismissed(dismissed: boolean): Promise<void> {
+    await this.tenantDb.transaction(async (tx, organizationId) => {
+      await tx
+        .update(organizations)
+        .set({ gettingStartedDismissedAt: dismissed ? new Date() : null })
+        .where(eq(organizations.id, organizationId));
+    });
+  }
+
+  /** Skip the team step, for an organization of one. */
+  async skipTeamStep(): Promise<void> {
+    await this.tenantDb.transaction(async (tx, organizationId) => {
+      await tx
+        .update(organizations)
+        .set({ teamStepSkippedAt: new Date() })
+        .where(eq(organizations.id, organizationId));
+    });
   }
 
   private async card(kind: HomeKind, today: string): Promise<HomeCard> {
