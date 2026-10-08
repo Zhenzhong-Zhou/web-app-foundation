@@ -123,11 +123,23 @@ Then tag v0.4.0.
   (ADR-057) are built on `adr-057-dates-export`, all seven steps: date ranges
   on six lists, a credit notes list, sorts on four with (value, id) cursors
   and migration 0044, ten CSV exports through one writer, audited, the
-  screens, and perf probes. Then a **home page** of what needs attention
-  (expiring lots, unsettled returns, costs waiting, orders to ship); then
-  **file storage** (one ADR for every file, below); then **organization
-  branding** (logo, accent with a contrast check, expiry thresholds), the
-  first feature that uploads one. Bob may reorder.
+  screens, and perf probes. Then **Home** (ADR-058, written: a greeting, a
+  sentence, a row of counts and cards of what needs attention, designed on a
+  Claude Design canvas before its page is built); then **status pages**
+  (below); then **file storage** (one ADR for every file, below); then
+  **organization branding** (logo, accent with a contrast check, expiry
+  thresholds), the first feature that uploads one. Bob may reorder.
+- **Status pages, after Home.** Today an unknown address shows a bare "Not
+  found" outside the layout, and a record that does not exist or a page the
+  role cannot open shows the server's raw error. One shared design for all
+  of them, in a feature folder `client/src/errors/`: an icon, a short title
+  ("Page not found", "This order doesn't exist", "You don't have access to
+  this", "Something went wrong"), one sentence, one or two actions (Go home,
+  Search everything, Reload) and a reference number after a crash, in three
+  languages. Signed in, it shows inside the app with the rail and the
+  lookup; signed out, alone and centred, offering to sign in. No ADR: a
+  `conventions.md` rule (a missing or forbidden record shows the status
+  page, not a raw error). Designed on the same canvas as Home.
 - **Dates, sorting and export, one ADR.** Only the audit log filters by date
   today, and every list is newest first, fixed, because keyset paging
   (ADR-051) relies on one order. Date ranges are cheap, one more filter
