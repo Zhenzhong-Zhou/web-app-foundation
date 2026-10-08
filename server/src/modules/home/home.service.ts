@@ -125,6 +125,14 @@ export class HomeService {
    * holds, read in one query, never stored; only Skip (the team step) and
    * Dismiss (the card) are, on the organization. `complete` once steps 1
    * to 6 are done and the team is added or skipped.
+   *
+   * The receipt step reads the ledger, the largest table there is. As an
+   * EXISTS, the planner may price a sequential scan that stops at the first
+   * receipt it meets, and Home's first perf run flagged one on
+   * stock_movements (ADR-058 amended). Ordered as the (organization,
+   * created_at) index is and limited to one row, the only cheap plan is
+   * that index: this organization's movements, newest first, up to the
+   * first receipt, and never another tenant's.
    */
   gettingStarted(): Promise<GettingStarted> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -140,9 +148,11 @@ export class HomeService {
                   where p.organization_id = o.id) as product,
           exists (select 1 from partners p
                   where p.organization_id = o.id) as partner,
-          exists (select 1 from stock_movements m
-                  where m.organization_id = o.id
-                    and m.reason = 'receipt') as receipt,
+          (select m.id from stock_movements m
+           where m.organization_id = o.id
+             and m.reason = 'receipt'
+           order by m.created_at desc nulls last
+           limit 1) is not null as receipt,
           exists (select 1 from invoices i
                   where i.organization_id = o.id
                     and i.status <> 'draft') as invoice,
