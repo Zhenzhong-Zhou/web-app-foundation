@@ -52,6 +52,42 @@ and price lists proposing the price of a new line.
   (ADR-053, phase 2). Migrations 0000–0037 confirmed; 0038 with the #20
   deploy.
 
+## Next, in order (as of 8 October 2026)
+
+1. **Home's Performance run must pass before Home merges.** It failed on
+   `adr-058-home` after migration 0046 was added. Start from the run's
+   output: any FAIL row in the budget table (likely `GET /home`, eight cards
+   in one request) and any "Failed:" line under Query plans (likely the
+   `home` probe). Fix on `adr-058-home`, re-run, then merge.
+2. **Status pages** (`status-pages.mbox`, two commits): branch from `main`
+   after Home merges, PR, merge. Client only; no Performance run needed.
+3. **Recently opened** (`recently-opened.mbox`, four commits, built on top of
+   the status pages): `git rebase main` the `recently-opened` branch (it
+   holds the ADR-058 amendment), `git am`, `npm run migrate:all` (0047), PR.
+   Run Performance once: a new table and query.
+4. **CI speed-up**, its own small branch, workflow files only. Read
+   `.github/workflows/ci.yml`, `performance.yml` and the Playwright projects
+   first, and one Performance run's step timings.
+    - e2e: skip CI for docs-only changes (`paths-ignore: docs/**, **/*.md`);
+      cancel outdated runs (`concurrency`, `cancel-in-progress`); pull
+      requests run Chromium only, split across 2–3 machines (`--shard`);
+      Firefox, WebKit and iPhone run on `main` after merging and nightly; a
+      `full-e2e` label runs every browser on a PR that needs it (layout,
+      mobile, auth).
+    - Performance: not on every merge. Run it on PRs that change how data is
+      read (queries, sorts, filters, search, indexes, migrations, pages like
+      Home), weekly on `main` on a schedule, and before each release tag. On
+      PRs, a lighter mode: seed and the plan check (which caught both real
+      problems), the 100-connection stress pass kept for the weekly run.
+5. Then **file storage** (an ADR for every file: logos, images, COAs), then
+   **organization branding**.
+
+Still open alongside: the three **account e2e** tests failing locally
+(the profile form is replaced a moment after loading, so Save stays
+disabled; check whether they also fail on `main`, and read their
+`error-context.md`); the **pinyin backfill** on Render's database; changing
+Render's **database password** (pasted in chat); MC-1558 and MC-1559 by hand.
+
 ## v0.4 milestone — money
 
 1. **Invoices for shipments** — done (ADR-046).
