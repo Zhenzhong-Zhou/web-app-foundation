@@ -5614,6 +5614,34 @@ across devices, which a browser's own storage would not.
 the page everyone opens first, so it is held to the read budget like any
 list.
 
+*Amended after the first run:* the budget caught Home. At small scale,
+`GET /v1/home` took 841 ms at the 95th percentile against 300, and held
+about 16 requests a second at 10 connections and at 100 alike: bound by
+the work each request does, not by waiting. The plan check counted 20
+statements in the `home` probe, the slowest 49.8 ms, and failed it on a
+sequential scan of `stock_movements` (206,425 rows). Two changes:
+
+- **Getting started finds a receipt through the ledger's index.** As an
+  EXISTS, the receipt step left the planner free to scan the ledger,
+  every tenant's, for the first receipt. It now asks for this
+  organization's newest receipt, ordered as the (organization,
+  created_at) index is, so that index is the only cheap plan.
+- **Every card's count in one statement.** Each card had read its count in
+  its own transaction, and the two stock cards each called the stock
+  list's `counts()`, which counts both quick filters, plus a third query for
+  the expired: seven reads of the organization's stock for two cards. Now
+  one statement answers every count the member may see, a `union all` with
+  a branch per card, each with the same conditions as its list: the stock
+  branches through `stockRowsOf`, the list's joins and filters that
+  `counts()` also counts through. The expired are counted among the
+  expiring card's rows, so `late` can never exceed `count`. The rows are
+  still each list's own first five, read through its service. Home went
+  from 20 statements in 17 transactions to 10 in 10.
+
+Not done: reading the cards in parallel. A request bound by work gets no
+faster when the same work is spread over more of the pool's connections,
+and under load it would take connections other pages need.
+
 **Consequences.**
 
 - Built in this order, each its own commit:
