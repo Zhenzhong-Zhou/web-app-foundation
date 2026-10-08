@@ -21,6 +21,7 @@ import { HomeService } from '../src/modules/home/home.service';
 import { InvoicesService } from '../src/modules/invoices/invoices.service';
 import { OrdersService } from '../src/modules/orders/orders.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
+import { RecentService } from '../src/modules/recent/recent.service';
 import { LookupService } from '../src/modules/search/lookup.service';
 import { AvailabilityService } from '../src/modules/stock/availability.service';
 import { LotTraceService } from '../src/modules/stock/lot-trace.service';
@@ -188,6 +189,7 @@ async function buildProbes(
   const costs = app.get(CostsService);
   const lookups = app.get(LookupService);
   const home = app.get(HomeService);
+  const recent = app.get(RecentService);
 
   const firstOrders = await orders.list({ status: 'all' });
   const deepOrders = await cursorAfter(
@@ -296,6 +298,11 @@ async function buildProbes(
     {
       name: 'home',
       run: () => home.home(EVERY_PERMISSION, MONTH_DAYS.to),
+    },
+    // Recently opened (ADR-058): a person's history, newest first, named.
+    {
+      name: 'recently opened',
+      run: () => recent.list(org.userId, EVERY_PERMISSION, 6),
     },
     // Dates and sorting (ADR-057): each sort read through its index on
     // (organization_id, value, id), its page 2 after a (value, id) cursor,

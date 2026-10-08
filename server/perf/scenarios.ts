@@ -235,6 +235,8 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     // Home (ADR-058): the page everyone opens first, every card an owner
     // sees and Getting started, in one request.
     read('GET /home', () => '/home'),
+    // Recently opened (ADR-058), read with Home and on each search's focus.
+    read('GET /recent', () => '/recent?limit=6'),
     // Dates and sorting (ADR-057): a sorted list's first page and a month's
     // range, each served by its index.
     read('GET /invoices?sort=total', () => '/invoices?sort=total&order=desc'),
