@@ -19,6 +19,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { partnerMatches } from '../partners/partner-search';
+import type { ListCreditNotesDto } from './dto/list-credit-notes.dto';
 import type { ListInvoicesDto } from './dto/list-invoices.dto';
 import { computeAmounts } from './invoice-amounts';
 
@@ -81,6 +82,58 @@ export class InvoicesService {
         .where(and(...scope))
         // By id: UUIDv7 is chronological, so one column is the cursor.
         .orderBy(desc(invoices.id))
+        .limit(limit + 1);
+
+      return pageOf(rows, limit);
+    });
+  }
+
+  /**
+   * Every credit note, newest first (ADR-057): they had pages but no list,
+   * so a quarter's could be neither shown nor exported. Each with its
+   * invoice's number and its partner, for the row and the export.
+   */
+  async listCreditNotes(query: ListCreditNotesDto) {
+    const limit = query.limit ?? DEFAULT_LIMIT;
+
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const scope = [eq(creditNotes.organizationId, organizationId)];
+
+      if (query.before) scope.push(lt(creditNotes.id, query.before));
+      if (query.partnerId) {
+        scope.push(eq(creditNotes.partnerId, query.partnerId));
+      }
+      if (query.invoiceId) {
+        scope.push(eq(creditNotes.invoiceId, query.invoiceId));
+      }
+      scope.push(...calendarRange(creditNotes.creditDate, query));
+      if (query.search) {
+        const terms = searchTerms(query.search);
+        const match = or(
+          codeMatches(creditNotes.number, terms),
+          partnerMatches(creditNotes.partnerId, terms),
+        );
+        if (match) scope.push(match);
+      }
+
+      const rows = await tx
+        .select({
+          id: creditNotes.id,
+          number: creditNotes.number,
+          invoiceId: creditNotes.invoiceId,
+          invoiceNumber: invoices.number,
+          partnerId: creditNotes.partnerId,
+          partnerName: partners.name,
+          currency: invoices.currency,
+          creditDate: creditNotes.creditDate,
+          total: creditNotes.total,
+          isVoid: creditNotes.isVoid,
+        })
+        .from(creditNotes)
+        .innerJoin(invoices, eq(invoices.id, creditNotes.invoiceId))
+        .innerJoin(partners, eq(partners.id, creditNotes.partnerId))
+        .where(and(...scope))
+        .orderBy(desc(creditNotes.id))
         .limit(limit + 1);
 
       return pageOf(rows, limit);

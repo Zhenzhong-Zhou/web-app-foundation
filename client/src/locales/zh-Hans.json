@@ -281,6 +281,8 @@
   "costs.why.noRate": "以 {currency} 计价，但没有登记汇率",
   "costs.why.opening": "开始估值时已有的库存",
   "costs.why.production": "由仍未关闭的生产订单生产",
+  "creditNotes.empty": "暂无贷项通知单。打开一张已开具的发票，即可贷记其中一部分。",
+  "creditNotes.intro": "贷项通知单退回发票的部分或全部金额。它从发票开具，开具后不再更改。",
   "documents.amount": "金额",
   "documents.backToCreditNote": "返回贷项通知单",
   "documents.backToInvoice": "返回发票",

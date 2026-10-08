@@ -281,6 +281,8 @@
   "costs.why.noRate": "Prix en {currency}, sans taux en dossier",
   "costs.why.opening": "En stock au début de l’évaluation",
   "costs.why.production": "Fabriqué par un ordre encore ouvert",
+  "creditNotes.empty": "Aucune note de crédit pour l’instant. Ouvrez une facture émise pour en créditer une partie.",
+  "creditNotes.intro": "Une note de crédit rembourse tout ou partie d’une facture. Elle est émise depuis la facture et ne change jamais.",
   "documents.amount": "Montant",
   "documents.backToCreditNote": "Retour à la note de crédit",
   "documents.backToInvoice": "Retour à la facture",

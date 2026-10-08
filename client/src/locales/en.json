@@ -281,6 +281,8 @@
   "costs.why.noRate": "Priced in {currency}, with no rate on file",
   "costs.why.opening": "On hand when valuation began",
   "costs.why.production": "Made by a run that is still open",
+  "creditNotes.empty": "No credit notes yet. Open an issued invoice to credit part of it.",
+  "creditNotes.intro": "A credit note gives back part or all of an invoice. It is issued from the invoice, and never changes.",
   "documents.amount": "Amount",
   "documents.backToCreditNote": "Back to the credit note",
   "documents.backToInvoice": "Back to the invoice",

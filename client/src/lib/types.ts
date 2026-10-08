@@ -1081,3 +1081,17 @@ export interface LookupResult {
 export interface LookupResponse {
   groups: { kind: LookupKind; results: LookupResult[] }[];
 }
+
+/** A row of the credit notes list (ADR-057). */
+export interface CreditNoteSummary {
+  id: string;
+  number: string;
+  invoiceId: string;
+  invoiceNumber: string | null;
+  partnerId: string;
+  partnerName: string;
+  currency: string;
+  creditDate: CalendarDay;
+  total: string;
+  isVoid: boolean;
+}

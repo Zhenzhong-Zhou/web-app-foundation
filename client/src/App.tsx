@@ -23,6 +23,7 @@ import {
   CreateOrderPage,
   CreditNoteDetailPage,
   CreditNotePrintPage,
+  CreditNotesPage,
   ExchangeRatesPage,
   InventoryPage,
   InvoiceDetailPage,
@@ -243,6 +244,7 @@ export default function App() {
         />
         <Route path="/invoices" element={split(InvoicesPage)} />
         <Route path="/invoices/:id" element={split(InvoiceDetailPage)} />
+        <Route path="/credit-notes" element={split(CreditNotesPage)} />
         <Route path="/credit-notes/:id" element={split(CreditNoteDetailPage)} />
         <Route path="/invoices/:id/print" element={split(InvoicePrintPage)} />
         <Route

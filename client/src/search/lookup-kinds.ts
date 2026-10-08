@@ -48,8 +48,7 @@ export function pathOf(kind: LookupKind, result: LookupResult): string {
 
 /**
  * The list that searches the same way, for "Show all", with the query in
- * its address; null where there is none (credit notes are found from their
- * invoice).
+ * its address; null where there is none.
  */
 export function listOf(kind: LookupKind, query: string): string | null {
   const search = `search=${encodeURIComponent(query)}`;
@@ -68,6 +67,6 @@ export function listOf(kind: LookupKind, query: string): string | null {
     case 'returnAuthorization':
       return `/return-authorizations?${search}`;
     case 'creditNote':
-      return null;
+      return `/credit-notes?${search}`;
   }
 }

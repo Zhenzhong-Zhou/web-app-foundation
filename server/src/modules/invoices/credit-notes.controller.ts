@@ -1,7 +1,8 @@
-import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { ListCreditNotesDto } from './dto/list-credit-notes.dto';
 import { InvoicesService } from './invoices.service';
 
 /**
@@ -13,6 +14,13 @@ import { InvoicesService } from './invoices.service';
 @Controller({ path: 'credit-notes', version: '1' })
 export class CreditNotesController {
   constructor(private readonly invoices: InvoicesService) {}
+
+  /** Every credit note, newest first, with its date range and search. */
+  @Get()
+  @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
+  list(@Query() query: ListCreditNotesDto) {
+    return this.invoices.listCreditNotes(query);
+  }
 
   @Get(':id')
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)

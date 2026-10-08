@@ -123,6 +123,7 @@ describe('Date ranges (e2e)', () => {
   it.each([
     ['/v1/orders?status=all', 'from=2026-09-01&to=2026-09-30', 'to=2026-02-30'],
     ['/v1/invoices', 'from=2026-09-01&to=2026-09-30', 'from=yesterday'],
+    ['/v1/credit-notes', 'from=2026-07-01&to=2026-09-30', 'to=30/09/2026'],
     [
       '/v1/return-authorizations',
       'from=2026-09-01T00:00:00Z&until=2026-10-01T00:00:00Z',

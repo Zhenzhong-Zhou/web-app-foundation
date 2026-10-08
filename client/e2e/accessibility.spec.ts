@@ -54,6 +54,7 @@ const SCREENS: Screen[] = [
     ready: (page) => page.getByRole('tab', { name: 'History' }),
   },
   { name: 'invoices', path: () => '/invoices', ready: heading },
+  { name: 'credit notes', path: () => '/credit-notes', ready: heading },
   { name: 'returns', path: () => '/return-authorizations', ready: heading },
   { name: 'production', path: () => '/production', ready: heading },
   { name: 'products', path: () => '/products', ready: heading },

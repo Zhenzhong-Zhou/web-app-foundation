@@ -26,6 +26,7 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch, withSearch } from '../lib/use-list-search';
 import { STATUS_TONES } from '../theme/status';
+import { CreditNotesLink } from './credit-notes-page';
 import { invoiceStatus } from './invoice-status';
 
 type Filter = InvoiceStatus | 'all';
@@ -88,6 +89,7 @@ export function InvoicesPage() {
           defaultMessage:
             'An invoice bills one shipment, and is created from it on the order. Once issued it never changes — a mistake is voided with a credit note and invoiced again.',
         })}
+        actions={<CreditNotesLink />}
       />
 
       {/* The one filter row (ADR-055): which invoices, as buttons. Tabs
