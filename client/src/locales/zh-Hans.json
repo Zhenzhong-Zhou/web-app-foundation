@@ -725,6 +725,8 @@
   "orders.filter.cancelled": "已取消",
   "orders.filter.fulfilled": "已完成",
   "orders.filter.open": "未完成",
+  "orders.filter.purchases": "仅采购订单",
+  "orders.filter.sales": "仅销售订单",
   "orders.fulfilled": "已完成",
   "orders.fulfilledOfOrdered": "{fulfilled} / {ordered}",
   "orders.items": "物品",

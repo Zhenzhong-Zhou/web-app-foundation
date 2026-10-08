@@ -27,6 +27,7 @@ import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
+import { flagFromAddress } from '../lib/address-filter';
 import { api, messageFor } from '../lib/api';
 import { EXPIRY_DAYS } from '../lib/expiry';
 import {
@@ -97,10 +98,15 @@ export function InventoryPage() {
   const [viewing, setViewing] = useState<StockRow | null>(null);
   const [includeEmpty, setIncludeEmpty] = useState(false);
   // "Expiring soon": lots within the amber threshold, the expired included.
-  const [expiring, setExpiring] = useState(false);
+  // Home's cards open this list narrowed: ?expiring=1, ?needsCost=1.
+  const [expiring, setExpiring] = useState(() =>
+    flagFromAddress(params, 'expiring'),
+  );
   const [expiringCount, setExpiringCount] = useState<number | null>(null);
   // "Needs a cost": stock whose value is still provisional (ADR-048).
-  const [needsCost, setNeedsCost] = useState(false);
+  const [needsCost, setNeedsCost] = useState(() =>
+    flagFromAddress(params, 'needsCost'),
+  );
   const [needsCostCount, setNeedsCostCount] = useState<number | null>(null);
   /** Bumped by Refresh and by every dialog that moves stock. */
   const [changes, setChanges] = useState(0);

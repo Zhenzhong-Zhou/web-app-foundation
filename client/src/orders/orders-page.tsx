@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
@@ -26,9 +26,10 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
+import { fromAddress } from '../lib/address-filter';
 import { type DayRange, withDays } from '../lib/date-range';
 import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
-import type { OrderSummary } from '../lib/types';
+import type { OrderDirection, OrderSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch, withSearch } from '../lib/use-list-search';
@@ -69,13 +70,34 @@ const FILTERS = [
   },
 ] as const;
 
-type Filter = (typeof FILTERS)[number]['value'];
+/**
+ * The quick filters' values, and the two a link may also give: Home's
+ * cards open confirmed orders only (ADR-058), which no button stands for.
+ */
+type Filter = (typeof FILTERS)[number]['value'] | 'draft' | 'confirmed';
+const FILTER_VALUES: readonly Filter[] = [
+  ...FILTERS.map((option) => option.value),
+  'draft',
+  'confirmed',
+];
 
 export function OrdersPage() {
   const intl = useIntl();
   const can = useCan();
 
-  const [filter, setFilter] = useState<Filter>('open');
+  // Opened from Home: ?direction=sale&status=confirmed (ADR-058).
+  const [params] = useSearchParams();
+  const [filter, setFilter] = useState<Filter>(() =>
+    fromAddress(params, 'status', FILTER_VALUES, 'open'),
+  );
+  const [direction, setDirection] = useState<OrderDirection | ''>(() =>
+    fromAddress<OrderDirection | ''>(
+      params,
+      'direction',
+      ['', 'sale', 'purchase'],
+      '',
+    ),
+  );
   const { text, setText, search } = useListSearch();
   // By expected date, and sortable by it (ADR-057); the export takes the
   // same query, so the file is what the list shows.
@@ -84,7 +106,10 @@ export function OrdersPage() {
   const path = withSort(
     withDays(
       withSearch(
-        `/orders?${new URLSearchParams({ status: filter }).toString()}`,
+        `/orders?${new URLSearchParams({
+          status: filter,
+          ...(direction ? { direction } : {}),
+        }).toString()}`,
         search,
       ),
       range,
@@ -151,6 +176,34 @@ export function OrdersPage() {
       >
         <DateRangeFilter label={expected} value={range} onChange={setRange} />
       </FilterRow>
+
+      {/* What a link narrowed that no button shows, each removable. */}
+      {(direction || filter === 'draft' || filter === 'confirmed') && (
+        <Stack direction="row" spacing={1}>
+          {direction && (
+            <Chip
+              label={
+                direction === 'sale'
+                  ? intl.formatMessage({
+                      id: 'orders.filter.sales',
+                      defaultMessage: 'Sales only',
+                    })
+                  : intl.formatMessage({
+                      id: 'orders.filter.purchases',
+                      defaultMessage: 'Purchases only',
+                    })
+              }
+              onDelete={() => setDirection('')}
+            />
+          )}
+          {(filter === 'draft' || filter === 'confirmed') && (
+            <Chip
+              label={orderStatusLabel(filter, direction || 'sale')}
+              onDelete={() => setFilter('open')}
+            />
+          )}
+        </Stack>
+      )}
 
       {error && <Alert severity="error">{error}</Alert>}
 

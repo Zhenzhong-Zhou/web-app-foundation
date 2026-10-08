@@ -725,6 +725,8 @@
   "orders.filter.cancelled": "Cancelled",
   "orders.filter.fulfilled": "Fulfilled",
   "orders.filter.open": "Open",
+  "orders.filter.purchases": "Purchases only",
+  "orders.filter.sales": "Sales only",
   "orders.fulfilled": "Fulfilled",
   "orders.fulfilledOfOrdered": "{fulfilled} / {ordered}",
   "orders.items": "Items",

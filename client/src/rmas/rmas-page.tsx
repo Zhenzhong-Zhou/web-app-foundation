@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
@@ -21,6 +21,7 @@ import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { fromAddress } from '../lib/address-filter';
 import { type DayRange, withInstants } from '../lib/date-range';
 import { formatDate } from '../lib/format';
 import type {
@@ -41,6 +42,8 @@ const LABELS = defineMessages({
   cancelled: { id: 'orders.status.cancelled', defaultMessage: 'Cancelled' },
   all: { id: 'invoices.filter.all', defaultMessage: 'All' },
 });
+
+const FILTER_VALUES: readonly Filter[] = ['all', 'open', 'closed', 'cancelled'];
 
 const FILTERS: { value: Filter; label: MessageDescriptor }[] = [
   { value: 'open', label: LABELS.open },
@@ -65,7 +68,11 @@ function query(filter: Filter): string {
  */
 export function RmasPage() {
   const intl = useIntl();
-  const [filter, setFilter] = useState<Filter>('open');
+  // Home's card opens the open ones: ?status=open (ADR-058).
+  const [params] = useSearchParams();
+  const [filter, setFilter] = useState<Filter>(() =>
+    fromAddress(params, 'status', FILTER_VALUES, 'open'),
+  );
   const { text, setText, search } = useListSearch();
   // When raised, the reader's days as instants (ADR-057).
   const [range, setRange] = useState<DayRange>({});

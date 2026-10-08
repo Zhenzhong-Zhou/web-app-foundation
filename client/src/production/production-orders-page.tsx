@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
@@ -22,6 +22,7 @@ import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { fromAddress } from '../lib/address-filter';
 import { type DayRange, withInstants } from '../lib/date-range';
 import { displayQuantity, formatDate, NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -44,7 +45,11 @@ export function ProductionOrdersPage() {
   const intl = useIntl();
   const can = useCan();
 
-  const [filter, setFilter] = useState<RunStatus | ''>('');
+  // Home's card opens runs in progress: ?status=released (ADR-058).
+  const [params] = useSearchParams();
+  const [filter, setFilter] = useState<RunStatus | ''>(() =>
+    fromAddress<RunStatus | ''>(params, 'status', ['', ...RUN_STATUSES], ''),
+  );
   const { text, setText, search } = useListSearch();
   // When planned, the reader's days as instants (ADR-057).
   const [range, setRange] = useState<DayRange>({});
