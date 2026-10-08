@@ -20,10 +20,11 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0044** (`sort_indexes`, ADR-057) on `main`;
-  **0045** (`getting_started`, ADR-058) and **0046** (`sort_indexes_desc`,
-  ADR-057 amended) on `adr-058-home`. Render runs them on deploy (confirm in
-  the deploy log, *In flight* below). Next is **0047**.
+- Migrations: through **0046** (`sort_indexes_desc`, ADR-057 amended) on
+  `main` once Home merges, with **0045** (`getting_started`, ADR-058);
+  **0047** (`recent_records`, ADR-058 amended) on `recently-opened`. Render
+  runs them on deploy (confirm in the deploy log, *In flight* below). Next
+  is **0048**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -132,6 +133,10 @@ Then tag v0.4.0.
   file, below); then **organization branding** (logo, accent with a contrast
   check, expiry thresholds), the first feature that uploads one. Bob may
   reorder.
+- **Recently opened, built** on `recently-opened` (ADR-058 amended): the
+  last records a person opened, on the server per person (migration 0047),
+  reported by the eight record pages once loaded, shown on Home under the
+  quick actions and in the empty search box.
 - **Status pages, built** on `status-pages`: one shape for an unknown
   address, a record that does not exist, one the role cannot open, a server
   out of reach and a crash (`client/src/errors/`, conventions.md "Status
