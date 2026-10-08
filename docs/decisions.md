@@ -5483,6 +5483,12 @@ designers; before any card, three things say where the day stands:
   spoiling (red overdue or expired, amber within the warning days), and
   each a link to its card further down. This is the page's visualization:
   the counts at a glance, no charts.
+- **Quick actions,** under the row of counts: the few things people start
+  from Home, Raise an order, Receive stock, Trace a lot, Plan a run, each
+  shown only when the member's role may do it, as buttons that open where
+  the work is done. Not a map of every page: the rail lists those on every
+  screen and the lookup finds any record, and a second copy here would push
+  the to-dos down.
 
 - **Each card: a count, the five most urgent rows, and a link** to the list
   already filtered to the same rows ("See all 12"). A row opens its record.
@@ -5558,7 +5564,8 @@ list.
        count matching its list, the five rows' order, a card hidden without
        its permission, another organization's records never counted.
     3. The lists reading their filters from the address, with unit tests.
-    4. The page: the greeting, the sentence and the row of counts,
+    4. The page: the greeting, the sentence, the row of counts, the
+       quick actions,
        Getting started, the cards, the rail item, `/` as Home,
        with unit tests, an e2e flow (a card's "See all" opening its list
        with the same count), and Home in `accessibility.spec`.
@@ -5587,6 +5594,12 @@ list.
 
 - **Choosing and ordering cards per person.** Trigger: someone asking to
   hide one they never need.
+- **Recently opened:** the last few records a person opened (orders, lots,
+  products), on Home, for the thing they were working on yesterday. Kept
+  on the server per person, so it follows them across devices, which a
+  browser's own storage would not; a small table, a row written when a
+  record's page opens, the oldest dropped past a few dozen. Trigger: people
+  going back to the same records often, seen in use or asked for.
 - **Figures** (invoiced this month, stock value, per currency). Trigger:
   asked for, with the currency rule decided.
 - **Live updates.** Trigger: two people working the same queue at once and
