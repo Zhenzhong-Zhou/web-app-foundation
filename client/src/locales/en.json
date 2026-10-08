@@ -688,6 +688,7 @@
   "orders.create.raiseAsDraft": "Raise as draft",
   "orders.create.raising": "Raising…",
   "orders.create.removeItem": "Remove item",
+  "orders.create.unsaved": "The order you started has not been raised. Leaving loses its partner and lines.",
   "orders.direction": "Direction",
   "orders.direction.buying": "Buying",
   "orders.direction.purchase": "Buying from them",
@@ -1270,5 +1271,8 @@
   "settings.tax.rate": "{value}%",
   "settings.tax.ratePercent": "Rate %",
   "settings.tax.removeThis": "Remove this tax",
-  "settings.tax.saved": "Tax code saved"
+  "settings.tax.saved": "Tax code saved",
+  "unsaved.leave": "Leave",
+  "unsaved.stay": "Stay",
+  "unsaved.title": "Leave without saving?"
 }

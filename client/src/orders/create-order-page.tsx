@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
+import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
 import { api } from '../lib/api';
 import {
   BLANK_LINE,
@@ -29,6 +30,7 @@ import {
 } from '../lib/format';
 import type { OrderDirection, Partner, VariantOption } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
+import { useUnsavedChanges } from '../lib/use-unsaved-changes';
 import { unitLabel } from '../products/units';
 
 interface LineDraft {
@@ -85,6 +87,22 @@ export function CreateOrderPage() {
    * on the case that almost never happens.
    */
   const [currency, setCurrency] = useState('');
+
+  // Anything typed or chosen is worth asking about before it is thrown away
+  // (issue #54); an untouched form leaves without a word.
+  const dirty =
+    partner !== null ||
+    reference.trim() !== '' ||
+    expectedAt !== '' ||
+    note.trim() !== '' ||
+    isSample ||
+    lines.some(
+      (line) =>
+        line.variant !== null ||
+        line.quantityOrdered !== '' ||
+        line.unitPrice !== '',
+    );
+  const { blocker, release } = useUnsavedChanges(dirty);
 
   const { submitting, error, submit } = useSubmit(
     () => {
@@ -213,12 +231,22 @@ export function CreateOrderPage() {
         }),
       });
 
+      // Saved: on to the order, without asking.
+      release();
       navigate(`/orders/${created.order.id}`);
     });
   }
 
   return (
     <form onSubmit={handleSubmit}>
+      <UnsavedChangesDialog
+        blocker={blocker}
+        message={intl.formatMessage({
+          id: 'orders.create.unsaved',
+          defaultMessage:
+            'The order you started has not been raised. Leaving loses its partner and lines.',
+        })}
+      />
       <Stack spacing={3}>
         <Typography variant="h5" component="h1">
           {intl.formatMessage({
@@ -491,7 +519,11 @@ export function CreateOrderPage() {
           <Button
             variant="text"
             disabled={submitting}
-            onClick={() => void navigate('/orders')}
+            // Cancel means discard; it does not ask again.
+            onClick={() => {
+              release();
+              void navigate('/orders');
+            }}
           >
             {intl.formatMessage({
               id: 'common.cancel',
