@@ -18,16 +18,21 @@ import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
+import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
+import { type DayRange, withDays } from '../lib/date-range';
 import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
 import type { OrderSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch, withSearch } from '../lib/use-list-search';
+import { useListSort, withSort } from '../lib/use-list-sort';
 import { STATUS_TONES } from '../theme/status';
 import { orderStatusLabel } from './status';
 
@@ -72,6 +77,24 @@ export function OrdersPage() {
 
   const [filter, setFilter] = useState<Filter>('open');
   const { text, setText, search } = useListSearch();
+  // By expected date, and sortable by it (ADR-057); the export takes the
+  // same query, so the file is what the list shows.
+  const [range, setRange] = useState<DayRange>({});
+  const { sort, toggle } = useListSort<'expectedAt'>();
+  const path = withSort(
+    withDays(
+      withSearch(
+        `/orders?${new URLSearchParams({ status: filter }).toString()}`,
+        search,
+      ),
+      range,
+    ),
+    sort,
+  );
+  const expected = intl.formatMessage({
+    id: 'orders.expected',
+    defaultMessage: 'Expected',
+  });
 
   const canCreate = can('orders.create');
   const {
@@ -81,12 +104,7 @@ export function OrdersPage() {
     hasMore,
     loadingMore,
     loadMore,
-  } = useKeysetList<OrderSummary>(
-    withSearch(
-      `/orders?${new URLSearchParams({ status: filter }).toString()}`,
-      search,
-    ),
-  );
+  } = useKeysetList<OrderSummary>(path);
   const showSkeleton = useDelayedFlag(loading);
 
   return (
@@ -98,14 +116,17 @@ export function OrdersPage() {
           defaultMessage: 'Orders',
         })}
         actions={
-          canCreate && (
-            <Button component={RouterLink} to="/orders/new">
-              {intl.formatMessage({
-                id: 'orders.raise',
-                defaultMessage: 'Raise an order',
-              })}
-            </Button>
-          )
+          <Stack direction="row" spacing={1}>
+            <ExportButton path={path.replace('/orders', '/orders/export')} />
+            {canCreate && (
+              <Button component={RouterLink} to="/orders/new">
+                {intl.formatMessage({
+                  id: 'orders.raise',
+                  defaultMessage: 'Raise an order',
+                })}
+              </Button>
+            )}
+          </Stack>
         }
       />
 
@@ -127,7 +148,9 @@ export function OrdersPage() {
           pressed: filter === option.value,
           onToggle: () => setFilter(option.value),
         }))}
-      />
+      >
+        <DateRangeFilter label={expected} value={range} onChange={setRange} />
+      </FilterRow>
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -164,12 +187,12 @@ export function OrdersPage() {
                       defaultMessage: 'Reference',
                     })}
                   </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'orders.expected',
-                      defaultMessage: 'Expected',
-                    })}
-                  </TableCell>
+                  <SortHeader
+                    label={expected}
+                    active={sort?.key === 'expectedAt'}
+                    order={sort?.order ?? 'asc'}
+                    onSort={() => toggle('expectedAt')}
+                  />
                   <TableCell align="right">
                     {intl.formatMessage({
                       id: 'orders.fulfilled',
@@ -265,7 +288,7 @@ export function OrdersPage() {
           // No Raise an order here: the page header already offers it, and
           // a second button for the same act is one too many.
           <EmptyState>
-            {search
+            {search || range.from || range.to
               ? intl.formatMessage({
                   id: 'inventory.noMatch',
                   defaultMessage: 'Nothing matches that search.',

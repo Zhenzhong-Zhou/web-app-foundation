@@ -12,19 +12,25 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
+import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
+import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
+import { type DayRange, withDays } from '../lib/date-range';
 import { formatCredit, formatDay, NO_VALUE } from '../lib/format';
 import type { CreditNoteSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch, withSearch } from '../lib/use-list-search';
+import { useListSort, withSort } from '../lib/use-list-sort';
 
 /**
  * Every credit note, newest first (ADR-057). They had pages but no list,
@@ -34,6 +40,21 @@ import { useListSearch, withSearch } from '../lib/use-list-search';
 export function CreditNotesPage() {
   const intl = useIntl();
   const { text, setText, search } = useListSearch();
+  // By credit date, sortable by date and amount (ADR-057).
+  const [range, setRange] = useState<DayRange>({});
+  const { sort, toggle } = useListSort<'creditDate' | 'total'>();
+  const path = withSort(
+    withDays(withSearch('/credit-notes', search), range),
+    sort,
+  );
+  const creditDate = intl.formatMessage({
+    id: 'invoices.date',
+    defaultMessage: 'Date',
+  });
+  const amount = intl.formatMessage({
+    id: 'invoices.amount',
+    defaultMessage: 'Amount',
+  });
   const {
     entries: rows,
     error,
@@ -41,7 +62,7 @@ export function CreditNotesPage() {
     hasMore,
     loadingMore,
     loadMore,
-  } = useKeysetList<CreditNoteSummary>(withSearch('/credit-notes', search));
+  } = useKeysetList<CreditNoteSummary>(path);
   const showSkeleton = useDelayedFlag(loading);
 
   return (
@@ -65,6 +86,11 @@ export function CreditNotesPage() {
           defaultMessage:
             'A credit note gives back part or all of an invoice. It is issued from the invoice, and never changes.',
         })}
+        actions={
+          <ExportButton
+            path={path.replace('/credit-notes', '/credit-notes/export')}
+          />
+        }
       />
 
       <FilterRow
@@ -76,7 +102,9 @@ export function CreditNotesPage() {
           value: text,
           onChange: setText,
         }}
-      />
+      >
+        <DateRangeFilter label={creditDate} value={range} onChange={setRange} />
+      </FilterRow>
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -87,7 +115,7 @@ export function CreditNotesPage() {
           </Stack>
         ) : rows?.length === 0 ? (
           <EmptyState>
-            {search
+            {search || range.from || range.to
               ? intl.formatMessage({
                   id: 'inventory.noMatch',
                   defaultMessage: 'Nothing matches that search.',
@@ -121,18 +149,19 @@ export function CreditNotesPage() {
                       defaultMessage: 'Customer',
                     })}
                   </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.date',
-                      defaultMessage: 'Date',
-                    })}
-                  </TableCell>
-                  <TableCell align="right">
-                    {intl.formatMessage({
-                      id: 'invoices.amount',
-                      defaultMessage: 'Amount',
-                    })}
-                  </TableCell>
+                  <SortHeader
+                    label={creditDate}
+                    active={sort?.key === 'creditDate'}
+                    order={sort?.order ?? 'asc'}
+                    onSort={() => toggle('creditDate')}
+                  />
+                  <SortHeader
+                    align="right"
+                    label={amount}
+                    active={sort?.key === 'total'}
+                    order={sort?.order ?? 'asc'}
+                    onSort={() => toggle('total')}
+                  />
                   <TableCell />
                 </TableRow>
               </TableHead>

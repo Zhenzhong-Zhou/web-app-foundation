@@ -85,6 +85,36 @@ type ApiInit = Omit<RequestInit, 'headers'> & {
  * conditional someone eventually gets wrong.
  */
 export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
+  const response = await send(path, init);
+
+  // 204 from logout and reset-password: no body to parse (ADR-011, ADR-017).
+  return response.status === 204
+    ? (undefined as T)
+    : ((await response.json()) as T);
+}
+
+/**
+ * A file the server sends as an attachment, saved by the browser under the
+ * name the server gives it (ADR-057's exports). Errors arrive as JSON and
+ * are thrown as ApiError, as api() throws them.
+ */
+export async function download(path: string): Promise<void> {
+  const response = await send(path, {});
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? 'export.csv';
+
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+/** The request every call makes, and the error every failure throws. */
+async function send(path: string, init: ApiInit): Promise<Response> {
   const response = await fetch(`${BASE}${path}`, {
     ...init,
     credentials: 'include',
@@ -122,8 +152,5 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
     );
   }
 
-  // 204 from logout and reset-password: no body to parse (ADR-011, ADR-017).
-  return response.status === 204
-    ? (undefined as T)
-    : ((await response.json()) as T);
+  return response;
 }
