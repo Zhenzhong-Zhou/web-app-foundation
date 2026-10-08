@@ -148,9 +148,16 @@ export const stockValuations = pgTable(
       .on(t.organizationId, t.referenceType, t.referenceId)
       .where(sql`${t.referenceType} is not null`),
 
-    /** The needs-cost list. Partial: almost every row is valued. */
-    index('stock_valuations_org_needs_cost_idx')
-      .on(t.organizationId)
+    /**
+     * Waiting valuations by pool. Partial: almost every row is valued.
+     * The stock list's "Needs a cost" filter and Home's costs card ask,
+     * for each stock row, whether its pool has one waiting; by pool, that
+     * reads only the waiting rows, where the pool index above reads every
+     * valuation of the variant (ADR-058 amended). Leading with the
+     * organization, it also serves the needs-cost list.
+     */
+    index('stock_valuations_org_pool_needs_cost_idx')
+      .on(t.organizationId, t.variantId, t.lotId)
       .where(sql`${t.needsCost}`),
 
     check(

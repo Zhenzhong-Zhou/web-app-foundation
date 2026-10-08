@@ -20,11 +20,11 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0047** (`recent_records`, ADR-058 amended) on
-  `main`, with **0045** (`getting_started`, ADR-058) and **0046**
-  (`sort_indexes_desc`, ADR-057 amended). Render runs them on deploy
-  (confirm in the deploy log: `drizzle.__drizzle_migrations` holds 48
-  rows). Next is **0048**.
+- Migrations: through **0048** (`needs_cost_pool_index`, ADR-058 amended)
+  on `main` once `fix-home-perf-2` merges, with **0045**
+  (`getting_started`), **0046** (`sort_indexes_desc`) and **0047**
+  (`recent_records`). Render runs them on deploy (confirm in the deploy
+  log: `drizzle.__drizzle_migrations` holds 49 rows). Next is **0049**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -55,10 +55,13 @@ and price lists proposing the price of a new line.
 ## Next, in order (as of 8 October 2026)
 
 Done today: **Home** (ADR-058) merged, then its Performance fix
-(`fix-home-perf`: Getting started reads the ledger through its index, and
-every card's count is one statement, ADR-058 amended); **status pages**
-(PR #60) and **recently opened** (PR #61) merged; the **CI speed-up** on
-`ci-speed-up`.
+(`fix-home-perf`, PR #62: Getting started reads the ledger through its
+index, and every card's count is one statement, ADR-058 amended);
+**status pages** (PR #60), **recently opened** (PR #61) and the **CI
+speed-up** (PR #63) merged. Home was still over budget (453 ms p95 of 300):
+`fix-home-perf-2` adds the needs-cost index by pool (migration 0048), the
+invoice step through its index, and the plan check reading the totals.
+Merge it only once a Performance run (budgets) on the branch passes.
 
 1. **CI speed-up**, if not merged yet: workflow files and docs only.
    Pull requests run Chromium in three shards beside the lint jobs;

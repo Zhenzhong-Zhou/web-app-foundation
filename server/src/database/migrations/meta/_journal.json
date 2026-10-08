@@ -337,6 +337,13 @@
       "when": 1791480225272,
       "tag": "0047_recent_records",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1791489019057,
+      "tag": "0048_needs_cost_pool_index",
+      "breakpoints": true
     }
   ]
 }
