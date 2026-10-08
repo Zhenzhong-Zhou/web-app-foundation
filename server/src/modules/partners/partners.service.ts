@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
 
+import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { assertLanguagePair } from '../../core/organizations/document-languages';
 import { isUniqueViolation } from '../../database/errors';
 import { addresses, contacts, partners } from '../../database/schema';
@@ -66,6 +67,7 @@ export class PartnersService {
       const [partner] = await this.tenantDb
         .insert(partners, {
           name: input.name,
+          namePinyin: namePinyin(input.name),
           code: input.code,
           taxId: input.taxId,
           notes: input.notes,
@@ -144,7 +146,11 @@ export class PartnersService {
     }
 
     try {
-      await this.tenantDb.update(partners, input, eq(partners.id, partnerId));
+      await this.tenantDb.update(
+        partners,
+        { ...input, ...pinyinOf(input.name) },
+        eq(partners.id, partnerId),
+      );
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw new ConflictException(

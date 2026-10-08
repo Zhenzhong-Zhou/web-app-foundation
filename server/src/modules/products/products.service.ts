@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 
+import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
 import {
@@ -141,6 +142,7 @@ export class ProductsService {
             organizationId,
             type: input.type,
             name: input.name,
+            namePinyin: namePinyin(input.name),
             description: input.description,
           })
           .returning();
@@ -153,6 +155,7 @@ export class ProductsService {
             organizationId,
             productId: product.id,
             ...input.variant,
+            namePinyin: namePinyin(input.variant.name),
           })
           .returning();
 
@@ -191,7 +194,11 @@ export class ProductsService {
         t({ id: 'products.suchProduct', defaultMessage: 'No such product' }),
       );
 
-    await this.tenantDb.update(products, input, eq(products.id, productId));
+    await this.tenantDb.update(
+      products,
+      { ...input, ...pinyinOf(input.name) },
+      eq(products.id, productId),
+    );
 
     this.logger.log(`Product ${productId} updated`);
   }
@@ -217,7 +224,11 @@ export class ProductsService {
       // organizationId comes from tenant context inside insert() — its
       // parameter type omits the column for exactly that reason.
       const [variant] = await this.tenantDb
-        .insert(productVariants, { productId, ...input })
+        .insert(productVariants, {
+          productId,
+          ...input,
+          namePinyin: namePinyin(input.name),
+        })
         .returning();
 
       this.logger.log(`Variant ${variant.sku} added to product ${productId}`);
@@ -267,7 +278,7 @@ export class ProductsService {
     try {
       await this.tenantDb.update(
         productVariants,
-        input,
+        { ...input, ...pinyinOf(input.name) },
         eq(productVariants.id, variantId),
       );
 
@@ -339,6 +350,7 @@ export class ProductsService {
             productId,
             locale: translation.locale,
             name: translation.name,
+            namePinyin: namePinyin(translation.name),
             // Empty means none, which the column holds as null.
             description: translation.description || null,
           })),
@@ -347,6 +359,7 @@ export class ProductsService {
           target: [productTranslations.productId, productTranslations.locale],
           set: {
             name: sql`excluded.name`,
+            namePinyin: sql`excluded.name_pinyin`,
             description: sql`excluded.description`,
           },
           // Plain SQL, so the table each column belongs to is written here.
@@ -411,11 +424,15 @@ export class ProductsService {
             variantId,
             locale: translation.locale,
             name: translation.name,
+            namePinyin: namePinyin(translation.name),
           })),
         )
         .onConflictDoUpdate({
           target: [variantTranslations.variantId, variantTranslations.locale],
-          set: { name: sql`excluded.name` },
+          set: {
+            name: sql`excluded.name`,
+            namePinyin: sql`excluded.name_pinyin`,
+          },
           setWhere: sql`variant_translations.name is distinct from excluded.name`,
         });
     });
