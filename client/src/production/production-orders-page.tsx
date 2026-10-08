@@ -26,6 +26,7 @@ import { openDialog } from '../lib/open-dialog';
 import type { ProductionRun, RunStatus } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { useListSearch, withSearch } from '../lib/use-list-search';
 import { STATUS_TONES } from '../theme/status';
 import { CreateRunDialog } from './create-run-dialog';
 import { RUN_STATUSES, runStatusLabel } from './status';
@@ -42,6 +43,7 @@ export function ProductionOrdersPage() {
   const can = useCan();
 
   const [filter, setFilter] = useState<RunStatus | ''>('');
+  const { text, setText, search } = useListSearch();
   const [creating, setCreating] = useState(false);
 
   const canCreate = can('production.create');
@@ -53,7 +55,7 @@ export function ProductionOrdersPage() {
     loadingMore,
     loadMore,
     reload,
-  } = useKeysetList<ProductionRun>(query(filter));
+  } = useKeysetList<ProductionRun>(withSearch(query(filter), search));
   const showSkeleton = useDelayedFlag(loading);
 
   return (
@@ -78,6 +80,14 @@ export function ProductionOrdersPage() {
 
       {/* The one filter row (ADR-055): All and each status, as buttons. */}
       <FilterRow
+        search={{
+          label: intl.formatMessage({
+            id: 'inventory.search',
+            defaultMessage: 'Search',
+          }),
+          value: text,
+          onChange: setText,
+        }}
         quick={[
           {
             id: 'all',
@@ -104,11 +114,16 @@ export function ProductionOrdersPage() {
       {items?.length === 0 && (
         <Paper variant="outlined">
           <EmptyState>
-            {intl.formatMessage({
-              id: 'production.empty',
-              defaultMessage:
-                'Nothing here. A run consumes components and produces a finished item — it needs a recipe first, which lives on the product.',
-            })}
+            {search
+              ? intl.formatMessage({
+                  id: 'inventory.noMatch',
+                  defaultMessage: 'Nothing matches that search.',
+                })
+              : intl.formatMessage({
+                  id: 'production.empty',
+                  defaultMessage:
+                    'Nothing here. A run consumes components and produces a finished item — it needs a recipe first, which lives on the product.',
+                })}
           </EmptyState>
         </Paper>
       )}

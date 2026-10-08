@@ -106,6 +106,12 @@ export const creditNotes = pgTable(
       .defaultNow(),
   },
   (t) => [
+    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
+    // matches; names through search_text, codes as stored.
+    index('credit_notes_number_trgm_idx').using(
+      'gin',
+      sql`${t.number} gin_trgm_ops`,
+    ),
     check(
       'credit_notes_currency_format_check',
       sql`${isCurrencyCode(t.currency)}`,

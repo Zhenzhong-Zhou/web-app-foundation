@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
+import { searchTerms } from '../../common/search';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { itemName } from './item-name';
@@ -80,14 +81,12 @@ export class LotTraceService {
    * Codes that start with the text come first, so typing a prefix still puts
    * the obvious match on top. % and _ are escaped so they match themselves.
    *
-   * Anywhere-in cannot use an ordinary index, so this reads the
-   * organization's lots in full: milliseconds for tens of thousands. A
-   * trigram index (pg_trgm) is the fix if the table ever reaches millions.
+   * Anywhere-in cannot use an ordinary index; lots_code_trgm_idx, a trigram
+   * index (ADR-056, migration 0042), serves it.
    */
   async search(code: string) {
-    const escaped = code.replace(/[\\%_]/g, (char) => `\\${char}`);
-    const anywhere = `%${escaped}%`;
-    const prefix = `${escaped}%`;
+    // Escaped and trimmed as every search is (ADR-056, common/search.ts).
+    const { anywhere, prefix } = searchTerms(code);
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const rows = (

@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, lt, or, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
+import { codeMatches, searchTerms } from '../../common/search';
 import { documentLanguages } from '../../core/organizations/document-languages';
 import {
   creditNoteLines,
@@ -16,6 +17,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { partnerMatches } from '../partners/partner-search';
 import type { ListInvoicesDto } from './dto/list-invoices.dto';
 import { computeAmounts } from './invoice-amounts';
 
@@ -44,6 +46,16 @@ export class InvoicesService {
       if (query.status) scope.push(eq(invoices.status, query.status));
       if (query.partnerId) scope.push(eq(invoices.partnerId, query.partnerId));
       if (query.orderId) scope.push(eq(invoices.orderId, query.orderId));
+      // Its number or its partner's name (ADR-056). A draft has no number
+      // yet, so only its partner finds it.
+      if (query.search) {
+        const terms = searchTerms(query.search);
+        const match = or(
+          codeMatches(invoices.number, terms),
+          partnerMatches(invoices.partnerId, terms),
+        );
+        if (match) scope.push(match);
+      }
 
       const rows = await tx
         .select({

@@ -1053,3 +1053,31 @@ export interface PriceListItem {
 export interface PriceListDetail extends Omit<PriceList, 'itemCount'> {
   items: PriceListItem[];
 }
+
+/** Kinds of record the top bar's lookup finds (ADR-056). */
+export type LookupKind =
+  | 'order'
+  | 'invoice'
+  | 'creditNote'
+  | 'lot'
+  | 'item'
+  | 'partner'
+  | 'productionRun'
+  | 'returnAuthorization';
+
+/** One record the lookup found; the client builds its address. */
+export interface LookupResult {
+  id: string;
+  title: string;
+  detail: string | null;
+  status: string | null;
+  expiresAt: CalendarDay | null;
+  productId: string | null;
+  /** Found by similarity, after the exact matches: a typo. */
+  close: boolean;
+}
+
+/** What GET /lookup returns: kinds in the order to show them. */
+export interface LookupResponse {
+  groups: { kind: LookupKind; results: LookupResult[] }[];
+}

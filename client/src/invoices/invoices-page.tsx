@@ -24,6 +24,7 @@ import { formatDay, formatMoney, NO_VALUE } from '../lib/format';
 import type { InvoiceStatus, InvoiceSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { useListSearch, withSearch } from '../lib/use-list-search';
 import { STATUS_TONES } from '../theme/status';
 import { invoiceStatus } from './invoice-status';
 
@@ -63,6 +64,7 @@ function query(filter: Filter): string {
 export function InvoicesPage() {
   const intl = useIntl();
   const [filter, setFilter] = useState<Filter>('all');
+  const { text, setText, search } = useListSearch();
   const {
     entries: rows,
     error,
@@ -70,7 +72,7 @@ export function InvoicesPage() {
     hasMore,
     loadingMore,
     loadMore,
-  } = useKeysetList<InvoiceSummary>(query(filter));
+  } = useKeysetList<InvoiceSummary>(withSearch(query(filter), search));
   const showSkeleton = useDelayedFlag(loading);
 
   return (
@@ -91,6 +93,14 @@ export function InvoicesPage() {
       {/* The one filter row (ADR-055): which invoices, as buttons. Tabs
           were for sections of one thing, not for narrowing a list. */}
       <FilterRow
+        search={{
+          label: intl.formatMessage({
+            id: 'inventory.search',
+            defaultMessage: 'Search',
+          }),
+          value: text,
+          onChange: setText,
+        }}
         quick={FILTERS.map((option) => ({
           id: option.value,
           label: intl.formatMessage(option.label),
@@ -108,16 +118,21 @@ export function InvoicesPage() {
           </Stack>
         ) : rows?.length === 0 ? (
           <EmptyState>
-            {filter === 'all'
+            {search
               ? intl.formatMessage({
-                  id: 'invoices.empty',
-                  defaultMessage:
-                    'No invoices yet. Open an order and create one from a shipment.',
+                  id: 'inventory.noMatch',
+                  defaultMessage: 'Nothing matches that search.',
                 })
-              : intl.formatMessage({
-                  id: 'invoices.emptyFiltered',
-                  defaultMessage: 'Nothing here.',
-                })}
+              : filter === 'all'
+                ? intl.formatMessage({
+                    id: 'invoices.empty',
+                    defaultMessage:
+                      'No invoices yet. Open an order and create one from a shipment.',
+                  })
+                : intl.formatMessage({
+                    id: 'invoices.emptyFiltered',
+                    defaultMessage: 'Nothing here.',
+                  })}
           </EmptyState>
         ) : (
           <TableContainer>

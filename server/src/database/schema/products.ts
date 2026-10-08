@@ -64,8 +64,25 @@ export const products = pgTable(
     isActive: boolean('is_active').notNull().default(true),
 
     ...timestamps,
+
+    /**
+     * The name's pinyin, full and initials, for search (ADR-056): written by
+     * the server whenever the name is saved, null when the name has no
+     * Chinese. "深海鱼油" holds "shenhaiyuyou shyy".
+     */
+    namePinyin: text('name_pinyin'),
   },
   (t) => [
+    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
+    // matches; names through search_text, codes as stored.
+    index('products_name_trgm_idx').using(
+      'gin',
+      sql`search_text(${t.name}) gin_trgm_ops`,
+    ),
+    index('products_name_pinyin_trgm_idx').using(
+      'gin',
+      sql`${t.namePinyin} gin_trgm_ops`,
+    ),
     check(
       'products_type_check',
       sql`${t.type} in ('good', 'material', 'packaging', 'sample', 'supply', 'equipment')`,

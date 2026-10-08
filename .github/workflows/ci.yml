@@ -14,7 +14,7 @@ concurrency:
 jobs:
   client:
     name: Client — lint, types, unit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -55,7 +55,7 @@ jobs:
 
   server:
     name: Server — lint, build, integration
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       postgres:
@@ -191,7 +191,7 @@ jobs:
 
   browser:
     name: Client — Playwright
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [client, server]
 
     services:

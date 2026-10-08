@@ -1,5 +1,12 @@
 import { sql } from 'drizzle-orm';
-import { check, pgTable, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  check,
+  index,
+  pgTable,
+  text,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
@@ -38,8 +45,25 @@ export const productTranslations = pgTable(
     description: text('description'),
 
     ...timestamps,
+
+    /**
+     * The name's pinyin, full and initials, for search (ADR-056): written by
+     * the server whenever the name is saved, null when the name has no
+     * Chinese. "深海鱼油" holds "shenhaiyuyou shyy".
+     */
+    namePinyin: text('name_pinyin'),
   },
   (t) => [
+    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
+    // matches; names through search_text, codes as stored.
+    index('product_translations_name_trgm_idx').using(
+      'gin',
+      sql`search_text(${t.name}) gin_trgm_ops`,
+    ),
+    index('product_translations_name_pinyin_trgm_idx').using(
+      'gin',
+      sql`${t.namePinyin} gin_trgm_ops`,
+    ),
     // One name per language. Also serves "these products in this language".
     uniqueIndex('product_translations_product_locale_key').on(
       t.productId,

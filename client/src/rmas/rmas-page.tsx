@@ -27,6 +27,7 @@ import type {
 } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { useListSearch, withSearch } from '../lib/use-list-search';
 import { STATUS_TONES } from '../theme/status';
 import { rmaStatus } from './rma-labels';
 
@@ -63,6 +64,7 @@ function query(filter: Filter): string {
 export function RmasPage() {
   const intl = useIntl();
   const [filter, setFilter] = useState<Filter>('open');
+  const { text, setText, search } = useListSearch();
   const {
     entries: rows,
     error,
@@ -70,7 +72,9 @@ export function RmasPage() {
     hasMore,
     loadingMore,
     loadMore,
-  } = useKeysetList<ReturnAuthorizationSummary>(query(filter));
+  } = useKeysetList<ReturnAuthorizationSummary>(
+    withSearch(query(filter), search),
+  );
   const showSkeleton = useDelayedFlag(loading);
 
   return (
@@ -90,6 +94,14 @@ export function RmasPage() {
 
       {/* The one filter row (ADR-055), as on Orders and Invoices. */}
       <FilterRow
+        search={{
+          label: intl.formatMessage({
+            id: 'inventory.search',
+            defaultMessage: 'Search',
+          }),
+          value: text,
+          onChange: setText,
+        }}
         quick={FILTERS.map((option) => ({
           id: option.value,
           label: intl.formatMessage(option.label),
@@ -107,15 +119,20 @@ export function RmasPage() {
           </Stack>
         ) : rows?.length === 0 ? (
           <EmptyState>
-            {filter === 'open'
+            {search
               ? intl.formatMessage({
-                  id: 'rmas.empty',
-                  defaultMessage: 'No open returns.',
+                  id: 'inventory.noMatch',
+                  defaultMessage: 'Nothing matches that search.',
                 })
-              : intl.formatMessage({
-                  id: 'invoices.emptyFiltered',
-                  defaultMessage: 'Nothing here.',
-                })}
+              : filter === 'open'
+                ? intl.formatMessage({
+                    id: 'rmas.empty',
+                    defaultMessage: 'No open returns.',
+                  })
+                : intl.formatMessage({
+                    id: 'invoices.emptyFiltered',
+                    defaultMessage: 'Nothing here.',
+                  })}
           </EmptyState>
         ) : (
           <TableContainer>

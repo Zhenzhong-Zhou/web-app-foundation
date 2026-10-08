@@ -93,8 +93,30 @@ export const partners = pgTable(
     documentSecondLanguage: text('document_second_language').$type<Locale>(),
 
     ...timestamps,
+
+    /**
+     * The name's pinyin, full and initials, for search (ADR-056): written by
+     * the server whenever the name is saved, null when the name has no
+     * Chinese. "深海鱼油" holds "shenhaiyuyou shyy".
+     */
+    namePinyin: text('name_pinyin'),
   },
   (t) => [
+    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
+    // matches; names through search_text, codes as stored.
+    index('partners_name_trgm_idx').using(
+      'gin',
+      sql`search_text(${t.name}) gin_trgm_ops`,
+    ),
+    index('partners_code_trgm_idx').using('gin', sql`${t.code} gin_trgm_ops`),
+    index('partners_tax_id_trgm_idx').using(
+      'gin',
+      sql`${t.taxId} gin_trgm_ops`,
+    ),
+    index('partners_name_pinyin_trgm_idx').using(
+      'gin',
+      sql`${t.namePinyin} gin_trgm_ops`,
+    ),
     // Per organization, never globally: two customers using the same supplier
     // number is normal, and rejecting it would reveal the other tenant exists.
     uniqueIndex('partners_org_code_key')

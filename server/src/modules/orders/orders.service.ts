@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
+import { codeMatches, searchTerms } from '../../common/search';
 import {
   creditNoteLines,
   creditNotes,
@@ -19,6 +20,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { partnerMatches } from '../partners/partner-search';
 import { itemName } from '../stock/item-name';
 import { ListOrdersDto } from './dto/list-orders.dto';
 
@@ -82,6 +84,15 @@ export class OrdersService {
 
       if (query.before) scope.push(lt(orders.id, query.before));
       if (query.partnerId) scope.push(eq(orders.partnerId, query.partnerId));
+      // Its reference or its partner's name (ADR-056).
+      if (query.search) {
+        const terms = searchTerms(query.search);
+        const match = or(
+          codeMatches(orders.reference, terms),
+          partnerMatches(orders.partnerId, terms),
+        );
+        if (match) scope.push(match);
+      }
 
       if (!query.status || query.status === 'open') {
         scope.push(inArray(orders.status, [...OPEN_STATUSES]));

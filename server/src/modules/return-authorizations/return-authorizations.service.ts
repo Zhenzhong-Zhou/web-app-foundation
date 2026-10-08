@@ -5,9 +5,10 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, desc, eq, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, lt, or, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
+import { codeMatches, searchTerms } from '../../common/search';
 import type { Transaction } from '../../database/database.module';
 import {
   creditNoteLines,
@@ -23,6 +24,7 @@ import { t } from '../../i18n/translate';
 import { takeNumber } from '../invoices/document-numbers';
 import { loadOrder } from '../orders/load-order';
 import { requestedLines } from '../orders/order-line-lookup';
+import { partnerMatches } from '../partners/partner-search';
 import type { CreateReturnAuthorizationDto } from './dto/create-return-authorization.dto';
 import type { ListReturnAuthorizationsDto } from './dto/list-return-authorizations.dto';
 import { linesWithProgress } from './lines-with-progress';
@@ -57,6 +59,15 @@ export class ReturnAuthorizationsService {
       }
       if (query.orderId) {
         scope.push(eq(returnAuthorizations.orderId, query.orderId));
+      }
+      // Its number or its partner's name (ADR-056).
+      if (query.search) {
+        const terms = searchTerms(query.search);
+        const match = or(
+          codeMatches(returnAuthorizations.number, terms),
+          partnerMatches(returnAuthorizations.partnerId, terms),
+        );
+        if (match) scope.push(match);
       }
 
       const rows = await tx

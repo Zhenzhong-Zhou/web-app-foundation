@@ -22,8 +22,9 @@ and price lists proposing the price of a new line.
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
 - Migrations: through **0040** (`document_languages`, ADR-054) on
   `main`; **0041** (`notification_messages`, ADR-054 amended) on
-  `notifications-language`. Render runs them on deploy (confirm in the
-  deploy log, *In flight* below). Next is **0042**.
+  `notifications-language`, **0042** (`search_indexes`) and **0043**
+  (`search_text`), ADR-056, on `adr-056-search`. Render runs them on deploy
+  (confirm in the deploy log, *In flight* below). Next is **0044**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -32,7 +33,7 @@ and price lists proposing the price of a new line.
   currency per sale from the first priced line). **ADR-054** (languages)
   is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
   ADR-055 (the look) is built on `ui-design-pass`, with an amendment.
-  Next is **ADR-056**.
+  Next is **ADR-057**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot
@@ -114,12 +115,27 @@ Then tag v0.4.0.
   (Bob's mother's business, a first customer), add the paid database plan
   (ADR-053 phase 2) and the v0.4.0 walkthrough and BF-2609 recall drill
   before any feature.
-- **After that:** ADR-056 onward, each with its ADR before code: **search
-  and lookup** in the top bar, then a **home page** of what needs attention
-  (expiring lots, unsettled returns, costs waiting, orders to ship), then
-  **file storage** (one ADR for every file, below), then **organization
-  branding** (logo, accent with a contrast check, expiry thresholds), the
-  first feature that uploads one. Bob may reorder.
+- **After that:** each with its ADR before code. **Search and lookup**
+  (ADR-056) is built on `adr-056-search`, all seven steps: migrations 0042 and
+  0043, pinyin written on save, one way of matching, list search, the lookup
+  endpoint, the top bar and list boxes, and the perf budget. After deploying
+  it, run `npm run backfill:pinyin` once against each database with data,
+  since Render runs migrations but not that script. Next, **list filters by
+  date, sorting where it helps, and CSV export** (below); then a **home page**
+  of what needs attention (expiring lots, unsettled returns, costs waiting,
+  orders to ship); then **file storage** (one ADR for every file, below); then
+  **organization branding** (logo, accent with a contrast check, expiry
+  thresholds), the first feature that uploads one. Bob may reorder.
+- **Dates, sorting and export, one ADR.** Only the audit log filters by date
+  today, and every list is newest first, fixed, because keyset paging
+  (ADR-051) relies on one order. Date ranges are cheap, one more filter
+  that pages as before: invoices and credit notes by their date, orders by
+  expected date, movements and production by date, the accountant's "this
+  month". Sorting is not: each sortable column needs its own cursor and an
+  index, so only where people ask for it (invoices by amount, orders by
+  expected date, inventory by expiry, soonest first). CSV export, raised
+  under *Left over*, belongs in the same ADR, since a filtered month is
+  what an accountant exports.
 - **File storage, one ADR for all of it.** Backups (ADR-053), the
   organization's logo (ADR-055 *Open decisions*) and product images (the
   catalogue note in *Open decisions*) each point at "the bucket question";
@@ -139,9 +155,9 @@ Then tag v0.4.0.
 - **Words checked by the reviewer:** 贷项通知单 for a credit note, 开票净额（含税）,
   未开票金额（税前）, 待定成本. The same person could do MC-1405, the fluent review of
   the Chinese catalogue that v0.5 skipped.
-- **To file as an issue:** the unsaved-changes guard. The create-order page
-  loses a half-built order when someone follows a link; React Router's
-  `useBlocker` covers it, and `conventions.md` gains a line for the pattern.
+- **Issue #54:** the unsaved-changes guard. The create-order page loses a
+  half-built order when someone follows a link; React Router's `useBlocker`
+  covers it, and `conventions.md` gains a line for the pattern.
 
 ## Now: v0.5, maintainability and languages
 
@@ -559,6 +575,8 @@ Rules, still in force:
 - #25 show what the customer kept (shipped − returned)
 - #26 cancel check and update are not one transaction
 - #28 run-close top-up ignores holds and the lots picked at release
+- #54 unsaved changes lost silently when leaving the create-order page
+  (`useBlocker` and `beforeunload`; raised in the UI pass)
 
 ## Left over, small
 
@@ -604,8 +622,9 @@ Rules, still in force:
 - Client speed: unmeasured. Lighthouse on the Render static site, warm and
   just woken, and the bundle sizes `vite build` prints; measure first and set
   a budget only if something is slow, as ADR-051 did for the server.
-- The `ubuntu-latest` runner moves to Ubuntu 26 from 19 October 2026. Pin
-  `ubuntu-24.04` in `ci.yml` if you'd rather choose when.
+- Every workflow runs on `ubuntu-24.04`, pinned, so `ubuntu-latest` moving
+  to Ubuntu 26 on 19 October 2026 changes nothing. Moving is a choice: one
+  line per job, CI as the test.
 - From the UI pass (ADR-055), small:
     - **Firefox on Bob's Mac:** Playwright's build cannot open its profile
       there ("Could not find profile folder"; reinstalling, clearing

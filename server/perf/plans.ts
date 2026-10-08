@@ -12,6 +12,7 @@ import { NestFactory } from '@nestjs/core';
 import type { Pool } from 'pg';
 
 import { AppModule } from '../src/app.module';
+import { ALL_PERMISSIONS } from '../src/core/authorization/permissions';
 import { PG_POOL } from '../src/database/database.tokens';
 import type { VolumeManifest } from '../src/database/seed-volume';
 import { runInTenantContext } from '../src/database/tenant-context';
@@ -19,6 +20,7 @@ import { CostsService } from '../src/modules/costs/costs.service';
 import { InvoicesService } from '../src/modules/invoices/invoices.service';
 import { OrdersService } from '../src/modules/orders/orders.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
+import { LookupService } from '../src/modules/search/lookup.service';
 import { AvailabilityService } from '../src/modules/stock/availability.service';
 import { LotTraceService } from '../src/modules/stock/lot-trace.service';
 import { StockReadsService } from '../src/modules/stock/stock-reads.service';
@@ -46,19 +48,14 @@ import { REPORTS } from './report';
 
 const MANIFEST = join(__dirname, 'volume.json');
 
+/** The lookup as an owner sees it: every kind queried. */
+const EVERY_PERMISSION = new Set(ALL_PERMISSIONS);
+
 /**
  * Sequential scans that are the decision, not an accident. Each says why,
  * so the next person can tell whether the reason still holds.
  */
 const ALLOWED: { probe: string; table: string; reason: string }[] = [
-  {
-    probe: 'lot search',
-    table: 'lots',
-    reason:
-      "Matches anywhere in the code (ilike '%…%'), which no b-tree index " +
-      "serves. lot-trace.service.ts reads the organization's lots in full " +
-      'by design; pg_trgm is the recorded fix if lots reach millions.',
-  },
   ...['valuation_pools', 'lots', 'product_variants'].map((table) => ({
     probe: 'valuation',
     table,
@@ -177,6 +174,7 @@ async function buildProbes(
   const traces = app.get(LotTraceService);
   const shipping = app.get(ShippingService);
   const costs = app.get(CostsService);
+  const lookups = app.get(LookupService);
 
   const firstOrders = await orders.list({ status: 'all' });
   const deepOrders = await cursorAfter(
@@ -261,6 +259,25 @@ async function buildProbes(
       run: () => invoices.list({ partnerId: org.customerId }),
     },
     { name: 'lot search', run: () => traces.search('LV-0001') },
+    // Search (ADR-056): served by the trigram indexes for three characters
+    // or more, so no allowance here; a sequential scan of a large table is a
+    // failure like any other.
+    {
+      name: 'orders: search',
+      run: () => orders.list({ status: 'all', search: 'SO-10' }),
+    },
+    {
+      name: 'lookup: code',
+      run: () => lookups.lookup('LV-00001', EVERY_PERMISSION, 'en'),
+    },
+    {
+      name: 'lookup: name',
+      run: () => lookups.lookup('focus', EVERY_PERMISSION, 'en'),
+    },
+    {
+      name: 'lookup: typo',
+      run: () => lookups.lookup('fokus dialy', EVERY_PERMISSION, 'en'),
+    },
     { name: 'valuation', run: () => costs.stockValuation() },
   ];
 

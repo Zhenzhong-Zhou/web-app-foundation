@@ -27,6 +27,7 @@ import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
 import type { OrderSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { useListSearch, withSearch } from '../lib/use-list-search';
 import { STATUS_TONES } from '../theme/status';
 import { orderStatusLabel } from './status';
 
@@ -70,6 +71,7 @@ export function OrdersPage() {
   const can = useCan();
 
   const [filter, setFilter] = useState<Filter>('open');
+  const { text, setText, search } = useListSearch();
 
   const canCreate = can('orders.create');
   const {
@@ -80,7 +82,10 @@ export function OrdersPage() {
     loadingMore,
     loadMore,
   } = useKeysetList<OrderSummary>(
-    `/orders?${new URLSearchParams({ status: filter }).toString()}`,
+    withSearch(
+      `/orders?${new URLSearchParams({ status: filter }).toString()}`,
+      search,
+    ),
   );
   const showSkeleton = useDelayedFlag(loading);
 
@@ -108,6 +113,14 @@ export function OrdersPage() {
           than a select, so the choice is visible before it is made. One is
           always pressed; pressing another moves to it. */}
       <FilterRow
+        search={{
+          label: intl.formatMessage({
+            id: 'inventory.search',
+            defaultMessage: 'Search',
+          }),
+          value: text,
+          onChange: setText,
+        }}
         quick={FILTERS.map((option) => ({
           id: option.value,
           label: intl.formatMessage(option.label),
@@ -252,16 +265,21 @@ export function OrdersPage() {
           // No Raise an order here: the page header already offers it, and
           // a second button for the same act is one too many.
           <EmptyState>
-            {filter === 'open'
+            {search
               ? intl.formatMessage({
-                  id: 'orders.empty.open',
-                  defaultMessage:
-                    'Nothing open. Raising an order records what you asked a partner for — receiving against it is what puts the stock on a shelf.',
+                  id: 'inventory.noMatch',
+                  defaultMessage: 'Nothing matches that search.',
                 })
-              : intl.formatMessage({
-                  id: 'orders.empty.filtered',
-                  defaultMessage: 'No orders match that filter.',
-                })}
+              : filter === 'open'
+                ? intl.formatMessage({
+                    id: 'orders.empty.open',
+                    defaultMessage:
+                      'Nothing open. Raising an order records what you asked a partner for — receiving against it is what puts the stock on a shelf.',
+                  })
+                : intl.formatMessage({
+                    id: 'orders.empty.filtered',
+                    defaultMessage: 'No orders match that filter.',
+                  })}
           </EmptyState>
         )}
       </Paper>

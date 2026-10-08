@@ -1,19 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gt,
-  ilike,
-  lt,
-  or,
-  type SQL,
-  sql,
-} from 'drizzle-orm';
+import { and, asc, desc, eq, gt, lt, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 import { pageOf } from '../../common/keyset';
+import { codeMatches, searchTerms } from '../../common/search';
 import {
   locations,
   lots,
@@ -26,6 +16,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { openNeedsCost } from '../costs/open-needs-cost';
+import { itemMatches } from '../products/item-search';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
 
@@ -78,18 +69,11 @@ function filtersOf(query: ListStockDto, organizationId: string): SQL[] {
     scope.push(gt(stockLevels.quantity, '0'));
   }
 
-  // Anywhere in the SKU, the product name or the lot code: what someone
-  // looking for stock types is any of the three. % and _ match themselves.
+  // The item (SKU, names in every language, pinyin) or the lot code, matched
+  // as every search in the app matches (ADR-056, common/search.ts).
   if (query.search) {
-    const escaped = query.search.replace(/[\\%_]/g, (char) => `\\${char}`);
-    const pattern = `%${escaped}%`;
-    scope.push(
-      or(
-        ilike(productVariants.sku, pattern),
-        ilike(products.name, pattern),
-        ilike(lots.code, pattern),
-      )!,
-    );
+    const terms = searchTerms(query.search);
+    scope.push(or(itemMatches(terms), codeMatches(lots.code, terms))!);
   }
 
   if (query.expiringWithin) {

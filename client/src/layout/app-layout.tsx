@@ -30,6 +30,7 @@ import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { LanguageSelect } from '../components/language-select';
 import { api } from '../lib/api';
+import { LookupBox } from '../search/lookup-box';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
 import { RAIL_FOLDED_WIDTH, RAIL_WIDTH, SideNav } from './side-nav';
@@ -215,7 +216,18 @@ export function AppLayout() {
               </Typography>
             </Link>
 
-            <Box sx={{ flexGrow: 1 }} />
+            {/* The lookup (ADR-056) in the space between the organization and
+                the bell: a box from md, a button that opens it below. */}
+            <Box
+              sx={{
+                flexGrow: 1,
+                display: 'flex',
+                justifyContent: { xs: 'flex-end', md: 'center' },
+                minWidth: 0,
+              }}
+            >
+              <LookupBox />
+            </Box>
 
             <NotificationBell />
 
