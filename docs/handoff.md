@@ -22,8 +22,9 @@ and price lists proposing the price of a new line.
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
 - Migrations: through **0040** (`document_languages`, ADR-054) on
   `main`; **0041** (`notification_messages`, ADR-054 amended) on
-  `notifications-language`. Render runs them on deploy (confirm in the
-  deploy log, *In flight* below). Next is **0042**.
+  `notifications-language`, **0042** (`search_indexes`, ADR-056) on
+  `adr-056-search`. Render runs them on deploy (confirm in the deploy log,
+  *In flight* below). Next is **0043**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -32,7 +33,7 @@ and price lists proposing the price of a new line.
   currency per sale from the first priced line). **ADR-054** (languages)
   is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
   ADR-055 (the look) is built on `ui-design-pass`, with an amendment.
-  Next is **ADR-056**.
+  Next is **ADR-057**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot
@@ -115,12 +116,16 @@ Then tag v0.4.0.
   (ADR-053 phase 2) and the v0.4.0 walkthrough and BF-2609 recall drill
   before any feature.
 - **After that:** each with its ADR before code. **Search and lookup**
-  (ADR-056, being built on `adr-056-search`); then **list filters by date,
-  sorting where it helps, and CSV export** (below); then a **home page** of
-  what needs attention (expiring lots, unsettled returns, costs waiting,
-  orders to ship); then **file storage** (one ADR for every file, below);
-  then **organization branding** (logo, accent with a contrast check,
-  expiry thresholds), the first feature that uploads one. Bob may reorder.
+  (ADR-056) is built on `adr-056-search`, all seven steps: migration 0042,
+  pinyin written on save, one way of matching, list search, the lookup
+  endpoint, the top bar and list boxes, and the perf budget. After deploying
+  it, run `npm run backfill:pinyin` once against each database with data,
+  since Render runs migrations but not that script. Next, **list filters by
+  date, sorting where it helps, and CSV export** (below); then a **home page**
+  of what needs attention (expiring lots, unsettled returns, costs waiting,
+  orders to ship); then **file storage** (one ADR for every file, below); then
+  **organization branding** (logo, accent with a contrast check, expiry
+  thresholds), the first feature that uploads one. Bob may reorder.
 - **Dates, sorting and export, one ADR.** Only the audit log filters by date
   today, and every list is newest first, fixed, because keyset paging
   (ADR-051) relies on one order. Date ranges are cheap, one more filter
