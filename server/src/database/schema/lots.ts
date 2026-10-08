@@ -85,7 +85,7 @@ export const lots = pgTable(
   },
   (t) => [
     // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through immutable_unaccent, codes as stored.
+    // matches; names through search_text, codes as stored.
     index('lots_code_trgm_idx').using('gin', sql`${t.code} gin_trgm_ops`),
     // Per variant, not per organization: two different products may legitimately
     // carry the same supplier lot code, and they are not the same lot.

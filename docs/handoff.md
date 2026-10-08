@@ -22,9 +22,9 @@ and price lists proposing the price of a new line.
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
 - Migrations: through **0040** (`document_languages`, ADR-054) on
   `main`; **0041** (`notification_messages`, ADR-054 amended) on
-  `notifications-language`, **0042** (`search_indexes`, ADR-056) on
-  `adr-056-search`. Render runs them on deploy (confirm in the deploy log,
-  *In flight* below). Next is **0043**.
+  `notifications-language`, **0042** (`search_indexes`) and **0043**
+  (`search_text`), ADR-056, on `adr-056-search`. Render runs them on deploy
+  (confirm in the deploy log, *In flight* below). Next is **0044**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -116,8 +116,8 @@ Then tag v0.4.0.
   (ADR-053 phase 2) and the v0.4.0 walkthrough and BF-2609 recall drill
   before any feature.
 - **After that:** each with its ADR before code. **Search and lookup**
-  (ADR-056) is built on `adr-056-search`, all seven steps: migration 0042,
-  pinyin written on save, one way of matching, list search, the lookup
+  (ADR-056) is built on `adr-056-search`, all seven steps: migrations 0042 and
+  0043, pinyin written on save, one way of matching, list search, the lookup
   endpoint, the top bar and list boxes, and the perf budget. After deploying
   it, run `npm run backfill:pinyin` once against each database with data,
   since Render runs migrations but not that script. Next, **list filters by

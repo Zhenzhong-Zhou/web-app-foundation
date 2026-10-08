@@ -5098,10 +5098,12 @@ their own pages.
   FOC-2609-01, "inv-214" finds INV-000214. Surrounding spaces are trimmed and
   inner runs of spaces read as one. At least **2 characters**: one matches
   nearly everything.
-- **Accents ignored on names, not on codes:** "saint laurent" and "Saint
-  Laurent" find "Pharmacie Saint-Laurent", "eleuthero" finds "Éleuthéro".
-  Through Postgres's `unaccent`, in an immutable wrapper so it can be
-  indexed. Codes are compared as typed, apart from case.
+- **Accents and punctuation ignored on names, not on codes:** "saint
+  laurent" finds "Pharmacie Saint-Laurent", "eleuthero" finds "Éleuthéro".
+  Through `search_text()` (migration 0043): Postgres's `unaccent` in an
+  immutable wrapper so it can be indexed, lower case, and every run of
+  punctuation and spaces read as one space. Codes are compared as typed,
+  apart from case.
 - **Every language at once.** An item is found by its name in any language
   it has, whatever language the reader uses, and shown in the reader's
   language (ADR-054). A Chinese reader typing an English name still finds it.

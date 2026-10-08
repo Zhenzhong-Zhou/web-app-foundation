@@ -8,6 +8,7 @@ describe('searchTerms', () => {
       prefix: 'saint laurent%',
       anywhere: '%saint laurent%',
       pinyin: '%saintlaurent%',
+      hasWords: true,
     });
   });
 
@@ -21,5 +22,11 @@ describe('searchTerms', () => {
     expect(searchTerms('Yu You').pinyin).toBe('%yuyou%');
     expect(searchTerms('鱼油').pinyin).toBeNull();
     expect(searchTerms('a').pinyin).toBeNull();
+  });
+
+  it('knows a query of punctuation alone has nothing to match a name with', () => {
+    expect(searchTerms('--').hasWords).toBe(false);
+    expect(searchTerms('鱼油').hasWords).toBe(true);
+    expect(searchTerms('50%').hasWords).toBe(true);
   });
 });

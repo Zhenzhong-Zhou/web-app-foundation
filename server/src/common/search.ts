@@ -5,8 +5,9 @@ import { type SQL, sql, type SQLWrapper } from 'drizzle-orm';
  * the lookup finds, its list finds too.
  *
  * - Anywhere in the text, case ignored: "2609" finds FOC-2609-01.
- * - Names with accents ignored, through immutable_unaccent (migration
- *   0042): "eleuthero" finds "Éleuthéro". Codes compared as stored.
+ * - Names with accents and punctuation ignored, through search_text
+ *   (migrations 0042, 0043): "eleuthero" finds "Éleuthéro", "saint
+ *   laurent" finds "Saint-Laurent". Codes compared as stored.
  * - Chinese names also by their pinyin, full or initials, when the query is
  *   Latin letters and digits: "yuyou" and "shyy" find 深海鱼油.
  * - % and _ match themselves: they are escaped, never wildcards.
@@ -31,6 +32,12 @@ export interface SearchTerms {
    * contains-pattern; null when the query has too few of them to be pinyin.
    */
   pinyin: string | null;
+  /**
+   * Whether the query has anything to match a name with once punctuation
+   * and spaces are set aside; "--" has not, and matches no name rather
+   * than every name.
+   */
+  hasWords: boolean;
 }
 
 function escapeLike(text: string): string {
@@ -48,6 +55,7 @@ export function searchTerms(raw: string): SearchTerms {
     prefix: `${exact}%`,
     anywhere: `%${exact}%`,
     pinyin: latin.length >= MIN_SEARCH_LENGTH ? `%${latin}%` : null,
+    hasWords: /[\p{L}\p{N}]/u.test(text),
   };
 }
 
@@ -56,9 +64,15 @@ export function codeMatches(column: SQLWrapper, terms: SearchTerms): SQL {
   return sql`${column} ilike ${terms.anywhere}`;
 }
 
-/** A name, accents and case ignored. */
+/**
+ * A name, with accents, case and punctuation ignored on both sides:
+ * search_text() turns "Pharmacie Saint-Laurent" into "pharmacie saint
+ * laurent" and the query "saint  laurent" into "saint laurent". LIKE's
+ * wildcards are punctuation, so the query needs no escaping here.
+ */
 export function nameMatches(column: SQLWrapper, terms: SearchTerms): SQL {
-  return sql`immutable_unaccent(${column}) ilike immutable_unaccent(${terms.anywhere})`;
+  if (!terms.hasWords) return sql`false`;
+  return sql`search_text(${column}) like '%' || search_text(${terms.text}) || '%'`;
 }
 
 /**
@@ -80,25 +94,33 @@ function comparable(
 ): { value: SQL; wrap: (text: string) => SQL } {
   return kind === 'name'
     ? {
-        value: sql`immutable_unaccent(${column})`,
-        wrap: (text) => sql`immutable_unaccent(${text})`,
+        value: sql`search_text(${column})`,
+        wrap: (text) => sql`search_text(${text})`,
       }
     : { value: sql`${column}`, wrap: (text) => sql`${text}` };
 }
 
 /**
  * For ORDER BY, lowest first: 0 for an exact match, 1 for a match at the
- * start, 2 for anywhere (ADR-056). Names compared without accents.
+ * start, 2 for anywhere (ADR-056). Names compared as nameMatches compares
+ * them, codes case ignored.
  */
 export function matchRank(
   column: SQLWrapper,
   terms: SearchTerms,
   kind: 'code' | 'name' = 'code',
 ): SQL {
-  const { value, wrap } = comparable(column, kind);
+  if (kind === 'name') {
+    const query = sql`search_text(${terms.text})`;
+    return sql`case
+      when search_text(${column}) = ${query} then 0
+      when search_text(${column}) like ${query} || '%' then 1
+      else 2
+    end`;
+  }
   return sql`case
-    when lower(${value}) = lower(${wrap(terms.exact)}) then 0
-    when ${value} ilike ${wrap(terms.prefix)} then 1
+    when lower(${column}) = lower(${terms.text}) then 0
+    when ${column} ilike ${terms.prefix} then 1
     else 2
   end`;
 }

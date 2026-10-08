@@ -191,7 +191,7 @@ export const productionOrders = pgTable(
   },
   (t) => [
     // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through immutable_unaccent, codes as stored.
+    // matches; names through search_text, codes as stored.
     index('production_orders_reference_trgm_idx').using(
       'gin',
       sql`${t.reference} gin_trgm_ops`,

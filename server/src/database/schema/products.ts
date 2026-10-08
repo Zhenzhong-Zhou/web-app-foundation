@@ -74,10 +74,10 @@ export const products = pgTable(
   },
   (t) => [
     // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
-    // matches; names through immutable_unaccent, codes as stored.
+    // matches; names through search_text, codes as stored.
     index('products_name_trgm_idx').using(
       'gin',
-      sql`immutable_unaccent(${t.name}) gin_trgm_ops`,
+      sql`search_text(${t.name}) gin_trgm_ops`,
     ),
     index('products_name_pinyin_trgm_idx').using(
       'gin',
