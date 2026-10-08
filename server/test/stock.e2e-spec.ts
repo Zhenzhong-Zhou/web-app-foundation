@@ -79,13 +79,13 @@ describe('Stock (e2e)', () => {
 
   async function createVariant(
     agent: Agent,
-    options: { sku?: string; tracksLots?: boolean } = {},
+    options: { sku?: string; tracksLots?: boolean; name?: string } = {},
   ) {
     const res = await agent
       .post('/v1/products')
       .send({
         type: 'good',
-        name: `Product ${options.sku ?? 'WIDGET'}`,
+        name: options.name ?? `Product ${options.sku ?? 'WIDGET'}`,
         variant: {
           sku: options.sku ?? 'WIDGET-1',
           tracksLots: options.tracksLots ?? false,
@@ -784,6 +784,45 @@ describe('Stock (e2e)', () => {
       ).toHaveLength(1);
 
       await org.agent.get('/v1/stock?needsCost=maybe').expect(400);
+    });
+
+    /**
+     * The search matches as every search does (ADR-056): a name without its
+     * accents, a Chinese name by its pinyin and initials, by characters, and
+     * % as itself, not a wildcard.
+     */
+    it('finds names without accents, Chinese by pinyin, and % as itself', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const shelf = await createLocation(org.agent);
+      const herb = await createVariant(org.agent, {
+        sku: 'ELEU-30',
+        name: 'Éleuthéro racine',
+      });
+      const oil = await createVariant(org.agent, {
+        sku: 'OIL-90',
+        name: '深海鱼油',
+      });
+      const sale = await createVariant(org.agent, {
+        sku: 'PROMO-50%',
+        name: 'Promotion',
+      });
+      for (const variant of [herb, oil, sale]) {
+        await org.agent
+          .post('/v1/stock/movements')
+          .send(receipt(variant.id, shelf, '5'))
+          .expect(201);
+      }
+
+      const skus = async (search: string) =>
+        (
+          await stockRows(org.agent, `?search=${encodeURIComponent(search)}`)
+        ).map((row) => row.sku);
+
+      expect(await skus('eleuthero')).toEqual(['ELEU-30']);
+      expect(await skus('yuyou')).toEqual(['OIL-90']);
+      expect(await skus('shyy')).toEqual(['OIL-90']);
+      expect(await skus('鱼油')).toEqual(['OIL-90']);
+      expect(await skus('50%')).toEqual(['PROMO-50%']);
     });
 
     it('names the product, since most variants have no name of their own', async () => {
