@@ -33,7 +33,7 @@ and price lists proposing the price of a new line.
   is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
   ADR-055 (the look) is built on `ui-design-pass`, with an amendment.
   ADR-057 (dates, sorting, export) is built on `adr-057-dates-export`.
-  Next is **ADR-058**.
+  ADR-058 (Home) is written for review. Next is **ADR-059**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot

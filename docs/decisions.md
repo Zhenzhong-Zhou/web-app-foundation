@@ -5440,6 +5440,132 @@ amount, voided, with the date range and search (ADR-056) like the rest.
 
 ---
 
+## ADR-058 — Home: what needs attention, first
+
+**Context.** Signing in lands on Products (`/` redirects there), the page a
+person needs least often. What needs doing today is spread over six lists,
+each found by knowing where to look and which filter to press: orders to
+ship and to receive, lots near expiry, receipts waiting for a cost, draft
+invoices, returns not settled, runs under way, licences running out. The
+organization's name in the top bar already links to `/`, and ADR-055 kept
+the corner as "the way home", with nowhere for it to lead yet.
+
+The counts behind most of this exist (ADR-055's quick filters,
+`GET /v1/stock/counts`); what does not is one place that shows them
+together, with the most urgent few of each.
+
+**Decision — `/` is Home, a page of cards, each something to do.**
+
+| Card | Shows | Order | Opens | Permission |
+|---|---|---|---|---|
+| To ship | confirmed sales with lines still to ship | overdue first, then by expected date | Orders, sales, open | `orders.view` |
+| To receive | confirmed purchases with lines still to come | overdue first, then by expected date | Orders, purchases, open | `orders.view` |
+| Expiring soon | lots with stock expiring within 90 days, or expired | soonest first, expired red | Inventory, Expiring soon | `stock.view` |
+| Costs waiting | receipts with no cost yet | oldest first | Inventory, Needs a cost | `costs.view` |
+| Invoices to issue | draft invoices, and shipments not yet invoiced | oldest first | Invoices, drafts | `invoices.view` |
+| Returns open | authorized returns not closed, and credits not yet issued | oldest first | Returns, open | `return_authorizations.view` |
+| Production | runs planned or in progress | planned overdue first | Production | `production.view` |
+| Licences | licences expiring within 60 days, or expired | soonest first | Licences | `product_licences.view` |
+
+- **Each card: a count, the five most urgent rows, and a link** to the list
+  already filtered to the same rows ("See all 12"). A row opens its record.
+- **A card with nothing to do says so** ("Nothing to ship"), in a quiet tone,
+  rather than disappearing: an empty Home should read as all done, not as
+  broken. A card the member may not view is not shown, and its query never
+  runs (as the lookup, ADR-056).
+- **Overdue** means an expected date before today in the reader's calendar;
+  the thresholds are the screens' own (ADR-055: expiry 90 and 30 days), until
+  branding makes them the organization's (Open decisions).
+- **No money and no charts.** A figure like "invoiced this month" needs one
+  currency or one per currency and a decision about what it counts; charts
+  are an open decision of their own. Both stay out until asked for.
+
+**Decision — the lists open where Home points.** A card's link must land
+on exactly its rows, so the lists read their quick filters and range from
+the address, as they already read `?search=` (ADR-056):
+`/orders?direction=sale&status=open`, `/inventory?expiring=1`,
+`/inventory?needsCost=1`, `/invoices?status=draft`,
+`/return-authorizations?status=open`. Orders gain a direction filter, which
+To ship and To receive need. Changing a filter on the page does not rewrite
+the address; arriving with one sets it.
+
+**Decision — one endpoint, the cards together.** `GET /v1/home` answers
+every card the member may see in one request, each its own query in one
+transaction, scoped to the organization: `{ cards: [{ kind, count, rows }] }`
+with up to five rows each. The counts come from the same conditions as the
+lists' filters, through the same functions, so "See all 12" opens twelve.
+
+**Decision — a new organization gets a start, not a page of zeros.** Until
+it has a product, a location and a partner, Home leads with *Getting
+started*: those three, then a first order, each ticked when done and linked
+to where it is done. It goes away by itself once all four exist.
+
+**Decision — in the browser.**
+
+- Home is the first item in the rail's Main group, and `/` stops redirecting
+  to Products. The page title is the organization's name.
+- Cards in a responsive grid: two or three across on a desktop, one on a
+  phone, in the order of the table above, which is the order of a working
+  day (out the door, in the door, what spoils, what is unpriced, what to
+  bill).
+- Each row is the record's number or name, a short second line (partner,
+  SKU), and the chip that says why it is here (overdue, expires in 12 days).
+- Read when the page opens, with a refresh button, as every list is; not
+  live.
+
+**Decision — a budget before it ships.** ADR-051's perf run gains
+`GET /v1/home`, and the plan check a probe for each card's query; Home is
+the page everyone opens first, so it is held to the read budget like any
+list.
+
+**Consequences.**
+
+- Built in this order, each its own commit:
+    1. The shared conditions: each card's filter defined once on the
+       server, used by its list and by Home (orders to ship and receive,
+       expiring, needs a cost, drafts and uninvoiced shipments, open
+       returns, active runs, expiring licences).
+    2. `GET /v1/home`, cards by permission, with e2e cases: each card's
+       count matching its list, the five rows' order, a card hidden without
+       its permission, another organization's records never counted.
+    3. The lists reading their filters from the address, with unit tests.
+    4. The page: Getting started, the cards, the rail item, `/` as Home,
+       with unit tests, an e2e flow (a card's "See all" opening its list
+       with the same count), and Home in `accessibility.spec`.
+    5. The perf scenario and probes; a manual check in Chinese and on a
+       phone.
+- ADR-055's "the way home" in the top bar now leads somewhere. The
+  Licences card uses issue #17's 60 days; the issue's notification stays its
+  own work.
+
+**Considered and not done.**
+
+- **A dashboard of figures and charts.** What people asked for was what to
+  do next, not how the month went; figures need currency rules and charts an
+  ADR of their own (Open decisions).
+- **Landing on the last page visited.** Useful to a person mid-task, and
+  hides what is overdue from one who is not; the browser's Back and the
+  lookup cover the first.
+- **A home per role** (the warehouse sees shipping, the accountant
+  invoices). Permissions already do most of this: a member sees only the
+  cards for what they may view. Roles are the organization's to define
+  (ADR-016), so fixed role pages would not fit them.
+- **Cards that hide when empty.** An empty page reads as broken; a quiet
+  "Nothing to ship" reads as done.
+
+**Deferred — each with what brings it in.**
+
+- **Choosing and ordering cards per person.** Trigger: someone asking to
+  hide one they never need.
+- **Figures** (invoiced this month, stock value, per currency). Trigger:
+  asked for, with the currency rule decided.
+- **Live updates.** Trigger: two people working the same queue at once and
+  colliding.
+- **Thresholds per organization** (expiry days, overdue grace), with
+  branding. Trigger: that ADR.
+
+---
+
 # Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
