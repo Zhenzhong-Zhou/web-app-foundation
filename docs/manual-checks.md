@@ -710,6 +710,15 @@ Paper is checked first because it must not change at all.
   Expires lists the soonest first; Movements, Production and Returns narrow by
   their date range; Products, Partners, a price list, Stock value and the
   Audit log each export, and the Audit log shows the export as an entry.
+- **MC-1559** Sign in as the demo owner: Home opens, greeting by the time of
+  day, the sentence's counts matching the cards, red only on late or expired.
+  Each card's See all opens its list showing the same number of rows. Switch
+  to 中文 and to a phone (or a narrow window): the counts sit two by two, cards
+  stack, nothing scrolls sideways, and the wording reads naturally. Register a
+  new organization: Getting started leads with seven steps; add a location and
+  see its step ticked on Refresh; Skip the team step; Dismiss the card and
+  bring it back with Show Getting started. Sign in as a viewer: no Skip or
+  Dismiss, and only the cards that role may see.
 
 ## Regressions
 
@@ -832,3 +841,4 @@ first.
 - 2026-10-07: ADR-056 step 6, the lookup in the top bar: MC-1556.
 - 2026-10-07: ADR-056 step 6, search on the lists: MC-1557.
 - 2026-10-07: ADR-057 step 6, dates, sorting and exports on every list: MC-1558.
+- 2026-10-08: ADR-058, Home, what needs attention first: MC-1559.
