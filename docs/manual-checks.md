@@ -702,6 +702,14 @@ Paper is checked first because it must not change at all.
   type, with the status buttons still applying. "Show all in Orders" from the
   top bar opens Orders already narrowed, as do the Items, Lots and Partners
   links.
+- **MC-1558** Invoices → Period → Last month → Export: the file opens in Excel
+  and in Numbers with every invoice of that month, totals as numbers that sum,
+  dates as dates. Switch to 中文 and export again: the headers are Chinese and
+  the Chinese names read correctly, not as garbled characters. Sort Invoices
+  by Total, then export: the file is in the same order. Inventory sorted by
+  Expires lists the soonest first; Movements, Production and Returns narrow by
+  their date range; Products, Partners, a price list, Stock value and the
+  Audit log each export, and the Audit log shows the export as an entry.
 
 ## Regressions
 
@@ -823,3 +831,4 @@ first.
 - 2026-10-07: the short chip under the outstanding figure: MC-1555.
 - 2026-10-07: ADR-056 step 6, the lookup in the top bar: MC-1556.
 - 2026-10-07: ADR-056 step 6, search on the lists: MC-1557.
+- 2026-10-07: ADR-057 step 6, dates, sorting and exports on every list: MC-1558.

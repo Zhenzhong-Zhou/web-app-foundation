@@ -19,6 +19,7 @@ import { useIntl } from 'react-intl';
 import { useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { api } from '../lib/api';
@@ -152,6 +153,14 @@ export function AuditPage() {
           defaultMessage:
             'Every change made in this organization, newest first. Entries are kept for two years and cannot be edited or removed. Where a value is shown, it is what the field was set to — not what it was before.',
         })}
+        actions={
+          canView && (
+            // With the page's own filters; the export is itself an entry.
+            <ExportButton
+              path={`/audit/export?${queryFor().replace(/(^|&)limit=\d+&?/, '$1')}`}
+            />
+          )
+        }
       />
 
       {/* Their own row rather than beside the title: three controls crowd a

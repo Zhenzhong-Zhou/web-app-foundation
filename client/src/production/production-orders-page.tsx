@@ -16,11 +16,13 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { type DayRange, withInstants } from '../lib/date-range';
 import { displayQuantity, formatDate, NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { ProductionRun, RunStatus } from '../lib/types';
@@ -44,6 +46,8 @@ export function ProductionOrdersPage() {
 
   const [filter, setFilter] = useState<RunStatus | ''>('');
   const { text, setText, search } = useListSearch();
+  // When planned, the reader's days as instants (ADR-057).
+  const [range, setRange] = useState<DayRange>({});
   const [creating, setCreating] = useState(false);
 
   const canCreate = can('production.create');
@@ -55,7 +59,9 @@ export function ProductionOrdersPage() {
     loadingMore,
     loadMore,
     reload,
-  } = useKeysetList<ProductionRun>(withSearch(query(filter), search));
+  } = useKeysetList<ProductionRun>(
+    withInstants(withSearch(query(filter), search), range),
+  );
   const showSkeleton = useDelayedFlag(loading);
 
   return (
@@ -105,7 +111,16 @@ export function ProductionOrdersPage() {
             onToggle: () => setFilter(status),
           })),
         ]}
-      />
+      >
+        <DateRangeFilter
+          label={intl.formatMessage({
+            id: 'production.plannedOn',
+            defaultMessage: 'Planned',
+          })}
+          value={range}
+          onChange={setRange}
+        />
+      </FilterRow>
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -114,7 +129,7 @@ export function ProductionOrdersPage() {
       {items?.length === 0 && (
         <Paper variant="outlined">
           <EmptyState>
-            {search
+            {search || range.from || range.to
               ? intl.formatMessage({
                   id: 'inventory.noMatch',
                   defaultMessage: 'Nothing matches that search.',

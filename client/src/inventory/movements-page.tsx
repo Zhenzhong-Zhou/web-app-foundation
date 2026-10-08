@@ -19,9 +19,12 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import { DateRangeFilter } from '../components/date-range-filter';
+import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { api } from '../lib/api';
+import { type DayRange, withInstants } from '../lib/date-range';
 import {
   formatMoment,
   formatQuantity,
@@ -63,6 +66,7 @@ export function MovementsPage() {
   const [variant, setVariant] = useState<VariantOption | null>(null);
   const [locationId, setLocationId] = useState('');
   const [reason, setReason] = useState('');
+  const [range, setRange] = useState<DayRange>({});
 
   /**
    * No filter set means recent-everything, rather than an empty screen asking
@@ -76,6 +80,8 @@ export function MovementsPage() {
     if (reason) params.set('reason', reason);
     return params.toString();
   }, [variant, locationId, reason]);
+  // When recorded, the reader's days as instants (ADR-057).
+  const path = withInstants(`/stock/movements?${query}`, range);
 
   /**
    * Refetched when a filter changes rather than filtered in memory. The list
@@ -83,7 +89,7 @@ export function MovementsPage() {
    * and quietly hide everything past it.
    */
   const { entries, error, loading, hasMore, loadingMore, loadMore } =
-    useKeysetList<Movement>(`/stock/movements?${query}`);
+    useKeysetList<Movement>(path);
   const showSkeleton = useDelayedFlag(loading);
 
   useEffect(() => {
@@ -123,9 +129,25 @@ export function MovementsPage() {
           defaultMessage:
             'Every quantity change, newest first. Movements are never edited or removed — a mistake is corrected by another movement.',
         })}
+        actions={
+          <ExportButton
+            path={path
+              .replace('/stock/movements?', '/stock/movements/export?')
+              .replace(/(^|[?&])limit=\d+&?/, '$1')}
+          />
+        }
       />
 
       {error && <Alert severity="error">{error}</Alert>}
+
+      <DateRangeFilter
+        label={intl.formatMessage({
+          id: 'inventory.movements.recorded',
+          defaultMessage: 'Recorded',
+        })}
+        value={range}
+        onChange={setRange}
+      />
 
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
         <Autocomplete

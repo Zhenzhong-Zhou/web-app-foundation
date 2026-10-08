@@ -19,6 +19,7 @@ import { useParams } from 'react-router-dom';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
+import { ExportButton } from '../components/export-button';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
 import { formatUnitCost, SEPARATOR } from '../lib/format';
@@ -111,6 +112,8 @@ export function PriceListDetailPage() {
         ].join(SEPARATOR)}
         actions={
           <Stack direction="row" spacing={1}>
+            {/* Its items as a spreadsheet, to send a customer (ADR-057). */}
+            <ExportButton path={`/price-lists/${id}/export`} />
             <HistoryButton resourceId={list.id} />
             {canUpdate && (
               <Button
