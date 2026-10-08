@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig, devices } from '@playwright/test';
 import { config as loadEnv } from 'dotenv';
 
@@ -23,8 +25,12 @@ import { config as loadEnv } from 'dotenv';
  * minute or two, past the dev rate limit of 100 a minute, so this API runs
  * with the limits raised — as the e2e stack does — instead of anyone
  * having to restart theirs.
+ *
+ * The .env path is resolved from this file, as in playwright.config.ts, so
+ * the VS Code extension finds it too.
  */
-loadEnv({ path: '../.env', quiet: true });
+const ENV_FILE = fileURLToPath(new URL('../.env', import.meta.url));
+loadEnv({ path: ENV_FILE, quiet: true });
 
 const CLIENT_URL = 'http://localhost:5373';
 const API_URL = 'http://localhost:3200';
