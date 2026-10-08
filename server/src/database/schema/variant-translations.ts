@@ -1,5 +1,12 @@
 import { sql } from 'drizzle-orm';
-import { check, pgTable, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  check,
+  index,
+  pgTable,
+  text,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
@@ -30,8 +37,25 @@ export const variantTranslations = pgTable(
     name: text('name').notNull(),
 
     ...timestamps,
+
+    /**
+     * The name's pinyin, full and initials, for search (ADR-056): written by
+     * the server whenever the name is saved, null when the name has no
+     * Chinese. "深海鱼油" holds "shenhaiyuyou shyy".
+     */
+    namePinyin: text('name_pinyin'),
   },
   (t) => [
+    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
+    // matches; names through immutable_unaccent, codes as stored.
+    index('variant_translations_name_trgm_idx').using(
+      'gin',
+      sql`immutable_unaccent(${t.name}) gin_trgm_ops`,
+    ),
+    index('variant_translations_name_pinyin_trgm_idx').using(
+      'gin',
+      sql`${t.namePinyin} gin_trgm_ops`,
+    ),
     uniqueIndex('variant_translations_variant_locale_key').on(
       t.variantId,
       t.locale,

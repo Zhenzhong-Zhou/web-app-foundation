@@ -92,8 +92,29 @@ export const productVariants = pgTable(
     caseHeightMm: integer('case_height_mm'),
 
     ...timestamps,
+
+    /**
+     * The name's pinyin, full and initials, for search (ADR-056): written by
+     * the server whenever the name is saved, null when the name has no
+     * Chinese. "深海鱼油" holds "shenhaiyuyou shyy".
+     */
+    namePinyin: text('name_pinyin'),
   },
   (t) => [
+    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
+    // matches; names through immutable_unaccent, codes as stored.
+    index('product_variants_sku_trgm_idx').using(
+      'gin',
+      sql`${t.sku} gin_trgm_ops`,
+    ),
+    index('product_variants_name_trgm_idx').using(
+      'gin',
+      sql`immutable_unaccent(${t.name}) gin_trgm_ops`,
+    ),
+    index('product_variants_name_pinyin_trgm_idx').using(
+      'gin',
+      sql`${t.namePinyin} gin_trgm_ops`,
+    ),
     uniqueIndex('product_variants_org_sku_key').on(t.organizationId, t.sku),
     index('product_variants_product_id_idx').on(t.productId),
     index('product_variants_organization_id_idx').on(t.organizationId),

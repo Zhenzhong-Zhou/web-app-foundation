@@ -149,6 +149,12 @@ export const invoices = pgTable(
     ...timestamps,
   },
   (t) => [
+    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
+    // matches; names through immutable_unaccent, codes as stored.
+    index('invoices_number_trgm_idx').using(
+      'gin',
+      sql`${t.number} gin_trgm_ops`,
+    ),
     check(
       'invoices_status_check',
       sql`${t.status} in ('draft', 'issued', 'voided')`,

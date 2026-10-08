@@ -178,6 +178,12 @@ export const orders = pgTable(
     ...timestamps,
   },
   (t) => [
+    // Search (ADR-056): trigram indexes, which serve ILIKE '%…%' and close
+    // matches; names through immutable_unaccent, codes as stored.
+    index('orders_reference_trgm_idx').using(
+      'gin',
+      sql`${t.reference} gin_trgm_ops`,
+    ),
     check(
       'orders_direction_check',
       sql`${t.direction} in ('purchase', 'sale')`,
