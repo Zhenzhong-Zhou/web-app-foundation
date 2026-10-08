@@ -27,6 +27,7 @@ import { RunCostPanel } from '../costs/run-cost-panel';
 import { LoadFailure } from '../errors/load-failure';
 import { displayQuantity, NO_VALUE, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { useRecordOpened } from '../lib/recent';
 import type { LineVariance, OutputVariance, RunDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
@@ -51,6 +52,8 @@ export function ProductionOrderDetailPage() {
     loading,
     reload,
   } = useResource<RunDetail>(`/production-orders/${id!}`);
+  // Remembered as recently opened, once loaded (ADR-058).
+  useRecordOpened('run', id, run !== null && run !== undefined);
 
   /** 0.12 as "12%", or "12 %" as French writes it. */
   const percent = (fraction: number) =>

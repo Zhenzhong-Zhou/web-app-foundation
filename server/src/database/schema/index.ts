@@ -39,6 +39,7 @@ export * from './product-variants';
 export * from './production-order-lines';
 export * from './production-orders';
 export * from './products';
+export * from './recent-records';
 export * from './return-authorization-lines';
 export * from './return-authorizations';
 export * from './role-permissions';

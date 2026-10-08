@@ -48,6 +48,10 @@ export const LOCATIONS = [
 ];
 
 export const handlers = [
+  // Record pages report an opening (ADR-058); nothing to check in most
+  // specs, so it is answered here once.
+  http.post(`${BASE}/recent`, () => new HttpResponse(null, { status: 204 })),
+  http.get(`${BASE}/recent`, () => HttpResponse.json({ recent: [] })),
   http.get(`${BASE}/products/variants`, () => HttpResponse.json(VARIANTS)),
   http.get(`${BASE}/locations`, () => HttpResponse.json(LOCATIONS)),
   http.get(`${BASE}/stock`, () =>

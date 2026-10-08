@@ -36,6 +36,7 @@ import {
   NO_VALUE,
   SEPARATOR,
 } from '../lib/format';
+import { useRecordOpened } from '../lib/recent';
 import type { LotMatch, LotTrace } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
@@ -212,6 +213,8 @@ export function LotTracePage() {
     loading,
     reload,
   } = useResource<LotTrace>(`/stock/lots/${id!}/trace`);
+  // Remembered as recently opened, once loaded (ADR-058).
+  useRecordOpened('lot', id, trace !== null && trace !== undefined);
 
   const showSkeleton = useDelayedFlag(loading);
 

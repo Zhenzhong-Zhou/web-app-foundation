@@ -24,6 +24,7 @@ import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import { LANGUAGE_NAMES, type Locale } from '../lib/locales';
 import { openDialog } from '../lib/open-dialog';
+import { useRecordOpened } from '../lib/recent';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { AddVariantDialog } from './add-variant-dialog';
@@ -58,6 +59,8 @@ export function ProductDetailPage() {
     loading,
     reload,
   } = useResource<ProductDetail>(`/products/${id!}`);
+  // Remembered as recently opened, once loaded (ADR-058).
+  useRecordOpened('product', id, product !== null && product !== undefined);
   const [saving, setSaving] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [translating, setTranslating] = useState(false);

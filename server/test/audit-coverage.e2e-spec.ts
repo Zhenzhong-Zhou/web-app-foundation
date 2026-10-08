@@ -62,6 +62,11 @@ const NOT_AUDITED = new Map<string, string>([
   ],
   ['NotificationsController.markAllRead', 'As above (ADR-036)'],
   [
+    'RecentController.record',
+    'Opening a record is reading it; the history is the person’s own (ADR-058)',
+  ],
+  ['RecentController.clear', 'Clearing your own history, as above (ADR-058)'],
+  [
     'ShipmentsController.preview',
     'Reads only: computes what a shipment would take. A POST because the question has a body (ADR-041)',
   ],

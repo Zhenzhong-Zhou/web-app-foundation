@@ -5567,6 +5567,35 @@ progress bar over them.
   stored on the organization (migration), and only a member who may change
   its settings (`organizations.update`) sees the two controls.
 
+**Decision — recently opened, for picking up where one left off.**
+*Amended: brought forward from Deferred at Bob's request.* The last few
+records a person opened, kept on the server so they follow the person
+across devices, which a browser's own storage would not.
+
+- **What is remembered:** opening an order, invoice, lot, product,
+  partner, production run, return or price list, once its page has loaded.
+  The page sends `POST /v1/recent` with the kind and id; a list, a search
+  or Home itself is not an opening. One row per person, organization and
+  record, its time moved on when it is opened again; past 30 a person's
+  oldest are dropped.
+- **What is shown:** `GET /v1/recent` names each record as it is now
+  (renamed, it shows the new name; deleted, it drops out) and returns only
+  kinds the member may still view, as the lookup does (ADR-056). Never
+  another person's: each sees their own.
+- **Where:** on Home, a *Recently opened* card under the quick actions,
+  the last six as tiles (kind, name, a second line, when), with Clear. Not
+  a to-do: it is not counted in the sentence or the row of counts, and it
+  is left out while empty, the one card that hides, since an empty history
+  is not work done. And in the top bar's search, opened before anything is
+  typed, the last five, so `/` then Enter reopens the last record.
+- **Not audited:** opening a record is reading it, and the audit log
+  records changes, not reads; the history is the person's own convenience,
+  cleared by them, removed with their membership.
+- Built on its own branch after Home: a migration (`recent_records`), the
+  two endpoints and Clear (`DELETE /v1/recent`), with e2e; the record pages
+  reporting an opening; the card and the search's empty state, to the
+  canvas; a perf read and probe. Designed on the canvas with Home's.
+
 **Decision — in the browser.**
 
 - Home is the first item in the rail's Main group, and `/` stops redirecting
@@ -5626,12 +5655,6 @@ list.
 
 - **Choosing and ordering cards per person.** Trigger: someone asking to
   hide one they never need.
-- **Recently opened:** the last few records a person opened (orders, lots,
-  products), on Home, for the thing they were working on yesterday. Kept
-  on the server per person, so it follows them across devices, which a
-  browser's own storage would not; a small table, a row written when a
-  record's page opens, the oldest dropped past a few dozen. Trigger: people
-  going back to the same records often, seen in use or asked for.
 - **Figures** (invoiced this month, stock value, per currency). Trigger:
   asked for, with the currency rule decided.
 - **Live updates.** Trigger: two people working the same queue at once and

@@ -330,6 +330,13 @@
       "when": 1791474483230,
       "tag": "0046_sort_indexes_desc",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1791480225272,
+      "tag": "0047_recent_records",
+      "breakpoints": true
     }
   ]
 }

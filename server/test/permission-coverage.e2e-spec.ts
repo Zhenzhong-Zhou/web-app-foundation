@@ -61,6 +61,15 @@ const GATED_INSIDE = new Map<string, string>([
     'HomeController.get',
     'Each card by its own view permission, in the service (ADR-058)',
   ],
+  [
+    'RecentController.list',
+    'Each kind by its own view permission, in the service (ADR-058)',
+  ],
+  [
+    'RecentController.record',
+    'The kind’s own view permission, checked in the handler (ADR-058)',
+  ],
+  ['RecentController.clear', 'A person’s own history only (ADR-058)'],
 ]);
 
 const ALLOWED = new Map([...SELF_SERVICE, ...GATED_INSIDE]);

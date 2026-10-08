@@ -35,6 +35,7 @@ import {
   SEPARATOR,
 } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { useRecordOpened } from '../lib/recent';
 import type {
   InvoicePage,
   InvoiceSummary,
@@ -71,6 +72,8 @@ export function RmaDetailPage() {
     returnAuthorization: ReturnAuthorizationDetail;
   }>(`/return-authorizations/${id}`);
   const rma = data?.returnAuthorization ?? null;
+  // Remembered as recently opened, once loaded (ADR-058).
+  useRecordOpened('return', id, rma !== null);
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [linking, setLinking] = useState(false);
 

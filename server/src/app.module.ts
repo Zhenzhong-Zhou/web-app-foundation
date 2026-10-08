@@ -30,6 +30,7 @@ import { PriceListsModule } from './modules/price-lists/price-lists.module';
 import { ProductLicencesModule } from './modules/product-licences/product-licences.module';
 import { ProductionOrdersModule } from './modules/production-orders/production-orders.module';
 import { ProductsModule } from './modules/products/products.module';
+import { RecentModule } from './modules/recent/recent.module';
 import { ReturnAuthorizationsModule } from './modules/return-authorizations/return-authorizations.module';
 import { SearchModule } from './modules/search/search.module';
 import { StockModule } from './modules/stock/stock.module';
@@ -130,6 +131,7 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     ProductionOrdersModule,
     SearchModule,
     HomeModule,
+    RecentModule,
     LocationsModule,
     StockModule,
     CostsModule,

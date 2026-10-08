@@ -20,6 +20,7 @@ import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import { formatDay, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { useRecordOpened } from '../lib/recent';
 import type {
   LineHold,
   Location,
@@ -63,6 +64,8 @@ export function OrderDetailPage() {
   const navigate = useNavigate();
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
+  // Remembered as recently opened, once loaded (ADR-058).
+  useRecordOpened('order', id, order !== null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [error, setError] = useState<string | null>(null);
   // The load's error itself, to tell a missing order from a refused one.

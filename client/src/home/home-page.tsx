@@ -22,6 +22,7 @@ import { formatDay } from '../lib/format';
 import type { HomeCard, HomeResponse, HomeRow } from '../lib/types';
 import { GettingStarted } from './getting-started';
 import { CARDS, daysUntil } from './home-cards';
+import { RecentCard } from './recent-card';
 
 /**
  * Home (ADR-058): what needs attention, first. A greeting by the reader's
@@ -231,6 +232,9 @@ export function HomePage() {
               ))}
             </Stack>
           )}
+
+          {/* What this person opened last; hidden while empty (ADR-058). */}
+          <RecentCard />
 
           {showStart && started && (
             <GettingStarted
