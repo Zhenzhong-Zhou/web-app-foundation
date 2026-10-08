@@ -16,6 +16,7 @@ import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
 import { ExpiryChip } from '../components/expiry-chip';
+import { OPEN_LOOKUP } from '../errors/open-lookup';
 import { api } from '../lib/api';
 import type { LookupKind, LookupResponse, LookupResult } from '../lib/types';
 import { KIND_LABELS, listOf, pathOf } from './lookup-kinds';
@@ -65,8 +66,17 @@ export function LookupBox() {
       if (inline) input.current?.focus();
       else setOpen(true);
     }
+    // A status page's "Search everything" opens it the same way.
+    function onOpen() {
+      if (inline) input.current?.focus();
+      else setOpen(true);
+    }
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener(OPEN_LOOKUP, onOpen);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener(OPEN_LOOKUP, onOpen);
+    };
   }, [inline]);
 
   const label = intl.formatMessage({

@@ -26,6 +26,7 @@ import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { LoadFailure } from '../errors/load-failure';
 import { api } from '../lib/api';
 import {
   displayQuantity,
@@ -69,7 +70,7 @@ export function InvoiceDetailPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const { data, error, loading, reload } = useResource<{
+  const { data, error, failure, loading, reload } = useResource<{
     invoice: InvoiceDetail;
   }>(`/invoices/${id}`);
   const invoice = data?.invoice ?? null;
@@ -147,14 +148,24 @@ export function InvoiceDetailPage() {
   }
 
   if (!invoice) {
+    if (!error) return null;
     return (
-      <Alert severity="error">
-        {error ??
-          intl.formatMessage({
-            id: 'invoices.notFound',
-            defaultMessage: 'No such invoice.',
-          })}
-      </Alert>
+      <LoadFailure
+        failure={failure}
+        message={error}
+        missingTitle={intl.formatMessage({
+          id: 'status.missing.invoice',
+          defaultMessage: "This invoice doesn't exist",
+        })}
+        list={{
+          to: '/invoices',
+          label: intl.formatMessage({
+            id: 'layout.nav.invoices',
+            defaultMessage: 'Invoices',
+          }),
+        }}
+        onRetry={() => void reload()}
+      />
     );
   }
 

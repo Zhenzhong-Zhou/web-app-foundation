@@ -6,8 +6,8 @@ import {
   Stack,
 } from '@mui/material';
 import { type ComponentType, type ReactNode, Suspense } from 'react';
-import { FormattedMessage, useIntl } from 'react-intl';
-import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { useIntl } from 'react-intl';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { ForgotPasswordPage } from './auth/forgot-password-page';
 import { LoginPage } from './auth/login-page';
@@ -15,6 +15,7 @@ import { RegisterPage } from './auth/register-page';
 import { ResetPasswordPage } from './auth/reset-password-page';
 import { useAuth } from './auth/use-auth';
 import { VerifyEmailPage } from './auth/verify-email-page';
+import { NotFoundRoute } from './errors/not-found-page';
 import { AppLayout } from './layout/app-layout';
 import { useDelayedFlag } from './lib/use-delayed-flag';
 import {
@@ -268,27 +269,7 @@ export default function App() {
           user following a bad link would sign in only to land on a 404 —
           two steps to learn the link was wrong. Nothing leaks: every route
           is readable in the bundle, and access is enforced server-side. */}
-      <Route
-        path="*"
-        element={
-          <div>
-            <h1>
-              <FormattedMessage
-                id="app.notFound.title"
-                defaultMessage="Not found"
-              />
-            </h1>
-            <p>
-              <Link to="/">
-                <FormattedMessage
-                  id="app.notFound.goHome"
-                  defaultMessage="Go home"
-                />
-              </Link>
-            </p>
-          </div>
-        }
-      />
+      <Route path="*" element={<NotFoundRoute />} />
     </Routes>
   );
 }
