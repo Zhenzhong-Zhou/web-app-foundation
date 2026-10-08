@@ -1,7 +1,6 @@
 import {
   Alert,
   Button,
-  Link,
   Paper,
   Skeleton,
   Stack,
@@ -15,12 +14,13 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { RecipePanel } from '../boms/recipe-panel';
 import { PageHeader } from '../components/page-header';
+import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import { LANGUAGE_NAMES, type Locale } from '../lib/locales';
 import { openDialog } from '../lib/open-dialog';
@@ -53,6 +53,7 @@ export function ProductDetailPage() {
   const {
     data: product,
     error,
+    failure,
     setError,
     loading,
     reload,
@@ -128,15 +129,22 @@ export function ProductDetailPage() {
 
   if (error && !product) {
     return (
-      <Stack spacing={2}>
-        <Alert severity="error">{error}</Alert>
-        <Link component={RouterLink} to="/products">
-          {intl.formatMessage({
-            id: 'products.backToList',
-            defaultMessage: 'Back to products',
-          })}
-        </Link>
-      </Stack>
+      <LoadFailure
+        failure={failure}
+        message={error}
+        missingTitle={intl.formatMessage({
+          id: 'status.missing.product',
+          defaultMessage: "This product doesn't exist",
+        })}
+        list={{
+          to: '/products',
+          label: intl.formatMessage({
+            id: 'layout.nav.products',
+            defaultMessage: 'Products',
+          }),
+        }}
+        onRetry={() => void reload()}
+      />
     );
   }
 

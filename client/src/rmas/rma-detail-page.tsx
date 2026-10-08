@@ -26,6 +26,7 @@ import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
+import { LoadFailure } from '../errors/load-failure';
 import { api } from '../lib/api';
 import {
   displayQuantity,
@@ -66,7 +67,7 @@ export function RmaDetailPage() {
   const can = useCan();
   const navigate = useNavigate();
 
-  const { data, error, loading, reload } = useResource<{
+  const { data, error, failure, loading, reload } = useResource<{
     returnAuthorization: ReturnAuthorizationDetail;
   }>(`/return-authorizations/${id}`);
   const rma = data?.returnAuthorization ?? null;
@@ -128,7 +129,26 @@ export function RmaDetailPage() {
   );
 
   if (!rma) {
-    if (error) return <Alert severity="error">{error}</Alert>;
+    if (error) {
+      return (
+        <LoadFailure
+          failure={failure}
+          message={error}
+          missingTitle={intl.formatMessage({
+            id: 'status.missing.rma',
+            defaultMessage: "This return doesn't exist",
+          })}
+          list={{
+            to: '/return-authorizations',
+            label: intl.formatMessage({
+              id: 'layout.nav.returns',
+              defaultMessage: 'Returns',
+            }),
+          }}
+          onRetry={() => void reload()}
+        />
+      );
+    }
     return showSkeleton ? <Skeleton height={240} /> : null;
   }
 

@@ -24,6 +24,7 @@ import { useCan } from '../auth/permissions';
 import { LabelledValue } from '../components/labelled-value';
 import { PageHeader } from '../components/page-header';
 import { RunCostPanel } from '../costs/run-cost-panel';
+import { LoadFailure } from '../errors/load-failure';
 import { displayQuantity, NO_VALUE, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import type { LineVariance, OutputVariance, RunDetail } from '../lib/types';
@@ -46,6 +47,7 @@ export function ProductionOrderDetailPage() {
   const {
     data: run,
     error,
+    failure,
     loading,
     reload,
   } = useResource<RunDetail>(`/production-orders/${id!}`);
@@ -79,15 +81,22 @@ export function ProductionOrderDetailPage() {
 
   if (error && !run) {
     return (
-      <Stack spacing={2}>
-        <Alert severity="error">{error}</Alert>
-        <Link component={RouterLink} to="/production">
-          {intl.formatMessage({
-            id: 'production.backToList',
-            defaultMessage: 'Back to production',
-          })}
-        </Link>
-      </Stack>
+      <LoadFailure
+        failure={failure}
+        message={error}
+        missingTitle={intl.formatMessage({
+          id: 'status.missing.run',
+          defaultMessage: "This production run doesn't exist",
+        })}
+        list={{
+          to: '/production',
+          label: intl.formatMessage({
+            id: 'layout.nav.production',
+            defaultMessage: 'Production',
+          }),
+        }}
+        onRetry={() => void reload()}
+      />
     );
   }
 

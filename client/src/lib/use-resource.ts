@@ -33,16 +33,25 @@ import { api, messageFor } from './api';
 export function useResource<T>(path: string) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The error itself, for a page to tell a missing record from a refused
+  // one (LoadFailure, conventions.md "Status pages").
+  const [failure, setFailure] = useState<unknown>(null);
 
   useEffect(() => {
     let ignore = false;
 
     void api<T>(path)
       .then((response) => {
-        if (!ignore) setData(response);
+        if (!ignore) {
+          setData(response);
+          setFailure(null);
+        }
       })
       .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
+        if (!ignore) {
+          setError(messageFor(caught));
+          setFailure(caught);
+        }
       });
 
     return () => {
@@ -54,14 +63,17 @@ export function useResource<T>(path: string) {
     try {
       setData(await api<T>(path));
       setError(null);
+      setFailure(null);
     } catch (caught) {
       setError(messageFor(caught));
+      setFailure(caught);
     }
   }, [path]);
 
   return {
     data,
     error,
+    failure,
     setError,
     /** True until the first read has either answered or failed. */
     loading: data === null && error === null,

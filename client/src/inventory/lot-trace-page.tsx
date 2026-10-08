@@ -27,6 +27,7 @@ import {
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { LotCostPanel } from '../costs/lot-cost-panel';
+import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import {
   formatDate,
@@ -207,12 +208,33 @@ export function LotTracePage() {
   const {
     data: trace,
     error,
+    failure,
     loading,
+    reload,
   } = useResource<LotTrace>(`/stock/lots/${id!}/trace`);
 
   const showSkeleton = useDelayedFlag(loading);
 
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (error) {
+    return (
+      <LoadFailure
+        failure={failure}
+        message={error}
+        missingTitle={intl.formatMessage({
+          id: 'status.missing.lot',
+          defaultMessage: "This lot doesn't exist",
+        })}
+        list={{
+          to: '/lots',
+          label: intl.formatMessage({
+            id: 'layout.nav.trace',
+            defaultMessage: 'Trace a lot',
+          }),
+        }}
+        onRetry={() => void reload()}
+      />
+    );
+  }
   if (!trace) return showSkeleton ? <Skeleton height={320} /> : null;
 
   const unknown = trace.recipients.filter((row) => !row.partnerName);

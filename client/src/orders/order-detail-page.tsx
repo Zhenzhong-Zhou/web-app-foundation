@@ -16,6 +16,7 @@ import { HistoryEntries } from '../audit/history-entries';
 import { useCan } from '../auth/permissions';
 import { DetailLayout } from '../components/detail-layout';
 import { PageHeader } from '../components/page-header';
+import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import { formatDay, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -64,6 +65,8 @@ export function OrderDetailPage() {
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [locations, setLocations] = useState<Location[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // The load's error itself, to tell a missing order from a refused one.
+  const [failure, setFailure] = useState<unknown>(null);
   // Why an item just added has no price, when its list could not give one
   // (ADR-049). Dismissed by the person, or replaced by the next notice.
   const [priceNotice, setPriceNotice] = useState<string | null>(null);
@@ -124,8 +127,10 @@ export function OrderDetailPage() {
     try {
       setOrder(await api<OrderDetail>(`/orders/${id}`));
       setError(null);
+      setFailure(null);
     } catch (caught) {
       setError(messageFor(caught));
+      setFailure(caught);
     }
   }, [id]);
 
@@ -142,7 +147,9 @@ export function OrderDetailPage() {
         setLocations(locationRows);
       })
       .catch((caught: unknown) => {
-        if (!ignore) setError(messageFor(caught));
+        if (ignore) return;
+        setError(messageFor(caught));
+        setFailure(caught);
       });
 
     return () => {
@@ -216,7 +223,26 @@ export function OrderDetailPage() {
     ) : null;
   }
 
-  if (error && !order) return <Alert severity="error">{error}</Alert>;
+  if (error && !order) {
+    return (
+      <LoadFailure
+        failure={failure}
+        message={error}
+        missingTitle={intl.formatMessage({
+          id: 'status.missing.order',
+          defaultMessage: "This order doesn't exist",
+        })}
+        list={{
+          to: '/orders',
+          label: intl.formatMessage({
+            id: 'layout.nav.orders',
+            defaultMessage: 'Orders',
+          }),
+        }}
+        onRetry={() => void load()}
+      />
+    );
+  }
   if (!order) return null;
 
   // Stock sits only at leaves (ADR-024), so a receipt has nowhere else to go.

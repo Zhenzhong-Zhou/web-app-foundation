@@ -290,6 +290,31 @@ product, a run, an RMA, a recipe) asks before it is thrown away (issue #54):
   on Cancel: a state change arrives a tick too late. A dialog that saves
   and closes needs none of this; its own Cancel already asks nothing.
 
+## Status pages
+
+When a page cannot show what was asked for, it says so in one shape, not a
+bare heading or the server's raw error. `client/src/errors/` holds it:
+`StatusPage` (an icon, a short title as the page's one heading, one sentence
+of what to do, one or two actions, a reference where a failure needs
+reporting) and the cases built on it.
+
+- **An unknown address:** "Page not found", Go home and Search everything.
+  Signed in, inside the app with the rail and the lookup; signed out,
+  centred on its own with Sign in (`NotFoundRoute`).
+- **A record that did not load:** `LoadFailure` with the error itself
+  (`useResource` returns it as `failure`). A 404 is "This order doesn't
+  exist", in the page's words, with its list and the lookup; a 403 is "You
+  don't have access to this", naming who can change the role; no answer at
+  all is "Can't reach the server" with Try again. Anything else keeps the
+  server's own message, since it says something particular.
+- **A crash:** the error boundary's "Something went wrong", with Reload and
+  a reference to quote (the server's request id, or one made and logged).
+- Tones: calm (info) for what is not there, amber for what is not yours,
+  red only for a real failure.
+
+A new record page passes its load error to `LoadFailure` rather than
+rendering it in an Alert.
+
 ## Responsive layout
 
 MUI's breakpoint props (`sx={{ py: { xs: 3, sm: 8 } }}`), applied where a

@@ -21,6 +21,7 @@ import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { PageHeader } from '../components/page-header';
+import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import { formatUnitCost, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -46,7 +47,7 @@ export function PriceListDetailPage() {
   const intl = useIntl();
   const { id = '' } = useParams();
   const can = useCan();
-  const { data, error, setError, loading, reload } = useResource<{
+  const { data, error, failure, setError, loading, reload } = useResource<{
     priceList: PriceListDetail;
   }>(`/price-lists/${id}`);
   const list = data?.priceList ?? null;
@@ -76,7 +77,22 @@ export function PriceListDetailPage() {
 
   if (!list) {
     return error ? (
-      <Alert severity="error">{error}</Alert>
+      <LoadFailure
+        failure={failure}
+        message={error}
+        missingTitle={intl.formatMessage({
+          id: 'status.missing.priceList',
+          defaultMessage: "This price list doesn't exist",
+        })}
+        list={{
+          to: '/settings/price-lists',
+          label: intl.formatMessage({
+            id: 'layout.menu.priceLists',
+            defaultMessage: 'Price lists',
+          }),
+        }}
+        onRetry={() => void reload()}
+      />
     ) : showSkeleton ? (
       <Skeleton height={240} />
     ) : null;

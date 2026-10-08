@@ -242,7 +242,7 @@ describe('ProductionOrderDetailPage', () => {
     ).toHaveAttribute('href', '/licences');
   });
 
-  it('surfaces a refusal from the server', async () => {
+  it('says a run that does not exist does not, with the way back', async () => {
     serve(BASE);
     server.use(
       http.get('/api/v1/production-orders/:id', () =>
@@ -253,7 +253,28 @@ describe('ProductionOrderDetailPage', () => {
     renderPage();
 
     expect(
-      await screen.findByText('No such production order'),
+      await screen.findByRole('heading', {
+        level: 1,
+        name: "This production run doesn't exist",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Go to Production' }),
+    ).toHaveAttribute('href', '/production');
+  });
+
+  it('keeps the server’s words for any other refusal', async () => {
+    serve(BASE);
+    server.use(
+      http.get('/api/v1/production-orders/:id', () =>
+        apiError(409, 'This run is being changed elsewhere'),
+      ),
+    );
+
+    renderPage();
+
+    expect(
+      await screen.findByText('This run is being changed elsewhere'),
     ).toBeInTheDocument();
   });
 });

@@ -16,6 +16,7 @@ import { useParams } from 'react-router-dom';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
+import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import type { Address, Contact, PartnerDetail } from '../lib/types';
@@ -57,6 +58,7 @@ export function PartnerDetailPage() {
   const {
     data: partner,
     error,
+    failure,
     setError,
     loading,
     reload,
@@ -104,7 +106,26 @@ export function PartnerDetailPage() {
     ) : null;
   }
 
-  if (error && !partner) return <Alert severity="error">{error}</Alert>;
+  if (error && !partner) {
+    return (
+      <LoadFailure
+        failure={failure}
+        message={error}
+        missingTitle={intl.formatMessage({
+          id: 'status.missing.partner',
+          defaultMessage: "This partner doesn't exist",
+        })}
+        list={{
+          to: '/partners',
+          label: intl.formatMessage({
+            id: 'layout.nav.partners',
+            defaultMessage: 'Partners',
+          }),
+        }}
+        onRetry={() => void reload()}
+      />
+    );
+  }
   if (!partner) return null;
 
   return (
