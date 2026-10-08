@@ -166,6 +166,20 @@ async function walk(session: Session, path: string) {
 // -----------------------------------------------------------------------------
 // Reads (ADR-051): the lists people open, an order, and a lot's trace
 
+/** The thirty days before today, as calendar days (ADR-057). */
+function lastMonthDays(): string {
+  const to = new Date();
+  const from = new Date(to.getTime() - 30 * 86_400_000);
+  return `from=${from.toISOString().slice(0, 10)}&to=${to.toISOString().slice(0, 10)}`;
+}
+
+/** The same thirty days as instants, for lists of instants. */
+function lastMonthInstants(): string {
+  const until = new Date();
+  const from = new Date(until.getTime() - 30 * 86_400_000);
+  return `from=${from.toISOString()}&until=${until.toISOString()}`;
+}
+
 export function readScenarios(orgs: Org[]): Scenario[] {
   const read = (
     name: string,
@@ -218,6 +232,19 @@ export function readScenarios(orgs: Org[]): Scenario[] {
     read('GET /lookup?q=name', () => '/lookup?q=focus'),
     read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
     read('GET /orders?search', () => '/orders?status=all&search=SO-10'),
+    // Dates and sorting (ADR-057): a sorted list's first page and a month's
+    // range, each served by its index.
+    read('GET /invoices?sort=total', () => '/invoices?sort=total&order=desc'),
+    read(
+      'GET /orders?sort=expectedAt',
+      () => '/orders?status=all&sort=expectedAt',
+    ),
+    read('GET /stock?sort=expiry', () => '/stock?sort=expiry'),
+    read('GET /invoices?from&to', () => `/invoices?${lastMonthDays()}`),
+    read(
+      'GET /stock/movements?from&until',
+      () => `/stock/movements?${lastMonthInstants()}`,
+    ),
   ];
 
   if (orgs.every((org) => org.anchors.traceLotId)) {
