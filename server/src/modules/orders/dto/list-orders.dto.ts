@@ -1,6 +1,7 @@
 import { IsIn, IsOptional, IsUUID } from 'class-validator';
 
 import { CalendarRangeQueryDto } from '../../../common/dto/range-query.dto';
+import { SORT_ORDERS, type SortOrder } from '../../../common/sorted-page';
 import { ORDER_STATUSES, type OrderStatus } from '../../../database/schema';
 
 /**
@@ -28,4 +29,14 @@ export class ListOrdersDto extends CalendarRangeQueryDto {
   @IsOptional()
   @IsUUID()
   partnerId?: string;
+
+  /** Sorted by expected date (ADR-057), orders without one last. */
+  @IsOptional()
+  @IsIn(['expectedAt'])
+  sort?: 'expectedAt';
+
+  /** Ascending unless asked; with no sort, the list is newest first. */
+  @IsOptional()
+  @IsIn(SORT_ORDERS)
+  order?: SortOrder;
 }

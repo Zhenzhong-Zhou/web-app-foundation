@@ -1,9 +1,7 @@
-import { IsISO8601, IsOptional, Matches } from 'class-validator';
+import { IsISO8601, IsOptional } from 'class-validator';
 
+import { IsCalendarDay } from './calendar-day';
 import { SearchableKeysetQueryDto } from './searchable-keyset-query.dto';
-
-/** A calendar day as the API writes one (ADR-052). */
-export const CALENDAR_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * A list filtered by a calendar day column (ADR-057): `from` and `to`, both
@@ -11,13 +9,11 @@ export const CALENDAR_DAY = /^\d{4}-\d{2}-\d{2}$/;
  */
 export class CalendarRangeQueryDto extends SearchableKeysetQueryDto {
   @IsOptional()
-  @IsISO8601({ strict: true })
-  @Matches(CALENDAR_DAY)
+  @IsCalendarDay()
   from?: string;
 
   @IsOptional()
-  @IsISO8601({ strict: true })
-  @Matches(CALENDAR_DAY)
+  @IsCalendarDay()
   to?: string;
 }
 

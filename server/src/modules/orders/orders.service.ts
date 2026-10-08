@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, or, sql } from 'drizzle-orm';
 
 import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
+import { pagedBy } from '../../common/sorted-page';
 import {
   creditNoteLines,
   creditNotes,
@@ -83,7 +84,36 @@ export class OrdersService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const scope = [eq(orders.organizationId, organizationId)];
 
-      if (query.before) scope.push(lt(orders.id, query.before));
+      // Newest first, or sorted (ADR-057), paged after the cursor either way.
+      const paging = await pagedBy({
+        id: orders.id,
+        before: query.before,
+        sorted: query.sort
+          ? {
+              value: { expectedAt: orders.expectedAt }[query.sort],
+              order: query.order ?? 'asc',
+            }
+          : undefined,
+        readCursor: async (before) => {
+          const column = query.sort
+            ? { expectedAt: orders.expectedAt }[query.sort]
+            : orders.id;
+          const [row] = await tx
+            .select({
+              value: sql<string | null>`${column}::text`,
+              id: orders.id,
+            })
+            .from(orders)
+            .where(
+              and(
+                eq(orders.organizationId, organizationId),
+                eq(orders.id, before),
+              ),
+            );
+          return row;
+        },
+      });
+      if (paging.where) scope.push(paging.where);
       if (query.partnerId) scope.push(eq(orders.partnerId, query.partnerId));
       // By expected date (ADR-057); an order without one is left out.
       scope.push(...calendarRange(orders.expectedAt, query));
@@ -133,9 +163,9 @@ export class OrdersService {
         // restricts deletion, so an order with no partner cannot exist.
         .innerJoin(partners, eq(partners.id, orders.partnerId))
         .where(and(...scope))
-        // By id, not created_at. UUIDv7 sorts chronologically (ADR-010), so
-        // this is the same order with a single-column cursor and no tiebreak.
-        .orderBy(desc(orders.id))
+        // By id, newest first, unless sorted: UUIDv7 sorts chronologically
+        // (ADR-010), so one column is the cursor. A sort pages by (value, id).
+        .orderBy(...paging.orderBy)
         // One extra row, to know whether there is another page without
         // counting the table.
         .limit(limit + 1);

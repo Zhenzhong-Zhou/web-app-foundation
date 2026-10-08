@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, asc, desc, eq, lt, or, sql } from 'drizzle-orm';
+import { and, asc, eq, or, sql } from 'drizzle-orm';
 
 import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
+import { pagedBy } from '../../common/sorted-page';
 import { documentLanguages } from '../../core/organizations/document-languages';
 import {
   creditNoteLines,
@@ -44,7 +45,41 @@ export class InvoicesService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const scope = [eq(invoices.organizationId, organizationId)];
 
-      if (query.before) scope.push(lt(invoices.id, query.before));
+      // Newest first, or sorted (ADR-057), paged after the cursor either way.
+      const paging = await pagedBy({
+        id: invoices.id,
+        before: query.before,
+        sorted: query.sort
+          ? {
+              value: {
+                invoiceDate: invoices.invoiceDate,
+                total: invoices.total,
+              }[query.sort],
+              order: query.order ?? 'asc',
+            }
+          : undefined,
+        readCursor: async (before) => {
+          const column = query.sort
+            ? { invoiceDate: invoices.invoiceDate, total: invoices.total }[
+                query.sort
+              ]
+            : invoices.id;
+          const [row] = await tx
+            .select({
+              value: sql<string | null>`${column}::text`,
+              id: invoices.id,
+            })
+            .from(invoices)
+            .where(
+              and(
+                eq(invoices.organizationId, organizationId),
+                eq(invoices.id, before),
+              ),
+            );
+          return row;
+        },
+      });
+      if (paging.where) scope.push(paging.where);
       if (query.status) scope.push(eq(invoices.status, query.status));
       if (query.partnerId) scope.push(eq(invoices.partnerId, query.partnerId));
       if (query.orderId) scope.push(eq(invoices.orderId, query.orderId));
@@ -80,8 +115,8 @@ export class InvoicesService {
         .from(invoices)
         .innerJoin(partners, eq(partners.id, invoices.partnerId))
         .where(and(...scope))
-        // By id: UUIDv7 is chronological, so one column is the cursor.
-        .orderBy(desc(invoices.id))
+        // By id (UUIDv7 is chronological), or by the sort and then id.
+        .orderBy(...paging.orderBy)
         .limit(limit + 1);
 
       return pageOf(rows, limit);
@@ -99,7 +134,41 @@ export class InvoicesService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const scope = [eq(creditNotes.organizationId, organizationId)];
 
-      if (query.before) scope.push(lt(creditNotes.id, query.before));
+      // Newest first, or sorted (ADR-057), paged after the cursor either way.
+      const paging = await pagedBy({
+        id: creditNotes.id,
+        before: query.before,
+        sorted: query.sort
+          ? {
+              value: {
+                creditDate: creditNotes.creditDate,
+                total: creditNotes.total,
+              }[query.sort],
+              order: query.order ?? 'asc',
+            }
+          : undefined,
+        readCursor: async (before) => {
+          const column = query.sort
+            ? { creditDate: creditNotes.creditDate, total: creditNotes.total }[
+                query.sort
+              ]
+            : creditNotes.id;
+          const [row] = await tx
+            .select({
+              value: sql<string | null>`${column}::text`,
+              id: creditNotes.id,
+            })
+            .from(creditNotes)
+            .where(
+              and(
+                eq(creditNotes.organizationId, organizationId),
+                eq(creditNotes.id, before),
+              ),
+            );
+          return row;
+        },
+      });
+      if (paging.where) scope.push(paging.where);
       if (query.partnerId) {
         scope.push(eq(creditNotes.partnerId, query.partnerId));
       }
@@ -133,7 +202,7 @@ export class InvoicesService {
         .innerJoin(invoices, eq(invoices.id, creditNotes.invoiceId))
         .innerJoin(partners, eq(partners.id, creditNotes.partnerId))
         .where(and(...scope))
-        .orderBy(desc(creditNotes.id))
+        .orderBy(...paging.orderBy)
         .limit(limit + 1);
 
       return pageOf(rows, limit);

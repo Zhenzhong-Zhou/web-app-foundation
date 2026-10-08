@@ -5,6 +5,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
+import { afterCursor, sortedOrder } from '../../common/sorted-page';
 import {
   locations,
   lots,
@@ -135,6 +136,10 @@ export class StockReadsService {
       const lotOf = lotJoin(organizationId);
 
       const order = sql`(${locations.name}, ${productVariants.sku}, coalesce(${lots.code}, ''), ${stockLevels.id})`;
+      // By the lot's expiry when asked (ADR-057): soonest first by default,
+      // stock with no lot or no expiry last; paged by (expiry, id).
+      const byExpiry =
+        query.sort === 'expiry' ? (query.order ?? 'asc') : undefined;
 
       if (query.before) {
         const [cursor] = await tx
@@ -142,6 +147,7 @@ export class StockReadsService {
             locationName: locations.name,
             sku: productVariants.sku,
             lotCode: sql<string>`coalesce(${lots.code}, '')`,
+            expiresAt: sql<string | null>`${lots.expiresAt}::text`,
             id: stockLevels.id,
           })
           .from(stockLevels)
@@ -171,7 +177,14 @@ export class StockReadsService {
         }
 
         scope.push(
-          sql`${order} > (${cursor.locationName}, ${cursor.sku}, ${cursor.lotCode}, ${cursor.id}::uuid)`,
+          byExpiry
+            ? afterCursor(
+                lots.expiresAt,
+                stockLevels.id,
+                { value: cursor.expiresAt, id: cursor.id },
+                byExpiry,
+              )
+            : sql`${order} > (${cursor.locationName}, ${cursor.sku}, ${cursor.lotCode}, ${cursor.id}::uuid)`,
         );
       }
 
@@ -208,10 +221,14 @@ export class StockReadsService {
         .leftJoin(lots, lotOf)
         .where(and(...scope))
         .orderBy(
-          asc(locations.name),
-          asc(productVariants.sku),
-          sql`coalesce(${lots.code}, '')`,
-          asc(stockLevels.id),
+          ...(byExpiry
+            ? sortedOrder(lots.expiresAt, stockLevels.id, byExpiry)
+            : [
+                asc(locations.name),
+                asc(productVariants.sku),
+                sql`coalesce(${lots.code}, '')`,
+                asc(stockLevels.id),
+              ]),
         )
         // One past the page, so the page knows whether there is more.
         .limit(limit + 1);
