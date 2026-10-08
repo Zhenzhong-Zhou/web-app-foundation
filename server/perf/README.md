@@ -6,10 +6,20 @@ Three commands, run against a database of their own:
 - `npm run perf` measures a running server against the budgets;
 - `npm run perf:plans` runs `EXPLAIN` on the main list and ledger queries.
 
-None of them is part of `npm test` or of CI on a pull request. The
-**Performance** workflow runs all three on demand (Actions → Performance →
-Run workflow) on a fresh database at the scale chosen, and keeps the
-reports as an artifact for 30 days.
+None of them is part of `npm test`. The **Performance** workflow
+(`.github/workflows/perf.yml`) runs them in one of three modes and keeps the
+reports as an artifact for 30 days:
+
+- **plans**, the seed and the plan check: on every pull request that
+  changes `server/src/` or `perf/`. It loads the last small volume seeded on
+  `main` when the seed's own code is unchanged, and migrates it forward, so
+  it takes minutes, not a quarter of an hour.
+- **budgets**, plans plus the budgets and the concurrency check: by hand on
+  a branch whose speed is in question (Actions → Performance → Run
+  workflow).
+- **full**, budgets plus the 100-connection stress pass: weekly on `main`,
+  on each release candidate tag (`v*-rc.*`), and by hand. Timed runs always
+  seed fresh.
 
 ## Running it locally
 

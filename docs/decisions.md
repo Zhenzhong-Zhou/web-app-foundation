@@ -3972,6 +3972,18 @@ before every release (MC-1201 to MC-1204 in `docs/manual-checks.md`); and
 after any change to a list, a ledger query or an index. Small and large
 each in a database of their own, as `server/perf/README.md` describes.
 
+*Amended (CI speed-up, October 2026):* the workflow runs itself. A small
+run took 23 minutes: 12 seeding the volume, 10 for the budgets and the
+stress pass, 9 seconds for the plan check, which caught both real problems
+so far (the stock list's tenant joins, then Home's ledger scan). So the plan
+check now runs on every pull request that changes the server's code, as a
+gate: unlike timings on a shared runner it is deterministic. It loads the
+last small volume seeded on `main` from the Actions cache, keyed on the
+seed's own code, and migrates it forward, as production data is. The
+budgets run by hand on a branch; the full run, stress included, weekly on
+`main` and on each release candidate tag, so before every release. Timed
+runs always seed fresh, so their numbers stay comparable.
+
 ---
 
 ## ADR-052 — Calendar days are `date`, sent as YYYY-MM-DD (amends ADR-040)

@@ -1,12 +1,25 @@
 name: Performance
 
-# ADR-051: run on demand, never on a pull request. Seeding takes minutes and
-# timing on shared runners is too noisy to block a merge, so this produces
-# numbers to compare between runs, not a gate. Actions → Performance → Run
-# workflow.
+# ADR-051, amended (CI speed-up). Three modes:
+#
+# - plans: seed, then the plan check (EXPLAIN on the main reads). It is
+#   deterministic, so it can gate a pull request, and it caught both real
+#   problems so far. On every pull request that changes the server's code.
+# - budgets: plans, plus the response-time budgets and the concurrency check
+#   at 10 connections. By hand, on a branch whose speed is in question.
+# - full: budgets, plus the 100-connection stress pass. Weekly on main, on
+#   each release candidate tag (so before every release), and by hand.
+#
+# Timings on shared runners are too noisy to gate a merge, so only by hand
+# do budgets run on a branch: Actions → Performance → Run workflow.
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: What to run
+        type: choice
+        options: [full, budgets, plans]
+        default: full
       scale:
         description: Volume to seed (large takes hours)
         type: choice
@@ -16,20 +29,38 @@ on:
         description: Organizations to seed
         type: number
         default: 5
+  pull_request:
+    paths:
+      - 'server/src/**'
+      - 'server/perf/**'
+      - '.github/workflows/perf.yml'
+      - '!server/src/**/*.spec.ts'
+  push:
+    tags: ['v*-rc.*']
+  schedule:
+    - cron: '0 11 * * 1' # Mondays, 4am in Vancouver
 
-# One at a time: two runs on one account's runners would measure each other.
+# Timed runs one at a time: two runs on one account's runners would measure
+# each other. A pull request's plan check times nothing, so it has a group
+# per branch, and a newer push replaces it.
 concurrency:
-  group: performance
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('performance-plans-{0}', github.ref) || 'performance' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   perf:
-    name: Volume seed, budgets, query plans
+    name: Performance, ${{ inputs.mode || (github.event_name == 'pull_request' && 'plans') || 'full' }}
     # Pinned, unlike ci.yml: these numbers are compared across runs, and a
     # runner image changing underneath (ubuntu-latest moves to 26 on
     # 19 October 2026) would make two runs incomparable.
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ inputs.scale == 'large' && 350 || 90 }}
+
+    # One place for what this run does. Inputs only exist when run by hand.
+    env:
+      MODE: ${{ inputs.mode || (github.event_name == 'pull_request' && 'plans') || 'full' }}
+      SCALE: ${{ inputs.scale || 'small' }}
+      ORGANIZATIONS: ${{ inputs.organizations || 5 }}
 
     services:
       postgres:
@@ -95,6 +126,38 @@ jobs:
 
       - run: npm run build
 
+      # Seeding the volume is half of a run (11m 48s of 22m 48s). The volume
+      # depends on the seed's own code, so that is the cache key; each save
+      # adds the run id, and a restore takes the newest.
+      - name: Volume cache key
+        id: key
+        run: echo "prefix=perf-volume-$SCALE-$ORGANIZATIONS-${{ hashFiles('server/src/database/seed-volume.ts', 'server/src/database/volume/**') }}-" >> "$GITHUB_OUTPUT"
+
+      # Plans only: the volume from the last seed on main. Written by older
+      # services and migrated forward by the next step, which is what a
+      # production database is, and plans do not depend on when it was
+      # written. Timed runs always seed fresh, so their numbers compare.
+      - name: Restore the volume
+        id: volume
+        if: env.MODE == 'plans'
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            server/perf/volume.dump
+            server/perf/volume.json
+          key: ${{ steps.key.outputs.prefix }}${{ github.run_id }}
+          restore-keys: ${{ steps.key.outputs.prefix }}
+
+      # Inside the service container, so pg_restore is Postgres 18's own;
+      # the runner's client tools are older than the server.
+      - name: Load the volume
+        if: steps.volume.outputs.cache-matched-key != ''
+        env:
+          PG: ${{ job.services.postgres.id }}
+        run: |
+          docker exec -i "$PG" pg_restore -U app -d foundation --no-owner --no-privileges --exit-on-error < perf/volume.dump
+          docker exec "$PG" psql -U app -d foundation -c 'analyze'
+
       - run: npm run migrate
 
       - run: npm run seed
@@ -102,13 +165,29 @@ jobs:
       # Inputs through env, not pasted into the script, so a value is never
       # read as shell.
       - name: Seed volume
-        env:
-          SCALE: ${{ inputs.scale }}
-          ORGANIZATIONS: ${{ inputs.organizations }}
+        if: steps.volume.outputs.cache-matched-key == ''
         run: npm run seed:volume -- --scale "$SCALE" --organizations "$ORGANIZATIONS"
+
+      # A fresh small volume on main is kept for the pull requests after it,
+      # dumped before anything below writes to it. The weekly run renews it.
+      - name: Dump the volume
+        if: steps.volume.outputs.cache-matched-key == '' && github.ref == 'refs/heads/main' && env.SCALE == 'small'
+        env:
+          PG: ${{ job.services.postgres.id }}
+        run: docker exec "$PG" pg_dump -U app -d foundation -Fc --no-owner --no-privileges > perf/volume.dump
+
+      - name: Keep the volume
+        if: steps.volume.outputs.cache-matched-key == '' && github.ref == 'refs/heads/main' && env.SCALE == 'small'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            server/perf/volume.dump
+            server/perf/volume.json
+          key: ${{ steps.key.outputs.prefix }}${{ github.run_id }}
 
       # The built server, as production runs it, in the background.
       - name: Start the server
+        if: env.MODE != 'plans'
         run: |
           node dist/main > server.log 2>&1 &
           for _ in $(seq 1 60); do
@@ -118,9 +197,18 @@ jobs:
           cat server.log
           exit 1
 
+      # The stress pass sends three times the budget pass's requests, at 100
+      # connections, and never fails: most of this step's ten minutes, so it
+      # is the full run's alone.
       - name: Budgets, concurrency, stress
         id: perf
-        run: npm run perf
+        if: env.MODE != 'plans'
+        run: |
+          if [ "$MODE" = budgets ]; then
+            npm run perf -- --skip-stress
+          else
+            npm run perf
+          fi
 
       # Runs even when a budget failed: the plans are often why.
       - name: Query plans
@@ -130,7 +218,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: perf-${{ inputs.scale }}-${{ github.run_number }}
+          name: perf-${{ env.MODE }}-${{ env.SCALE }}-${{ github.run_number }}
           path: |
             server/perf/reports/
             server/server.log
