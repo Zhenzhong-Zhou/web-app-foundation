@@ -1,0 +1,2 @@
+DROP INDEX "stock_valuations_org_needs_cost_idx";--> statement-breakpoint
+CREATE INDEX "stock_valuations_org_pool_needs_cost_idx" ON "stock_valuations" USING btree ("organization_id","variant_id","lot_id") WHERE "stock_valuations"."needs_cost";
