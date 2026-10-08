@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig, devices } from '@playwright/test';
 import { config as loadEnv } from 'dotenv';
 
@@ -6,8 +8,13 @@ import { config as loadEnv } from 'dotenv';
  * test` is what anyone actually types and it does not go through dotenv-cli.
  * Without this DATABASE_URL_E2E is undefined and the API starts against
  * nothing — which Playwright reports as a timeout, not a config error.
+ *
+ * The path is resolved from this file, not the working directory. The VS
+ * Code Playwright extension loads the config from the repo root, where
+ * '../.env' points outside the repo.
  */
-loadEnv({ path: '../.env', quiet: true });
+const ENV_FILE = fileURLToPath(new URL('../.env', import.meta.url));
+loadEnv({ path: ENV_FILE, quiet: true });
 
 /**
  * End-to-end tests run against a real client, a real server, and a real
