@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 
+import { EXPORT_LIMIT } from '../../common/export';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
@@ -74,6 +75,40 @@ export class ProductsService {
   async list() {
     return this.tenantDb.select(products, undefined, {
       orderBy: asc(products.name),
+    });
+  }
+
+  /**
+   * The catalogue as a spreadsheet (ADR-057): a row per variant, with its
+   * product, and the product's name in each language it has. One query, at
+   * most EXPORT_LIMIT + 1 rows, for withinLimit to judge.
+   */
+  exportRows() {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const translated = (locale: string) => sql<string | null>`(
+        select ${productTranslations.name} from ${productTranslations}
+        where ${productTranslations.productId} = ${products.id}
+          and ${productTranslations.locale} = ${locale}
+      )`;
+
+      return tx
+        .select({
+          id: productVariants.id,
+          sku: productVariants.sku,
+          productName: products.name,
+          variantName: productVariants.name,
+          type: products.type,
+          unitOfMeasure: productVariants.unitOfMeasure,
+          tracksLots: productVariants.tracksLots,
+          discontinued: sql<boolean>`not (${products.isActive} and ${productVariants.isActive})`,
+          nameFrench: translated('fr-CA'),
+          nameChinese: translated('zh-Hans'),
+        })
+        .from(productVariants)
+        .innerJoin(products, eq(products.id, productVariants.productId))
+        .where(eq(productVariants.organizationId, organizationId))
+        .orderBy(asc(products.name), asc(productVariants.sku))
+        .limit(EXPORT_LIMIT + 1);
     });
   }
 

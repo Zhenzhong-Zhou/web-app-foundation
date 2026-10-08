@@ -26,4 +26,7 @@ export const HEADERS = {
   unit: t({ id: 'exports.column.unit', defaultMessage: 'Unit' }),
   reference: t({ id: 'exports.column.reference', defaultMessage: 'Reference' }),
   created: t({ id: 'exports.column.created', defaultMessage: 'Created' }),
+  name: t({ id: 'exports.column.name', defaultMessage: 'Name' }),
+  code: t({ id: 'exports.column.code', defaultMessage: 'Code' }),
+  price: t({ id: 'exports.column.price', defaultMessage: 'Price' }),
 } as const;

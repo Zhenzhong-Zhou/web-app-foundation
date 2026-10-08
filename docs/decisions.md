@@ -5361,11 +5361,12 @@ amount, voided, with the date range and search (ADR-056) like the rest.
       billing address;
     - a price list: its items, SKU, item, unit, price, currency; one export
       per list;
-    - stock value (the costs page): SKU, item, lot, quantity, unit cost,
-      value, currency, provisional, as at the moment of export;
-    - the audit log: when, who, action, resource, and the summary the page
-      shows, under `audit.view` like the page, filtered by its own date
-      range and action.
+    - stock value (the costs page): SKU, lot, quantity, unit cost, value,
+      currency, provisional, as at the moment of export;
+    - the audit log: when, by whom, action, record type, record, and the
+      fields the entry recorded as JSON (their shape differs per action),
+      under `audit.view` like the page, filtered by its own date range and
+      action.
 
   Products, partners, price lists, stock value and the audit log were
   added before step 5 was built: once one CSV writer exists, each is a

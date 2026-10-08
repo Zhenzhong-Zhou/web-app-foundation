@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -11,16 +12,22 @@ import {
   Post,
   Put,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 
+import { csvFile, withinLimit } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
+import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { localeOf } from '../../i18n/translate';
 import { CreatePriceListDto } from './dto/create-price-list.dto';
 import { ListPriceListsDto } from './dto/list-price-lists.dto';
 import { SetPriceListItemDto } from './dto/set-price-list-item.dto';
 import { UpdatePriceListDto } from './dto/update-price-list.dto';
+import { PRICE_LIST_COLUMNS } from './price-list-exports';
 import { PriceListsService } from './price-lists.service';
 
 /**
@@ -35,6 +42,33 @@ export class PriceListsController {
   @RequirePermissions(PERMISSIONS.PRICE_LISTS_VIEW)
   async list(@Query() query: ListPriceListsDto) {
     return { priceLists: await this.priceLists.list(query) };
+  }
+
+  /** One price list's items as CSV (ADR-057), to send a customer. */
+  @Get(':id/export')
+  @RequirePermissions(PERMISSIONS.PRICE_LISTS_VIEW)
+  @Audited({
+    action: AUDIT_ACTIONS.LIST_EXPORTED,
+    resourceType: 'price_list',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async exportPriceList(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res({ passthrough: true }) res: Response,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const list = await this.priceLists.findById(id);
+    const rows = withinLimit(
+      list.items.map((item) => ({ ...item, currency: list.currency })),
+    );
+    recordContext({ list: 'price_list', filters: { id }, rows: rows.length });
+    return csvFile(
+      res,
+      'price-list',
+      PRICE_LIST_COLUMNS,
+      rows,
+      localeOf(acceptLanguage),
+    );
   }
 
   @Get(':id')

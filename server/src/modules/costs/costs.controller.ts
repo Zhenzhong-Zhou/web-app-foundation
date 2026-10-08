@@ -2,20 +2,27 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
   ParseUUIDPipe,
   Put,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 
+import { csvFile, withinLimit } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
+import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
 import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { localeOf } from '../../i18n/translate';
+import { poolsOf, VALUATION_COLUMNS } from './cost-exports';
 import { CostsService } from './costs.service';
 import { ListExchangeRatesDto } from './dto/list-exchange-rates.dto';
 import { ListNeedsCostDto } from './dto/list-needs-cost.dto';
@@ -42,6 +49,25 @@ export class CostsController {
   @RequirePermissions(PERMISSIONS.COSTS_VIEW)
   async stockValuation() {
     return { valuation: await this.costs.stockValuation() };
+  }
+
+  /** Stock value as CSV (ADR-057), as at the moment of export. */
+  @Get('valuation/export')
+  @RequirePermissions(PERMISSIONS.COSTS_VIEW)
+  @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'stock_value' })
+  async exportValuation(
+    @Res({ passthrough: true }) res: Response,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const rows = withinLimit(poolsOf(await this.costs.stockValuation()));
+    recordContext({ list: 'stock_value', filters: {}, rows: rows.length });
+    return csvFile(
+      res,
+      'stock-value',
+      VALUATION_COLUMNS,
+      rows,
+      localeOf(acceptLanguage),
+    );
   }
 
   @Get('lots/:id')

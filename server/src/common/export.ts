@@ -38,21 +38,31 @@ export async function everyRow<T extends { id: string }>(
     const { entries, nextCursor } = await page(before, BATCH);
     rows.push(...entries);
 
-    if (rows.length > EXPORT_LIMIT) {
-      throw new BadRequestException(
-        t(
-          {
-            id: 'exports.tooMany',
-            defaultMessage:
-              'More than {limit, number} rows match. Narrow the dates or filters, and export again.',
-          },
-          { limit: EXPORT_LIMIT },
-        ),
-      );
-    }
+    withinLimit(rows);
     if (!nextCursor) return rows;
     before = nextCursor;
   }
+}
+
+/**
+ * The rows as they are, or a refusal past EXPORT_LIMIT with a message to
+ * narrow them. An export read in one query asks for EXPORT_LIMIT + 1 rows
+ * and passes them here.
+ */
+export function withinLimit<T>(rows: T[]): T[] {
+  if (rows.length > EXPORT_LIMIT) {
+    throw new BadRequestException(
+      t(
+        {
+          id: 'exports.tooMany',
+          defaultMessage:
+            'More than {limit, number} rows match. Narrow the dates or filters, and export again.',
+        },
+        { limit: EXPORT_LIMIT },
+      ),
+    );
+  }
+  return rows;
 }
 
 /**

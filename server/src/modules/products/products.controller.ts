@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -9,12 +10,17 @@ import {
   Patch,
   Post,
   Put,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 
+import { csvFile, withinLimit } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
+import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { localeOf } from '../../i18n/translate';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import {
@@ -23,6 +29,7 @@ import {
 } from './dto/set-translations.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
+import { PRODUCT_COLUMNS } from './product-exports';
 import { ProductsService } from './products.service';
 
 @Controller({ path: 'products', version: '1' })
@@ -33,6 +40,25 @@ export class ProductsController {
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
   list() {
     return this.products.list();
+  }
+
+  /** The catalogue as CSV (ADR-057), a row per variant. Above ':id'. */
+  @Get('export')
+  @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
+  @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'products' })
+  async exportProducts(
+    @Res({ passthrough: true }) res: Response,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const rows = withinLimit(await this.products.exportRows());
+    recordContext({ list: 'products', filters: {}, rows: rows.length });
+    return csvFile(
+      res,
+      'products',
+      PRODUCT_COLUMNS,
+      rows,
+      localeOf(acceptLanguage),
+    );
   }
 
   /**
