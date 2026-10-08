@@ -17,6 +17,7 @@ import { PG_POOL } from '../src/database/database.tokens';
 import type { VolumeManifest } from '../src/database/seed-volume';
 import { runInTenantContext } from '../src/database/tenant-context';
 import { CostsService } from '../src/modules/costs/costs.service';
+import { HomeService } from '../src/modules/home/home.service';
 import { InvoicesService } from '../src/modules/invoices/invoices.service';
 import { OrdersService } from '../src/modules/orders/orders.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
@@ -186,6 +187,7 @@ async function buildProbes(
   const shipping = app.get(ShippingService);
   const costs = app.get(CostsService);
   const lookups = app.get(LookupService);
+  const home = app.get(HomeService);
 
   const firstOrders = await orders.list({ status: 'all' });
   const deepOrders = await cursorAfter(
@@ -288,6 +290,12 @@ async function buildProbes(
     {
       name: 'lookup: typo',
       run: () => lookups.lookup('fokus dialy', EVERY_PERMISSION, 'en'),
+    },
+    // Home (ADR-058): every card's rows and counts, and Getting started's
+    // steps, as an owner sees them.
+    {
+      name: 'home',
+      run: () => home.home(EVERY_PERMISSION, MONTH_DAYS.to),
     },
     // Dates and sorting (ADR-057): each sort read through its index on
     // (organization_id, value, id), its page 2 after a (value, id) cursor,
