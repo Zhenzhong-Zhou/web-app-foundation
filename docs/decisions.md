@@ -5114,13 +5114,19 @@ their own pages.
   "shyy", all find "深海鱼油". The server writes each name's pinyin when the
   name is saved (below); a query of Latin letters matches it as it matches
   any name, anywhere in the text. Names with no Chinese have no pinyin.
-- **Typos forgiven, after exact matches.** When a kind finds nothing, or
-  fewer than its five, the lookup adds close matches by trigram similarity
-  (`word_similarity` above 0.3, on the accent-free form): "fokus" finds
-  "Focus 60ct", "nortside" finds "Northside Pharmacy", "FOC-2690" finds
-  "FOC-2609-01". They come after every exact match, marked "close match" in
-  the reader's language, best first. List search shows them only when the
-  list would otherwise be empty, under "No exact match. Close matches:".
+- **Typos forgiven, after exact matches.** When the whole lookup finds
+  fewer than five records, it adds close matches in each kind by trigram
+  similarity (`word_similarity` above 0.3, on the accent-free form):
+  "fokus" finds "Focus 60ct", "nortside" finds "Northside Pharmacy",
+  "FOC-2690" finds "FOC-2609-01". They come after a kind's exact matches,
+  marked "close match" in the reader's language, best first.
+  *Amended while building:* first written as "when a kind finds fewer than
+  five", which ran the close pass in nearly every kind of nearly every
+  lookup; the perf budget caught a lot code's lookup at 329 ms against 300,
+  and its close matches were all noise. A typo is a search that finds next
+  to nothing. List search shows exact matches only, not close ones as first
+  written: the lookup is where a typo is forgiven, and a list empty for a
+  typo says so, with the lookup one key away.
 
 **Decision — order of results.** Within each kind: an exact match first, then
 a match at the start, then anywhere; ties by most recent. The lookup shows at
