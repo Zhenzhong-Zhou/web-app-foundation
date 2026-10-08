@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, asc, count, eq, gt, lt, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, lt, lte, type SQL, sql } from 'drizzle-orm';
 
 import type { Permission } from '../../core/authorization/permissions';
 import {
@@ -10,14 +10,13 @@ import {
   productionOrders,
   productLicences,
   returnAuthorizations,
-  stockLevels,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { InvoicesService } from '../invoices/invoices.service';
 import { OrdersService } from '../orders/orders.service';
 import { ProductionOrdersService } from '../production-orders/production-orders.service';
 import { ReturnAuthorizationsService } from '../return-authorizations/return-authorizations.service';
-import { StockReadsService } from '../stock/stock-reads.service';
+import { StockReadsService, stockRowsOf } from '../stock/stock-reads.service';
 
 /** The most urgent rows each card shows (ADR-058). */
 export const HOME_ROWS = 5;
@@ -93,13 +92,31 @@ function addDays(day: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** A card's count, and how many of those are overdue or expired. */
+type Totals = Pick<HomeCard, 'count' | 'late'>;
+
+/** To ship is the sales, to receive the purchases. */
+function directionOf(kind: 'toShip' | 'toReceive') {
+  return kind === 'toShip' ? 'sale' : 'purchase';
+}
+
+/** Licences: the active ones expiring within the notice, or already. */
+function licencesDue(organizationId: string, today: string) {
+  return and(
+    eq(productLicences.organizationId, organizationId),
+    eq(productLicences.isActive, true),
+    lte(productLicences.expiresAt, addDays(today, LICENCE_WARNING_DAYS)),
+  );
+}
+
 /**
  * Home (ADR-058): what needs attention, a card per kind the member may see.
  *
  * Each card's rows come from its list's own service with the same filters
  * the card's "See all" link sets, so the five shown are that list's first
  * five; each count uses the same conditions, so "See all 12" opens twelve.
- * A card the member may not view is never queried.
+ * The counts are one statement for every card (totals()), the rows a read
+ * per card. A card the member may not view is never queried.
  */
 @Injectable()
 export class HomeService {
@@ -113,9 +130,18 @@ export class HomeService {
   ) {}
 
   async home(held: ReadonlySet<Permission>, today: string) {
+    const kinds = CARDS.flatMap(({ kind, permission }) =>
+      held.has(permission) ? [kind] : [],
+    );
+    const totals = await this.totals(kinds, today);
+
     const cards: HomeCard[] = [];
-    for (const { kind, permission } of CARDS) {
-      if (held.has(permission)) cards.push(await this.card(kind, today));
+    for (const kind of kinds) {
+      cards.push({
+        kind,
+        ...totals.get(kind)!,
+        rows: await this.rows(kind, today),
+      });
     }
     return { gettingStarted: await this.gettingStarted(), cards };
   }
@@ -125,6 +151,14 @@ export class HomeService {
    * holds, read in one query, never stored; only Skip (the team step) and
    * Dismiss (the card) are, on the organization. `complete` once steps 1
    * to 6 are done and the team is added or skipped.
+   *
+   * The receipt step reads the ledger, the largest table there is. As an
+   * EXISTS, the planner may price a sequential scan that stops at the first
+   * receipt it meets, and Home's first perf run flagged one on
+   * stock_movements (ADR-058 amended). Ordered as the (organization,
+   * created_at) index is and limited to one row, the only cheap plan is
+   * that index: this organization's movements, newest first, up to the
+   * first receipt, and never another tenant's.
    */
   gettingStarted(): Promise<GettingStarted> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -140,9 +174,11 @@ export class HomeService {
                   where p.organization_id = o.id) as product,
           exists (select 1 from partners p
                   where p.organization_id = o.id) as partner,
-          exists (select 1 from stock_movements m
-                  where m.organization_id = o.id
-                    and m.reason = 'receipt') as receipt,
+          (select m.id from stock_movements m
+           where m.organization_id = o.id
+             and m.reason = 'receipt'
+           order by m.created_at desc nulls last
+           limit 1) is not null as receipt,
           exists (select 1 from invoices i
                   where i.organization_id = o.id
                     and i.status <> 'draft') as invoice,
@@ -193,35 +229,54 @@ export class HomeService {
     });
   }
 
-  private async card(kind: HomeKind, today: string): Promise<HomeCard> {
+  /**
+   * Every card's count and late count, in one statement (ADR-058 amended).
+   *
+   * They were a read per card, each in its own transaction, and the two
+   * stock cards between them read the organization's stock seven times.
+   * Now a `union all` with a branch per card the member may see: Postgres
+   * plans each branch on its own, as it planned each query before, and the
+   * page pays for one round trip instead of eight.
+   */
+  private totals(
+    kinds: HomeKind[],
+    today: string,
+  ): Promise<Map<HomeKind, Totals>> {
+    if (kinds.length === 0) {
+      return Promise.resolve(new Map<HomeKind, Totals>());
+    }
+
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const branches = kinds.map(
+        (kind) => sql`(${totalOf(kind, organizationId, today)})`,
+      );
+      const result = await tx.execute(sql.join(branches, sql` union all `));
+      const rows = result.rows as ({ kind: HomeKind } & Totals)[];
+      return new Map<HomeKind, Totals>(
+        rows.map(({ kind, count, late }) => [kind, { count, late }]),
+      );
+    });
+  }
+
+  /** A card's five most urgent rows, from its list's own read. */
+  private async rows(kind: HomeKind, today: string): Promise<HomeRow[]> {
     switch (kind) {
       case 'toShip':
       case 'toReceive': {
-        const direction = kind === 'toShip' ? 'sale' : 'purchase';
         const page = await this.orders.list({
           status: 'confirmed',
-          direction,
+          direction: directionOf(kind),
           sort: 'expectedAt',
           order: 'asc',
           limit: HOME_ROWS,
         });
-        const where = (organizationId: string) =>
-          and(
-            eq(orders.organizationId, organizationId),
-            eq(orders.direction, direction),
-            eq(orders.status, 'confirmed'),
-          );
-        return {
-          kind,
-          ...(await this.counted(orders, where, lt(orders.expectedAt, today))),
-          rows: page.entries.map((row) => ({
-            id: row.id,
-            title: row.reference ?? row.partnerName,
-            detail: row.partnerName,
-            due: row.expectedAt,
-            late: row.expectedAt !== null && row.expectedAt < today,
-          })),
-        };
+        return page.entries.map((row) => ({
+          id: row.id,
+          title: row.reference ?? row.partnerName,
+          detail: row.partnerName,
+          due: row.expectedAt,
+          late: row.expectedAt !== null && row.expectedAt < today,
+        }));
       }
 
       case 'expiring': {
@@ -231,38 +286,14 @@ export class HomeService {
           order: 'asc',
           limit: HOME_ROWS,
         });
-        const { expiring } = await this.stock.counts({
-          expiringWithin: EXPIRY_WARNING_DAYS,
-        });
-        const late = await this.tenantDb.transaction(
-          async (tx, organizationId) => {
-            const [row] = await tx
-              .select({ value: count() })
-              .from(stockLevels)
-              .innerJoin(lots, eq(lots.id, stockLevels.lotId))
-              .where(
-                and(
-                  eq(stockLevels.organizationId, organizationId),
-                  gt(stockLevels.quantity, '0'),
-                  lt(lots.expiresAt, today),
-                ),
-              );
-            return row.value;
-          },
-        );
-        return {
-          kind,
-          count: expiring,
-          late,
-          rows: page.entries.map((row) => ({
-            // A row opens its lot's trace.
-            id: row.lotId ?? row.id,
-            title: row.lotCode ?? row.sku,
-            detail: `${row.sku} · ${row.locationName}`,
-            due: row.lotExpiresAt,
-            late: row.lotExpiresAt !== null && row.lotExpiresAt < today,
-          })),
-        };
+        return page.entries.map((row) => ({
+          // A row opens its lot's trace.
+          id: row.lotId ?? row.id,
+          title: row.lotCode ?? row.sku,
+          detail: `${row.sku} · ${row.locationName}`,
+          due: row.lotExpiresAt,
+          late: row.lotExpiresAt !== null && row.lotExpiresAt < today,
+        }));
       }
 
       case 'costsWaiting': {
@@ -270,19 +301,13 @@ export class HomeService {
           needsCost: 'true',
           limit: HOME_ROWS,
         });
-        const { needsCost } = await this.stock.counts({});
-        return {
-          kind,
-          count: needsCost,
-          late: 0,
-          rows: page.entries.map((row) => ({
-            id: row.variantId,
-            title: row.sku,
-            detail: row.lotCode ?? row.locationName,
-            due: null,
-            late: false,
-          })),
-        };
+        return page.entries.map((row) => ({
+          id: row.variantId,
+          title: row.sku,
+          detail: row.lotCode ?? row.locationName,
+          due: null,
+          late: false,
+        }));
       }
 
       case 'invoicesToIssue': {
@@ -290,22 +315,13 @@ export class HomeService {
           status: 'draft',
           limit: HOME_ROWS,
         });
-        return {
-          kind,
-          ...(await this.counted(invoices, (organizationId) =>
-            and(
-              eq(invoices.organizationId, organizationId),
-              eq(invoices.status, 'draft'),
-            ),
-          )),
-          rows: page.entries.map((row) => ({
-            id: row.id,
-            title: row.partnerName,
-            detail: row.orderReference,
-            due: null,
-            late: false,
-          })),
-        };
+        return page.entries.map((row) => ({
+          id: row.id,
+          title: row.partnerName,
+          detail: row.orderReference,
+          due: null,
+          late: false,
+        }));
       }
 
       case 'returnsOpen': {
@@ -313,22 +329,13 @@ export class HomeService {
           status: 'open',
           limit: HOME_ROWS,
         });
-        return {
-          kind,
-          ...(await this.counted(returnAuthorizations, (organizationId) =>
-            and(
-              eq(returnAuthorizations.organizationId, organizationId),
-              eq(returnAuthorizations.status, 'open'),
-            ),
-          )),
-          rows: page.entries.map((row) => ({
-            id: row.id,
-            title: row.number,
-            detail: row.partnerName,
-            due: null,
-            late: false,
-          })),
-        };
+        return page.entries.map((row) => ({
+          id: row.id,
+          title: row.number,
+          detail: row.partnerName,
+          due: null,
+          late: false,
+        }));
       }
 
       case 'production': {
@@ -336,39 +343,17 @@ export class HomeService {
           status: 'released',
           limit: HOME_ROWS,
         });
-        return {
-          kind,
-          ...(await this.counted(productionOrders, (organizationId) =>
-            and(
-              eq(productionOrders.organizationId, organizationId),
-              eq(productionOrders.status, 'released'),
-            ),
-          )),
-          rows: page.entries.map((row) => ({
-            id: row.id,
-            title: row.reference ?? row.id,
-            detail: null,
-            due: null,
-            late: false,
-          })),
-        };
+        return page.entries.map((row) => ({
+          id: row.id,
+          title: row.reference ?? row.id,
+          detail: null,
+          due: null,
+          late: false,
+        }));
       }
 
-      case 'licences': {
-        const until = addDays(today, LICENCE_WARNING_DAYS);
+      case 'licences':
         return this.tenantDb.transaction(async (tx, organizationId) => {
-          const where = and(
-            eq(productLicences.organizationId, organizationId),
-            eq(productLicences.isActive, true),
-            lte(productLicences.expiresAt, until),
-          );
-          const [totals] = await tx
-            .select({
-              count: count(),
-              late: sql<number>`count(*) filter (where ${productLicences.expiresAt} < ${today})::int`,
-            })
-            .from(productLicences)
-            .where(where);
           const rows = await tx
             .select({
               id: productLicences.id,
@@ -377,47 +362,87 @@ export class HomeService {
               expiresAt: productLicences.expiresAt,
             })
             .from(productLicences)
-            .where(where)
+            .where(licencesDue(organizationId, today))
             .orderBy(asc(productLicences.expiresAt), asc(productLicences.id))
             .limit(HOME_ROWS);
-          return {
-            kind,
-            count: totals.count,
-            late: totals.late,
-            rows: rows.map((row) => ({
-              id: row.id,
-              title: row.number,
-              detail: row.authority,
-              due: row.expiresAt,
-              late: row.expiresAt !== null && row.expiresAt < today,
-            })),
-          };
+          return rows.map((row) => ({
+            id: row.id,
+            title: row.number,
+            detail: row.authority,
+            due: row.expiresAt,
+            late: row.expiresAt !== null && row.expiresAt < today,
+          }));
         });
-      }
     }
   }
+}
 
-  /** A card's count, and how many of those are late when lateness applies. */
-  private counted(
-    table:
-      | typeof orders
-      | typeof invoices
-      | typeof returnAuthorizations
-      | typeof productionOrders,
-    where: (organizationId: string) => ReturnType<typeof and>,
-    late?: ReturnType<typeof lt>,
-  ): Promise<{ count: number; late: number }> {
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [row] = await tx
-        .select({
-          count: count(),
-          late: late
-            ? sql<number>`count(*) filter (where ${late})::int`
-            : sql<number>`0`,
-        })
-        .from(table)
-        .where(where(organizationId));
-      return { count: row.count, late: Number(row.late) };
-    });
+/**
+ * One card's branch of totals(): its count, and its late count where
+ * lateness applies, under the same conditions as its list's filter.
+ */
+function totalOf(kind: HomeKind, organizationId: string, today: string): SQL {
+  const counted = (rows: SQL, late?: SQL) => {
+    const lateCount = late ? sql`count(*) filter (where ${late})::int` : sql`0`;
+    return sql`
+      select ${kind}::text as kind, count(*)::int as count, ${lateCount} as late
+      from ${rows}
+    `;
+  };
+
+  switch (kind) {
+    case 'toShip':
+    case 'toReceive': {
+      const where = and(
+        eq(orders.organizationId, organizationId),
+        eq(orders.direction, directionOf(kind)),
+        eq(orders.status, 'confirmed'),
+      );
+      return counted(
+        sql`${orders} where ${where}`,
+        lt(orders.expectedAt, today),
+      );
+    }
+
+    // The stock list's own rows (stockRowsOf), so the counts are the
+    // list's. The expired are counted among the expiring.
+    case 'expiring':
+      return counted(
+        stockRowsOf({ expiringWithin: EXPIRY_WARNING_DAYS }, organizationId),
+        lt(lots.expiresAt, today),
+      );
+
+    case 'costsWaiting':
+      return counted(stockRowsOf({ needsCost: 'true' }, organizationId));
+
+    case 'invoicesToIssue': {
+      const where = and(
+        eq(invoices.organizationId, organizationId),
+        eq(invoices.status, 'draft'),
+      );
+      return counted(sql`${invoices} where ${where}`);
+    }
+
+    case 'returnsOpen': {
+      const where = and(
+        eq(returnAuthorizations.organizationId, organizationId),
+        eq(returnAuthorizations.status, 'open'),
+      );
+      return counted(sql`${returnAuthorizations} where ${where}`);
+    }
+
+    case 'production': {
+      const where = and(
+        eq(productionOrders.organizationId, organizationId),
+        eq(productionOrders.status, 'released'),
+      );
+      return counted(sql`${productionOrders} where ${where}`);
+    }
+
+    case 'licences':
+      return counted(
+        sql`${productLicences} where ${licencesDue(organizationId, today)}`,
+        lt(productLicences.expiresAt, today),
+      );
   }
 }

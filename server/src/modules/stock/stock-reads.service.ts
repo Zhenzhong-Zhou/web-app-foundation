@@ -104,6 +104,23 @@ function lotJoin(organizationId: string) {
   );
 }
 
+/**
+ * The rows the stock list would show under these filters, as the FROM and
+ * WHERE of a count: the list's joins and filtersOf's conditions. counts()
+ * counts through it, and Home embeds it in its one totals statement
+ * (ADR-058), so a count beside a filter, on a card or on the list itself is
+ * always of the same rows.
+ */
+export function stockRowsOf(query: ListStockDto, organizationId: string): SQL {
+  return sql`${stockLevels}
+    inner join ${productVariants}
+      on ${productVariants.id} = ${stockLevels.variantId}
+    inner join ${products} on ${products.id} = ${productVariants.productId}
+    inner join ${locations} on ${locations.id} = ${stockLevels.locationId}
+    left join ${lots} on ${lotJoin(organizationId)}
+    where ${and(...filtersOf(query, organizationId))}`;
+}
+
 @Injectable()
 export class StockReadsService {
   constructor(private readonly tenantDb: TenantDb) {}
@@ -250,18 +267,11 @@ export class StockReadsService {
       const unfiltered = { ...rest, needsCost: undefined };
 
       const count = async (filters: ListStockDto) => {
-        const [row] = await tx
-          .select({ count: sql<number>`count(*)::int` })
-          .from(stockLevels)
-          .innerJoin(
-            productVariants,
-            eq(productVariants.id, stockLevels.variantId),
-          )
-          .innerJoin(products, eq(products.id, productVariants.productId))
-          .innerJoin(locations, eq(locations.id, stockLevels.locationId))
-          .leftJoin(lots, lotJoin(organizationId))
-          .where(and(...filtersOf(filters, organizationId)));
-        return row.count;
+        const result = await tx.execute(sql`
+          select count(*)::int as count
+          from ${stockRowsOf(filters, organizationId)}
+        `);
+        return (result.rows[0] as { count: number }).count;
       };
 
       return {
