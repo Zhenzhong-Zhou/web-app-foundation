@@ -211,6 +211,13 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       (org) => `/stock/movements?variantId=${org.hot[0].variantId}`,
     ),
     read('GET /invoices', () => '/invoices'),
+    // Search (ADR-056): the lookup as people type it, a code in part, a
+    // name, and a typo that falls through to close matches; and a list
+    // narrowed by its search.
+    read('GET /lookup?q=code', () => '/lookup?q=LV-00001'),
+    read('GET /lookup?q=name', () => '/lookup?q=focus'),
+    read('GET /lookup?q=typo', () => '/lookup?q=fokus%20dialy'),
+    read('GET /orders?search', () => '/orders?status=all&search=SO-10'),
   ];
 
   if (orgs.every((org) => org.anchors.traceLotId)) {
