@@ -2,7 +2,12 @@ import { IsIn, IsOptional, IsUUID } from 'class-validator';
 
 import { CalendarRangeQueryDto } from '../../../common/dto/range-query.dto';
 import { SORT_ORDERS, type SortOrder } from '../../../common/sorted-page';
-import { ORDER_STATUSES, type OrderStatus } from '../../../database/schema';
+import {
+  ORDER_DIRECTIONS,
+  ORDER_STATUSES,
+  type OrderDirection,
+  type OrderStatus,
+} from '../../../database/schema';
 
 /**
  * Paged like every list, by KeysetQueryDto; these are the order filters.
@@ -29,6 +34,11 @@ export class ListOrdersDto extends CalendarRangeQueryDto {
   @IsOptional()
   @IsUUID()
   partnerId?: string;
+
+  /** Sales or purchases only (ADR-058: Home's To ship and To receive). */
+  @IsOptional()
+  @IsIn(ORDER_DIRECTIONS)
+  direction?: OrderDirection;
 
   /** Sorted by expected date (ADR-057), orders without one last. */
   @IsOptional()

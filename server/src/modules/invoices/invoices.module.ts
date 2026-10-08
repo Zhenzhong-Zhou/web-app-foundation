@@ -11,6 +11,7 @@ import { InvoicesService } from './invoices.service';
 @Module({
   imports: [TaxCodesModule],
   controllers: [InvoicesController, CreditNotesController],
+  exports: [InvoicesService],
   providers: [
     InvoicesService,
     InvoiceDraftsService,
