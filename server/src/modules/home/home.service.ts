@@ -152,13 +152,13 @@ export class HomeService {
    * Dismiss (the card) are, on the organization. `complete` once steps 1
    * to 6 are done and the team is added or skipped.
    *
-   * The receipt step reads the ledger, the largest table there is. As an
-   * EXISTS, the planner may price a sequential scan that stops at the first
-   * receipt it meets, and Home's first perf run flagged one on
-   * stock_movements (ADR-058 amended). Ordered as the (organization,
-   * created_at) index is and limited to one row, the only cheap plan is
-   * that index: this organization's movements, newest first, up to the
-   * first receipt, and never another tenant's.
+   * The receipt and invoice steps read the two largest tables it touches.
+   * As an EXISTS, the planner may price a sequential scan that stops at the
+   * first match, and Home's perf runs flagged one on stock_movements, then
+   * on invoices (ADR-058 amended). Each is ordered as one of its table's
+   * indexes is and limited to one row, so the only cheap plan is that
+   * index: this organization's rows, newest first, up to the first match,
+   * and never another tenant's.
    */
   gettingStarted(): Promise<GettingStarted> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -179,9 +179,11 @@ export class HomeService {
              and m.reason = 'receipt'
            order by m.created_at desc nulls last
            limit 1) is not null as receipt,
-          exists (select 1 from invoices i
-                  where i.organization_id = o.id
-                    and i.status <> 'draft') as invoice,
+          (select i.id from invoices i
+           where i.organization_id = o.id
+             and i.status <> 'draft'
+           order by i.invoice_date desc nulls last, i.id desc
+           limit 1) is not null as invoice,
           (select count(*) from memberships m
            where m.organization_id = o.id) > 1 as team,
           o.team_step_skipped_at is not null as "teamSkipped",
