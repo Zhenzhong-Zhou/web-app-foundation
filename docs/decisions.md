@@ -5348,11 +5348,13 @@ amount, voided, with the date range and search (ADR-056) like the rest.
       currency, subtotal, tax, total, credited, net;
     - credit notes: number, invoice, partner, credit date, currency, amount,
       voided;
-    - orders: reference, direction, status, partner, expected date,
-      currency, total before tax;
-    - stock movements: when, reason, SKU, item, lot, quantity, unit,
-      from and to location, reference;
-    - inventory: SKU, item, lot, expiry, location, quantity, unit, cost;
+    - orders: reference, direction, status, partner, expected date, lines,
+      quantity ordered, quantity received or shipped, created; no money,
+      since a line carries its own currency and one total could be wrong;
+    - stock movements: when, reason, SKU, lot, quantity, from and to
+      location, by whom, note;
+    - inventory: SKU, item, variant, lot, expiry, location, quantity, unit;
+      costs are the stock value export's, beside the valuation;
     - products: SKU, product, variant, type, unit, tracks lots, discontinued,
       and the names in each language the product has;
     - partners: name, code, tax ID, document language, retired, and the

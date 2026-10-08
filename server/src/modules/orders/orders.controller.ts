@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -10,14 +11,19 @@ import {
   Patch,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 
+import { csvFile, everyRow, exportFilters } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
+import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
 import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { localeOf } from '../../i18n/translate';
 import { CloseLineDto } from './dto/close-line.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { DuplicateOrderDto } from './dto/duplicate-order.dto';
@@ -25,6 +31,7 @@ import { ListOrdersDto } from './dto/list-orders.dto';
 import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
 import { ReceiveLineDto } from './dto/receive-line.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { ORDER_COLUMNS } from './order-exports';
 import { OrderLifecycleService } from './order-lifecycle.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderReceiptsService } from './order-receipts.service';
@@ -47,6 +54,32 @@ export class OrdersController {
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
   list(@Query() query: ListOrdersDto) {
     return this.orders.list(query);
+  }
+
+  /** Every order the filters match, as CSV (ADR-057): the list's own query, every page. */
+  @Get('export')
+  @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
+  @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'orders' })
+  async exportOrders(
+    @Query() query: ListOrdersDto,
+    @Res({ passthrough: true }) res: Response,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const rows = await everyRow((before, limit) =>
+      this.orders.list({ ...query, before, limit }),
+    );
+    recordContext({
+      list: 'orders',
+      filters: exportFilters(query),
+      rows: rows.length,
+    });
+    return csvFile(
+      res,
+      'orders',
+      ORDER_COLUMNS,
+      rows,
+      localeOf(acceptLanguage),
+    );
   }
 
   @Get(':id')

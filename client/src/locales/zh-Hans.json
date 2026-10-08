@@ -53,6 +53,7 @@
   "audit.action.invoiceLineUpdated": "发票行已更新",
   "audit.action.invoiceUpdated": "发票已更新",
   "audit.action.invoiceVoided": "发票已作废",
+  "audit.action.listExported": "导出了列表",
   "audit.action.locationCreated": "库位已创建",
   "audit.action.locationUpdated": "库位已更新",
   "audit.action.memberRemoved": "成员已移除",

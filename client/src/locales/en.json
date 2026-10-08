@@ -53,6 +53,7 @@
   "audit.action.invoiceLineUpdated": "Invoice line updated",
   "audit.action.invoiceUpdated": "Invoice updated",
   "audit.action.invoiceVoided": "Invoice voided",
+  "audit.action.listExported": "Exported a list",
   "audit.action.locationCreated": "Location created",
   "audit.action.locationUpdated": "Location updated",
   "audit.action.memberRemoved": "Member removed",

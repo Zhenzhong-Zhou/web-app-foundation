@@ -53,6 +53,7 @@
   "audit.action.invoiceLineUpdated": "Ligne de facture modifiée",
   "audit.action.invoiceUpdated": "Facture modifiée",
   "audit.action.invoiceVoided": "Facture annulée",
+  "audit.action.listExported": "Liste exportée",
   "audit.action.locationCreated": "Emplacement créé",
   "audit.action.locationUpdated": "Emplacement modifié",
   "audit.action.memberRemoved": "Membre retiré",

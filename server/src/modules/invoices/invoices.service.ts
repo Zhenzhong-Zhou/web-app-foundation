@@ -109,11 +109,26 @@ export class InvoicesService {
           currency: invoices.currency,
           invoiceDate: invoices.invoiceDate,
           dueDate: invoices.dueDate,
+          subtotal: invoices.subtotal,
+          taxTotal: invoices.taxTotal,
           total: invoices.total,
+          // Every credit note against it, the voiding one included, and
+          // what is left: for the export (ADR-057) and the row alike.
+          credited: sql<string>`coalesce((
+            select sum(${creditNotes.total}) from ${creditNotes}
+            where ${creditNotes.invoiceId} = ${invoices.id}
+          ), 0)::text`,
+          // In SQL, so decimals stay exact (ADR-025); null on a draft.
+          net: sql<string | null>`(${invoices.total} - coalesce((
+            select sum(${creditNotes.total}) from ${creditNotes}
+            where ${creditNotes.invoiceId} = ${invoices.id}
+          ), 0))::text`,
+          orderReference: orders.reference,
           createdAt: invoices.createdAt,
         })
         .from(invoices)
         .innerJoin(partners, eq(partners.id, invoices.partnerId))
+        .innerJoin(orders, eq(orders.id, invoices.orderId))
         .where(and(...scope))
         // By id (UUIDv7 is chronological), or by the sort and then id.
         .orderBy(...paging.orderBy)

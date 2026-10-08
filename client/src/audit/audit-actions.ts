@@ -68,6 +68,10 @@ export const AUDIT_ACTION_NAMES = defineMessages({
     id: 'audit.action.invoiceVoided',
     defaultMessage: 'Invoice voided',
   },
+  'list.exported': {
+    id: 'audit.action.listExported',
+    defaultMessage: 'Exported a list',
+  },
   'location.created': {
     id: 'audit.action.locationCreated',
     defaultMessage: 'Location created',
