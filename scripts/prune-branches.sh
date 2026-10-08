@@ -61,7 +61,7 @@ done
 
 cd "$(git rev-parse --show-toplevel)"
 
-echo "Fetching $REMOTE (and dropping branches already deleted there)…"
+echo "Fetching ${REMOTE} (and dropping branches already deleted there)..."
 git fetch --prune --quiet "$REMOTE"
 
 if ! git rev-parse --verify --quiet "$BASE" >/dev/null; then
@@ -175,11 +175,11 @@ elif [ "$DO_DELETE" -eq 0 ]; then
   echo "Dry run: nothing deleted. Run again with --yes to delete the branches marked delete."
 else
   if [ "${#REMOTE_DELETE[@]}" -gt 0 ]; then
-    echo "Deleting on $REMOTE…"
+    echo "Deleting on ${REMOTE}..."
     git push "$REMOTE" --delete "${REMOTE_DELETE[@]}"
   fi
   if [ "${#LOCAL_DELETE[@]}" -gt 0 ]; then
-    echo "Deleting locally…"
+    echo "Deleting locally..."
     # -D, not -d: -d checks against the local main and refuses a rebased or
     # squashed branch, which is already proven merged above.
     git branch -D "${LOCAL_DELETE[@]}"
