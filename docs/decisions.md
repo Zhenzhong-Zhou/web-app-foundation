@@ -5462,9 +5462,9 @@ together, with the most urgent few of each.
 | To receive | confirmed purchases with lines still to come | overdue first, then by expected date | Orders, purchases, open | `orders.view` |
 | Expiring soon | lots with stock expiring within 90 days, or expired | soonest first, expired red | Inventory, Expiring soon | `stock.view` |
 | Costs waiting | receipts with no cost yet | oldest first | Inventory, Needs a cost | `costs.view` |
-| Invoices to issue | draft invoices, and shipments not yet invoiced | oldest first | Invoices, drafts | `invoices.view` |
-| Returns open | authorized returns not closed, and credits not yet issued | oldest first | Returns, open | `return_authorizations.view` |
-| Production | runs planned or in progress | planned overdue first | Production | `production.view` |
+| Invoices to issue | draft invoices | newest first, as the list | Invoices, drafts | `invoices.view` |
+| Returns open | returns still open | newest first, as the list | Returns, open | `return_authorizations.view` |
+| Production | runs in progress (released) | newest first, as the list | Production, in progress | `production.view` |
 | Licences | licences expiring within 60 days, or expired | soonest first | Licences | `product_licences.view` |
 
 **Decision — a welcome, a sentence and a row of counts, above the cards.**
@@ -5496,6 +5496,16 @@ designers; before any card, three things say where the day stands:
 - **No money and no charts.** A figure like "invoiced this month" needs one
   currency or one per currency and a decision about what it counts; charts
   are an open decision of their own. Both stay out until asked for.
+
+*Amended while building:* each card reads its rows through its list's own
+service with the card's filters, so its five rows are exactly that list's
+first five, in the list's order; a card ordered differently from its list
+would have needed its own query and could drift from it. Shipments not yet
+invoiced, credits not yet issued and planned runs are left out for now:
+none has a list filter for "See all" to open, and a card must open its own
+rows. Each comes back with its filter. Lateness follows the reader's day
+(`?today=`); the expiring count's 90 days are the server's, as the
+inventory's own filter counts them.
 
 **Decision — the lists open where Home points.** A card's link must land
 on exactly its rows, so the lists read their quick filters and range from

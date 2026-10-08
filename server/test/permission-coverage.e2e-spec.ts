@@ -57,6 +57,10 @@ const GATED_INSIDE = new Map<string, string>([
     'LookupController.lookup',
     'Each kind of record by its own view permission, in the service (ADR-056)',
   ],
+  [
+    'HomeController.get',
+    'Each card by its own view permission, in the service (ADR-058)',
+  ],
 ]);
 
 const ALLOWED = new Map([...SELF_SERVICE, ...GATED_INSIDE]);

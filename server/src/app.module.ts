@@ -21,6 +21,7 @@ import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { BomsModule } from './modules/boms/boms.module';
 import { CostsModule } from './modules/costs/costs.module';
+import { HomeModule } from './modules/home/home.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { OrdersModule } from './modules/orders/orders.module';
@@ -128,6 +129,7 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     BomsModule,
     ProductionOrdersModule,
     SearchModule,
+    HomeModule,
     LocationsModule,
     StockModule,
     CostsModule,
