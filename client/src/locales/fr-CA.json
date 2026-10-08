@@ -688,6 +688,7 @@
   "orders.create.raiseAsDraft": "Créer en brouillon",
   "orders.create.raising": "Création…",
   "orders.create.removeItem": "Retirer l’article",
+  "orders.create.unsaved": "La commande commencée n’a pas été créée. En quittant, son partenaire et ses lignes seront perdus.",
   "orders.direction": "Sens",
   "orders.direction.buying": "Achat",
   "orders.direction.purchase": "Nous leur achetons",
@@ -1270,5 +1271,8 @@
   "settings.tax.rate": "{value} %",
   "settings.tax.ratePercent": "Taux %",
   "settings.tax.removeThis": "Retirer cette taxe",
-  "settings.tax.saved": "Code de taxe enregistré"
+  "settings.tax.saved": "Code de taxe enregistré",
+  "unsaved.leave": "Quitter",
+  "unsaved.stay": "Rester",
+  "unsaved.title": "Quitter sans enregistrer?"
 }

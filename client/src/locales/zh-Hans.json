@@ -688,6 +688,7 @@
   "orders.create.raiseAsDraft": "保存为草稿",
   "orders.create.raising": "正在创建…",
   "orders.create.removeItem": "移除此项",
+  "orders.create.unsaved": "您开始的订单尚未创建。离开将丢失其合作伙伴和明细行。",
   "orders.direction": "方向",
   "orders.direction.buying": "采购",
   "orders.direction.purchase": "向其采购",
@@ -1270,5 +1271,8 @@
   "settings.tax.rate": "{value}%",
   "settings.tax.ratePercent": "税率 %",
   "settings.tax.removeThis": "移除此税种",
-  "settings.tax.saved": "税码已保存"
+  "settings.tax.saved": "税码已保存",
+  "unsaved.leave": "离开",
+  "unsaved.stay": "留下",
+  "unsaved.title": "不保存就离开？"
 }

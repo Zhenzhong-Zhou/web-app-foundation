@@ -275,6 +275,21 @@ takes about a minute to wake, and a blank page for that long reads as broken.
 
 ---
 
+## Unsaved changes
+
+A form that builds something a person would be sorry to lose (an order, a
+product, a run, an RMA, a recipe) asks before it is thrown away (issue #54):
+
+- `useUnsavedChanges(dirty)` with `UnsavedChangesDialog`, its message saying
+  what would be lost in the page's words. Inside the app it holds the
+  navigation (React Router's `useBlocker`, which is why the app uses a data
+  router); closing the tab or reloading gets the browser's own prompt.
+- `dirty` is anything typed or chosen; an untouched form leaves without a
+  word. Stay is the default button; Leave is red.
+- Call `release()` just before navigating away on purpose, after a save or
+  on Cancel: a state change arrives a tick too late. A dialog that saves
+  and closes needs none of this; its own Cancel already asks nothing.
+
 ## Responsive layout
 
 MUI's breakpoint props (`sx={{ py: { xs: 3, sm: 8 } }}`), applied where a
