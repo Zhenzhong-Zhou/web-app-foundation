@@ -49,6 +49,19 @@ const SELF_SERVICE = new Map<string, string>([
 ]);
 
 /**
+ * Routes open to any member that gate what they return themselves, each
+ * part by its own permission, so the route has no single one to declare.
+ */
+const GATED_INSIDE = new Map<string, string>([
+  [
+    'LookupController.lookup',
+    'Each kind of record by its own view permission, in the service (ADR-056)',
+  ],
+]);
+
+const ALLOWED = new Map([...SELF_SERVICE, ...GATED_INSIDE]);
+
+/**
  * The guard reads the handler first and falls back to the class, so a
  * controller marked `@Public()` once covers every route in it. This reads
  * the same way, or a class-level decorator would be reported as missing.
@@ -87,7 +100,7 @@ describe('permission coverage', () => {
 
   it('guards every route, or says why it is self-service', () => {
     const open = routes()
-      .filter((route) => !route.guarded && !SELF_SERVICE.has(route.key))
+      .filter((route) => !route.guarded && !ALLOWED.has(route.key))
       .map((route) => route.key);
 
     // Named rather than counted: a failure should say which route to fix.
@@ -106,7 +119,7 @@ describe('permission coverage', () => {
         .map((route) => route.key),
     );
 
-    const stale = [...SELF_SERVICE.keys()].filter((key) => !unguarded.has(key));
+    const stale = [...ALLOWED.keys()].filter((key) => !unguarded.has(key));
 
     expect(stale).toEqual([]);
   });
