@@ -154,6 +154,13 @@ export const creditNotes = pgTable(
 
     // An invoice's credits, on its page.
     index('credit_notes_org_invoice_idx').on(t.organizationId, t.invoiceId),
+    // Sorted lists (ADR-057): the sort's value, then id, the keyset's pair.
+    index('credit_notes_org_credit_date_id_idx').on(
+      t.organizationId,
+      t.creditDate,
+      t.id,
+    ),
+    index('credit_notes_org_total_id_idx').on(t.organizationId, t.total, t.id),
 
     // A customer's credits, newest first.
     index('credit_notes_org_partner_date_idx').on(

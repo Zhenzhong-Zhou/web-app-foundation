@@ -15,11 +15,13 @@ import { useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { type DayRange, withInstants } from '../lib/date-range';
 import { formatDate } from '../lib/format';
 import type {
   ReturnAuthorizationStatus,
@@ -65,6 +67,8 @@ export function RmasPage() {
   const intl = useIntl();
   const [filter, setFilter] = useState<Filter>('open');
   const { text, setText, search } = useListSearch();
+  // When raised, the reader's days as instants (ADR-057).
+  const [range, setRange] = useState<DayRange>({});
   const {
     entries: rows,
     error,
@@ -73,7 +77,7 @@ export function RmasPage() {
     loadingMore,
     loadMore,
   } = useKeysetList<ReturnAuthorizationSummary>(
-    withSearch(query(filter), search),
+    withInstants(withSearch(query(filter), search), range),
   );
   const showSkeleton = useDelayedFlag(loading);
 
@@ -108,7 +112,16 @@ export function RmasPage() {
           pressed: filter === option.value,
           onToggle: () => setFilter(option.value),
         }))}
-      />
+      >
+        <DateRangeFilter
+          label={intl.formatMessage({
+            id: 'rmas.raised',
+            defaultMessage: 'Raised',
+          })}
+          value={range}
+          onChange={setRange}
+        />
+      </FilterRow>
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -119,7 +132,7 @@ export function RmasPage() {
           </Stack>
         ) : rows?.length === 0 ? (
           <EmptyState>
-            {search
+            {search || range.from || range.to
               ? intl.formatMessage({
                   id: 'inventory.noMatch',
                   defaultMessage: 'Nothing matches that search.',

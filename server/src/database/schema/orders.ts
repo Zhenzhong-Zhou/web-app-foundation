@@ -228,6 +228,12 @@ export const orders = pgTable(
     index('orders_org_partner_idx').on(t.organizationId, t.partnerId),
     index('orders_org_created_at_idx').on(t.organizationId, t.createdAt.desc()),
     index('orders_org_id_idx').on(t.organizationId, t.id.desc()),
+    // Sorted by expected date (ADR-057), then id, the keyset's pair.
+    index('orders_org_expected_at_id_idx').on(
+      t.organizationId,
+      t.expectedAt,
+      t.id,
+    ),
 
     // "What replaced this one", and the lookup the RESTRICT foreign key runs
     // on every delete. Partial because almost no order is a duplicate.

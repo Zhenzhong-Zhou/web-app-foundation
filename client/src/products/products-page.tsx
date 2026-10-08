@@ -18,6 +18,7 @@ import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
+import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
@@ -100,6 +101,8 @@ export function ProductsPage() {
         })}
         actions={
           <Stack direction="row" spacing={1}>
+            {/* The whole catalogue, every language's names (ADR-057). */}
+            <ExportButton path="/products/export" />
             {/* Reference data for recipes, so it hangs off the catalogue
                 rather than the navigation. */}
             {can('product_licences.view') && (

@@ -108,6 +108,13 @@ export const AUDIT_ACTIONS = {
   PRICE_LIST_UPDATED: 'price_list.updated',
   PRICE_LIST_ITEM_SET: 'price_list.item_set',
   PRICE_LIST_ITEM_REMOVED: 'price_list.item_removed',
+
+  /**
+   * A list exported as CSV (ADR-057): which list, its filters, how many
+   * rows. Data leaving in bulk, partners' addresses and the audit log among
+   * it, so who took what is worth a line.
+   */
+  LIST_EXPORTED: 'list.exported',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

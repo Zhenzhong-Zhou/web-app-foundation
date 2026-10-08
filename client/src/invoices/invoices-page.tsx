@@ -15,17 +15,23 @@ import { useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
+import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
+import { type DayRange, withDays } from '../lib/date-range';
 import { formatDay, formatMoney, NO_VALUE } from '../lib/format';
 import type { InvoiceStatus, InvoiceSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch, withSearch } from '../lib/use-list-search';
+import { useListSort, withSort } from '../lib/use-list-sort';
 import { STATUS_TONES } from '../theme/status';
+import { CreditNotesLink } from './credit-notes-page';
 import { invoiceStatus } from './invoice-status';
 
 type Filter = InvoiceStatus | 'all';
@@ -65,6 +71,22 @@ export function InvoicesPage() {
   const intl = useIntl();
   const [filter, setFilter] = useState<Filter>('all');
   const { text, setText, search } = useListSearch();
+  // By invoice date, sortable by date and total (ADR-057); the export
+  // takes the same query.
+  const [range, setRange] = useState<DayRange>({});
+  const { sort, toggle } = useListSort<'invoiceDate' | 'total'>();
+  const path = withSort(
+    withDays(withSearch(query(filter), search), range),
+    sort,
+  );
+  const invoiceDate = intl.formatMessage({
+    id: 'invoices.date',
+    defaultMessage: 'Date',
+  });
+  const total = intl.formatMessage({
+    id: 'orders.lines.total',
+    defaultMessage: 'Total',
+  });
   const {
     entries: rows,
     error,
@@ -72,7 +94,7 @@ export function InvoicesPage() {
     hasMore,
     loadingMore,
     loadMore,
-  } = useKeysetList<InvoiceSummary>(withSearch(query(filter), search));
+  } = useKeysetList<InvoiceSummary>(path);
   const showSkeleton = useDelayedFlag(loading);
 
   return (
@@ -88,6 +110,14 @@ export function InvoicesPage() {
           defaultMessage:
             'An invoice bills one shipment, and is created from it on the order. Once issued it never changes — a mistake is voided with a credit note and invoiced again.',
         })}
+        actions={
+          <Stack direction="row" spacing={1}>
+            <ExportButton
+              path={path.replace('/invoices', '/invoices/export')}
+            />
+            <CreditNotesLink />
+          </Stack>
+        }
       />
 
       {/* The one filter row (ADR-055): which invoices, as buttons. Tabs
@@ -107,7 +137,13 @@ export function InvoicesPage() {
           pressed: filter === option.value,
           onToggle: () => setFilter(option.value),
         }))}
-      />
+      >
+        <DateRangeFilter
+          label={invoiceDate}
+          value={range}
+          onChange={setRange}
+        />
+      </FilterRow>
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -118,7 +154,7 @@ export function InvoicesPage() {
           </Stack>
         ) : rows?.length === 0 ? (
           <EmptyState>
-            {search
+            {search || range.from || range.to
               ? intl.formatMessage({
                   id: 'inventory.noMatch',
                   defaultMessage: 'Nothing matches that search.',
@@ -151,24 +187,25 @@ export function InvoicesPage() {
                       defaultMessage: 'Customer',
                     })}
                   </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'invoices.date',
-                      defaultMessage: 'Date',
-                    })}
-                  </TableCell>
+                  <SortHeader
+                    label={invoiceDate}
+                    active={sort?.key === 'invoiceDate'}
+                    order={sort?.order ?? 'asc'}
+                    onSort={() => toggle('invoiceDate')}
+                  />
                   <TableCell>
                     {intl.formatMessage({
                       id: 'invoices.due',
                       defaultMessage: 'Due',
                     })}
                   </TableCell>
-                  <TableCell align="right">
-                    {intl.formatMessage({
-                      id: 'orders.lines.total',
-                      defaultMessage: 'Total',
-                    })}
-                  </TableCell>
+                  <SortHeader
+                    align="right"
+                    label={total}
+                    active={sort?.key === 'total'}
+                    order={sort?.order ?? 'asc'}
+                    onSort={() => toggle('total')}
+                  />
                   <TableCell>
                     {intl.formatMessage({
                       id: 'common.status',

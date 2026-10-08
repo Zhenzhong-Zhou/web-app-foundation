@@ -23,6 +23,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
@@ -187,6 +188,7 @@ export function StockValuePage() {
           defaultMessage:
             'Each lot carries what it cost; stock without lots carries a running average. Values are material cost only — what was bought and what went into a batch — in the base currency.',
         })}
+        actions={<ExportButton path="/costs/valuation/export" />}
       />
 
       {error && <Alert severity="error">{error}</Alert>}

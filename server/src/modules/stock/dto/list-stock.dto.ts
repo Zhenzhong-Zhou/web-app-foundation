@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsBooleanString,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -11,6 +12,7 @@ import {
 } from 'class-validator';
 
 import { KeysetQueryDto } from '../../../common/dto/keyset-query.dto';
+import { SORT_ORDERS, type SortOrder } from '../../../common/sorted-page';
 
 /** The stock list's filters, and its page (ADR-051). */
 export class ListStockDto extends KeysetQueryDto {
@@ -52,4 +54,14 @@ export class ListStockDto extends KeysetQueryDto {
   @IsOptional()
   @IsBooleanString()
   needsCost?: string;
+
+  /** Sorted by the lot's expiry, soonest first by default (ADR-057); stock with no lot or no expiry last. */
+  @IsOptional()
+  @IsIn(['expiry'])
+  sort?: 'expiry';
+
+  /** Ascending unless asked; with no sort, the list is newest first. */
+  @IsOptional()
+  @IsIn(SORT_ORDERS)
+  order?: SortOrder;
 }

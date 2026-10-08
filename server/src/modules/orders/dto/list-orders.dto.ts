@@ -1,6 +1,7 @@
 import { IsIn, IsOptional, IsUUID } from 'class-validator';
 
-import { SearchableKeysetQueryDto } from '../../../common/dto/searchable-keyset-query.dto';
+import { CalendarRangeQueryDto } from '../../../common/dto/range-query.dto';
+import { SORT_ORDERS, type SortOrder } from '../../../common/sorted-page';
 import { ORDER_STATUSES, type OrderStatus } from '../../../database/schema';
 
 /**
@@ -11,7 +12,7 @@ import { ORDER_STATUSES, type OrderStatus } from '../../../database/schema';
  * be simpler and wrong for the same reason it is wrong for the audit log: new
  * rows arriving mid-scroll shift every page down and the reader misses rows.
  */
-export class ListOrdersDto extends SearchableKeysetQueryDto {
+export class ListOrdersDto extends CalendarRangeQueryDto {
   /**
    * Absent means open orders only — draft and confirmed.
    *
@@ -28,4 +29,14 @@ export class ListOrdersDto extends SearchableKeysetQueryDto {
   @IsOptional()
   @IsUUID()
   partnerId?: string;
+
+  /** Sorted by expected date (ADR-057), orders without one last. */
+  @IsOptional()
+  @IsIn(['expectedAt'])
+  sort?: 'expectedAt';
+
+  /** Ascending unless asked; with no sort, the list is newest first. */
+  @IsOptional()
+  @IsIn(SORT_ORDERS)
+  order?: SortOrder;
 }

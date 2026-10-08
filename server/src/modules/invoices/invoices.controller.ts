@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -10,14 +11,19 @@ import {
   Patch,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 
+import { csvFile, everyRow, exportFilters } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
+import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
 import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { localeOf } from '../../i18n/translate';
 import { CreditNotesService } from './credit-notes.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { CreditInvoiceDto, PreviewCreditDto } from './dto/credit-invoice.dto';
@@ -27,6 +33,7 @@ import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { UpdateInvoiceLineDto } from './dto/update-invoice-line.dto';
 import { VoidInvoiceDto } from './dto/void-invoice.dto';
 import { InvoiceDraftsService } from './invoice-drafts.service';
+import { INVOICE_COLUMNS } from './invoice-exports';
 import { InvoiceIssuingService } from './invoice-issuing.service';
 import { InvoicesService } from './invoices.service';
 
@@ -47,6 +54,32 @@ export class InvoicesController {
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
   list(@Query() query: ListInvoicesDto) {
     return this.invoices.list(query);
+  }
+
+  /** Every invoice the filters match, as CSV (ADR-057): the list's own query, every page. */
+  @Get('export')
+  @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
+  @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'invoices' })
+  async exportInvoices(
+    @Query() query: ListInvoicesDto,
+    @Res({ passthrough: true }) res: Response,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const rows = await everyRow((before, limit) =>
+      this.invoices.list({ ...query, before, limit }),
+    );
+    recordContext({
+      list: 'invoices',
+      filters: exportFilters(query),
+      rows: rows.length,
+    });
+    return csvFile(
+      res,
+      'invoices',
+      INVOICE_COLUMNS,
+      rows,
+      localeOf(acceptLanguage),
+    );
   }
 
   @Get(':id')

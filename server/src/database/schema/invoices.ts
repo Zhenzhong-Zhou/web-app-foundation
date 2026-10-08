@@ -257,6 +257,13 @@ export const invoices = pgTable(
 
     // What is still a draft, what is issued.
     index('invoices_org_status_idx').on(t.organizationId, t.status),
+    // Sorted lists (ADR-057): the sort's value, then id, the keyset's pair.
+    index('invoices_org_invoice_date_id_idx').on(
+      t.organizationId,
+      t.invoiceDate,
+      t.id,
+    ),
+    index('invoices_org_total_id_idx').on(t.organizationId, t.total, t.id),
 
     // An order's invoices, on its page.
     index('invoices_org_order_idx').on(t.organizationId, t.orderId),

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
 
+import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
 import { isForeignKeyViolation } from '../../database/errors';
@@ -120,6 +121,8 @@ export class ProductionOrdersService {
         ? eq(productionOrders.partnerId, query.partnerId)
         : undefined,
       query.before ? lt(productionOrders.id, query.before) : undefined,
+      // When planned (ADR-057).
+      ...instantRange(productionOrders.createdAt, query),
       // Its reference (ADR-056).
       query.search
         ? codeMatches(productionOrders.reference, searchTerms(query.search))

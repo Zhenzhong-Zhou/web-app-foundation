@@ -22,9 +22,11 @@ import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExpiryChip } from '../components/expiry-chip';
+import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { SortHeader } from '../components/sort-header';
 import { api, messageFor } from '../lib/api';
 import { EXPIRY_DAYS } from '../lib/expiry';
 import {
@@ -37,6 +39,7 @@ import { openDialog } from '../lib/open-dialog';
 import type { Availability, Location, StockRow } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { useListSort } from '../lib/use-list-sort';
 import { displayWithUnit } from '../products/units';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
@@ -83,6 +86,7 @@ export function InventoryPage() {
   // From the address too: the lookup's "Show all" opens it narrowed.
   const [params] = useSearchParams();
   const [searchText, setSearchText] = useState(params.get('search') ?? '');
+  const { sort, toggle } = useListSort<'expiry'>();
   const [search, setSearch] = useState((params.get('search') ?? '').trim());
   const [setupError, setSetupError] = useState<string | null>(null);
   const [receiving, setReceiving] = useState(false);
@@ -131,8 +135,13 @@ export function InventoryPage() {
     if (search) params.set('search', search);
     if (expiring) params.set('expiringWithin', String(EXPIRY_DAYS.warning));
     if (needsCost) params.set('needsCost', 'true');
+    // By the lot's expiry when its header is chosen (ADR-057).
+    if (sort) {
+      params.set('sort', sort.key);
+      params.set('order', sort.order);
+    }
     return `/stock?${params.toString()}`;
-  }, [locationId, includeEmpty, search, expiring, needsCost]);
+  }, [locationId, includeEmpty, search, expiring, needsCost, sort]);
 
   /**
    * The count beside "Expiring soon", with the list's other filters, so it
@@ -231,6 +240,12 @@ export function InventoryPage() {
         })}
         actions={
           <Stack direction="row" spacing={1}>
+            {/* Every row the filters match, not the page (ADR-057). */}
+            <ExportButton
+              path={stockPath
+                .replace('/stock?', '/stock/export?')
+                .replace(/(^|[?&])limit=\d+&?/, '$1')}
+            />
             {/* A recall starts from a code off a label (ADR-044). */}
             <Button variant="text" component={RouterLink} to="/lots">
               {intl.formatMessage({
@@ -390,12 +405,15 @@ export function InventoryPage() {
                       defaultMessage: 'Lot',
                     })}
                   </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
+                  <SortHeader
+                    label={intl.formatMessage({
                       id: 'inventory.lot.expires',
                       defaultMessage: 'Expires',
                     })}
-                  </TableCell>
+                    active={sort?.key === 'expiry'}
+                    order={sort?.order ?? 'asc'}
+                    onSort={() => toggle('expiry')}
+                  />
                   <TableCell align="right">
                     {intl.formatMessage({
                       id: 'inventory.quantity',

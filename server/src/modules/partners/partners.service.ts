@@ -4,8 +4,9 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 
+import { EXPORT_LIMIT } from '../../common/export';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
 import { assertLanguagePair } from '../../core/organizations/document-languages';
 import { isUniqueViolation } from '../../database/errors';
@@ -41,6 +42,42 @@ export class PartnersService {
     return this.tenantDb.select(partners, undefined, {
       orderBy: asc(partners.name),
     });
+  }
+
+  /**
+   * Customers and suppliers as a spreadsheet (ADR-057), each with its
+   * billing address on one line: the default one, else the first, of those
+   * still in use. At most EXPORT_LIMIT + 1 rows, for withinLimit to judge.
+   */
+  exportRows() {
+    return this.tenantDb.transaction(async (tx, organizationId) =>
+      tx
+        .select({
+          id: partners.id,
+          name: partners.name,
+          code: partners.code,
+          taxId: partners.taxId,
+          documentLanguage: partners.documentLanguage,
+          retired: sql<boolean>`not ${partners.isActive}`,
+          // The outer partners.id written out in full: with no join, Drizzle
+          // writes a column without its table, and a bare "id" inside the
+          // subquery would be the address's own.
+          billingAddress: sql<string | null>`(
+            select concat_ws(', ', ${addresses.line1}, ${addresses.line2},
+              ${addresses.city}, ${addresses.region}, ${addresses.postalCode},
+              ${addresses.country})
+            from ${addresses}
+            where ${addresses.partnerId} = ${sql.raw('"partners"."id"')}
+              and ${addresses.isBilling} and ${addresses.isActive}
+            order by ${addresses.isDefault} desc, ${addresses.id}
+            limit 1
+          )`,
+        })
+        .from(partners)
+        .where(eq(partners.organizationId, organizationId))
+        .orderBy(asc(partners.name))
+        .limit(EXPORT_LIMIT + 1),
+    );
   }
 
   async findById(partnerId: string) {

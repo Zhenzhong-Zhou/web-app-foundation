@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -9,15 +10,20 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 
+import { csvFile, everyRow, exportFilters } from '../../common/export';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
+import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
 import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { localeOf } from '../../i18n/translate';
 import { AdjustmentGuard } from './adjustment.guard';
 import { ListLotsDto } from './dto/list-lots.dto';
 import { ListMovementsDto } from './dto/list-movements.dto';
@@ -26,6 +32,7 @@ import { RecordMovementDto } from './dto/record-movement.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
 import { LotsService } from './lots.service';
 import { StockService } from './stock.service';
+import { MOVEMENT_COLUMNS, STOCK_COLUMNS } from './stock-exports';
 import { StockReadsService } from './stock-reads.service';
 
 /**
@@ -53,6 +60,32 @@ export class StockController {
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
   list(@Query() query: ListStockDto) {
     return this.reads.list(query);
+  }
+
+  /** What is on hand, as the filters narrow it, as CSV (ADR-057): the list's own query, every page. */
+  @Get('export')
+  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
+  @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'inventory' })
+  async exportInventory(
+    @Query() query: ListStockDto,
+    @Res({ passthrough: true }) res: Response,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const rows = await everyRow((before, limit) =>
+      this.reads.list({ ...query, before, limit }),
+    );
+    recordContext({
+      list: 'inventory',
+      filters: exportFilters(query),
+      rows: rows.length,
+    });
+    return csvFile(
+      res,
+      'inventory',
+      STOCK_COLUMNS,
+      rows,
+      localeOf(acceptLanguage),
+    );
   }
 
   @Post('movements')
@@ -89,6 +122,32 @@ export class StockController {
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
   listMovements(@Query() query: ListMovementsDto) {
     return this.reads.listMovements(query);
+  }
+
+  /** Every movement the filters match, as CSV (ADR-057): the list's own query, every page. */
+  @Get('movements/export')
+  @RequirePermissions(PERMISSIONS.STOCK_VIEW)
+  @Audited({ action: AUDIT_ACTIONS.LIST_EXPORTED, resourceType: 'movements' })
+  async exportMovements(
+    @Query() query: ListMovementsDto,
+    @Res({ passthrough: true }) res: Response,
+    @Headers('accept-language') acceptLanguage?: string,
+  ) {
+    const rows = await everyRow((before, limit) =>
+      this.reads.listMovements({ ...query, before, limit }),
+    );
+    recordContext({
+      list: 'movements',
+      filters: exportFilters(query),
+      rows: rows.length,
+    });
+    return csvFile(
+      res,
+      'movements',
+      MOVEMENT_COLUMNS,
+      rows,
+      localeOf(acceptLanguage),
+    );
   }
 
   @Get('lots')

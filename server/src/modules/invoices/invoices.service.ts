@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, asc, desc, eq, lt, or, sql } from 'drizzle-orm';
+import { and, asc, eq, or, sql } from 'drizzle-orm';
 
+import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
+import { pagedBy } from '../../common/sorted-page';
 import { documentLanguages } from '../../core/organizations/document-languages';
 import {
   creditNoteLines,
@@ -18,6 +20,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { partnerMatches } from '../partners/partner-search';
+import type { ListCreditNotesDto } from './dto/list-credit-notes.dto';
 import type { ListInvoicesDto } from './dto/list-invoices.dto';
 import { computeAmounts } from './invoice-amounts';
 
@@ -42,10 +45,47 @@ export class InvoicesService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const scope = [eq(invoices.organizationId, organizationId)];
 
-      if (query.before) scope.push(lt(invoices.id, query.before));
+      // Newest first, or sorted (ADR-057), paged after the cursor either way.
+      const paging = await pagedBy({
+        id: invoices.id,
+        before: query.before,
+        sorted: query.sort
+          ? {
+              value: {
+                invoiceDate: invoices.invoiceDate,
+                total: invoices.total,
+              }[query.sort],
+              order: query.order ?? 'asc',
+            }
+          : undefined,
+        readCursor: async (before) => {
+          const column = query.sort
+            ? { invoiceDate: invoices.invoiceDate, total: invoices.total }[
+                query.sort
+              ]
+            : invoices.id;
+          const [row] = await tx
+            .select({
+              value: sql<string | null>`${column}::text`,
+              id: invoices.id,
+            })
+            .from(invoices)
+            .where(
+              and(
+                eq(invoices.organizationId, organizationId),
+                eq(invoices.id, before),
+              ),
+            );
+          return row;
+        },
+      });
+      if (paging.where) scope.push(paging.where);
       if (query.status) scope.push(eq(invoices.status, query.status));
       if (query.partnerId) scope.push(eq(invoices.partnerId, query.partnerId));
       if (query.orderId) scope.push(eq(invoices.orderId, query.orderId));
+      // By invoice date (ADR-057); a draft has none yet, so a range leaves
+      // drafts out.
+      scope.push(...calendarRange(invoices.invoiceDate, query));
       // Its number or its partner's name (ADR-056). A draft has no number
       // yet, so only its partner finds it.
       if (query.search) {
@@ -69,14 +109,115 @@ export class InvoicesService {
           currency: invoices.currency,
           invoiceDate: invoices.invoiceDate,
           dueDate: invoices.dueDate,
+          subtotal: invoices.subtotal,
+          taxTotal: invoices.taxTotal,
           total: invoices.total,
+          // Every credit note against it, the voiding one included, and
+          // what is left: for the export (ADR-057) and the row alike.
+          credited: sql<string>`coalesce((
+            select sum(${creditNotes.total}) from ${creditNotes}
+            where ${creditNotes.invoiceId} = ${invoices.id}
+          ), 0)::text`,
+          // In SQL, so decimals stay exact (ADR-025); null on a draft.
+          net: sql<string | null>`(${invoices.total} - coalesce((
+            select sum(${creditNotes.total}) from ${creditNotes}
+            where ${creditNotes.invoiceId} = ${invoices.id}
+          ), 0))::text`,
+          orderReference: orders.reference,
           createdAt: invoices.createdAt,
         })
         .from(invoices)
         .innerJoin(partners, eq(partners.id, invoices.partnerId))
+        .innerJoin(orders, eq(orders.id, invoices.orderId))
         .where(and(...scope))
-        // By id: UUIDv7 is chronological, so one column is the cursor.
-        .orderBy(desc(invoices.id))
+        // By id (UUIDv7 is chronological), or by the sort and then id.
+        .orderBy(...paging.orderBy)
+        .limit(limit + 1);
+
+      return pageOf(rows, limit);
+    });
+  }
+
+  /**
+   * Every credit note, newest first (ADR-057): they had pages but no list,
+   * so a quarter's could be neither shown nor exported. Each with its
+   * invoice's number and its partner, for the row and the export.
+   */
+  async listCreditNotes(query: ListCreditNotesDto) {
+    const limit = query.limit ?? DEFAULT_LIMIT;
+
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const scope = [eq(creditNotes.organizationId, organizationId)];
+
+      // Newest first, or sorted (ADR-057), paged after the cursor either way.
+      const paging = await pagedBy({
+        id: creditNotes.id,
+        before: query.before,
+        sorted: query.sort
+          ? {
+              value: {
+                creditDate: creditNotes.creditDate,
+                total: creditNotes.total,
+              }[query.sort],
+              order: query.order ?? 'asc',
+            }
+          : undefined,
+        readCursor: async (before) => {
+          const column = query.sort
+            ? { creditDate: creditNotes.creditDate, total: creditNotes.total }[
+                query.sort
+              ]
+            : creditNotes.id;
+          const [row] = await tx
+            .select({
+              value: sql<string | null>`${column}::text`,
+              id: creditNotes.id,
+            })
+            .from(creditNotes)
+            .where(
+              and(
+                eq(creditNotes.organizationId, organizationId),
+                eq(creditNotes.id, before),
+              ),
+            );
+          return row;
+        },
+      });
+      if (paging.where) scope.push(paging.where);
+      if (query.partnerId) {
+        scope.push(eq(creditNotes.partnerId, query.partnerId));
+      }
+      if (query.invoiceId) {
+        scope.push(eq(creditNotes.invoiceId, query.invoiceId));
+      }
+      scope.push(...calendarRange(creditNotes.creditDate, query));
+      if (query.search) {
+        const terms = searchTerms(query.search);
+        const match = or(
+          codeMatches(creditNotes.number, terms),
+          partnerMatches(creditNotes.partnerId, terms),
+        );
+        if (match) scope.push(match);
+      }
+
+      const rows = await tx
+        .select({
+          id: creditNotes.id,
+          number: creditNotes.number,
+          invoiceId: creditNotes.invoiceId,
+          invoiceNumber: invoices.number,
+          partnerId: creditNotes.partnerId,
+          partnerName: partners.name,
+          currency: invoices.currency,
+          creditDate: creditNotes.creditDate,
+          total: creditNotes.total,
+          isVoid: creditNotes.isVoid,
+        })
+        .from(creditNotes)
+        .innerJoin(invoices, eq(invoices.id, creditNotes.invoiceId))
+        .innerJoin(partners, eq(partners.id, creditNotes.partnerId))
+        .where(and(...scope))
+        .orderBy(...paging.orderBy)
         .limit(limit + 1);
 
       return pageOf(rows, limit);

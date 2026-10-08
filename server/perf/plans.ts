@@ -48,6 +48,17 @@ import { REPORTS } from './report';
 
 const MANIFEST = join(__dirname, 'volume.json');
 
+/** The thirty days before today, as days and as instants (ADR-057). */
+const NOW = Date.now();
+const MONTH_DAYS = {
+  from: new Date(NOW - 30 * 86_400_000).toISOString().slice(0, 10),
+  to: new Date(NOW).toISOString().slice(0, 10),
+};
+const MONTH_INSTANTS = {
+  from: new Date(NOW - 30 * 86_400_000).toISOString(),
+  until: new Date(NOW).toISOString(),
+};
+
 /** The lookup as an owner sees it: every kind queried. */
 const EVERY_PERMISSION = new Set(ALL_PERMISSIONS);
 
@@ -277,6 +288,43 @@ async function buildProbes(
     {
       name: 'lookup: typo',
       run: () => lookups.lookup('fokus dialy', EVERY_PERMISSION, 'en'),
+    },
+    // Dates and sorting (ADR-057): each sort read through its index on
+    // (organization_id, value, id), its page 2 after a (value, id) cursor,
+    // and a month's range on a calendar day and on an instant.
+    {
+      name: 'invoices: by total',
+      run: () => invoices.list({ sort: 'total', order: 'desc' }),
+    },
+    {
+      name: 'invoices: by date, page 2',
+      run: async () => {
+        const first = await invoices.list({ sort: 'invoiceDate' });
+        return invoices.list({
+          sort: 'invoiceDate',
+          before: first.nextCursor ?? undefined,
+        });
+      },
+    },
+    {
+      name: 'credit notes: by date',
+      run: () => invoices.listCreditNotes({ sort: 'creditDate' }),
+    },
+    {
+      name: 'orders: by expected date',
+      run: () => orders.list({ status: 'all', sort: 'expectedAt' }),
+    },
+    {
+      name: 'inventory: by expiry',
+      run: () => stock.list({ sort: 'expiry' }),
+    },
+    {
+      name: 'invoices: a month',
+      run: () => invoices.list({ ...MONTH_DAYS }),
+    },
+    {
+      name: 'movements: a month',
+      run: () => stock.listMovements({ ...MONTH_INSTANTS }),
     },
     { name: 'valuation', run: () => costs.stockValuation() },
   ];

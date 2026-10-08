@@ -1,7 +1,7 @@
 import { IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 import { IsPositiveDecimal } from '../../../common/dto/decimal';
-import { SearchableKeysetQueryDto } from '../../../common/dto/searchable-keyset-query.dto';
+import { InstantRangeQueryDto } from '../../../common/dto/range-query.dto';
 import { trim } from '../../../common/dto/trim';
 
 export class CreateProductionOrderDto {
@@ -85,7 +85,7 @@ export class UpdateProductionOrderDto {
   notes?: string;
 }
 
-export class ListProductionOrdersDto extends SearchableKeysetQueryDto {
+export class ListProductionOrdersDto extends InstantRangeQueryDto {
   @IsOptional()
   @IsIn(['draft', 'released', 'completed', 'cancelled'])
   status?: 'draft' | 'released' | 'completed' | 'cancelled';

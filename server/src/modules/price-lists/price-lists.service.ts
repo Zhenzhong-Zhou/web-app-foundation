@@ -73,6 +73,7 @@ export class PriceListsService {
           sku: productVariants.sku,
           productName: products.name,
           variantName: productVariants.name,
+          unitOfMeasure: productVariants.unitOfMeasure,
           unitPrice: priceListItems.unitPrice,
           updatedAt: priceListItems.updatedAt,
         })

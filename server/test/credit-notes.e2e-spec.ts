@@ -178,6 +178,43 @@ describe('Credit notes (e2e)', () => {
       expect(row.status).toBe('issued');
     });
 
+    it('lists credit notes, by number, partner and credit date (ADR-057)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const inv = await invoiced(org);
+      const issued = body<{ creditNote: { id: string; number: string } }>(
+        await credit(org, inv, [
+          { invoiceLineId: inv.capsules, quantity: '2' },
+        ]).expect(201),
+      ).creditNote;
+
+      const list = async (query = '') =>
+        body<{
+          entries: {
+            id: string;
+            number: string;
+            invoiceNumber: string | null;
+            total: string;
+            isVoid: boolean;
+          }[];
+        }>(await org.agent.get(`/v1/credit-notes${query}`).expect(200)).entries;
+
+      const [row] = await list();
+      expect(row).toMatchObject({
+        id: issued.id,
+        number: 'CN-000001',
+        total: '26.2500',
+        isVoid: false,
+      });
+      expect(row.invoiceNumber).toMatch(/^INV-/);
+
+      expect(await list('?search=cn-0000')).toHaveLength(1);
+      expect(await list('?search=nothing-like-it')).toHaveLength(0);
+      // Credited on TODAY (2026-09-25 in these tests): a range ending the
+      // day before leaves it out, one holding the day keeps it.
+      expect(await list('?to=2026-09-24')).toHaveLength(0);
+      expect(await list(`?from=${TODAY}&to=${TODAY}`)).toHaveLength(1);
+    });
+
     it('previews exactly what issuing stores', async () => {
       const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);

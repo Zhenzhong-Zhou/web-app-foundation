@@ -119,6 +119,7 @@ describe('List search (e2e)', () => {
     '/v1/invoices',
     '/v1/return-authorizations',
     '/v1/production-orders',
+    '/v1/credit-notes',
   ])('reads and validates search on %s', async (path) => {
     const alpha = await registerOrganization(app, 'alpha');
 

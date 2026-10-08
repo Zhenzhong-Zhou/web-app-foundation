@@ -18,6 +18,7 @@ import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
+import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
@@ -90,6 +91,8 @@ export function PartnersPage() {
         })}
         actions={
           <Stack direction="row" spacing={1}>
+            {/* Every partner, with billing addresses (ADR-057). */}
+            <ExportButton path="/partners/export" />
             <Button
               variant="text"
               disabled={loading}
