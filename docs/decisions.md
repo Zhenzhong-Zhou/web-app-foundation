@@ -5654,6 +5654,22 @@ Not done: reading the cards in parallel. A request bound by work gets no
 faster when the same work is spread over more of the pool's connections,
 and under load it would take connections other pages need.
 
+*Amended after the second run:* `GET /v1/home` fell from 841 ms to 453 ms
+at the 95th percentile and from 20 statements to 9, still over 300. The
+plans showed where the rest went: the costs card's rows took 39 ms of the
+probe's 42, and its count does the same work. A stock row "needs a cost"
+when a waiting valuation exists for its pool, and the planner checked that
+for each of 1,542 stock rows through the pool index, reading every
+valuation of the variant to find the few waiting ones. The partial index
+for the needs-cost list was on the organization alone. It now holds the
+pool, (organization, variant, lot) where needs_cost, so each check reads
+only waiting rows (migration 0048); the needs-cost list still leads with
+the organization. Two smaller fixes: the plan check now explains the
+totals statement, which it skipped because it opens with a parenthesis,
+and Getting started's invoice step reads through an index, as the receipt
+step does, after a run flagged a scan of invoices that the previous run's
+plan had not chosen.
+
 **Consequences.**
 
 - Built in this order, each its own commit:
