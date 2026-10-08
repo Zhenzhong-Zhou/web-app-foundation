@@ -2,12 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
-import {
-  codeMatches,
-  nameMatches,
-  pinyinMatches,
-  searchTerms,
-} from '../../common/search';
+import { codeMatches, searchTerms } from '../../common/search';
 import {
   creditNoteLines,
   creditNotes,
@@ -25,6 +20,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { partnerMatches } from '../partners/partner-search';
 import { itemName } from '../stock/item-name';
 import { ListOrdersDto } from './dto/list-orders.dto';
 
@@ -93,8 +89,7 @@ export class OrdersService {
         const terms = searchTerms(query.search);
         const match = or(
           codeMatches(orders.reference, terms),
-          nameMatches(partners.name, terms),
-          pinyinMatches(partners.namePinyin, terms),
+          partnerMatches(orders.partnerId, terms),
         );
         if (match) scope.push(match);
       }

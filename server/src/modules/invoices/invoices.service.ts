@@ -2,12 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, desc, eq, lt, or, sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
-import {
-  codeMatches,
-  nameMatches,
-  pinyinMatches,
-  searchTerms,
-} from '../../common/search';
+import { codeMatches, searchTerms } from '../../common/search';
 import { documentLanguages } from '../../core/organizations/document-languages';
 import {
   creditNoteLines,
@@ -22,6 +17,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { partnerMatches } from '../partners/partner-search';
 import type { ListInvoicesDto } from './dto/list-invoices.dto';
 import { computeAmounts } from './invoice-amounts';
 
@@ -56,8 +52,7 @@ export class InvoicesService {
         const terms = searchTerms(query.search);
         const match = or(
           codeMatches(invoices.number, terms),
-          nameMatches(partners.name, terms),
-          pinyinMatches(partners.namePinyin, terms),
+          partnerMatches(invoices.partnerId, terms),
         );
         if (match) scope.push(match);
       }

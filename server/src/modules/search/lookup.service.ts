@@ -27,6 +27,7 @@ import {
   returnAuthorizations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { partnerMatches } from '../partners/partner-search';
 import { itemMatches } from '../products/item-search';
 
 /** At most this many of each kind (ADR-056). */
@@ -154,15 +155,16 @@ export class LookupService {
               and(
                 eq(orders.organizationId, organizationId),
                 excluding(orders.id, exclude),
+                // The partner through a subquery on orders.partner_id, so
+                // both halves stay on orders and indexed (partner-search).
                 close
                   ? or(
                       closeMatches(orders.reference, terms),
-                      closeMatches(partners.name, terms, 'name'),
+                      partnerMatches(orders.partnerId, terms, 'close'),
                     )
                   : or(
                       codeMatches(orders.reference, terms),
-                      nameMatches(partners.name, terms),
-                      pinyinMatches(partners.namePinyin, terms),
+                      partnerMatches(orders.partnerId, terms),
                     ),
               ),
             )
