@@ -128,20 +128,14 @@ Then tag v0.4.0.
   service, the lists opening from the address, Getting started with migration
   0045, the page to the canvas at
   https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ, and its perf probes. Then
-  **status pages** (below); then **file storage** (one ADR for every file,
-  below); then **organization branding** (logo, accent with a contrast check,
-  expiry thresholds), the first feature that uploads one. Bob may reorder.
-- **Status pages, after Home.** Today an unknown address shows a bare "Not
-  found" outside the layout, and a record that does not exist or a page the
-  role cannot open shows the server's raw error. One shared design for all
-  of them, in a feature folder `client/src/errors/`: an icon, a short title
-  ("Page not found", "This order doesn't exist", "You don't have access to
-  this", "Something went wrong"), one sentence, one or two actions (Go home,
-  Search everything, Reload) and a reference number after a crash, in three
-  languages. Signed in, it shows inside the app with the rail and the
-  lookup; signed out, alone and centred, offering to sign in. No ADR: a
-  `conventions.md` rule (a missing or forbidden record shows the status
-  page, not a raw error). Designed on the same canvas as Home.
+  **status pages** (built, below); then **file storage** (one ADR for every
+  file, below); then **organization branding** (logo, accent with a contrast
+  check, expiry thresholds), the first feature that uploads one. Bob may
+  reorder.
+- **Status pages, built** on `status-pages`: one shape for an unknown
+  address, a record that does not exist, one the role cannot open, a server
+  out of reach and a crash (`client/src/errors/`, conventions.md "Status
+  pages"), designed on Home's canvas.
 - **Dates, sorting and export, one ADR.** Only the audit log filters by date
   today, and every list is newest first, fixed, because keyset paging
   (ADR-051) relies on one order. Date ranges are cheap, one more filter
