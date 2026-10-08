@@ -1,0 +1,69 @@
+{
+  // Shared project settings for VS Code. Personal taste (theme, font,
+  // keymap) belongs in User settings, not here.
+
+  // --- TypeScript -----------------------------------------------------------
+  // One tsserver serves the whole window. Pin it to the server's copy, as
+  // WebStorm was, so the client's version is never applied to server files.
+  // Run "TypeScript: Select TypeScript Version" > "Use Workspace Version"
+  // once; VS Code remembers it.
+  "typescript.tsdk": "server/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  // WebStorm rewrites imports when a file moves; do the same without asking.
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+
+  // --- Formatting and lint ---------------------------------------------------
+  // Prettier from each side's own node_modules, then ESLint's fixes. Import
+  // order is ESLint's simple-import-sort, so "organize imports" stays off:
+  // the two would fight over the same lines.
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
+  // server/ and client/ each have their own flat config and node_modules.
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+  // Neither side's format:check covers docs/ or .github/, and ci.yml is not
+  // Prettier-formatted (handoff). Formatting them on save would turn a
+  // one-line edit into a whole-file diff.
+  "[markdown]": {
+    "editor.formatOnSave": false,
+    "files.trimTrailingWhitespace": false
+  },
+  "[yaml]": { "editor.formatOnSave": false },
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+
+  // --- Git ------------------------------------------------------------------
+  // With nothing staged, VS Code offers to commit every change at once —
+  // the `git add -A` the working agreements rule out. Stage by concern.
+  "git.enableSmartCommit": false,
+  "git.suggestSmartCommit": false,
+
+  // --- Debugging ------------------------------------------------------------
+  // launch.json is gitignored. Instead, any process started with --inspect
+  // (nest start --debug) attaches the debugger by itself.
+  "debug.javascript.autoAttachFilter": "onlyWithFlag",
+
+  // --- Tests ----------------------------------------------------------------
+  // Jest lives in server/ only; the Vitest and Playwright extensions find
+  // client/'s configs on their own.
+  "jest.virtualFolders": [{ "name": "server", "rootPath": "server" }],
+  "jest.runMode": "on-demand",
+
+  // --- Search ---------------------------------------------------------------
+  // Generated or bulky output: drizzle snapshots, compiled catalogues,
+  // reports. Still visible in the tree, just kept out of Find in Files.
+  "search.exclude": {
+    "**/dist": true,
+    "**/coverage": true,
+    "**/database/migrations/meta": true,
+    "client/src/i18n/compiled": true,
+    "client/playwright-report": true,
+    "client/test-results": true,
+    "client/e2e/.output": true,
+    "server/perf/reports": true
+  }
+}
