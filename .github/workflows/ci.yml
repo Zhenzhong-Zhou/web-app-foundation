@@ -1,19 +1,40 @@
 name: CI
 
+# Docs-only changes skip CI: prose cannot break the build, and the suites
+# take minutes. A Markdown file anywhere counts as docs.
 on:
   push:
     branches: [main]
+    paths-ignore: ['docs/**', '**/*.md']
   pull_request:
+    # labeled, so adding full-e2e to a pull request runs every browser on it
+    # without another push.
+    types: [opened, synchronize, reopened, labeled]
+    paths-ignore: ['docs/**', '**/*.md']
+  # Every browser nightly, so a WebKit, Firefox or iPhone regression from a
+  # day of merges shows the next morning rather than at the next release.
+  schedule:
+    - cron: '0 9 * * *' # 2am in Vancouver
+  workflow_dispatch:
 
 # A second push to the same branch cancels the first. The suites take minutes
 # and nobody reads the result of a commit that has already been replaced.
+# Adding any other label gets a group of its own, so it cannot cancel a run
+# in progress; its jobs are then skipped (each job's `if`).
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'full-e2e' && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
+
+# Every browser on main, nightly, by hand, and on a pull request labelled
+# full-e2e (layout, mobile, sign-in: anything an engine could render or
+# handle differently). Other pull requests run Chromium only.
+env:
+  FULL_E2E: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-e2e') }}
 
 jobs:
   client:
     name: Client — lint, types, unit
+    if: github.event.action != 'labeled' || github.event.label.name == 'full-e2e'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -55,6 +76,7 @@ jobs:
 
   server:
     name: Server — lint, build, integration
+    if: github.event.action != 'labeled' || github.event.label.name == 'full-e2e'
     runs-on: ubuntu-24.04
 
     services:
@@ -189,10 +211,20 @@ jobs:
       - run: npm run test:e2e
         working-directory: server
 
+  # Three machines, each a third of the suite (--shard). No `needs`: it
+  # starts beside the other two instead of after them, which took the
+  # longest path from about 10 minutes to the slowest of the three jobs.
+  # A lint failure still fails the run; the browsers just do not wait for it.
   browser:
-    name: Client — Playwright
+    name: Client — Playwright ${{ matrix.shard }}/3
+    if: github.event.action != 'labeled' || github.event.label.name == 'full-e2e'
     runs-on: ubuntu-24.04
-    needs: [client, server]
+    strategy:
+      # One shard failing must not cancel the others: their failures are
+      # different tests, and all of them are wanted at once.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
 
     services:
       postgres:
@@ -261,21 +293,35 @@ jobs:
         working-directory: client
 
       # Chromium for the suite; WebKit (Safari, iPhone) and Firefox for the
-      # projects that check every screen in each (playwright.config.ts).
+      # projects that check every screen in each (playwright.config.ts), only
+      # when they run.
       - name: Install browsers
-        run: npx playwright install --with-deps chromium webkit firefox
+        run: |
+          if [ "$FULL_E2E" = true ]; then
+            npx playwright install --with-deps chromium webkit firefox
+          else
+            npx playwright install --with-deps chromium
+          fi
         working-directory: client
 
       # One script, not four steps. pretest:e2e already migrates and seeds
       # against DATABASE_URL_E2E through dotenv-cli, and test:e2e wraps
       # playwright in the same loader — reimplementing either here would be a
       # second definition of the setup, free to drift from the one people run.
-      - run: npm run test:e2e
+      - name: Playwright, shard ${{ matrix.shard }} of 3
+        env:
+          SHARD: ${{ matrix.shard }}/3
+        run: |
+          if [ "$FULL_E2E" = true ]; then
+            npm run test:e2e -- --shard="$SHARD"
+          else
+            npm run test:e2e -- --project=chromium --shard="$SHARD"
+          fi
         working-directory: client
 
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: client/playwright-report/
           retention-days: 7

@@ -422,5 +422,7 @@ browser's IE mode, is not supported.
   Firefox, and mobile.spec on an iPhone's screen and engine. A spec that
   shares the owner's organization runs in Chromium only. Firefox runs in CI
   and with E2E_FIREFOX=1; Playwright's build of it cannot start on some
-  macOS versions.
+  macOS versions. In CI a pull request runs Chromium only, in three shards;
+  every browser runs on main, nightly, and on a pull request labelled
+  full-e2e (layout, mobile, sign-in).
 - The product's name in the tab is VITE_APP_NAME in the repository's .env.
