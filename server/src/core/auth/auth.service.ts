@@ -15,7 +15,7 @@ import { DEFAULT_LOCALE, type Locale } from '../../common/locales';
 import type { Env } from '../../config/env';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
-import { organizations } from '../../database/schema';
+import { type OrganizationRail, organizations } from '../../database/schema';
 import { memberships, users } from '../../database/schema';
 import {
   recipientLocale,
@@ -58,7 +58,20 @@ export interface CurrentSession {
     locale: Locale | null;
   };
   /** Null when the caller belongs to no organization — see SessionGuard. */
-  organization: { id: string; name: string; roleId: string } | null;
+  organization: {
+    id: string;
+    name: string;
+    roleId: string;
+    /** How the app looks, and what counts as expiring (ADR-060). */
+    branding: {
+      logoFileId: string | null;
+      accentColor: string | null;
+      rail: OrganizationRail;
+      logoOnDocuments: boolean;
+      expiryWarningDays: number;
+      expiryCriticalDays: number;
+    };
+  } | null;
   /** Empty when there is no organization: permissions come from a role. */
   permissions: Permission[];
 }
@@ -364,7 +377,16 @@ export class AuthService implements OnModuleInit {
     // here costs a round trip for nothing.
     const [[organization], permissions] = await Promise.all([
       this.db
-        .select({ id: organizations.id, name: organizations.name })
+        .select({
+          id: organizations.id,
+          name: organizations.name,
+          logoFileId: organizations.logoFileId,
+          accentColor: organizations.accentColor,
+          rail: organizations.rail,
+          logoOnDocuments: organizations.logoOnDocuments,
+          expiryWarningDays: organizations.expiryWarningDays,
+          expiryCriticalDays: organizations.expiryCriticalDays,
+        })
         .from(organizations)
         .where(eq(organizations.id, context.organizationId)),
       this.permissions.listForRole(context.roleId),
@@ -372,7 +394,19 @@ export class AuthService implements OnModuleInit {
 
     return {
       ...base,
-      organization: { ...organization, roleId: context.roleId },
+      organization: {
+        id: organization.id,
+        name: organization.name,
+        roleId: context.roleId,
+        branding: {
+          logoFileId: organization.logoFileId,
+          accentColor: organization.accentColor,
+          rail: organization.rail,
+          logoOnDocuments: organization.logoOnDocuments,
+          expiryWarningDays: organization.expiryWarningDays,
+          expiryCriticalDays: organization.expiryCriticalDays,
+        },
+      },
       permissions,
     };
   }

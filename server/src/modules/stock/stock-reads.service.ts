@@ -9,6 +9,7 @@ import { afterCursor, sortedOrder } from '../../common/sorted-page';
 import {
   locations,
   lots,
+  organizations,
   products,
   productVariants,
   stockLevels,
@@ -258,8 +259,9 @@ export class StockReadsService {
    * How many rows each quick filter would show (ADR-055), beside its
    * button: "Expiring soon 2", "Needs a cost 1". Each is counted with the
    * list's own filters and the others' left off, so the number is the
-   * rows pressing that one shows. Expiring means within 90 days unless
-   * asked otherwise, the threshold the expiry chips turn amber at.
+   * rows pressing that one shows. Expiring means within the
+   * organization's warning days (ADR-060) unless asked otherwise, the
+   * threshold the expiry chips turn amber at.
    */
   counts(query: ListStockDto = {}) {
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -274,10 +276,18 @@ export class StockReadsService {
         return (result.rows[0] as { count: number }).count;
       };
 
+      // The organization's warning days unless asked otherwise (ADR-060).
+      const [organization] = expiringWithin
+        ? [{ days: expiringWithin }]
+        : await tx
+            .select({ days: organizations.expiryWarningDays })
+            .from(organizations)
+            .where(eq(organizations.id, organizationId));
+
       return {
         expiring: await count({
           ...unfiltered,
-          expiringWithin: expiringWithin ?? 90,
+          expiringWithin: organization.days,
         }),
         needsCost: await count({ ...unfiltered, needsCost: 'true' }),
       };

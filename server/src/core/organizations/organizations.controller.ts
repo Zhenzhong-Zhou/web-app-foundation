@@ -56,6 +56,14 @@ export class OrganizationController {
       'documentLanguage',
       'documentSecondLanguage',
       'requiredNameLanguages',
+      // Branding and the expiry days (ADR-060). The accent is logged as
+      // sent; the row holds the shade that passed.
+      'logoFileId',
+      'accentColor',
+      'rail',
+      'logoOnDocuments',
+      'expiryWarningDays',
+      'expiryCriticalDays',
     ],
   })
   async update(@Body() dto: UpdateOrganizationDto): Promise<void> {

@@ -233,6 +233,7 @@
   "orders.void.billed": "This shipment is billed on {number} — void the invoice first",
   "orders.void.draftInvoice": "This shipment has a draft invoice — delete it first",
   "organizations.baseCurrencyFixed": "Stock is already valued in {baseCurrency}, so the base currency cannot change",
+  "organizations.expiryDaysOrder": "Urgent must be fewer days than expiring soon",
   "organizations.languagesDiffer": "The second document language must differ from the first",
   "organizations.notFound": "No such organization",
   "organizations.secondNeedsFirst": "A second document language needs a first one",

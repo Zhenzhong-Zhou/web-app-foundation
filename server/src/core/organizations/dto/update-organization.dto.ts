@@ -3,10 +3,14 @@ import {
   IsArray,
   IsBoolean,
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
+  Max,
   MaxLength,
+  Min,
   MinLength,
   ValidateIf,
 } from 'class-validator';
@@ -15,7 +19,12 @@ import { IsCurrencyCode } from '../../../common/dto/currency';
 import { IsLocale } from '../../../common/dto/locale';
 import { trim } from '../../../common/dto/trim';
 import type { Locale } from '../../../common/locales';
-import { LICENCE_POLICIES, type LicencePolicy } from '../../../database/schema';
+import {
+  LICENCE_POLICIES,
+  type LicencePolicy,
+  ORGANIZATION_RAILS,
+  type OrganizationRail,
+} from '../../../database/schema';
 
 /**
  * What the organization prints and the rules it works under, each changed
@@ -110,4 +119,42 @@ export class UpdateOrganizationDto {
   @ArrayUnique()
   @IsLocale({ each: true })
   requiredNameLanguages?: Locale[];
+
+  /**
+   * Branding (ADR-060). The accent as `#RRGGBB`, null for the default; the
+   * service saves the nearest shade that passes the contrast check. The
+   * logo is an uploaded logo file (ADR-059), null to remove it.
+   */
+  @IsOptional()
+  @Matches(/^#[0-9a-fA-F]{6}$/)
+  accentColor?: string | null;
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsIn(ORGANIZATION_RAILS)
+  rail?: OrganizationRail;
+
+  @IsOptional()
+  @IsUUID()
+  logoFileId?: string | null;
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean()
+  logoOnDocuments?: boolean;
+
+  /**
+   * When a lot counts as expiring (ADR-060), each 1 to 365 days; critical
+   * fewer than warning, checked against the stored one when only one is
+   * sent.
+   */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  expiryWarningDays?: number;
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  expiryCriticalDays?: number;
 }

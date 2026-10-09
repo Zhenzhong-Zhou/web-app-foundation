@@ -233,6 +233,7 @@
   "orders.void.billed": "Cette expédition est facturée sur {number} — annulez d’abord la facture",
   "orders.void.draftInvoice": "Cette expédition a une facture brouillon — supprimez-la d’abord",
   "organizations.baseCurrencyFixed": "Le stock est déjà évalué en {baseCurrency}; la devise de base ne peut donc plus changer",
+  "organizations.expiryDaysOrder": "Le délai urgent doit compter moins de jours que le délai « expire bientôt »",
   "organizations.languagesDiffer": "La deuxième langue des documents doit différer de la première",
   "organizations.notFound": "Organisation introuvable",
   "organizations.secondNeedsFirst": "Une deuxième langue des documents exige une première",

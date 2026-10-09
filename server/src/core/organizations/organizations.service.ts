@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -15,6 +16,8 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { assertListAssignable } from '../../modules/price-lists/list-price';
 import { recordPrevious } from '../audit/audit-context';
+import { FilesService } from '../files/files.service';
+import { normalizeHex, safeAccent } from './accent';
 import { assertLanguagePair } from './document-languages';
 import type { OrganizationAddressDto } from './dto/organization-address.dto';
 import type { UpdateOrganizationDto } from './dto/update-organization.dto';
@@ -33,7 +36,10 @@ import { registeredAddress } from './registered-address';
 export class OrganizationsService {
   private readonly logger = new Logger(OrganizationsService.name);
 
-  constructor(private readonly tenantDb: TenantDb) {}
+  constructor(
+    private readonly tenantDb: TenantDb,
+    private readonly files: FilesService,
+  ) {}
 
   async get() {
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -51,6 +57,12 @@ export class OrganizationsService {
           documentLanguage: organizations.documentLanguage,
           documentSecondLanguage: organizations.documentSecondLanguage,
           requiredNameLanguages: organizations.requiredNameLanguages,
+          logoFileId: organizations.logoFileId,
+          accentColor: organizations.accentColor,
+          rail: organizations.rail,
+          logoOnDocuments: organizations.logoOnDocuments,
+          expiryWarningDays: organizations.expiryWarningDays,
+          expiryCriticalDays: organizations.expiryCriticalDays,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
@@ -83,6 +95,12 @@ export class OrganizationsService {
           documentLanguage: organizations.documentLanguage,
           documentSecondLanguage: organizations.documentSecondLanguage,
           requiredNameLanguages: organizations.requiredNameLanguages,
+          logoFileId: organizations.logoFileId,
+          accentColor: organizations.accentColor,
+          rail: organizations.rail,
+          logoOnDocuments: organizations.logoOnDocuments,
+          expiryWarningDays: organizations.expiryWarningDays,
+          expiryCriticalDays: organizations.expiryCriticalDays,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
@@ -120,7 +138,47 @@ export class OrganizationsService {
         documentLanguage: existing.documentLanguage,
         documentSecondLanguage: existing.documentSecondLanguage,
         requiredNameLanguages: existing.requiredNameLanguages,
+        logoFileId: existing.logoFileId,
+        accentColor: existing.accentColor,
+        rail: existing.rail,
+        logoOnDocuments: existing.logoOnDocuments,
+        expiryWarningDays: existing.expiryWarningDays,
+        expiryCriticalDays: existing.expiryCriticalDays,
       });
+
+      // The two expiry days as they will stand, one sent alone checked
+      // against the other as stored (ADR-060).
+      const warning = input.expiryWarningDays ?? existing.expiryWarningDays;
+      const critical = input.expiryCriticalDays ?? existing.expiryCriticalDays;
+      if (critical >= warning) {
+        throw new BadRequestException(
+          t({
+            id: 'organizations.expiryDaysOrder',
+            defaultMessage: 'Urgent must be fewer days than expiring soon',
+          }),
+        );
+      }
+
+      // Saved as the shade that passes the contrast check (ADR-060), so
+      // every stored colour is readable; null returns to the default.
+      const accentColor =
+        input.accentColor === undefined || input.accentColor === null
+          ? input.accentColor
+          : safeAccent(normalizeHex(input.accentColor) ?? '').accent;
+
+      // A new logo is attached in this transaction and the old released,
+      // so one is never left both unused and kept (ADR-059).
+      const logoChanges =
+        input.logoFileId !== undefined &&
+        input.logoFileId !== existing.logoFileId;
+      if (logoChanges) {
+        if (input.logoFileId) {
+          await this.files.attach(tx, organizationId, input.logoFileId, 'logo');
+        }
+        if (existing.logoFileId) {
+          await this.files.release(tx, organizationId, existing.logoFileId);
+        }
+      }
 
       if (input.defaultSalePriceListId) {
         await assertListAssignable(
@@ -202,6 +260,18 @@ export class OrganizationsService {
           : {}),
         ...(input.requiredNameLanguages !== undefined
           ? { requiredNameLanguages: input.requiredNameLanguages }
+          : {}),
+        ...(logoChanges ? { logoFileId: input.logoFileId } : {}),
+        ...(accentColor !== undefined ? { accentColor } : {}),
+        ...(input.rail !== undefined ? { rail: input.rail } : {}),
+        ...(input.logoOnDocuments !== undefined
+          ? { logoOnDocuments: input.logoOnDocuments }
+          : {}),
+        ...(input.expiryWarningDays !== undefined
+          ? { expiryWarningDays: input.expiryWarningDays }
+          : {}),
+        ...(input.expiryCriticalDays !== undefined
+          ? { expiryCriticalDays: input.expiryCriticalDays }
           : {}),
       };
 

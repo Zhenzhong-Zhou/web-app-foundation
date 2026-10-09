@@ -173,6 +173,19 @@ describe('Home (e2e)', () => {
     // Read as if three weeks on, in the reader's calendar: LOT-SOON expired.
     const later = card(await home(alpha, day(21)), 'expiring');
     expect(later?.late).toBe(1);
+
+    // The organization's own days (ADR-060): a year counts both lots, ten
+    // days neither.
+    await alpha.agent
+      .patch('/v1/organization')
+      .send({ expiryWarningDays: 365 })
+      .expect(204);
+    expect(card(await home(alpha), 'expiring')?.count).toBe(2);
+    await alpha.agent
+      .patch('/v1/organization')
+      .send({ expiryWarningDays: 10, expiryCriticalDays: 5 })
+      .expect(204);
+    expect(card(await home(alpha), 'expiring')?.count).toBe(0);
   });
 
   it('shows only the cards the member may view', async () => {
