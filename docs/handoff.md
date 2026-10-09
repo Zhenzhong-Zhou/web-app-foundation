@@ -20,10 +20,9 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0048** (`needs_cost_pool_index`, ADR-058 amended)
-  on `main`, and **0049** (`files`, ADR-059) on `file-storage`. Render runs
+- Migrations: through **0049** (`files`, ADR-059) on `main`. Render runs
   them on deploy (confirm in the deploy log: `drizzle.__drizzle_migrations`
-  holds 50 rows once 0049 is deployed). Next is **0050**.
+  holds 50 rows). Next is **0050**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -78,12 +77,14 @@ Merge it only once a Performance run (budgets) on the branch passes.
    served through `GET /v1/files/:id`, released files purged after 30
    days, copied nightly into `waf-backups/files/`, 1 GB per organization.
    Build order in the ADR: setup by hand (done: `waf-files`, its two
-   tokens, the `files/` lock and lifecycle on `waf-backups`), migration
-   0049 and the storage module (built on `file-storage`: `src/core/files/`,
-   the local and s3 drivers, the checks and three sizes, `POST
+   tokens, the `files/` lock and lifecycle on `waf-backups`); migration
+   0049 and the storage module (merged, PR #69: `src/core/files/`, the
+   local and s3 drivers, the checks and three sizes, `POST
    /v1/files/logo` and `/product-image`, `GET /v1/files/:id`, the hourly
-   purge; MC-1601 and MC-1602), then the backup copy, then branding's
-   logo.
+   purge; MC-1601 and MC-1602); the backup copy (built on `files-backup`:
+   `scripts/backup-files.sh` after each nightly dump,
+   `scripts/check-files-backup.sh` in the monthly drill, the runbook's
+   "The files are gone"); then branding's logo.
 3. **Organization branding**: logo, accent colour with a contrast check,
    per-organization expiry thresholds; the first feature that uploads a
    file.

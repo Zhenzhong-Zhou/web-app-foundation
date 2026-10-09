@@ -304,7 +304,8 @@ backup scripts or workflows. The steps are in `docs/runbooks/restore.md`.
   `.sha256`.
 - **MC-1302** Actions → Restore drill: the last run is green, and its
   summary shows the organizations restored and how long it took, under 4
-  hours (ADR-053's RTO).
+  hours (ADR-053's RTO); with `s3`, its step "Check every file has
+  its copy" passed too.
 - **MC-1303** On a Mac, following the runbook's section 3, the newest
   backup restores into the local database and `restore.sh` reports the
   organizations it found.
