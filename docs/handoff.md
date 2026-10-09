@@ -20,10 +20,10 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0052** (`people`, ADR-063) on `main`, and
-  **0053** (licence reminders, ADR-064) on `licence-reminders`. Render
-  runs them on deploy (`drizzle.__drizzle_migrations` holds 54 rows once
-  0053 is deployed). Next is **0054**.
+- Migrations: through **0053** (licence reminders, ADR-064) on `main`,
+  and **0054** (staying signed in, ADR-065) on `sessions`. Render runs
+  them on deploy (`drizzle.__drizzle_migrations` holds 55 rows once 0054
+  is deployed). Next is **0055**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -39,8 +39,9 @@ and price lists proposing the price of a new line.
   (migration 0051, MC-1801), merged (PR #78). **ADR-063** (people: a
   photo of one's own, initials otherwise, a People page) is built on
   `people` (migration 0052, MC-1901), merged (PR #79). **ADR-064**
-  (licence expiry reminders, #17) is built on `licence-reminders`
-  (migration 0053, MC-2001). Next is **ADR-065**.
+  (licence expiry reminders, #17) is merged (PR #81). **ADR-065**
+  (staying signed in) is built on `sessions` (migration 0054, MC-2101).
+  Next is **ADR-066**: covers in the item lookup.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot
