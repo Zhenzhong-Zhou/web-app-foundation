@@ -20,10 +20,10 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0049** (`files`, ADR-059) on `main`, and **0050**
-  (`branding`, ADR-060) on `branding`. Render runs them on deploy (confirm
-  in the deploy log: `drizzle.__drizzle_migrations` holds 51 rows once 0050
-  is deployed). Next is **0051**.
+- Migrations: through **0050** (`branding`, ADR-060) on `main`, and
+  **0051** (`product_images`, ADR-062) on `product-images`. Render runs
+  them on deploy (`drizzle.__drizzle_migrations` holds 52 rows once 0051
+  is deployed). Next is **0052**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -35,8 +35,8 @@ and price lists proposing the price of a new line.
   ADR-057 (dates, sorting, export) is built on `adr-057-dates-export`.
   ADR-058 (Home, with recently opened) and ADR-059 (file storage) are
   merged. **ADR-060** (branding) and **ADR-061** (the Organization page in tabs)
-  are merged. **ADR-062** (product images) is written on
-  `product-images`, designed before it is built. Next is **ADR-063**:
+  are merged. **ADR-062** (product images) is built on `product-images`
+  (migration 0051, MC-1801). Next is **ADR-063**:
   people's photos and a People page, right after product images. Only the
   person sets, replaces or removes their own photo; with none, initials on
   a colour taken from the name.

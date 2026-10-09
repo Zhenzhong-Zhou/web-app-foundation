@@ -773,6 +773,21 @@ await fetch(`${api}/v1/files/product-image`, {
   Documents and print again: no logo. A viewer sees no Branding tab. In 中文
   the tab reads 品牌.
 
+## 18. Product images (ADR-062)
+
+- **MC-1801** On a product with no images, the drop area invites one. Add
+  three photos at once from a computer: each shows its progress, then
+  "Making sizes…", then joins the gallery; add a PDF with them and only it
+  is refused, with the reason. Paste a screenshot (⌘V): it is added. Add
+  the same photo again: "already on this product". Open an image: Esc
+  closes, ← → move, double-click zooms; on a phone, swipe and double-tap.
+  Use a thumbnail's menu to Make cover and Move left; drag one to the end.
+  Remove one and press Undo: it is back; remove one and wait: after a
+  reload it is gone. The Products list and Inventory show each cover; a
+  product without one shows the plain tile. At eight, Add images is
+  disabled with the reason. A viewer sees the gallery without the menus.
+  In 中文 on a phone, the buttons and the hint read naturally.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -898,3 +913,4 @@ first.
 - 2026-10-08: ADR-059, files on R2, served through the app: MC-1601, MC-1602.
 - 2026-10-09: ADR-061, the Organization page in tabs and its name: MC-1701.
 - 2026-10-09: ADR-060, branding and the organization's expiry days: MC-1702.
+- 2026-10-09: ADR-062, product images: MC-1801.

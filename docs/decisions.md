@@ -6392,6 +6392,17 @@ Whoever has `products.view` sees them.
   and the thumb's size, so a list asks for no more than it does now; each
   thumbnail is then one cached request (ADR-059's immutable year).
 
+*Amended while building:*
+
+- **Not in the item lookup yet.** The lookup's results are one shape for
+  eight kinds of record; a cover for one of them waits for a change that
+  needs that shape anyway. The Products list and Inventory have theirs.
+- **Undo is the client's.** Remove hides the image and sends the removal
+  when the undo has passed, or at once when the page is left or another
+  image is removed; Undo puts it back and nothing is sent.
+- **Uploads report progress** through XMLHttpRequest, the one browser API
+  that does; the rest of the app keeps `api()`.
+
 **Considered and not done.**
 
 - **Images on variants.** Three sizes of one bottle look alike; the rare
