@@ -37,7 +37,9 @@ test('sets details and a photo, and finds them on People', async ({
   await expect(page.getByText('Operations manager')).toBeVisible();
   await page.getByRole('link', { name: freshOrg.name }).click();
 
-  await expect(page.getByRole('heading', { name: freshOrg.name })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: freshOrg.name }),
+  ).toBeVisible();
   await expect(page.getByText('ext. 214')).toBeVisible();
   // Your own page lists no work: that is on your Account page.
   await expect(page.getByText('Recent activity')).toHaveCount(0);
