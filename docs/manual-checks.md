@@ -761,6 +761,18 @@ await fetch(`${api}/v1/files/product-image`, {
   issued before still prints the old name. In 中文 the tabs read 概况, 财务,
   单据 and 库存.
 
+- **MC-1702** Branding (ADR-060). As an owner, Settings → Organization →
+  Branding: upload a PNG logo and an SVG one in turn; each previews on both
+  sidebar shades, and after Save the logo replaces the name in the top bar
+  (on a white plate in dark mode). Choose Teal and Save: buttons, links and
+  the selected tab turn teal at once, in light and dark mode. Choose your
+  own colour `#5BB8F0`: the tab says `#127EB3` will be saved; `#D93A2B`
+  warns it is close to the error red. On Stock set expiry to 180 and 60:
+  a lot 150 days out shows amber in Inventory and on Home. Print an invoice
+  and a packing slip: the logo at the top left; turn "Print the logo" off on
+  Documents and print again: no logo. A viewer sees no Branding tab. In 中文
+  the tab reads 品牌.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -885,3 +897,4 @@ first.
 - 2026-10-08: ADR-058, Home, what needs attention first: MC-1559.
 - 2026-10-08: ADR-059, files on R2, served through the app: MC-1601, MC-1602.
 - 2026-10-09: ADR-061, the Organization page in tabs and its name: MC-1701.
+- 2026-10-09: ADR-060, branding and the organization's expiry days: MC-1702.

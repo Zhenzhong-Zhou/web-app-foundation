@@ -20,9 +20,10 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0049** (`files`, ADR-059) on `main`. Render runs
-  them on deploy (confirm in the deploy log: `drizzle.__drizzle_migrations`
-  holds 50 rows). Next is **0050**.
+- Migrations: through **0049** (`files`, ADR-059) on `main`, and **0050**
+  (`branding`, ADR-060) on `branding`. Render runs them on deploy (confirm
+  in the deploy log: `drizzle.__drizzle_migrations` holds 51 rows once 0050
+  is deployed). Next is **0051**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -91,13 +92,14 @@ Merge it only once a Performance run (budgets) on the branch passes.
    switching keeps what was typed, the base currency notes linking to
    Money, and the organization's name editable on Profile (server and
    client, audited). Branding is the fifth tab, with ADR-060. MC-1701.
-4. **Organization branding, ADR-060 written** on the same branch: the logo
-   (ADR-059's storage, previewed on both rails), six tested colours or a
-   custom one darkened to the nearest shade that passes AA, warned near the
-   status tones, the sidebar's shade, on the Branding tab; the
-   organization's expiry days (90 and 30 by default) on Stock; "Print the
-   logo" on Documents, on by default. Designed on the Claude Design canvas
-   and approved; migration 0050 after ADR-061's build.
+4. **Organization branding, ADR-060 built** on `branding` (one PR,
+   migration 0050): the Branding tab with the logo previewed on both rails,
+   six tested colours or a custom one saved as the nearest shade that
+   passes AA and warned near the status tones, and the sidebar's shade; the
+   theme following the organization through the session; the logo in the
+   top bar and on printed documents unless switched off on Documents; the
+   expiry days on Stock, used by every chip, the Inventory filter and Home.
+   MC-1702.
 
 Still open alongside: the three **account e2e** tests failing locally
 (the profile form is replaced a moment after loading, so Save stays
