@@ -77,7 +77,7 @@ user belongs to two organizations, which is normal in any multi-tenant system.
 
 **Decision.** Roles attach to a **membership**, not to a user:
 
-```
+```text
 users (global identity)
 memberships (user_id, organization_id, role_id)
 roles → role_permissions → permissions
@@ -1024,15 +1024,17 @@ quantity exist, and how does it change.
 
 **Decision — products group, variants carry stock.**
 
-    products          id, organization_id, type, name, description
-    product_variants  id, organization_id, product_id, sku, name, unit_of_measure,
-                      tracks_batches, weight_grams, dimensions, case_quantity
-                      unique (organization_id, sku)
-    batches           id, organization_id, variant_id, code, expires_at, received_at
-                      unique (organization_id, variant_id, code)
-    locations         id, organization_id, name, type, parent_id
-    stock             variant_id, location_id, batch_id, quantity
-    stock_movements   append-only; see below
+```text
+products          id, organization_id, type, name, description
+product_variants  id, organization_id, product_id, sku, name, unit_of_measure,
+                  tracks_batches, weight_grams, dimensions, case_quantity
+                  unique (organization_id, sku)
+batches           id, organization_id, variant_id, code, expires_at, received_at
+                  unique (organization_id, variant_id, code)
+locations         id, organization_id, name, type, parent_id
+stock             variant_id, location_id, batch_id, quantity
+stock_movements   append-only; see below
+```
 
 The product is a grouping for display. The variant is the thing counted,
 bought, and shipped — "Vitamin D3" is a product, "Vitamin D3, 60ct" is what
@@ -1111,12 +1113,14 @@ none of these tables.
 
 **Decision — quantity is a ledger, and `stock` is a cache.**
 
-    stock_movements   id, organization_id, variant_id, batch_id,
-                      from_location_id, to_location_id,   -- null marks direction
-                      quantity,                            -- always positive
-                      reason, reason_detail,
-                      reference_type, reference_id,
-                      note, actor_id, created_at
+```text
+stock_movements   id, organization_id, variant_id, batch_id,
+                  from_location_id, to_location_id,   -- null marks direction
+                  quantity,                            -- always positive
+                  reason, reason_detail,
+                  reference_type, reference_id,
+                  note, actor_id, created_at
+```
 
 Append-only, like `audit_log`. `stock` is updated in the same transaction and
 is derived — a convenience for reads, never the source of truth.
@@ -1192,8 +1196,10 @@ in-process units need a home that is still countable.
 
 **Decision — one `locations` table, self-referencing.**
 
-    locations  id, organization_id, name, code, type, parent_id,
-               is_available, is_active
+```text
+locations  id, organization_id, name, code, type, parent_id,
+           is_available, is_active
+```
 
 Warehouses, zones, aisles, shelves, and bins all need a name, a parent, and a
 status, so they are one table with a `type`. Separate tables would force
@@ -1356,8 +1362,10 @@ for the split is specific enough to say whether it applies here.
 
 **Decision — one `partners` table, and direction lives on the order.**
 
-    partners  id, organization_id, name, code, tax_id, notes, is_active
-              unique (organization_id, code) where code is not null
+```text
+partners  id, organization_id, name, code, tax_id, notes, is_active
+          unique (organization_id, code) where code is not null
+```
 
 They share almost everything that makes a row: a name, addresses, contact
 people, a tax id, notes, an active flag. What differs is what they *connect*
@@ -1437,11 +1445,13 @@ more here than deciding its columns.
 
 **Decision — `orders` and `order_lines`, covering purchase and sale.**
 
-    orders       id, organization_id, partner_id, direction, status,
-                 reference, expected_at, note, created_by
-    order_lines  id, organization_id, order_id, variant_id,
-                 sku,                       -- snapshotted, as movements do
-                 quantity_ordered, quantity_fulfilled
+```text
+orders       id, organization_id, partner_id, direction, status,
+             reference, expected_at, note, created_by
+order_lines  id, organization_id, order_id, variant_id,
+             sku,                       -- snapshotted, as movements do
+             quantity_ordered, quantity_fulfilled
+```
 
 A purchase order and a sales order are the same shape mirrored: a partner,
 lines of variants, one direction, fulfilment that moves stock. That symmetry is
@@ -1455,8 +1465,10 @@ query. Same precedent as `products.type` and `stock_movements.reason`.
 
 **Decision — status is the document's lifecycle, never fulfilment progress.**
 
-    draft → confirmed → received
-                    ↘ cancelled
+```text
+draft → confirmed → received
+                ↘ cancelled
+```
 
 Four values, and the temptation is to add `partially_received` and
 `fully_received` beside them. That is the mistake this decision exists to
@@ -1665,10 +1677,12 @@ different recipes in any case.
 
 **Decision — a header table, and versioning by snapshot at consumption.**
 
-    boms       id, organization_id, output_variant_id, output_quantity,
-               version, status, notes
-    bom_lines  id, organization_id, bom_id, component_variant_id,
-               quantity, supply_type, notes
+```text
+boms       id, organization_id, output_variant_id, output_quantity,
+           version, status, notes
+bom_lines  id, organization_id, bom_id, component_variant_id,
+           quantity, supply_type, notes
+```
 
 The header is what a bare join table has nowhere to put: a version, a status, a
 yield. Splitting it out after the table holds data is the retrofit the open
@@ -2066,9 +2080,11 @@ deferral was read as covering line editing generally. It does not.
 **Decision — the same rule that froze the order reference.** What other records
 depend on becomes immutable; what nothing depends on stays editable.
 
-    add a line       draft only
-    change quantity  draft or confirmed, refused once anything is received
-    remove a line    draft only, and never the last one
+```text
+add a line       draft only
+change quantity  draft or confirmed, refused once anything is received
+remove a line    draft only, and never the last one
+```
 
 A draft line is not a record of anything that happened. No movement references
 it, no snapshot copies it, and the order has not been sent. Correcting one is
@@ -2225,7 +2241,9 @@ repeats.
 A check keeps them together — a price with no currency is a number with no
 unit, and a currency with no price says nothing:
 
-    (unit_price is null) = (currency is null)
+```text
+(unit_price is null) = (currency is null)
+```
 
 **Decision — the line total is computed, never stored.** `unit_price ×
 quantity_ordered` is derivable, and a stored copy is a third number free to
@@ -2270,9 +2288,11 @@ whoever happened to click the button, and in a log nobody reads unprompted.
 
 **Decision — one table, one row per recipient.**
 
-    notifications  id, user_id, organization_id, type,
-                   resource_type, resource_id, title, body,
-                   read_at, created_at
+```text
+notifications  id, user_id, organization_id, type,
+               resource_type, resource_id, title, body,
+               read_at, created_at
+```
 
 A row per recipient rather than per event, because read state is per person. A
 shared event row plus a separate `notification_reads` table is the normalised
@@ -3290,15 +3310,17 @@ it cannot sit there:
 **Decision — value is an append-only ledger beside the quantity ledger.**
 `stock_valuations`, one row per event that changes what stock is worth:
 
-    stock_valuations  id, organization_id, variant_id, lot_id,
-                      kind,                      -- see below
-                      movement_id,               -- null for rows no movement caused
-                      quantity,                  -- signed; zero for revaluations
-                      value,                     -- signed, in the base currency
-                      unit_price, currency,      -- as paid, on acquisitions
-                      exchange_rate,             -- the rate applied, on acquisitions
-                      needs_cost,                -- valued at zero for want of a price
-                      reference_type, reference_id, note, actor_id, created_at
+```text
+stock_valuations  id, organization_id, variant_id, lot_id,
+                  kind,                      -- see below
+                  movement_id,               -- null for rows no movement caused
+                  quantity,                  -- signed; zero for revaluations
+                  value,                     -- signed, in the base currency
+                  unit_price, currency,      -- as paid, on acquisitions
+                  exchange_rate,             -- the rate applied, on acquisitions
+                  needs_cost,                -- valued at zero for want of a price
+                  reference_type, reference_id, note, actor_id, created_at
+```
 
 Nothing updates a row and nothing deletes one; a correction is a new row.
 The reasons are ADR-023's, applied to money. A figure that can be recomputed
@@ -3571,11 +3593,13 @@ valuation snapshots a purchase price rather than reading through to it.
 
 **Decision — the shape.**
 
-    price_lists       id, organization_id, name, direction ('sale' |
-                      'purchase'), currency, is_active, timestamps
-    price_list_items  id, organization_id, price_list_id, variant_id,
-                      unit_price, timestamps
-                      unique (price_list_id, variant_id)
+```text
+price_lists       id, organization_id, name, direction ('sale' |
+                  'purchase'), currency, is_active, timestamps
+price_list_items  id, organization_id, price_list_id, variant_id,
+                  unit_price, timestamps
+                  unique (price_list_id, variant_id)
+```
 
 - **One currency per list.** A sale must be single-currency at confirm
   (ADR-046), so a list that mixed them would propose orders that cannot be
@@ -6021,7 +6045,7 @@ setting, so a plan can raise it.
 
 ---
 
-# Open decisions
+## Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
 they exist so the reasoning is not rediscovered from scratch.
@@ -6543,7 +6567,7 @@ they exist so the reasoning is not rediscovered from scratch.
 
 ---
 
-# Resolved
+## Resolved
 
 | Decision                               | Outcome                                               | ADR              |
 |----------------------------------------|-------------------------------------------------------|------------------|

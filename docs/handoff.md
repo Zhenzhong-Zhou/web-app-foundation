@@ -730,7 +730,7 @@ Rules, still in force:
 
 ## Working agreements (for Claude)
 
-**How code is delivered**
+### How code is delivered
 
 - **Every answer that changes files opens with a roadmap:** a tree or
   relative paths, each marked **new**, **full replacement** or **snippet**.
@@ -749,7 +749,7 @@ Rules, still in force:
   - `client/e2e/…`;
   - `docs/decisions.md`.
 
-**Process**
+### Process
 
 - ADR before code for each new area. Server first with e2e tests, then the
   client screens. Each step its own commit.
@@ -767,7 +767,7 @@ Rules, still in force:
   updates `docs/manual-checks.md` in the same commit (`docs/conventions.md`,
   Tests).
 
-**Commits**
+### Commits
 
 - **Authored as Bob:** `Zhenzhong Zhou <bob0823.zhou@gmail.com>`, the
   identity on the repo's history (`git log --format='%an <%ae>' | sort |
@@ -792,7 +792,7 @@ Rules, still in force:
   (`npx tsc --noEmit` in `client/` checks nothing: the root tsconfig only
   holds project references.)
 
-**Moving code** (what step 1 learned)
+### Moving code (what step 1 learned)
 
 - Find every caller before moving a method, including
   `server/src/database/seed-demo.ts`, and calls split over two lines
@@ -803,7 +803,7 @@ Rules, still in force:
 - Check a new comment's claims against the code it describes before
   keeping it.
 
-**Server**
+### Server
 
 - Server e2e: always `npm run test:e2e`. Never run two at once — the second
   now refuses. Don't edit server files while Playwright runs against
@@ -821,7 +821,7 @@ Rules, still in force:
   and its descriptions, never to the Admin or Viewer lists, and to the
   client's list in the same commit.
 
-**Client and copy**
+### Client and copy
 
 - Dialogs take permission flags from their page rather than reading the
   session.
