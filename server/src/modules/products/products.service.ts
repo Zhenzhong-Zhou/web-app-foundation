@@ -4,7 +4,15 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  eq,
+  getTableColumns,
+  inArray,
+  notInArray,
+  sql,
+} from 'drizzle-orm';
 
 import { EXPORT_LIMIT } from '../../common/export';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
@@ -26,6 +34,7 @@ import type {
 } from './dto/set-translations.dto';
 import type { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
+import { coverOf, imagesOf, publicImages } from './product-images';
 
 /**
  * A set of names in other languages as one line for the audit log:
@@ -72,10 +81,18 @@ export class ProductsService {
     );
   }
 
-  async list() {
-    return this.tenantDb.select(products, undefined, {
-      orderBy: asc(products.name),
-    });
+  /** Every product, by name, each with its cover's file (ADR-062). */
+  list() {
+    return this.tenantDb.transaction((tx, organizationId) =>
+      tx
+        .select({
+          ...getTableColumns(products),
+          coverFileId: coverOf(),
+        })
+        .from(products)
+        .where(eq(products.organizationId, organizationId))
+        .orderBy(asc(products.name)),
+    );
   }
 
   /**
@@ -146,8 +163,14 @@ export class ProductsService {
       ),
     ]);
 
+    // Its gallery, the cover first (ADR-062).
+    const images = await this.tenantDb.transaction((tx, organizationId) =>
+      imagesOf(tx, organizationId, productId),
+    );
+
     return {
       ...product,
+      images: publicImages(images),
       translations: translations.map(({ locale, name, description }) => ({
         locale,
         name,

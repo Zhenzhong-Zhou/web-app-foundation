@@ -45,6 +45,13 @@ export interface Movement {
   createdAt: string;
 }
 
+/** One image of a product's gallery (ADR-062), in its three sizes. */
+export interface ProductImage {
+  fileId: string;
+  /** From 0; the first is the cover. */
+  position: number;
+}
+
 export interface StockRow {
   /** The stock row itself; also the list's cursor (ADR-051). */
   id: string;
@@ -52,6 +59,8 @@ export interface StockRow {
   sku: string;
   productName: string;
   variantName: string | null;
+  /** The product's cover (ADR-062), or null. */
+  coverFileId: string | null;
   unitOfMeasure: string;
   locationId: string;
   locationName: string;

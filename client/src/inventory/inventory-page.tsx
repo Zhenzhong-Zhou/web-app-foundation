@@ -26,6 +26,7 @@ import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { ProductCover } from '../components/product-cover';
 import { SortHeader } from '../components/sort-header';
 import { flagFromAddress } from '../lib/address-filter';
 import { api, messageFor } from '../lib/api';
@@ -450,7 +451,19 @@ export function InventoryPage() {
                       its own — "Focus (60ct)" — as the packing slip and the
                       variant picker already say it. */}
                     <TableCell>
-                      {itemName(row.productName, row.variantName)}
+                      <Stack
+                        direction="row"
+                        spacing={1.5}
+                        sx={{ alignItems: 'center' }}
+                      >
+                        <ProductCover
+                          fileId={row.coverFileId}
+                          name={row.productName}
+                        />
+                        <span>
+                          {itemName(row.productName, row.variantName)}
+                        </span>
+                      </Stack>
                     </TableCell>
                     <TableCell>{row.locationName}</TableCell>
                     <TableCell>

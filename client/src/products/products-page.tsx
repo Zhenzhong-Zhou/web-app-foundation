@@ -21,6 +21,7 @@ import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
 import { PageHeader } from '../components/page-header';
+import { ProductCover } from '../components/product-cover';
 import { StatusChip } from '../components/status-chip';
 import type { Locale } from '../lib/locales';
 import { openDialog } from '../lib/open-dialog';
@@ -56,6 +57,8 @@ export interface Product {
   name: string;
   description: string | null;
   isActive: boolean;
+  /** Its cover (ADR-062), or null. */
+  coverFileId?: string | null;
 }
 
 export function ProductsPage() {
@@ -205,9 +208,22 @@ export function ProductsPage() {
                       {/* The detail page is where variants live. The list shows
                         products because that is the grouping a person scans;
                         the variant is what they act on once they are there. */}
-                      <Link component={RouterLink} to={`/products/${item.id}`}>
-                        {item.name}
-                      </Link>
+                      <Stack
+                        direction="row"
+                        spacing={1.5}
+                        sx={{ alignItems: 'center' }}
+                      >
+                        <ProductCover
+                          fileId={item.coverFileId}
+                          name={item.name}
+                        />
+                        <Link
+                          component={RouterLink}
+                          to={`/products/${item.id}`}
+                        >
+                          {item.name}
+                        </Link>
+                      </Stack>
                     </TableCell>
                     <TableCell>{productTypeLabel(item.type, intl)}</TableCell>
                     <TableCell>
