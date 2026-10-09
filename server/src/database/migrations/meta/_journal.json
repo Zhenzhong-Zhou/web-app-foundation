@@ -358,6 +358,13 @@
       "when": 1791525453826,
       "tag": "0050_branding",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1791566539033,
+      "tag": "0051_product_images",
+      "breakpoints": true
     }
   ]
 }
