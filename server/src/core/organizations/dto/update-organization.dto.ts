@@ -20,6 +20,9 @@ import { IsLocale } from '../../../common/dto/locale';
 import { trim } from '../../../common/dto/trim';
 import type { Locale } from '../../../common/locales';
 import {
+  IDLE_SIGN_OUT_MINUTES,
+  IDLE_SIGN_OUT_SCOPES,
+  type IdleSignOutScope,
   LICENCE_POLICIES,
   type LicencePolicy,
   ORGANIZATION_RAILS,
@@ -157,4 +160,16 @@ export class UpdateOrganizationDto {
   @Min(1)
   @Max(365)
   expiryCriticalDays?: number;
+
+  /**
+   * Sign out after inactivity (ADR-065): 15, 30, 60 or 240 minutes, or null
+   * for Off; and whom it applies to.
+   */
+  @IsOptional()
+  @IsIn(IDLE_SIGN_OUT_MINUTES)
+  idleSignOutMinutes?: number | null;
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsIn(IDLE_SIGN_OUT_SCOPES)
+  idleSignOutScope?: IdleSignOutScope;
 }

@@ -92,7 +92,11 @@ export class AuthController {
       res.cookie(
         SESSION_COOKIE_NAME,
         session.token,
-        sessionCookieOptions(session.expiresAt, isProduction),
+        sessionCookieOptions(
+          session.expiresAt,
+          isProduction,
+          session.keepSignedIn,
+        ),
       );
 
       // The session token is returned in the cookie only, never in the body:
@@ -151,7 +155,11 @@ export class AuthController {
     res.cookie(
       SESSION_COOKIE_NAME,
       session.token,
-      sessionCookieOptions(session.expiresAt, isProduction),
+      sessionCookieOptions(
+        session.expiresAt,
+        isProduction,
+        session.keepSignedIn,
+      ),
     );
 
     return { user };

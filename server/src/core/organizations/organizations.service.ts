@@ -63,6 +63,8 @@ export class OrganizationsService {
           logoOnDocuments: organizations.logoOnDocuments,
           expiryWarningDays: organizations.expiryWarningDays,
           expiryCriticalDays: organizations.expiryCriticalDays,
+          idleSignOutMinutes: organizations.idleSignOutMinutes,
+          idleSignOutScope: organizations.idleSignOutScope,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
@@ -101,6 +103,8 @@ export class OrganizationsService {
           logoOnDocuments: organizations.logoOnDocuments,
           expiryWarningDays: organizations.expiryWarningDays,
           expiryCriticalDays: organizations.expiryCriticalDays,
+          idleSignOutMinutes: organizations.idleSignOutMinutes,
+          idleSignOutScope: organizations.idleSignOutScope,
         })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
@@ -144,6 +148,8 @@ export class OrganizationsService {
         logoOnDocuments: existing.logoOnDocuments,
         expiryWarningDays: existing.expiryWarningDays,
         expiryCriticalDays: existing.expiryCriticalDays,
+        idleSignOutMinutes: existing.idleSignOutMinutes,
+        idleSignOutScope: existing.idleSignOutScope,
       });
 
       // The two expiry days as they will stand, one sent alone checked
@@ -272,6 +278,12 @@ export class OrganizationsService {
           : {}),
         ...(input.expiryCriticalDays !== undefined
           ? { expiryCriticalDays: input.expiryCriticalDays }
+          : {}),
+        ...(input.idleSignOutMinutes !== undefined
+          ? { idleSignOutMinutes: input.idleSignOutMinutes }
+          : {}),
+        ...(input.idleSignOutScope !== undefined
+          ? { idleSignOutScope: input.idleSignOutScope }
           : {}),
       };
 

@@ -43,6 +43,12 @@ export type LicencePolicy = (typeof LICENCE_POLICIES)[number];
 export const ORGANIZATION_RAILS = ['dark', 'light'] as const;
 export type OrganizationRail = (typeof ORGANIZATION_RAILS)[number];
 
+/** Whom an idle sign-out applies to (ADR-065). */
+export const IDLE_SIGN_OUT_SCOPES = ['unticked', 'everyone'] as const;
+export type IdleSignOutScope = (typeof IDLE_SIGN_OUT_SCOPES)[number];
+/** The idle limits an organization may choose, in minutes; null is Off. */
+export const IDLE_SIGN_OUT_MINUTES = [15, 30, 60, 240] as const;
+
 export const organizations = pgTable(
   'organizations',
   {
@@ -160,6 +166,17 @@ export const organizations = pgTable(
     logoOnDocuments: boolean('logo_on_documents').notNull().default(true),
 
     /**
+     * Sign out after inactivity (ADR-065): null for Off, else minutes. It
+     * only ever shortens a session's own limit, and applies to sign-ins
+     * without Keep me signed in, or to everyone.
+     */
+    idleSignOutMinutes: integer('idle_sign_out_minutes'),
+    idleSignOutScope: text('idle_sign_out_scope')
+      .$type<IdleSignOutScope>()
+      .notNull()
+      .default('unticked'),
+
+    /**
      * When a lot counts as expiring (ADR-060): warning within this many
      * days, critical within the second. The organization's, since a bakery
      * and a supplement maker cannot share 90 and 30.
@@ -202,6 +219,14 @@ export const organizations = pgTable(
       sql`${t.accentColor} is null or ${t.accentColor} ~ '^#[0-9A-F]{6}$'`,
     ),
     check('organizations_rail_check', sql`${t.rail} in ('dark', 'light')`),
+    check(
+      'organizations_idle_sign_out_minutes_check',
+      sql`${t.idleSignOutMinutes} is null or ${t.idleSignOutMinutes} in (15, 30, 60, 240)`,
+    ),
+    check(
+      'organizations_idle_sign_out_scope_check',
+      sql`${t.idleSignOutScope} in ('unticked', 'everyone')`,
+    ),
     check(
       'organizations_expiry_days_check',
       sql`${t.expiryCriticalDays} between 1 and 365 and ${t.expiryWarningDays} between 1 and 365 and ${t.expiryCriticalDays} < ${t.expiryWarningDays}`,

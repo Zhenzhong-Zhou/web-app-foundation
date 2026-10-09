@@ -4,10 +4,15 @@ import type { NextFunction, Request, Response } from 'express';
 
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
-import { memberships, users } from '../../database/schema';
+import {
+  type IdleSignOutScope,
+  memberships,
+  organizations,
+  users,
+} from '../../database/schema';
 import { runInTenantContext } from '../../database/tenant-context';
 import { type RequestContext, setRequestContext } from './request-context';
-import { SessionService } from './session.service';
+import { SessionService, UNKEPT_IDLE_MS } from './session.service';
 import { readSessionCookie } from './session-cookie';
 
 /** Last active moves at most this often (ADR-063). */
@@ -85,6 +90,18 @@ export class SessionContextMiddleware implements NestMiddleware {
       ? await this.findMembership(user.id, session.currentOrgId)
       : undefined;
 
+    // The idle limit this session is held to: its own if not kept, the
+    // organization's if it applies and is shorter (ADR-065). Past it, the
+    // session ends here, on the next request, whatever the page did.
+    const idleLimitMs = idleLimitOf(session, membership);
+    if (
+      idleLimitMs !== null &&
+      Date.now() - session.lastSeenAt.getTime() > idleLimitMs
+    ) {
+      await this.sessions.revoke(session.sessionId);
+      return null;
+    }
+
     if (membership && !background) await this.markActive(membership);
 
     return {
@@ -94,6 +111,7 @@ export class SessionContextMiddleware implements NestMiddleware {
       name: user.name,
       organizationId: membership?.organizationId ?? null,
       roleId: membership?.roleId ?? null,
+      idleLimitMs,
       // Captured per request rather than read off the session row: ADR-012
       // wants these at event time, and the session's values are from
       // whenever it was created.
@@ -131,8 +149,14 @@ export class SessionContextMiddleware implements NestMiddleware {
         organizationId: memberships.organizationId,
         roleId: memberships.roleId,
         lastActiveAt: memberships.lastActiveAt,
+        idleSignOutMinutes: organizations.idleSignOutMinutes,
+        idleSignOutScope: organizations.idleSignOutScope,
       })
       .from(memberships)
+      .innerJoin(
+        organizations,
+        eq(organizations.id, memberships.organizationId),
+      )
       .where(
         and(
           eq(memberships.userId, userId),
@@ -142,4 +166,29 @@ export class SessionContextMiddleware implements NestMiddleware {
 
     return row;
   }
+}
+
+/**
+ * How long a session may sit idle, when that is short enough to warn
+ * about (ADR-065): two hours if not kept; the organization's minutes if
+ * its policy applies, to everyone or to sessions not kept; the shorter
+ * of the two. Null for an ordinary kept session under no policy.
+ */
+export function idleLimitOf(
+  session: { keepSignedIn: boolean },
+  membership?: {
+    idleSignOutMinutes: number | null;
+    idleSignOutScope: IdleSignOutScope;
+  },
+): number | null {
+  const own = session.keepSignedIn ? null : UNKEPT_IDLE_MS;
+  const minutes = membership?.idleSignOutMinutes ?? null;
+  const applies =
+    minutes !== null &&
+    (membership?.idleSignOutScope === 'everyone' || !session.keepSignedIn);
+  const policy = applies ? minutes * 60_000 : null;
+
+  if (own === null) return policy;
+  if (policy === null) return own;
+  return Math.min(own, policy);
 }
