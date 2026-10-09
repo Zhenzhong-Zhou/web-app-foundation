@@ -788,6 +788,23 @@ await fetch(`${api}/v1/files/product-image`, {
   disabled with the reason. A viewer sees the gallery without the menus.
   In 中文 on a phone, the buttons and the hint read naturally.
 
+## 19. People (ADR-063)
+
+- **MC-1901** On Account, add a photo (a phone's camera works too): the
+  circle shows it cropped square, and so does the top bar at once; hover
+  it for your name and email. Replace it, then Remove it: your initials
+  come back on your colour. Fill in your details at work and save. On
+  People, your card shows your title and extension; another member's
+  card, with nothing filled in, shows only initials, name and role.
+  Search finds a person by title. Open a colleague's page: only what they
+  filled in, "Active today" or similar; as an owner, the exact time and
+  their recent work, with "See all" opening the audit log filtered to
+  them. Your own page lists no work; "See all your work" on Account opens
+  Your activity, whose export holds only your actions. Members and a
+  record's History show faces. Leave a tab open and hidden for a few
+  minutes, then look at People from another account: you are not shown
+  as active then. In 中文 on a phone, People reads 同事 and the cards fit.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -914,3 +931,4 @@ first.
 - 2026-10-09: ADR-061, the Organization page in tabs and its name: MC-1701.
 - 2026-10-09: ADR-060, branding and the organization's expiry days: MC-1702.
 - 2026-10-09: ADR-062, product images: MC-1801.
+- 2026-10-09: ADR-063, people: MC-1901.

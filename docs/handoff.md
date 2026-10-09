@@ -20,10 +20,10 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0050** (`branding`, ADR-060) on `main`, and
-  **0051** (`product_images`, ADR-062) on `product-images`. Render runs
-  them on deploy (`drizzle.__drizzle_migrations` holds 52 rows once 0051
-  is deployed). Next is **0052**.
+- Migrations: through **0051** (`product_images`, ADR-062) on `main`, and
+  **0052** (`people`, ADR-063) on `people`. Render runs them on deploy
+  (`drizzle.__drizzle_migrations` holds 53 rows once 0052 is deployed).
+  Next is **0053**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -37,8 +37,8 @@ and price lists proposing the price of a new line.
   merged. **ADR-060** (branding) and **ADR-061** (the Organization page in tabs)
   are merged. **ADR-062** (product images) is built on `product-images`
   (migration 0051, MC-1801), merged (PR #78). **ADR-063** (people: a
-  photo of one's own, initials otherwise, a People page) is written on
-  `people`, designed before it is built. Next is **ADR-064**.
+  photo of one's own, initials otherwise, a People page) is built on
+  `people` (migration 0052, MC-1901). Next is **ADR-064**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot

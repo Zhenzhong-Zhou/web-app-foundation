@@ -6582,6 +6582,25 @@ and your recent work.
   People page, a person's page); manual checks.
 - Deleting an account deletes its photo with it.
 
+*Amended while building:*
+
+- **"Deleted at once" is the app's storage.** The nightly copy of the
+  files bucket (ADR-059) keeps a removed photo until that copy expires,
+  31 days on, as it keeps everything; nothing restores it into the app.
+- **A photo change is an account event** (`account.profile_updated`,
+  ADR-022), not an audit entry: it is the person's own, like their name.
+  Changing your details at work is neither, as a self-action on your own
+  membership.
+- **Members gains the face, not last active.** The People page and a
+  person's page carry last active; Members stays the page for managing.
+- **Your activity is the audit log's page** in a mode of its own: the
+  person set by the server, no action filter (the log's vocabulary is
+  for those who may read it), its own export. An owner's "See all of
+  their activity" opens the audit log with a person filter it now shows
+  as a notice, like a record filter.
+- **The bell's background mark** is `X-Background: 1`, and it polls only
+  while its tab is visible, asking at once when it is seen again.
+
 **Considered and not done.**
 
 - **An owner adding a photo for someone.** Faster for staff who never
