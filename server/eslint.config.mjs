@@ -94,11 +94,14 @@ export default tseslint.config(
     // organization at all (ADR-036). The files purge releases and deletes
     // every organization's expired files in one pass, with no request and so
     // no tenant (ADR-059); the rest of core/files goes through TenantDb.
+    // The licence reminders read every organization's licences hourly, for
+    // the same reason (ADR-064).
     files: [
       'src/core/auth/**/*.ts',
       'src/core/authorization/**/*.ts',
       'src/core/notifications/**/*.ts',
       'src/core/files/files-purge.service.ts',
+      'src/modules/product-licences/licence-reminders.service.ts',
     ],
     rules: { 'no-restricted-imports': 'off' },
   },
