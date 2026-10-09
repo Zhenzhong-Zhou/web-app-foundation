@@ -61,7 +61,9 @@ describe('renderLogo', () => {
 
     expect(logo.size).toBe('full');
     expect((await sharp(logo.data).metadata()).format).toBe('png');
-    expect([logo.width, logo.height]).toEqual([1024, 512]);
+    // Drawn at 300 dpi, then scaled: a pixel either way is rounding.
+    expect(logo.width).toBe(1024);
+    expect(Math.abs(logo.height - 512)).toBeLessThanOrEqual(1);
   });
 
   it('refuses a raster logo narrower than 256 px', async () => {

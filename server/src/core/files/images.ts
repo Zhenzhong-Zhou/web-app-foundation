@@ -76,10 +76,7 @@ export function renderPhoto(input: Buffer): Promise<Rendered[]> {
  * here and only the PNG is kept, so nothing an SVG carries ever runs; the
  * renderer loads nothing outside it, as it reads from memory.
  */
-export function renderLogo(
-  input: Buffer,
-  type: Sniffed,
-): Promise<Rendered[]> {
+export function renderLogo(input: Buffer, type: Sniffed): Promise<Rendered[]> {
   return decoded(async () => {
     const vector = type === 'image/svg+xml';
     const image = sharp(input, {

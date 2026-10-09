@@ -11,14 +11,10 @@ import {
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { and, eq, isNull, lt, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 
 import type { Env } from '../../config/env';
-import {
-  type Database,
-  type Transaction,
-  UNSAFE_GLOBAL_DB,
-} from '../../database/database.module';
+import type { Transaction } from '../../database/database.module';
 import {
   type FileKind,
   files,
@@ -39,11 +35,6 @@ import {
   UnreadableImage,
 } from './images';
 import { sniff, type Sniffed } from './sniff';
-
-const DAY = 24 * 60 * 60 * 1000;
-
-/** Released files keep their bytes this long, for undoing and restores. */
-export const PURGE_AFTER_DAYS = 30;
 
 /** An upload as multer hands it over, in memory. */
 export interface UploadedBinary {
@@ -81,7 +72,6 @@ export class FilesService {
 
   constructor(
     private readonly tenantDb: TenantDb,
-    @Inject(UNSAFE_GLOBAL_DB) private readonly db: Database,
     @Inject(FILE_STORAGE) private readonly storage: FileStorage,
     config: ConfigService<Env, true>,
   ) {
@@ -181,7 +171,13 @@ export class FilesService {
       );
     } catch (error) {
       // Without its bytes the row is a lie: take it back, and say why.
-      await this.db.delete(files).where(eq(files.id, row.id));
+      await this.tenantDb.transaction((tx, organizationId) =>
+        tx
+          .delete(files)
+          .where(
+            and(eq(files.id, row.id), eq(files.organizationId, organizationId)),
+          ),
+      );
       throw error;
     }
 
@@ -284,7 +280,7 @@ export class FilesService {
     }
   }
 
-  /** The record no longer uses it: purged PURGE_AFTER_DAYS from now. */
+  /** The record no longer uses it: purged 30 days from now (FilesPurge). */
   async release(
     tx: Transaction,
     organizationId: string,
@@ -300,51 +296,6 @@ export class FilesService {
           isNull(files.releasedAt),
         ),
       );
-  }
-
-  /**
-   * Every organization's, so on the global connection. Uploads never
-   * attached within a day are released; files released PURGE_AFTER_DAYS
-   * ago lose their bytes, then their row. A batch at a time; the next run
-   * takes the rest.
-   */
-  async purge(
-    now = new Date(),
-  ): Promise<{ released: number; deleted: number }> {
-    const released = await this.db
-      .update(files)
-      .set({ releasedAt: now })
-      .where(
-        and(
-          isNull(files.attachedAt),
-          isNull(files.releasedAt),
-          lt(files.createdAt, new Date(now.getTime() - DAY)),
-        ),
-      )
-      .returning({ id: files.id });
-
-    const due = await this.db
-      .select({
-        id: files.id,
-        organizationId: files.organizationId,
-        sizes: files.sizes,
-      })
-      .from(files)
-      .where(
-        lt(files.releasedAt, new Date(now.getTime() - PURGE_AFTER_DAYS * DAY)),
-      )
-      .limit(500);
-
-    for (const row of due) {
-      await Promise.all(
-        (Object.keys(row.sizes) as FileSize[]).map((size) =>
-          this.storage.delete(keyOf(row.organizationId, row.id, size)),
-        ),
-      );
-      await this.db.delete(files).where(eq(files.id, row.id));
-    }
-
-    return { released: released.length, deleted: due.length };
   }
 
   private async render(

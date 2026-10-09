@@ -4,9 +4,10 @@ import { ConfigService } from '@nestjs/config';
 import type { Env } from '../../config/env';
 import { AuthorizationModule } from '../authorization/authorization.module';
 import { FILE_STORAGE } from './file-storage';
-import { FilesPurgeTimer } from './files-purge.timer';
 import { FilesController } from './files.controller';
 import { FilesService } from './files.service';
+import { FilesPurgeService } from './files-purge.service';
+import { FilesPurgeTimer } from './files-purge.timer';
 import { storageFromConfig } from './storage-from-config';
 
 /** Files (ADR-059). Exported for the features that attach them. */
@@ -21,6 +22,7 @@ import { storageFromConfig } from './storage-from-config';
         storageFromConfig(config),
     },
     FilesService,
+    FilesPurgeService,
     FilesPurgeTimer,
   ],
   exports: [FilesService],

@@ -75,8 +75,8 @@ export default tseslint.config(
               message:
                 'Services must use TenantDb — it applies organization_id (ADR-003/ADR-009). ' +
                 'Global queries are allowed in core/auth, ' +
-                'core/authorization and core/notifications; ' +
-                'anywhere else, this is a scoping mistake.',
+                'core/authorization, core/notifications and the files ' +
+                'purge; anywhere else, this is a scoping mistake.',
             },
           ],
         },
@@ -85,17 +85,20 @@ export default tseslint.config(
   },
 
   {
-    // UNSAFE_GLOBAL_DB is allowed in exactly three places, none of which has a
+    // UNSAFE_GLOBAL_DB is allowed in exactly four places, none of which has a
     // tenant to scope to. core/auth resolves a user by email before any
     // organization is known. core/authorization joins the permission
     // catalogue, which has no organization_id by design. core/notifications is
     // scoped by recipient instead: an account notification — "somebody signed
     // in to your account" — belongs to a person who may belong to no
-    // organization at all (ADR-036).
+    // organization at all (ADR-036). The files purge releases and deletes
+    // every organization's expired files in one pass, with no request and so
+    // no tenant (ADR-059); the rest of core/files goes through TenantDb.
     files: [
       'src/core/auth/**/*.ts',
       'src/core/authorization/**/*.ts',
       'src/core/notifications/**/*.ts',
+      'src/core/files/files-purge.service.ts',
     ],
     rules: { 'no-restricted-imports': 'off' },
   },

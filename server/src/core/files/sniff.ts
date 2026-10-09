@@ -42,7 +42,10 @@ function ascii(bytes: Buffer, start: number, end: number): string {
 function isSvg(bytes: Buffer): boolean {
   const head = bytes.subarray(0, 1024);
   if (head.includes(0)) return false;
-  const text = head.toString('utf8').replace(/^\uFEFF/, '').trimStart();
+  const text = head
+    .toString('utf8')
+    .replace(/^\uFEFF/, '')
+    .trimStart();
   return /^(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(
     text,
   );

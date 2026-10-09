@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
 
 import { FilesService } from '../src/core/files/files.service';
+import { FilesPurgeService } from '../src/core/files/files-purge.service';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -57,11 +58,13 @@ describe('Files (e2e)', () => {
   let app: INestApplication;
   let db: Database;
   let service: FilesService;
+  let purge: FilesPurgeService;
 
   beforeAll(async () => {
     app = await createE2eApp();
     db = app.get<Database>(UNSAFE_GLOBAL_DB);
     service = app.get(FilesService);
+    purge = app.get(FilesPurgeService);
   });
 
   afterAll(async () => {
@@ -206,14 +209,14 @@ describe('Files (e2e)', () => {
     );
 
     const now = Date.now();
-    expect(await service.purge(new Date(now + 2 * DAY))).toEqual({
+    expect(await purge.purge(new Date(now + 2 * DAY))).toEqual({
       released: 1,
       deleted: 0,
     });
     await alpha.agent.get(`/v1/files/${unused.id}`).expect(404);
     await alpha.agent.get(`/v1/files/${used.id}`).expect(200);
 
-    expect(await service.purge(new Date(now + 33 * DAY))).toEqual({
+    expect(await purge.purge(new Date(now + 33 * DAY))).toEqual({
       released: 0,
       deleted: 1,
     });
@@ -221,9 +224,7 @@ describe('Files (e2e)', () => {
       await db.select().from(files).where(eq(files.id, unused.id)),
     ).toEqual([]);
     await expect(
-      access(
-        path.resolve('storage', alpha.organizationId, unused.id, 'thumb'),
-      ),
+      access(path.resolve('storage', alpha.organizationId, unused.id, 'thumb')),
     ).rejects.toThrow();
   });
 

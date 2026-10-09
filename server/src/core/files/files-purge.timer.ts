@@ -7,7 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 import type { Env } from '../../config/env';
-import { FilesService } from './files.service';
+import { FilesPurgeService } from './files-purge.service';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -25,7 +25,7 @@ export class FilesPurgeTimer
   private timer?: NodeJS.Timeout;
 
   constructor(
-    private readonly files: FilesService,
+    private readonly purge: FilesPurgeService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -41,7 +41,7 @@ export class FilesPurgeTimer
 
   private async run(): Promise<void> {
     try {
-      const { released, deleted } = await this.files.purge();
+      const { released, deleted } = await this.purge.purge();
       if (released || deleted) {
         this.logger.log(`Files: ${released} released, ${deleted} purged`);
       }
