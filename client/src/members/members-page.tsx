@@ -24,6 +24,7 @@ import { PersonAvatar } from '../components/person-avatar';
 import { api, messageFor } from '../lib/api';
 import { formatMoment } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { activeLabel, type ActiveSince } from '../people/people-types';
 import { CreateMemberDialog } from './create-member-dialog.tsx';
@@ -242,7 +243,7 @@ export function MembersPage() {
                       <TableCell
                         title={member.email}
                         sx={{
-                          maxWidth: 260,
+                          maxWidth: EMAIL_MAX_WIDTH,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',

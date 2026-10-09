@@ -2,6 +2,7 @@ import { Box, Stack, Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
 
 import { formatMoment, formatWhen, relativeTime } from '../lib/format';
+import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { PersonAvatar } from './person-avatar';
 
 /** One line, cut with "…", whole on hover: long emails never break a row. */
@@ -49,7 +50,7 @@ export function Who({
         photoFileId={photoFileId}
         size={size}
       />
-      <Box sx={{ minWidth: 0, maxWidth: 240 }}>
+      <Box sx={{ minWidth: 0, maxWidth: EMAIL_MAX_WIDTH }}>
         <Typography
           variant="body2"
           title={name || email || removed}

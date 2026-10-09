@@ -31,6 +31,7 @@ import { ErrorBoundary } from '../components/error-boundary';
 import { LanguageSelect } from '../components/language-select';
 import { PersonAvatar } from '../components/person-avatar';
 import { api } from '../lib/api';
+import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { LookupBox } from '../search/lookup-box';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
@@ -276,11 +277,22 @@ export function AppLayout() {
                   photoFileId={session?.user.photoFileId}
                   size={40}
                 />
-                <Stack sx={{ minWidth: 0 }}>
-                  <Typography variant="subtitle2" noWrap>
+                {/* Cut short when long, whole on hover: the menu keeps its
+                    width whatever the address (ADR-063). */}
+                <Stack sx={{ minWidth: 0, maxWidth: EMAIL_MAX_WIDTH }}>
+                  <Typography
+                    variant="subtitle2"
+                    noWrap
+                    title={session?.user.name}
+                  >
                     {session?.user.name}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" noWrap>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    noWrap
+                    title={session?.user.email}
+                  >
                     {session?.user.email}
                   </Typography>
                 </Stack>
