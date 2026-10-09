@@ -67,6 +67,11 @@ const NOT_AUDITED = new Map<string, string>([
   ],
   ['RecentController.clear', 'Clearing your own history, as above (ADR-058)'],
   [
+    'FilesController.uploadLogo',
+    'An upload changes nothing until a record uses it; attaching it is that record’s audited save (ADR-059)',
+  ],
+  ['FilesController.uploadProductImage', 'As above (ADR-059)'],
+  [
     'ShipmentsController.preview',
     'Reads only: computes what a shipment would take. A POST because the question has a body (ADR-041)',
   ],

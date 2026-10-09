@@ -53,3 +53,6 @@ server/.flake-hunt/
 # Translation review workbooks (scripts/i18n-review.mjs): working files,
 # the catalogues are the source of truth.
 /review/
+
+# Files kept by FILE_STORAGE=local (ADR-059)
+server/storage/

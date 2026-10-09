@@ -15,6 +15,7 @@ import { AuthModule } from './core/auth/auth.module';
 import { SessionGuard } from './core/auth/session.guard';
 import { AuthorizationModule } from './core/authorization/authorization.module';
 import { PermissionGuard } from './core/authorization/permission.guard';
+import { FilesModule } from './core/files/files.module';
 import { OrganizationsModule } from './core/organizations/organizations.module';
 import { UsersModule } from './core/users/users.module';
 import { DatabaseModule } from './database/database.module';
@@ -120,6 +121,7 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     AuthModule,
     AuthorizationModule,
     AuditModule,
+    FilesModule,
     UsersModule,
 
     // Feature modules. These consume the above and add nothing to it.

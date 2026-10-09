@@ -17,6 +17,7 @@ export * from './credit-note-taxes';
 export * from './credit-notes';
 export * from './document-sequences';
 export * from './exchange-rates';
+export * from './files';
 export * from './invoice-line-taxes';
 export * from './invoice-lines';
 export * from './invoice-taxes';

@@ -70,6 +70,10 @@ const GATED_INSIDE = new Map<string, string>([
     'The kind’s own view permission, checked in the handler (ADR-058)',
   ],
   ['RecentController.clear', 'A person’s own history only (ADR-058)'],
+  [
+    'FilesController.read',
+    'The kind’s own view permission, checked in the service once the file is read (ADR-059)',
+  ],
 ]);
 
 const ALLOWED = new Map([...SELF_SERVICE, ...GATED_INSIDE]);

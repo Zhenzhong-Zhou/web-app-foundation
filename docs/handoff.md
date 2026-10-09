@@ -21,10 +21,9 @@ and price lists proposing the price of a new line.
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
 - Migrations: through **0048** (`needs_cost_pool_index`, ADR-058 amended)
-  on `main` once `fix-home-perf-2` merges, with **0045**
-  (`getting_started`), **0046** (`sort_indexes_desc`) and **0047**
-  (`recent_records`). Render runs them on deploy (confirm in the deploy
-  log: `drizzle.__drizzle_migrations` holds 49 rows). Next is **0049**.
+  on `main`, and **0049** (`files`, ADR-059) on `file-storage`. Render runs
+  them on deploy (confirm in the deploy log: `drizzle.__drizzle_migrations`
+  holds 50 rows once 0049 is deployed). Next is **0050**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -34,7 +33,8 @@ and price lists proposing the price of a new line.
   is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
   ADR-055 (the look) is built on `ui-design-pass`, with an amendment.
   ADR-057 (dates, sorting, export) is built on `adr-057-dates-export`.
-  ADR-058 (Home, with recently opened) is merged. Next is **ADR-059**.
+  ADR-058 (Home, with recently opened) is merged. **ADR-059** (file
+  storage) is written, not built. Next is **ADR-060**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot
@@ -71,8 +71,19 @@ Merge it only once a Performance run (budgets) on the branch passes.
    hand; the full run weekly on `main` and on `v*-rc.*` tags (ADR-051
    amended). The first weekly or by-hand run on `main` fills the volume
    cache; until then a pull request's plan check seeds its own.
-2. **File storage**: one ADR for every file (logos, images, COAs) on
-   Cloudflare R2, the bucket already chosen for backups.
+2. **File storage, ADR-059 written** on `adr-059-file-storage`: one
+   `waf-files` bucket on R2 with its own token, a `files` table as the
+   record, uploads checked and photos re-encoded on the server in three
+   sizes (thumb 400 px, display 1200, full 3000 for zoom), every file
+   served through `GET /v1/files/:id`, released files purged after 30
+   days, copied nightly into `waf-backups/files/`, 1 GB per organization.
+   Build order in the ADR: setup by hand (done: `waf-files`, its two
+   tokens, the `files/` lock and lifecycle on `waf-backups`), migration
+   0049 and the storage module (built on `file-storage`: `src/core/files/`,
+   the local and s3 drivers, the checks and three sizes, `POST
+   /v1/files/logo` and `/product-image`, `GET /v1/files/:id`, the hourly
+   purge; MC-1601 and MC-1602), then the backup copy, then branding's
+   logo.
 3. **Organization branding**: logo, accent colour with a contrast check,
    per-organization expiry thresholds; the first feature that uploads a
    file.
