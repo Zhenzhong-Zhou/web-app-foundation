@@ -106,8 +106,7 @@ Still open alongside: the three **account e2e** tests failing locally
 disabled; check whether they also fail on `main`, and read their
 `error-context.md`); the **pinyin backfill** on Render's database; changing
 Render's **database password** (pasted in chat); MC-1558 and MC-1559 by hand;
-**demo orders with expected dates**, so Home's cards show due and late
-chips; the typo lookup at 270 ms of its 300 ms budget (one query per pass if
+the typo lookup at 270 ms of its 300 ms budget (one query per pass if
 it ever fails); Mailpit in the Performance workflow (only quietens harmless
 email errors).
 
@@ -664,8 +663,14 @@ Rules, still in force:
   copied permission list)
 - #20 `date` column for calendar days — done (ADR-052), closed by PR #40
 - #25 show what the customer kept (shipped − returned)
-- #26 cancel check and update are not one transaction
-- #28 run-close top-up ignores holds and the lots picked at release
+- #26 cancel check and update are not one transaction — fixed on
+  `fixes-orders-runs`: an order's header change runs in one transaction on
+  the order row, locked by `loadOrder`, which every line and stock change
+  to an order already goes through
+- #28 run-close top-up ignores holds and the lots picked at release —
+  fixed on `fixes-orders-runs`: the top-up is checked against holds like
+  release (ADR-045), and continues the lots release issued before opening
+  the next to expire (ADR-039 amended)
 
 ## Left over, small
 
