@@ -750,6 +750,17 @@ await fetch(`${api}/v1/files/product-image`, {
   the file (never attached) is released; 30 days later its three objects are
   gone from `waf-files`.
 
+## 17. Organization settings (ADR-061)
+
+- **MC-1701** Settings → Organization opens on Profile; Money, Documents and
+  Stock each change the address (`?tab=money` and so on), and pasting that
+  address in a new tab opens the same tab. Type in Profile's tax number, open
+  Stock and come back: the typing is still there. On a phone the tabs scroll
+  sideways. Rename the organization: the side rail and the top bar show the
+  new name after Save, the History button lists the change, and an invoice
+  issued before still prints the old name. In 中文 the tabs read 概况, 财务,
+  单据 and 库存.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -873,3 +884,4 @@ first.
 - 2026-10-07: ADR-057 step 6, dates, sorting and exports on every list: MC-1558.
 - 2026-10-08: ADR-058, Home, what needs attention first: MC-1559.
 - 2026-10-08: ADR-059, files on R2, served through the app: MC-1601, MC-1602.
+- 2026-10-09: ADR-061, the Organization page in tabs and its name: MC-1701.

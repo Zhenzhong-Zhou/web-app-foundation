@@ -6253,6 +6253,23 @@ the organization.
        Profile tab.
 - The current single page's address keeps working: it is Profile.
 
+*Amended while building:*
+
+- **The address is `?tab=money`, not `/settings/organization/money`**,
+  as on every record page: the same `useTab`, which keeps the open tab in
+  the address, falls back to the first for an unknown one, and replaces
+  history rather than adding to it. `/settings/organization` is Profile.
+- **Every tab stays mounted, and only the open one shows**, so moving
+  between tabs keeps whatever was typed. Nothing needs to ask: no work is
+  lost by switching, and leaving the page is as it was.
+- **The name is 1 to 100 characters**, as at registration, not 120.
+- **Four tabs until ADR-060 is built**: Branding arrives with it, and so do
+  the expiry days on Stock and, with them, Home's link to Stock.
+- **Links built now:** Getting started's first step opens Profile, as the
+  page's own address; the base currency notes on Stock value and on
+  Exchange rates open Money. The refusal to issue an invoice without an
+  address is the server's message, shown as it comes, with no link yet.
+
 **Considered and not done.**
 
 - **One long page with an index down the side.** Shorter to build, and

@@ -86,11 +86,11 @@ Merge it only once a Performance run (budgets) on the branch passes.
    `scripts/backup-files.sh` after each nightly dump,
    `scripts/check-files-backup.sh` in the monthly drill, the runbook's
    "The files are gone"); then branding's logo.
-3. **The Organization page in tabs, ADR-061 written** on
-   `adr-060-branding`: Profile, Money, Documents, Stock and Branding, each
-   with its own address, links that open the right tab, and the
-   organization's name editable on Profile. Built first: the client's tabs,
-   then the name.
+3. **The Organization page in tabs, ADR-061 built** on `adr-061-org-tabs`:
+   Profile, Money, Documents and Stock at `?tab=`, every tab mounted so
+   switching keeps what was typed, the base currency notes linking to
+   Money, and the organization's name editable on Profile (server and
+   client, audited). Branding is the fifth tab, with ADR-060. MC-1701.
 4. **Organization branding, ADR-060 written** on the same branch: the logo
    (ADR-059's storage, previewed on both rails), six tested colours or a
    custom one darkened to the nearest shade that passes AA, warned near the
