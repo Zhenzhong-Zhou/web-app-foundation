@@ -12,7 +12,7 @@ tooling doesn't.
 
 kebab-case, with a dot-separated type suffix:
 
-```
+```text
 users.controller.ts        UsersController
 users.service.ts           UsersService
 users.module.ts            UsersModule
@@ -49,7 +49,7 @@ idiomatic TypeScript, and Drizzle's column definition is the one place they meet
 
 **Class methods are regular methods, never arrow properties.**
 
-```
+```ts
 // correct
 @Get()
 check() { ... }
@@ -80,7 +80,7 @@ an arrow class property doesn't live on the prototype.
 
 ### What a complete module looks like
 
-```
+```text
 core/auth/
 ├── dto/
 │   ├── login.dto.ts          request shapes, validated by class-validator
@@ -395,7 +395,7 @@ A new screen gets a line in SCREENS in client/e2e/accessibility.spec.ts, which
 runs axe for WCAG 2.2 AA in light and dark mode (ADR-055). A violation is
 fixed, not excluded: no rule is turned off.
 
-A link inside a sentence (a FormattedMessage <link> chunk) is
+A link inside a sentence (a FormattedMessage `<link>` chunk) is
 underline="always": colour alone does not tell it from the words around it.
 Links standing alone, in a table cell or a list, keep the theme's underline on
 hover. A control without visible text of its own, such as a switch in a table

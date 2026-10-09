@@ -1,9 +1,11 @@
 {
   // Matches the tooling the repo already runs: ESLint and Prettier on both
-  // sides, Jest on the server, Vitest and Playwright on the client.
+  // sides, Jest on the server, Vitest and Playwright on the client, and
+  // markdownlint for every Markdown file.
   "recommendations": [
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
+    "davidanson.vscode-markdownlint",
     "orta.vscode-jest",
     "vitest.explorer",
     "ms-playwright.playwright"

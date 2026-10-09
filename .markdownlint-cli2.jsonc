@@ -1,0 +1,20 @@
+{
+  // markdownlint's standard rules, for every Markdown file in the repo.
+  // `npx markdownlint-cli2@0.23.3` checks; add `--fix` to fix what it can.
+  // The VS Code markdownlint extension reads this same file.
+  "config": {
+    "default": true,
+    // The one exception. The 80-column limit also counts table rows and
+    // long links, which cannot be wrapped; prose is already wrapped by hand.
+    "MD013": false
+  },
+  "globs": ["**/*.md"],
+  "ignores": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "client/playwright-report/**",
+    "client/test-results/**",
+    "review/**"
+  ]
+}

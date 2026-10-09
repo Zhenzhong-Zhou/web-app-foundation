@@ -77,7 +77,7 @@ user belongs to two organizations, which is normal in any multi-tenant system.
 
 **Decision.** Roles attach to a **membership**, not to a user:
 
-```
+```text
 users (global identity)
 memberships (user_id, organization_id, role_id)
 roles → role_permissions → permissions
@@ -220,7 +220,7 @@ tenant-scoped query helper that always applies the `organization_id` filter. Dir
 access in a service is a review-blocking defect.
 
 Escape hatch for queries the builder cannot express (window functions, recursive CTEs):
-the `` sql`` `` template, which still parameterises values safely.
+the ``sql`` `` template, which still parameterises values safely.
 
 Cost: smaller ecosystem and fewer tutorials than Prisma, and no equivalent of Prisma
 Studio. Accepted.
@@ -1024,15 +1024,17 @@ quantity exist, and how does it change.
 
 **Decision — products group, variants carry stock.**
 
-    products          id, organization_id, type, name, description
-    product_variants  id, organization_id, product_id, sku, name, unit_of_measure,
-                      tracks_batches, weight_grams, dimensions, case_quantity
-                      unique (organization_id, sku)
-    batches           id, organization_id, variant_id, code, expires_at, received_at
-                      unique (organization_id, variant_id, code)
-    locations         id, organization_id, name, type, parent_id
-    stock             variant_id, location_id, batch_id, quantity
-    stock_movements   append-only; see below
+```text
+products          id, organization_id, type, name, description
+product_variants  id, organization_id, product_id, sku, name, unit_of_measure,
+                  tracks_batches, weight_grams, dimensions, case_quantity
+                  unique (organization_id, sku)
+batches           id, organization_id, variant_id, code, expires_at, received_at
+                  unique (organization_id, variant_id, code)
+locations         id, organization_id, name, type, parent_id
+stock             variant_id, location_id, batch_id, quantity
+stock_movements   append-only; see below
+```
 
 The product is a grouping for display. The variant is the thing counted,
 bought, and shipped — "Vitamin D3" is a product, "Vitamin D3, 60ct" is what
@@ -1111,12 +1113,14 @@ none of these tables.
 
 **Decision — quantity is a ledger, and `stock` is a cache.**
 
-    stock_movements   id, organization_id, variant_id, batch_id,
-                      from_location_id, to_location_id,   -- null marks direction
-                      quantity,                            -- always positive
-                      reason, reason_detail,
-                      reference_type, reference_id,
-                      note, actor_id, created_at
+```text
+stock_movements   id, organization_id, variant_id, batch_id,
+                  from_location_id, to_location_id,   -- null marks direction
+                  quantity,                            -- always positive
+                  reason, reason_detail,
+                  reference_type, reference_id,
+                  note, actor_id, created_at
+```
 
 Append-only, like `audit_log`. `stock` is updated in the same transaction and
 is derived — a convenience for reads, never the source of truth.
@@ -1192,8 +1196,10 @@ in-process units need a home that is still countable.
 
 **Decision — one `locations` table, self-referencing.**
 
-    locations  id, organization_id, name, code, type, parent_id,
-               is_available, is_active
+```text
+locations  id, organization_id, name, code, type, parent_id,
+           is_available, is_active
+```
 
 Warehouses, zones, aisles, shelves, and bins all need a name, a parent, and a
 status, so they are one table with a `type`. Separate tables would force
@@ -1356,8 +1362,10 @@ for the split is specific enough to say whether it applies here.
 
 **Decision — one `partners` table, and direction lives on the order.**
 
-    partners  id, organization_id, name, code, tax_id, notes, is_active
-              unique (organization_id, code) where code is not null
+```text
+partners  id, organization_id, name, code, tax_id, notes, is_active
+          unique (organization_id, code) where code is not null
+```
 
 They share almost everything that makes a row: a name, addresses, contact
 people, a tax id, notes, an active flag. What differs is what they *connect*
@@ -1437,11 +1445,13 @@ more here than deciding its columns.
 
 **Decision — `orders` and `order_lines`, covering purchase and sale.**
 
-    orders       id, organization_id, partner_id, direction, status,
-                 reference, expected_at, note, created_by
-    order_lines  id, organization_id, order_id, variant_id,
-                 sku,                       -- snapshotted, as movements do
-                 quantity_ordered, quantity_fulfilled
+```text
+orders       id, organization_id, partner_id, direction, status,
+             reference, expected_at, note, created_by
+order_lines  id, organization_id, order_id, variant_id,
+             sku,                       -- snapshotted, as movements do
+             quantity_ordered, quantity_fulfilled
+```
 
 A purchase order and a sales order are the same shape mirrored: a partner,
 lines of variants, one direction, fulfilment that moves stock. That symmetry is
@@ -1455,8 +1465,10 @@ query. Same precedent as `products.type` and `stock_movements.reason`.
 
 **Decision — status is the document's lifecycle, never fulfilment progress.**
 
-    draft → confirmed → received
-                    ↘ cancelled
+```text
+draft → confirmed → received
+                ↘ cancelled
+```
 
 Four values, and the temptation is to add `partially_received` and
 `fully_received` beside them. That is the mistake this decision exists to
@@ -1665,10 +1677,12 @@ different recipes in any case.
 
 **Decision — a header table, and versioning by snapshot at consumption.**
 
-    boms       id, organization_id, output_variant_id, output_quantity,
-               version, status, notes
-    bom_lines  id, organization_id, bom_id, component_variant_id,
-               quantity, supply_type, notes
+```text
+boms       id, organization_id, output_variant_id, output_quantity,
+           version, status, notes
+bom_lines  id, organization_id, bom_id, component_variant_id,
+           quantity, supply_type, notes
+```
 
 The header is what a bare join table has nowhere to put: a version, a status, a
 yield. Splitting it out after the table holds data is the retrofit the open
@@ -1782,7 +1796,7 @@ split the first time a recipe changes.
 avoiding it required actively choosing a separate component table. Pointing at
 `product_variants` is both the simpler choice and the one that leaves the door
 open.
- 
+
 ---
 
 ## ADR-030 — Who supplies a component is a property of the run
@@ -1873,7 +1887,7 @@ Our books only ever hold half of an outsourced batch. That is correct, and it
 means finished-good cost for those runs arrives inside the price on the
 manufacturer's invoice rather than being rolled up from components. Cost rollup
 is open, and this is one of the reasons it is not simple.
- 
+
 ---
 
 ## ADR-031 — A duplicate re-resolves snapshots; it never copies history forward
@@ -1920,7 +1934,7 @@ questions asked about every cancelled order.
 arrived. Copying only the shortfall is a backorder, which means something
 different, and one button with two behaviours depending on data is how a control
 becomes untrustworthy. Open below.
- 
+
 ---
 
 ## ADR-032 — Production runs: partial output, actual consumption, lot identity
@@ -2066,9 +2080,11 @@ deferral was read as covering line editing generally. It does not.
 **Decision — the same rule that froze the order reference.** What other records
 depend on becomes immutable; what nothing depends on stays editable.
 
-    add a line       draft only
-    change quantity  draft or confirmed, refused once anything is received
-    remove a line    draft only, and never the last one
+```text
+add a line       draft only
+change quantity  draft or confirmed, refused once anything is received
+remove a line    draft only, and never the last one
+```
 
 A draft line is not a record of anything that happened. No movement references
 it, no snapshot copies it, and the order has not been sent. Correcting one is
@@ -2225,7 +2241,9 @@ repeats.
 A check keeps them together — a price with no currency is a number with no
 unit, and a currency with no price says nothing:
 
-    (unit_price is null) = (currency is null)
+```text
+(unit_price is null) = (currency is null)
+```
 
 **Decision — the line total is computed, never stored.** `unit_price ×
 quantity_ordered` is derivable, and a stored copy is a third number free to
@@ -2270,9 +2288,11 @@ whoever happened to click the button, and in a log nobody reads unprompted.
 
 **Decision — one table, one row per recipient.**
 
-    notifications  id, user_id, organization_id, type,
-                   resource_type, resource_id, title, body,
-                   read_at, created_at
+```text
+notifications  id, user_id, organization_id, type,
+               resource_type, resource_id, title, body,
+               read_at, created_at
+```
 
 A row per recipient rather than per event, because read state is per person. A
 shared event row plus a separate `notification_reads` table is the normalised
@@ -3015,6 +3035,7 @@ gains two refusals for sales (unpriced line, mixed currency). Void shipment's
 rule changes and gains a reopen. The close button is renamed.
 
 **Deferred.**
+
 - **Pro forma invoices** — a valued document that creates no debt: for
   customs, prepayment, a customer's approval, a sample's declared value. Its
   own document type and number series, never counted as owed. Additive, and
@@ -3251,6 +3272,7 @@ components. The returns route learns an optional RMA and its limits. The
 credit note routes gain a preview and a create beside the void.
 
 **Deferred.**
+
 - **A free-standing amount** — "$50 off this invoice" — not tied to any
   line. Every credit in v0.4 credits a line; a discount on the whole is
   spread across its lines by hand.
@@ -3277,6 +3299,7 @@ lands — unrecoverable later, the same class as licence history.
 
 ADR-023 put `unit_cost` on the batch. The code has since shown three reasons
 it cannot sit there:
+
 - A lot is reused by its code, so a second delivery of L2024-A joins the
   first, possibly at another price.
 - A variant that does not track lots has no lot at all: bottles, caps,
@@ -3287,15 +3310,17 @@ it cannot sit there:
 **Decision — value is an append-only ledger beside the quantity ledger.**
 `stock_valuations`, one row per event that changes what stock is worth:
 
-    stock_valuations  id, organization_id, variant_id, lot_id,
-                      kind,                      -- see below
-                      movement_id,               -- null for rows no movement caused
-                      quantity,                  -- signed; zero for revaluations
-                      value,                     -- signed, in the base currency
-                      unit_price, currency,      -- as paid, on acquisitions
-                      exchange_rate,             -- the rate applied, on acquisitions
-                      needs_cost,                -- valued at zero for want of a price
-                      reference_type, reference_id, note, actor_id, created_at
+```text
+stock_valuations  id, organization_id, variant_id, lot_id,
+                  kind,                      -- see below
+                  movement_id,               -- null for rows no movement caused
+                  quantity,                  -- signed; zero for revaluations
+                  value,                     -- signed, in the base currency
+                  unit_price, currency,      -- as paid, on acquisitions
+                  exchange_rate,             -- the rate applied, on acquisitions
+                  needs_cost,                -- valued at zero for want of a price
+                  reference_type, reference_id, note, actor_id, created_at
+```
 
 Nothing updates a row and nothing deletes one; a correction is a new row.
 The reasons are ADR-023's, applied to money. A figure that can be recomputed
@@ -3306,6 +3331,7 @@ NetSuite and Odoo (`stock.valuation.layer`) all keep this ledger for the
 same reasons.
 
 `kind` is closed:
+
 - `movement` — the value a stock movement carried;
 - `run_close` — a batch's cost arriving at close;
 - `correction` — a cost set or changed after the fact;
@@ -3318,6 +3344,7 @@ untracked variant has exactly one pool. A pool's unit cost is value ÷
 quantity.
 
 It works exactly as `stock_levels` does (ADR-025):
+
 - A movement upserts its pool row first, which takes the lock, then writes
   its valuation row in the same transaction.
 - `quantity >= 0` is checked on the pool.
@@ -3446,6 +3473,7 @@ of an order.
 
 **Decision — permissions: `costs.view` and `costs.update`, Owner-only by
 default.**
+
 - `costs.view` reads valuations, pool costs, batch costs and rates.
 - `costs.update` sets costs and rates.
 
@@ -3457,6 +3485,7 @@ a margin, once price lists exist.
 **Performance.** Every stock change gains one pool upsert and, except
 transfers, one insert, in the transaction it already has. Reads are single
 rows and indexed sums:
+
 - a lot's cost is one pool row;
 - a run's cost is its rows via `(organization_id, reference_type,
   reference_id)`;
@@ -3464,6 +3493,7 @@ rows and indexed sums:
   lot or untracked variant, not per movement.
 
 Indexes on `stock_valuations`:
+
 - `(organization_id, variant_id, lot_id, created_at desc)` for a pool's
   history;
 - `(organization_id, reference_type, reference_id)`;
@@ -3476,6 +3506,7 @@ already the grain ADR-045's per-product advisory lock serialises for
 outbound.
 
 **Consequences.**
+
 - Migration 0033: `organizations.base_currency`, `exchange_rates`,
   `valuation_pools`, and `stock_valuations` with checks — a closed `kind`,
   currency format, a positive rate, and `needs_cost` only with zero value.
@@ -3495,6 +3526,7 @@ outbound.
   service and asserted in e2e (ADR-025).
 
 **Deferred.**
+
 - **Propagating corrections** through closed runs.
 - **Landed cost** — freight, duty and brokerage allocated onto receipts as
   their own rows, not folded into `unit_price`.
@@ -3561,11 +3593,13 @@ valuation snapshots a purchase price rather than reading through to it.
 
 **Decision — the shape.**
 
-    price_lists       id, organization_id, name, direction ('sale' |
-                      'purchase'), currency, is_active, timestamps
-    price_list_items  id, organization_id, price_list_id, variant_id,
-                      unit_price, timestamps
-                      unique (price_list_id, variant_id)
+```text
+price_lists       id, organization_id, name, direction ('sale' |
+                  'purchase'), currency, is_active, timestamps
+price_list_items  id, organization_id, price_list_id, variant_id,
+                  unit_price, timestamps
+                  unique (price_list_id, variant_id)
+```
 
 - **One currency per list.** A sale must be single-currency at confirm
   (ADR-046), so a list that mixed them would propose orders that cannot be
@@ -3644,6 +3678,7 @@ which the unique index serves. A list's page reads its items by
 existing keyset pattern if it grows past that.
 
 **Consequences.**
+
 - Migration 0035: `price_lists`, `price_list_items`, three nullable columns
   on `partners` and `organizations`, checks for direction, currency format
   and a non-negative price.
@@ -3652,13 +3687,14 @@ existing keyset pattern if it grows past that.
 - The order line gains `price_source`, stored, so the history of how a line
   was priced survives the list changing.
 - Client:
-    - a Price lists page with items;
-    - the list pickers on the partner and organization pages;
-    - order line dialogs showing where a price came from;
-    - a margin column on sale orders for `costs.view`.
+  - a Price lists page with items;
+  - the list pickers on the partner and organization pages;
+  - order line dialogs showing where a price came from;
+  - a margin column on sale orders for `costs.view`.
 - Three permissions and their audit actions.
 
 **Deferred.**
+
 - **Quantity breaks** — a lower price from a quantity up. The line
   snapshots its price when added, so a break would need re-resolving when
   the quantity changes, which is the re-pricing this ADR rejects.
@@ -4101,11 +4137,11 @@ calendar-day fields in UTC.
   the same merge. An old bundle reads the new values correctly; under
   strict, its writes are refused until the page reloads.
 - Server first, with e2e tests:
-    - every route that writes one of these days returns it exactly as sent;
-    - an instant is refused under strict;
-    - under lenient, an instant at UTC midnight is stored as its day, and any
+  - every route that writes one of these days returns it exactly as sent;
+  - an instant is refused under strict;
+  - under lenient, an instant at UTC midnight is stored as its day, and any
       other instant is still refused;
-    - a schema test asserts every calendar-day column, the older `date` ones
+  - a schema test asserts every calendar-day column, the older `date` ones
       included, is `date`, so a future `timestamptz` day fails the suite.
 - The server's licence-status unit test and the client's keep pinning the
   same days either side of today, now as strings.
@@ -4262,11 +4298,11 @@ nobody has restored is a hope.
   the real RTO — and fails loudly if any step does. The drill needs the
   private key, so it runs from a separate secret only that workflow reads.
 - Three kinds of restore, each in the runbook:
-    - **The host is gone:** a new database anywhere, restore the latest
+  - **The host is gone:** a new database anywhere, restore the latest
       dump, point `DATABASE_URL` at it, start the app.
-    - **A bad deploy or a bad delete:** the host's point-in-time recovery to
+  - **A bad deploy or a bad delete:** the host's point-in-time recovery to
       the minute before (phase 2).
-    - **One organization's mistake:** restore into a scratch database and
+  - **One organization's mistake:** restore into a scratch database and
       copy back that organization's rows only. Never the whole database:
       that would erase every other organization's work since the backup.
       Every table carries `organization_id`, which is what makes one
@@ -4582,11 +4618,11 @@ choice, else the organization's, stored on the document.**
 - The pair is resolved when the paper becomes a document and stored on it,
   like the seller and bill-to (ADR-046) and every other snapshot (ADR-029,
   ADR-038), so a reprint in a year reads as the original did:
-    - `shipments.language` and `second_language` at ship, for the packing
+  - `shipments.language` and `second_language` at ship, for the packing
       slip;
-    - `invoices.language` and `second_language` at issue. A draft prints in
+  - `invoices.language` and `second_language` at issue. A draft prints in
       the languages it would be issued in today, and is still marked DRAFT;
-    - `credit_notes.language` and `second_language` copied from its
+  - `credit_notes.language` and `second_language` copied from its
       invoice, never resolved again, so an invoice and its credit note read
       as one set (ADR-046's print rule) even if the partner's setting
       changed in between.
@@ -4859,7 +4895,7 @@ tones, in one table in `client/src/theme/status.ts`; modules name a status,
 never a colour.
 
 | Tone | Means | For example |
-|---|---|---|
+| --- | --- | --- |
 | neutral | nothing to do, or finished with | draft, closed, cancelled, retired, typed by hand |
 | info | in progress, normal | confirmed, released, issued |
 | positive | completed as hoped | fulfilled, received in full |
@@ -5092,7 +5128,7 @@ Both match the same way, so a record the lookup finds, its list finds too.
 **Decision — what is searched, by what.**
 
 | Kind | Matched on | Opens |
-|---|---|---|
+| --- | --- | --- |
 | Order | its reference; the partner's name | the order |
 | Invoice, credit note | its number | the document |
 | Return authorization | its number | the RMA |
@@ -5292,7 +5328,7 @@ what gets exported.
 **Decision — a date range on the lists that have a date people ask by.**
 
 | List | Filtered by | Kind |
-|---|---|---|
+| --- | --- | --- |
 | Invoices | invoice date | calendar day |
 | Credit notes | credit date | calendar day |
 | Orders | expected date | calendar day |
@@ -5320,7 +5356,7 @@ amount, voided, with the date range and search (ADR-056) like the rest.
 **Decision — sorting where it is asked for, not on every column.**
 
 | List | Sortable by | Why |
-|---|---|---|
+| --- | --- | --- |
 | Invoices | invoice date, total | a period in order; the largest first |
 | Credit notes | credit date, total | as invoices |
 | Orders | expected date | what is due next |
@@ -5367,26 +5403,26 @@ amount, voided, with the date range and search (ADR-056) like the rest.
   list, its filters, how many rows), since it is data leaving the system in
   bulk.
 - What each export holds:
-    - invoices: number, status, invoice date, due date, partner, order,
+  - invoices: number, status, invoice date, due date, partner, order,
       currency, subtotal, tax, total, credited, net;
-    - credit notes: number, invoice, partner, credit date, currency, amount,
+  - credit notes: number, invoice, partner, credit date, currency, amount,
       voided;
-    - orders: reference, direction, status, partner, expected date, lines,
+  - orders: reference, direction, status, partner, expected date, lines,
       quantity ordered, quantity received or shipped, created; no money,
       since a line carries its own currency and one total could be wrong;
-    - stock movements: when, reason, SKU, lot, quantity, from and to
+  - stock movements: when, reason, SKU, lot, quantity, from and to
       location, by whom, note;
-    - inventory: SKU, item, variant, lot, expiry, location, quantity, unit;
+  - inventory: SKU, item, variant, lot, expiry, location, quantity, unit;
       costs are the stock value export's, beside the valuation;
-    - products: SKU, product, variant, type, unit, tracks lots, discontinued,
+  - products: SKU, product, variant, type, unit, tracks lots, discontinued,
       and the names in each language the product has;
-    - partners: name, code, tax ID, document language, retired, and the
+  - partners: name, code, tax ID, document language, retired, and the
       billing address;
-    - a price list: its items, SKU, item, unit, price, currency; one export
+  - a price list: its items, SKU, item, unit, price, currency; one export
       per list;
-    - stock value (the costs page): SKU, lot, quantity, unit cost, value,
+  - stock value (the costs page): SKU, lot, quantity, unit cost, value,
       currency, provisional, as at the moment of export;
-    - the audit log: when, by whom, action, record type, record, and the
+  - the audit log: when, by whom, action, record type, record, and the
       fields the entry recorded as JSON (their shape differs per action),
       under `audit.view` like the page, filtered by its own date range and
       action.
@@ -5474,7 +5510,7 @@ together, with the most urgent few of each.
 **Decision — `/` is Home, a page of cards, each something to do.**
 
 | Card | Shows | Order | Opens | Permission |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | To ship | confirmed sales with lines still to ship | overdue first, then by expected date | Orders, sales, open | `orders.view` |
 | To receive | confirmed purchases with lines still to come | overdue first, then by expected date | Orders, purchases, open | `orders.view` |
 | Expiring soon | lots with stock expiring within 90 days, or expired | soonest first, expired red | Inventory, Expiring soon | `stock.view` |
@@ -5767,7 +5803,7 @@ What shapes the answer:
   store is a new endpoint and keys, as for backups.
 
 | Variable | Holds |
-|---|---|
+| --- | --- |
 | `FILE_STORAGE` | `s3` in production, `local` in development and tests |
 | `FILES_S3_ENDPOINT`, `FILES_S3_REGION`, `FILES_BUCKET` | Where files go (`auto` is R2's region) |
 | `FILES_S3_ACCESS_KEY_ID`, `FILES_S3_SECRET_ACCESS_KEY` | The app's key for `waf-files` |
@@ -5822,7 +5858,7 @@ server checks, in order, and stores only what passes:
    a download (below).
 
 | Kind | Accepted | Largest upload | Kept as |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `logo` | PNG, JPEG, WebP, SVG | 2 MB | PNG, at most 1024 px wide, at least 256 px wide accepted |
 | `product_image` | PNG, JPEG, WebP | 20 MB | WebP in three sizes (below) |
 | `return_photo` | PNG, JPEG, WebP | 20 MB | WebP in three sizes (below) |
@@ -5835,7 +5871,7 @@ a full photo in a list of fifty is megabytes for fifty squares, and a
 thumbnail zoomed in is a blur.
 
 | Size | Long side | Quality | About | Shown |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | `thumb` | 400 px | WebP 75 | 20–40 KB | Lists, cards, a gallery's strip (200 px on screen, sharp on a 2× display) |
 | `display` | 1200 px | WebP 80 | 100–250 KB | The image on a record's own page, the main picture of a gallery |
 | `full` | 3000 px | WebP 85 | 0.5–1.5 MB | Opened to zoom in, and downloaded |
@@ -6009,7 +6045,7 @@ setting, so a plan can raise it.
 
 ---
 
-# Open decisions
+## Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
 they exist so the reasoning is not rediscovered from scratch.
@@ -6531,7 +6567,7 @@ they exist so the reasoning is not rediscovered from scratch.
 
 ---
 
-# Resolved
+## Resolved
 
 | Decision                               | Outcome                                               | ADR              |
 |----------------------------------------|-------------------------------------------------------|------------------|
