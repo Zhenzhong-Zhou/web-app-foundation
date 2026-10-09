@@ -2,10 +2,12 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 
 import { MailModule } from '../../shared/mail/mail.module';
 import { AuthorizationModule } from '../authorization/authorization.module';
+import { FilesModule } from '../files/files.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 import { AccountEventService } from './account-event.service';
+import { AccountPhotoService } from './account-photo.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthTokenService } from './auth-token.service';
@@ -14,7 +16,8 @@ import { SessionService } from './session.service';
 import { SessionContextMiddleware } from './session-context.middleware';
 
 @Module({
-  imports: [AuthorizationModule, MailModule, NotificationsModule],
+  // FilesModule for the storage a person's photo goes to (ADR-063).
+  imports: [AuthorizationModule, FilesModule, MailModule, NotificationsModule],
   controllers: [AuthController, AccountController],
   providers: [
     AuthService,
@@ -24,6 +27,7 @@ import { SessionContextMiddleware } from './session-context.middleware';
     SessionContextMiddleware,
     AccountService,
     AccountEventService,
+    AccountPhotoService,
   ],
   // Exported for the guard, and for password-change flows that must revoke
   // other sessions (ADR-011). AuthTokenService is exported so admin-created

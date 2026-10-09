@@ -29,6 +29,9 @@ export interface AuditRecord {
   actorId: string | null;
   /** Joined so the client is not left resolving UUIDs it cannot look up. */
   actorEmail: string | null;
+  /** The actor's name and photo, for their face (ADR-063). */
+  actorName: string | null;
+  actorPhotoFileId: string | null;
   ip: string | null;
   userAgent: string | null;
   createdAt: Date;
@@ -104,6 +107,9 @@ export class AuditService {
         payload: auditLog.payload,
         actorId: auditLog.actorId,
         actorEmail: users.email,
+        // Who, as a face and a name (ADR-063).
+        actorName: users.name,
+        actorPhotoFileId: users.photoFileId,
         ip: auditLog.ip,
         userAgent: auditLog.userAgent,
         createdAt: auditLog.createdAt,

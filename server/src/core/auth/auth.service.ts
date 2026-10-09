@@ -56,6 +56,8 @@ export interface CurrentSession {
     emailVerified: boolean;
     /** Null follows the browser (ADR-054). */
     locale: Locale | null;
+    /** Their photo (ADR-063); null shows their initials. */
+    photoFileId?: string | null;
   };
   /** Null when the caller belongs to no organization — see SessionGuard. */
   organization: {
@@ -347,6 +349,7 @@ export class AuthService implements OnModuleInit {
         name: users.name,
         emailVerifiedAt: users.emailVerifiedAt,
         locale: users.locale,
+        photoFileId: users.photoFileId,
       })
       .from(users)
       .where(eq(users.id, context.userId));
@@ -364,6 +367,7 @@ export class AuthService implements OnModuleInit {
         name: user.name,
         emailVerified: user.emailVerifiedAt !== null,
         locale: user.locale,
+        photoFileId: user.photoFileId,
       },
     };
 

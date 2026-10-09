@@ -17,6 +17,15 @@ export const PHOTO_SIZES: Record<FileSize, PhotoSize> = {
   full: { long: 3000, quality: 85 },
 };
 
+/**
+ * A person's photo (ADR-063): square, since a face is shown in a circle,
+ * small for the circles beside names, larger for their own page.
+ */
+export const AVATAR_SIZES = {
+  thumb: { side: 128, quality: 80 },
+  full: { side: 512, quality: 85 },
+} as const;
+
 /** A logo is kept at most this wide, and must be at least LOGO_MIN wide. */
 export const LOGO_MAX = 1024;
 export const LOGO_MIN = 256;
@@ -67,6 +76,37 @@ export function renderPhoto(input: Buffer): Promise<Rendered[]> {
           .toBuffer({ resolveWithObject: true });
         return { size, data, width: info.width, height: info.height };
       }),
+    );
+  });
+}
+
+/**
+ * A person's photo in its two sizes: like a photo, upright, sRGB and
+ * without metadata, but cropped square from the centre, the part a circle
+ * shows (ADR-063). Enlarged if smaller, so a small photo still fills its
+ * circle.
+ */
+export function renderAvatar(input: Buffer): Promise<Rendered[]> {
+  return decoded(async () => {
+    const source = sharp(input, {
+      failOn: 'error',
+      limitInputPixels: MAX_PIXELS,
+    })
+      .rotate()
+      .toColourspace('srgb');
+
+    return Promise.all(
+      (Object.keys(AVATAR_SIZES) as (keyof typeof AVATAR_SIZES)[]).map(
+        async (size) => {
+          const { side, quality } = AVATAR_SIZES[size];
+          const { data, info } = await source
+            .clone()
+            .resize({ width: side, height: side, fit: 'cover' })
+            .webp({ quality })
+            .toBuffer({ resolveWithObject: true });
+          return { size, data, width: info.width, height: info.height };
+        },
+      ),
     );
   });
 }

@@ -1,6 +1,7 @@
 {
   "account.password.noneSet": "This account has no password set. Use the reset link instead.",
   "account.password.wrong": "That password is not correct",
+  "account.photo.missing": "Choose a photo to upload",
   "account.sessions.notFound": "No such session",
   "account.sessions.useSignOut": "Use sign out to end the current session.",
   "auth.emailTaken": "That email address is already registered",
@@ -242,6 +243,7 @@
   "partners.suchAddress": "No such address",
   "partners.suchContact": "No such contact",
   "partners.suchPartner": "No such partner",
+  "people.notFound": "No such person here",
   "priceLists.itemList": "That item is not on the list",
   "priceLists.nameDirectionListNeeds": "{name} is a {direction} list, and this needs a {direction2} list",
   "priceLists.nameRetired": "{name} is retired",

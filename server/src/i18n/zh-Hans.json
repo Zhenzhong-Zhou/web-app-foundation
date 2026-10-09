@@ -1,6 +1,7 @@
 {
   "account.password.noneSet": "此账户未设置密码。请改用重置链接。",
   "account.password.wrong": "密码不正确",
+  "account.photo.missing": "请选择要上传的照片",
   "account.sessions.notFound": "未找到该会话",
   "account.sessions.useSignOut": "请使用“退出登录”结束当前会话。",
   "auth.emailTaken": "该邮箱地址已注册",
@@ -242,6 +243,7 @@
   "partners.suchAddress": "未找到该地址",
   "partners.suchContact": "未找到该联系人",
   "partners.suchPartner": "未找到该合作伙伴",
+  "people.notFound": "这里没有这个人",
   "priceLists.itemList": "该物品不在价目表上",
   "priceLists.nameDirectionListNeeds": "{name} 是{direction, select, sale {销售} purchase {采购} other {{direction}}}价目表，而此处需要{direction2, select, sale {销售} purchase {采购} other {{direction2}}}价目表",
   "priceLists.nameRetired": "{name} 已停用",

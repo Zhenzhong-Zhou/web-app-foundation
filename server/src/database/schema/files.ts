@@ -18,8 +18,10 @@ import { users } from './users';
  * The kinds of file stored so far (ADR-059). Each feature that keeps files
  * adds its own, with a migration for the check below.
  */
-export const FILE_KINDS = ['logo', 'product_image'] as const;
+export const FILE_KINDS = ['logo', 'product_image', 'avatar'] as const;
 export type FileKind = (typeof FILE_KINDS)[number];
+/** The kinds an organization owns; an avatar is its person's (ADR-063). */
+export type OrganizationFileKind = Exclude<FileKind, 'avatar'>;
 
 /** The sizes a file is kept in: a logo only `full`, a photo all three. */
 export const FILE_SIZES = ['thumb', 'display', 'full'] as const;
@@ -42,9 +44,16 @@ export const files = pgTable(
   'files',
   {
     id: primaryKey(),
-    organizationId: uuid('organization_id')
-      .notNull()
-      .references(() => organizations.id, { onDelete: 'cascade' }),
+    /**
+     * The owner: an organization, or for a person's photo the person
+     * (ADR-063), never both. The storage key starts with whichever it is.
+     */
+    organizationId: uuid('organization_id').references(() => organizations.id, {
+      onDelete: 'cascade',
+    }),
+    userId: uuid('user_id').references(() => users.id, {
+      onDelete: 'cascade',
+    }),
     kind: text('kind').notNull(),
     contentType: text('content_type').notNull(),
     sizes: jsonb('sizes')
@@ -76,6 +85,17 @@ export const files = pgTable(
     index('files_released_at_idx')
       .on(t.releasedAt)
       .where(sql`${t.releasedAt} is not null`),
-    check('files_kind_check', sql`${t.kind} in ('logo', 'product_image')`),
+    check(
+      'files_kind_check',
+      sql`${t.kind} in ('logo', 'product_image', 'avatar')`,
+    ),
+    // One owner: an avatar is its person's, everything else an
+    // organization's (ADR-063).
+    check(
+      'files_owner_check',
+      sql`(${t.kind} = 'avatar') = (${t.userId} is not null and ${t.organizationId} is null)
+        and (${t.userId} is null) <> (${t.organizationId} is null)`,
+    ),
+    index('files_user_id_idx').on(t.userId),
   ],
 );

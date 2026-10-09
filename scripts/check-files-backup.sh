@@ -35,7 +35,10 @@ if [[ $(psql "$database" -At -c "select to_regclass('public.files') is not null"
 fi
 
 psql "$database" -At -v ON_ERROR_STOP=1 -c "
-  select f.organization_id || '/' || f.id || '/' || size
+  -- The owner: the organization, or for a photo the person (ADR-063);
+  -- read through to_jsonb so a backup from before user_id still checks.
+  select coalesce(f.organization_id::text, to_jsonb(f)->>'user_id')
+    || '/' || f.id || '/' || size
   from files f, jsonb_object_keys(f.sizes) as size
   where f.released_at is null" | LC_ALL=C sort >"$work/expected"
 

@@ -1,6 +1,7 @@
 {
   "account.password.noneSet": "Ce compte n’a pas de mot de passe. Utilisez plutôt le lien de réinitialisation.",
   "account.password.wrong": "Ce mot de passe est incorrect",
+  "account.photo.missing": "Choisissez une photo à téléverser",
   "account.sessions.notFound": "Session introuvable",
   "account.sessions.useSignOut": "Utilisez Se déconnecter pour terminer la session en cours.",
   "auth.emailTaken": "Cette adresse courriel est déjà inscrite",
@@ -242,6 +243,7 @@
   "partners.suchAddress": "Adresse introuvable",
   "partners.suchContact": "Contact introuvable",
   "partners.suchPartner": "Partenaire introuvable",
+  "people.notFound": "Aucune personne de ce nom ici",
   "priceLists.itemList": "Cet article n’est pas sur la liste",
   "priceLists.nameDirectionListNeeds": "{name} est une liste {direction, select, sale {de vente} purchase {d’achat} other {{direction}}}, et il faut ici une liste {direction2, select, sale {de vente} purchase {d’achat} other {{direction2}}}",
   "priceLists.nameRetired": "{name} est retirée",

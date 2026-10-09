@@ -19,13 +19,14 @@ import {
   type FileKind,
   files,
   type FileSize,
+  type OrganizationFileKind,
   type StoredSize,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { Permission } from '../authorization/permissions';
 import { KIND_RULES } from './file-kinds';
-import { FILE_STORAGE, type FileStorage, keyOf } from './file-storage';
+import { FILE_STORAGE, type FileStorage, keyOf, ownerOf } from './file-storage';
 import {
   LOGO_MIN,
   LogoTooSmall,
@@ -84,7 +85,7 @@ export class FilesService {
    * type from the bytes, the image itself, and the organization's limit.
    */
   async upload(
-    kind: FileKind,
+    kind: OrganizationFileKind,
     file: UploadedBinary,
     userId: string,
   ): Promise<FileView> {
@@ -163,7 +164,7 @@ export class FilesService {
       await Promise.all(
         rendered.map((size) =>
           this.storage.put(
-            keyOf(row.organizationId, row.id, size.size),
+            keyOf(ownerOf(row), row.id, size.size),
             size.data,
             contentType,
           ),
@@ -213,7 +214,7 @@ export class FilesService {
       );
     }
 
-    const view = KIND_RULES[row.kind as FileKind].view;
+    const view = KIND_RULES[row.kind as OrganizationFileKind].view;
     if (view && !held.has(view)) {
       throw new ForbiddenException(
         t(
@@ -232,7 +233,7 @@ export class FilesService {
     if (!stored) throw new Error(`File ${row.id} has no ${kept} size`);
 
     return {
-      key: keyOf(row.organizationId, row.id, kept),
+      key: keyOf(ownerOf(row), row.id, kept),
       contentType: row.contentType,
       bytes: stored.bytes,
       etag: `"${row.sha256.slice(0, 32)}-${kept}"`,
@@ -255,7 +256,7 @@ export class FilesService {
     tx: Transaction,
     organizationId: string,
     id: string,
-    kind: FileKind,
+    kind: OrganizationFileKind,
   ): Promise<void> {
     const [attached] = await tx
       .update(files)
