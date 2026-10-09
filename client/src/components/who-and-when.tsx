@@ -1,22 +1,64 @@
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack, Tooltip, Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
 
 import { formatMoment, formatWhen, relativeTime } from '../lib/format';
-import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
+import { EMAIL_MAX_WIDTH, EMAIL_MIN_WIDTH } from '../lib/text-limits';
 import { PersonAvatar } from './person-avatar';
 
-/** One line, cut with "…", whole on hover: long emails never break a row. */
+/** One line, cut with "…". */
 const ONE_LINE = {
   display: 'block',
-  maxWidth: '100%',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 } as const;
 
 /**
+ * A name with the email beneath it, never wider than the name (ADR-063):
+ * the email takes no width of its own, so the name sets it, between a
+ * floor that leaves a short name's email readable and a ceiling. Whole on
+ * hover, as a tooltip.
+ */
+export function NameAndEmail({
+  name,
+  email,
+  nameVariant = 'body2',
+}: {
+  name: string;
+  email: string | null;
+  nameVariant?: 'body2' | 'subtitle2';
+}) {
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        minWidth: EMAIL_MIN_WIDTH,
+        maxWidth: EMAIL_MAX_WIDTH,
+      }}
+    >
+      <Tooltip title={name} placement="top-start" enterDelay={600}>
+        <Typography variant={nameVariant} sx={ONE_LINE}>
+          {name}
+        </Typography>
+      </Tooltip>
+      {email && (
+        <Tooltip title={email} placement="bottom-start">
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ ...ONE_LINE, width: 0, minWidth: '100%' }}
+          >
+            {email}
+          </Typography>
+        </Tooltip>
+      )}
+    </Box>
+  );
+}
+
+/**
  * Who did something (ADR-063): their face, their name, and their email
- * beneath it on one line, cut short when long. A removed account says so.
+ * beneath it. A removed account says so.
  */
 export function Who({
   userId,
@@ -50,25 +92,10 @@ export function Who({
         photoFileId={photoFileId}
         size={size}
       />
-      <Box sx={{ minWidth: 0, maxWidth: EMAIL_MAX_WIDTH }}>
-        <Typography
-          variant="body2"
-          title={name || email || removed}
-          sx={ONE_LINE}
-        >
-          {name || email || removed}
-        </Typography>
-        {name && email && (
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            title={email}
-            sx={ONE_LINE}
-          >
-            {email}
-          </Typography>
-        )}
-      </Box>
+      <NameAndEmail
+        name={name || email || removed}
+        email={name ? email : null}
+      />
     </Stack>
   );
 }

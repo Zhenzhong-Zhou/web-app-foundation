@@ -30,8 +30,8 @@ import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { LanguageSelect } from '../components/language-select';
 import { PersonAvatar } from '../components/person-avatar';
+import { NameAndEmail } from '../components/who-and-when';
 import { api } from '../lib/api';
-import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { LookupBox } from '../search/lookup-box';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
@@ -269,7 +269,20 @@ export function AppLayout() {
                 the rail now (ADR-055); this keeps who is signed in and how
                 the app reads to them. */}
             <Menu anchorEl={menu} open={!!menu} onClose={() => setMenu(null)}>
-              <MenuItem disabled sx={{ opacity: '1 !important', gap: 1.5 }}>
+              {/* Who is signed in: not a menu item, so it takes a hover (a
+                  disabled item takes none). The email is cut at the name's
+                  width, whole in its tooltip (ADR-063). */}
+              <Box
+                component="li"
+                role="none"
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  px: 2,
+                  py: 1.5,
+                }}
+              >
                 <PersonAvatar
                   userId={session?.user.id ?? null}
                   name={session?.user.name ?? null}
@@ -277,26 +290,12 @@ export function AppLayout() {
                   photoFileId={session?.user.photoFileId}
                   size={40}
                 />
-                {/* Cut short when long, whole on hover: the menu keeps its
-                    width whatever the address (ADR-063). */}
-                <Stack sx={{ minWidth: 0, maxWidth: EMAIL_MAX_WIDTH }}>
-                  <Typography
-                    variant="subtitle2"
-                    noWrap
-                    title={session?.user.name}
-                  >
-                    {session?.user.name}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    noWrap
-                    title={session?.user.email}
-                  >
-                    {session?.user.email}
-                  </Typography>
-                </Stack>
-              </MenuItem>
+                <NameAndEmail
+                  name={session?.user.name ?? ''}
+                  email={session?.user.email ?? null}
+                  nameVariant="subtitle2"
+                />
+              </Box>
 
               <Divider />
 
