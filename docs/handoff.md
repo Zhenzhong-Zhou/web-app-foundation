@@ -741,6 +741,14 @@ Rules, still in force:
 
 ## Working agreements (for Claude)
 
+### Pull requests
+
+- **One PR per feature** (October 2026): its ADR, when it has a new one,
+  as the first commit, then server, client and docs as commits of their own;
+  fixes go on the branch until its checks pass, never in a follow-up PR.
+  Small chores (a CI line, a lint rule, a docs tidy) ride along in the next
+  feature PR rather than getting one of their own.
+
 ### How code is delivered
 
 - **Every answer that changes files opens with a roadmap:** a tree or
