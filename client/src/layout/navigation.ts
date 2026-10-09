@@ -70,8 +70,8 @@ const labels = defineMessages({
     defaultMessage: 'Exchange rates',
   },
   priceLists: { id: 'layout.menu.priceLists', defaultMessage: 'Price lists' },
-  account: { id: 'layout.menu.account', defaultMessage: 'Account' },
-  devices: { id: 'layout.menu.devices', defaultMessage: 'Devices' },
+  account: { id: 'layout.menu.account', defaultMessage: 'Your account' },
+  devices: { id: 'layout.menu.devices', defaultMessage: 'Your devices' },
 });
 
 /**
