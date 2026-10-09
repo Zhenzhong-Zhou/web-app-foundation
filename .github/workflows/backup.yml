@@ -10,7 +10,10 @@ name: Backup
 #   s3                an S3-compatible bucket (ADR-053's production setup)
 # Secrets: BACKUP_DATABASE_URL, BACKUP_AGE_RECIPIENT, and for s3
 # BACKUP_BUCKET, BACKUP_S3_REGION, BACKUP_S3_ENDPOINT (not for AWS),
-# BACKUP_S3_ACCESS_KEY_ID, BACKUP_S3_SECRET_ACCESS_KEY.
+# BACKUP_S3_ACCESS_KEY_ID, BACKUP_S3_SECRET_ACCESS_KEY, and the files
+# bucket's read-only key, BACKUP_FILES_S3_ACCESS_KEY_ID and
+# BACKUP_FILES_S3_SECRET_ACCESS_KEY (ADR-059). The variable
+# BACKUP_FILES_BUCKET names the files bucket, waf-files when unset.
 on:
   schedule:
     - cron: '0 10 * * *' # the backup: 3am in Vancouver, 6am in Toronto
@@ -66,6 +69,22 @@ jobs:
           path=$(scripts/backup.sh)
           echo "path=$path" >> "$GITHUB_OUTPUT"
           echo "name=$(basename "$path" .dump.age)" >> "$GITHUB_OUTPUT"
+
+      # Files (ADR-059), after the database, so every file the dump knows of
+      # is copied after it: into the same bucket under files/, adding what is
+      # new. Only with s3; an artifact backup is for testing and holds none.
+      - name: Copy files
+        if: env.BACKUP_DESTINATION == 's3'
+        env:
+          BACKUP_FILES_BUCKET: ${{ vars.BACKUP_FILES_BUCKET || 'waf-files' }}
+          BACKUP_FILES_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_FILES_S3_ACCESS_KEY_ID }}
+          BACKUP_FILES_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_FILES_S3_SECRET_ACCESS_KEY }}
+          BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+          BACKUP_S3_REGION: ${{ secrets.BACKUP_S3_REGION }}
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          BACKUP_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+        run: scripts/backup-files.sh
 
       - name: Keep it as an artifact
         if: env.BACKUP_DESTINATION == 'artifact'
