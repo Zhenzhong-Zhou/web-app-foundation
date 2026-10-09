@@ -1,0 +1,39 @@
+name: Docs
+
+# Markdown gets its own workflow because CI skips docs-only changes
+# (ci.yml's paths-ignore): a check inside ci.yml would never run on the
+# pull requests that need it. This one runs only when Markdown, its rules,
+# or this file change, and takes seconds.
+on:
+  push:
+    branches: [main]
+    paths: ['**/*.md', '.markdownlint-cli2.jsonc', '.github/workflows/docs.yml']
+  pull_request:
+    paths: ['**/*.md', '.markdownlint-cli2.jsonc', '.github/workflows/docs.yml']
+  workflow_dispatch:
+
+# A second push to the same branch cancels the first, as in ci.yml.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Reads the repository and nothing else.
+permissions:
+  contents: read
+
+jobs:
+  markdown:
+    name: Docs — markdownlint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+
+      # The same version and the same .markdownlint-cli2.jsonc as the editor
+      # and a local run, so all three give the same answer. Pinned: a new
+      # markdownlint release can add a rule, and that should arrive as a
+      # change here rather than as a red build on an unrelated pull request.
+      - run: npx --yes markdownlint-cli2@0.23.3
