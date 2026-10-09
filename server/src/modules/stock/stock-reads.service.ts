@@ -20,6 +20,7 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { openNeedsCost } from '../costs/open-needs-cost';
 import { itemMatches } from '../products/item-search';
+import { coverOf } from '../products/product-images';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
 
@@ -213,6 +214,8 @@ export class StockReadsService {
           sku: productVariants.sku,
           productName: products.name,
           variantName: productVariants.name,
+          // Its product's cover, beside the name (ADR-062).
+          coverFileId: coverOf(),
           unitOfMeasure: productVariants.unitOfMeasure,
           locationId: stockLevels.locationId,
           locationName: locations.name,

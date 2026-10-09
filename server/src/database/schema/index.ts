@@ -34,6 +34,7 @@ export * from './partners';
 export * from './permissions';
 export * from './price-list-items';
 export * from './price-lists';
+export * from './product-images';
 export * from './product-licences';
 export * from './product-translations';
 export * from './product-variants';

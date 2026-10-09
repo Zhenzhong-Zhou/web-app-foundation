@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   HttpCode,
@@ -24,17 +25,25 @@ import { localeOf } from '../../i18n/translate';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
 import {
+  AddProductImageDto,
+  OrderProductImagesDto,
+} from './dto/product-images.dto';
+import {
   SetProductTranslationsDto,
   SetVariantTranslationsDto,
 } from './dto/set-translations.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateVariantDto } from './dto/update-variant.dto';
 import { PRODUCT_COLUMNS } from './product-exports';
+import { ProductImagesService } from './product-images.service';
 import { ProductsService } from './products.service';
 
 @Controller({ path: 'products', version: '1' })
 export class ProductsController {
-  constructor(private readonly products: ProductsService) {}
+  constructor(
+    private readonly products: ProductsService,
+    private readonly images: ProductImagesService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
@@ -198,5 +207,58 @@ export class ProductsController {
     @Body() dto: SetVariantTranslationsDto,
   ): Promise<void> {
     await this.products.setVariantTranslations(id, variantId, dto);
+  }
+
+  /**
+   * The gallery (ADR-062). An image is uploaded first, as a product_image
+   * file (ADR-059), then added here, which attaches it. Each change is a
+   * change to the product, in its history, naming the file.
+   */
+  @Post(':id/images')
+  @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(PERMISSIONS.PRODUCTS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.PRODUCT_UPDATED,
+    resourceType: 'product',
+    resourceId: (_response, request) => request.params.id,
+    fields: ['fileId'],
+  })
+  async addImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AddProductImageDto,
+  ) {
+    return { images: await this.images.add(id, dto.fileId) };
+  }
+
+  /** The new order, the cover first. */
+  @Put(':id/images')
+  @RequirePermissions(PERMISSIONS.PRODUCTS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.PRODUCT_UPDATED,
+    resourceType: 'product',
+    resourceId: (_response, request) => request.params.id,
+    fields: ['fileIds'],
+  })
+  async orderImages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: OrderProductImagesDto,
+  ) {
+    return { images: await this.images.reorder(id, dto.fileIds) };
+  }
+
+  /** Off the gallery; the file is released and purged 30 days on. */
+  @Delete(':id/images/:fileId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.PRODUCTS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.PRODUCT_UPDATED,
+    resourceType: 'product',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async removeImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('fileId', ParseUUIDPipe) fileId: string,
+  ): Promise<void> {
+    await this.images.remove(id, fileId);
   }
 }
