@@ -62,6 +62,22 @@ export const envSchema = z.object({
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   RATE_LIMIT_AUTH_MAX: z.coerce.number().int().positive().default(5),
+
+  // Files (ADR-059). `local` keeps them on disk, for development, tests and
+  // CI; `s3` in a bucket, which needs the five FILES_S3_* and FILES_BUCKET.
+  FILE_STORAGE: z.enum(['local', 's3']).default('local'),
+  FILES_LOCAL_DIR: z.string().min(1).default('storage'),
+  FILES_S3_ENDPOINT: z.url().optional(),
+  FILES_S3_REGION: z.string().min(1).default('auto'),
+  FILES_BUCKET: z.string().min(1).optional(),
+  FILES_S3_ACCESS_KEY_ID: z.string().min(1).optional(),
+  FILES_S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  // Every file and every size an organization keeps, together: 1 GB.
+  FILES_ORG_LIMIT_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1_073_741_824),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -81,5 +97,25 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     throw new Error(`Invalid environment configuration:\n${issues}`);
   }
 
+  // A bucket without its address or keys would fail at the first upload,
+  // in production; here it fails at boot.
+  if (parsed.data.FILE_STORAGE === 's3') {
+    const missing = S3_SETTINGS.filter((name) => !parsed.data[name]);
+    if (missing.length > 0) {
+      throw new Error(
+        `Invalid environment configuration:\n${missing
+          .map((name) => `  - ${name}: required when FILE_STORAGE is s3`)
+          .join('\n')}`,
+      );
+    }
+  }
+
   return parsed.data;
 }
+
+const S3_SETTINGS = [
+  'FILES_S3_ENDPOINT',
+  'FILES_BUCKET',
+  'FILES_S3_ACCESS_KEY_ID',
+  'FILES_S3_SECRET_ACCESS_KEY',
+] as const;
