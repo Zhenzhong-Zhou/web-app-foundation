@@ -44,6 +44,9 @@ function linkFor(entry: Notification): string | null {
       return `/orders/${entry.resourceId}`;
     case 'production_order':
       return `/production/${entry.resourceId}`;
+    // Licences have no page of their own: the list, where it is (ADR-064).
+    case 'product_licence':
+      return '/licences';
     default:
       return null;
   }

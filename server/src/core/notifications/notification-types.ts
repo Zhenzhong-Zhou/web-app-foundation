@@ -9,6 +9,8 @@ export const NOTIFICATION_TYPES = {
   PRODUCTION_VARIANCE: 'production.variance',
   /** An order line will not be fulfilled in full (ADR-034). */
   ORDER_LINE_CLOSED_SHORT: 'order.line_closed_short',
+  /** A licence expires in 60, 30 or 7 days, or today (ADR-064). */
+  LICENCE_EXPIRING: 'licence.expiring',
   /** Somebody signed in. The strongest takeover signal there is. */
   SESSION_CREATED: 'account.session_created',
   PASSWORD_CHANGED: 'account.password_changed',

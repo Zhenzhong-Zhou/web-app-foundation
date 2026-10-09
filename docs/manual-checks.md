@@ -805,6 +805,16 @@ await fetch(`${api}/v1/files/product-image`, {
   minutes, then look at People from another account: you are not shown
   as active then. In 中文 on a phone, People reads 同事 and the cards fit.
 
+## 20. Licence reminders (ADR-064)
+
+- **MC-2001** Give a licence an expiry 60 days from today and restart the
+  server (it checks at start, then hourly): the owner and anyone who
+  releases production get one notice in the bell, in their language,
+  opening Licences; a viewer gets none. Restart again: no second notice.
+  Change the date to 5 days from today: the 7-day notice arrives, alone.
+  Change it to today: "expires today". Renew it a year out: nothing more
+  until 60 days before the new date. In 中文 the notice reads naturally.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -932,3 +942,4 @@ first.
 - 2026-10-09: ADR-060, branding and the organization's expiry days: MC-1702.
 - 2026-10-09: ADR-062, product images: MC-1801.
 - 2026-10-09: ADR-063, people: MC-1901.
+- 2026-10-09: ADR-064, licence expiry reminders: MC-2001.

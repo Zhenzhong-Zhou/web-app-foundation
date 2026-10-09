@@ -4,6 +4,7 @@ import {
   check,
   date,
   index,
+  integer,
   pgTable,
   text,
   uniqueIndex,
@@ -80,6 +81,14 @@ export const productLicences = pgTable(
      */
     expiresAt: date('expires_at', { mode: 'string' }),
 
+    /**
+     * The expiry reminders (ADR-064): the date they count down to and the
+     * last sent for it, 60, 30, 7 or 0 days before. A changed expiry date
+     * no longer matches, so a renewal starts the countdown again.
+     */
+    expiryNoticeFor: date('expiry_notice_for', { mode: 'string' }),
+    expiryNoticeDays: integer('expiry_notice_days'),
+
     notes: text('notes'),
 
     ...timestamps,
@@ -96,6 +105,8 @@ export const productLicences = pgTable(
     ),
 
     index('product_licences_organization_id_idx').on(t.organizationId),
+    // The hourly reminder check reads by date across organizations (ADR-064).
+    index('product_licences_expires_at_idx').on(t.expiresAt),
 
     check(
       'product_licences_number_not_blank_check',
