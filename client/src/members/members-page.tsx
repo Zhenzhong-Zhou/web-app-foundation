@@ -22,8 +22,10 @@ import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { PersonAvatar } from '../components/person-avatar';
 import { api, messageFor } from '../lib/api';
+import { formatMoment } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { activeLabel, type ActiveSince } from '../people/people-types';
 import { CreateMemberDialog } from './create-member-dialog.tsx';
 import { roleLabel } from './role-names';
 
@@ -34,6 +36,9 @@ interface Member {
   roleId: string;
   /** Their photo (ADR-063); null shows their initials. */
   photoFileId?: string | null;
+  /** Roughly for everyone, the time too with the history (ADR-063). */
+  active: ActiveSince;
+  lastActiveAt?: string | null;
 }
 
 interface Role {
@@ -203,6 +208,12 @@ export function MembersPage() {
                       defaultMessage: 'Role',
                     })}
                   </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
+                      id: 'people.lastActive',
+                      defaultMessage: 'Last active',
+                    })}
+                  </TableCell>
                 </TableRow>
               </TableHead>
 
@@ -228,7 +239,17 @@ export function MembersPage() {
                           <span>{member.name}</span>
                         </Stack>
                       </TableCell>
-                      <TableCell>{member.email}</TableCell>
+                      <TableCell
+                        title={member.email}
+                        sx={{
+                          maxWidth: 260,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {member.email}
+                      </TableCell>
                       <TableCell>
                         {/* Rendered as plain text when the caller lacks
                           users.update. That is display only — the 403 from
@@ -278,6 +299,16 @@ export function MembersPage() {
                             })}
                           </Typography>
                         )}
+                      </TableCell>
+                      <TableCell
+                        sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}
+                        title={
+                          member.lastActiveAt
+                            ? formatMoment(member.lastActiveAt)
+                            : undefined
+                        }
+                      >
+                        {activeLabel(member, intl)}
                       </TableCell>
                     </TableRow>
                   );

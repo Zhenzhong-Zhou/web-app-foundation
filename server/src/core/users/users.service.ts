@@ -25,6 +25,7 @@ export interface OrganizationMember {
   roleId: string;
   /** Their photo (ADR-063); null shows their initials. */
   photoFileId?: string | null;
+  lastActiveAt?: Date | null;
 }
 
 @Injectable()
@@ -57,6 +58,8 @@ export class UsersService {
         roleId: memberships.roleId,
         // Their face beside their name (ADR-063).
         photoFileId: users.photoFileId,
+        // Shown coarse, or exact with audit.view (ADR-063), by the route.
+        lastActiveAt: memberships.lastActiveAt,
       },
     );
   }

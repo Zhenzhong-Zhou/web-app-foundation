@@ -88,6 +88,20 @@ export function relativeTime(
  * Not for calendar days. Use formatDay for those.
  */
 /**
+ * When something happened, to the minute, in the reader's language and
+ * time: "9 Oct 2026, 13:02". Beside "3 hours ago" where both help.
+ */
+export function formatWhen(
+  value: string | Date,
+  locale: string | undefined = current,
+): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
+}
+
+/**
  * A moment in full, as a tooltip shows it: the browser's own form, in the
  * reader's language — the same output toLocaleString() always gave an
  * English reader, now in the chosen language for everyone else.

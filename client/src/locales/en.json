@@ -1014,6 +1014,7 @@
   "people.count": "Everyone in {organization}, {count, plural, one {# person} other {# people}}.",
   "people.department": "Department",
   "people.email": "Email",
+  "people.lastActive": "Last active",
   "people.location": "Location",
   "people.memberSince": "Member since",
   "people.noActivity": "Nothing yet.",

@@ -1014,6 +1014,7 @@
   "people.count": "{organization} 的所有成员，共 {count} 人。",
   "people.department": "部门",
   "people.email": "邮箱",
+  "people.lastActive": "最近活跃",
   "people.location": "工作地点",
   "people.memberSince": "加入时间",
   "people.noActivity": "暂无记录。",

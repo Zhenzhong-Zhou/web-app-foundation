@@ -6591,8 +6591,14 @@ and your recent work.
   ADR-022), not an audit entry: it is the person's own, like their name.
   Changing your details at work is neither, as a self-action on your own
   membership.
-- **Members gains the face, not last active.** The People page and a
-  person's page carry last active; Members stays the page for managing.
+- **Members gains the face and last active,** as People shows it: roughly
+  for everyone, to the minute for those who may read the history. First
+  built with the face alone; seeing the page, its last active was wanted
+  where people are managed too.
+- **Who and when, both ways.** The audit log, Your activity and a record's
+  History show the person's name with their email beneath it, cut short
+  when long and whole on hover, and the time to the minute with how long
+  ago beside it.
 - **Your activity is the audit log's page** in a mode of its own: the
   person set by the server, no action filter (the log's vocabulary is
   for those who may read it), its own export. An owner's "See all of

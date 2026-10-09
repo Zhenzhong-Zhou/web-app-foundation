@@ -131,6 +131,26 @@ describe('Users (e2e)', () => {
       expect(members[0].email).toBe('owner@alpha.example.com');
     });
 
+    // ADR-063: last active on Members as on People, roughly for everyone,
+    // the time itself only with audit.view.
+    it('shows last active roughly, and exactly to those with the history', async () => {
+      const owner = await registerOrg('alpha');
+      const viewer = await addViewer(owner, 'viewer@alpha.example.com');
+
+      type Shown = { email: string; active: string; lastActiveAt?: string };
+      const asOwner = body<Shown[]>(
+        await owner.agent.get('/v1/users').expect(200),
+      );
+      const ownerRow = asOwner.find(
+        (m) => m.email === 'owner@alpha.example.com',
+      );
+      expect(ownerRow?.active).toBe('today');
+      expect(ownerRow?.lastActiveAt).toEqual(expect.any(String));
+
+      const asViewer = body<Shown[]>(await viewer.get('/v1/users').expect(200));
+      expect(asViewer.every((m) => !('lastActiveAt' in m))).toBe(true);
+    });
+
     it('never leaks a password hash', async () => {
       const owner = await registerOrg('alpha');
 

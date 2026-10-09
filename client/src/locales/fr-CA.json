@@ -1014,6 +1014,7 @@
   "people.count": "Tout le monde chez {organization}, {count, plural, one {# personne} other {# personnes}}.",
   "people.department": "Service",
   "people.email": "Courriel",
+  "people.lastActive": "Dernière activité",
   "people.location": "Lieu",
   "people.memberSince": "Membre depuis",
   "people.noActivity": "Rien pour l’instant.",
