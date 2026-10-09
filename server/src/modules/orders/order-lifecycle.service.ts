@@ -3,9 +3,8 @@ import {
   ConflictException,
   Injectable,
   Logger,
-  NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, gt } from 'drizzle-orm';
+import { and, asc, eq, gt, type SQL } from 'drizzle-orm';
 
 import { recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
@@ -273,117 +272,128 @@ export class OrderLifecycleService {
    * different question from renaming a reference.
    */
   async update(orderId: string, input: UpdateOrderDto) {
-    const [existing] = await this.tenantDb.select(
-      orders,
-      eq(orders.id, orderId),
-    );
-
-    if (!existing)
-      throw new NotFoundException(
-        t({ id: 'orders.suchOrder', defaultMessage: 'No such order' }),
-      );
-
     /**
-     * A reference is matched against a supplier invoice once goods arrive, so
-     * changing it afterwards breaks that link silently. Expected date and note
-     * carry no such dependency and stay editable at any status — what other
-     * records depend on is what becomes immutable.
+     * One transaction, the order row locked (#26). Each rule below reads the
+     * order or its lines and decides, and the write that follows must land
+     * on what was read: a line added, a receipt or a shipment against this
+     * order waits for this save to commit, and this save for them.
      */
-    if (
-      input.reference !== undefined &&
-      input.reference !== existing.reference &&
-      existing.status === 'fulfilled'
-    ) {
-      throw new ConflictException(
-        t({
-          id: 'orders.referenceChangeOnceOrder',
-          defaultMessage:
-            'The reference cannot change once an order is fulfilled — it is what an invoice is matched against',
-        }),
-      );
-    }
+    const existing = await this.tenantDb.transaction(
+      async (tx, organizationId) => {
+        const order = await loadOrder(tx, organizationId, orderId);
 
-    if (input.status && input.status !== existing.status) {
-      const from = ALLOWED_FROM[input.status] ?? [];
+        /**
+         * A reference is matched against a supplier invoice once goods
+         * arrive, so changing it afterwards breaks that link silently.
+         * Expected date and note carry no such dependency and stay editable
+         * at any status — what other records depend on is what becomes
+         * immutable.
+         */
+        if (
+          input.reference !== undefined &&
+          input.reference !== order.reference &&
+          order.status === 'fulfilled'
+        ) {
+          throw new ConflictException(
+            t({
+              id: 'orders.referenceChangeOnceOrder',
+              defaultMessage:
+                'The reference cannot change once an order is fulfilled — it is what an invoice is matched against',
+            }),
+          );
+        }
 
-      if (!from.includes(existing.status)) {
-        throw new ConflictException(
-          t(
-            {
-              id: 'orders.orderGoStatusStatus',
-              defaultMessage: 'An order cannot go from {from} to {to}',
-            },
-            { from: existing.status, to: input.status },
-          ),
-        );
-      }
-    }
+        if (input.status && input.status !== order.status) {
+          const from = ALLOWED_FROM[input.status] ?? [];
 
-    /**
-     * A sale is priced, in one currency, before it is confirmed (ADR-046).
-     * Confirming is the customer's commitment and the moment a price is
-     * agreed; an invoice cannot bill a line nobody priced, and it is paid in
-     * one currency. Samples are exempt: they ship, but are never invoiced.
-     *
-     * Read outside a transaction, like the cancel check below, so a line
-     * added between this read and the status write slips past. That is the
-     * race in #26, and it closes when update() moves into one transaction.
-     */
-    if (
-      input.status === 'confirmed' &&
-      existing.direction === 'sale' &&
-      !existing.isSample
-    ) {
-      const lines = await this.tenantDb.select(
-        orderLines,
-        eq(orderLines.orderId, orderId),
-      );
+          if (!from.includes(order.status)) {
+            throw new ConflictException(
+              t(
+                {
+                  id: 'orders.orderGoStatusStatus',
+                  defaultMessage: 'An order cannot go from {from} to {to}',
+                },
+                { from: order.status, to: input.status },
+              ),
+            );
+          }
+        }
 
-      this.assertSaleIsInvoiceable(lines);
-    }
+        /** This order's lines, read inside the lock. */
+        const lines = (...where: SQL[]) =>
+          tx
+            .select()
+            .from(orderLines)
+            .where(
+              and(
+                eq(orderLines.organizationId, organizationId),
+                eq(orderLines.orderId, orderId),
+                ...where,
+              ),
+            );
 
-    /**
-     * Cancelling says the order never happened. Once goods have moved against
-     * it, that is untrue — close it short instead, which keeps what shipped
-     * or arrived on the record (ADR-023).
-     */
-    if (input.status === 'cancelled') {
-      const [moved] = await this.tenantDb.select(
-        orderLines,
-        and(
-          eq(orderLines.orderId, orderId),
-          gt(orderLines.quantityFulfilled, '0'),
-        ),
-      );
+        /**
+         * A sale is priced, in one currency, before it is confirmed
+         * (ADR-046). Confirming is the customer's commitment and the moment
+         * a price is agreed; an invoice cannot bill a line nobody priced,
+         * and it is paid in one currency. Samples are exempt: they ship,
+         * but are never invoiced.
+         */
+        if (
+          input.status === 'confirmed' &&
+          order.direction === 'sale' &&
+          !order.isSample
+        ) {
+          this.assertSaleIsInvoiceable(await lines());
+        }
 
-      if (moved) {
-        throw new ConflictException(
-          t({
-            id: 'orders.goodsMovedAgainstOrder',
-            defaultMessage:
-              'Goods have already moved against this order, so it cannot be cancelled — close it instead',
-          }),
-        );
-      }
-    }
+        /**
+         * Cancelling says the order never happened. Once goods have moved
+         * against it, that is untrue — close it short instead, which keeps
+         * what shipped or arrived on the record (ADR-023).
+         */
+        if (input.status === 'cancelled') {
+          const [moved] = await lines(gt(orderLines.quantityFulfilled, '0'));
 
-    /**
-     * Built field by field rather than spread: a spread would carry any future
-     * DTO field straight into the table, which is how a validation-only
-     * property ends up as a column write nobody intended.
-     */
-    await this.tenantDb.update(
-      orders,
-      {
-        status: input.status,
-        // Its place in line for stock (ADR-045). Set once, on confirming.
-        ...(input.status === 'confirmed' ? { confirmedAt: new Date() } : {}),
-        reference: input.reference,
-        note: input.note,
-        // YYYY-MM-DD as it arrives (ADR-052); undefined leaves it alone.
-        expectedAt: input.expectedAt,
+          if (moved) {
+            throw new ConflictException(
+              t({
+                id: 'orders.goodsMovedAgainstOrder',
+                defaultMessage:
+                  'Goods have already moved against this order, so it cannot be cancelled — close it instead',
+              }),
+            );
+          }
+        }
+
+        /**
+         * Built field by field rather than spread: a spread would carry any
+         * future DTO field straight into the table, which is how a
+         * validation-only property ends up as a column write nobody
+         * intended.
+         */
+        await tx
+          .update(orders)
+          .set({
+            status: input.status,
+            // Its place in line for stock (ADR-045). Set once, on confirming.
+            ...(input.status === 'confirmed'
+              ? { confirmedAt: new Date() }
+              : {}),
+            reference: input.reference,
+            note: input.note,
+            // YYYY-MM-DD as it arrives (ADR-052); undefined leaves it alone.
+            expectedAt: input.expectedAt,
+          })
+          .where(
+            and(
+              eq(orders.id, orderId),
+              eq(orders.organizationId, organizationId),
+            ),
+          );
+
+        return order;
       },
-      eq(orders.id, orderId),
     );
 
     recordPrevious({

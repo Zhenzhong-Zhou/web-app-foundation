@@ -449,6 +449,31 @@ describe('Orders (e2e)', () => {
       expect(row.status).toBe('confirmed');
     });
 
+    /**
+     * #26: a cancel and a receipt sent at once. The order row is locked, so
+     * one waits for the other: the receipt lands and the cancel is refused,
+     * or the cancel lands and the receipt is refused. Never both, which
+     * would leave a cancelled order holding goods that arrived.
+     */
+    it('never cancels an order a receipt lands on at once', async () => {
+      const ctx = await setup('alpha');
+
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const order = await confirmed(ctx);
+        const [cancel, receipt] = await Promise.all([
+          ctx.agent
+            .patch(`/v1/orders/${order.id}`)
+            .send({ status: 'cancelled' }),
+          ctx.agent
+            .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+            .send({ toLocationId: ctx.locationId, quantity: '10' }),
+        ]);
+
+        const succeeded = [cancel.status === 204, receipt.status === 201];
+        expect(succeeded.filter(Boolean)).toHaveLength(1);
+      }
+    });
+
     it('still closes a partly received order', async () => {
       const ctx = await setup('alpha');
       const order = await confirmed(ctx);
