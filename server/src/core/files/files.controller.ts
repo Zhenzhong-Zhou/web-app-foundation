@@ -15,7 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
 
-import type { FileKind } from '../../database/schema';
+import type { OrganizationFileKind } from '../../database/schema';
 import { t } from '../../i18n/translate';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
@@ -35,7 +35,7 @@ import {
  * it the request is cut off with 413, not read to the end. One route per
  * kind, so the limit and the permission are both known before a byte is.
  */
-function receive(kind: FileKind) {
+function receive(kind: OrganizationFileKind) {
   return FileInterceptor('file', {
     limits: { fileSize: KIND_RULES[kind].maxBytes, files: 1 },
   });
@@ -106,7 +106,7 @@ export class FilesController {
   }
 
   private async keep(
-    kind: FileKind,
+    kind: OrganizationFileKind,
     user: RequestContext,
     file: UploadedBinary | undefined,
   ): Promise<{ file: FileView }> {

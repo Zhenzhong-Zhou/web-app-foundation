@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,11 +11,16 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 
 import { t } from '../../i18n/translate';
+import type { UploadedBinary } from '../files/files.service';
 import { AccountService } from './account.service';
+import { AccountPhotoService, AVATAR_MAX_BYTES } from './account-photo.service';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { CurrentUser } from './current-user.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -32,7 +38,10 @@ import type { RequestContext } from './request-context';
 @Controller({ path: 'account', version: '1' })
 @AllowNoOrganization()
 export class AccountController {
-  constructor(private readonly account: AccountService) {}
+  constructor(
+    private readonly account: AccountService,
+    private readonly photo: AccountPhotoService,
+  ) {}
 
   @Patch('profile')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -92,5 +101,38 @@ export class AccountController {
           defaultMessage: 'No such session',
         }),
       );
+  }
+
+  /**
+   * Your photo (ADR-063): only yours, set here and nowhere else. Cut off at
+   * 5 MB while it arrives; cropped square and re-encoded by the service.
+   */
+  @Post('photo')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: AVATAR_MAX_BYTES, files: 1 },
+    }),
+  )
+  async setPhoto(
+    @CurrentUser() context: RequestContext,
+    @UploadedFile() file: UploadedBinary | undefined,
+  ): Promise<{ photoFileId: string }> {
+    if (!file) {
+      throw new BadRequestException(
+        t({
+          id: 'account.photo.missing',
+          defaultMessage: 'Choose a photo to upload',
+        }),
+      );
+    }
+    return this.photo.set(context, file);
+  }
+
+  /** Removed, and deleted at once: a face someone took back is not kept. */
+  @Delete('photo')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removePhoto(@CurrentUser() context: RequestContext): Promise<void> {
+    await this.photo.remove(context);
   }
 }

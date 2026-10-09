@@ -23,6 +23,8 @@ export interface OrganizationMember {
   email: string;
   name: string;
   roleId: string;
+  /** Their photo (ADR-063); null shows their initials. */
+  photoFileId?: string | null;
 }
 
 @Injectable()
@@ -53,6 +55,8 @@ export class UsersService {
         email: users.email,
         name: users.name,
         roleId: memberships.roleId,
+        // Their face beside their name (ADR-063).
+        photoFileId: users.photoFileId,
       },
     );
   }

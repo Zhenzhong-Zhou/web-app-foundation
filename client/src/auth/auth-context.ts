@@ -22,6 +22,8 @@ export interface CurrentSession {
     emailVerified: boolean;
     /** The account's language (ADR-054); null follows the browser. */
     locale: Locale | null;
+    /** Their photo (ADR-063); null shows their initials. */
+    photoFileId?: string | null;
   };
   /** Null when the caller belongs to no organization — see SessionGuard. */
   organization: {

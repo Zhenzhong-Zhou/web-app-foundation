@@ -1,4 +1,4 @@
-import type { FileKind } from '../../database/schema';
+import type { OrganizationFileKind } from '../../database/schema';
 import type { Permission } from '../authorization/permissions';
 import type { Sniffed } from './sniff';
 
@@ -16,7 +16,8 @@ export interface KindRule {
   render: 'logo' | 'photo';
 }
 
-export const KIND_RULES: Record<FileKind, KindRule> = {
+/** An organization's kinds; a person's photo is not uploaded here (ADR-063). */
+export const KIND_RULES: Record<OrganizationFileKind, KindRule> = {
   logo: {
     accepts: ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'],
     maxBytes: 2 * MB,

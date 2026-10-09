@@ -17,11 +17,21 @@ export interface FileStorage {
   delete(key: string): Promise<void>;
 }
 
-/** `<organization id>/<file id>/<size>`: nothing a person typed. */
-export function keyOf(
-  organizationId: string,
-  fileId: string,
-  size: FileSize,
-): string {
-  return `${organizationId}/${fileId}/${size}`;
+/**
+ * `<owner id>/<file id>/<size>`: nothing a person typed. The owner is the
+ * organization, or for a person's photo the person (ADR-063).
+ */
+export function keyOf(ownerId: string, fileId: string, size: FileSize): string {
+  return `${ownerId}/${fileId}/${size}`;
+}
+
+/** A file's owner, the organization or the person; the check holds one. */
+export function ownerOf(row: {
+  id: string;
+  organizationId: string | null;
+  userId: string | null;
+}): string {
+  const owner = row.organizationId ?? row.userId;
+  if (!owner) throw new Error(`File ${row.id} has no owner`);
+  return owner;
 }

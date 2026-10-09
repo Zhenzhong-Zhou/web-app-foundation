@@ -10,6 +10,9 @@ import { type RequestContext, setRequestContext } from './request-context';
 import { SessionService } from './session.service';
 import { readSessionCookie } from './session-cookie';
 
+/** Last active moves at most this often (ADR-063). */
+const LAST_ACTIVE_WRITE_INTERVAL_MS = 60_000;
+
 /**
  * Resolves the session cookie to (user, current_org) and runs the rest of the
  * request inside that tenant context (ADR-003).
@@ -53,7 +56,12 @@ export class SessionContextMiddleware implements NestMiddleware {
     token: string,
     req: Request,
   ): Promise<RequestContext | null> {
-    const session = await this.sessions.validate(token);
+    // A background request, the bell's poll, says so (ADR-063): it moves
+    // neither the session's idle timer nor the person's last active.
+    const background = req.headers['x-background'] === '1';
+    const session = await this.sessions.validate(token, {
+      touch: !background,
+    });
     if (!session) return null;
 
     const [user] = await this.db
@@ -77,6 +85,8 @@ export class SessionContextMiddleware implements NestMiddleware {
       ? await this.findMembership(user.id, session.currentOrgId)
       : undefined;
 
+    if (membership && !background) await this.markActive(membership);
+
     return {
       sessionId: session.sessionId,
       userId: user.id,
@@ -92,11 +102,35 @@ export class SessionContextMiddleware implements NestMiddleware {
     };
   }
 
+  /**
+   * When the person last did something here (ADR-063): at most once a
+   * minute, the same throttle as the session's, in one statement whose
+   * where clause is the throttle, so a busy minute costs no write at all.
+   */
+  private async markActive(membership: {
+    id: string;
+    lastActiveAt: Date | null;
+  }): Promise<void> {
+    const now = Date.now();
+    if (
+      membership.lastActiveAt &&
+      now - membership.lastActiveAt.getTime() < LAST_ACTIVE_WRITE_INTERVAL_MS
+    ) {
+      return;
+    }
+    await this.db
+      .update(memberships)
+      .set({ lastActiveAt: new Date(now) })
+      .where(eq(memberships.id, membership.id));
+  }
+
   private async findMembership(userId: string, organizationId: string) {
     const [row] = await this.db
       .select({
+        id: memberships.id,
         organizationId: memberships.organizationId,
         roleId: memberships.roleId,
+        lastActiveAt: memberships.lastActiveAt,
       })
       .from(memberships)
       .where(

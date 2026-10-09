@@ -101,7 +101,10 @@ export class SessionService {
    * resolved per request through the membership, so that a demoted admin loses
    * access immediately rather than at session expiry.
    */
-  async validate(token: string): Promise<SessionInfo | null> {
+  async validate(
+    token: string,
+    { touch = true }: { touch?: boolean } = {},
+  ): Promise<SessionInfo | null> {
     const now = new Date();
     const idleCutoff = new Date(now.getTime() - this.idleMs);
 
@@ -126,10 +129,12 @@ export class SessionService {
     if (!row) return null;
 
     // One UPDATE per request per user is significant write traffic for a
-    // column read at minute granularity. Throttle it.
+    // column read at minute granularity. Throttle it. A background request
+    // (touch: false) moves nothing: an untouched tab's polling must not keep
+    // its session alive past the idle limit (ADR-063).
     if (
-      now.getTime() - row.lastSeenAt.getTime() >
-      LAST_SEEN_WRITE_INTERVAL_MS
+      touch &&
+      now.getTime() - row.lastSeenAt.getTime() > LAST_SEEN_WRITE_INTERVAL_MS
     ) {
       await this.db
         .update(sessions)

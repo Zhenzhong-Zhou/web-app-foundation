@@ -13,6 +13,7 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { LoadMoreButton } from '../components/load-more-button';
+import { PersonAvatar } from '../components/person-avatar';
 import { relativeTime, SEPARATOR } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
@@ -67,30 +68,45 @@ export function HistoryEntries({ resourceId }: { resourceId: string }) {
                 key={entry.id}
                 disableGutters
                 divider
-                sx={{ display: 'block', py: 1.25 }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 1.5,
+                  py: 1.25,
+                }}
               >
-                <Typography variant="body2">
-                  {describe(entry.action)}
-                </Typography>
-
-                {summarise(entry.payload) && (
-                  <Typography variant="body2" color="text.secondary">
-                    {summarise(entry.payload)}
+                {/* Who, as a face (ADR-063). */}
+                <PersonAvatar
+                  userId={entry.actorId}
+                  name={entry.actorName ?? null}
+                  email={entry.actorEmail}
+                  photoFileId={entry.actorPhotoFileId}
+                  size={28}
+                />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="body2">
+                    {describe(entry.action)}
                   </Typography>
-                )}
 
-                <Typography variant="caption" color="text.secondary">
-                  {/* A tombstoned actor keeps its id and loses its email
+                  {summarise(entry.payload) && (
+                    <Typography variant="body2" color="text.secondary">
+                      {summarise(entry.payload)}
+                    </Typography>
+                  )}
+
+                  <Typography variant="caption" color="text.secondary">
+                    {/* A tombstoned actor keeps its id and loses its email
                       (ADR-012). */}
-                  {[
-                    entry.actorEmail ??
-                      intl.formatMessage({
-                        id: 'audit.removedAccount',
-                        defaultMessage: 'A removed account',
-                      }),
-                    relativeTime(entry.createdAt),
-                  ].join(SEPARATOR)}
-                </Typography>
+                    {[
+                      entry.actorEmail ??
+                        intl.formatMessage({
+                          id: 'audit.removedAccount',
+                          defaultMessage: 'A removed account',
+                        }),
+                      relativeTime(entry.createdAt),
+                    ].join(SEPARATOR)}
+                  </Typography>
+                </Box>
               </ListItem>
             ))}
           </List>

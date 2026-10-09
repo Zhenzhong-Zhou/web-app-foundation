@@ -1,4 +1,11 @@
-import { index, pgTable, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
@@ -30,6 +37,24 @@ export const memberships = pgTable(
     roleId: uuid('role_id')
       .notNull()
       .references(() => roles.id, { onDelete: 'restrict' }),
+
+    /**
+     * Their details at work (ADR-063), each optional, each set by the person
+     * themself: on the membership, since someone in two organizations has a
+     * title and an extension in each.
+     */
+    jobTitle: text('job_title'),
+    department: text('department'),
+    location: text('location'),
+    workPhone: text('work_phone'),
+    extension: text('extension'),
+
+    /**
+     * When they last did something here (ADR-063): moved by their own
+     * requests at most once a minute, never by a background one. Not a
+     * sign-in time, which is the session's.
+     */
+    lastActiveAt: timestamp('last_active_at', { withTimezone: true }),
 
     ...timestamps,
   },

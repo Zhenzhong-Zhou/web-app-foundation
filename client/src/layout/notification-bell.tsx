@@ -78,8 +78,11 @@ export function NotificationBell() {
      */
     async function tick() {
       try {
+        // Marked as background (ADR-063): the bell asking moves neither the
+        // person's last active nor their session's idle timer.
         const { count: unread } = await api<{ count: number }>(
           '/notifications/unread-count',
+          { headers: { 'X-Background': '1' } },
         );
         if (!ignore) setCount(unread);
       } catch {
@@ -88,12 +91,35 @@ export function NotificationBell() {
       }
     }
 
-    void tick();
-    const timer = setInterval(() => void tick(), POLL_MS);
+    /**
+     * Only while the tab is seen: a hidden tab asks nothing, and the moment
+     * it is seen again it asks at once, so the count is right when looked
+     * at (ADR-063).
+     */
+    let timer: number | undefined;
+    function start() {
+      void tick();
+      timer = window.setInterval(() => void tick(), POLL_MS);
+    }
+    function stop() {
+      window.clearInterval(timer);
+      timer = undefined;
+    }
+    function onVisibility() {
+      if (document.visibilityState === 'visible') {
+        if (timer === undefined) start();
+      } else {
+        stop();
+      }
+    }
+
+    if (document.visibilityState === 'visible') start();
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       ignore = true;
-      clearInterval(timer);
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
 

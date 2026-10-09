@@ -1,8 +1,16 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  type AnyPgColumn,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import type { Locale } from '../../common/locales';
 import { primaryKey, timestamps } from './columns';
+import { files } from './files';
 
 /**
  * Global identity. **No organization_id** — a user is not owned by an org
@@ -30,6 +38,14 @@ export const users = pgTable(
     locale: text('locale').$type<Locale>(),
 
     emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+
+    /**
+     * Their photo (ADR-063): a file of kind avatar, theirs, set and removed
+     * only by them. Null shows their initials.
+     */
+    photoFileId: uuid('photo_file_id').references((): AnyPgColumn => files.id, {
+      onDelete: 'set null',
+    }),
 
     suspendedAt: timestamp('suspended_at', { withTimezone: true }),
     suspendedReason: text('suspended_reason'),

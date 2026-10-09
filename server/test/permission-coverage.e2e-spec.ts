@@ -39,6 +39,15 @@ const SELF_SERVICE = new Map<string, string>([
   ['AccountController.listSessions', 'Your own sessions'],
   ['AccountController.revokeSession', 'Ending one of your own sessions'],
   ['AccountController.listEvents', 'Your own account history'],
+  ['AccountController.setPhoto', 'Your own photo, set only by you (ADR-063)'],
+  ['AccountController.removePhoto', 'As above'],
+  ['WorkController.details', 'Your own details at work (ADR-063)'],
+  ['WorkController.updateDetails', 'As above'],
+  [
+    'WorkController.activity',
+    'What you did, the person set by the server (ADR-063)',
+  ],
+  ['WorkController.exportActivity', 'As above'],
   [
     'NotificationsController.unreadCount',
     'Your own notifications, scoped to you by the service (ADR-036)',

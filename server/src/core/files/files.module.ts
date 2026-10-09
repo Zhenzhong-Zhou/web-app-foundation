@@ -10,7 +10,11 @@ import { FilesPurgeService } from './files-purge.service';
 import { FilesPurgeTimer } from './files-purge.timer';
 import { storageFromConfig } from './storage-from-config';
 
-/** Files (ADR-059). Exported for the features that attach them. */
+/**
+ * Files (ADR-059). FilesService for the features that attach them; the
+ * storage itself for a person's photo (ADR-063), which no organization
+ * owns.
+ */
 @Module({
   imports: [AuthorizationModule],
   controllers: [FilesController],
@@ -25,6 +29,6 @@ import { storageFromConfig } from './storage-from-config';
     FilesPurgeService,
     FilesPurgeTimer,
   ],
-  exports: [FilesService],
+  exports: [FilesService, FILE_STORAGE],
 })
 export class FilesModule {}

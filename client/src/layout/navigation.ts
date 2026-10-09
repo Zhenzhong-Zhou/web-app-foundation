@@ -4,6 +4,7 @@ import AssessmentOutlined from '@mui/icons-material/AssessmentOutlined';
 import AssignmentReturnOutlined from '@mui/icons-material/AssignmentReturnOutlined';
 import BusinessOutlined from '@mui/icons-material/BusinessOutlined';
 import CategoryOutlined from '@mui/icons-material/CategoryOutlined';
+import ContactsOutlined from '@mui/icons-material/ContactsOutlined';
 import CurrencyExchangeOutlined from '@mui/icons-material/CurrencyExchangeOutlined';
 import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
 import GroupOutlined from '@mui/icons-material/GroupOutlined';
@@ -51,6 +52,7 @@ const labels = defineMessages({
   invoices: { id: 'layout.nav.invoices', defaultMessage: 'Invoices' },
   returns: { id: 'layout.nav.returns', defaultMessage: 'Returns' },
   production: { id: 'layout.nav.production', defaultMessage: 'Production' },
+  people: { id: 'layout.nav.people', defaultMessage: 'People' },
   products: { id: 'layout.nav.products', defaultMessage: 'Products' },
   partners: { id: 'layout.nav.partners', defaultMessage: 'Partners' },
   locations: { id: 'layout.nav.locations', defaultMessage: 'Locations' },
@@ -125,6 +127,13 @@ export const NAV_GROUPS: NavGroup[] = [
         to: '/production',
         icon: PrecisionManufacturingOutlined,
         permission: 'production.view',
+      },
+      // The organization's people, for every member (ADR-063).
+      {
+        label: labels.people,
+        to: '/people',
+        icon: ContactsOutlined,
+        permission: 'users.view',
       },
     ],
   },

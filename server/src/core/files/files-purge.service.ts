@@ -6,7 +6,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../../database/database.module';
 import { files, type FileSize } from '../../database/schema';
-import { FILE_STORAGE, type FileStorage, keyOf } from './file-storage';
+import { FILE_STORAGE, type FileStorage, keyOf, ownerOf } from './file-storage';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -48,6 +48,7 @@ export class FilesPurgeService {
       .select({
         id: files.id,
         organizationId: files.organizationId,
+        userId: files.userId,
         sizes: files.sizes,
       })
       .from(files)
@@ -59,7 +60,7 @@ export class FilesPurgeService {
     for (const row of due) {
       await Promise.all(
         (Object.keys(row.sizes) as FileSize[]).map((size) =>
-          this.storage.delete(keyOf(row.organizationId, row.id, size)),
+          this.storage.delete(keyOf(ownerOf(row), row.id, size)),
         ),
       );
       await this.db.delete(files).where(eq(files.id, row.id));

@@ -24,6 +24,9 @@ export interface AuditRecord {
   actorId: string | null;
   /** Joined server-side: a tombstoned actor is not in GET /v1/users. */
   actorEmail: string | null;
+  /** Their name and photo, for their face (ADR-063). */
+  actorName?: string | null;
+  actorPhotoFileId?: string | null;
   /**
    * What a field was set to, for the routes that name fields (ADR-018). Not
    * before and after — the interceptor runs after the handler and never saw

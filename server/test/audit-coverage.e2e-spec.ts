@@ -54,6 +54,12 @@ const NOT_AUDITED = new Map<string, string>([
     'AccountController.updateProfile',
     'Account events: a self-action, not an act on somebody else (ADR-022)',
   ],
+  ['AccountController.setPhoto', 'Account events (ADR-022, ADR-063)'],
+  ['AccountController.removePhoto', 'Account events (ADR-022, ADR-063)'],
+  [
+    'WorkController.updateDetails',
+    'Your own details at work, changed by you alone (ADR-063)',
+  ],
   ['AccountController.changePassword', 'Account events (ADR-022)'],
   ['AccountController.revokeSession', 'Account events (ADR-022)'],
   [

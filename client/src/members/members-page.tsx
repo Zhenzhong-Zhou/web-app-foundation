@@ -20,6 +20,7 @@ import { useIntl } from 'react-intl';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
+import { PersonAvatar } from '../components/person-avatar';
 import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -31,6 +32,8 @@ interface Member {
   email: string;
   name: string;
   roleId: string;
+  /** Their photo (ADR-063); null shows their initials. */
+  photoFileId?: string | null;
 }
 
 interface Role {
@@ -209,7 +212,22 @@ export function MembersPage() {
 
                   return (
                     <TableRow key={member.id}>
-                      <TableCell>{member.name}</TableCell>
+                      <TableCell>
+                        {/* Their face beside their name (ADR-063). */}
+                        <Stack
+                          direction="row"
+                          spacing={1.5}
+                          sx={{ alignItems: 'center' }}
+                        >
+                          <PersonAvatar
+                            userId={member.id}
+                            name={member.name}
+                            email={member.email}
+                            photoFileId={member.photoFileId}
+                          />
+                          <span>{member.name}</span>
+                        </Stack>
+                      </TableCell>
                       <TableCell>{member.email}</TableCell>
                       <TableCell>
                         {/* Rendered as plain text when the caller lacks
