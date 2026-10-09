@@ -41,7 +41,10 @@ const ACTIVE = defineMessages<ActiveSince>({
  * When they were last here: the exact time for those who may read the
  * history, to the minute; roughly for everyone else.
  */
-export function activeLabel(person: Person, intl: IntlShape): string {
+export function activeLabel(
+  person: Pick<Person, 'active' | 'lastActiveAt'>,
+  intl: IntlShape,
+): string {
   if (person.lastActiveAt) {
     return intl.formatMessage(
       {

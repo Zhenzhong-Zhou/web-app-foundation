@@ -170,7 +170,7 @@ export function SessionsPage() {
         ]}
         title={intl.formatMessage({
           id: 'account.sessions.title',
-          defaultMessage: 'Active sessions',
+          defaultMessage: 'Your devices',
         })}
         actions={
           <Button

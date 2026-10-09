@@ -46,10 +46,14 @@ test('changes the password and keeps this session', async ({
 
   await signInAs(page, freshOrg.api);
 
+  // The form opens in a dialog from Sign-in and security, whose own submit
+  // is also Change password, so everything after is within the dialog.
   await page.goto('/account');
-  await page.getByLabel('Current password').fill(E2E_PASSWORD);
-  await page.locator('#newPassword').fill(newPassword);
-  await page.getByLabel('Confirm new password').fill(newPassword);
+  await page.getByRole('button', { name: 'Change password' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Current password').fill(E2E_PASSWORD);
+  await dialog.locator('#newPassword').fill(newPassword);
+  await dialog.getByLabel('Confirm new password').fill(newPassword);
 
   // Asserted on the status, not on an alert: getByRole('alert') matches the
   // error one too, so a failed change passed here and blew up two lines later
@@ -59,7 +63,7 @@ test('changes the password and keeps this session', async ({
       res.url().includes('/account/password') &&
       res.request().method() === 'POST',
   );
-  await page.getByRole('button', { name: 'Change password' }).click();
+  await dialog.getByRole('button', { name: 'Change password' }).click();
   expect((await response).status()).toBe(200);
 
   // The old one is dead and the new one works. Asserted against the API rather
@@ -83,16 +87,18 @@ test('refuses a wrong current password and changes nothing', async ({
   await signInAs(page, freshOrg.api);
 
   await page.goto('/account');
-  await page.getByLabel('Current password').fill('not-the-right-one');
-  await page.locator('#newPassword').fill('e2e-other-password-1');
-  await page.getByLabel('Confirm new password').fill('e2e-other-password-1');
+  await page.getByRole('button', { name: 'Change password' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Current password').fill('not-the-right-one');
+  await dialog.locator('#newPassword').fill('e2e-other-password-1');
+  await dialog.getByLabel('Confirm new password').fill('e2e-other-password-1');
 
   const response = page.waitForResponse(
     (res) =>
       res.url().includes('/account/password') &&
       res.request().method() === 'POST',
   );
-  await page.getByRole('button', { name: 'Change password' }).click();
+  await dialog.getByRole('button', { name: 'Change password' }).click();
   expect((await response).status()).toBe(401);
 
   // A 401 that wrote the new hash anyway would be invisible from the screen,

@@ -424,7 +424,7 @@ folder by folder; these check what is already in place.
       dialog and settings section, Load more, the Back button, a picker's
       "no matching items", and the page shown when a screen breaks;
   - the account: the Account page with its language picker, the
-      password form and its devices-signed-out message, Active sessions
+      password form and its devices-signed-out message, Your devices
       and Recent activity;
   - products: the list, the detail page with its variants, and the
       add-product, add-variant and edit-variant dialogs, including each

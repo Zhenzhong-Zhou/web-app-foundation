@@ -16,21 +16,40 @@ import { Audited } from '../audit/audited.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
 import { PERMISSIONS } from '../authorization/permissions';
+import { PermissionsService } from '../authorization/permissions.service';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
+import { activeSince } from '../people/people.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
 @Controller({ path: 'users', version: '1' })
 export class UsersController {
-  constructor(private readonly users: UsersService) {}
+  constructor(
+    private readonly users: UsersService,
+    private readonly permissions: PermissionsService,
+  ) {}
 
   // Viewer holds users.view, so this is readable by every member. The
   // permission still gates it, because a future role need not.
   @Get()
   @RequirePermissions(PERMISSIONS.USERS_VIEW)
-  list() {
-    return this.users.listMembers();
+  async list(@CurrentUser() user: RequestContext) {
+    // Last active as People shows it (ADR-063): roughly for everyone, the
+    // time itself only for those who may read the history.
+    const exact =
+      !!user.roleId &&
+      (await this.permissions.listForRole(user.roleId)).includes(
+        PERMISSIONS.AUDIT_VIEW,
+      );
+    const now = new Date();
+    return (await this.users.listMembers()).map(
+      ({ lastActiveAt, ...member }) => ({
+        ...member,
+        active: activeSince(lastActiveAt ?? null, now),
+        ...(exact ? { lastActiveAt: lastActiveAt ?? null } : {}),
+      }),
+    );
   }
 
   @Post()

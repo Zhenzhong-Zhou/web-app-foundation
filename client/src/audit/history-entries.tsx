@@ -14,7 +14,12 @@ import { Link as RouterLink } from 'react-router-dom';
 
 import { LoadMoreButton } from '../components/load-more-button';
 import { PersonAvatar } from '../components/person-avatar';
-import { relativeTime, SEPARATOR } from '../lib/format';
+import {
+  formatMoment,
+  formatWhen,
+  relativeTime,
+  SEPARATOR,
+} from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { type AuditRecord, describe, summarise } from './audit-format';
@@ -83,7 +88,7 @@ export function HistoryEntries({ resourceId }: { resourceId: string }) {
                   photoFileId={entry.actorPhotoFileId}
                   size={28}
                 />
-                <Box sx={{ minWidth: 0 }}>
+                <Box sx={{ minWidth: 0, flexGrow: 1 }}>
                   <Typography variant="body2">
                     {describe(entry.action)}
                   </Typography>
@@ -94,15 +99,36 @@ export function HistoryEntries({ resourceId }: { resourceId: string }) {
                     </Typography>
                   )}
 
-                  <Typography variant="caption" color="text.secondary">
-                    {/* A tombstoned actor keeps its id and loses its email
-                      (ADR-012). */}
+                  {/* Who, by name with the email cut short, and when, to the
+                    minute and how long ago (ADR-063). A tombstoned actor
+                    keeps its id and loses its email (ADR-012). */}
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    title={entry.actorEmail ?? undefined}
+                    sx={{
+                      display: 'block',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {[entry.actorName, entry.actorEmail]
+                      .filter(Boolean)
+                      .join(SEPARATOR) ||
+                      intl.formatMessage({
+                        id: 'audit.removedAccount',
+                        defaultMessage: 'A removed account',
+                      })}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    title={formatMoment(entry.createdAt)}
+                    sx={{ display: 'block' }}
+                  >
                     {[
-                      entry.actorEmail ??
-                        intl.formatMessage({
-                          id: 'audit.removedAccount',
-                          defaultMessage: 'A removed account',
-                        }),
+                      formatWhen(entry.createdAt),
                       relativeTime(entry.createdAt),
                     ].join(SEPARATOR)}
                   </Typography>
