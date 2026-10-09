@@ -20,6 +20,7 @@ import { api } from '../lib/api';
 import { dayOf } from '../lib/date-range';
 import { formatDay } from '../lib/format';
 import type { HomeCard, HomeResponse, HomeRow } from '../lib/types';
+import { useExpiryDays } from '../lib/use-expiry-days';
 import { GettingStarted } from './getting-started';
 import { CARDS, daysUntil } from './home-cards';
 import { RecentCard } from './recent-card';
@@ -348,6 +349,8 @@ function CountTile({ card }: { card: HomeCard }) {
 /** One card: its title, "See all", and its five most urgent rows. */
 function CardPanel({ card, today }: { card: HomeCard; today: string }) {
   const intl = useIntl();
+  // The organization's days (ADR-060), for "Nothing expires within".
+  const { warning: expiringWithin } = useExpiryDays();
   const meta = CARDS[card.kind];
   const Icon = meta.icon;
 
@@ -383,7 +386,7 @@ function CardPanel({ card, today }: { card: HomeCard; today: string }) {
           sx={{ py: 1, borderTop: 1, borderColor: 'divider' }}
           color="success.dark"
         >
-          {intl.formatMessage(meta.empty)}
+          {intl.formatMessage(meta.empty, { days: expiringWithin })}
         </Typography>
       ) : (
         card.rows.map((row) => (

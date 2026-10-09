@@ -16,6 +16,7 @@ import type { ReactNode } from 'react';
 import { type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import { useBranding } from '../auth/use-branding';
 import { formatMoney, formatQuantity, NO_VALUE } from '../lib/format';
 import type { InvoiceTax } from '../lib/types';
 import { formatRate } from '../settings/tax-rate';
@@ -54,6 +55,13 @@ export function PrintSheet({
   children: ReactNode;
 }) {
   const intl = useIntl();
+  // The organization's logo at the top, unless it chose not to print it
+  // (ADR-060). Whatever logo it has when the sheet is made.
+  const branding = useBranding();
+  const logo =
+    branding?.logoOnDocuments && branding.logoFileId
+      ? `/api/v1/files/${branding.logoFileId}`
+      : null;
 
   return (
     <Stack spacing={3} sx={{ maxWidth: 800 }}>
@@ -102,6 +110,14 @@ export function PrintSheet({
             '@media print': { p: 0 },
           }}
         >
+          {logo && (
+            <Box
+              component="img"
+              src={logo}
+              alt=""
+              sx={{ display: 'block', maxHeight: '18mm', maxWidth: '60mm' }}
+            />
+          )}
           {children}
         </Stack>
       </ThemeProvider>

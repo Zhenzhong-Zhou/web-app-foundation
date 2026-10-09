@@ -14,6 +14,7 @@ import {
   ORDER_DIRECTIONS,
   ORDER_LINE_PRICE_SOURCES,
   ORDER_STATUSES,
+  ORGANIZATION_RAILS,
   PRICE_LIST_DIRECTIONS,
   RETURN_AUTHORIZATION_STATUSES,
   RETURN_RESOLUTIONS,
@@ -98,6 +99,7 @@ describe('schema invariants', () => {
     ['price_lists_direction_check', PRICE_LIST_DIRECTIONS],
     ['order_lines_price_source_check', ORDER_LINE_PRICE_SOURCES],
     ['files_kind_check', FILE_KINDS],
+    ['organizations_rail_check', ORGANIZATION_RAILS],
   ])('%s', (constraintName, values) => {
     it('accepts every value the code can write', async () => {
       const result = await db.execute(sql`

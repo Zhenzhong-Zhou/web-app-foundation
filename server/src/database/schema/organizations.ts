@@ -4,6 +4,7 @@ import {
   boolean,
   char,
   check,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -18,6 +19,7 @@ import {
   primaryKey,
   timestamps,
 } from './columns';
+import { files } from './files';
 import { priceLists } from './price-lists';
 
 /**
@@ -37,6 +39,10 @@ export type LicencePolicy = (typeof LICENCE_POLICIES)[number];
  * reference each other, and the Owner membership already records who
  * created it.
  */
+/** The side rail's two shades (ADR-055); dark unless chosen (ADR-060). */
+export const ORGANIZATION_RAILS = ['dark', 'light'] as const;
+export type OrganizationRail = (typeof ORGANIZATION_RAILS)[number];
+
 export const organizations = pgTable(
   'organizations',
   {
@@ -139,6 +145,28 @@ export const organizations = pgTable(
       withTimezone: true,
     }),
 
+    /**
+     * Branding (ADR-060). The logo is a file (ADR-059), attached when saved
+     * and released when replaced; null shows the name in text. The accent
+     * is stored as the shade that passes the contrast check, never the one
+     * typed, so every stored colour is readable; null is ADR-055's default.
+     */
+    logoFileId: uuid('logo_file_id').references((): AnyPgColumn => files.id, {
+      onDelete: 'set null',
+    }),
+    accentColor: text('accent_color'),
+    rail: text('rail').$type<OrganizationRail>().notNull().default('dark'),
+    /** Whether invoices, credit notes and packing slips print the logo. */
+    logoOnDocuments: boolean('logo_on_documents').notNull().default(true),
+
+    /**
+     * When a lot counts as expiring (ADR-060): warning within this many
+     * days, critical within the second. The organization's, since a bakery
+     * and a supplement maker cannot share 90 and 30.
+     */
+    expiryWarningDays: integer('expiry_warning_days').notNull().default(90),
+    expiryCriticalDays: integer('expiry_critical_days').notNull().default(30),
+
     ...timestamps,
   },
   (t) => [
@@ -168,6 +196,15 @@ export const organizations = pgTable(
     check(
       'organizations_document_languages_differ_check',
       languagesDiffer(t.documentLanguage, t.documentSecondLanguage),
+    ),
+    check(
+      'organizations_accent_color_format_check',
+      sql`${t.accentColor} is null or ${t.accentColor} ~ '^#[0-9A-F]{6}$'`,
+    ),
+    check('organizations_rail_check', sql`${t.rail} in ('dark', 'light')`),
+    check(
+      'organizations_expiry_days_check',
+      sql`${t.expiryCriticalDays} between 1 and 365 and ${t.expiryWarningDays} between 1 and 365 and ${t.expiryCriticalDays} < ${t.expiryWarningDays}`,
     ),
   ],
 );

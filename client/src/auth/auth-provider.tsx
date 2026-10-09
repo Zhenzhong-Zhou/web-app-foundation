@@ -3,6 +3,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useLanguage } from '../i18n/use-language';
 import { api, ApiError } from '../lib/api';
 import { isLocale } from '../lib/locales';
+import { setBrand } from '../theme/brand-store';
 import { AuthContext, type CurrentSession } from './auth-context';
 
 interface Resolved {
@@ -83,6 +84,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLocale(accountLocale)) setLocale(accountLocale);
   }, [accountLocale, setLocale]);
+
+  // The organization's look follows it the same way (ADR-060): the theme
+  // reads it from here, and signing out returns the defaults.
+  const branding = state.session?.organization?.branding ?? null;
+  useEffect(() => {
+    setBrand(branding);
+  }, [branding]);
 
   return (
     <AuthContext.Provider value={{ ...state, refresh }}>

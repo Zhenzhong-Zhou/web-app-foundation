@@ -20,8 +20,6 @@ import { StockReadsService, stockRowsOf } from '../stock/stock-reads.service';
 
 /** The most urgent rows each card shows (ADR-058). */
 export const HOME_ROWS = 5;
-/** Expiring soon: the screens' warning days (ADR-055). */
-export const EXPIRY_WARNING_DAYS = 90;
 /** Licences: issue #17's notice. */
 export const LICENCE_WARNING_DAYS = 60;
 
@@ -133,14 +131,16 @@ export class HomeService {
     const kinds = CARDS.flatMap(({ kind, permission }) =>
       held.has(permission) ? [kind] : [],
     );
-    const totals = await this.totals(kinds, today);
+    // The organization's own warning days (ADR-060), for the Expiring card.
+    const expiringWithin = await this.expiryWarningDays();
+    const totals = await this.totals(kinds, today, expiringWithin);
 
     const cards: HomeCard[] = [];
     for (const kind of kinds) {
       cards.push({
         kind,
         ...totals.get(kind)!,
-        rows: await this.rows(kind, today),
+        rows: await this.rows(kind, today, expiringWithin),
       });
     }
     return { gettingStarted: await this.gettingStarted(), cards };
@@ -243,6 +243,7 @@ export class HomeService {
   private totals(
     kinds: HomeKind[],
     today: string,
+    expiringWithin: number,
   ): Promise<Map<HomeKind, Totals>> {
     if (kinds.length === 0) {
       return Promise.resolve(new Map<HomeKind, Totals>());
@@ -250,7 +251,8 @@ export class HomeService {
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const branches = kinds.map(
-        (kind) => sql`(${totalOf(kind, organizationId, today)})`,
+        (kind) =>
+          sql`(${totalOf(kind, organizationId, today, expiringWithin)})`,
       );
       const result = await tx.execute(sql.join(branches, sql` union all `));
       const rows = result.rows as ({ kind: HomeKind } & Totals)[];
@@ -261,7 +263,22 @@ export class HomeService {
   }
 
   /** A card's five most urgent rows, from its list's own read. */
-  private async rows(kind: HomeKind, today: string): Promise<HomeRow[]> {
+  /** When a lot counts as expiring here (ADR-060): 90 days by default. */
+  private expiryWarningDays(): Promise<number> {
+    return this.tenantDb.transaction(async (tx, organizationId) => {
+      const [organization] = await tx
+        .select({ days: organizations.expiryWarningDays })
+        .from(organizations)
+        .where(eq(organizations.id, organizationId));
+      return organization.days;
+    });
+  }
+
+  private async rows(
+    kind: HomeKind,
+    today: string,
+    expiringWithin: number,
+  ): Promise<HomeRow[]> {
     switch (kind) {
       case 'toShip':
       case 'toReceive': {
@@ -283,7 +300,7 @@ export class HomeService {
 
       case 'expiring': {
         const page = await this.stock.list({
-          expiringWithin: EXPIRY_WARNING_DAYS,
+          expiringWithin,
           sort: 'expiry',
           order: 'asc',
           limit: HOME_ROWS,
@@ -383,7 +400,12 @@ export class HomeService {
  * One card's branch of totals(): its count, and its late count where
  * lateness applies, under the same conditions as its list's filter.
  */
-function totalOf(kind: HomeKind, organizationId: string, today: string): SQL {
+function totalOf(
+  kind: HomeKind,
+  organizationId: string,
+  today: string,
+  expiringWithin: number,
+): SQL {
   const counted = (rows: SQL, late?: SQL) => {
     const lateCount = late ? sql`count(*) filter (where ${late})::int` : sql`0`;
     return sql`
@@ -410,7 +432,7 @@ function totalOf(kind: HomeKind, organizationId: string, today: string): SQL {
     // list's. The expired are counted among the expiring.
     case 'expiring':
       return counted(
-        stockRowsOf({ expiringWithin: EXPIRY_WARNING_DAYS }, organizationId),
+        stockRowsOf({ expiringWithin }, organizationId),
         lt(lots.expiresAt, today),
       );
 

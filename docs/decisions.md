@@ -6172,6 +6172,27 @@ come with the organization's other settings; nothing new is fetched.
 - Nothing changes for an organization that sets nothing: the defaults are
   ADR-055's and ADR-058's values.
 
+*Amended while building:*
+
+- **The logo shows where ADR-055 put the organization**: the top bar's left
+  corner and the phone menu's header, at most 32 px tall, the name in text
+  until there is a logo. On a white plate in dark mode, and in the phone
+  menu while the rail is dark.
+- **The theme follows the session.** `/v1/auth/me` carries the branding
+  and the expiry days, so no page asks for them; the theme sits outside the
+  router and AuthProvider inside it, so a small store between them hands
+  the colour over, and signing out returns the defaults.
+- **Indigo is saved as no colour**, not as `#5546B8`, so a change to the
+  default reaches every organization that never chose.
+- **One Save for the Branding tab** (logo, colour, rail); the expiry days
+  and "Print the logo" are saved on their own tabs, each refreshing the
+  session so the chips and the paper follow at once.
+- **The logo prints from the print sheet itself**, so invoices, credit
+  notes and packing slips all have it without three copies of the rule.
+- **Not built: Home's link to Stock.** The Expiring card names the
+  organization's days ("Nothing expires within 180 days"); a link from it
+  to the setting waits for someone looking for it there.
+
 **Considered and not done.**
 
 - **Refusing a colour that fails contrast.** Correct, and unkind: an owner

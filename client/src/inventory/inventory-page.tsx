@@ -29,7 +29,6 @@ import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
 import { flagFromAddress } from '../lib/address-filter';
 import { api, messageFor } from '../lib/api';
-import { EXPIRY_DAYS } from '../lib/expiry';
 import {
   displayQuantity,
   itemName,
@@ -39,6 +38,7 @@ import {
 import { openDialog } from '../lib/open-dialog';
 import type { Availability, Location, StockRow } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { useExpiryDays } from '../lib/use-expiry-days';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSort } from '../lib/use-list-sort';
 import { displayWithUnit } from '../products/units';
@@ -81,6 +81,8 @@ function leavesOf(locations: Location[]): Location[] {
 export function InventoryPage() {
   const intl = useIntl();
   const can = useCan();
+  // The organization's own days (ADR-060): what Expiring soon means here.
+  const { warning: expiringWithin } = useExpiryDays();
 
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [locationId, setLocationId] = useState('');
@@ -139,7 +141,7 @@ export function InventoryPage() {
     if (locationId) params.set('locationId', locationId);
     if (includeEmpty) params.set('includeEmpty', 'true');
     if (search) params.set('search', search);
-    if (expiring) params.set('expiringWithin', String(EXPIRY_DAYS.warning));
+    if (expiring) params.set('expiringWithin', String(expiringWithin));
     if (needsCost) params.set('needsCost', 'true');
     // By the lot's expiry when its header is chosen (ADR-057).
     if (sort) {
@@ -147,7 +149,15 @@ export function InventoryPage() {
       params.set('order', sort.order);
     }
     return `/stock?${params.toString()}`;
-  }, [locationId, includeEmpty, search, expiring, needsCost, sort]);
+  }, [
+    locationId,
+    includeEmpty,
+    search,
+    expiring,
+    expiringWithin,
+    needsCost,
+    sort,
+  ]);
 
   /**
    * The count beside "Expiring soon", with the list's other filters, so it
@@ -156,7 +166,7 @@ export function InventoryPage() {
   useEffect(() => {
     let ignore = false;
     const params = new URLSearchParams({
-      expiringWithin: String(EXPIRY_DAYS.warning),
+      expiringWithin: String(expiringWithin),
     });
     if (locationId) params.set('locationId', locationId);
     if (includeEmpty) params.set('includeEmpty', 'true');
@@ -176,7 +186,7 @@ export function InventoryPage() {
     return () => {
       ignore = true;
     };
-  }, [locationId, includeEmpty, search, changes]);
+  }, [locationId, includeEmpty, search, expiringWithin, changes]);
 
   const {
     entries: rows,
@@ -493,7 +503,7 @@ export function InventoryPage() {
                       id: 'inventory.noneExpiring',
                       defaultMessage: 'No lot here expires within {days} days.',
                     },
-                    { days: EXPIRY_DAYS.warning },
+                    { days: expiringWithin },
                   )
                 : search
                   ? intl.formatMessage({

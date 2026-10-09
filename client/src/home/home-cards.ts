@@ -53,7 +53,7 @@ const EMPTY = defineMessages<HomeKind>({
   },
   expiring: {
     id: 'home.empty.expiring',
-    defaultMessage: 'Nothing expires within 90 days.',
+    defaultMessage: 'Nothing expires within {days} days.',
   },
   costsWaiting: {
     id: 'home.empty.costsWaiting',

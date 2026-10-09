@@ -3,6 +3,17 @@ import { createContext } from 'react';
 import type { Locale } from '../lib/locales';
 
 /** Mirrors CurrentSession from the server's auth.service.ts. */
+/** An organization's look and expiry days (ADR-060), with the session. */
+export interface OrganizationBranding {
+  logoFileId: string | null;
+  /** The saved shade, already readable; null for the default. */
+  accentColor: string | null;
+  rail: 'dark' | 'light';
+  logoOnDocuments: boolean;
+  expiryWarningDays: number;
+  expiryCriticalDays: number;
+}
+
 export interface CurrentSession {
   user: {
     id: string;
@@ -13,7 +24,13 @@ export interface CurrentSession {
     locale: Locale | null;
   };
   /** Null when the caller belongs to no organization — see SessionGuard. */
-  organization: { id: string; name: string; roleId: string } | null;
+  organization: {
+    id: string;
+    name: string;
+    roleId: string;
+    /** How the app looks, and what counts as expiring (ADR-060). */
+    branding: OrganizationBranding;
+  } | null;
   /**
    * For rendering only: hide a control the user cannot use. This is NOT an
    * authorization check. It is resolved at boot and stale the moment someone

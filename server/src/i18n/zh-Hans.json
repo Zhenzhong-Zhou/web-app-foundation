@@ -233,6 +233,7 @@
   "orders.void.billed": "此次发货已在 {number} 上开票——请先作废发票",
   "orders.void.draftInvoice": "此次发货有一张发票草稿——请先删除",
   "organizations.baseCurrencyFixed": "库存已以 {baseCurrency} 计价，因此本位币不能再更改",
+  "organizations.expiryDaysOrder": "紧急的天数必须少于即将过期的天数",
   "organizations.languagesDiffer": "第二单据语言必须与第一语言不同",
   "organizations.notFound": "未找到该组织",
   "organizations.secondNeedsFirst": "设置第二单据语言前需先设置第一语言",

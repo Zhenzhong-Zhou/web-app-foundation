@@ -1,11 +1,12 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
+import sharp from 'sharp';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { addresses, auditLog } from '../src/database/schema';
+import { addresses, auditLog, files } from '../src/database/schema';
 import {
   addMember,
   body,
@@ -173,6 +174,136 @@ describe('Organization (e2e)', () => {
       .where(eq(auditLog.action, 'organization.updated'));
     expect(entry.payload).toEqual({
       name: { from: 'alpha Co', to: 'Northside Naturals' },
+    });
+  });
+
+  describe('branding (ADR-060)', () => {
+    type Agent = Awaited<ReturnType<typeof registerOrganization>>['agent'];
+
+    async function branding(agent: Agent) {
+      const me = body<{
+        organization: {
+          branding: {
+            logoFileId: string | null;
+            accentColor: string | null;
+            rail: string;
+            logoOnDocuments: boolean;
+            expiryWarningDays: number;
+            expiryCriticalDays: number;
+          };
+        };
+      }>(await agent.get('/v1/auth/me').expect(200));
+      return me.organization.branding;
+    }
+
+    async function logo(agent: Agent): Promise<string> {
+      const png = await sharp({
+        create: { width: 400, height: 160, channels: 4, background: '#2a6' },
+      })
+        .png()
+        .toBuffer();
+      return body<{ file: { id: string } }>(
+        await agent
+          .post('/v1/files/logo')
+          .attach('file', png, 'logo.png')
+          .expect(201),
+      ).file.id;
+    }
+
+    it('starts with the defaults, returned with the session', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      expect(await branding(org.agent)).toEqual({
+        logoFileId: null,
+        accentColor: null,
+        rail: 'dark',
+        logoOnDocuments: true,
+        expiryWarningDays: 90,
+        expiryCriticalDays: 30,
+      });
+    });
+
+    it('saves a preset as is, a pale colour as one that reads', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const accent = async (accentColor: string | null) => {
+        await org.agent
+          .patch('/v1/organization')
+          .send({ accentColor })
+          .expect(204);
+        return (await branding(org.agent)).accentColor;
+      };
+
+      expect(await accent('#0f6e6e')).toBe('#0F6E6E');
+      expect(await accent('#5BB8F0')).toBe('#127EB3');
+      expect(await accent(null)).toBeNull();
+      await org.agent
+        .patch('/v1/organization')
+        .send({ accentColor: 'teal' })
+        .expect(400);
+    });
+
+    it('keeps urgent below expiring soon, each 1 to 365', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const send = (fields: object, status: number) =>
+        org.agent.patch('/v1/organization').send(fields).expect(status);
+
+      await send({ expiryWarningDays: 30, expiryCriticalDays: 30 }, 400);
+      await send({ expiryCriticalDays: 40 }, 204);
+      // Checked against the stored critical days, 40.
+      await send({ expiryWarningDays: 20 }, 400);
+      await send({ expiryWarningDays: 0 }, 400);
+      await send({ expiryWarningDays: 366 }, 400);
+      await send({ expiryWarningDays: 180, expiryCriticalDays: 60 }, 204);
+
+      expect(await branding(org.agent)).toMatchObject({
+        expiryWarningDays: 180,
+        expiryCriticalDays: 60,
+      });
+    });
+
+    it('attaches a new logo and releases the one it replaces', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const first = await logo(org.agent);
+      const second = await logo(org.agent);
+      const row = async (id: string) =>
+        (await db.select().from(files).where(eq(files.id, id)))[0];
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ logoFileId: first })
+        .expect(204);
+      expect((await branding(org.agent)).logoFileId).toBe(first);
+      expect((await row(first)).attachedAt).not.toBeNull();
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ logoFileId: second })
+        .expect(204);
+      expect((await row(first)).releasedAt).not.toBeNull();
+      expect((await row(second)).attachedAt).not.toBeNull();
+
+      // A file already used cannot be attached again.
+      await org.agent
+        .patch('/v1/organization')
+        .send({ logoFileId: first })
+        .expect(400);
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ logoFileId: null })
+        .expect(204);
+      expect((await branding(org.agent)).logoFileId).toBeNull();
+      expect((await row(second)).releasedAt).not.toBeNull();
+    });
+
+    it('lets another organization attach none of them', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const theirs = await logo(alpha.agent);
+
+      await beta.agent
+        .patch('/v1/organization')
+        .send({ logoFileId: theirs })
+        .expect(400);
     });
   });
 

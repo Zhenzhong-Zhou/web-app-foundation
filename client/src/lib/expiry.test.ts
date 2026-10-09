@@ -22,6 +22,9 @@ describe('expiry', () => {
     expect(expiryTone(31)).toBe('warning');
     expect(expiryTone(90)).toBe('warning');
     expect(expiryTone(91)).toBeNull();
+    // An organization's own days (ADR-060).
+    expect(expiryTone(150, { warning: 180, critical: 60 })).toBe('warning');
+    expect(expiryTone(45, { warning: 180, critical: 60 })).toBe('critical');
   });
 
   it('reads today from the local clock, not UTC', () => {

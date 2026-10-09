@@ -1,12 +1,17 @@
 import type { ToneName } from '../theme/tokens';
 import type { CalendarDay } from './types';
 
+/** When a lot's expiry turns amber, then red: within so many days. */
+export interface ExpiryDays {
+  warning: number;
+  critical: number;
+}
+
 /**
- * Within this many days a lot's expiry turns amber, then red (ADR-055).
- * Fixed for every organization for now; a setting of each organization's
- * own waits with branding (Open decisions).
+ * ADR-055's days, until an organization sets its own (ADR-060), which
+ * useExpiryDays reads from the session.
  */
-export const EXPIRY_DAYS = { warning: 90, critical: 30 } as const;
+export const EXPIRY_DAYS: ExpiryDays = { warning: 90, critical: 30 };
 
 /** The person's own calendar day, YYYY-MM-DD, by their clock and zone. */
 export function localToday(now: Date = new Date()): CalendarDay {
@@ -32,9 +37,12 @@ export function daysUntil(
   return Math.round((utcMidnight(day) - utcMidnight(today)) / 86_400_000);
 }
 
-/** Critical within 30 days or past, warning within 90, else nothing. */
-export function expiryTone(days: number): ToneName | null {
-  if (days <= EXPIRY_DAYS.critical) return 'critical';
-  if (days <= EXPIRY_DAYS.warning) return 'warning';
+/** Critical within its days or past, warning within its own, else none. */
+export function expiryTone(
+  days: number,
+  thresholds: ExpiryDays = EXPIRY_DAYS,
+): ToneName | null {
+  if (days <= thresholds.critical) return 'critical';
+  if (days <= thresholds.warning) return 'warning';
   return null;
 }
