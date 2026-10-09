@@ -36,10 +36,9 @@ and price lists proposing the price of a new line.
   ADR-058 (Home, with recently opened) and ADR-059 (file storage) are
   merged. **ADR-060** (branding) and **ADR-061** (the Organization page in tabs)
   are merged. **ADR-062** (product images) is built on `product-images`
-  (migration 0051, MC-1801). Next is **ADR-063**:
-  people's photos and a People page, right after product images. Only the
-  person sets, replaces or removes their own photo; with none, initials on
-  a colour taken from the name.
+  (migration 0051, MC-1801), merged (PR #78). **ADR-063** (people: a
+  photo of one's own, initials otherwise, a People page) is written on
+  `people`, designed before it is built. Next is **ADR-064**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot
