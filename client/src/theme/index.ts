@@ -6,8 +6,8 @@ import {
 } from '@mui/material/styles';
 
 import type { Locale } from '../lib/locales';
+import { type Brand, DEFAULT_BRAND } from './brand-store';
 import {
-  BRAND,
   DARK,
   DARK_ACCENT_WEIGHT,
   FONT_STACK,
@@ -93,23 +93,23 @@ const TOUCH = '@media (pointer: coarse)';
  * Everything below is ADR-055's tokens (tokens.ts) given to MUI. A value
  * that is not a token does not belong here either.
  */
-const options: ThemeOptions = {
+const optionsFor = (brand: Brand): ThemeOptions => ({
   cssVariables: { colorSchemeSelector: 'class' },
   colorSchemes: {
     light: {
       palette: palette(
         LIGHT,
-        BRAND.accent,
+        brand.accent,
         ON_ACCENT.light,
-        RAILS[BRAND.rail].light,
+        RAILS[brand.rail].light,
       ),
     },
     dark: {
       palette: palette(
         DARK,
-        towardWhite(BRAND.accent, DARK_ACCENT_WEIGHT),
+        towardWhite(brand.accent, DARK_ACCENT_WEIGHT),
         ON_ACCENT.dark,
-        RAILS[BRAND.rail].dark,
+        RAILS[brand.rail].dark,
       ),
     },
   },
@@ -289,23 +289,25 @@ const options: ThemeOptions = {
       },
     },
   },
-};
+});
 
 /** MUI's own words in each language: Simplified Chinese is zhCN. */
 const MUI_LOCALES = { en: enUS, 'fr-CA': frFR, 'zh-Hans': zhCN };
 
-const themes = new Map<Locale, Theme>();
+const themes = new Map<string, Theme>();
 
 /**
- * The theme in a language (ADR-054): the same design, with MUI's built-in
- * text — pagination, "No options", "Close" — in it. Built once per
- * language and kept, so switching back costs nothing.
+ * The theme in a language (ADR-054) and an organization's look (ADR-060):
+ * the same design, with MUI's built-in text — pagination, "No options",
+ * "Close" — in the language, and the organization's accent and rail.
+ * Built once per pair and kept, so switching back costs nothing.
  */
-export function themeFor(locale: Locale): Theme {
-  let theme = themes.get(locale);
+export function themeFor(locale: Locale, brand: Brand = DEFAULT_BRAND): Theme {
+  const key = `${locale} ${brand.accent} ${brand.rail}`;
+  let theme = themes.get(key);
   if (!theme) {
-    theme = createTheme(options, MUI_LOCALES[locale]);
-    themes.set(locale, theme);
+    theme = createTheme(optionsFor(brand), MUI_LOCALES[locale]);
+    themes.set(key, theme);
   }
   return theme;
 }

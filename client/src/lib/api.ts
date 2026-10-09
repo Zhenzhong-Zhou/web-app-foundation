@@ -120,7 +120,10 @@ async function send(path: string, init: ApiInit): Promise<Response> {
     credentials: 'include',
     headers: {
       ...(requestLanguage ? { 'Accept-Language': requestLanguage } : {}),
-      'Content-Type': 'application/json',
+      // A file goes as multipart, whose boundary the browser writes itself.
+      ...(init.body instanceof FormData
+        ? {}
+        : { 'Content-Type': 'application/json' }),
       'X-Requested-With': 'XMLHttpRequest',
       ...init.headers,
     },

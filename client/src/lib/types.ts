@@ -341,6 +341,14 @@ export interface OrganizationProfile {
   documentSecondLanguage: Locale | null;
   /** Languages an invoice may not be issued in while a name is missing. */
   requiredNameLanguages: Locale[];
+  /** Branding (ADR-060): the logo file, the saved accent, the rail. */
+  logoFileId: string | null;
+  accentColor: string | null;
+  rail: 'dark' | 'light';
+  logoOnDocuments: boolean;
+  /** When a lot counts as expiring here (ADR-060). */
+  expiryWarningDays: number;
+  expiryCriticalDays: number;
 }
 
 /**

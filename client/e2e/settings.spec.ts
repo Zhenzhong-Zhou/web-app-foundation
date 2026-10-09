@@ -72,6 +72,43 @@ test('opens a tab by its address, and renames the organization', async ({
   ).toBeVisible();
 });
 
+/**
+ * Branding (ADR-060): a preset becomes the whole app's colour at once, a
+ * pale colour is shown as the shade that will be saved, and the expiry
+ * days are the organization's.
+ */
+test('brands the organization and sets its expiry days', async ({
+  page,
+  freshOrg,
+}) => {
+  await signInAs(page, freshOrg.api);
+  await page.goto('/settings/organization?tab=branding');
+
+  await page.getByLabel('Your own colour', { exact: true }).check();
+  await page.getByLabel('Your own colour, as #RRGGBB').fill('#5BB8F0');
+  await expect(page.getByText(/#127EB3, the same colour/)).toBeVisible();
+
+  await page.getByLabel('Teal').check();
+  await page.getByRole('button', { name: 'Save branding' }).click();
+  await expect(page.getByText('Branding saved')).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        getComputedStyle(document.documentElement)
+          .getPropertyValue('--mui-palette-primary-main')
+          .trim()
+          .toUpperCase(),
+      ),
+    )
+    .toBe('#0F6E6E');
+
+  await page.getByRole('tab', { name: 'Stock' }).click();
+  await page.getByLabel('Expiring soon, within days').fill('180');
+  await page.getByLabel('Urgent, within days').fill('60');
+  await page.getByRole('button', { name: 'Save expiry' }).click();
+  await expect(page.getByText('Expiry saved')).toBeVisible();
+});
+
 test('adds a two-tax code, changes a rate, and retires it', async ({
   page,
   freshOrg,

@@ -4,6 +4,7 @@ import { useIntl } from 'react-intl';
 import { daysUntil, expiryTone } from '../lib/expiry';
 import { formatDay, NO_VALUE } from '../lib/format';
 import type { CalendarDay } from '../lib/types';
+import { useExpiryDays } from '../lib/use-expiry-days';
 import { StatusChip } from './status-chip';
 
 /**
@@ -22,12 +23,13 @@ export function ExpiryChip({
   today?: CalendarDay;
 }) {
   const intl = useIntl();
+  const thresholds = useExpiryDays();
 
   if (!expiresAt) return NO_VALUE;
 
   const date = formatDay(expiresAt);
   const days = daysUntil(expiresAt, today);
-  const tone = expiryTone(days);
+  const tone = expiryTone(days, thresholds);
 
   if (!tone) return date;
 

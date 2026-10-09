@@ -27,13 +27,19 @@ import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { useTab } from '../lib/use-tab';
 import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
+import { BrandingForm } from './branding-form';
 import {
   OrganizationDocumentLanguages,
   RequiredNameLanguages,
 } from './document-languages-form';
 
-/** The Organization page's tabs (ADR-061), Profile first. */
-const ORGANIZATION_TABS = ['profile', 'money', 'documents', 'stock'] as const;
+/**
+ * The Organization page's tabs (ADR-061), Profile first. Branding is only
+ * for those who may change it (ADR-060): nothing there is worth reading
+ * without changing it, and every member sees its result anyway.
+ */
+const READ_TABS = ['profile', 'money', 'documents', 'stock'] as const;
+const ORGANIZATION_TABS = [...READ_TABS, 'branding'] as const;
 type OrganizationTab = (typeof ORGANIZATION_TABS)[number];
 
 const TAB_LABEL = defineMessages({
@@ -41,6 +47,7 @@ const TAB_LABEL = defineMessages({
   money: { id: 'settings.org.tab.money', defaultMessage: 'Money' },
   documents: { id: 'settings.org.tab.documents', defaultMessage: 'Documents' },
   stock: { id: 'settings.org.tab.stock', defaultMessage: 'Stock' },
+  branding: { id: 'settings.org.tab.branding', defaultMessage: 'Branding' },
 });
 
 /**
@@ -66,10 +73,17 @@ export function OrganizationPage() {
     organization: OrganizationProfile;
   }>('/organization');
   const organization = data?.organization ?? null;
-  const [tab, setTab] = useTab<OrganizationTab>(ORGANIZATION_TABS);
-
   const showSkeleton = useDelayedFlag(organization === null && !error);
   const canUpdate = can('organizations.update');
+  const tabs: readonly OrganizationTab[] = canUpdate
+    ? ORGANIZATION_TABS
+    : READ_TABS;
+  const [tab, setTab] = useTab<OrganizationTab>(tabs);
+
+  /** A save the whole app shows: the theme, chips and logo read it. */
+  const reloadAll = async () => {
+    await Promise.all([reload(), refresh()]);
+  };
 
   /** One tab's forms, shown only while it is open. */
   const panel = (id: OrganizationTab, children: ReactNode) => (
@@ -120,7 +134,7 @@ export function OrganizationPage() {
               scrollButtons="auto"
               allowScrollButtonsMobile
             >
-              {ORGANIZATION_TABS.map((id) => (
+              {tabs.map((id) => (
                 <Tab
                   key={id}
                   value={id}
@@ -147,10 +161,8 @@ export function OrganizationPage() {
                 key={organization.name}
                 value={organization.name}
                 readOnly={!canUpdate}
-                onSaved={async () => {
-                  // The name is in the side rail and the top bar too.
-                  await Promise.all([reload(), refresh()]);
-                }}
+                // The name is in the side rail and the top bar too.
+                onSaved={reloadAll}
               />
               <TaxNumberForm
                 key={organization.taxRegistrationNumber ?? ''}
@@ -204,21 +216,54 @@ export function OrganizationPage() {
                 readOnly={!canUpdate}
                 onSaved={reload}
               />
+              <LogoOnDocumentsForm
+                key={String(organization.logoOnDocuments)}
+                value={organization.logoOnDocuments}
+                readOnly={!canUpdate}
+                onSaved={reloadAll}
+              />
             </>,
           )}
           {panel(
             'stock',
-            <LicencePolicyForm
-              key={[
-                organization.licenceNotInForcePolicy,
-                organization.licenceExpiredPolicy,
-                organization.licenceRequired,
-              ].join()}
-              organization={organization}
-              readOnly={!canUpdate}
-              onSaved={reload}
-            />,
+            <>
+              <ExpiryDaysForm
+                key={[
+                  organization.expiryWarningDays,
+                  organization.expiryCriticalDays,
+                ].join()}
+                warning={organization.expiryWarningDays}
+                critical={organization.expiryCriticalDays}
+                readOnly={!canUpdate}
+                onSaved={reloadAll}
+              />
+              <LicencePolicyForm
+                key={[
+                  organization.licenceNotInForcePolicy,
+                  organization.licenceExpiredPolicy,
+                  organization.licenceRequired,
+                ].join()}
+                organization={organization}
+                readOnly={!canUpdate}
+                onSaved={reload}
+              />
+            </>,
           )}
+          {canUpdate &&
+            panel(
+              'branding',
+              <BrandingForm
+                key={[
+                  organization.logoFileId,
+                  organization.accentColor,
+                  organization.rail,
+                ].join()}
+                logoFileId={organization.logoFileId}
+                accentColor={organization.accentColor}
+                rail={organization.rail}
+                onSaved={reloadAll}
+              />,
+            )}
         </>
       ) : showSkeleton ? (
         <Skeleton variant="rounded" height={240} />
@@ -293,6 +338,168 @@ function NameForm({
         })}
         slotProps={{ htmlInput: { maxLength: 100 } }}
       />
+    </SettingsSection>
+  );
+}
+
+/**
+ * When a lot counts as expiring (ADR-060), on every list and on Home: the
+ * organization's own, since a bakery and a supplement maker cannot share
+ * 90 and 30.
+ */
+function ExpiryDaysForm({
+  warning,
+  critical,
+  readOnly,
+  onSaved,
+}: {
+  warning: number;
+  critical: number;
+  readOnly: boolean;
+  onSaved: () => Promise<void>;
+}) {
+  const intl = useIntl();
+  const [warningDays, setWarningDays] = useState(String(warning));
+  const [criticalDays, setCriticalDays] = useState(String(critical));
+  const { submitting, error, submit } = useSubmit(onSaved, {
+    success: intl.formatMessage({
+      id: 'settings.org.expiry.saved',
+      defaultMessage: 'Expiry saved',
+    }),
+  });
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    void submit(() =>
+      api('/organization', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          expiryWarningDays: Number(warningDays),
+          expiryCriticalDays: Number(criticalDays),
+        }),
+      }),
+    );
+  }
+
+  const days = { min: 1, max: 365, step: 1 };
+
+  return (
+    <SettingsSection
+      title={intl.formatMessage({
+        id: 'settings.org.expiry.title',
+        defaultMessage: 'Expiry',
+      })}
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel={intl.formatMessage({
+        id: 'settings.org.expiry.save',
+        defaultMessage: 'Save expiry',
+      })}
+    >
+      <Typography color="text.secondary">
+        {intl.formatMessage({
+          id: 'settings.org.expiry.intro',
+          defaultMessage:
+            'When a lot counts as expiring, on every list and on Home. Urgent must be fewer days than expiring soon; both from 1 to 365.',
+        })}
+      </Typography>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <TextField
+          id="organization-expiry-warning"
+          type="number"
+          label={intl.formatMessage({
+            id: 'settings.org.expiry.warning',
+            defaultMessage: 'Expiring soon, within days',
+          })}
+          value={warningDays}
+          onChange={(event) => setWarningDays(event.target.value)}
+          disabled={readOnly}
+          slotProps={{ htmlInput: days }}
+        />
+        <TextField
+          id="organization-expiry-critical"
+          type="number"
+          label={intl.formatMessage({
+            id: 'settings.org.expiry.critical',
+            defaultMessage: 'Urgent, within days',
+          })}
+          value={criticalDays}
+          onChange={(event) => setCriticalDays(event.target.value)}
+          disabled={readOnly}
+          slotProps={{ htmlInput: days }}
+        />
+      </Stack>
+    </SettingsSection>
+  );
+}
+
+/** Whether invoices, credit notes and packing slips print the logo. */
+function LogoOnDocumentsForm({
+  value,
+  readOnly,
+  onSaved,
+}: {
+  value: boolean;
+  readOnly: boolean;
+  onSaved: () => Promise<void>;
+}) {
+  const intl = useIntl();
+  const [printLogo, setPrintLogo] = useState(value);
+  const { submitting, error, submit } = useSubmit(onSaved, {
+    success: intl.formatMessage({
+      id: 'settings.org.printLogo.saved',
+      defaultMessage: 'Logo on documents saved',
+    }),
+  });
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    void submit(() =>
+      api('/organization', {
+        method: 'PATCH',
+        body: JSON.stringify({ logoOnDocuments: printLogo }),
+      }),
+    );
+  }
+
+  return (
+    <SettingsSection
+      title={intl.formatMessage({
+        id: 'settings.org.printLogo.title',
+        defaultMessage: 'Logo on documents',
+      })}
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel={intl.formatMessage({
+        id: 'settings.org.printLogo.save',
+        defaultMessage: 'Save logo on documents',
+      })}
+    >
+      <FormControlLabel
+        control={
+          <Switch
+            checked={printLogo}
+            onChange={(event) => setPrintLogo(event.target.checked)}
+            disabled={readOnly}
+          />
+        }
+        label={intl.formatMessage({
+          id: 'settings.org.printLogo.label',
+          defaultMessage:
+            'Print the logo on invoices, credit notes and packing slips',
+        })}
+      />
+      <Typography variant="body2" color="text.secondary">
+        {intl.formatMessage({
+          id: 'settings.org.printLogo.help',
+          defaultMessage:
+            'At the top left, at most 18 mm tall, once the organization has a logo. Turn off if your printed stationery already carries it.',
+        })}
+      </Typography>
     </SettingsSection>
   );
 }

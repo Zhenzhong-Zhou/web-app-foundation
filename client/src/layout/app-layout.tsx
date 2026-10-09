@@ -33,6 +33,7 @@ import { api } from '../lib/api';
 import { LookupBox } from '../search/lookup-box';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
+import { OrganizationMark } from './organization-mark';
 import { RAIL_FOLDED_WIDTH, RAIL_WIDTH, SideNav } from './side-nav';
 
 /**
@@ -193,11 +194,11 @@ export function AppLayout() {
               <MenuIcon />
             </IconButton>
 
-            {/* The organization's place: its logo when it has one (Open
-                decisions, branding), its name until then. The way home, which
-                is what a person expects of the top-left corner. Truncated
-                rather than wrapped: a long name is the one thing here of
-                unknown width, so it is the one thing that gives. */}
+            {/* The organization's place: its logo when it has one (ADR-060),
+                its name until then. The way home, which is what a person
+                expects of the top-left corner. Truncated rather than
+                wrapped: a long name is the one thing here of unknown width,
+                so it is the one thing that gives. */}
             <Link
               component={RouterLink}
               to="/"
@@ -206,14 +207,9 @@ export function AppLayout() {
               title={orgName}
               sx={{ minWidth: 0, flexShrink: 1 }}
             >
-              <Typography
-                variant="h6"
-                component="div"
-                noWrap
-                sx={{ maxWidth: { xs: '50vw', [BAR]: 320 } }}
-              >
-                {orgName}
-              </Typography>
+              <Box sx={{ maxWidth: { xs: '50vw', [BAR]: 320 } }}>
+                <OrganizationMark name={orgName} />
+              </Box>
             </Link>
 
             {/* The lookup (ADR-056) in the space between the organization and
@@ -330,13 +326,9 @@ export function AppLayout() {
             direction="row"
             sx={{ alignItems: 'center', pl: 1.5, pb: 1, gap: 1 }}
           >
-            <Typography
-              variant="subtitle1"
-              noWrap
-              sx={{ flexGrow: 1, color: 'rail.strong' }}
-            >
-              {orgName}
-            </Typography>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <OrganizationMark name={orgName} onRail />
+            </Box>
             <IconButton
               aria-label={intl.formatMessage({
                 id: 'layout.closeNavigation',
