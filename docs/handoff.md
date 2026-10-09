@@ -21,10 +21,9 @@ and price lists proposing the price of a new line.
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
 - Migrations: through **0048** (`needs_cost_pool_index`, ADR-058 amended)
-  on `main` once `fix-home-perf-2` merges, with **0045**
-  (`getting_started`), **0046** (`sort_indexes_desc`) and **0047**
-  (`recent_records`). Render runs them on deploy (confirm in the deploy
-  log: `drizzle.__drizzle_migrations` holds 49 rows). Next is **0049**.
+  on `main`, and **0049** (`files`, ADR-059) on `file-storage`. Render runs
+  them on deploy (confirm in the deploy log: `drizzle.__drizzle_migrations`
+  holds 50 rows once 0049 is deployed). Next is **0050**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -78,8 +77,13 @@ Merge it only once a Performance run (budgets) on the branch passes.
    sizes (thumb 400 px, display 1200, full 3000 for zoom), every file
    served through `GET /v1/files/:id`, released files purged after 30
    days, copied nightly into `waf-backups/files/`, 1 GB per organization.
-   Build order in the ADR: setup by hand, migration 0049, the storage
-   module, the backup copy, then branding's logo.
+   Build order in the ADR: setup by hand (done: `waf-files`, its two
+   tokens, the `files/` lock and lifecycle on `waf-backups`), migration
+   0049 and the storage module (built on `file-storage`: `src/core/files/`,
+   the local and s3 drivers, the checks and three sizes, `POST
+   /v1/files/logo` and `/product-image`, `GET /v1/files/:id`, the hourly
+   purge; MC-1601 and MC-1602), then the backup copy, then branding's
+   logo.
 3. **Organization branding**: logo, accent colour with a contrast check,
    per-organization expiry thresholds; the first feature that uploads a
    file.

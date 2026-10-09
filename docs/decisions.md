@@ -5756,9 +5756,9 @@ What shapes the answer:
 
 **Decision — one store for every file: Cloudflare R2, its own bucket.**
 
-- Bucket `waf-files`, created with the same Eastern North America location
-  hint as `waf-backups`. One bucket for every kind of file and every
-  organization; the database, not the bucket, knows whose a file is.
+- Bucket `waf-files`, in the location nearest the app's host (amended
+  below). One bucket for every kind of file and every organization; the
+  database, not the bucket, knows whose a file is.
 - Its own API token, scoped to `waf-files` with read and write, held only
   by the app. Backups never share a bucket or keys with it, in either
   direction: the app cannot touch a backup, and the backup job's key for
@@ -5945,6 +5945,29 @@ setting, so a plan can raise it.
 - No virus scanning. Images are rewritten and PDFs only downloaded, and
   every file comes from a signed-in member of the same organization.
   Trigger below.
+
+*Amended while building:*
+
+- **One upload route per kind**, `POST /v1/files/logo` and
+  `/v1/files/product-image`, not one route with the kind as a field. The
+  size limit is enforced while the upload arrives, and the permission
+  checked before it does; both depend on the kind, which a route knows
+  before a byte is read and a form field does not. Each feature that keeps
+  files adds its route, its kind and a migration for `files_kind_check`;
+  `logo` and `product_image` are the first two.
+- **The purge runs hourly inside the server**, not as a scheduled job
+  elsewhere: a server that sleeps when idle purges whenever it wakes, and
+  two instances purging at once only delete the same things twice. Not in
+  tests, which call it with the time they need.
+- **Over the organization's limit is a 409**, saying the limit in MB; an
+  upload over its kind's size is a 413, cut off on the stream.
+- **The bucket's location follows the app's host, not the backups'.**
+  Every file passes through the server, so `waf-files` sits in the region
+  nearest it; `waf-backups` is placed for its own reasons (ADR-053).
+- **Deleting an organization deletes its `files` rows** (the foreign key
+  cascades). Nothing deletes an organization today; when something does,
+  it releases the organization's files first, as the decision above says,
+  so the purge removes their bytes.
 
 **Considered and not done.**
 

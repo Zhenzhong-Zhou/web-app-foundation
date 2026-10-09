@@ -720,6 +720,35 @@ Paper is checked first because it must not change at all.
   bring it back with Show Getting started. Sign in as a viewer: no Skip or
   Dismiss, and only the cards that role may see.
 
+## 16. Files (ADR-059)
+
+Once after `FILE_STORAGE=s3` first reaches production, and after any change
+to the storage drivers. Until a screen uploads, the upload is made from the
+browser's console while signed in as an owner:
+
+```js
+const api = '/api'; // the API's address as the Network tab shows the app calling it
+const canvas = Object.assign(document.createElement('canvas'), { width: 1600, height: 1200 });
+canvas.getContext('2d').fillRect(0, 0, 800, 600);
+const form = new FormData();
+form.append('file', await new Promise((r) => canvas.toBlob(r, 'image/png')), 'test.png');
+await fetch(`${api}/v1/files/product-image`, {
+  method: 'POST', body: form, credentials: 'include',
+  headers: { 'X-Requested-With': 'fetch' },
+}).then((r) => r.json());
+```
+
+- **MC-1601** The upload answers 201 with three sizes. In Cloudflare, R2 →
+  `waf-files` → Objects holds `<organization id>/<file id>/thumb`, `display`
+  and `full`, and the bucket has no public URL. Opening
+  `<api>/v1/files/<file id>?size=thumb` in the same browser shows the image;
+  in a private window, signed in to another organization, the same address
+  is a 404.
+- **MC-1602** The next morning, after the nightly backup, `waf-backups` →
+  Objects → `files/` holds the same three objects. The day after the upload,
+  the file (never attached) is released; 30 days later its three objects are
+  gone from `waf-files`.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -842,3 +871,4 @@ first.
 - 2026-10-07: ADR-056 step 6, search on the lists: MC-1557.
 - 2026-10-07: ADR-057 step 6, dates, sorting and exports on every list: MC-1558.
 - 2026-10-08: ADR-058, Home, what needs attention first: MC-1559.
+- 2026-10-08: ADR-059, files on R2, served through the app: MC-1601, MC-1602.
