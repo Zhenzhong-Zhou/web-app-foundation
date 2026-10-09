@@ -8,6 +8,7 @@ import { NotificationsService } from '../../core/notifications/notifications.ser
 import { productionOrderLines, productionOrders } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { assertTakeable, inVariantOrder } from '../stock/availability';
 import { allocateFefo } from '../stock/lot-allocation';
 import { postRunCost } from '../stock/revaluation';
 import { StockService } from '../stock/stock.service';
@@ -100,6 +101,30 @@ export class ProductionCloseService {
         lines.map((line) => line.componentVariantId),
       );
 
+      /**
+       * A top-up takes stock from the shelf like release did, so it obeys
+       * release's rule (ADR-045): only stock no confirmed sale is holding
+       * (#28). Checked before anything moves, in product order, the order
+       * every product lock is taken in, so a close and a release over the
+       * same components cannot deadlock.
+       */
+      const byVariant = inVariantOrder(
+        lines,
+        (each) => each.componentVariantId,
+      );
+      for (const line of byVariant) {
+        if (!needsTopUp(line, run.locationId, actuals)) continue;
+        await assertTakeable(tx, {
+          organizationId,
+          variantId: line.componentVariantId,
+          quantity: this.difference(
+            actuals.get(line.id) ?? line.quantityPlanned,
+            line.quantityPlanned,
+          ).toFixed(4),
+          sku: line.sku,
+        });
+      }
+
       for (const line of lines) {
         if (line.supplyType !== 'stocked') continue;
 
@@ -116,8 +141,9 @@ export class ProductionCloseService {
         const issuedInPlace = line.sourceLocationId === run.locationId;
 
         if (shortfall > 0 && line.sourceLocationId && !issuedInPlace) {
-          // A top-up follows the same rule as release: earliest expiry first
-          // from the source, one transfer per lot (ADR-039).
+          // A top-up continues the lots release issued from the source,
+          // picked by hand or not, then earliest expiry first, one transfer
+          // per lot (ADR-039, #28).
           const topUps = isTracked
             ? await allocateFefo(tx, {
                 organizationId,
@@ -125,6 +151,7 @@ export class ProductionCloseService {
                 locationId: line.sourceLocationId,
                 quantity: shortfall.toFixed(4),
                 sku: line.sku,
+                preferRunId: runId,
               })
             : [{ lotId: null, quantity: shortfall.toFixed(4) }];
 
@@ -299,4 +326,25 @@ export class ProductionCloseService {
   private difference(actual: string, planned: string): number {
     return Number(actual) - Number(planned);
   }
+}
+
+/**
+ * Whether closing this line takes more from its source (#28): a stocked
+ * line that consumed over plan, issued from somewhere other than the run's
+ * own location. Issued in place, there is nothing to move.
+ */
+function needsTopUp(
+  line: {
+    id: string;
+    supplyType: string;
+    sourceLocationId: string | null;
+    quantityPlanned: string;
+  },
+  runLocationId: string,
+  actuals: Map<string, string>,
+): boolean {
+  if (line.supplyType !== 'stocked' || !line.sourceLocationId) return false;
+  if (line.sourceLocationId === runLocationId) return false;
+  const consumed = actuals.get(line.id) ?? line.quantityPlanned;
+  return Number(consumed) > Number(line.quantityPlanned);
 }

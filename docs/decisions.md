@@ -2480,6 +2480,11 @@ the recall trail exact: every consumed unit traces back through a transfer to
 the lot it came from. Close takes no hand-picked lots yet; the run's own lots
 are the set, and within them the order rarely matters.
 
+*Amended (#28):* a top-up continues the lots release issued from the same
+source, picked by hand or not, earliest expiry first among them, and only
+then opens the next to expire. A run given lot NEVER by hand at release is
+topped up from NEVER, not from whatever expires soonest.
+
 **Decision — all allocation arithmetic is in SQL.** A running total over
 numeric(18,4) is exactly what ADR-025 kept out of JavaScript. Stock rows are
 locked in lot-id order before allocating: a window function cannot be combined
@@ -2797,7 +2802,8 @@ A real order is real whether or not the shelf is full today.
 **Decision — enforced where stock leaves or is committed.** Shipping against
 an order may use its own hold and whatever is unheld, but not another order's.
 A production release, a hand-out sample or a one-off shipment may use only
-unheld stock. Adjustments and transfers are not checked: they record what
+unheld stock, and so may a run's top-up at close, which takes from the shelf
+as release does (#28). Adjustments and transfers are not checked: they record what
 physically happened, and refusing them would put the ledger out of step with
 the shelf. The check and the movement run under a per-product advisory lock,
 taken in product order, so two transactions cannot both spend the same

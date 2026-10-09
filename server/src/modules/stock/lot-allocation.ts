@@ -30,6 +30,13 @@ export interface CandidateQuery {
    * (ADR-039).
    */
   fromRunId?: string;
+  /**
+   * Lots already issued to this run from this location go first, earliest
+   * expiry first among them, then the rest by the same rule: a top-up
+   * continues the lots release picked, by hand or not, before it opens
+   * another (#28).
+   */
+  preferRunId?: string;
 }
 
 /**
@@ -59,10 +66,10 @@ export async function lotCandidates(
     with candidates as (${scope}),
     ordered as (
       select
-        lot_id, code, expires_at, created_at, quantity,
+        lot_id, code, expires_at, created_at, quantity, preferred,
         coalesce(
           sum(quantity) over (
-            order by expires_at asc nulls last, created_at asc, lot_id asc
+            order by preferred desc, expires_at asc nulls last, created_at asc, lot_id asc
             rows between unbounded preceding and 1 preceding
           ),
           0
@@ -77,7 +84,7 @@ export async function lotCandidates(
       greatest(least(quantity, ${query.quantity}::numeric - before), 0)::text as take,
       least(quantity, ${query.quantity}::numeric - before) > 0 as taken
     from ordered
-    order by expires_at asc nulls last, created_at asc, lot_id asc
+    order by preferred desc, expires_at asc nulls last, created_at asc, lot_id asc
   `);
 
   const shortfall = await tx.execute(sql`
@@ -171,8 +178,22 @@ function candidateScope(query: CandidateQuery): SQL {
         )`
     : sql``;
 
+  const preferred = query.preferRunId
+    ? sql`sl.lot_id in (
+        select sm.lot_id from stock_movements sm
+        where sm.organization_id = ${query.organizationId}::uuid
+          and sm.reference_type = 'production_order'
+          and sm.reference_id = ${query.preferRunId}::uuid
+          and sm.from_location_id = ${query.locationId}::uuid
+          and sm.variant_id = ${query.variantId}::uuid
+          and sm.lot_id is not null
+      )`
+    : sql`false`;
+
   return sql`
-    select sl.lot_id, sl.quantity, l.code, l.expires_at, l.created_at
+    select
+      sl.lot_id, sl.quantity, l.code, l.expires_at, l.created_at,
+      ${preferred} as preferred
     from stock_levels sl
     join lots l on l.id = sl.lot_id
     where sl.organization_id = ${query.organizationId}::uuid

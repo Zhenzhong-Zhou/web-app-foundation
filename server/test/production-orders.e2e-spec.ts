@@ -17,6 +17,7 @@ import {
   body,
   createE2eApp,
   createLocation,
+  createPartner,
   createVariant,
   registerOrganization,
 } from './utils/fixtures';
@@ -763,6 +764,96 @@ describe('Production orders (e2e)', () => {
       expect(await byLot(s.blend, s.wip)).toEqual({
         EARLY: '0.0000',
         LATE: '0.0000',
+      });
+    });
+
+    /** Closes a one-line run at this consumption, expecting this status. */
+    async function closeAt(
+      org: Org,
+      runId: string,
+      quantityConsumed: string,
+      status: number,
+    ) {
+      const detail = body<RunDetailResponse>(
+        await org.agent.get(`/v1/production-orders/${runId}`).expect(200),
+      );
+      await org.agent
+        .post(`/v1/production-orders/${runId}/close`)
+        .send({ lines: [{ lineId: detail.lines[0].id, quantityConsumed }] })
+        .expect(status);
+    }
+
+    // #28: a top-up continues the lots release was given, picked by hand
+    // here, before opening the next to expire.
+    it('tops up first from the lots picked at release', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const s = await trackedScenario(alpha);
+
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/release`)
+        .send({
+          sourceLocationId: s.shelf,
+          lots: [
+            {
+              componentVariantId: s.blend,
+              lots: [{ lotId: await lotIdOf('NEVER'), quantity: '2400' }],
+            },
+          ],
+        })
+        .expect(200);
+
+      await closeAt(alpha, s.run.id, '2500', 200);
+
+      // The 100 more came from NEVER, not from EARLY, the next to expire.
+      expect(await byLot(s.blend, s.shelf)).toEqual({
+        EARLY: '1500.0000',
+        LATE: '1500.0000',
+        NEVER: '2500.0000',
+      });
+    });
+
+    // #28: a top-up takes from the shelf, so it obeys release's rule
+    // (ADR-045): only what no confirmed sale holds.
+    it('refuses a top-up of stock a confirmed sale holds', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const s = await trackedScenario(alpha);
+
+      await alpha.agent
+        .post(`/v1/production-orders/${s.run.id}/release`)
+        .send({ sourceLocationId: s.shelf })
+        .expect(200);
+
+      // A customer confirms all but 50 of the blend there is.
+      const partnerId = await createPartner(alpha.agent, { name: 'Bulk' });
+      const sale = body<{ order: { id: string } }>(
+        await alpha.agent
+          .post('/v1/orders')
+          .send({
+            partnerId,
+            direction: 'sale',
+            lines: [
+              {
+                variantId: s.blend,
+                quantityOrdered: '7950',
+                unitPrice: '1',
+                currency: 'CAD',
+              },
+            ],
+          })
+          .expect(201),
+      ).order;
+      await alpha.agent
+        .patch(`/v1/orders/${sale.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+
+      await closeAt(alpha, s.run.id, '2500', 409);
+
+      // Nothing moved: the shelf is as release left it.
+      expect(await byLot(s.blend, s.shelf)).toEqual({
+        EARLY: '0.0000',
+        LATE: '600.0000',
+        NEVER: '5000.0000',
       });
     });
   });

@@ -342,6 +342,8 @@ async function seedDemo(): Promise<void> {
             partnerId: customer.id,
             direction: 'sale',
             reference: 'SO-DEMO-1',
+            // Due two days ago, so Home's To ship card shows a late chip.
+            expectedAt: daysFromNow(-2),
             lines: [
               {
                 variantId: finished.variants[0].id,
@@ -763,6 +765,8 @@ async function seedDemo(): Promise<void> {
             partnerId: secondCustomer.id,
             direction: 'sale',
             reference: 'SO-DEMO-2',
+            // Due next week: a due date beside the late one on Home.
+            expectedAt: daysFromNow(5),
             lines: [
               {
                 variantId: finished.variants[0].id,
