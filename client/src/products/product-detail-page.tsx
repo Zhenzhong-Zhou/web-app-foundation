@@ -25,10 +25,12 @@ import { api, messageFor } from '../lib/api';
 import { LANGUAGE_NAMES, type Locale } from '../lib/locales';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
+import type { ProductImage } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { AddVariantDialog } from './add-variant-dialog';
 import { EditVariantDialog } from './edit-variant-dialog';
+import { ProductGallery } from './product-gallery';
 import { productTypeLabel } from './product-types';
 import type { Product, Variant } from './products-page';
 import { TranslationsDialog } from './translations-dialog';
@@ -44,6 +46,8 @@ export interface ProductTranslation {
 export interface ProductDetail extends Product {
   translations: ProductTranslation[];
   variants: Variant[];
+  /** Its gallery, the cover first (ADR-062). */
+  images: ProductImage[];
 }
 
 export function ProductDetailPage() {
@@ -203,6 +207,15 @@ export function ProductDetailPage() {
       />
 
       {error && <Alert severity="error">{error}</Alert>}
+
+      {/* Keyed on what was saved, so a reload starts it afresh. */}
+      <ProductGallery
+        key={product.images.map((image) => image.fileId).join()}
+        productId={product.id}
+        productName={product.name}
+        images={product.images}
+        canEdit={can('products.update')}
+      />
 
       {!product?.isActive && (
         <Alert severity="info">
