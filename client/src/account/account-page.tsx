@@ -1,4 +1,14 @@
-import { Box, Divider, Link, Paper, Stack } from '@mui/material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material';
+import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -16,6 +26,7 @@ import { WorkDetailsForm } from './work-details-form';
  */
 export function AccountPage() {
   const intl = useIntl();
+  const [changingPassword, setChangingPassword] = useState(false);
 
   return (
     <Stack spacing={3}>
@@ -48,19 +59,71 @@ export function AccountPage() {
         <WorkDetailsForm />
       </Paper>
 
+      {/* One line, as designed (ADR-063): the password in a dialog, the
+          devices on their own page. */}
       <Paper variant="outlined" sx={{ p: 3 }}>
-        <Stack spacing={3} divider={<Divider />}>
-          <ChangePasswordForm />
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between' }}
+        >
           <Box>
-            <Link component={RouterLink} to="/account/sessions">
+            <Typography variant="h6" component="h2">
               {intl.formatMessage({
-                id: 'account.sessions.title',
-                defaultMessage: 'Active sessions',
+                id: 'account.security.title',
+                defaultMessage: 'Sign-in and security',
               })}
-            </Link>
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {intl.formatMessage({
+                id: 'account.security.intro',
+                defaultMessage:
+                  'Your password, and the devices signed in as you.',
+              })}
+            </Typography>
           </Box>
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="outlined"
+              onClick={() => setChangingPassword(true)}
+            >
+              {intl.formatMessage({
+                id: 'account.password.title',
+                defaultMessage: 'Change password',
+              })}
+            </Button>
+            <Button
+              variant="outlined"
+              component={RouterLink}
+              to="/account/sessions"
+            >
+              {intl.formatMessage({
+                id: 'account.security.devices',
+                defaultMessage: 'Your devices',
+              })}
+            </Button>
+          </Stack>
         </Stack>
       </Paper>
+
+      <Dialog
+        open={changingPassword}
+        onClose={() => setChangingPassword(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogContent>
+          <ChangePasswordForm />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setChangingPassword(false)}>
+            {intl.formatMessage({
+              id: 'common.close',
+              defaultMessage: 'Close',
+            })}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Paper variant="outlined" sx={{ p: 3 }}>
         <RecentWork />

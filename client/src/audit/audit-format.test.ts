@@ -3,6 +3,28 @@ import { describe, expect, it } from 'vitest';
 import { summarise } from './audit-format';
 
 describe('summarise', () => {
+  // What Your activity showed: "filters: [object Object]", and an image's
+  // id for an image added.
+  it("reads an export's filters and a gallery change in words", () => {
+    const filters = summarise({
+      list: 'products',
+      rows: 15,
+      filters: {
+        from: '2026-10-01',
+        to: '2026-10-09',
+        actorId: '01a121bb-81d7-7b64-922a-486f6870d0a0',
+      },
+    });
+    expect(filters).not.toContain('[object Object]');
+    expect(filters).not.toContain('01a121bb');
+    expect(filters).toContain('filters: from');
+
+    expect(summarise({ filters: {} })).toBe('filters: none');
+    expect(summarise({ fileId: '01a121bb-81d7-7b64-922a-486f6870d0a0' })).toBe(
+      'an image added',
+    );
+  });
+
   // What the audit log showed: an unchanged reference and a raw ISO string.
   it('shows only what changed, with calendar days as days', () => {
     const shown = summarise({

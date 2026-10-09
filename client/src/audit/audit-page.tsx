@@ -1,5 +1,6 @@
 import {
   Alert,
+  Box,
   Button,
   MenuItem,
   Paper,
@@ -324,12 +325,15 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
                         defaultMessage: 'Action',
                       })}
                     </TableCell>
-                    <TableCell>
-                      {intl.formatMessage({
-                        id: 'inventory.movements.by',
-                        defaultMessage: 'By',
-                      })}
-                    </TableCell>
+                    {/* Your activity is all yours: no column to say so. */}
+                    {!mine && (
+                      <TableCell>
+                        {intl.formatMessage({
+                          id: 'inventory.movements.by',
+                          defaultMessage: 'By',
+                        })}
+                      </TableCell>
+                    )}
                     <TableCell>
                       {intl.formatMessage({
                         id: 'inventory.movements.when',
@@ -375,30 +379,47 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
                         )}
                       </TableCell>
 
-                      <TableCell>
-                        {/* A tombstoned actor keeps its id and loses its email
-                          (ADR-012). The row stays, which is the point. */}
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          sx={{ alignItems: 'center' }}
-                        >
-                          <PersonAvatar
-                            userId={entry.actorId}
-                            name={entry.actorName ?? null}
-                            email={entry.actorEmail}
-                            photoFileId={entry.actorPhotoFileId}
-                            size={24}
-                          />
-                          <span>
-                            {entry.actorEmail ??
-                              intl.formatMessage({
-                                id: 'audit.removedAccount',
-                                defaultMessage: 'A removed account',
-                              })}
-                          </span>
-                        </Stack>
-                      </TableCell>
+                      {!mine && (
+                        <TableCell>
+                          {/* A tombstoned actor keeps its id and loses its
+                            email (ADR-012). The row stays, which is the point.
+                            The name leads; the email tells two Meis apart. */}
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ alignItems: 'center' }}
+                          >
+                            <PersonAvatar
+                              userId={entry.actorId}
+                              name={entry.actorName ?? null}
+                              email={entry.actorEmail}
+                              photoFileId={entry.actorPhotoFileId}
+                              size={28}
+                            />
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography variant="body2" noWrap>
+                                {entry.actorName ||
+                                  entry.actorEmail ||
+                                  intl.formatMessage({
+                                    id: 'audit.removedAccount',
+                                    defaultMessage: 'A removed account',
+                                  })}
+                              </Typography>
+                              {entry.actorName && entry.actorEmail && (
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  noWrap
+                                  title={entry.actorEmail}
+                                  sx={{ display: 'block' }}
+                                >
+                                  {entry.actorEmail}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Stack>
+                        </TableCell>
+                      )}
 
                       <TableCell>{relativeTime(entry.createdAt)}</TableCell>
                       <TableCell>{entry.ip ?? NO_VALUE}</TableCell>

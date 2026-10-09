@@ -90,6 +90,9 @@ function moment(value: string): string {
   });
 }
 
+/** A record's id, which says nothing to a person reading the log. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * A value as it should read in the log.
  *
@@ -105,6 +108,27 @@ function moment(value: string): string {
  */
 function show(key: string, value: unknown): string {
   if (value === null || value === undefined) return NO_VALUE;
+
+  // An export's filters (ADR-057), or any value recorded as an object:
+  // its own fields, read the same way, leaving out ids nobody can read.
+  // Never "[object Object]".
+  if (Array.isArray(value)) {
+    return value.map((item) => show(key, item)).join(', ') || NO_VALUE;
+  }
+  if (typeof value === 'object') {
+    const fields = Object.entries(value as Record<string, unknown>).filter(
+      ([, field]) =>
+        field !== null &&
+        field !== undefined &&
+        field !== '' &&
+        !(typeof field === 'string' && UUID.test(field)),
+    );
+    return fields.length === 0
+      ? intl().formatMessage({ id: 'audit.none', defaultMessage: 'none' })
+      : fields
+          .map(([field, inner]) => `${label(field)} ${show(field, inner)}`)
+          .join(', ');
+  }
 
   if (typeof value === 'string' && CALENDAR_DAY.test(value)) {
     return formatDay(value);
@@ -148,9 +172,33 @@ export function summarise(
   const parts: string[] = [];
 
   for (const [key, value] of entries) {
+    // A product's gallery (ADR-062): the file's id is no news to a reader.
+    if (key === 'fileId') {
+      parts.push(
+        intl().formatMessage({
+          id: 'audit.imageAdded',
+          defaultMessage: 'an image added',
+        }),
+      );
+      continue;
+    }
+    if (key === 'fileIds') {
+      parts.push(
+        intl().formatMessage({
+          id: 'audit.imagesReordered',
+          defaultMessage: 'the images reordered',
+        }),
+      );
+      continue;
+    }
+
+    // A change is exactly { from, to }: an export's date filters also have
+    // a from and a to, beside other fields, and are not a change.
     if (
       value !== null &&
       typeof value === 'object' &&
+      !Array.isArray(value) &&
+      Object.keys(value).length === 2 &&
       'from' in value &&
       'to' in value
     ) {
