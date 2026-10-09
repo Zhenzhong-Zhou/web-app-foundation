@@ -365,6 +365,13 @@
       "when": 1791566539033,
       "tag": "0051_product_images",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1791571771625,
+      "tag": "0052_people",
+      "breakpoints": true
     }
   ]
 }
