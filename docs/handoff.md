@@ -32,8 +32,9 @@ and price lists proposing the price of a new line.
   is written on `adr-054-languages`, not built yet. Next is **ADR-055**.
   ADR-055 (the look) is built on `ui-design-pass`, with an amendment.
   ADR-057 (dates, sorting, export) is built on `adr-057-dates-export`.
-  ADR-058 (Home, with recently opened) is merged. **ADR-059** (file
-  storage) is written, not built. Next is **ADR-060**.
+  ADR-058 (Home, with recently opened) and ADR-059 (file storage) are
+  merged. **ADR-060** (branding) and **ADR-061** (the Organization page in tabs)
+  are written, not built. Next is **ADR-062**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot
@@ -85,9 +86,18 @@ Merge it only once a Performance run (budgets) on the branch passes.
    `scripts/backup-files.sh` after each nightly dump,
    `scripts/check-files-backup.sh` in the monthly drill, the runbook's
    "The files are gone"); then branding's logo.
-3. **Organization branding**: logo, accent colour with a contrast check,
-   per-organization expiry thresholds; the first feature that uploads a
-   file.
+3. **The Organization page in tabs, ADR-061 written** on
+   `adr-060-branding`: Profile, Money, Documents, Stock and Branding, each
+   with its own address, links that open the right tab, and the
+   organization's name editable on Profile. Built first: the client's tabs,
+   then the name.
+4. **Organization branding, ADR-060 written** on the same branch: the logo
+   (ADR-059's storage, previewed on both rails), six tested colours or a
+   custom one darkened to the nearest shade that passes AA, warned near the
+   status tones, the sidebar's shade, on the Branding tab; the
+   organization's expiry days (90 and 30 by default) on Stock; "Print the
+   logo" on Documents, on by default. Designed on the Claude Design canvas
+   and approved; migration 0050 after ADR-061's build.
 
 Still open alongside: the three **account e2e** tests failing locally
 (the profile form is replaced a moment after loading, so Save stays
