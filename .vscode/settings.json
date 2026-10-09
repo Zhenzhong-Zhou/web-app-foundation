@@ -25,13 +25,17 @@
   },
   // server/ and client/ each have their own flat config and node_modules.
   "eslint.workingDirectories": [{ "mode": "auto" }],
-  // Neither side's format:check covers docs/ or .github/, and ci.yml is not
-  // Prettier-formatted (handoff). Formatting them on save would turn a
-  // one-line edit into a whole-file diff.
+  // Markdown follows markdownlint's standard rules (.markdownlint-cli2.jsonc):
+  // save applies its fixes, and Prettier stays out so one tool owns the style.
   "[markdown]": {
     "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.markdownlint": "explicit"
+    },
     "files.trimTrailingWhitespace": false
   },
+  // ci.yml is not Prettier-formatted (handoff). Formatting it on save would
+  // turn a one-line edit into a whole-file diff.
   "[yaml]": { "editor.formatOnSave": false },
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
