@@ -73,6 +73,7 @@ export class OrganizationsService {
     await this.tenantDb.transaction(async (tx, organizationId) => {
       const [existing] = await tx
         .select({
+          name: organizations.name,
           taxRegistrationNumber: organizations.taxRegistrationNumber,
           baseCurrency: organizations.baseCurrency,
           defaultSalePriceListId: organizations.defaultSalePriceListId,
@@ -109,6 +110,7 @@ export class OrganizationsService {
        * who did it?"), so the log keeps what it replaced.
        */
       recordPrevious({
+        name: existing.name,
         taxRegistrationNumber: existing.taxRegistrationNumber,
         baseCurrency: existing.baseCurrency,
         defaultSalePriceListId: existing.defaultSalePriceListId,
@@ -166,6 +168,10 @@ export class OrganizationsService {
       }
 
       const changes = {
+        // Only when it differs, so a save of the same name records nothing.
+        ...(input.name !== undefined && input.name !== existing.name
+          ? { name: input.name }
+          : {}),
         ...(input.taxRegistrationNumber !== undefined
           ? {
               // Empty clears it: the column refuses a blank, and a cleared

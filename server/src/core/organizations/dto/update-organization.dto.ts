@@ -7,6 +7,7 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  MinLength,
   ValidateIf,
 } from 'class-validator';
 
@@ -18,11 +19,22 @@ import { LICENCE_POLICIES, type LicencePolicy } from '../../../database/schema';
 
 /**
  * What the organization prints and the rules it works under, each changed
- * on its own. The name is absent: it is set at registration, and changing it
- * is a question of its own — it is printed on every document the
- * organization has ever issued.
+ * on its own.
  */
 export class UpdateOrganizationDto {
+  /**
+   * The organization's name (ADR-061), as at registration: 1 to 100
+   * characters once trimmed, never null. Invoices and credit notes copy the
+   * seller's name when issued (ADR-046), so renaming changes none already
+   * issued.
+   */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @trim()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  name?: string;
+
   /**
    * GST/HST, VAT, ABN — as issued, never parsed. The formats differ by
    * country, and a pattern would refuse the next market first. Null or an
