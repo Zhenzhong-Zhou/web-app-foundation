@@ -130,10 +130,10 @@ npm run dev
 
 | Service                    | URL                          |
 |----------------------------|------------------------------|
-| Client (Vite dev server)   | http://localhost:5173        |
-| API (versioned, ADR-013)   | http://localhost:3000/v1     |
-| Health check (unversioned) | http://localhost:3000/health |
-| Mailpit inbox              | http://localhost:8025        |
+| Client (Vite dev server)   | <http://localhost:5173>        |
+| API (versioned, ADR-013)   | <http://localhost:3000/v1>     |
+| Health check (unversioned) | <http://localhost:3000/health> |
+| Mailpit inbox              | <http://localhost:8025>        |
 | Postgres                   | localhost:5432               |
 
 No real SMTP provider is needed in development. All outbound mail is captured by

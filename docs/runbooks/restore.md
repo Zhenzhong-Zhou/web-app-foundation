@@ -114,10 +114,12 @@ and that the migrations match the code.
 2. Fetch the newest backup: `scripts/backup-latest.sh --download /tmp/restore`
    (or download the artifact).
 3. Restore. The target is not on this machine, so type its name:
+
    ```bash
    RESTORE_CONFIRM=<database name> BACKUP_AGE_IDENTITY_FILE=~/foundation-backup-key.txt \
      scripts/restore.sh /tmp/restore/<name>.dump.age "<new database URL>"
    ```
+
 4. Point the server's `DATABASE_URL` at the new database and redeploy. The
    deploy runs any migrations newer than the backup.
 5. Change `BACKUP_DATABASE_URL` to the new database.

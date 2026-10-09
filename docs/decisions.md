@@ -220,7 +220,7 @@ tenant-scoped query helper that always applies the `organization_id` filter. Dir
 access in a service is a review-blocking defect.
 
 Escape hatch for queries the builder cannot express (window functions, recursive CTEs):
-the `` sql`` `` template, which still parameterises values safely.
+the ``sql`` `` template, which still parameterises values safely.
 
 Cost: smaller ecosystem and fewer tutorials than Prisma, and no equivalent of Prisma
 Studio. Accepted.
@@ -1782,7 +1782,7 @@ split the first time a recipe changes.
 avoiding it required actively choosing a separate component table. Pointing at
 `product_variants` is both the simpler choice and the one that leaves the door
 open.
- 
+
 ---
 
 ## ADR-030 — Who supplies a component is a property of the run
@@ -1873,7 +1873,7 @@ Our books only ever hold half of an outsourced batch. That is correct, and it
 means finished-good cost for those runs arrives inside the price on the
 manufacturer's invoice rather than being rolled up from components. Cost rollup
 is open, and this is one of the reasons it is not simple.
- 
+
 ---
 
 ## ADR-031 — A duplicate re-resolves snapshots; it never copies history forward
@@ -1920,7 +1920,7 @@ questions asked about every cancelled order.
 arrived. Copying only the shortfall is a backorder, which means something
 different, and one button with two behaviours depending on data is how a control
 becomes untrustworthy. Open below.
- 
+
 ---
 
 ## ADR-032 — Production runs: partial output, actual consumption, lot identity
@@ -3015,6 +3015,7 @@ gains two refusals for sales (unpriced line, mixed currency). Void shipment's
 rule changes and gains a reopen. The close button is renamed.
 
 **Deferred.**
+
 - **Pro forma invoices** — a valued document that creates no debt: for
   customs, prepayment, a customer's approval, a sample's declared value. Its
   own document type and number series, never counted as owed. Additive, and
@@ -3251,6 +3252,7 @@ components. The returns route learns an optional RMA and its limits. The
 credit note routes gain a preview and a create beside the void.
 
 **Deferred.**
+
 - **A free-standing amount** — "$50 off this invoice" — not tied to any
   line. Every credit in v0.4 credits a line; a discount on the whole is
   spread across its lines by hand.
@@ -3277,6 +3279,7 @@ lands — unrecoverable later, the same class as licence history.
 
 ADR-023 put `unit_cost` on the batch. The code has since shown three reasons
 it cannot sit there:
+
 - A lot is reused by its code, so a second delivery of L2024-A joins the
   first, possibly at another price.
 - A variant that does not track lots has no lot at all: bottles, caps,
@@ -3306,6 +3309,7 @@ NetSuite and Odoo (`stock.valuation.layer`) all keep this ledger for the
 same reasons.
 
 `kind` is closed:
+
 - `movement` — the value a stock movement carried;
 - `run_close` — a batch's cost arriving at close;
 - `correction` — a cost set or changed after the fact;
@@ -3318,6 +3322,7 @@ untracked variant has exactly one pool. A pool's unit cost is value ÷
 quantity.
 
 It works exactly as `stock_levels` does (ADR-025):
+
 - A movement upserts its pool row first, which takes the lock, then writes
   its valuation row in the same transaction.
 - `quantity >= 0` is checked on the pool.
@@ -3446,6 +3451,7 @@ of an order.
 
 **Decision — permissions: `costs.view` and `costs.update`, Owner-only by
 default.**
+
 - `costs.view` reads valuations, pool costs, batch costs and rates.
 - `costs.update` sets costs and rates.
 
@@ -3457,6 +3463,7 @@ a margin, once price lists exist.
 **Performance.** Every stock change gains one pool upsert and, except
 transfers, one insert, in the transaction it already has. Reads are single
 rows and indexed sums:
+
 - a lot's cost is one pool row;
 - a run's cost is its rows via `(organization_id, reference_type,
   reference_id)`;
@@ -3464,6 +3471,7 @@ rows and indexed sums:
   lot or untracked variant, not per movement.
 
 Indexes on `stock_valuations`:
+
 - `(organization_id, variant_id, lot_id, created_at desc)` for a pool's
   history;
 - `(organization_id, reference_type, reference_id)`;
@@ -3476,6 +3484,7 @@ already the grain ADR-045's per-product advisory lock serialises for
 outbound.
 
 **Consequences.**
+
 - Migration 0033: `organizations.base_currency`, `exchange_rates`,
   `valuation_pools`, and `stock_valuations` with checks — a closed `kind`,
   currency format, a positive rate, and `needs_cost` only with zero value.
@@ -3495,6 +3504,7 @@ outbound.
   service and asserted in e2e (ADR-025).
 
 **Deferred.**
+
 - **Propagating corrections** through closed runs.
 - **Landed cost** — freight, duty and brokerage allocated onto receipts as
   their own rows, not folded into `unit_price`.
@@ -3644,6 +3654,7 @@ which the unique index serves. A list's page reads its items by
 existing keyset pattern if it grows past that.
 
 **Consequences.**
+
 - Migration 0035: `price_lists`, `price_list_items`, three nullable columns
   on `partners` and `organizations`, checks for direction, currency format
   and a non-negative price.
@@ -3652,13 +3663,14 @@ existing keyset pattern if it grows past that.
 - The order line gains `price_source`, stored, so the history of how a line
   was priced survives the list changing.
 - Client:
-    - a Price lists page with items;
-    - the list pickers on the partner and organization pages;
-    - order line dialogs showing where a price came from;
-    - a margin column on sale orders for `costs.view`.
+  - a Price lists page with items;
+  - the list pickers on the partner and organization pages;
+  - order line dialogs showing where a price came from;
+  - a margin column on sale orders for `costs.view`.
 - Three permissions and their audit actions.
 
 **Deferred.**
+
 - **Quantity breaks** — a lower price from a quantity up. The line
   snapshots its price when added, so a break would need re-resolving when
   the quantity changes, which is the re-pricing this ADR rejects.
@@ -4101,11 +4113,11 @@ calendar-day fields in UTC.
   the same merge. An old bundle reads the new values correctly; under
   strict, its writes are refused until the page reloads.
 - Server first, with e2e tests:
-    - every route that writes one of these days returns it exactly as sent;
-    - an instant is refused under strict;
-    - under lenient, an instant at UTC midnight is stored as its day, and any
+  - every route that writes one of these days returns it exactly as sent;
+  - an instant is refused under strict;
+  - under lenient, an instant at UTC midnight is stored as its day, and any
       other instant is still refused;
-    - a schema test asserts every calendar-day column, the older `date` ones
+  - a schema test asserts every calendar-day column, the older `date` ones
       included, is `date`, so a future `timestamptz` day fails the suite.
 - The server's licence-status unit test and the client's keep pinning the
   same days either side of today, now as strings.
@@ -4262,11 +4274,11 @@ nobody has restored is a hope.
   the real RTO — and fails loudly if any step does. The drill needs the
   private key, so it runs from a separate secret only that workflow reads.
 - Three kinds of restore, each in the runbook:
-    - **The host is gone:** a new database anywhere, restore the latest
+  - **The host is gone:** a new database anywhere, restore the latest
       dump, point `DATABASE_URL` at it, start the app.
-    - **A bad deploy or a bad delete:** the host's point-in-time recovery to
+  - **A bad deploy or a bad delete:** the host's point-in-time recovery to
       the minute before (phase 2).
-    - **One organization's mistake:** restore into a scratch database and
+  - **One organization's mistake:** restore into a scratch database and
       copy back that organization's rows only. Never the whole database:
       that would erase every other organization's work since the backup.
       Every table carries `organization_id`, which is what makes one
@@ -4582,11 +4594,11 @@ choice, else the organization's, stored on the document.**
 - The pair is resolved when the paper becomes a document and stored on it,
   like the seller and bill-to (ADR-046) and every other snapshot (ADR-029,
   ADR-038), so a reprint in a year reads as the original did:
-    - `shipments.language` and `second_language` at ship, for the packing
+  - `shipments.language` and `second_language` at ship, for the packing
       slip;
-    - `invoices.language` and `second_language` at issue. A draft prints in
+  - `invoices.language` and `second_language` at issue. A draft prints in
       the languages it would be issued in today, and is still marked DRAFT;
-    - `credit_notes.language` and `second_language` copied from its
+  - `credit_notes.language` and `second_language` copied from its
       invoice, never resolved again, so an invoice and its credit note read
       as one set (ADR-046's print rule) even if the partner's setting
       changed in between.
@@ -4859,7 +4871,7 @@ tones, in one table in `client/src/theme/status.ts`; modules name a status,
 never a colour.
 
 | Tone | Means | For example |
-|---|---|---|
+| --- | --- | --- |
 | neutral | nothing to do, or finished with | draft, closed, cancelled, retired, typed by hand |
 | info | in progress, normal | confirmed, released, issued |
 | positive | completed as hoped | fulfilled, received in full |
@@ -5092,7 +5104,7 @@ Both match the same way, so a record the lookup finds, its list finds too.
 **Decision — what is searched, by what.**
 
 | Kind | Matched on | Opens |
-|---|---|---|
+| --- | --- | --- |
 | Order | its reference; the partner's name | the order |
 | Invoice, credit note | its number | the document |
 | Return authorization | its number | the RMA |
@@ -5292,7 +5304,7 @@ what gets exported.
 **Decision — a date range on the lists that have a date people ask by.**
 
 | List | Filtered by | Kind |
-|---|---|---|
+| --- | --- | --- |
 | Invoices | invoice date | calendar day |
 | Credit notes | credit date | calendar day |
 | Orders | expected date | calendar day |
@@ -5320,7 +5332,7 @@ amount, voided, with the date range and search (ADR-056) like the rest.
 **Decision — sorting where it is asked for, not on every column.**
 
 | List | Sortable by | Why |
-|---|---|---|
+| --- | --- | --- |
 | Invoices | invoice date, total | a period in order; the largest first |
 | Credit notes | credit date, total | as invoices |
 | Orders | expected date | what is due next |
@@ -5367,26 +5379,26 @@ amount, voided, with the date range and search (ADR-056) like the rest.
   list, its filters, how many rows), since it is data leaving the system in
   bulk.
 - What each export holds:
-    - invoices: number, status, invoice date, due date, partner, order,
+  - invoices: number, status, invoice date, due date, partner, order,
       currency, subtotal, tax, total, credited, net;
-    - credit notes: number, invoice, partner, credit date, currency, amount,
+  - credit notes: number, invoice, partner, credit date, currency, amount,
       voided;
-    - orders: reference, direction, status, partner, expected date, lines,
+  - orders: reference, direction, status, partner, expected date, lines,
       quantity ordered, quantity received or shipped, created; no money,
       since a line carries its own currency and one total could be wrong;
-    - stock movements: when, reason, SKU, lot, quantity, from and to
+  - stock movements: when, reason, SKU, lot, quantity, from and to
       location, by whom, note;
-    - inventory: SKU, item, variant, lot, expiry, location, quantity, unit;
+  - inventory: SKU, item, variant, lot, expiry, location, quantity, unit;
       costs are the stock value export's, beside the valuation;
-    - products: SKU, product, variant, type, unit, tracks lots, discontinued,
+  - products: SKU, product, variant, type, unit, tracks lots, discontinued,
       and the names in each language the product has;
-    - partners: name, code, tax ID, document language, retired, and the
+  - partners: name, code, tax ID, document language, retired, and the
       billing address;
-    - a price list: its items, SKU, item, unit, price, currency; one export
+  - a price list: its items, SKU, item, unit, price, currency; one export
       per list;
-    - stock value (the costs page): SKU, lot, quantity, unit cost, value,
+  - stock value (the costs page): SKU, lot, quantity, unit cost, value,
       currency, provisional, as at the moment of export;
-    - the audit log: when, by whom, action, record type, record, and the
+  - the audit log: when, by whom, action, record type, record, and the
       fields the entry recorded as JSON (their shape differs per action),
       under `audit.view` like the page, filtered by its own date range and
       action.
@@ -5474,7 +5486,7 @@ together, with the most urgent few of each.
 **Decision — `/` is Home, a page of cards, each something to do.**
 
 | Card | Shows | Order | Opens | Permission |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | To ship | confirmed sales with lines still to ship | overdue first, then by expected date | Orders, sales, open | `orders.view` |
 | To receive | confirmed purchases with lines still to come | overdue first, then by expected date | Orders, purchases, open | `orders.view` |
 | Expiring soon | lots with stock expiring within 90 days, or expired | soonest first, expired red | Inventory, Expiring soon | `stock.view` |
@@ -5767,7 +5779,7 @@ What shapes the answer:
   store is a new endpoint and keys, as for backups.
 
 | Variable | Holds |
-|---|---|
+| --- | --- |
 | `FILE_STORAGE` | `s3` in production, `local` in development and tests |
 | `FILES_S3_ENDPOINT`, `FILES_S3_REGION`, `FILES_BUCKET` | Where files go (`auto` is R2's region) |
 | `FILES_S3_ACCESS_KEY_ID`, `FILES_S3_SECRET_ACCESS_KEY` | The app's key for `waf-files` |
@@ -5822,7 +5834,7 @@ server checks, in order, and stores only what passes:
    a download (below).
 
 | Kind | Accepted | Largest upload | Kept as |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `logo` | PNG, JPEG, WebP, SVG | 2 MB | PNG, at most 1024 px wide, at least 256 px wide accepted |
 | `product_image` | PNG, JPEG, WebP | 20 MB | WebP in three sizes (below) |
 | `return_photo` | PNG, JPEG, WebP | 20 MB | WebP in three sizes (below) |
@@ -5835,7 +5847,7 @@ a full photo in a list of fifty is megabytes for fifty squares, and a
 thumbnail zoomed in is a blur.
 
 | Size | Long side | Quality | About | Shown |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | `thumb` | 400 px | WebP 75 | 20–40 KB | Lists, cards, a gallery's strip (200 px on screen, sharp on a 2× display) |
 | `display` | 1200 px | WebP 80 | 100–250 KB | The image on a record's own page, the main picture of a gallery |
 | `full` | 3000 px | WebP 85 | 0.5–1.5 MB | Opened to zoom in, and downloaded |

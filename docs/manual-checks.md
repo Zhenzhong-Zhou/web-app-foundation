@@ -414,61 +414,61 @@ folder by folder; these check what is already in place.
   then `npm run i18n:check` in client/ and server/, and one commit.
 - **MC-1406** In Français and in 简体中文, every area converted so far
   reads entirely in that language, with no English left on it:
-    - signed out: sign-in, register, forgot-password, reset and verify,
+  - signed out: sign-in, register, forgot-password, reset and verify,
       including the rate-limit message after too many sign-ins;
-    - the frame: the navigation bar, the drawer on a narrow window, the
+  - the frame: the navigation bar, the drawer on a narrow window, the
       account menu, the notification bell, the email-confirmation banner,
       the page-not-found screen and the could-not-reach-the-server screen.
-    - shared pieces: the colour-mode choices, Cancel and Saving… in every
+  - shared pieces: the colour-mode choices, Cancel and Saving… in every
       dialog and settings section, Load more, the Back button, a picker's
       "no matching items", and the page shown when a screen breaks;
-    - the account: the Account page with its language picker, the
+  - the account: the Account page with its language picker, the
       password form and its devices-signed-out message, Active sessions
       and Recent activity;
-    - products: the list, the detail page with its variants, and the
+  - products: the list, the detail page with its variants, and the
       add-product, add-variant and edit-variant dialogs, including each
       product type and unit of measure by name;
-    - partners: the list, the detail page with its addresses and contacts,
+  - partners: the list, the detail page with its addresses and contacts,
       and the partner, address and contact dialogs;
-    - locations: the tree with its chips, and the add and edit dialogs,
+  - locations: the tree with its chips, and the add and edit dialogs,
       each location type by name;
-    - inventory: the stock list and what is promised, the action menu, the
+  - inventory: the stock list and what is promised, the action menu, the
       receive, move, sample, correct and lot dialogs, a pile's history,
       the movements page with its reasons, and tracing a lot;
-    - orders: the list with its filter and statuses, raising an order,
+  - orders: the list with its filter and statuses, raising an order,
       the order page with its lines, and the edit, duplicate, close, add,
       edit and close-short dialogs; receiving a line, shipping with its lot
       preview, the shipments and returns on an order, voiding a shipment,
       taking a return with its reasons, and linking a return to an RMA. The
       packing slip stays English until printed documents (step 5);
-    - invoices: the list with its status tabs, an invoice with its lines,
+  - invoices: the list with its status tabs, an invoice with its lines,
       totals, parties and credit notes, the draft's details and tax code,
       the line, issue, void, credit and delete dialogs, and a credit note's
       page. The printed invoice and credit note stay English until step 5;
-    - returns: the RMA list with its status tabs, raising an RMA with each
+  - returns: the RMA list with its status tabs, raising an RMA with each
       line's resolution by name, an RMA's page with closing, cancelling,
       linking a return and raising a replacement;
-    - production: the runs list with its statuses, planning a run, a run's
+  - production: the runs list with its statuses, planning a run, a run's
       page with its components, lots and variances, and the release (with
       its licence warnings), record-output, close and cancel dialogs;
-    - recipes: the recipe panel on a product with its versions and statuses,
+  - recipes: the recipe panel on a product with its versions and statuses,
       the new-recipe, add-component and edit-component dialogs, archiving,
       new version and promote with their tooltips, and the licence on a
       version;
-    - costs: the stock value page with what waits for a cost and why, a
+  - costs: the stock value page with what waits for a cost and why, a
       lot's and a run's cost panels, and setting a cost;
-    - licences: the register with each licence's status (Current, Expires
+  - licences: the register with each licence's status (Current, Expires
       in N days, Expired, In force from, Withdrawn), adding and editing one,
       and what a batch was made under on a run and a lot trace;
-    - price lists: the lists, a list with its prices, creating and editing
+  - price lists: the lists, a list with its prices, creating and editing
       one, setting a price, the picker (a retired list marked so), a
       partner's lists and the organization's default;
-    - settings: the Organization page's sections and licence policy, tax
+  - settings: the Organization page's sections and licence policy, tax
       codes with their rates (9,975 % in French), and exchange rates;
-    - members: the list, changing a role and adding a member, with the
+  - members: the list, changing a role and adding a member, with the
       built-in roles (Owner, Admin, Viewer) named in the language and a
       role the organization named itself shown as named;
-    - audit: the audit log with its filters and the History panel on a
+  - audit: the audit log with its filters and the History panel on a
       record, timestamps and action names in the language ("Commande
       expédiée", not "Order shipped"); field names stay as the API names
       them.

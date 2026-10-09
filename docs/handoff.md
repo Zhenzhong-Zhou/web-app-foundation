@@ -111,12 +111,13 @@ email errors).
 
 Then the end-of-milestone ritual, **required this time** since v0.3 skipped
 it:
+
 - look around;
 - a real week by hand, including:
-    - an invoice, an RMA, a partial credit and a replacement;
-    - a foreign-currency purchase, and a rate entered for it;
-    - a costed batch;
-    - a list-priced sale;
+  - an invoice, an RMA, a partial credit and a replacement;
+  - a foreign-currency purchase, and a rate entered for it;
+  - a costed batch;
+  - a list-priced sale;
 - the timed recall drill on BF-2609.
 
 Then tag v0.4.0.
@@ -174,7 +175,7 @@ Then tag v0.4.0.
   five steps: `GET /v1/home` and its cards read through each list's own
   service, the lists opening from the address, Getting started with migration
   0045, the page to the canvas at
-  https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ, and its perf probes. Then
+  <https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ>, and its perf probes. Then
   **status pages** (built, below); then **file storage** (one ADR for every
   file, below); then **organization branding** (logo, accent with a contrast
   check, expiry thresholds), the first feature that uploads one. Bob may
@@ -322,6 +323,7 @@ Then tag v0.4.0.
 ## What v0.4 built
 
 **ADR-046 — invoicing.**
+
 - An invoice bills exactly one shipment; draft → issued → voided.
 - Issuing takes a gapless per-organization number (`document_sequences`,
   `INV-`/`CN-`/`RMA-`), stores every amount, and copies seller, bill-to and
@@ -334,12 +336,14 @@ Then tag v0.4.0.
 - Void issues a full credit note.
 
 **ADR-047 — RMAs and credit notes.**
+
 - An RMA has a resolution per line (credit / replace / none).
 - A credit note credits part of one invoice. It is capped by value, by tax
   component, and by RMA quantity.
 - Replacement is a draft sale at zero.
 
 **ADR-048 — cost: value is a ledger, like quantity.**
+
 - `stock_valuations` is append-only. Kinds: `movement`, `run_close`,
   `correction`, `issued`, `opening`. `issued` is value belonging to units
   already gone, kept out of the pool's balance.
@@ -347,21 +351,22 @@ Then tag v0.4.0.
 - The method is weighted average within a pool, so lot-tracked stock carries
   its actual cost per batch.
 - How value arrives:
-    - A receipt copies its line's price × the latest rate on or before the
+  - A receipt copies its line's price × the latest rate on or before the
       server's today, the UTC day (`todayUtc`, ADR-052).
-    - Run close posts the batch's material cost to its output.
-    - A correction (`PUT /v1/costs/valuations/:id`) splits the difference
+  - Run close posts the batch's material cost to its output.
+  - A correction (`PUT /v1/costs/valuations/:id`) splits the difference
       between stock held and stock gone.
-    - `needs_cost` is cleared by a later row, never edited.
+  - `needs_cost` is cleared by a later row, never edited.
 - `organizations.base_currency`, fixed once anything carries a value.
 - `exchange_rates`: one per currency per day.
 - `costs.view` and `costs.update`, Owner-only.
 - Screens:
-    - Stock value and its needs-cost list;
-    - exchange rates;
-    - cost panels on runs and lot traces.
+  - Stock value and its needs-cost list;
+  - exchange rates;
+  - cost panels on runs and lot traces.
 
 **ADR-049 — price lists: a default the line keeps.**
+
 - A list has one currency and one direction (sale / purchase).
 - A partner names a sale list and a purchase list; the organization names a
   default sale list.
@@ -376,6 +381,7 @@ Then tag v0.4.0.
   columns with defaults.
 
 **Test harness (#1, closed).**
+
 - `createTestApp` listens once on 127.0.0.1. Supertest's per-request
   ephemeral port could be answered by another process on macOS.
 - Each e2e run takes an advisory lock on the test database, so a second run
@@ -398,6 +404,7 @@ ignores the migration snapshots, so a plain `npx jscpd` gives the report.
 
 **Reviewed and kept — jscpd still reports these; each was read and left on
 purpose.** Do not re-review them unless the code around them changes:
+
 - Create and update DTO pairs (address, contact, partner, variant, licence,
   location): required against optional; each DTO states its own shape.
 - Controller import headers and schema column blocks: declarations, not
@@ -473,6 +480,7 @@ code had been formatted by hand.
   `roleIdNamed`, `addMember` and `addViewer` into the fixtures.
 
 **Size review (the four largest files left, judged by jobs, not lines):**
+
 - `orders/orders.service.ts` (700): split. `OrdersService` keeps the reads;
   `OrderLifecycleService` has create, duplicate and update.
 - `invoices/credit-notes.service.ts` (599): one job, kept; its 360-line
@@ -486,6 +494,7 @@ code had been formatted by hand.
   kept (see reviewed and kept).
 
 **Behaviour settled in rounds 2 and 3 (fix commits):**
+
 - A request against the wrong kind of order is a 400 everywhere: an RMA or
   an invoice draft from a purchase used to be 409. An order's direction
   never changes, so the request can never succeed.
@@ -502,6 +511,7 @@ code had been formatted by hand.
   that does not exist, "must be a real date".
 
 **Left from these rounds, none started:**
+
 - Two fixes without a test: the recipe panel's reload answering late
   (its tests would need a response held back) and invoice drafting's
   refusal of a purchase shipment (no route can make one).
@@ -514,6 +524,7 @@ code had been formatted by hand.
   invoice detail.
 
 **Shared pieces — use these rather than writing the thing again:**
+
 - Client `lib/`: `messageFor` and `ApiError` (reads `Retry-After`) in
   `api.ts`; `useResource` (one GET with reload); `useKeysetList` (paged
   lists); `formatDay` in `format.ts`; the `CalendarDay` type in `types.ts`.
@@ -559,6 +570,7 @@ code had been formatted by hand.
   `expectBooksToReconcile`), `routes.ts` (the coverage walk).
 
 **Behaviour settled on the way (fix commits, not refactors):**
+
 - A failed reload shows its error; it used to escape as an unhandled
   rejection.
 - A rate limit says how long to wait: `api()` reads `Retry-After`.
@@ -575,6 +587,7 @@ code had been formatted by hand.
 
 **Test gaps found while refactoring** (step 1; rounds 2 and 3 closed the
 first three):
+
 - ~~Server unit tests for the pure logic~~ — done where it is pure.
 - ~~Cross-tenant tests per shared lookup~~ — done.
 - ~~Whether an expired licence stops a release~~ — it does not; ADR-050.
@@ -583,6 +596,7 @@ first three):
   → credit) in Playwright.
 
 **In flight — finish before new work:**
+
 1. **Turn the backups on.** Render's database Access Control allows all
    IPs (Actions runners change address every run). Add the secrets
    `BACKUP_DATABASE_URL`, `BACKUP_AGE_RECIPIENT`, `BACKUP_AGE_IDENTITY`
@@ -595,6 +609,7 @@ first three):
 4. Open the issue "Organization time zone for today" (ADR-052, Deferred).
 
 **Next, in this order:**
+
 1. **ADR-054, languages** — written; build it in the ADR's order,
    starting with step 1 (server, migration 0039). Before the release that
    offers French or Chinese: a fluent review of each catalogue, and the
@@ -607,6 +622,7 @@ first three):
 
 **Before real customers** (not needed while the database is the Free
 test instance):
+
 - Backups phase 2: a paid database plan with point-in-time recovery, and
   the S3 bucket in Canada with object lock (`BACKUP_DESTINATION=s3`, the
   runbook's section 1). Settings, not code.
@@ -616,6 +632,7 @@ test instance):
   restoring the newest backup is a real test of the runbook.
 
 Rules, still in force:
+
 - no behaviour change in a refactor; a fix is its own commit, first;
 - tests stay green between commits;
 - one extraction per commit, with the reason in the message;
@@ -644,12 +661,12 @@ Rules, still in force:
 - Check ADR-047's audit list names `return_authorization.replacement_raised`.
 - `npm audit` on both sides has not been run in a while.
 - ADR-051 tooling, small follow-ups:
-    - **perf/ is never compiled in CI.** ESLint does not report type errors
+  - **perf/ is never compiled in CI.** ESLint does not report type errors
       and the build excludes the folder, so a type error there shows only
       when someone runs it (it happened twice on the first run). Fix: a
       `perf/tsconfig.json` and `npx tsc --noEmit -p perf/tsconfig.json` in
       ci.yml's server job.
-    - **One manifest per scale.** seed:volume writes `perf/volume.json`, so
+  - **One manifest per scale.** seed:volume writes `perf/volume.json`, so
       seeding the other scale overwrites it and it has to be copied aside by
       hand (once it was lost and rebuilt from the database). Fix: write
       `volume-<scale>.json`, and `npm run perf -- --scale small` reads it.
@@ -667,12 +684,12 @@ Rules, still in force:
   insert need an ADR first (validation, partial failure, audit,
   duplicates, tenant checks). Decide from what users actually need.
 - ADR-048 deferrals worth remembering:
-    - propagating corrections through closed runs;
-    - period close;
-    - landed cost and conversion cost;
-    - FIFO;
-    - export to the books;
-    - confirming the weighted-average method with the accountant.
+  - propagating corrections through closed runs;
+  - period close;
+  - landed cost and conversion cost;
+  - FIFO;
+  - export to the books;
+  - confirming the weighted-average method with the accountant.
 - User guides and a glossary: raised, not decided. Markdown under
   `docs/user/`, a getting-started order, task guides by job, the rules in
   plain words, and a glossary that also holds the translation terms (ADR-054).
@@ -684,36 +701,37 @@ Rules, still in force:
   to Ubuntu 26 on 19 October 2026 changes nothing. Moving is a choice: one
   line per job, CI as the test.
 - From the UI pass (ADR-055), small:
-    - **Firefox on Bob's Mac:** Playwright's build cannot open its profile
+  - **Firefox on Bob's Mac:** Playwright's build cannot open its profile
       there ("Could not find profile folder"; reinstalling, clearing
       quarantine and moving TMPDIR did not help). CI runs it on Linux, and
       `E2E_FIREFOX=1` runs it locally. Not a work item: retry after a
       Playwright update, or from Terminal rather than WebStorm.
-    - **Page titles per screen:** the tab reads the product's name
+  - **Page titles per screen:** the tab reads the product's name
       everywhere; "SO-DEMO-1 · web-app-foundation" helps with several open.
-    - **The "after" screenshots** for the UI pass, kept with its release,
+  - **The "after" screenshots** for the UI pass, kept with its release,
       and a release tag for it and the notifications work (`v0.6.0-rc.1`?).
-    - **Full workflows in WebKit and Firefox:** only specs that make their
+  - **Full workflows in WebKit and Firefox:** only specs that make their
       own organization or change nothing run in more than one browser.
       Each spec on its own organization would let all of them; worth it if
       a Safari user hits a workflow bug.
-    - **A notification's decimal point:** quantities lose their padding
+  - **A notification's decimal point:** quantities lose their padding
       zeros but keep "." in French ("1.5", not "1,5"); a notification is
       written before anyone reads it. Fix by formatting the value when the
       sentence is written on read, if a reader minds.
-    - `.github/workflows/ci.yml` is outside every `format:check` and not
+  - `.github/workflows/ci.yml` is outside every `format:check` and not
       Prettier-formatted; harmless.
 - Before customers, by hand rather than code:
-    - **Real devices:** Android with WeChat (its engine is Tencent's, and
+  - **Real devices:** Android with WeChat (its engine is Tencent's, and
       nothing automated covers it), and 360 or QQ on Windows in 极速模式.
-    - **One email to a QQ or 163.com address:** verification and reset
+  - **One email to a QQ or 163.com address:** verification and reset
       mail can be delayed or filtered there.
-    - **Serving China:** a Hong Kong or Singapore region with our own
+  - **Serving China:** a Hong Kong or Singapore region with our own
       domain; hosting inside mainland China needs an ICP filing.
 
 ## Working agreements (for Claude)
 
 **How code is delivered**
+
 - **Every answer that changes files opens with a roadmap:** a tree or
   relative paths, each marked **new**, **full replacement** or **snippet**.
 - **New files, and changes touching several places or a large chunk of one
@@ -723,15 +741,16 @@ Rules, still in force:
   counts once Bob says he has resynced from `main`. Otherwise ask, or build
   from the Project copy plus known changes and tell Bob to check `git diff`.
 - State the exact path of every file:
-    - `server/src/modules/…`;
-    - `server/src/core/…` (organizations, audit, authorization);
-    - `server/src/database/schema/…` and `…/migrations/…`;
-    - `server/test/…`;
-    - `client/src/…` (feature folders, `lib/types.ts`, `auth/permissions.ts`);
-    - `client/e2e/…`;
-    - `docs/decisions.md`.
+  - `server/src/modules/…`;
+  - `server/src/core/…` (organizations, audit, authorization);
+  - `server/src/database/schema/…` and `…/migrations/…`;
+  - `server/test/…`;
+  - `client/src/…` (feature folders, `lib/types.ts`, `auth/permissions.ts`);
+  - `client/e2e/…`;
+  - `docs/decisions.md`.
 
 **Process**
+
 - ADR before code for each new area. Server first with e2e tests, then the
   client screens. Each step its own commit.
 - Migrations:
@@ -749,6 +768,7 @@ Rules, still in force:
   Tests).
 
 **Commits**
+
 - **Authored as Bob:** `Zhenzhong Zhou <bob0823.zhou@gmail.com>`, the
   identity on the repo's history (`git log --format='%an <%ae>' | sort |
   uniq -c` shows it). Every mbox or patch Claude prepares uses it, never a
@@ -773,6 +793,7 @@ Rules, still in force:
   holds project references.)
 
 **Moving code** (what step 1 learned)
+
 - Find every caller before moving a method, including
   `server/src/database/seed-demo.ts`, and calls split over two lines
   (`this.taxCodes` then `.findById`). After a server move, run
@@ -783,6 +804,7 @@ Rules, still in force:
   keeping it.
 
 **Server**
+
 - Server e2e: always `npm run test:e2e`. Never run two at once — the second
   now refuses. Don't edit server files while Playwright runs against
   `start:dev`.
@@ -800,14 +822,15 @@ Rules, still in force:
   client's list in the same commit.
 
 **Client and copy**
+
 - Dialogs take permission flags from their page rather than reading the
   session.
 - `useSubmit`'s callback takes no result — keep ids and notices in a
   `useRef`.
 - Hooks never inside hooks or after an early return.
 - Playwright:
-    - prefer `getByRole(…, { name, exact: true })`, and label tables
+  - prefer `getByRole(…, { name, exact: true })`, and label tables
       (`aria-label`) so row lookups stay inside them;
-    - an accessible name includes everything in the element, such as
+  - an accessible name includes everything in the element, such as
       `Old retail (CAD) — retired`.
 - British spelling in comments and copy is intentional.
