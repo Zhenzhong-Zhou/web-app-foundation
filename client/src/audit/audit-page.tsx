@@ -22,6 +22,7 @@ import { useCan } from '../auth/permissions';
 import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
+import { PersonAvatar } from '../components/person-avatar';
 import { api } from '../lib/api';
 import { NO_VALUE, relativeTime, SEPARATOR } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
@@ -38,7 +39,15 @@ import { type AuditRecord, describe, summarise } from './audit-format';
  */
 const PAGE_SIZE = 25;
 
-export function AuditPage() {
+/**
+ * Your activity (ADR-063): the audit log held to what you did, for anyone.
+ * The server sets you as the person; this page only asks.
+ */
+export function YourActivityPage() {
+  return <AuditPage mine />;
+}
+
+export function AuditPage({ mine = false }: { mine?: boolean }) {
   const intl = useIntl();
   const can = useCan();
 
@@ -53,10 +62,13 @@ export function AuditPage() {
   const from = params.get('from') ?? '';
   const to = params.get('to') ?? '';
   const resourceId = params.get('resourceId') ?? '';
+  // One person's work, from their page (ADR-063). Your own needs no filter.
+  const actorId = mine ? '' : (params.get('actorId') ?? '');
+  const base = mine ? '/account/activity' : '/audit';
 
   const [actions, setActions] = useState<string[]>([]);
 
-  const canView = can('audit.view');
+  const canView = mine || can('audit.view');
 
   /** The filters as the API wants them. */
   function queryFor(): string {
@@ -64,6 +76,7 @@ export function AuditPage() {
 
     if (action) query.set('action', action);
     if (resourceId) query.set('resourceId', resourceId);
+    if (actorId) query.set('actorId', actorId);
     // The date input gives YYYY-MM-DD; the API takes ISO timestamps.
     if (from) query.set('from', new Date(from).toISOString());
     if (to) query.set('to', new Date(to).toISOString());
@@ -72,7 +85,7 @@ export function AuditPage() {
   }
 
   const { entries, error, loading, hasMore, loadingMore, loadMore } =
-    useKeysetList<AuditRecord>(canView ? `/audit?${queryFor()}` : null);
+    useKeysetList<AuditRecord>(canView ? `${base}?${queryFor()}` : null);
   const showSkeleton = useDelayedFlag(loading);
 
   /**
@@ -103,7 +116,8 @@ export function AuditPage() {
    * option that returns nothing.
    */
   useEffect(() => {
-    if (!canView) return;
+    // Your own page offers no action filter: the vocabulary is the log's.
+    if (!canView || mine) return;
 
     let ignore = false;
 
@@ -118,7 +132,7 @@ export function AuditPage() {
     return () => {
       ignore = true;
     };
-  }, [canView]);
+  }, [canView, mine]);
 
   if (!canView) {
     return (
@@ -144,20 +158,35 @@ export function AuditPage() {
     <Stack spacing={3}>
       <PageHeader
         crumbs={[]}
-        title={intl.formatMessage({
-          id: 'layout.menu.auditLog',
-          defaultMessage: 'Audit log',
-        })}
-        subtitle={intl.formatMessage({
-          id: 'audit.intro',
-          defaultMessage:
-            'Every change made in this organization, newest first. Entries are kept for two years and cannot be edited or removed. Where a value is shown, it is what the field was set to — not what it was before.',
-        })}
+        title={
+          mine
+            ? intl.formatMessage({
+                id: 'audit.yours.title',
+                defaultMessage: 'Your activity',
+              })
+            : intl.formatMessage({
+                id: 'layout.menu.auditLog',
+                defaultMessage: 'Audit log',
+              })
+        }
+        subtitle={
+          mine
+            ? intl.formatMessage({
+                id: 'audit.yours.intro',
+                defaultMessage:
+                  'Everything you did in this organization, newest first. Your sign-ins and password changes are on Your devices.',
+              })
+            : intl.formatMessage({
+                id: 'audit.intro',
+                defaultMessage:
+                  'Every change made in this organization, newest first. Entries are kept for two years and cannot be edited or removed. Where a value is shown, it is what the field was set to — not what it was before.',
+              })
+        }
         actions={
           canView && (
             // With the page's own filters; the export is itself an entry.
             <ExportButton
-              path={`/audit/export?${queryFor().replace(/(^|&)limit=\d+&?/, '$1')}`}
+              path={`${base}/export?${queryFor().replace(/(^|&)limit=\d+&?/, '$1')}`}
             />
           )
         }
@@ -166,30 +195,32 @@ export function AuditPage() {
       {/* Their own row rather than beside the title: three controls crowd a
           heading, and an actor filter is the obvious next one. */}
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-        <TextField
-          id="audit-action"
-          label={intl.formatMessage({
-            id: 'audit.action',
-            defaultMessage: 'Action',
-          })}
-          select
-          size="small"
-          value={action}
-          onChange={(event) => changeFilter({ action: event.target.value })}
-          sx={{ minWidth: 220 }}
-        >
-          <MenuItem value="">
-            {intl.formatMessage({
-              id: 'audit.allActions',
-              defaultMessage: 'All actions',
+        {!mine && (
+          <TextField
+            id="audit-action"
+            label={intl.formatMessage({
+              id: 'audit.action',
+              defaultMessage: 'Action',
             })}
-          </MenuItem>
-          {actions.map((key) => (
-            <MenuItem key={key} value={key}>
-              {describe(key)}
+            select
+            size="small"
+            value={action}
+            onChange={(event) => changeFilter({ action: event.target.value })}
+            sx={{ minWidth: 220 }}
+          >
+            <MenuItem value="">
+              {intl.formatMessage({
+                id: 'audit.allActions',
+                defaultMessage: 'All actions',
+              })}
             </MenuItem>
-          ))}
-        </TextField>
+            {actions.map((key) => (
+              <MenuItem key={key} value={key}>
+                {describe(key)}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
 
         <TextField
           id="audit-from"
@@ -217,6 +248,26 @@ export function AuditPage() {
           slotProps={{ inputLabel: { shrink: true } }}
         />
       </Stack>
+
+      {/* As below, for one person's work, opened from their page. */}
+      {actorId && (
+        <Alert
+          severity="info"
+          action={
+            <Button size="small" onClick={() => changeFilter({ actorId: '' })}>
+              {intl.formatMessage({
+                id: 'audit.showAll',
+                defaultMessage: 'Show all',
+              })}
+            </Button>
+          }
+        >
+          {intl.formatMessage({
+            id: 'audit.onePerson',
+            defaultMessage: "Showing one person's activity only.",
+          })}
+        </Alert>
+      )}
 
       {/* A UUID in the query string is invisible, and a log filtered to one
           record looks broken rather than filtered. */}
@@ -248,7 +299,7 @@ export function AuditPage() {
 
       {entries?.length === 0 && (
         <Alert severity="info">
-          {action || from || to || resourceId
+          {action || from || to || resourceId || actorId
             ? intl.formatMessage({
                 id: 'audit.noMatch',
                 defaultMessage: 'Nothing matches these filters.',
@@ -327,11 +378,26 @@ export function AuditPage() {
                       <TableCell>
                         {/* A tombstoned actor keeps its id and loses its email
                           (ADR-012). The row stays, which is the point. */}
-                        {entry.actorEmail ??
-                          intl.formatMessage({
-                            id: 'audit.removedAccount',
-                            defaultMessage: 'A removed account',
-                          })}
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          sx={{ alignItems: 'center' }}
+                        >
+                          <PersonAvatar
+                            userId={entry.actorId}
+                            name={entry.actorName ?? null}
+                            email={entry.actorEmail}
+                            photoFileId={entry.actorPhotoFileId}
+                            size={24}
+                          />
+                          <span>
+                            {entry.actorEmail ??
+                              intl.formatMessage({
+                                id: 'audit.removedAccount',
+                                defaultMessage: 'A removed account',
+                              })}
+                          </span>
+                        </Stack>
                       </TableCell>
 
                       <TableCell>{relativeTime(entry.createdAt)}</TableCell>

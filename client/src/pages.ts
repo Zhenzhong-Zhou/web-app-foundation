@@ -21,6 +21,18 @@ export const SessionsPage = lazyNamed(
   () => import('./account/sessions-page'),
   'SessionsPage',
 );
+export const YourActivityPage = lazyNamed(
+  () => import('./audit/audit-page'),
+  'YourActivityPage',
+);
+export const PeoplePage = lazyNamed(
+  () => import('./people/people-page'),
+  'PeoplePage',
+);
+export const PersonPage = lazyNamed(
+  () => import('./people/person-page'),
+  'PersonPage',
+);
 
 export const AuditPage = lazyNamed(
   () => import('./audit/audit-page'),

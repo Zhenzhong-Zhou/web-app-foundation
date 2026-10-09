@@ -1,4 +1,3 @@
-import AccountCircle from '@mui/icons-material/AccountCircle';
 import CloseIcon from '@mui/icons-material/Close';
 import KeyboardDoubleArrowLeft from '@mui/icons-material/KeyboardDoubleArrowLeft';
 import KeyboardDoubleArrowRight from '@mui/icons-material/KeyboardDoubleArrowRight';
@@ -17,6 +16,7 @@ import {
   MenuItem,
   Stack,
   Toolbar,
+  Tooltip,
   Typography,
   useMediaQuery,
 } from '@mui/material';
@@ -29,6 +29,7 @@ import { useAuth } from '../auth/use-auth';
 import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { LanguageSelect } from '../components/language-select';
+import { PersonAvatar } from '../components/person-avatar';
 import { api } from '../lib/api';
 import { LookupBox } from '../search/lookup-box';
 import { ACCOUNT_ITEMS } from './navigation';
@@ -227,37 +228,62 @@ export function AppLayout() {
 
             <NotificationBell />
 
-            <IconButton
-              edge="end"
-              // The email rather than "Account": on a shared terminal, who you
-              // are signed in as is the thing worth being able to check.
-              aria-label={intl.formatMessage(
-                {
-                  id: 'layout.signedInAs',
-                  defaultMessage: 'Signed in as {email}',
-                },
-                {
-                  email:
-                    session?.user.email ??
-                    intl.formatMessage({
-                      id: 'layout.unknownUser',
-                      defaultMessage: 'unknown',
-                    }),
-                },
-              )}
-              onClick={(event) => setMenu(event.currentTarget)}
+            {/* The face alone (ADR-063): on a shared computer it says whose
+                account this is at a glance; the name and email are on hover
+                and at the top of the menu. */}
+            <Tooltip
+              title={[session?.user.name, session?.user.email]
+                .filter(Boolean)
+                .join(' · ')}
             >
-              <AccountCircle />
-            </IconButton>
+              <IconButton
+                edge="end"
+                aria-label={intl.formatMessage(
+                  {
+                    id: 'layout.signedInAs',
+                    defaultMessage: 'Signed in as {email}',
+                  },
+                  {
+                    email:
+                      session?.user.email ??
+                      intl.formatMessage({
+                        id: 'layout.unknownUser',
+                        defaultMessage: 'unknown',
+                      }),
+                  },
+                )}
+                onClick={(event) => setMenu(event.currentTarget)}
+              >
+                <PersonAvatar
+                  userId={session?.user.id ?? null}
+                  name={session?.user.name ?? null}
+                  email={session?.user.email}
+                  photoFileId={session?.user.photoFileId}
+                  size={32}
+                />
+              </IconButton>
+            </Tooltip>
 
             {/* The person's own things. The organization's settings are in
                 the rail now (ADR-055); this keeps who is signed in and how
                 the app reads to them. */}
             <Menu anchorEl={menu} open={!!menu} onClose={() => setMenu(null)}>
-              <MenuItem disabled sx={{ opacity: '1 !important' }}>
-                <Typography variant="caption" color="text.secondary">
-                  {session?.user.email}
-                </Typography>
+              <MenuItem disabled sx={{ opacity: '1 !important', gap: 1.5 }}>
+                <PersonAvatar
+                  userId={session?.user.id ?? null}
+                  name={session?.user.name ?? null}
+                  email={session?.user.email}
+                  photoFileId={session?.user.photoFileId}
+                  size={40}
+                />
+                <Stack sx={{ minWidth: 0 }}>
+                  <Typography variant="subtitle2" noWrap>
+                    {session?.user.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {session?.user.email}
+                  </Typography>
+                </Stack>
               </MenuItem>
 
               <Divider />

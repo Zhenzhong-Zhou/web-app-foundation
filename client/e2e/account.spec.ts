@@ -28,7 +28,7 @@ test('saves a new display name', async ({ page, freshOrg }) => {
 
   await page.goto('/account');
   await page.getByLabel('Your name').fill('Renamed Owner');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expect(page.getByText('Saved.')).toBeVisible();
 

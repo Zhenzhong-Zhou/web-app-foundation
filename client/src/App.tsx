@@ -43,6 +43,8 @@ import {
   PackingSlipPage,
   PartnerDetailPage,
   PartnersPage,
+  PeoplePage,
+  PersonPage,
   PriceListDetailPage,
   PriceListsPage,
   ProductDetailPage,
@@ -54,6 +56,7 @@ import {
   SessionsPage,
   StockValuePage,
   TaxCodesPage,
+  YourActivityPage,
 } from './pages';
 
 /** Needs a session. Remembers where the caller was headed. */
@@ -210,6 +213,9 @@ export default function App() {
         <Route path="/" element={split(HomePage)} />
         <Route path="/account" element={split(AccountPage)} />
         <Route path="/account/sessions" element={split(SessionsPage)} />
+        <Route path="/account/activity" element={split(YourActivityPage)} />
+        <Route path="/people" element={split(PeoplePage)} />
+        <Route path="/people/:userId" element={split(PersonPage)} />
         <Route path="/members" element={split(MembersPage)} />
         <Route path="/audit" element={split(AuditPage)} />
         <Route
