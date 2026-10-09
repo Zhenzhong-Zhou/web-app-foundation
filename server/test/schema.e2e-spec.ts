@@ -8,6 +8,7 @@ import {
 import {
   ACCOUNT_EVENT_ACTIONS,
   DOCUMENT_TYPES,
+  FILE_KINDS,
   INVOICE_STATUSES,
   MOVEMENT_REASONS,
   ORDER_DIRECTIONS,
@@ -96,6 +97,7 @@ describe('schema invariants', () => {
     ['stock_valuations_kind_check', VALUATION_KINDS],
     ['price_lists_direction_check', PRICE_LIST_DIRECTIONS],
     ['order_lines_price_source_check', ORDER_LINE_PRICE_SOURCES],
+    ['files_kind_check', FILE_KINDS],
   ])('%s', (constraintName, values) => {
     it('accepts every value the code can write', async () => {
       const result = await db.execute(sql`
