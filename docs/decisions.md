@@ -6045,6 +6045,154 @@ setting, so a plan can raise it.
 
 ---
 
+## ADR-060 — Branding: each organization's logo, colour and expiry days
+
+**Context.** ADR-055 made the brand a few values, the accent colour, the logo
+and the sidebar's shade, so that each organization could one day set its own.
+ADR-058 left the expiry thresholds (90 and 30 days) to the same decision, and
+ADR-059 now stores files, so a logo has somewhere to go. The open decision
+already listed what branding needs; this ADR decides it, so that the first
+organization other than the developer's own sees its own name and colour,
+and its own idea of "expiring soon".
+
+What shapes it:
+
+- **No brand may break a screen.** White text on a pale accent is unreadable;
+  an accent the red of a warning makes every button look like an error.
+  ADR-055 keeps status tones out of the brand for that reason.
+- **One domain for every organization.** The browser's tab icon and the sign-in
+  page come before anyone signs in, so they stay the product's own; branding
+  starts once the organization is known.
+- **People who are not designers.** An owner picks a colour once, from a phone
+  as often as a desk. Choosing must be safe by default.
+
+**Decision — Settings → Organization → Branding, for whoever may change the
+organization.** One section of the existing settings page, behind
+`organizations.update`, with its own Save: the logo, the colour, the
+sidebar's shade, and the expiry days. Every member sees the result; only
+those who may change the organization see the section.
+
+**Decision — the logo, stored as ADR-059 says.**
+
+- Uploaded through `POST /v1/files/logo`: PNG, JPEG, WebP or SVG, at most 2 MB,
+  at least 256 px wide; kept as one PNG at most 1024 px, an SVG drawn to PNG
+  and never kept.
+- `organizations.logo_file_id`. Saving a new logo attaches it and releases the
+  old one in the same transaction (`FilesService.attach`, `release`);
+  removing the logo releases it. A released logo is purged 30 days later.
+- **Previewed before saving** on both of the sidebar's shades, at the size it
+  will show, so a logo made for white is seen on dark before anyone else does.
+- **Where it shows:** the top of the side rail, at most 32 px tall (ADR-055),
+  the organization's name in text when there is none; on the dark rail it
+  sits on a white plate, since most logos are made for white. Printed
+  documents below.
+- **One logo.** A second version for dark backgrounds waits for a logo the
+  white plate does not suit (Deferred).
+
+**Decision — the colour: presets, or a custom colour made safe.**
+
+- **Six presets**, each tested in both colour modes: indigo (`#5546B8`, the
+  default), blue, teal, green-slate, plum and charcoal. None is near the red,
+  amber or green of the status tones.
+- **A custom colour**, typed as hex or picked. It is checked the way ADR-055
+  checks its own tokens, in both modes:
+  - light: white text on the accent, and the accent as link text on white,
+    at least 4.5 : 1 (WCAG AA);
+  - dark: the accent mixed 45% toward white (ADR-055's rule), with dark text
+    on it and as link text on the dark surface, at least 4.5 : 1.
+- **Never refused, made to pass.** A colour that fails is darkened (or, for
+  dark mode, lightened) along its own hue, keeping its chroma, to the nearest
+  shade that passes. The section shows both: the colour chosen and the one
+  that will be used, with why. What is saved is the shade that passes, so
+  every stored colour is readable without checking again.
+- **A warning, not a block,** when its hue is within 25° of the danger,
+  warning or success tone at a strong chroma: "This colour is close to the
+  red used for errors; buttons may read as warnings." The owner decides.
+- The same check runs on the server when saving, so a colour that skipped the
+  page is held to the same rule. `organizations.accent_color`, `#RRGGBB`, null
+  for the default.
+
+**Decision — the sidebar's shade.** `dark` (the default) or `light`, ADR-055's
+two rails, chosen beside the colour and previewed with the logo.
+`organizations.rail`.
+
+**Decision — expiry days, the organization's.**
+
+- Two numbers, **warning** (default 90) and **critical** (default 30), with
+  critical less than warning, both from 1 to 365.
+  `organizations.expiry_warning_days`, `expiry_critical_days`.
+- Every place that says "expiring" uses them: the inventory's chips and its
+  Expiring filter, a lot's chip on every page, and Home's Expiring card and
+  its count. The client's `EXPIRY_DAYS` constant becomes the organization's
+  values, read with the rest of its settings; the server's
+  `EXPIRY_WARNING_DAYS` becomes the organization's warning days.
+- Licence notice (60 days) and an overdue grace stay as they are (Deferred):
+  nobody has asked, and each is one more number to explain.
+
+**Decision — the logo on printed documents, a choice.** Invoices, credit
+notes and packing slips print the logo at the top left, at most 18 mm tall,
+when the organization has one and `organizations.logo_on_documents` is on,
+which it is by default. Off keeps the paper as it is now, for an organization
+whose stationery already carries its logo. Documents already issued are not
+reprinted: the logo is whatever the organization has when the PDF is made.
+
+**Decision — the theme follows the organization.** After sign-in the client
+builds its theme from the organization's accent and rail, as it builds it
+from ADR-055's defaults today. Before sign-in, and for a person in no
+organization, the defaults. Switching organization rebuilds it. The values
+come with the organization's other settings; nothing new is fetched.
+
+**Consequences.**
+
+- Built in this order, each its own commit:
+    1. The section designed on the Claude Design canvas: Branding on desktop
+       and on a phone, in English and Chinese, a custom colour adjusted and
+       warned, the logo previewed on both rails. Reviewed before building.
+    2. Migration 0050: `logo_file_id` (a foreign key to `files`),
+       `accent_color`, `rail`, `expiry_warning_days`,
+       `expiry_critical_days`, `logo_on_documents`, each with its check.
+    3. The server: the fields on the organization's read and update, the
+       colour check, attaching and releasing the logo, Home's Expiring card
+       by the organization's days, the audit of each change.
+    4. The client: the theme from the organization, the Branding section, the
+       logo in the rail, the expiry chips and filter by the organization's
+       days.
+    5. The logo on invoices, credit notes and packing slips.
+    6. Manual checks: a custom colour adjusted and used everywhere, a logo on
+       both rails and on paper, the expiry days changing a chip and Home.
+- The colour check is one function, in the client for the preview and in the
+  server for the save, with the same tests in both: the packages share no
+  code (as the catalogues, ADR-054).
+- Nothing changes for an organization that sets nothing: the defaults are
+  ADR-055's and ADR-058's values.
+
+**Considered and not done.**
+
+- **Refusing a colour that fails contrast.** Correct, and unkind: an owner
+  with a brand colour would be told no without being offered anything. The
+  nearest passing shade keeps their hue and keeps every screen readable.
+- **Free colour, unchecked.** Some products allow it; a pale accent would
+  leave every primary button unreadable for that organization's people.
+- **A full theme** (fonts, radius, surface colours). More values to break,
+  and nobody has asked; ADR-055 keeps the brand to a few on purpose.
+- **A per-organization tab icon and sign-in page.** Before sign-in there is
+  no organization, and a home-screen icon belongs to the website.
+- **The logo in the database.** ADR-059 decided one store for every file.
+
+**Deferred — each with what brings it in.**
+
+- **A second logo for dark backgrounds.** Trigger: a logo the white plate
+  does not suit, such as a white wordmark.
+- **Licence notice days and an overdue grace per organization.** Trigger:
+  the first organization that asks.
+- **A white-labelled domain, tab icon and sign-in page.** Trigger: a customer
+  who sells the product under their own name.
+- **The colour on emails.** The security emails stay the product's
+  (ADR-037). Trigger: an organization whose customers receive email from
+  the app.
+
+---
+
 ## Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -6378,19 +6526,6 @@ they exist so the reasoning is not rediscovered from scratch.
   list, so this reopens it. ADR-055 leaves the slot beside the logo empty
   until then. Trigger: Products or Partners past a few hundred rows, or the
   recall drill missing its two minutes.
-- **Branding per organization.** Each organization sets its own logo and
-  accent over ADR-055's brand tokens, and its own expiry thresholds (30 and 90
-  days by default). The logo: PNG or WebP, at most 500 KB and at least 256px
-  wide, previewed on light and dark before saving; SVG only if cleaned on the
-  server, since an SVG can carry script; a version for dark backgrounds, or
-  the white plate ADR-055 uses meanwhile. The colour: a few tested presets,
-  and a custom colour checked for contrast with white text and saved as the
-  nearest shade that passes rather than refused, with a warning when it is
-  close to the red, amber or green of the status tones. The sidebar's shade.
-  Whether the logo prints on the organization's invoices and credit notes,
-  which changes paper (ADR-041, ADR-046). The logo is stored as ADR-059
-  says: a PNG, re-encoded on the server, an SVG drawn to PNG and never kept.
-  Trigger: the second organization with real users, or the first that asks.
 - **Generated lot codes for production runs.** ADR-023 argues against generating
   SKUs because the organization already has one for every item. A lot code is
   different: it does not pre-exist, it comes into being at the moment of a run,
