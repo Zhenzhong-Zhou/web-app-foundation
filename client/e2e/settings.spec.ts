@@ -40,6 +40,38 @@ test('sets the registered address and tax number', async ({
   );
 });
 
+/**
+ * The Organization page in tabs (ADR-061): each opens at its own address,
+ * so a link can mean one, and the name can change from Profile.
+ */
+test('opens a tab by its address, and renames the organization', async ({
+  page,
+  freshOrg,
+}) => {
+  await signInAs(page, freshOrg.api);
+  await page.goto('/settings/organization?tab=stock');
+
+  await expect(page.getByRole('tab', { name: 'Stock' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(
+    page.getByRole('button', { name: 'Save licence policy' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save address' })).toBeHidden();
+
+  // Profile is the first tab, so its address is the page's own.
+  await page.getByRole('tab', { name: 'Profile' }).click();
+  await expect(page).toHaveURL(/\/settings\/organization$/);
+
+  await page.getByLabel('Organization name').fill('Renamed Naturals');
+  await page.getByRole('button', { name: 'Save name' }).click();
+  await expect(page.getByText('Name saved')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Renamed Naturals' }),
+  ).toBeVisible();
+});
+
 test('adds a two-tax code, changes a rate, and retires it', async ({
   page,
   freshOrg,

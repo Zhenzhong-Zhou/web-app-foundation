@@ -43,6 +43,8 @@ export class OrganizationController {
     resourceId: (_response, request) =>
       getRequestContext(request)?.organizationId ?? undefined,
     fields: [
+      // Renaming (ADR-061): the log keeps what it was called before.
+      'name',
       'taxRegistrationNumber',
       'baseCurrency',
       'defaultSalePriceListId',

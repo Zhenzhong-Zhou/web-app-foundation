@@ -203,7 +203,7 @@ export function StockValuePage() {
                 <Link
                   underline="always"
                   component={RouterLink}
-                  to="/settings/organization"
+                  to="/settings/organization?tab=money"
                 >
                   {chunks}
                 </Link>

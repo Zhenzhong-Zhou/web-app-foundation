@@ -1,18 +1,22 @@
 import {
   Alert,
+  Box,
   FormControlLabel,
   MenuItem,
   Skeleton,
   Stack,
   Switch,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useState } from 'react';
+import { type ReactNode, type SubmitEvent, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
+import { useAuth } from '../auth/use-auth';
 import { CurrencyField } from '../components/currency-field';
 import { PageHeader } from '../components/page-header';
 import { SettingsSection } from '../components/settings-section';
@@ -21,16 +25,34 @@ import type { LicencePolicy, OrganizationProfile } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
+import { useTab } from '../lib/use-tab';
 import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
 import {
   OrganizationDocumentLanguages,
   RequiredNameLanguages,
 } from './document-languages-form';
 
+/** The Organization page's tabs (ADR-061), Profile first. */
+const ORGANIZATION_TABS = ['profile', 'money', 'documents', 'stock'] as const;
+type OrganizationTab = (typeof ORGANIZATION_TABS)[number];
+
+const TAB_LABEL = defineMessages({
+  profile: { id: 'settings.org.tab.profile', defaultMessage: 'Profile' },
+  money: { id: 'settings.org.tab.money', defaultMessage: 'Money' },
+  documents: { id: 'settings.org.tab.documents', defaultMessage: 'Documents' },
+  stock: { id: 'settings.org.tab.stock', defaultMessage: 'Stock' },
+});
+
 /**
- * What the organization prints as the seller on every invoice (ADR-046) —
- * its tax registration number and registered address — and the currency its
- * stock is valued in (ADR-048).
+ * The organization's settings (ADR-061), in tabs: Profile (the name and
+ * what every invoice prints as the seller, ADR-046), Money (the base
+ * currency, ADR-048, and the default sale price list), Documents (their
+ * languages, ADR-054) and Stock (licences at release, ADR-050). Branding
+ * joins them with ADR-060.
+ *
+ * Each tab has its address, `?tab=money`, so a link can open the one it
+ * means. Every tab stays mounted and only the open one shows, so moving
+ * between tabs keeps whatever was typed and not yet saved.
  *
  * Small forms rather than one, because they are changed for different
  * reasons — a new registration, an office move, the first costed receipt.
@@ -39,13 +61,30 @@ import {
 export function OrganizationPage() {
   const intl = useIntl();
   const can = useCan();
+  const { refresh } = useAuth();
   const { data, error, reload } = useResource<{
     organization: OrganizationProfile;
   }>('/organization');
   const organization = data?.organization ?? null;
+  const [tab, setTab] = useTab<OrganizationTab>(ORGANIZATION_TABS);
 
   const showSkeleton = useDelayedFlag(organization === null && !error);
   const canUpdate = can('organizations.update');
+
+  /** One tab's forms, shown only while it is open. */
+  const panel = (id: OrganizationTab, children: ReactNode) => (
+    <Stack
+      role="tabpanel"
+      id={`organization-panel-${id}`}
+      aria-labelledby={`organization-tab-${id}`}
+      hidden={tab !== id}
+      spacing={3}
+      // `hidden` alone loses to Stack's display: flex.
+      sx={{ display: tab === id ? 'flex' : 'none' }}
+    >
+      {children}
+    </Stack>
+  );
 
   return (
     <Stack spacing={3}>
@@ -58,11 +97,6 @@ export function OrganizationPage() {
             defaultMessage: 'Organization',
           })
         }
-        subtitle={intl.formatMessage({
-          id: 'settings.org.intro',
-          defaultMessage:
-            'Every invoice prints these as the seller, copied on the day it is issued — changing them here never changes an invoice already sent. Invoices cannot be issued until the registered address is set.',
-        })}
         actions={
           <Stack direction="row" spacing={1}>
             {organization && <HistoryButton resourceId={organization.id} />}
@@ -74,65 +108,192 @@ export function OrganizationPage() {
 
       {organization ? (
         <>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs
+              value={tab}
+              onChange={(_, next: OrganizationTab) => setTab(next)}
+              aria-label={intl.formatMessage({
+                id: 'settings.org.tabs',
+                defaultMessage: 'Organization settings',
+              })}
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
+            >
+              {ORGANIZATION_TABS.map((id) => (
+                <Tab
+                  key={id}
+                  value={id}
+                  id={`organization-tab-${id}`}
+                  aria-controls={`organization-panel-${id}`}
+                  label={intl.formatMessage(TAB_LABEL[id])}
+                />
+              ))}
+            </Tabs>
+          </Box>
+
           {/* Keyed on what was saved, so a reload resets each form. */}
-          <TaxNumberForm
-            key={organization.taxRegistrationNumber ?? ''}
-            value={organization.taxRegistrationNumber}
-            readOnly={!canUpdate}
-            onSaved={reload}
-          />
-          <AddressForm
-            key={JSON.stringify(organization.address)}
-            address={organization.address}
-            readOnly={!canUpdate}
-            onSaved={reload}
-          />
-          <BaseCurrencyForm
-            key={organization.baseCurrency ?? ''}
-            value={organization.baseCurrency}
-            readOnly={!canUpdate}
-            onSaved={reload}
-          />
-          {can('price_lists.view') && (
-            <DefaultSaleListForm
-              key={organization.defaultSalePriceListId ?? ''}
-              value={organization.defaultSalePriceListId}
+          {panel(
+            'profile',
+            <>
+              <Typography color="text.secondary">
+                {intl.formatMessage({
+                  id: 'settings.org.intro',
+                  defaultMessage:
+                    'Every invoice prints these as the seller, copied on the day it is issued — changing them here never changes an invoice already sent. Invoices cannot be issued until the registered address is set.',
+                })}
+              </Typography>
+              <NameForm
+                key={organization.name}
+                value={organization.name}
+                readOnly={!canUpdate}
+                onSaved={async () => {
+                  // The name is in the side rail and the top bar too.
+                  await Promise.all([reload(), refresh()]);
+                }}
+              />
+              <TaxNumberForm
+                key={organization.taxRegistrationNumber ?? ''}
+                value={organization.taxRegistrationNumber}
+                readOnly={!canUpdate}
+                onSaved={reload}
+              />
+              <AddressForm
+                key={JSON.stringify(organization.address)}
+                address={organization.address}
+                readOnly={!canUpdate}
+                onSaved={reload}
+              />
+            </>,
+          )}
+          {panel(
+            'money',
+            <>
+              <BaseCurrencyForm
+                key={organization.baseCurrency ?? ''}
+                value={organization.baseCurrency}
+                readOnly={!canUpdate}
+                onSaved={reload}
+              />
+              {can('price_lists.view') && (
+                <DefaultSaleListForm
+                  key={organization.defaultSalePriceListId ?? ''}
+                  value={organization.defaultSalePriceListId}
+                  readOnly={!canUpdate}
+                  onSaved={reload}
+                />
+              )}
+            </>,
+          )}
+          {panel(
+            'documents',
+            <>
+              <OrganizationDocumentLanguages
+                key={[
+                  organization.documentLanguage,
+                  organization.documentSecondLanguage,
+                ].join()}
+                documentLanguage={organization.documentLanguage}
+                documentSecondLanguage={organization.documentSecondLanguage}
+                readOnly={!canUpdate}
+                onSaved={reload}
+              />
+              <RequiredNameLanguages
+                key={organization.requiredNameLanguages.join()}
+                value={organization.requiredNameLanguages}
+                readOnly={!canUpdate}
+                onSaved={reload}
+              />
+            </>,
+          )}
+          {panel(
+            'stock',
+            <LicencePolicyForm
+              key={[
+                organization.licenceNotInForcePolicy,
+                organization.licenceExpiredPolicy,
+                organization.licenceRequired,
+              ].join()}
+              organization={organization}
               readOnly={!canUpdate}
               onSaved={reload}
-            />
+            />,
           )}
-          {/* Keyed on what was saved, as the forms above. */}
-          <OrganizationDocumentLanguages
-            key={[
-              organization.documentLanguage,
-              organization.documentSecondLanguage,
-            ].join()}
-            documentLanguage={organization.documentLanguage}
-            documentSecondLanguage={organization.documentSecondLanguage}
-            readOnly={!canUpdate}
-            onSaved={reload}
-          />
-          <RequiredNameLanguages
-            key={organization.requiredNameLanguages.join()}
-            value={organization.requiredNameLanguages}
-            readOnly={!canUpdate}
-            onSaved={reload}
-          />
-          <LicencePolicyForm
-            key={[
-              organization.licenceNotInForcePolicy,
-              organization.licenceExpiredPolicy,
-              organization.licenceRequired,
-            ].join()}
-            organization={organization}
-            readOnly={!canUpdate}
-            onSaved={reload}
-          />
         </>
       ) : showSkeleton ? (
         <Skeleton variant="rounded" height={240} />
       ) : null}
     </Stack>
+  );
+}
+
+/**
+ * The organization's name (ADR-061). Issued invoices and credit notes keep
+ * the name they were issued with; from the save on, the app and new
+ * documents carry this one.
+ */
+function NameForm({
+  value,
+  readOnly,
+  onSaved,
+}: {
+  value: string;
+  readOnly: boolean;
+  onSaved: () => Promise<void>;
+}) {
+  const intl = useIntl();
+  const [name, setName] = useState(value);
+  const { submitting, error, submit } = useSubmit(onSaved, {
+    success: intl.formatMessage({
+      id: 'settings.org.name.saved',
+      defaultMessage: 'Name saved',
+    }),
+  });
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    void submit(() =>
+      api('/organization', {
+        method: 'PATCH',
+        body: JSON.stringify({ name: name.trim() }),
+      }),
+    );
+  }
+
+  return (
+    <SettingsSection
+      title={intl.formatMessage({
+        id: 'settings.org.name.title',
+        defaultMessage: 'Name',
+      })}
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel={intl.formatMessage({
+        id: 'settings.org.name.save',
+        defaultMessage: 'Save name',
+      })}
+    >
+      <TextField
+        id="organization-name"
+        label={intl.formatMessage({
+          id: 'settings.org.name.label',
+          defaultMessage: 'Organization name',
+        })}
+        fullWidth
+        required
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        disabled={readOnly}
+        helperText={intl.formatMessage({
+          id: 'settings.org.name.help',
+          defaultMessage:
+            'Shown across the app and on new invoices, credit notes and packing slips. Those already issued keep the name they were issued with.',
+        })}
+        slotProps={{ htmlInput: { maxLength: 100 } }}
+      />
+    </SettingsSection>
   );
 }
 

@@ -153,6 +153,45 @@ describe('Organization (e2e)', () => {
     });
   });
 
+  it('renames the organization, recording what it replaced', async () => {
+    const org = await registerOrganization(app, 'alpha');
+
+    await org.agent
+      .patch('/v1/organization')
+      .send({ name: 'Northside Naturals' })
+      .expect(204);
+
+    expect((await current(org.agent)).name).toBe('Northside Naturals');
+    const me = body<{ organization: { name: string } }>(
+      await org.agent.get('/v1/auth/me').expect(200),
+    );
+    expect(me.organization.name).toBe('Northside Naturals');
+
+    const [entry] = await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'organization.updated'));
+    expect(entry.payload).toEqual({
+      name: { from: 'alpha Co', to: 'Northside Naturals' },
+    });
+  });
+
+  it('refuses a blank, missing or overlong name', async () => {
+    const org = await registerOrganization(app, 'alpha');
+
+    for (const name of ['   ', null, 'x'.repeat(101)]) {
+      await org.agent.patch('/v1/organization').send({ name }).expect(400);
+    }
+    expect((await current(org.agent)).name).toBe('alpha Co');
+
+    // Spaces around a name are trimmed, as at registration.
+    await org.agent
+      .patch('/v1/organization')
+      .send({ name: '  Spaced Out  ' })
+      .expect(204);
+    expect((await current(org.agent)).name).toBe('Spaced Out');
+  });
+
   /**
    * The cautious reading of a regime nobody has configured: a licence not
    * yet in force is refused, an expired one needs an override, and a recipe
