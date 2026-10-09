@@ -76,3 +76,19 @@ jobs:
         run: >-
           scripts/restore.sh "${{ steps.fetch.outputs.path }}"
           "postgresql://drill:drill_password@localhost:5432/foundation_drill"
+
+      # Every file the restored database knows of has its copy under files/
+      # (ADR-059), checked with the read-only key. Only with s3: artifact
+      # backups hold no files.
+      - name: Check every file has its copy
+        if: env.BACKUP_DESTINATION == 's3'
+        env:
+          BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+          BACKUP_S3_REGION: ${{ secrets.BACKUP_S3_REGION }}
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_READ_ACCESS_KEY_ID }}
+          BACKUP_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_READ_SECRET_ACCESS_KEY }}
+          RESTORE_PGSSLMODE: disable
+        run: >-
+          scripts/check-files-backup.sh
+          "postgresql://drill:drill_password@localhost:5432/foundation_drill"

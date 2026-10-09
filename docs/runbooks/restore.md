@@ -8,11 +8,11 @@ issue or a commit.** If one leaks, change it (sections 1 and 6).
 
 ## What runs by itself
 
-| What            | When                                                             | Where to look                                  |
-|-----------------|------------------------------------------------------------------|------------------------------------------------|
-| Backup          | 10:00 UTC daily (3am Vancouver)                                  | Actions → **Backup**                           |
-| Freshness check | 16:30 UTC daily: fails if the newest backup is over 26 hours old | Actions → **Backup**                           |
-| Restore drill   | 11:00 UTC on the 1st: restores the newest backup and times it    | Actions → **Restore drill**, the run's summary |
+| What            | When                                                                                       | Where to look                                  |
+|-----------------|--------------------------------------------------------------------------------------------|------------------------------------------------|
+| Backup          | 10:00 UTC daily (3am Vancouver): the database, then the files                              | Actions → **Backup**                           |
+| Freshness check | 16:30 UTC daily: fails if the newest backup is over 26 hours old                           | Actions → **Backup**                           |
+| Restore drill   | 11:00 UTC on the 1st: restores the newest backup, times it, checks every file has its copy | Actions → **Restore drill**, the run's summary |
 
 A failed scheduled run emails the person who last changed the workflow file.
 GitHub pauses scheduled workflows after 60 days with no activity in the
@@ -59,6 +59,10 @@ For `s3`, also `BACKUP_BUCKET`, `BACKUP_S3_REGION`, `BACKUP_S3_ENDPOINT`
 `BACKUP_S3_READ_ACCESS_KEY_ID` and `BACKUP_S3_READ_SECRET_ACCESS_KEY`. Then
 Settings → Variables: `BACKUP_DESTINATION` = `s3`.
 
+For files (ADR-059), the files bucket's read-only token `waf-files-backup-read`
+as `BACKUP_FILES_S3_ACCESS_KEY_ID` and `BACKUP_FILES_S3_SECRET_ACCESS_KEY`. The
+variable `BACKUP_FILES_BUCKET` names the bucket, `waf-files` when unset.
+
 ### The bucket (for `s3`)
 
 At creation, because some settings cannot be added later: a Canadian region,
@@ -67,6 +71,11 @@ retention: Compliance mode, 30 days. Lifecycle rules: expire
 `production/daily/` after 31 days and `production/monthly/` after 366 days.
 Two logins: one that can only `PutObject` and `ListBucket`, one that can only
 `GetObject` and `ListBucket`.
+
+For files (ADR-059), on the same bucket: a bucket lock on `files/` for 30
+days, and a lifecycle rule deleting `files/` objects 31 days after upload,
+one day after the lock ends. The nightly copy writes again whatever is
+still live.
 
 ## 2. Take a backup now
 
@@ -125,6 +134,42 @@ and that the migrations match the code.
 5. Change `BACKUP_DATABASE_URL` to the new database.
 
 Data written after the backup is lost: up to 24 hours (ADR-053's target).
+Files are not on the host, so they are untouched; a file uploaded after the
+backup was taken has no row in the restored database and is purged in time
+as never attached.
+
+### The files are gone
+
+The `waf-files` bucket deleted or emptied (ADR-059). The copies in
+`waf-backups/files/` are at most a day old.
+
+1. Create a new bucket as ADR-059 describes, or empty the old one, and a new
+   read-and-write token for it.
+2. Copy the files back: read with the backup's read-only key, write with the
+   new token.
+
+   ```bash
+   AWS_ACCESS_KEY_ID=<backup read key id> AWS_SECRET_ACCESS_KEY=<its secret> \
+     aws --endpoint-url "<endpoint>" s3 sync s3://waf-backups/files/ /tmp/files
+   AWS_ACCESS_KEY_ID=<new files key id> AWS_SECRET_ACCESS_KEY=<its secret> \
+     aws --endpoint-url "<endpoint>" s3 sync /tmp/files s3://<new bucket>/
+   ```
+
+3. Check that the new bucket holds every file the database knows of, with
+   the new token and no prefix:
+
+   ```bash
+   BACKUP_BUCKET=<new bucket> BACKUP_FILES_PREFIX= BACKUP_S3_REGION=auto \
+     BACKUP_S3_ENDPOINT="<endpoint>" BACKUP_S3_ACCESS_KEY_ID=<new files key id> \
+     BACKUP_S3_SECRET_ACCESS_KEY=<its secret> \
+     scripts/check-files-backup.sh "<production database URL>"
+   ```
+
+4. Put the new bucket and token in the server's `FILES_*` settings and
+   redeploy.
+
+Files uploaded since the last nightly copy are lost: up to 24 hours, as for
+the database.
 
 ### A bad deploy or a bad delete
 
@@ -158,3 +203,6 @@ work since the backup.
   `BACKUP_AGE_IDENTITY`, take a backup now, and keep the old key until every
   backup made with it has expired.
 - **Bucket login:** delete the access key at the provider and make another.
+- **A files token:** roll it in R2 → Manage API tokens, then update where it
+  lives: the server's `FILES_S3_*` for `waf-files-app`, GitHub's
+  `BACKUP_FILES_S3_*` for `waf-files-backup-read`.
