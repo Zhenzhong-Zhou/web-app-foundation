@@ -17,13 +17,16 @@ on:
     - cron: '0 9 * * *' # 2am in Vancouver
   workflow_dispatch:
 
-# A second push to the same branch cancels the first. The suites take minutes
-# and nobody reads the result of a commit that has already been replaced.
+# On a pull request, a second push cancels the first: the suites take
+# minutes and nobody reads the result of a commit that has been replaced.
+# On main, never: every commit there is a version that deploys, so each gets
+# its own verdict, and a newer run waits for the older one to finish. That
+# is what shows which merge broke main, and what a release tag points at.
 # Adding any other label gets a group of its own, so it cannot cancel a run
 # in progress; its jobs are then skipped (each job's `if`).
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'full-e2e' && format('-{0}', github.run_id) || '' }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Every browser on main, nightly, by hand, and on a pull request labelled
 # full-e2e (layout, mobile, sign-in: anything an engine could render or
