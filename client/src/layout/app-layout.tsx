@@ -33,6 +33,7 @@ import { PersonAvatar } from '../components/person-avatar';
 import { NameAndEmail } from '../components/who-and-when';
 import { api } from '../lib/api';
 import { LookupBox } from '../search/lookup-box';
+import { IdleGuard } from './idle-guard';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
 import { OrganizationMark } from './organization-mark';
@@ -386,6 +387,8 @@ export function AppLayout() {
             <UnverifiedBanner />
             {/* Inside the page so the rail and the bar survive: a person
                 whose page broke should be able to click away from it. */}
+            {/* Signs out after inactivity, warning a minute before (ADR-065). */}
+            <IdleGuard />
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

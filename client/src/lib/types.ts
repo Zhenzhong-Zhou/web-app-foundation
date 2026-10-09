@@ -358,6 +358,9 @@ export interface OrganizationProfile {
   /** When a lot counts as expiring here (ADR-060). */
   expiryWarningDays: number;
   expiryCriticalDays: number;
+  /** Sign out after inactivity (ADR-065): minutes, or null for Off. */
+  idleSignOutMinutes: number | null;
+  idleSignOutScope: 'unticked' | 'everyone';
 }
 
 /**

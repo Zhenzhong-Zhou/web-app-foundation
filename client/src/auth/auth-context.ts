@@ -39,6 +39,8 @@ export interface CurrentSession {
    * is demoted; the server re-resolves per request and answers 403 (ADR-016).
    */
   permissions: string[];
+  /** How long this session may sit idle, when short enough to warn (ADR-065). */
+  idleLimitMs?: number | null;
 }
 
 export interface AuthState {
