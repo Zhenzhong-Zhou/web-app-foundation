@@ -153,8 +153,8 @@ test('refuses the same licence once the policy says so', async ({
   const runId = await seedExpiredRun(freshOrg.api);
   await signInAs(page, freshOrg.api);
 
-  // Settings → Organization, where the policy is set.
-  await page.goto('/settings/organization');
+  // Settings → Organization → Stock, where the policy is set (ADR-061).
+  await page.goto('/settings/organization?tab=stock');
   await page.getByLabel('Expired').click();
   await page.getByRole('option', { name: 'Refuse', exact: true }).click();
   await page.getByRole('button', { name: 'Save licence policy' }).click();
