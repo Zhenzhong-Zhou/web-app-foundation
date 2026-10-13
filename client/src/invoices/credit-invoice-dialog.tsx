@@ -27,8 +27,8 @@ import {
   toApiDecimal,
 } from '../lib/format';
 import type {
+  CreditPreview,
   InvoiceDetail,
-  InvoiceTax,
   ReturnAuthorizationDetail,
 } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
@@ -47,13 +47,6 @@ interface Row {
   quantity: string;
   unitPrice: string;
   returnAuthorizationLineId?: string;
-}
-
-interface CreditPreview {
-  subtotal: string;
-  taxTotal: string;
-  total: string;
-  taxes: InvoiceTax[];
 }
 
 /**

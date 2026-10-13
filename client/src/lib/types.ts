@@ -1,3 +1,4 @@
+import type { InvoiceSummary } from '../api/types.gen';
 import type { Locale } from './locales';
 
 /**
@@ -400,160 +401,27 @@ export interface LicenceAtReleaseFields {
   licenceOverrideReason: string | null;
 }
 
-export type InvoiceStatus = 'draft' | 'issued' | 'voided';
+/**
+ * Invoices and credit notes, generated from the server's OpenAPI document
+ * (ADR-068, phase 2), re-exported so their importers need no change.
+ * CreditNoteSummary is the credit notes list's row; an invoice's own list
+ * of credit notes is InvoiceCreditNote. Written by hand, the two had one
+ * name, and TypeScript merged them into a type neither response matched.
+ */
+export type {
+  CreditNoteDetail,
+  CreditNoteSummary,
+  CreditPreview,
+  InvoiceAmounts,
+  InvoiceCreditNote,
+  InvoiceDetail,
+  InvoiceLine,
+  InvoicePage,
+  InvoiceSummary,
+  InvoiceTax,
+} from '../api/types.gen';
 
-/** A row in the invoice list. The total is null until issued. */
-export interface InvoiceSummary {
-  id: string;
-  number: string | null;
-  status: InvoiceStatus;
-  orderId: string;
-  shipmentId: string;
-  partnerId: string;
-  partnerName: string;
-  currency: string;
-  invoiceDate: string | null;
-  dueDate: string | null;
-  total: string | null;
-  createdAt: string;
-}
-
-export interface InvoicePage {
-  entries: InvoiceSummary[];
-  nextCursor: string | null;
-}
-
-export interface InvoiceLine {
-  id: string;
-  orderLineId: string;
-  variantId: string;
-  sku: string;
-  description: string;
-  quantity: string;
-  unitPrice: string;
-  taxCodeId: string | null;
-  /** The live code name on a draft; the copy made at issue after that. */
-  taxCodeName: string | null;
-  /** Stored at issue; null on a draft, whose figures are in `preview`. */
-  netAmount: string | null;
-  /** The name in the second language, copied at issue (ADR-054). */
-  secondDescription: string | null;
-}
-
-/** One tax line: summed per component and rounded once (ADR-046). */
-export interface InvoiceTax {
-  name: string;
-  rate: string;
-  taxableAmount: string;
-  amount: string;
-}
-
-/** A draft's figures, computed the way issuing will store them. */
-export interface InvoiceAmounts {
-  lines: { id: string; netAmount: string }[];
-  taxes: InvoiceTax[];
-  subtotal: string;
-  taxTotal: string;
-  total: string;
-}
-
-export interface CreditNoteSummary {
-  id: string;
-  number: string;
-  creditDate: string;
-  reason: string;
-  isVoid: boolean;
-  total: string;
-}
-
-/** Who issued a document and who it is addressed to, as copied at issue. */
-export interface DocumentParties {
-  sellerName: string | null;
-  sellerTaxNumber: string | null;
-  sellerLine1: string | null;
-  sellerLine2: string | null;
-  sellerCity: string | null;
-  sellerRegion: string | null;
-  sellerPostalCode: string | null;
-  sellerCountry: string | null;
-  billToName: string | null;
-  billToLine1: string | null;
-  billToLine2: string | null;
-  billToCity: string | null;
-  billToRegion: string | null;
-  billToPostalCode: string | null;
-  billToCountry: string | null;
-}
-
-export interface InvoiceDetail extends DocumentParties {
-  id: string;
-  number: string | null;
-  status: InvoiceStatus;
-  orderId: string;
-  orderReference: string | null;
-  shipmentId: string;
-  partnerId: string;
-  partnerName: string;
-  currency: string;
-  invoiceDate: string | null;
-  dueDate: string | null;
-  note: string | null;
-  subtotal: string | null;
-  taxTotal: string | null;
-  total: string | null;
-  shipToLabel: string | null;
-  shipToLine1: string | null;
-  shipToLine2: string | null;
-  shipToCity: string | null;
-  shipToRegion: string | null;
-  shipToPostalCode: string | null;
-  shipToCountry: string | null;
-  issuedAt: string | null;
-  voidedAt: string | null;
-  voidReason: string | null;
-  lines: InvoiceLine[];
-  /** Stored tax lines once issued; null on a draft. */
-  taxes: InvoiceTax[] | null;
-  /** A draft's figures; null once issued. */
-  preview: InvoiceAmounts | null;
-  creditNotes: CreditNoteSummary[];
-  /**
-   * What it prints in (ADR-054): stored at issue, and for a draft the pair
-   * it would take today, so a draft's printout is the issued one's.
-   */
-  language: Locale;
-  secondLanguage: Locale | null;
-}
-
-export interface CreditNoteDetail extends DocumentParties {
-  id: string;
-  number: string;
-  invoiceId: string;
-  invoiceNumber: string | null;
-  invoiceDate: string | null;
-  currency: string;
-  creditDate: string;
-  reason: string;
-  isVoid: boolean;
-  subtotal: string;
-  taxTotal: string;
-  total: string;
-  lines: {
-    id: string;
-    invoiceLineId: string;
-    sku: string;
-    description: string;
-    secondDescription: string | null;
-    quantity: string;
-    unitPrice: string;
-    taxCodeName: string | null;
-    netAmount: string;
-  }[];
-  taxes: InvoiceTax[];
-  /** Its invoice's languages, copied when it was issued (ADR-054). */
-  language: Locale;
-  secondLanguage: Locale | null;
-}
+export type InvoiceStatus = InvoiceSummary['status'];
 
 export interface Bom {
   id: string;
@@ -1094,20 +962,6 @@ export interface LookupResult {
 /** What GET /lookup returns: kinds in the order to show them. */
 export interface LookupResponse {
   groups: { kind: LookupKind; results: LookupResult[] }[];
-}
-
-/** A row of the credit notes list (ADR-057). */
-export interface CreditNoteSummary {
-  id: string;
-  number: string;
-  invoiceId: string;
-  invoiceNumber: string | null;
-  partnerId: string;
-  partnerName: string;
-  currency: string;
-  creditDate: CalendarDay;
-  total: string;
-  isVoid: boolean;
 }
 
 /** Home's cards (ADR-058), in the order of a working day. */
