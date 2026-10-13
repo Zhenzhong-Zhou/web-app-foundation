@@ -17,6 +17,7 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { ProductLicencesService } from '../product-licences/product-licences.service';
 import type { CreateBomDto } from './dto/create-bom.dto';
+import type { Bom, BomDetail, BomLine } from './dto/bom-response.dto';
 import type { CreateBomLineDto } from './dto/create-bom-line.dto';
 import type { ListBomsDto } from './dto/list-boms.dto';
 import type { UpdateBomDto } from './dto/update-bom.dto';
@@ -30,8 +31,8 @@ type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
  * insert builder, and one `any` anywhere in that chain silently becomes the
  * controller's return type.
  */
-type Bom = typeof boms.$inferSelect;
-type BomLine = typeof bomLines.$inferSelect;
+type BomRow = typeof boms.$inferSelect;
+type BomLineRow = typeof bomLines.$inferSelect;
 
 /**
  * Recipes: what a variant is made of (ADR-029).
@@ -74,7 +75,7 @@ export class BomsService {
     }
   }
 
-  list(query: ListBomsDto) {
+  async list(query: ListBomsDto): Promise<Bom[]> {
     const filters = [
       query.outputVariantId
         ? eq(boms.outputVariantId, query.outputVariantId)
@@ -82,12 +83,13 @@ export class BomsService {
       query.status ? eq(boms.status, query.status) : undefined,
     ].filter((f): f is NonNullable<typeof f> => f !== undefined);
 
-    return this.tenantDb.select(
+    const rows = await this.tenantDb.select(
       boms,
       filters.length > 0 ? and(...filters) : undefined,
       // Newest version first: the one people mean is almost always the latest.
       { orderBy: [desc(boms.outputVariantId), desc(boms.version)] },
     );
+    return rows.map(bomOf);
   }
 
   async findById(bomId: string) {
@@ -109,7 +111,7 @@ export class BomsService {
    * Lines come back in insertion order, which is free — UUIDv7 ids sort by
    * creation time (ADR-010), so no sequence column exists or is needed.
    */
-  async findDetail(bomId: string) {
+  async findDetail(bomId: string): Promise<BomDetail> {
     const bom = await this.findById(bomId);
 
     const [lines, used] = await Promise.all([
@@ -125,7 +127,11 @@ export class BomsService {
      * draft is always editable; an active recipe stays editable only until a
      * run is planned against it.
      */
-    return { ...bom, lines, licenceLocked: bom.status !== 'draft' && used };
+    return {
+      ...bomOf(bom),
+      lines: lines.map(lineOf),
+      licenceLocked: bom.status !== 'draft' && used,
+    };
   }
 
   /**
@@ -136,7 +142,7 @@ export class BomsService {
    * index on (organization, output, version) is what makes two people drafting
    * at once fail loudly instead of silently colliding later.
    */
-  async create(input: CreateBomDto): Promise<Bom> {
+  async create(input: CreateBomDto): Promise<BomRow> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const version = await this.nextVersion(
         tx,
@@ -224,7 +230,10 @@ export class BomsService {
    * changing it would rewrite that. Archived recipes never reopen: the
    * question there is what was true, not what is.
    */
-  private async assertEditable(bom: Bom, input: UpdateBomDto): Promise<void> {
+  private async assertEditable(
+    bom: BomRow,
+    input: UpdateBomDto,
+  ): Promise<void> {
     if (bom.status === 'draft') return;
 
     /**
@@ -265,7 +274,7 @@ export class BomsService {
     return !!run;
   }
 
-  async addLine(bomId: string, input: CreateBomLineDto): Promise<BomLine> {
+  async addLine(bomId: string, input: CreateBomLineDto): Promise<BomLineRow> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const bom = await this.loadWithin(tx, organizationId, bomId);
 
@@ -403,7 +412,7 @@ export class BomsService {
    * successor and promoting it. Same rule as ADR-031 — nothing frozen is
    * copied forward, and the new draft starts its own life.
    */
-  async duplicate(bomId: string): Promise<Bom> {
+  async duplicate(bomId: string): Promise<BomRow> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const source = await this.loadWithin(tx, organizationId, bomId);
 
@@ -478,7 +487,7 @@ export class BomsService {
   private async insertHeader(
     tx: Tx,
     values: typeof boms.$inferInsert,
-  ): Promise<Bom> {
+  ): Promise<BomRow> {
     try {
       const [bom] = await tx.insert(boms).values(values).returning();
       return bom;
@@ -567,7 +576,7 @@ export class BomsService {
     organizationId: string,
     bomId: string,
     lines: CreateBomLineDto[],
-  ): Promise<BomLine[]> {
+  ): Promise<BomLineRow[]> {
     if (lines.length === 0) return [];
 
     try {
@@ -655,4 +664,31 @@ export class BomsService {
       );
     }
   }
+}
+
+/**
+ * A recipe as the API returns it (ADR-068): its own fields, not the row,
+ * which would also send the organization and its timestamps.
+ */
+function bomOf(row: Bom): Bom {
+  return {
+    id: row.id,
+    outputVariantId: row.outputVariantId,
+    outputQuantity: row.outputQuantity,
+    version: row.version,
+    status: row.status,
+    licenceId: row.licenceId,
+    notes: row.notes,
+  };
+}
+
+/** A recipe's line as the API returns it, without the row's ids. */
+function lineOf(row: BomLine): BomLine {
+  return {
+    id: row.id,
+    componentVariantId: row.componentVariantId,
+    quantity: row.quantity,
+    supplyType: row.supplyType,
+    notes: row.notes,
+  };
 }

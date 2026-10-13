@@ -2086,7 +2086,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Bom"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2108,7 +2118,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BomEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2131,7 +2148,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BomDetail"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2195,7 +2219,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BomLineEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2334,7 +2365,14 @@
         ],
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BomEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6331,7 +6369,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceListList"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6353,7 +6398,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceListEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6414,7 +6466,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceListEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6486,7 +6545,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceListItemEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -7789,6 +7855,143 @@
           }
         }
       },
+      "Bom": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "outputVariantId": {
+            "type": "string"
+          },
+          "outputQuantity": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "archived"
+            ]
+          },
+          "licenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "outputVariantId",
+          "outputQuantity",
+          "version",
+          "status",
+          "licenceId",
+          "notes"
+        ]
+      },
+      "BomLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "componentVariantId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "supplyType": {
+            "type": "string",
+            "enum": [
+              "stocked",
+              "external"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "componentVariantId",
+          "quantity",
+          "supplyType",
+          "notes"
+        ]
+      },
+      "BomDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "outputVariantId": {
+            "type": "string"
+          },
+          "outputQuantity": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "active",
+              "archived"
+            ],
+            "type": "string"
+          },
+          "licenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BomLine"
+            }
+          },
+          "licenceLocked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "outputVariantId",
+          "outputQuantity",
+          "version",
+          "status",
+          "licenceId",
+          "notes",
+          "lines",
+          "licenceLocked"
+        ]
+      },
       "CreateBomLineDto": {
         "type": "object",
         "properties": {
@@ -7847,6 +8050,17 @@
           "outputQuantity"
         ]
       },
+      "BomEnvelope": {
+        "type": "object",
+        "properties": {
+          "bom": {
+            "$ref": "#/components/schemas/BomDetail"
+          }
+        },
+        "required": [
+          "bom"
+        ]
+      },
       "UpdateBomDto": {
         "type": "object",
         "properties": {
@@ -7862,6 +8076,17 @@
             "maxLength": 1000
           }
         }
+      },
+      "BomLineEnvelope": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "$ref": "#/components/schemas/BomLine"
+          }
+        },
+        "required": [
+          "line"
+        ]
       },
       "UpdateBomLineDto": {
         "type": "object",
@@ -12524,6 +12749,136 @@
           "rate"
         ]
       },
+      "PriceList": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "sale",
+              "purchase"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "itemCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "direction",
+          "currency",
+          "isActive",
+          "itemCount"
+        ]
+      },
+      "PriceListList": {
+        "type": "object",
+        "properties": {
+          "priceLists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceList"
+            }
+          }
+        },
+        "required": [
+          "priceLists"
+        ]
+      },
+      "PriceListItem": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "variantId",
+          "sku",
+          "description",
+          "unitOfMeasure",
+          "unitPrice",
+          "updatedAt"
+        ]
+      },
+      "PriceListDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "sale",
+              "purchase"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceListItem"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "direction",
+          "currency",
+          "isActive",
+          "items"
+        ]
+      },
+      "PriceListEnvelope": {
+        "type": "object",
+        "properties": {
+          "priceList": {
+            "$ref": "#/components/schemas/PriceListDetail"
+          }
+        },
+        "required": [
+          "priceList"
+        ]
+      },
       "CreatePriceListDto": {
         "type": "object",
         "properties": {
@@ -12571,6 +12926,17 @@
         },
         "required": [
           "unitPrice"
+        ]
+      },
+      "PriceListItemEnvelope": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/PriceListItem"
+          }
+        },
+        "required": [
+          "item"
         ]
       },
       "Permission": {

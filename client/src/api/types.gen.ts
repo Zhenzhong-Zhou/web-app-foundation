@@ -308,6 +308,36 @@ export type UpdateTaxCodeDto = {
   components?: Array<TaxCodeComponentDto>;
 };
 
+export type Bom = {
+  id: string;
+  outputVariantId: string;
+  outputQuantity: string;
+  version: number;
+  status: 'draft' | 'active' | 'archived';
+  licenceId: string | null;
+  notes: string | null;
+};
+
+export type BomLine = {
+  id: string;
+  componentVariantId: string;
+  quantity: string;
+  supplyType: 'stocked' | 'external';
+  notes: string | null;
+};
+
+export type BomDetail = {
+  id: string;
+  outputVariantId: string;
+  outputQuantity: string;
+  version: number;
+  status: 'draft' | 'active' | 'archived';
+  licenceId: string | null;
+  notes: string | null;
+  lines: Array<BomLine>;
+  licenceLocked: boolean;
+};
+
 export type CreateBomLineDto = {
   componentVariantId: string;
   quantity: string;
@@ -323,10 +353,18 @@ export type CreateBomDto = {
   lines?: Array<CreateBomLineDto>;
 };
 
+export type BomEnvelope = {
+  bom: BomDetail;
+};
+
 export type UpdateBomDto = {
   outputQuantity?: string;
   licenceId?: string;
   notes?: string;
+};
+
+export type BomLineEnvelope = {
+  line: BomLine;
 };
 
 export type UpdateBomLineDto = {
@@ -1445,6 +1483,41 @@ export type ExchangeRateEnvelope = {
   rate: ExchangeRate;
 };
 
+export type PriceList = {
+  id: string;
+  name: string;
+  direction: 'sale' | 'purchase';
+  currency: string;
+  isActive: boolean;
+  itemCount: number;
+};
+
+export type PriceListList = {
+  priceLists: Array<PriceList>;
+};
+
+export type PriceListItem = {
+  variantId: string;
+  sku: string;
+  description: string;
+  unitOfMeasure: string;
+  unitPrice: string;
+  updatedAt: string;
+};
+
+export type PriceListDetail = {
+  id: string;
+  name: string;
+  direction: 'sale' | 'purchase';
+  currency: string;
+  isActive: boolean;
+  items: Array<PriceListItem>;
+};
+
+export type PriceListEnvelope = {
+  priceList: PriceListDetail;
+};
+
 export type CreatePriceListDto = {
   name: string;
   direction: 'sale' | 'purchase';
@@ -1458,6 +1531,10 @@ export type UpdatePriceListDto = {
 
 export type SetPriceListItemDto = {
   unitPrice: string;
+};
+
+export type PriceListItemEnvelope = {
+  item: PriceListItem;
 };
 
 export const Permission = {
@@ -2801,8 +2878,11 @@ export type BomsControllerListV1Data = {
 };
 
 export type BomsControllerListV1Responses = {
-  200: unknown;
+  200: Array<Bom>;
 };
+
+export type BomsControllerListV1Response =
+  BomsControllerListV1Responses[keyof BomsControllerListV1Responses];
 
 export type BomsControllerCreateV1Data = {
   body: CreateBomDto;
@@ -2812,8 +2892,11 @@ export type BomsControllerCreateV1Data = {
 };
 
 export type BomsControllerCreateV1Responses = {
-  201: unknown;
+  201: BomEnvelope;
 };
+
+export type BomsControllerCreateV1Response =
+  BomsControllerCreateV1Responses[keyof BomsControllerCreateV1Responses];
 
 export type BomsControllerFindV1Data = {
   body?: never;
@@ -2825,8 +2908,11 @@ export type BomsControllerFindV1Data = {
 };
 
 export type BomsControllerFindV1Responses = {
-  200: unknown;
+  200: BomDetail;
 };
+
+export type BomsControllerFindV1Response =
+  BomsControllerFindV1Responses[keyof BomsControllerFindV1Responses];
 
 export type BomsControllerUpdateV1Data = {
   body: UpdateBomDto;
@@ -2854,8 +2940,11 @@ export type BomsControllerAddLineV1Data = {
 };
 
 export type BomsControllerAddLineV1Responses = {
-  201: unknown;
+  201: BomLineEnvelope;
 };
+
+export type BomsControllerAddLineV1Response =
+  BomsControllerAddLineV1Responses[keyof BomsControllerAddLineV1Responses];
 
 export type BomsControllerRemoveLineV1Data = {
   body?: never;
@@ -2933,8 +3022,11 @@ export type BomsControllerDuplicateV1Data = {
 };
 
 export type BomsControllerDuplicateV1Responses = {
-  201: unknown;
+  201: BomEnvelope;
 };
+
+export type BomsControllerDuplicateV1Response =
+  BomsControllerDuplicateV1Responses[keyof BomsControllerDuplicateV1Responses];
 
 export type ProductionOrdersControllerListV1Data = {
   body?: never;
@@ -4523,8 +4615,11 @@ export type PriceListsControllerListV1Data = {
 };
 
 export type PriceListsControllerListV1Responses = {
-  200: unknown;
+  200: PriceListList;
 };
+
+export type PriceListsControllerListV1Response =
+  PriceListsControllerListV1Responses[keyof PriceListsControllerListV1Responses];
 
 export type PriceListsControllerCreateV1Data = {
   body: CreatePriceListDto;
@@ -4534,8 +4629,11 @@ export type PriceListsControllerCreateV1Data = {
 };
 
 export type PriceListsControllerCreateV1Responses = {
-  201: unknown;
+  201: PriceListEnvelope;
 };
+
+export type PriceListsControllerCreateV1Response =
+  PriceListsControllerCreateV1Responses[keyof PriceListsControllerCreateV1Responses];
 
 export type PriceListsControllerExportPriceListV1Data = {
   body?: never;
@@ -4566,8 +4664,11 @@ export type PriceListsControllerFindOneV1Data = {
 };
 
 export type PriceListsControllerFindOneV1Responses = {
-  200: unknown;
+  200: PriceListEnvelope;
 };
+
+export type PriceListsControllerFindOneV1Response =
+  PriceListsControllerFindOneV1Responses[keyof PriceListsControllerFindOneV1Responses];
 
 export type PriceListsControllerUpdateV1Data = {
   body: UpdatePriceListDto;
@@ -4613,8 +4714,11 @@ export type PriceListsControllerSetItemV1Data = {
 };
 
 export type PriceListsControllerSetItemV1Responses = {
-  200: unknown;
+  200: PriceListItemEnvelope;
 };
+
+export type PriceListsControllerSetItemV1Response =
+  PriceListsControllerSetItemV1Responses[keyof PriceListsControllerSetItemV1Responses];
 
 export type HealthControllerCheckData = {
   body?: never;

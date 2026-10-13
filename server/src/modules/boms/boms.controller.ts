@@ -17,6 +17,12 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { BomsService } from './boms.service';
+import type {
+  Bom,
+  BomDetail,
+  BomEnvelope,
+  BomLineEnvelope,
+} from './dto/bom-response.dto';
 import { CreateBomDto } from './dto/create-bom.dto';
 import { CreateBomLineDto } from './dto/create-bom-line.dto';
 import { ListBomsDto } from './dto/list-boms.dto';
@@ -29,14 +35,14 @@ export class BomsController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.BOMS_VIEW)
-  list(@Query() query: ListBomsDto) {
+  list(@Query() query: ListBomsDto): Promise<Bom[]> {
     return this.boms.list(query);
   }
 
   /** The recipe with its lines. The only consumer wants both. */
   @Get(':id')
   @RequirePermissions(PERMISSIONS.BOMS_VIEW)
-  find(@Param('id', ParseUUIDPipe) id: string) {
+  find(@Param('id', ParseUUIDPipe) id: string): Promise<BomDetail> {
     return this.boms.findDetail(id);
   }
 
@@ -48,8 +54,9 @@ export class BomsController {
     resourceType: 'bom',
     resourceId: (response: { bom: { id: string } }) => response.bom.id,
   })
-  async create(@Body() dto: CreateBomDto) {
-    return { bom: await this.boms.create(dto) };
+  async create(@Body() dto: CreateBomDto): Promise<BomEnvelope> {
+    const created = await this.boms.create(dto);
+    return { bom: await this.boms.findDetail(created.id) };
   }
 
   @Patch(':id')
@@ -78,8 +85,13 @@ export class BomsController {
   async addLine(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateBomLineDto,
-  ) {
-    return { line: await this.boms.addLine(id, dto) };
+  ): Promise<BomLineEnvelope> {
+    const added = await this.boms.addLine(id, dto);
+    // As the recipe's detail shows it, so a line has one shape.
+    const bom = await this.boms.findDetail(id);
+    const line = bom.lines.find((each) => each.id === added.id);
+    if (!line) throw new Error(`Line ${added.id} is not on BOM ${id}`);
+    return { line };
   }
 
   @Patch(':id/lines/:lineId')
@@ -164,7 +176,10 @@ export class BomsController {
     resourceType: 'bom',
     resourceId: (response: { bom: { id: string } }) => response.bom.id,
   })
-  async duplicate(@Param('id', ParseUUIDPipe) id: string) {
-    return { bom: await this.boms.duplicate(id) };
+  async duplicate(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<BomEnvelope> {
+    const copy = await this.boms.duplicate(id);
+    return { bom: await this.boms.findDetail(copy.id) };
   }
 }
