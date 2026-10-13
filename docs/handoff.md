@@ -53,7 +53,6 @@ with this one, this one is current.
 
 - **The typo lookup** sits at 270 ms of its 300 ms budget; one query per
   pass if it ever fails.
-- **`npm audit`**, a small branch of its own.
 - **Account deletion** does not exist yet. When it does, ADR-063 says it
   deletes the person's photo with it.
 
@@ -753,7 +752,6 @@ display-name test, or wait a minute between runs.
 - **Pro forma invoices** — deferred in ADR-046; remind Bob. Bring forward if
   the business needs them for customs, prepayment or sample values.
 - Check ADR-047's audit list names `return_authorization.replacement_raised`.
-- `npm audit` on both sides has not been run in a while.
 - ADR-051 tooling, small follow-ups:
   - **perf/ is never compiled in CI.** ESLint does not report type errors
       and the build excludes the folder, so a type error there shows only
