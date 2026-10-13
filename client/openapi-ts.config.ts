@@ -7,9 +7,13 @@ import { defineConfig } from '@hey-api/openapi-ts';
  * (Permission, Locale, AuditAction, ErrorCode) as plain constants. The
  * output is committed: the static site's build on Render cannot read
  * server/.
+ *
+ * Formatted by Prettier as it is written, one export to a line, so a
+ * change to the contract reads as a diff in review, and format:check holds
+ * it to the same style as everything else.
  */
 export default defineConfig({
   input: '../server/openapi.json',
-  output: 'src/api',
+  output: { path: 'src/api', postProcess: ['prettier'] },
   plugins: [{ name: '@hey-api/typescript', enums: 'javascript' }],
 });
