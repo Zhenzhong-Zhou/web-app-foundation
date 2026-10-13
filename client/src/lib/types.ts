@@ -1,7 +1,9 @@
 import type {
+  Bom,
   InvoiceSummary,
   LotCostEntry,
   OrderSummary,
+  PriceList,
 } from '../api/types.gen';
 import type { Locale } from './locales';
 
@@ -26,6 +28,25 @@ import type { Locale } from './locales';
  * is already this shape, so a form sends it as typed.
  */
 export type CalendarDay = string;
+
+/**
+ * Recipes and price lists, generated from the server's OpenAPI document
+ * (ADR-068), re-exported so their importers need no change.
+ */
+export type {
+  Bom,
+  BomDetail,
+  BomLine,
+  PriceList,
+  PriceListDetail,
+  PriceListItem,
+} from '../api/types.gen';
+
+/** A recipe's lifecycle (ADR-029), read from the generated recipe. */
+export type BomStatus = Bom['status'];
+
+/** Which side of a sale a list prices (ADR-049). */
+export type PriceListDirection = PriceList['direction'];
 
 /**
  * Products' images, the variant picker's options and product licences,
@@ -123,8 +144,6 @@ export type {
 export type OrderDirection = OrderSummary['direction'];
 
 export type OrderStatus = OrderSummary['status'];
-
-export type BomStatus = 'draft' | 'active' | 'archived';
 
 /**
  * Tax codes, generated from the server's OpenAPI document (ADR-068, the
@@ -244,37 +263,6 @@ export type {
 } from '../api/types.gen';
 
 export type InvoiceStatus = InvoiceSummary['status'];
-
-export interface Bom {
-  id: string;
-  outputVariantId: string;
-  /** Yield: what one batch makes, not an amount per unit. */
-  outputQuantity: string;
-  version: number;
-  status: BomStatus;
-  licenceId: string | null;
-  notes: string | null;
-}
-
-export interface BomLine {
-  id: string;
-  componentVariantId: string;
-  /** In the component variant's own unit — bom_lines carries no unit column. */
-  quantity: string;
-  supplyType: 'stocked' | 'external';
-  notes: string | null;
-}
-
-/** What GET /boms/:id returns — the recipe with its components. */
-export interface BomDetail extends Bom {
-  lines: BomLine[];
-  /**
-   * True once a run has been made against a promoted recipe. Until then the
-   * licence can still be attached — an NPN often arrives after the
-   * formulation is settled (ADR-029).
-   */
-  licenceLocked: boolean;
-}
 
 export type RunStatus = 'draft' | 'released' | 'completed' | 'cancelled';
 
@@ -529,31 +517,6 @@ export type {
 } from '../api/types.gen';
 
 export type ValuationKind = LotCostEntry['kind'];
-
-export type PriceListDirection = 'sale' | 'purchase';
-
-/** A price list, as the list page and the pickers show it (ADR-049). */
-export interface PriceList {
-  id: string;
-  name: string;
-  direction: PriceListDirection;
-  currency: string;
-  isActive: boolean;
-  itemCount: number;
-}
-
-export interface PriceListItem {
-  variantId: string;
-  sku: string;
-  description: string;
-  /** Per unit, net of tax, in the list's currency. */
-  unitPrice: string;
-  updatedAt: string;
-}
-
-export interface PriceListDetail extends Omit<PriceList, 'itemCount'> {
-  items: PriceListItem[];
-}
 
 /** Kinds of record the top bar's lookup finds (ADR-056). */
 export type LookupKind =
