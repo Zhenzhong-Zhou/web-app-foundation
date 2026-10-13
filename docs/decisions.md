@@ -7018,6 +7018,128 @@ yet. Its triggers are under *Deferred*.
 
 ---
 
+## ADR-068 — OpenAPI from the server, the client's types generated (#19)
+
+**Context.** The server and the client agree on the shape of every request
+and response by hand. `client/src/lib/types.ts` holds 89 types in 1,164
+lines that mirror what 34 controllers send, and nothing checks them: a
+field renamed on the server still compiles on the client, and only a
+Playwright test that happens to touch the screen notices. Four lists are
+copied as well (permissions, languages, audit actions, error codes), each
+kept honest by a script of its own in CI. The copies are a sound stopgap,
+and they do not scale; the 89 types are the larger risk. The packages share
+no files by design, and Render builds `server/` and `client/` as separate
+roots, where files outside a service's root directory are unavailable at
+build time and at runtime.
+
+**Decision — the server describes its API in OpenAPI 3.1, generated from
+its code.** `@nestjs/swagger` with its CLI plugin, which reads the existing
+DTOs and their class-validator decorators, so request bodies need little
+new annotation. OpenAPI is the vendor-neutral standard for REST APIs (the
+OpenAPI Initiative, under the Linux Foundation), not a Nest invention, so
+the same document serves the client, a partner's integration, and any tool
+that reads it. The four lists appear in it as enums on the fields that
+carry them: a role's permissions, a person's language, an audit entry's
+action, an error body's `code`.
+
+- **Written by a script, not served.** A script builds the document from
+  the application's modules and writes `server/openapi.json`, committed,
+  so a change to the API shows in review as a change to the contract.
+  Production serves no documentation page; an interactive one in
+  development only, if wanted.
+- **One freshness check replaces four.** CI regenerates the document and
+  the client's types and fails if either differs from what is committed,
+  as the migration snapshots are checked today. The four `check-client-*`
+  scripts go once their lists come from the spec.
+
+**Decision — the client's types are generated from the document.**
+`@hey-api/openapi-ts`, with its TypeScript plugin, types only and lists as
+plain constants, writes one file into `client/src/api/`, committed, so the
+static site's build on Render needs nothing outside `client/`. Pinned to an
+exact version: it is pre-1.0, so a minor release may change its output,
+and a regenerated file is then a reviewable diff, not a surprise.
+`openapi-typescript`, the better-known generator, was the first choice;
+its peer range stops at TypeScript 5, below this repository's 6, and
+ADR-019 does not override a peer range. Hey API's range is open-ended, but
+it writes its output through TypeScript's compiler API, which TypeScript
+7's native compiler brings back only in 7.1, so it joins typescript-eslint
+and the Nest CLI in what TypeScript 7 waits for (ADR-067). It runs only to
+generate a file, never in production, so a break shows as a failed
+freshness check; if it lags behind the rest, it can run on a pinned
+TypeScript 6 of its own while the project moves on. The client's `api()` stays: its
+errors, codes and request ids are this application's own, and a generated
+fetch client would replace what works for no gain yet.
+
+**Decision — built in two phases.**
+
+1. **The contract and the lists.** The plugin, the script, the generated
+   file, the four lists read from it, and the freshness check in place of
+   the four scripts. One pull request.
+2. **The responses, module by module.** Each controller's responses
+   declared as classes the plugin describes, and that module's types in
+   `types.ts` replaced by the generated ones, until the file is gone. A
+   module per pull request or riding along with feature work, never a
+   rewrite that blocks it.
+
+**Performance.** Nothing changes at runtime. The document is built in a
+script and in CI, never per request. Types are erased when the client
+compiles, and the lists that ship are the same few constants as today.
+Response classes describe the response for the document and the
+compiler; they do not validate it on the way out, so the Performance
+budgets are untouched.
+
+**Consequences.**
+
+- One contract for every consumer: the client now, an integration or an
+  AI model later.
+- "The packages share no files" holds: each side commits what it
+  generates, and only the generation reads across.
+- `conventions.md` gains how to regenerate after an API change, and the
+  pull request checklist the same line as "after a new migration".
+
+**Considered and not done.**
+
+- **Keeping the copies and their checks.** Cheap, and they work for four
+  short lists; they leave the 89 response types unchecked.
+- **A shared workspace package** (`packages/shared`), common in TypeScript
+  monorepos. On Render it would move both services to the repository root
+  with workspace installs and build filters, and it shares only what is
+  written into it: the response types would still be copied by hand.
+- **A typed RPC contract** (tRPC, ts-rest). Excellent when only TypeScript
+  calls the API, and a rewrite of 34 controllers that ties the contract to
+  TypeScript, where a B2B product will want plain REST for integrations.
+- **Standard Schema responses** (Nest 12's serializer with Zod). It would
+  validate every response at runtime, which costs time on the paths the
+  Performance budgets measure, for checks the compiler already makes.
+
+**Deferred — each with what brings it in.**
+
+- **A typed fetch client** generated from the spec. When `api()` itself
+  needs replacing.
+- **Published API documentation, or SDKs for partners.** The first
+  integration a customer asks for.
+- **An AI model calling the API, a small local one included.** OpenAPI
+  3.1's schemas are JSON Schema, which is how model tool calling and MCP
+  describe a tool's inputs, so an operation in the spec can become a tool
+  almost directly, and its summary and field descriptions become what the
+  model reads to choose it. Three things are decided when it comes, none
+  of them here:
+    1. **A curated handful of tools, not the whole API.** A small model
+       chooses well among about 5 to 15 clearly described tools, and
+       poorly among hundreds of endpoints: operations selected from the
+       spec, such as finding a lot, stock on hand, or drafting an order.
+    2. **Its own credential.** The API authenticates a browser, with a
+       session cookie and a CSRF header. An agent needs a scoped API token
+       tied to a person, so permissions and the audit log apply to
+       whatever it does. An ADR of its own.
+    3. **A person confirms every write.** Reading is safe to automate.
+       Issuing an invoice or adjusting stock goes through a draft that a
+       person approves.
+
+  Trigger: the first AI integration built on this application.
+
+---
+
 ## Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -7552,6 +7674,7 @@ they exist so the reasoning is not rediscovered from scratch.
 | Audit pagination                       | Keyset on UUIDv7 cursor                               | ADR-018          |
 | Dependency upgrades vs. peer conflicts | Never override; a blocked upgrade waits               | ADR-019          |
 | Server test runner                     | Vitest, as the client; Nest 12 after it               | ADR-067          |
+| Client types                           | Generated from the server's OpenAPI document          | ADR-068          |
 | Client route protection                | Three categories: protected, auth-only, public        | ADR-020          |
 | Component library                      | Material UI, CSS variables, three color modes         | ADR-021          |
 | Auditing account actions               | Separate account_events table, 90-day retention       | ADR-022          |
