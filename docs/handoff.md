@@ -37,7 +37,8 @@ with this one, this one is current.
   ADR-069; the steps are in conventions.md, "The API contract". Done: tax
   codes (the pilot), invoices and credit notes (`invoices-responses`,
   which settled the page class and found `CreditNoteSummary` declared
-  twice). Next, in order: orders; stock, costs and locations; products,
+  twice), orders' own controller (`orders-responses`). Next, in order:
+  shipments, returns and holds; stock, costs and locations; products,
   BOMs, price lists and product licences; partners; production orders and
   RMAs; account, auth, users, people, roles, organization and files; home,
   recent, lookup, notifications and health; then `client/src/lib/types.ts`
