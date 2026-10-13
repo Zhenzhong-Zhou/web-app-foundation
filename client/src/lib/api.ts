@@ -34,7 +34,8 @@ export class ApiError extends Error {
 /**
  * The codes the server puts beside a refusal's message (conventions.md,
  * "Error codes"), copied from server/src/common/error-codes.ts: the
- * packages share no files. Only the ones a screen acts on are here.
+ * packages share no files. check-client-error-codes.js fails CI when the
+ * two lists differ.
  */
 export const ERROR_CODES = {
   /** No registered address, which every invoice prints (ADR-046, ADR-061). */
