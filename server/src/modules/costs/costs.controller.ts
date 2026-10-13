@@ -24,6 +24,15 @@ import { RequirePermissions } from '../../core/authorization/require-permissions
 import { localeOf } from '../../i18n/translate';
 import { poolsOf, VALUATION_COLUMNS } from './cost-exports';
 import { CostsService } from './costs.service';
+import type {
+  CorrectedCostEnvelope,
+  ExchangeRateEnvelope,
+  ExchangeRateList,
+  LotCostEnvelope,
+  NeedsCostPage,
+  RunCostEnvelope,
+  StockValuationEnvelope,
+} from './dto/cost-response.dto';
 import { ListExchangeRatesDto } from './dto/list-exchange-rates.dto';
 import { ListNeedsCostDto } from './dto/list-needs-cost.dto';
 import { SetCostDto } from './dto/set-cost.dto';
@@ -47,7 +56,7 @@ export class CostsController {
 
   @Get('valuation')
   @RequirePermissions(PERMISSIONS.COSTS_VIEW)
-  async stockValuation() {
+  async stockValuation(): Promise<StockValuationEnvelope> {
     return { valuation: await this.costs.stockValuation() };
   }
 
@@ -72,19 +81,23 @@ export class CostsController {
 
   @Get('lots/:id')
   @RequirePermissions(PERMISSIONS.COSTS_VIEW)
-  async lotCost(@Param('id', ParseUUIDPipe) id: string) {
+  async lotCost(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<LotCostEnvelope> {
     return { lotCost: await this.costs.lotCost(id) };
   }
 
   @Get('runs/:id')
   @RequirePermissions(PERMISSIONS.COSTS_VIEW)
-  async runCost(@Param('id', ParseUUIDPipe) id: string) {
+  async runCost(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<RunCostEnvelope> {
     return { runCost: await this.costs.runCost(id) };
   }
 
   @Get('needs-cost')
   @RequirePermissions(PERMISSIONS.COSTS_VIEW)
-  needsCost(@Query() query: ListNeedsCostDto) {
+  needsCost(@Query() query: ListNeedsCostDto): Promise<NeedsCostPage> {
     return this.costs.needsCost(query);
   }
 
@@ -106,13 +119,15 @@ export class CostsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: SetCostDto,
     @CurrentUser() user: RequestContext,
-  ) {
+  ): Promise<CorrectedCostEnvelope> {
     return { cost: await this.costs.setCost(id, dto, user.userId) };
   }
 
   @Get('exchange-rates')
   @RequirePermissions(PERMISSIONS.COSTS_VIEW)
-  async listRates(@Query() query: ListExchangeRatesDto) {
+  async listRates(
+    @Query() query: ListExchangeRatesDto,
+  ): Promise<ExchangeRateList> {
     return { rates: await this.rates.list(query) };
   }
 
@@ -125,7 +140,9 @@ export class CostsController {
     resourceId: (response: { rate: { id: string } }) => response.rate.id,
     fields: ['currency', 'rateDate', 'rate'],
   })
-  async setRate(@Body() dto: SetExchangeRateDto) {
+  async setRate(
+    @Body() dto: SetExchangeRateDto,
+  ): Promise<ExchangeRateEnvelope> {
     return { rate: await this.rates.set(dto) };
   }
 }

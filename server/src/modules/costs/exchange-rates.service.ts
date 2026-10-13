@@ -43,7 +43,6 @@ export class ExchangeRatesService {
           currency: exchangeRates.currency,
           rateDate: exchangeRates.rateDate,
           rate: exchangeRates.rate,
-          updatedAt: exchangeRates.updatedAt,
         })
         .from(exchangeRates)
         .where(and(...filters))
