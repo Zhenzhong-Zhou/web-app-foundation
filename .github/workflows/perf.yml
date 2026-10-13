@@ -77,6 +77,15 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      # Catches the emails a run sends, as docker-compose's Mailpit does in
+      # development, and with the same image. Without it each send failed
+      # against an empty port 1025 and logged an error that was not one,
+      # which buried any real error in the run's log.
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+
     defaults:
       run:
         working-directory: server
