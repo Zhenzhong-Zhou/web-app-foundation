@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ApiError } from './api';
+import { ApiError, ERROR_CODES } from './api';
 import { useSubmit } from './use-submit';
 
 /**
@@ -105,5 +105,40 @@ describe('useSubmit', () => {
 
     expect(result.current.error).toBeNull();
     expect(result.current.submitting).toBe(false);
+  });
+
+  /**
+   * A dialog that can offer the way out of a refusal keys on its code, not
+   * its words (ADR-061's link to Profile). The code goes when the error does,
+   * so a retry that fails differently never shows the previous refusal's
+   * link.
+   */
+  it('keeps the refusal’s code beside its message, and clears it with it', async () => {
+    const { result } = renderHook(() => useSubmit(vi.fn()));
+
+    await act(async () => {
+      await result.current.submit(() =>
+        Promise.reject(
+          new ApiError(
+            'Set the address first',
+            409,
+            undefined,
+            undefined,
+            ERROR_CODES.organizationAddressMissing,
+          ),
+        ),
+      );
+    });
+
+    expect(result.current.error).toBe('Set the address first');
+    expect(result.current.errorCode).toBe('organization_address_missing');
+
+    await act(async () => {
+      await result.current.submit(() =>
+        Promise.reject(new TypeError('fetch failed')),
+      );
+    });
+
+    expect(result.current.errorCode).toBeNull();
   });
 });

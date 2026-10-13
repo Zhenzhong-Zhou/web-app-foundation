@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '../test/setup';
-import { api, ApiError } from './api';
+import { api, ApiError, ERROR_CODES } from './api';
 
 /** The error api() throws for a request, for asserting on its fields. */
 async function failureOf(path: string): Promise<ApiError> {
@@ -80,5 +80,29 @@ describe('api', () => {
     expect(error.requestId).toBe('req-1');
     // Only a 429 means "wait"; a stray header elsewhere is not read as one.
     expect(error.retryAfterSeconds).toBeUndefined();
+    expect(error.code).toBeUndefined();
+  });
+
+  /**
+   * A refusal a screen can offer a way out of comes with a code, which a
+   * dialog keys on rather than on the message (ADR-061's link to Profile).
+   */
+  it('carries the refusal’s code beside its message', async () => {
+    server.use(
+      http.get('/api/v1/things/refused', () =>
+        HttpResponse.json(
+          {
+            message: 'Set the address first',
+            code: 'organization_address_missing',
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    const error = await failureOf('/things/refused');
+
+    expect(error.message).toBe('Set the address first');
+    expect(error.code).toBe(ERROR_CODES.organizationAddressMissing);
   });
 });

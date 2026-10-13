@@ -215,7 +215,9 @@ second organization.
   Issuing gives the next number with no gap, and copies the seller, bill-to
   and ship-to as they are now.
 - **MC-702** Issuing to a customer with no billing address is refused, and
-  says to add one.
+  says to add one; under it, "Open {customer} to add one" opens the
+  customer's page. Add a billing address there, go Back and issue: it goes
+  through.
 - **MC-703** The printed invoice: amounts rounded to the currency, tax per
   component, the registered address and tax number.
 - **MC-704** Void an issued invoice: a full credit note is issued, and the
@@ -773,6 +775,14 @@ await fetch(`${api}/v1/files/product-image`, {
   Documents and print again: no logo. A viewer sees no Branding tab. In 中文
   the tab reads 品牌.
 
+- **MC-1703** The refusal to issue links to Profile. Register a new
+  organization (it has no registered address; the demo's has one), ship a
+  sale and issue its invoice: the refusal says to set the address and,
+  under it, "Set it on Organization → Profile" opens Profile. Set the
+  address, go Back and issue: it goes through. In 中文 the link reads
+  前往“组织 → 概况”设置. The customer's billing address does the same
+  (MC-702).
+
 ## 18. Product images (ADR-062)
 
 - **MC-1801** On a product with no images, the drop area invites one. Add
@@ -967,3 +977,5 @@ first.
 - 2026-10-09: ADR-064, licence expiry reminders: MC-2001.
 - 2026-10-09: ADR-065, staying signed in: MC-2101.
 - 2026-10-12: ADR-066, covers in the lookup: MC-2201.
+- 2026-10-12: ADR-061's links from the invoice refusals, to Profile and to
+  the customer: MC-1703 added, MC-702 rewritten.

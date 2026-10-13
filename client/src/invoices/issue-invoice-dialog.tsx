@@ -4,15 +4,18 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Link,
   Stack,
   TextField,
 } from '@mui/material';
 import { type ReactNode, type SubmitEvent, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
+import { Link as RouterLink } from 'react-router-dom';
 
+import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
-import { api } from '../lib/api';
+import { api, ERROR_CODES } from '../lib/api';
 import { formatMoney } from '../lib/format';
 import type { InvoiceDetail } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
@@ -25,6 +28,12 @@ import { todayLocal } from './calendar-day';
  *
  * The date defaults to the person's own today, sent as a calendar day —
  * the server does not guess one in UTC.
+ *
+ * Refused for want of an address, it links to where that address is set
+ * (ADR-061): the organization's to Organization → Profile, the customer's
+ * billing address to the customer's page, each for whoever may set it.
+ * Anyone else gets the server's message alone: a page they cannot change
+ * would be a dead end.
  */
 export function IssueInvoiceDialog({
   invoice,
@@ -38,9 +47,10 @@ export function IssueInvoiceDialog({
   onIssued: () => Promise<void> | void;
 }) {
   const intl = useIntl();
+  const can = useCan();
   const [invoiceDate, setInvoiceDate] = useState(todayLocal());
 
-  const { submitting, error, reset, submit } = useSubmit(
+  const { submitting, error, errorCode, reset, submit } = useSubmit(
     async () => {
       close();
       await onIssued();
@@ -69,7 +79,40 @@ export function IssueInvoiceDialog({
     );
   }
 
+  /** Where the refusal is put right, keyed on its code, never its words. */
+  function remedy(): { to: string; label: string } | null {
+    if (
+      errorCode === ERROR_CODES.organizationAddressMissing &&
+      can('organizations.update')
+    ) {
+      return {
+        to: '/settings/organization',
+        label: intl.formatMessage({
+          id: 'invoices.issue.setAddress',
+          defaultMessage: 'Set it on Organization → Profile',
+        }),
+      };
+    }
+    if (
+      errorCode === ERROR_CODES.customerBillingAddressMissing &&
+      can('partners.update')
+    ) {
+      return {
+        to: `/partners/${invoice.partnerId}`,
+        label: intl.formatMessage(
+          {
+            id: 'invoices.issue.addBillingAddress',
+            defaultMessage: 'Open {partner} to add one',
+          },
+          { partner: invoice.partnerName },
+        ),
+      };
+    }
+    return null;
+  }
+
   const untaxed = invoice.lines.filter((line) => !line.taxCodeId);
+  const fix = remedy();
 
   return (
     <Dialog
@@ -88,7 +131,20 @@ export function IssueInvoiceDialog({
 
         <DialogContent>
           <Stack spacing={2}>
-            {error && <FormError message={error} />}
+            {error && (
+              <FormError message={error}>
+                {fix && (
+                  <Link
+                    component={RouterLink}
+                    to={fix.to}
+                    color="inherit"
+                    underline="always"
+                  >
+                    {fix.label}
+                  </Link>
+                )}
+              </FormError>
+            )}
 
             {/* The server refuses too; saying it here saves the round trip. */}
             {untaxed.length > 0 && (

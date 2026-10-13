@@ -8,20 +8,40 @@ export class ApiError extends Error {
   readonly requestId?: string;
   /** Seconds, from the throttler's Retry-After header on a 429. */
   readonly retryAfterSeconds?: number;
+  /**
+   * What the refusal is, when the server says (ERROR_CODES below). The
+   * message is for the person and changes with the language; a screen that
+   * offers a way out keys on this instead.
+   */
+  readonly code?: string;
 
   constructor(
     message: string,
     status: number,
     requestId?: string,
     retryAfterSeconds?: number,
+    code?: string,
   ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.requestId = requestId;
     this.retryAfterSeconds = retryAfterSeconds;
+    this.code = code;
   }
 }
+
+/**
+ * The codes the server puts beside a refusal's message (conventions.md,
+ * "Error codes"), copied from server/src/common/error-codes.ts: the
+ * packages share no files. Only the ones a screen acts on are here.
+ */
+export const ERROR_CODES = {
+  /** No registered address, which every invoice prints (ADR-046, ADR-061). */
+  organizationAddressMissing: 'organization_address_missing',
+  /** The customer has no billing address to invoice to (ADR-046). */
+  customerBillingAddressMissing: 'customer_billing_address_missing',
+} as const;
 
 /**
  * What a failed request says to the person who made it: the server's own
@@ -134,6 +154,7 @@ async function send(path: string, init: ApiInit): Promise<Response> {
     const body = (await response.json().catch(() => null)) as {
       message?: string | string[];
       requestId?: string;
+      code?: string;
     } | null;
 
     const message = Array.isArray(body?.message)
@@ -152,6 +173,7 @@ async function send(path: string, init: ApiInit): Promise<Response> {
       response.status,
       body?.requestId,
       retryAfter(response),
+      body?.code,
     );
   }
 

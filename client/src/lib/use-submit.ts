@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { useToast } from '../components/use-toast';
-import { messageFor } from './api';
+import { ApiError, messageFor } from './api';
 
 /**
  * The submit half of a dialog: in-flight state, one error string, and the
@@ -17,6 +17,10 @@ import { messageFor } from './api';
  * `success` is the confirmation toast. Here rather than in each dialog, for
  * the reason this hook exists: said once, it cannot be forgotten on the next
  * dialog, and it cannot fire for a save that failed.
+ *
+ * `errorCode` is the refusal's code when the server gave one (ERROR_CODES in
+ * lib/api.ts), for a dialog that can offer the way out, such as a link to
+ * the setting that is missing. Set and cleared with `error`.
  */
 export function useSubmit(
   onDone: () => void | Promise<void>,
@@ -24,22 +28,26 @@ export function useSubmit(
 ) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const toast = useToast();
 
   /** Clears state when a dialog closes, so reopening starts clean. */
   function reset() {
     setError(null);
+    setErrorCode(null);
     setSubmitting(false);
   }
 
   async function submit(action: () => Promise<unknown>) {
     setSubmitting(true);
     setError(null);
+    setErrorCode(null);
 
     try {
       await action();
     } catch (caught) {
       setError(messageFor(caught));
+      setErrorCode(caught instanceof ApiError ? (caught.code ?? null) : null);
       return;
     } finally {
       setSubmitting(false);
@@ -50,5 +58,5 @@ export function useSubmit(
     await onDone();
   }
 
-  return { submitting, error, reset, submit };
+  return { submitting, error, errorCode, reset, submit };
 }

@@ -1,4 +1,5 @@
-import { Alert } from '@mui/material';
+import { Alert, Box } from '@mui/material';
+import type { ReactNode } from 'react';
 import { useIntl } from 'react-intl';
 
 /**
@@ -9,8 +10,17 @@ import { useIntl } from 'react-intl';
  * role="alert" and no distinguishing name are announced as an
  * indistinguishable pair. "Error" is generic enough to reuse; the dialog title
  * already says what the person was doing.
+ *
+ * `children`, when given, goes on its own line under the message: the way
+ * out of a refusal, such as a link to the setting that is missing (ADR-061).
  */
-export function FormError({ message }: { message: string }) {
+export function FormError({
+  message,
+  children,
+}: {
+  message: string;
+  children?: ReactNode;
+}) {
   const intl = useIntl();
 
   return (
@@ -22,6 +32,7 @@ export function FormError({ message }: { message: string }) {
       })}
     >
       {message}
+      {children && <Box sx={{ mt: 0.5 }}>{children}</Box>}
     </Alert>
   );
 }
