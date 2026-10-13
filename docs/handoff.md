@@ -17,8 +17,8 @@ with this one, this one is current.
   Organization → Profile and to the customer (`invoice-refusal-link`,
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
   "Error codes"). PRs through #87.
-- **Migrations:** through **0054** on `main`. Render should hold **55**
-  rows in `drizzle.__drizzle_migrations` once deployed. Next is **0055**.
+- **Migrations:** through **0054** on `main`; Render holds **55** rows in
+  `drizzle.__drizzle_migrations`. Next is **0055**.
   After any new migration: `npm run migrate:all`.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): the switch to Vitest merged; Nest 12 and
@@ -41,16 +41,23 @@ with this one, this one is current.
 
 ### Still to do, by hand
 
-- **Render:** change the database password (it was pasted in a chat);
-  confirm `FILE_STORAGE=s3` and the `FILES_*` variables; run the pinyin
-  backfill (`npm run backfill:pinyin` against the external URL with
-  `?sslmode=no-verify`); confirm 55 migrations.
+- **Render:** done on 13 October 2026. The free database was deleted and
+  created again, which retired the password pasted in a chat and left no
+  older rows for the pinyin backfill; 55 migrations applied; the
+  environment's keys checked, with `MAIL_USER` and `MAIL_PASSWORD` removed
+  (nothing reads them). A logo uploaded on Branding proved `FILE_STORAGE=s3`,
+  and showed `FILES_S3_ENDPOINT` ending in `/waf-files`, which stored every
+  file under a `waf-files/` folder inside the bucket. Corrected to the
+  account's address alone, the stray folder deleted, the logo uploaded
+  again to `<organization id>/…`, and GitHub's `BACKUP_S3_ENDPOINT` set
+  again the same way. The server now refuses such an endpoint at boot. The
+  new free database **expires on 12 November 2026**; replacing it, and what
+  changes before real data, are in `docs/runbooks/render.md`.
 - **Manual checks due:** MC-1601 and MC-1602 (an upload in R2, the
   nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
   MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
   photos and 同事 on a phone.
-- **Issues:** confirm #26 and #28 are closed (they merged without
-  "Fixes"); #17 closed itself.
+- **Issues:** #17, #26 and #28 are closed.
 - **Branches:** prune the merged ones (`scripts/prune-branches.sh`).
 
 ### Still to do, in code
