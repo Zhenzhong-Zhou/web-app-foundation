@@ -21,6 +21,12 @@ import { t } from '../../i18n/translate';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
+import type {
+  AuthenticatedUserEnvelope,
+  CurrentSession,
+  SentEmail,
+  VerifiedEmail,
+} from './dto/auth-response.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -58,7 +64,7 @@ export class AuthController {
    */
   @Get('me')
   @AllowNoOrganization()
-  me(@CurrentUser() context: RequestContext) {
+  me(@CurrentUser() context: RequestContext): Promise<CurrentSession> {
     return this.auth.me(context);
   }
 
@@ -78,7 +84,7 @@ export class AuthController {
     // passthrough lets Nest still serialise the return value while giving
     // access to res.cookie().
     @Res({ passthrough: true }) res: Response,
-  ) {
+  ): Promise<AuthenticatedUserEnvelope> {
     try {
       const { user, session } = await this.auth.register(dto, {
         ip: req.ip,
@@ -138,7 +144,7 @@ export class AuthController {
     @Body() dto: LoginDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ) {
+  ): Promise<AuthenticatedUserEnvelope> {
     const { user, session } = await this.auth.login(
       dto,
       {
@@ -210,7 +216,10 @@ export class AuthController {
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async verifyEmail(@Body() dto: VerifyEmailDto, @Req() req: Request) {
+  async verifyEmail(
+    @Body() dto: VerifyEmailDto,
+    @Req() req: Request,
+  ): Promise<VerifiedEmail> {
     const verified = await this.auth.verifyEmail(dto.token, {
       ip: req.ip,
       userAgent: req.headers['user-agent'],
@@ -245,7 +254,7 @@ export class AuthController {
   async resendVerification(
     @CurrentUser() user: RequestContext,
     @Headers('accept-language') language?: string,
-  ) {
+  ): Promise<SentEmail> {
     await this.auth.resendVerification(user, language);
     return { sent: true };
   }
@@ -274,7 +283,7 @@ export class AuthController {
   async forgotPassword(
     @Body() dto: ForgotPasswordDto,
     @Headers('accept-language') language?: string,
-  ) {
+  ): Promise<SentEmail> {
     await this.auth.requestPasswordReset(dto.email, language);
     return { sent: true };
   }

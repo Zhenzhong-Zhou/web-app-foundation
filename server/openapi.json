@@ -11,7 +11,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/CurrentSession"
                 }
               }
             }
@@ -38,7 +38,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedUserEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -62,7 +69,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedUserEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -100,7 +114,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifiedEmail"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -123,7 +144,14 @@
         ],
         "responses": {
           "202": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SentEmail"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -156,7 +184,14 @@
         },
         "responses": {
           "202": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SentEmail"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -228,7 +263,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordChanged"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -248,7 +290,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/SessionSummary"
                   }
                 }
               }
@@ -313,7 +355,14 @@
         "parameters": [],
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoSet"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -956,7 +1005,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WorkDetails"
                 }
               }
             }
@@ -6780,6 +6829,202 @@
   "servers": [],
   "components": {
     "schemas": {
+      "SessionUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "locale": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "photoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "emailVerified",
+          "locale"
+        ]
+      },
+      "OrganizationBranding": {
+        "type": "object",
+        "properties": {
+          "logoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "accentColor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rail": {
+            "type": "string",
+            "enum": [
+              "dark",
+              "light"
+            ]
+          },
+          "logoOnDocuments": {
+            "type": "boolean"
+          },
+          "expiryWarningDays": {
+            "type": "number"
+          },
+          "expiryCriticalDays": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "logoFileId",
+          "accentColor",
+          "rail",
+          "logoOnDocuments",
+          "expiryWarningDays",
+          "expiryCriticalDays"
+        ]
+      },
+      "SessionOrganization": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roleId": {
+            "type": "string"
+          },
+          "branding": {
+            "$ref": "#/components/schemas/OrganizationBranding"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "roleId",
+          "branding"
+        ]
+      },
+      "CurrentSession": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/SessionUser"
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SessionOrganization"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "users.view",
+                "users.create",
+                "users.update",
+                "users.delete",
+                "roles.view",
+                "roles.assign",
+                "organizations.view",
+                "organizations.update",
+                "audit.view",
+                "products.view",
+                "products.create",
+                "products.update",
+                "product_licences.view",
+                "product_licences.create",
+                "product_licences.update",
+                "tax_codes.view",
+                "tax_codes.create",
+                "tax_codes.update",
+                "invoices.view",
+                "invoices.create",
+                "invoices.update",
+                "invoices.delete",
+                "invoices.issue",
+                "return_authorizations.view",
+                "return_authorizations.create",
+                "return_authorizations.update",
+                "locations.view",
+                "locations.create",
+                "locations.update",
+                "stock.view",
+                "stock.move",
+                "stock.adjust",
+                "costs.view",
+                "costs.update",
+                "price_lists.view",
+                "price_lists.create",
+                "price_lists.update",
+                "partners.view",
+                "partners.create",
+                "partners.update",
+                "orders.view",
+                "orders.create",
+                "orders.update",
+                "orders.receive",
+                "orders.ship",
+                "boms.view",
+                "boms.create",
+                "boms.update",
+                "production.view",
+                "production.create",
+                "production.release",
+                "production.complete",
+                "production.override_licence"
+              ]
+            }
+          },
+          "idleLimitMs": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "user",
+          "organization",
+          "permissions"
+        ]
+      },
       "RegisterDto": {
         "type": "object",
         "properties": {
@@ -6823,6 +7068,60 @@
           "organizationName"
         ]
       },
+      "AuthenticatedUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "locale": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "organizationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "emailVerified",
+          "locale",
+          "organizationId"
+        ]
+      },
+      "AuthenticatedUserEnvelope": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AuthenticatedUser"
+          }
+        },
+        "required": [
+          "user"
+        ]
+      },
       "LoginDto": {
         "type": "object",
         "properties": {
@@ -6854,6 +7153,28 @@
         },
         "required": [
           "token"
+        ]
+      },
+      "VerifiedEmail": {
+        "type": "object",
+        "properties": {
+          "verified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "verified"
+        ]
+      },
+      "SentEmail": {
+        "type": "object",
+        "properties": {
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "sent"
         ]
       },
       "ForgotPasswordDto": {
@@ -6928,6 +7249,68 @@
           "newPassword"
         ]
       },
+      "PasswordChanged": {
+        "type": "object",
+        "properties": {
+          "otherSessionsRevoked": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "otherSessionsRevoked"
+        ]
+      },
+      "SessionSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "ip": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "browser": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "os": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "current": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "issuedAt",
+          "lastSeenAt",
+          "expiresAt",
+          "ip",
+          "browser",
+          "os",
+          "current"
+        ]
+      },
       "AccountEvent": {
         "type": "object",
         "properties": {
@@ -6960,6 +7343,59 @@
           "ip",
           "userAgent",
           "createdAt"
+        ]
+      },
+      "PhotoSet": {
+        "type": "object",
+        "properties": {
+          "photoFileId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "photoFileId"
+        ]
+      },
+      "WorkDetails": {
+        "type": "object",
+        "properties": {
+          "jobTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "workPhone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "extension": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "jobTitle",
+          "department",
+          "location",
+          "workPhone",
+          "extension"
         ]
       },
       "WorkDetailsDto": {

@@ -24,6 +24,11 @@ import { AccountPhotoService, AVATAR_MAX_BYTES } from './account-photo.service';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { CurrentUser } from './current-user.decorator';
 import type { AccountEvent } from './dto/account-event-response.dto';
+import type {
+  PasswordChanged,
+  PhotoSet,
+  SessionSummary,
+} from './dto/auth-response.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import type { RequestContext } from './request-context';
@@ -64,7 +69,7 @@ export class AccountController {
   async changePassword(
     @CurrentUser() context: RequestContext,
     @Body() dto: ChangePasswordDto,
-  ) {
+  ): Promise<PasswordChanged> {
     const revoked = await this.account.changePassword(context, dto);
 
     // Told, not hidden: "3 other devices were signed out" is how a user
@@ -73,7 +78,9 @@ export class AccountController {
   }
 
   @Get('sessions')
-  listSessions(@CurrentUser() context: RequestContext) {
+  listSessions(
+    @CurrentUser() context: RequestContext,
+  ): Promise<SessionSummary[]> {
     return this.account.listSessions(context);
   }
 
@@ -118,7 +125,7 @@ export class AccountController {
   async setPhoto(
     @CurrentUser() context: RequestContext,
     @UploadedFile() file: UploadedBinary | undefined,
-  ): Promise<{ photoFileId: string }> {
+  ): Promise<PhotoSet> {
     if (!file) {
       throw new BadRequestException(
         t({
