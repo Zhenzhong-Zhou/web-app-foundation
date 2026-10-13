@@ -33,7 +33,7 @@ import { t } from '../../i18n/translate';
 import { takeNumber } from './document-numbers';
 import type { IssueInvoiceDto } from './dto/issue-invoice.dto';
 import type { VoidInvoiceDto } from './dto/void-invoice.dto';
-import { computeAmounts } from './invoice-amounts';
+import { computeAmounts, type InvoiceAmounts } from './invoice-amounts';
 import { languagesOf, partiesOf, stored } from './issued-invoice';
 import { namedLines } from './line-names';
 import { lockDraft } from './lock-draft';
@@ -111,6 +111,23 @@ export class InvoiceIssuingService {
             invoiceId,
             invoice.currency,
           );
+
+          // A business that charges tax is registered for it, and its number
+          // prints on the invoice (ADR-046, amended). An invoice with no tax
+          // issues without one. The code is what the Issue dialog links to
+          // Profile on (ADR-061).
+          if (!seller.sellerTaxNumber && chargesTax(amounts)) {
+            throw new ConflictException(
+              withCode(
+                t({
+                  id: 'invoices.setOrganizationSTaxNumber',
+                  defaultMessage:
+                    'Set the organization’s tax number before issuing — an invoice that charges tax prints it',
+                }),
+                ERROR_CODES.organizationTaxNumberMissing,
+              ),
+            );
+          }
 
           /**
            * Per line, from the one calculation. A handful of lines per
@@ -600,4 +617,12 @@ export class InvoiceIssuingService {
 
     return order;
   }
+}
+
+/**
+ * Whether any tax component comes to more than zero. The amounts are decimal
+ * strings, read for a non-zero digit rather than converted to a float.
+ */
+function chargesTax(amounts: InvoiceAmounts): boolean {
+  return amounts.taxes.some((tax) => /[1-9]/.test(tax.amount));
 }

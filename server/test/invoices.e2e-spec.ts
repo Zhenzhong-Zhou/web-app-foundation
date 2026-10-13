@@ -787,6 +787,57 @@ describe('Invoices (e2e)', () => {
       expect(refused.code).toBe('customer_billing_address_missing');
     });
 
+    /**
+     * A business that charges tax has a tax number, and it prints on the
+     * invoice (ADR-046, amended). The refusal takes no number from the
+     * series, and its code is what the Issue dialog links to Profile on.
+     */
+    it('refuses a taxed invoice without the organization’s tax number, with its code', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      await org.agent
+        .patch('/v1/organization')
+        .send({ taxRegistrationNumber: null })
+        .expect(204);
+
+      const refused = body<{ message: string; code?: string }>(
+        await issue(org, r.invoice.id).expect(409),
+      );
+      expect(refused.code).toBe('organization_tax_number_missing');
+
+      await org.agent
+        .patch('/v1/organization')
+        .send({ taxRegistrationNumber: '123456789 RT0001' })
+        .expect(204);
+      const issued = body<{ invoice: IssuedInvoice }>(
+        await issue(org, r.invoice.id).expect(200),
+      ).invoice;
+      expect(issued.number).toBe('INV-000001');
+    });
+
+    it('issues an invoice that charges no tax without a tax number', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const s = await shipped(org);
+      await org.agent
+        .put('/v1/organization/address')
+        .send({ line1: '100 Main St', country: 'CA' })
+        .expect(204);
+      await org.agent
+        .post(`/v1/partners/${s.partnerId}/addresses`)
+        .send({ line1: '9 Harbour Rd', country: 'CA', isBilling: true })
+        .expect(201);
+      // Zero-rated: a tax line that comes to nothing, so no tax is charged.
+      const zeroRated = await taxCode(org, 'Zero-rated', '0');
+      const invoice = await draft(org, s.shipmentId, zeroRated);
+
+      const issued = body<{ invoice: IssuedInvoice }>(
+        await issue(org, invoice.id).expect(200),
+      ).invoice;
+
+      expect(issued.status).toBe('issued');
+      expect(issued.sellerTaxNumber).toBeNull();
+    });
+
     it('refuses a due date before the invoice date', async () => {
       const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);

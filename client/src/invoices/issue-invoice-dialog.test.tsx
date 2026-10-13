@@ -88,6 +88,11 @@ const ADDRESS_MISSING = {
   code: 'organization_address_missing',
 };
 
+const TAX_NUMBER_MISSING = {
+  message: 'Set the organization’s tax number before issuing',
+  code: 'organization_tax_number_missing',
+};
+
 const BILLING_MISSING = {
   message: 'Northside Pharmacy has no billing address',
   code: 'customer_billing_address_missing',
@@ -120,6 +125,16 @@ describe('IssueInvoiceDialog', () => {
       await screen.findByText(/registered address before issuing/),
     ).toBeTruthy();
     expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('links a missing tax number to Organization → Profile', async () => {
+    refuse(TAX_NUMBER_MISSING);
+    await issueAs(['invoices.issue', 'organizations.update']);
+
+    const link = await screen.findByRole('link', {
+      name: 'Set it on Organization → Profile',
+    });
+    expect(link.getAttribute('href')).toBe('/settings/organization');
   });
 
   it('links a customer with no billing address to the customer', async () => {

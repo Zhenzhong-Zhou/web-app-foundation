@@ -34,13 +34,16 @@ export class ApiError extends Error {
 /**
  * The codes the server puts beside a refusal's message (conventions.md,
  * "Error codes"), copied from server/src/common/error-codes.ts: the
- * packages share no files. Only the ones a screen acts on are here.
+ * packages share no files. check-client-error-codes.js fails CI when the
+ * two lists differ.
  */
 export const ERROR_CODES = {
   /** No registered address, which every invoice prints (ADR-046, ADR-061). */
   organizationAddressMissing: 'organization_address_missing',
   /** The customer has no billing address to invoice to (ADR-046). */
   customerBillingAddressMissing: 'customer_billing_address_missing',
+  /** An invoice charges tax, and the seller has no tax number (ADR-046). */
+  organizationTaxNumberMissing: 'organization_tax_number_missing',
 } as const;
 
 /**

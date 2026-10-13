@@ -119,6 +119,7 @@
   "invoices.saleInvoiced": "Seule une vente se facture",
   "invoices.samplesInvoicedTheyShip": "Les échantillons ne se facturent pas — ils s’expédient et se tracent comme des ventes, mais personne ne les paie",
   "invoices.setOrganizationSRegistered": "Définissez l’adresse du siège de l’organisation avant l’émission — chaque facture l’imprime",
+  "invoices.setOrganizationSTaxNumber": "Définissez le numéro de taxe de l’organisation avant l’émission — une facture avec taxes l’imprime",
   "invoices.shipmentCarriedNothing": "Cette expédition ne contenait rien",
   "invoices.shipmentInvoiceVoidBefore": "Cette expédition a déjà une facture — annulez-la avant de refacturer l’expédition",
   "invoices.shipmentWasVoidedNothing": "Cette expédition a été annulée — rien n’est parti, il n’y a donc rien à facturer",

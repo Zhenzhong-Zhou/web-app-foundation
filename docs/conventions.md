@@ -213,7 +213,8 @@ message, and the screen keys on the code, never on the words.
   thrown response. Most refusals carry none, and need none.
 - **One list on each side:** `server/src/common/error-codes.ts`, and
   `ERROR_CODES` in `client/src/lib/api.ts`, since the packages share no
-  files. The exception filter sends only the codes on the server's list.
+  files. `scripts/check-client-error-codes.js` fails CI when they differ,
+  and the exception filter sends only the codes on the server's list.
 - **snake_case, named for what is wrong**, not for the screen that offers
   the fix: `organization_address_missing`.
 - **Never renamed or removed once released:** a browser still running the

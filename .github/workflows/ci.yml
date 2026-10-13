@@ -188,6 +188,11 @@ jobs:
         run: node scripts/check-client-audit-actions.js
         working-directory: server
 
+      # And the error codes a screen keys on (conventions.md, "Error codes").
+      - name: Check client error codes
+        run: node scripts/check-client-error-codes.js
+        working-directory: server
+
       # The server's own catalogues against its t() calls (ADR-054).
       - name: Check server catalogues
         run: npm run i18n:check

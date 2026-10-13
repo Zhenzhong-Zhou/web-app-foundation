@@ -113,6 +113,11 @@ describe('Return authorizations (e2e)', () => {
       .put('/v1/organization/address')
       .send({ line1: '100 Main St', country: 'CA' })
       .expect(204);
+    // A taxed invoice needs the seller's tax number (ADR-046, amended).
+    await org.agent
+      .patch('/v1/organization')
+      .send({ taxRegistrationNumber: '123456789 RT0001' })
+      .expect(204);
     await org.agent
       .post(`/v1/partners/${s.partnerId}/addresses`)
       .send({

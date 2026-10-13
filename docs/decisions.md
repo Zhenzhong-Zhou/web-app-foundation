@@ -3083,6 +3083,44 @@ before this change can still be brought back to one; confirm keeps its own
 check for those. This is how sales documents work elsewhere: one document
 currency, chosen per order.
 
+**Amendment (October 2026) — an invoice that charges tax needs the
+seller's tax number.** The tax number stayed optional so that a business
+not registered for GST/HST, which has none, could still invoice. But such
+a business charges no tax either, and a business that charges tax is
+registered and has a number: in Canada, an invoice of $100 or more must
+show it for the customer to claim the input tax credit (the Input Tax
+Credit Information Regulations). So issuing is refused while the
+organization has no tax number and the invoice charges any tax, with the
+code `organization_tax_number_missing` and the same link to Profile as a
+missing address (ADR-061). An invoice with no tax, every line exempt or
+zero-rated, issues without one, as before. Every invoice, not only those
+over the threshold: the number is the seller's, not the amount's, and a
+rule with a figure in it is one more thing to keep up with the law.
+Credit notes copy the invoice's seller, so they are unaffected.
+
+*Deferred — tax profiles by country, with what brings them in.* The model
+is mostly country-neutral already: tax codes with any components and
+rates, any currency rounded to its minor units, snapshots, gapless numbers,
+documents in the customer's languages. What is Canadian is a few rules, and
+what other regimes need and this lacks: prices that include tax, the
+customer's tax number and reverse-charge wording on business invoices,
+rounding per line, a label and format for the tax number. When it comes,
+the organization's registered country picks a **tax profile** holding
+those, with today's behaviour as the Canada profile and a generic one
+beside it. One profile per organization: an organization is one legal
+entity registered in one country, and a group with entities in several
+runs one organization for each, as its books and invoice numbers already
+require. The profile also decides what shows: a form offers only the
+profile's fields, and a document prints only what is set (the print pages
+already leave out an empty value rather than print a blank). A
+per-country check on the tax number's format, as a warning that catches a
+typo (Canada's business number has a check digit), is the profile's first
+use. Government invoicing systems stay out: where the law issues tax
+invoices through one (China's fapiao, Mexico's CFDI, Italy's SDI, India's
+IRN), this app's invoice is the company's own record and a commercial
+invoice, and the tax invoice is issued there. Trigger: the first customer,
+or legal entity, outside Canada.
+
 ---
 
 ## ADR-047 — Return authorizations, and credit notes for what comes back
