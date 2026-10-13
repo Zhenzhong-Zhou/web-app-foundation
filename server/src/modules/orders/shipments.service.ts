@@ -5,6 +5,7 @@ import type { Locale } from '../../common/locales';
 import { shipments } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import type { PackingSlip, Shipment } from './dto/shipment-response.dto';
 import { lotItemsOf, withLotItems } from './lot-items';
 
 /**
@@ -23,10 +24,20 @@ export class ShipmentsService {
    * Read from the ledger: the movements are the record, the shipment row is
    * only the header they hang from.
    */
-  async listForOrder(orderId: string) {
+  async listForOrder(orderId: string): Promise<Shipment[]> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
+      // The fields the API returns (ADR-068), not the row.
       const headers = await tx
-        .select()
+        .select({
+          id: shipments.id,
+          fromLocationId: shipments.fromLocationId,
+          carrier: shipments.carrier,
+          trackingNumber: shipments.trackingNumber,
+          note: shipments.note,
+          voidedAt: shipments.voidedAt,
+          voidReason: shipments.voidReason,
+          createdAt: shipments.createdAt,
+        })
         .from(shipments)
         .where(
           and(
@@ -54,7 +65,7 @@ export class ShipmentsService {
    * catalogue, which is right for a slip — it is read by a person unpacking a
    * box, not kept as a record — while the SKU beside them is the snapshot.
    */
-  async slip(orderId: string, shipmentId: string) {
+  async slip(orderId: string, shipmentId: string): Promise<PackingSlip> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [row] = (
         await tx.execute(sql`

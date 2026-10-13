@@ -3302,7 +3302,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Availability"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3325,7 +3335,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LineHold"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4101,7 +4121,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/Shipment"
                   }
                 }
               }
@@ -4136,7 +4156,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4167,7 +4194,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackingSlip"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4200,7 +4234,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentPlan"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4270,7 +4311,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/OrderReturn"
                   }
                 }
               }
@@ -4305,7 +4346,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReturnEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4334,7 +4382,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/ReturnableLine"
                   }
                 }
               }
@@ -7608,6 +7656,64 @@
           }
         }
       },
+      "Availability": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "onHand": {
+            "type": "string"
+          },
+          "held": {
+            "type": "string"
+          },
+          "free": {
+            "type": "string"
+          },
+          "backordered": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "variantId",
+          "sku",
+          "unitOfMeasure",
+          "onHand",
+          "held",
+          "free",
+          "backordered"
+        ]
+      },
+      "LineHold": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "outstanding": {
+            "type": "string"
+          },
+          "held": {
+            "type": "string"
+          },
+          "short": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lineId",
+          "outstanding",
+          "held",
+          "short"
+        ]
+      },
       "OrderSummary": {
         "type": "object",
         "properties": {
@@ -8490,6 +8596,285 @@
           "movement"
         ]
       },
+      "ShipmentItem": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sku",
+          "description",
+          "unitOfMeasure",
+          "lotCode",
+          "expiresAt",
+          "quantity"
+        ]
+      },
+      "Shipment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fromLocationId": {
+            "type": "string"
+          },
+          "carrier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "trackingNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "voidedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "voidReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentItem"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "fromLocationId",
+          "carrier",
+          "trackingNumber",
+          "note",
+          "voidedAt",
+          "voidReason",
+          "createdAt",
+          "items"
+        ]
+      },
+      "SlipOrder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "partnerName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reference",
+          "partnerName"
+        ]
+      },
+      "SlipShipTo": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "region": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "label",
+          "line1",
+          "line2",
+          "city",
+          "region",
+          "postalCode",
+          "country"
+        ]
+      },
+      "PackingSlip": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "carrier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "trackingNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "voidedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "voidReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fromLocationName": {
+            "type": "string"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          },
+          "secondLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "order": {
+            "$ref": "#/components/schemas/SlipOrder"
+          },
+          "shipTo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlipShipTo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentItem"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "carrier",
+          "trackingNumber",
+          "note",
+          "voidedAt",
+          "voidReason",
+          "fromLocationName",
+          "organizationName",
+          "language",
+          "secondLanguage",
+          "order",
+          "shipTo",
+          "items"
+        ]
+      },
       "PreviewLineDto": {
         "type": "object",
         "properties": {
@@ -8524,6 +8909,95 @@
         },
         "required": [
           "fromLocationId",
+          "lines"
+        ]
+      },
+      "ShipmentPlanLot": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "onHand": {
+            "type": "string"
+          },
+          "take": {
+            "type": "string"
+          },
+          "taken": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lotId",
+          "code",
+          "expiresAt",
+          "onHand",
+          "take",
+          "taken"
+        ]
+      },
+      "ShipmentPlanLine": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "tracksLots": {
+            "type": "boolean"
+          },
+          "lots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentPlanLot"
+            }
+          },
+          "shortBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exceedsOutstanding": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lineId",
+          "sku",
+          "quantity",
+          "tracksLots",
+          "lots",
+          "shortBy",
+          "exceedsOutstanding"
+        ]
+      },
+      "ShipmentPlan": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentPlanLine"
+            }
+          }
+        },
+        "required": [
           "lines"
         ]
       },
@@ -8601,6 +9075,17 @@
           "lines"
         ]
       },
+      "ShipmentEnvelope": {
+        "type": "object",
+        "properties": {
+          "shipment": {
+            "$ref": "#/components/schemas/PackingSlip"
+          }
+        },
+        "required": [
+          "shipment"
+        ]
+      },
       "VoidShipmentDto": {
         "type": "object",
         "properties": {
@@ -8612,6 +9097,122 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "OrderReturn": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "toLocationId": {
+            "type": "string"
+          },
+          "returnAuthorizationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentItem"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "toLocationId",
+          "returnAuthorizationId",
+          "reason",
+          "note",
+          "createdAt",
+          "items"
+        ]
+      },
+      "ReturnableLot": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shipped": {
+            "type": "string"
+          },
+          "returned": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lotId",
+          "code",
+          "expiresAt",
+          "shipped",
+          "returned"
+        ]
+      },
+      "ReturnableLine": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "tracksLots": {
+            "type": "boolean"
+          },
+          "quantityFulfilled": {
+            "type": "string"
+          },
+          "quantityReturned": {
+            "type": "string"
+          },
+          "lots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReturnableLot"
+            }
+          }
+        },
+        "required": [
+          "lineId",
+          "sku",
+          "unitOfMeasure",
+          "tracksLots",
+          "quantityFulfilled",
+          "quantityReturned",
+          "lots"
         ]
       },
       "ReturnLotDto": {
@@ -8685,6 +9286,17 @@
         "required": [
           "toLocationId",
           "lines"
+        ]
+      },
+      "OrderReturnEnvelope": {
+        "type": "object",
+        "properties": {
+          "orderReturn": {
+            "$ref": "#/components/schemas/OrderReturn"
+          }
+        },
+        "required": [
+          "orderReturn"
         ]
       },
       "CreatePartnerDto": {

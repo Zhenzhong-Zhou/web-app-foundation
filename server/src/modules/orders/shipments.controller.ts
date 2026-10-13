@@ -16,6 +16,12 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { PreviewShipmentDto, ShipOrderDto } from './dto/ship-order.dto';
+import type {
+  PackingSlip,
+  Shipment,
+  ShipmentEnvelope,
+  ShipmentPlan,
+} from './dto/shipment-response.dto';
 import { VoidShipmentDto } from './dto/void-shipment.dto';
 import { ShipmentVoidsService } from './shipment-voids.service';
 import { ShipmentsService } from './shipments.service';
@@ -36,7 +42,7 @@ export class ShipmentsController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
-  list(@Param('id', ParseUUIDPipe) id: string) {
+  list(@Param('id', ParseUUIDPipe) id: string): Promise<Shipment[]> {
     return this.shipments.listForOrder(id);
   }
 
@@ -49,7 +55,7 @@ export class ShipmentsController {
   slip(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('shipmentId', ParseUUIDPipe) shipmentId: string,
-  ) {
+  ): Promise<PackingSlip> {
     return this.shipments.slip(id, shipmentId);
   }
 
@@ -64,7 +70,7 @@ export class ShipmentsController {
   preview(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: PreviewShipmentDto,
-  ) {
+  ): Promise<ShipmentPlan> {
     return this.shipping.preview(id, dto);
   }
 
@@ -85,8 +91,10 @@ export class ShipmentsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ShipOrderDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return { shipment: await this.shipping.ship(id, dto, user.userId) };
+  ): Promise<ShipmentEnvelope> {
+    const shipment = await this.shipping.ship(id, dto, user.userId);
+    // As its packing slip reads, the one read of a single shipment.
+    return { shipment: await this.shipments.slip(id, shipment.id) };
   }
 
   /**

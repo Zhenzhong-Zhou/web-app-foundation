@@ -7136,6 +7136,13 @@ budgets are untouched.
        Issuing an invoice or adjusting stock goes through a draft that a
        person approves.
 
+  Reading the UI instead, through the browser's accessibility tree (a
+  snapshot of each control's role and label, which the WCAG 2.2 AA
+  markup makes readable to a small model), suits testing and
+  exploration, not an integration: it is slower, breaks when a screen
+  changes, and acts as whoever is signed in to that browser.
+  Screenshots for a vision model are less reliable still.
+
   Trigger: the first AI integration built on this application.
 
 ---
