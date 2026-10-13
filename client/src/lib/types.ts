@@ -4,6 +4,8 @@ import type {
   LotCostEntry,
   OrderSummary,
   PriceList,
+  ProductionRun,
+  RunDetail,
 } from '../api/types.gen';
 import type { Locale } from './locales';
 
@@ -28,6 +30,44 @@ import type { Locale } from './locales';
  * is already this shape, so a form sends it as typed.
  */
 export type CalendarDay = string;
+
+/**
+ * Production runs, their issue plans and variances, and a lot's trace,
+ * generated from the server's OpenAPI document (ADR-068), re-exported so
+ * their importers need no change.
+ */
+export type {
+  ComponentLot,
+  IssuePlan,
+  IssuePlanLine,
+  IssuePlanLot,
+  LicenceCheck,
+  LineVariance,
+  LotTrace,
+  OutputVariance,
+  ProductionRun,
+  RelatedLot,
+  RunDetail,
+  RunLine,
+} from '../api/types.gen';
+
+export type RunStatus = ProductionRun['status'];
+
+/** A licence's state when a run was released (ADR-050). */
+export type LicenceStatusAtRelease = NonNullable<
+  ProductionRun['licenceStatusAtRelease']
+>;
+
+/** What a run, and a lot's source, record of the licence at release. */
+export type LicenceAtReleaseFields = Pick<
+  RunDetail,
+  | 'licenceId'
+  | 'licenceNumber'
+  | 'licenceAuthority'
+  | 'licenceStatusAtRelease'
+  | 'licenceOverriddenByName'
+  | 'licenceOverrideReason'
+>;
 
 /**
  * Partners with their addresses and contacts, generated from the server's
@@ -167,44 +207,6 @@ export interface OrganizationProfile {
 export type LicencePolicy = 'block' | 'override' | 'allow';
 
 /**
- * A licence's state as a run records it at release. Withdrawn never
- * appears: release always refuses it. Null on a run released before this
- * was recorded, which reads as "not recorded", never as current.
- */
-export type LicenceStatusAtRelease =
-  'current' | 'expired' | 'not_in_force' | 'none';
-
-/**
- * What release would do with a run's licence, as the issue plan previews it
- * (ADR-050). The server's reading, not the client's: release acts on this
- * one, so the dialog shows it rather than deriving its own.
- */
-export interface LicenceCheck {
-  licence: {
-    id: string;
-    number: string;
-    authority: string;
-    issuedAt: CalendarDay | null;
-    expiresAt: CalendarDay | null;
-  } | null;
-  status: LicenceStatusAtRelease | 'withdrawn';
-  outcome: 'allow' | 'override' | 'block';
-}
-
-/**
- * What a run was made under, and how it stood at release — the fields the
- * run page and the lot trace both show the same way.
- */
-export interface LicenceAtReleaseFields {
-  licenceId: string | null;
-  licenceNumber: string | null;
-  licenceAuthority: string | null;
-  licenceStatusAtRelease: LicenceStatusAtRelease | null;
-  licenceOverriddenByName: string | null;
-  licenceOverrideReason: string | null;
-}
-
-/**
  * Invoices and credit notes, generated from the server's OpenAPI document
  * (ADR-068, phase 2), re-exported so their importers need no change.
  * CreditNoteSummary is the credit notes list's row; an invoice's own list
@@ -226,112 +228,6 @@ export type {
 
 export type InvoiceStatus = InvoiceSummary['status'];
 
-export type RunStatus = 'draft' | 'released' | 'completed' | 'cancelled';
-
-export interface ProductionRun {
-  id: string;
-  outputVariantId: string;
-  bomId: string | null;
-  partnerId: string | null;
-  locationId: string;
-  quantityPlanned: string;
-  quantityProduced: string;
-  status: RunStatus;
-  /** What people call this run: a batch number, a co-packer's works order. */
-  reference: string | null;
-  /** Copied at release, so it says what the batch was made under then. */
-  licenceId: string | null;
-  licenceNumber: string | null;
-  licenceAuthority: string | null;
-  /** Its state at release, and any override (ADR-050). */
-  licenceStatusAtRelease: LicenceStatusAtRelease | null;
-  licenceOverriddenBy: string | null;
-  licenceOverrideReason: string | null;
-  notes: string | null;
-  createdAt: string;
-}
-
-export interface RunLine {
-  id: string;
-  componentVariantId: string;
-  /** Snapshotted at release — not joined from the variant (ADR-029). */
-  sku: string;
-  unitOfMeasure: string;
-  quantityPlanned: string;
-  quantityConsumed: string;
-  supplyType: 'stocked' | 'external';
-  sourceLocationId: string | null;
-  externalLotCode: string | null;
-}
-
-/**
- * One lot of one component, as it went into a run: the recall trail
- * (ADR-039). Issued includes top-ups; consumed is filled in at close.
- */
-export interface ComponentLot {
-  componentVariantId: string;
-  lotId: string;
-  code: string;
-  expiresAt: CalendarDay | null;
-  issued: string;
-  consumed: string;
-}
-
-export interface RunDetail extends ProductionRun {
-  /** Who overrode the licence policy at release, by name. */
-  licenceOverriddenByName: string | null;
-  lines: RunLine[];
-  componentLots: ComponentLot[];
-  /** Lot ids, read from the run's production movements (ADR-032). */
-  outputLots: string[];
-}
-
-/** A lot at the source, with what earliest-expiry-first would take from it. */
-export interface IssuePlanLot {
-  lotId: string;
-  code: string;
-  expiresAt: CalendarDay | null;
-  onHand: string;
-  take: string;
-  taken: boolean;
-}
-
-/** One recipe line as release would issue it, before anything moves. */
-export interface IssuePlanLine {
-  componentVariantId: string;
-  sku: string;
-  unitOfMeasure: string;
-  tracksLots: boolean;
-  supplyType: 'stocked' | 'external';
-  quantity: string;
-  lots: IssuePlanLot[];
-  /** How much the source is missing, or null when it can cover the line. */
-  shortBy: string | null;
-}
-
-/** What GET /production-orders/:id/issue-plan returns. */
-export interface IssuePlan {
-  lines: IssuePlanLine[];
-  licenceCheck: LicenceCheck;
-}
-
-/** The batch against its own plan, when it is far enough off to say so. */
-export interface OutputVariance {
-  quantityPlanned: string;
-  quantityProduced: string;
-  variance: number;
-}
-
-export interface LineVariance {
-  lineId: string;
-  componentVariantId: string;
-  /** Snapshotted on the line at release — a UUID reads as nothing on screen. */
-  sku: string;
-  quantityPlanned: string;
-  quantityConsumed: string;
-  variance: number;
-}
-
 /**
  * An order's shipments, returns and the plans behind them, generated from
  * the server's OpenAPI document (ADR-068, phase 2), re-exported so their
@@ -345,62 +241,6 @@ export type {
   Shipment,
   ShipmentPlanLine,
 } from '../api/types.gen';
-
-/** A lot connected through production, up or down the chain. */
-export interface RelatedLot {
-  lotId: string;
-  code: string;
-  sku: string;
-  /** Steps away: 1 is a direct ingredient or batch. */
-  depth: number;
-  runId: string;
-  runReference: string | null;
-}
-
-/** One lot's whole story, read from the ledger (ADR-044). */
-export interface LotTrace {
-  lot: {
-    id: string;
-    code: string;
-    expiresAt: CalendarDay | null;
-    sku: string;
-    unitOfMeasure: string;
-    description: string;
-  };
-  balances: {
-    locationId: string;
-    locationName: string;
-    isAvailable: boolean;
-    quantity: string;
-  }[];
-  sources: ({
-    kind: 'receipt' | 'production';
-    at: string;
-    quantity: string;
-    orderId: string | null;
-    orderReference: string | null;
-    supplierName: string | null;
-    runId: string | null;
-    runReference: string | null;
-  } & LicenceAtReleaseFields)[];
-  madeFrom: RelatedLot[];
-  wentInto: RelatedLot[];
-  /** Everyone who received it or anything made from it. */
-  recipients: {
-    /** Null when it left with no recipient on record. */
-    partnerId: string | null;
-    partnerName: string | null;
-    orderId: string | null;
-    orderReference: string | null;
-    isSampleOrder: boolean;
-    lotId: string;
-    lotCode: string;
-    sku: string;
-    shipped: string;
-    sampled: string;
-    returned: string;
-  }[];
-}
 
 /** Stock availability and a sale line's hold (ADR-045), generated (ADR-068). */
 export type { Availability, LineHold } from '../api/types.gen';
