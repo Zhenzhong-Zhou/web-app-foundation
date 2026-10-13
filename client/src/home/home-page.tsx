@@ -349,6 +349,7 @@ function CountTile({ card }: { card: HomeCard }) {
 /** One card: its title, "See all", and its five most urgent rows. */
 function CardPanel({ card, today }: { card: HomeCard; today: string }) {
   const intl = useIntl();
+  const can = useCan();
   // The organization's days (ADR-060), for "Nothing expires within".
   const { warning: expiringWithin } = useExpiryDays();
   const meta = CARDS[card.kind];
@@ -378,6 +379,22 @@ function CardPanel({ card, today }: { card: HomeCard; today: string }) {
               { id: 'home.seeAll', defaultMessage: 'See all {count}' },
               { count: card.count },
             )}
+          </Link>
+        )}
+        {/* Where the days come from, for whoever may change them
+            (ADR-060, ADR-061). */}
+        {card.kind === 'expiring' && can('organizations.update') && (
+          <Link
+            component={RouterLink}
+            to="/settings/organization?tab=stock"
+            underline="hover"
+            color="text.secondary"
+            variant="body2"
+          >
+            {intl.formatMessage({
+              id: 'home.expiringDays',
+              defaultMessage: 'Change the days',
+            })}
           </Link>
         )}
       </Stack>

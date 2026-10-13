@@ -383,6 +383,7 @@
   "home.empty.returnsOpen": "No returns open.",
   "home.empty.toReceive": "Nothing to receive.",
   "home.empty.toShip": "Nothing to ship.",
+  "home.expiringDays": "Change the days",
   "home.greeting.afternoon": "Good afternoon, {name}",
   "home.greeting.evening": "Good evening, {name}",
   "home.greeting.morning": "Good morning, {name}",

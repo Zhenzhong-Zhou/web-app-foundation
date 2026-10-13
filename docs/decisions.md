@@ -6195,9 +6195,9 @@ come with the organization's other settings; nothing new is fetched.
   session so the chips and the paper follow at once.
 - **The logo prints from the print sheet itself**, so invoices, credit
   notes and packing slips all have it without three copies of the rule.
-- **Not built: Home's link to Stock.** The Expiring card names the
-  organization's days ("Nothing expires within 180 days"); a link from it
-  to the setting waits for someone looking for it there.
+- **Home's link to Stock**, built after: the Expiring card names the
+  organization's days ("Nothing expires within 180 days") and, for those
+  who may change them, links to the Stock tab: "Change the days".
 
 **Considered and not done.**
 
