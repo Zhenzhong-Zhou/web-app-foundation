@@ -10,7 +10,7 @@ knows nothing about stock or recipes and would carry unchanged into a CRM or a b
 app; everything under `server/src/modules` is the inventory domain and depends on core,
 never the other way round.
 
-> **Status: pre-release (v0.5.0-rc.1), in daily use by its author.** Auth,
+> **Status: pre-release (v0.7.0-rc.1), in daily use by its author.** Auth,
 > tenancy, permissions and auditing work end to end, and so does the whole cycle
 > for a maker of natural health products: buying, receiving, making under a
 > licence, selling, shipping, invoicing, returns and credit — with every lot

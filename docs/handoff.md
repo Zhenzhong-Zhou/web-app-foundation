@@ -21,14 +21,25 @@ with this one, this one is current.
   `drizzle.__drizzle_migrations`. Next is **0055**.
   After any new migration: `npm run migrate:all`.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
-  intl-messageformat 12): the switch to Vitest merged; Nest 12 and
-  intl-messageformat 12 on `nest-12`. TypeScript 7 waits for
-  typescript-eslint and the Nest CLI (ADR-067, *Deferred*). Next is
-  **ADR-068**.
-- **Release:** **v0.6.0** is tagged on #87's merge (b18cdf0), straight
-  after rc.2, with no rc.3. Its notes and v0.5.0's, in full, are the GitHub
-  releases and `docs/releases/`. Release notes are release notes only:
-  they say nothing of manual checks or the walkthrough. Next is v0.7.0.
+  intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
+  for typescript-eslint and the Nest CLI (ADR-067, *Deferred*).
+- **ADR-046 amended:** a taxed invoice needs the seller's tax number,
+  refused with `organization_tax_number_missing` and linked to Profile
+  (`invoice-tax-number`, MC-711). Tax profiles by country are deferred in
+  the same amendment, until the first customer or legal entity outside
+  Canada. The client's error codes are now checked against the server's
+  in CI, like the other copied lists.
+- **Next, in Bob's order:** **ADR-068**, generated client types from the
+  server's OpenAPI (#19), replacing the four copied lists and their checks;
+  then **ADR-069**, account deletion (ADR-012 already settles the audit
+  side: anonymize the person, keep the rows).
+- **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),
+  a GitHub pre-release; its tag ran the Performance workflow's full
+  budgets. v0.7.0 follows once those pass and the release candidate has
+  run in production for a few days, with its notes in `docs/releases/`.
+  v0.6.0 and v0.5.0's notes are the GitHub releases and `docs/releases/`.
+  Release notes are release notes only: they say nothing of manual checks
+  or the walkthrough.
 - **Working agreements** are below, unchanged: one PR per feature, ADR
   first; chores ride along; commits authored Zhenzhong Zhou
   <bob0823.zhou@gmail.com>; a file roadmap in every answer that changes
