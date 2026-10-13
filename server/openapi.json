@@ -4548,7 +4548,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Partner"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4570,7 +4580,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartnerEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4623,7 +4640,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartnerDetail"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4677,7 +4701,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Address"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4708,7 +4742,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4801,7 +4842,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Contact"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4832,7 +4883,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -10450,6 +10508,301 @@
           "orderReturn"
         ]
       },
+      "Partner": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taxId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "salePriceListId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "purchasePriceListId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "documentLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "documentSecondLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code",
+          "taxId",
+          "salePriceListId",
+          "purchasePriceListId",
+          "documentLanguage",
+          "documentSecondLanguage",
+          "notes",
+          "isActive"
+        ]
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "region": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "type": "string"
+          },
+          "isBilling": {
+            "type": "boolean"
+          },
+          "isShipping": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "line1",
+          "line2",
+          "city",
+          "region",
+          "postalCode",
+          "country",
+          "isBilling",
+          "isShipping",
+          "isDefault",
+          "isActive"
+        ]
+      },
+      "Contact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role",
+          "email",
+          "phone",
+          "notes",
+          "isPrimary",
+          "isActive"
+        ]
+      },
+      "PartnerDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taxId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "salePriceListId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "purchasePriceListId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "documentLanguage": {
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "documentSecondLanguage": {
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Address"
+            }
+          },
+          "contacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contact"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code",
+          "taxId",
+          "salePriceListId",
+          "purchasePriceListId",
+          "documentLanguage",
+          "documentSecondLanguage",
+          "notes",
+          "isActive",
+          "addresses",
+          "contacts"
+        ]
+      },
       "CreatePartnerDto": {
         "type": "object",
         "properties": {
@@ -10497,6 +10850,17 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "PartnerEnvelope": {
+        "type": "object",
+        "properties": {
+          "partner": {
+            "$ref": "#/components/schemas/PartnerDetail"
+          }
+        },
+        "required": [
+          "partner"
         ]
       },
       "UpdatePartnerDto": {
@@ -10609,6 +10973,17 @@
           "country"
         ]
       },
+      "AddressEnvelope": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      },
       "UpdateAddressDto": {
         "type": "object",
         "properties": {
@@ -10686,6 +11061,17 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "ContactEnvelope": {
+        "type": "object",
+        "properties": {
+          "contact": {
+            "$ref": "#/components/schemas/Contact"
+          }
+        },
+        "required": [
+          "contact"
         ]
       },
       "UpdateContactDto": {

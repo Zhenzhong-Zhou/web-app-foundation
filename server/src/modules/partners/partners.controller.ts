@@ -21,6 +21,11 @@ import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CreatePartnerDto } from './dto/create-partner.dto';
+import type {
+  Partner,
+  PartnerDetail,
+  PartnerEnvelope,
+} from './dto/partner-response.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
 import { PARTNER_COLUMNS } from './partner-exports';
 import { PartnersService } from './partners.service';
@@ -31,7 +36,7 @@ export class PartnersController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PARTNERS_VIEW)
-  list() {
+  list(): Promise<Partner[]> {
     return this.partners.list();
   }
 
@@ -64,7 +69,7 @@ export class PartnersController {
    */
   @Get(':id')
   @RequirePermissions(PERMISSIONS.PARTNERS_VIEW)
-  find(@Param('id', ParseUUIDPipe) id: string) {
+  find(@Param('id', ParseUUIDPipe) id: string): Promise<PartnerDetail> {
     return this.partners.findDetail(id);
   }
 
@@ -76,8 +81,9 @@ export class PartnersController {
     resourceType: 'partner',
     resourceId: (response: { partner: { id: string } }) => response.partner.id,
   })
-  async create(@Body() dto: CreatePartnerDto) {
-    return { partner: await this.partners.create(dto) };
+  async create(@Body() dto: CreatePartnerDto): Promise<PartnerEnvelope> {
+    const created = await this.partners.create(dto);
+    return { partner: await this.partners.findDetail(created.id) };
   }
 
   /**

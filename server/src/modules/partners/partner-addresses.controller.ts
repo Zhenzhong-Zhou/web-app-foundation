@@ -16,8 +16,10 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateAddressDto } from './dto/create-address.dto';
+import type { Address, AddressEnvelope } from './dto/partner-response.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { PartnerAddressesService } from './partner-addresses.service';
+import { addressOf } from './partner-views';
 
 /**
  * Nested under the partner rather than a flat /v1/addresses.
@@ -38,7 +40,9 @@ export class PartnerAddressesController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PARTNERS_VIEW)
-  list(@Param('partnerId', ParseUUIDPipe) partnerId: string) {
+  list(
+    @Param('partnerId', ParseUUIDPipe) partnerId: string,
+  ): Promise<Address[]> {
     return this.addresses.list(partnerId);
   }
 
@@ -56,8 +60,9 @@ export class PartnerAddressesController {
   async create(
     @Param('partnerId', ParseUUIDPipe) partnerId: string,
     @Body() dto: CreateAddressDto,
-  ) {
-    return { address: await this.addresses.create(partnerId, dto) };
+  ): Promise<AddressEnvelope> {
+    const created = await this.addresses.create(partnerId, dto);
+    return { address: addressOf(created) };
   }
 
   @Patch(':id')

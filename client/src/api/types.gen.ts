@@ -951,6 +951,60 @@ export type OrderReturnEnvelope = {
   orderReturn: OrderReturn;
 };
 
+export type Partner = {
+  id: string;
+  name: string;
+  code: string | null;
+  taxId: string | null;
+  salePriceListId: string | null;
+  purchasePriceListId: string | null;
+  documentLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  documentSecondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  notes: string | null;
+  isActive: boolean;
+};
+
+export type Address = {
+  id: string;
+  label: string | null;
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string;
+  isBilling: boolean;
+  isShipping: boolean;
+  isDefault: boolean;
+  isActive: boolean;
+};
+
+export type Contact = {
+  id: string;
+  name: string;
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  isPrimary: boolean;
+  isActive: boolean;
+};
+
+export type PartnerDetail = {
+  id: string;
+  name: string;
+  code: string | null;
+  taxId: string | null;
+  salePriceListId: string | null;
+  purchasePriceListId: string | null;
+  documentLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  documentSecondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  notes: string | null;
+  isActive: boolean;
+  addresses: Array<Address>;
+  contacts: Array<Contact>;
+};
+
 export type CreatePartnerDto = {
   name: string;
   code?: string;
@@ -958,6 +1012,10 @@ export type CreatePartnerDto = {
   notes?: string;
   documentLanguage?: 'en' | 'fr-CA' | 'zh-Hans' | null;
   documentSecondLanguage?: 'en' | 'fr-CA' | 'zh-Hans' | null;
+};
+
+export type PartnerEnvelope = {
+  partner: PartnerDetail;
 };
 
 export type UpdatePartnerDto = {
@@ -985,6 +1043,10 @@ export type CreateAddressDto = {
   isDefault?: boolean;
 };
 
+export type AddressEnvelope = {
+  address: Address;
+};
+
 export type UpdateAddressDto = {
   label?: string;
   line1?: string;
@@ -1006,6 +1068,10 @@ export type CreateContactDto = {
   notes?: string;
   isPrimary?: boolean;
   isActive?: boolean;
+};
+
+export type ContactEnvelope = {
+  contact: Contact;
 };
 
 export type UpdateContactDto = {
@@ -3847,8 +3913,11 @@ export type PartnersControllerListV1Data = {
 };
 
 export type PartnersControllerListV1Responses = {
-  200: unknown;
+  200: Array<Partner>;
 };
+
+export type PartnersControllerListV1Response =
+  PartnersControllerListV1Responses[keyof PartnersControllerListV1Responses];
 
 export type PartnersControllerCreateV1Data = {
   body: CreatePartnerDto;
@@ -3858,8 +3927,11 @@ export type PartnersControllerCreateV1Data = {
 };
 
 export type PartnersControllerCreateV1Responses = {
-  201: unknown;
+  201: PartnerEnvelope;
 };
+
+export type PartnersControllerCreateV1Response =
+  PartnersControllerCreateV1Responses[keyof PartnersControllerCreateV1Responses];
 
 export type PartnersControllerExportPartnersV1Data = {
   body?: never;
@@ -3888,8 +3960,11 @@ export type PartnersControllerFindV1Data = {
 };
 
 export type PartnersControllerFindV1Responses = {
-  200: unknown;
+  200: PartnerDetail;
 };
+
+export type PartnersControllerFindV1Response =
+  PartnersControllerFindV1Responses[keyof PartnersControllerFindV1Responses];
 
 export type PartnersControllerUpdateV1Data = {
   body: UpdatePartnerDto;
@@ -3917,8 +3992,11 @@ export type PartnerAddressesControllerListV1Data = {
 };
 
 export type PartnerAddressesControllerListV1Responses = {
-  200: unknown;
+  200: Array<Address>;
 };
+
+export type PartnerAddressesControllerListV1Response =
+  PartnerAddressesControllerListV1Responses[keyof PartnerAddressesControllerListV1Responses];
 
 export type PartnerAddressesControllerCreateV1Data = {
   body: CreateAddressDto;
@@ -3930,8 +4008,11 @@ export type PartnerAddressesControllerCreateV1Data = {
 };
 
 export type PartnerAddressesControllerCreateV1Responses = {
-  201: unknown;
+  201: AddressEnvelope;
 };
+
+export type PartnerAddressesControllerCreateV1Response =
+  PartnerAddressesControllerCreateV1Responses[keyof PartnerAddressesControllerCreateV1Responses];
 
 export type PartnerAddressesControllerRetireV1Data = {
   body?: never;
@@ -3977,8 +4058,11 @@ export type PartnerContactsControllerListV1Data = {
 };
 
 export type PartnerContactsControllerListV1Responses = {
-  200: unknown;
+  200: Array<Contact>;
 };
+
+export type PartnerContactsControllerListV1Response =
+  PartnerContactsControllerListV1Responses[keyof PartnerContactsControllerListV1Responses];
 
 export type PartnerContactsControllerCreateV1Data = {
   body: CreateContactDto;
@@ -3990,8 +4074,11 @@ export type PartnerContactsControllerCreateV1Data = {
 };
 
 export type PartnerContactsControllerCreateV1Responses = {
-  201: unknown;
+  201: ContactEnvelope;
 };
+
+export type PartnerContactsControllerCreateV1Response =
+  PartnerContactsControllerCreateV1Responses[keyof PartnerContactsControllerCreateV1Responses];
 
 export type PartnerContactsControllerRetireV1Data = {
   body?: never;

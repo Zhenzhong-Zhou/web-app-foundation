@@ -15,7 +15,9 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { assertListAssignable } from '../price-lists/list-price';
 import type { CreatePartnerDto } from './dto/create-partner.dto';
+import type { Partner, PartnerDetail } from './dto/partner-response.dto';
 import type { UpdatePartnerDto } from './dto/update-partner.dto';
+import { addressOf, contactOf, partnerOf } from './partner-views';
 
 /**
  * Everyone the organization trades with, in one table (ADR-026).
@@ -38,10 +40,11 @@ export class PartnersService {
    * than one shown as inactive. The order form filters them out instead —
    * that is where an inactive partner would be a mistake.
    */
-  list() {
-    return this.tenantDb.select(partners, undefined, {
+  async list(): Promise<Partner[]> {
+    const rows = await this.tenantDb.select(partners, undefined, {
       orderBy: asc(partners.name),
     });
+    return rows.map(partnerOf);
   }
 
   /**
@@ -225,7 +228,7 @@ export class PartnersService {
    * hiding them — the order form is where the filter belongs, because that is
    * the one place a retired address would be a mistake.
    */
-  async findDetail(partnerId: string) {
+  async findDetail(partnerId: string): Promise<PartnerDetail> {
     const partner = await this.findById(partnerId);
 
     // Two queries, not a join: a join across both children multiplies rows
@@ -241,9 +244,9 @@ export class PartnersService {
     ]);
 
     return {
-      ...partner,
-      addresses: partnerAddresses,
-      contacts: partnerContacts,
+      ...partnerOf(partner),
+      addresses: partnerAddresses.map(addressOf),
+      contacts: partnerContacts.map(contactOf),
     };
   }
 }
