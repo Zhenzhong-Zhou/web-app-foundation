@@ -436,105 +436,18 @@ export interface LineVariance {
 }
 
 /**
- * One line as a shipment would send it, with the lots earliest expiry first
- * would take (ADR-041). The same shape as a release preview, per order line.
+ * An order's shipments, returns and the plans behind them, generated from
+ * the server's OpenAPI document (ADR-068, phase 2), re-exported so their
+ * importers need no change.
  */
-export interface ShipmentPlanLine {
-  lineId: string;
-  sku: string;
-  quantity: string;
-  tracksLots: boolean;
-  lots: IssuePlanLot[];
-  /** What the source is missing, or null when it can cover the line. */
-  shortBy: string | null;
-  /** More than the line still has outstanding: the ship would be refused. */
-  exceedsOutstanding: boolean;
-}
-
-/** A shipment as its order page lists it: the header and what it carried. */
-export interface Shipment {
-  id: string;
-  fromLocationId: string;
-  carrier: string | null;
-  trackingNumber: string | null;
-  note: string | null;
-  /** Set when a shipment recorded too early was voided (ADR-041); null otherwise. */
-  voidedAt: string | null;
-  voidReason: string | null;
-  createdAt: string;
-  items: {
-    sku: string;
-    /** Null for untracked stock, which ships without a lot. */
-    lotCode: string | null;
-    expiresAt: CalendarDay | null;
-    quantity: string;
-    /** From the catalogue, beside the snapshotted SKU. */
-    description: string;
-    unitOfMeasure: string;
-  }[];
-}
-
-/** Everything a packing slip prints, from one read (ADR-041). */
-export interface PackingSlip {
-  id: string;
-  createdAt: string;
-  carrier: string | null;
-  trackingNumber: string | null;
-  note: string | null;
-  /** Set when a shipment recorded too early was voided (ADR-041); null otherwise. */
-  voidedAt: string | null;
-  voidReason: string | null;
-  fromLocationName: string;
-  organizationName: string;
-  /** What it prints in, fixed when it shipped (ADR-054). */
-  language: Locale;
-  secondLanguage: Locale | null;
-  order: { id: string; reference: string | null; partnerName: string };
-  /** The order's snapshot; null when it was raised without a destination. */
-  shipTo: {
-    label: string | null;
-    line1: string;
-    line2: string | null;
-    city: string | null;
-    region: string | null;
-    postalCode: string | null;
-    country: string | null;
-  } | null;
-  items: Shipment['items'];
-}
-
-/** A lot that shipped on an order, with how much has come back (ADR-043). */
-export interface ReturnableLot {
-  lotId: string;
-  code: string;
-  expiresAt: CalendarDay | null;
-  shipped: string;
-  returned: string;
-}
-
-/** One shipped line, as the return dialog offers it. */
-export interface ReturnableLine {
-  lineId: string;
-  sku: string;
-  unitOfMeasure: string;
-  tracksLots: boolean;
-  quantityFulfilled: string;
-  quantityReturned: string;
-  /** Only lots that shipped on this order; empty when untracked. */
-  lots: ReturnableLot[];
-}
-
-/** A return as its order page lists it: the header and what came back. */
-export interface OrderReturn {
-  id: string;
-  toLocationId: string;
-  /** The RMA it counts against, if any (ADR-047). */
-  returnAuthorizationId: string | null;
-  reason: string | null;
-  note: string | null;
-  createdAt: string;
-  items: Shipment['items'];
-}
+export type {
+  OrderReturn,
+  PackingSlip,
+  ReturnableLine,
+  ReturnableLot,
+  Shipment,
+  ShipmentPlanLine,
+} from '../api/types.gen';
 
 /** A lot matched by the start of its code (ADR-044). */
 export interface LotMatch {
@@ -600,28 +513,8 @@ export interface LotTrace {
   }[];
 }
 
-/** Per product across available locations (ADR-045). */
-export interface Availability {
-  variantId: string;
-  sku: string;
-  unitOfMeasure: string;
-  /** Stock at locations marked available: what could be promised. */
-  onHand: string;
-  /** Held for confirmed sales, earliest confirmed first. */
-  held: string;
-  /** Neither held nor unavailable: free to promise, sample or use. */
-  free: string;
-  /** Wanted by confirmed sales beyond what exists. */
-  backordered: string;
-}
-
-/** One confirmed sale line's hold (ADR-045). */
-export interface LineHold {
-  lineId: string;
-  outstanding: string;
-  held: string;
-  short: string;
-}
+/** Stock availability and a sale line's hold (ADR-045), generated (ADR-068). */
+export type { Availability, LineHold } from '../api/types.gen';
 
 export type ReturnResolution = 'credit' | 'replace' | 'none';
 
