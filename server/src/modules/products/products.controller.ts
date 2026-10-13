@@ -28,6 +28,14 @@ import {
   AddProductImageDto,
   OrderProductImagesDto,
 } from './dto/product-images.dto';
+import type {
+  ProductDetail,
+  ProductEnvelope,
+  ProductImageList,
+  ProductSummary,
+  VariantEnvelope,
+  VariantOption,
+} from './dto/product-response.dto';
 import {
   SetProductTranslationsDto,
   SetVariantTranslationsDto,
@@ -47,7 +55,7 @@ export class ProductsController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
-  list() {
+  list(): Promise<ProductSummary[]> {
     return this.products.list();
   }
 
@@ -81,13 +89,13 @@ export class ProductsController {
    */
   @Get('variants')
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
-  listVariants() {
+  listVariants(): Promise<VariantOption[]> {
     return this.products.listActiveVariants();
   }
 
   @Get(':id')
   @RequirePermissions(PERMISSIONS.PRODUCTS_VIEW)
-  find(@Param('id', ParseUUIDPipe) id: string) {
+  find(@Param('id', ParseUUIDPipe) id: string): Promise<ProductDetail> {
     return this.products.findById(id);
   }
 
@@ -99,8 +107,9 @@ export class ProductsController {
     resourceType: 'product',
     resourceId: (response: { product: { id: string } }) => response.product.id,
   })
-  async create(@Body() dto: CreateProductDto) {
-    return { product: await this.products.create(dto) };
+  async create(@Body() dto: CreateProductDto): Promise<ProductEnvelope> {
+    const created = await this.products.create(dto);
+    return { product: await this.products.findById(created.id) };
   }
 
   /**
@@ -141,8 +150,15 @@ export class ProductsController {
   async addVariant(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateVariantDto,
-  ) {
-    return { variant: await this.products.addVariant(id, dto) };
+  ): Promise<VariantEnvelope> {
+    const added = await this.products.addVariant(id, dto);
+    // As the product's detail shows it, so a variant has one shape.
+    const product = await this.products.findById(id);
+    const variant = product.variants.find((each) => each.id === added.id);
+    if (!variant) {
+      throw new Error(`Variant ${added.id} is not on product ${id}`);
+    }
+    return { variant };
   }
 
   /**
@@ -226,7 +242,7 @@ export class ProductsController {
   async addImage(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddProductImageDto,
-  ) {
+  ): Promise<ProductImageList> {
     return { images: await this.images.add(id, dto.fileId) };
   }
 
@@ -242,7 +258,7 @@ export class ProductsController {
   async orderImages(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: OrderProductImagesDto,
-  ) {
+  ): Promise<ProductImageList> {
     return { images: await this.images.reorder(id, dto.fileIds) };
   }
 

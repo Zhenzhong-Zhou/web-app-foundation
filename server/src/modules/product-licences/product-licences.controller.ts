@@ -15,6 +15,10 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateProductLicenceDto } from './dto/create-product-licence.dto';
+import type {
+  LicenceEnvelope,
+  ProductLicence,
+} from './dto/product-licence-response.dto';
 import { UpdateProductLicenceDto } from './dto/update-product-licence.dto';
 import { ProductLicencesService } from './product-licences.service';
 
@@ -29,7 +33,7 @@ export class ProductLicencesController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PRODUCT_LICENCES_VIEW)
-  list() {
+  list(): Promise<ProductLicence[]> {
     return this.licences.list();
   }
 
@@ -43,7 +47,7 @@ export class ProductLicencesController {
     // The number and who issued it. Not the notes, which are free text.
     fields: ['number', 'authority'],
   })
-  async create(@Body() dto: CreateProductLicenceDto) {
+  async create(@Body() dto: CreateProductLicenceDto): Promise<LicenceEnvelope> {
     return { licence: await this.licences.create(dto) };
   }
 

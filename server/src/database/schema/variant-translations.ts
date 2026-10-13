@@ -8,6 +8,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
+import type { Locale } from '../../common/locales';
 import { primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
 import { productVariants } from './product-variants';
@@ -32,7 +33,8 @@ export const variantTranslations = pgTable(
       .notNull()
       .references(() => productVariants.id, { onDelete: 'cascade' }),
 
-    locale: text('locale').notNull(),
+    // Written only through the translation DTOs, which take a Locale.
+    locale: text('locale').$type<Locale>().notNull(),
 
     name: text('name').notNull(),
 

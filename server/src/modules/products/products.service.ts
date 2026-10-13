@@ -4,15 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  and,
-  asc,
-  eq,
-  getTableColumns,
-  inArray,
-  notInArray,
-  sql,
-} from 'drizzle-orm';
+import { and, asc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 
 import { EXPORT_LIMIT } from '../../common/export';
 import { namePinyin, pinyinOf } from '../../common/pinyin';
@@ -28,6 +20,11 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { CreateProductDto } from './dto/create-product.dto';
 import { CreateVariantDto } from './dto/create-variant.dto';
+import type {
+  ProductDetail,
+  ProductSummary,
+  Variant,
+} from './dto/product-response.dto';
 import type {
   SetProductTranslationsDto,
   SetVariantTranslationsDto,
@@ -82,11 +79,17 @@ export class ProductsService {
   }
 
   /** Every product, by name, each with its cover's file (ADR-062). */
-  list() {
+  list(): Promise<ProductSummary[]> {
     return this.tenantDb.transaction((tx, organizationId) =>
       tx
+        // The fields the API returns (ADR-068): not the organization, nor
+        // the pinyin kept for search.
         .select({
-          ...getTableColumns(products),
+          id: products.id,
+          type: products.type,
+          name: products.name,
+          description: products.description,
+          isActive: products.isActive,
           coverFileId: coverOf(),
         })
         .from(products)
@@ -129,7 +132,7 @@ export class ProductsService {
     });
   }
 
-  async findById(productId: string) {
+  async findById(productId: string): Promise<ProductDetail> {
     const [product] = await this.tenantDb.select(
       products,
       eq(products.id, productId),
@@ -169,7 +172,11 @@ export class ProductsService {
     );
 
     return {
-      ...product,
+      id: product.id,
+      type: product.type,
+      name: product.name,
+      description: product.description,
+      isActive: product.isActive,
       images: publicImages(images),
       translations: translations.map(({ locale, name, description }) => ({
         locale,
@@ -177,7 +184,7 @@ export class ProductsService {
         description,
       })),
       variants: variants.map((variant) => ({
-        ...variant,
+        ...variantOf(variant),
         translations: variantNames
           .filter((row) => row.variantId === variant.id)
           .map(({ locale, name }) => ({ locale, name })),
@@ -497,4 +504,25 @@ export class ProductsService {
 
     this.logger.log(`Variant ${variantId} translations set`);
   }
+}
+
+/**
+ * A variant as the API returns it (ADR-068): not the organization or the
+ * product it belongs to, the pinyin kept for search, or the case
+ * dimensions no screen reads yet.
+ */
+function variantOf(row: Variant): Variant {
+  return {
+    id: row.id,
+    sku: row.sku,
+    name: row.name,
+    unitOfMeasure: row.unitOfMeasure,
+    isActive: row.isActive,
+    tracksLots: row.tracksLots,
+    weightGrams: row.weightGrams,
+    lengthMm: row.lengthMm,
+    widthMm: row.widthMm,
+    heightMm: row.heightMm,
+    caseQuantity: row.caseQuantity,
+  };
 }

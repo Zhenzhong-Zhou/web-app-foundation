@@ -13,6 +13,7 @@ import { productLicences } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { CreateProductLicenceDto } from './dto/create-product-licence.dto';
+import type { ProductLicence } from './dto/product-licence-response.dto';
 import type { UpdateProductLicenceDto } from './dto/update-product-licence.dto';
 
 /**
@@ -30,13 +31,14 @@ export class ProductLicencesService {
 
   constructor(private readonly tenantDb: TenantDb) {}
 
-  list() {
-    return this.tenantDb.select(productLicences, undefined, {
+  async list(): Promise<ProductLicence[]> {
+    const rows = await this.tenantDb.select(productLicences, undefined, {
       orderBy: [asc(productLicences.authority), asc(productLicences.number)],
     });
+    return rows.map(licenceOf);
   }
 
-  async create(input: CreateProductLicenceDto) {
+  async create(input: CreateProductLicenceDto): Promise<ProductLicence> {
     try {
       const [licence] = await this.tenantDb
         .insert(productLicences, {
@@ -51,7 +53,7 @@ export class ProductLicencesService {
         .returning();
 
       this.logger.log(`Product licence ${licence.id} created`);
-      return licence;
+      return licenceOf(licence);
     } catch (error) {
       if (
         isUniqueViolation(error, 'product_licences_org_authority_number_key')
@@ -169,4 +171,20 @@ export class ProductLicencesService {
 
     return licence ? `${licence.number} (${licence.authority})` : null;
   }
+}
+
+/**
+ * A licence as the API returns it (ADR-068): not the organization, nor the
+ * reminder bookkeeping kept on the row for the licence reminders (ADR-064).
+ */
+function licenceOf(row: ProductLicence): ProductLicence {
+  return {
+    id: row.id,
+    number: row.number,
+    authority: row.authority,
+    isActive: row.isActive,
+    issuedAt: row.issuedAt,
+    expiresAt: row.expiresAt,
+    notes: row.notes,
+  };
 }
