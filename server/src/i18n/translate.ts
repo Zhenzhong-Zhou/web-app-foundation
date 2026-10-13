@@ -20,8 +20,8 @@ import chinese from './zh-Hans.json';
  *
  * Formatted with intl-messageformat, the ICU engine under the client's
  * react-intl, so plurals and placeholders behave the same on both sides;
- * its version 10 is the one that still loads as CommonJS, as the server
- * and its Jest run.
+ * both run the same major. An ES module only since 11, it loads into the
+ * CommonJS server through Node's require(esm), as Nest 12 does (ADR-067).
  *
  * `t` writes the English at once, so a log line, a request with no language
  * (curl, an integration, the e2e suite) and anything that reads the

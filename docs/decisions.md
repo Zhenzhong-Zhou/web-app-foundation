@@ -6954,6 +6954,30 @@ yet. Its triggers are under *Deferred*.
   explicitly rather than assumed. The client has no decorators and needs
   only the first.
 
+*Amended while building (October 2026):*
+
+- **Jest was not a hard block on Node 26.** Nest's migration guide says
+  Jest 30 loads the ES-module-only v12 packages through `require(esm)`
+  from Node 24.9; only older releases fail, with
+  `ERR_REQUIRE_ASYNC_MODULE`. The Context above overstated it. The move
+  to Vitest stands on its other reasons: one runner on both sides,
+  ts-jest's `typescript <7` gone, the `sprintf-js` finding gone, and the
+  way Nest's own repositories and its ES module template went.
+- **Vite's own transform was enough.** The spike's suites booted the app
+  first time with Oxc emitting decorator metadata; `unplugin-swc` was not
+  needed.
+- **What Nest 12 asked of this code**, checked against the v12 packages:
+  the tests' two deep imports resolve through the packages' `./*`
+  exports; `ConfigModule`'s `validate` and `ConfigService.get(…, { infer:
+  true })` keep their shape; `TranslatingValidationPipe`'s override still
+  matches `ValidationPipe`; nothing uses `@Optional()`, which v12 no
+  longer inherits; and the shutdown hooks (the two timers, the mail
+  transport, the pool) do not depend on the order v12 now calls them in.
+- **Nest 12's own `errorCode`.** `HttpExceptionOptions` now takes an
+  `errorCode`, which does what `withCode()` does (conventions.md, "Error
+  codes"). The exception filter writes the body itself, so the two do
+  not collide. Moving to Nest's is a tidy for later, not part of this.
+
 ---
 
 ## Open decisions
