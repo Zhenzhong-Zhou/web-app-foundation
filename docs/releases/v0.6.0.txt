@@ -1,0 +1,103 @@
+v0.6.0 — a product to work in
+
+A look of its own, search and a Home page to find the work, files,
+branding and product photos, the people one works with, licence
+reminders, and a say in how long anyone stays signed in.
+
+The look (ADR-055)
+- A design of its own: a side rail (a drawer below 1200px), tabs on
+  records with a summary beside them, one colour per status.
+- Expiry shown as days left, in colour; money labelled before or
+  including tax.
+- Dark mode, larger controls on touch screens, WCAG 2.2 AA as the floor.
+  Printed documents keep their own plain look.
+
+Search (ADR-056)
+- One lookup in the top bar (press /) across every kind of record the
+  member may see, and a search box on every list.
+- Chinese names found by their pinyin; close matches offered only when
+  nothing closer is found.
+
+Dates, sorting and export (ADR-057)
+- Date ranges on invoices, credit notes, orders, stock movements,
+  production runs and return authorizations, and a Credit notes list.
+- Sorting where it was asked for: invoices by amount, orders by expected
+  date, inventory by expiry.
+- CSV export of what a list shows, recorded in the audit log.
+
+Home (ADR-058)
+- What needs attention, first: a card for each kind of waiting work,
+  each opening the list it counts.
+- Getting started for a new organization, and the records opened last.
+- One kind of page for an unknown address, a missing record, no access,
+  the server out of reach, or a crash.
+
+Files (ADR-059)
+- One store for every file, on Cloudflare R2, always served through the
+  app's own address. Uploads are checked; photos are re-sized and their
+  location data removed. 1 GB per organization. Copied nightly to the
+  backup bucket.
+
+The organization (ADR-060, ADR-061)
+- Settings → Organization in tabs: Profile, Money, Documents, Stock,
+  Branding and Security. The organization's name can now be changed;
+  invoices already issued keep the old one.
+- Each organization's logo (in the top bar and, if chosen, on printed
+  documents), colour (six presets, or its own made readable), sidebar
+  shade, and the days before expiry that turn a lot amber and red.
+
+Product images (ADR-062, ADR-066)
+- Up to eight images per product, added by dragging, pasting or
+  choosing, put in order, with a cover.
+- The cover shows in Products, Inventory and the lookup; a viewer zooms.
+
+People (ADR-063)
+- A photo of one's own, set only by that person; initials otherwise.
+- A People page, a page per person, and when each was last active.
+
+Notifications (ADR-064, #17)
+- Licence expiry reminders 60, 30 and 7 days before, and on the day, to
+  those who can update licences or release production.
+- Every notification reads in the reader's own language.
+
+Staying signed in (ADR-065)
+- "Keep me signed in" at sign-in. Unticked, for a shared computer: signed
+  out after two hours idle or twelve in all.
+- An organization may sign people out after 15 minutes to 4 hours of
+  inactivity (off by default), with a warning first.
+
+Invoicing
+- A refusal to issue for a missing address links to where it is set:
+  Organization → Profile, or the customer's page.
+
+Fixes
+- Cancelling an order can no longer race another change to it (#26).
+- Closing a run no longer tops up from stock held for a sale, and
+  continues the lots the run was released with (#28).
+- Leaving Raise an order with unsaved changes asks first (#54).
+- Home loads within its performance budget.
+
+Known limitations
+- French and Chinese are still unreviewed drafts, marked beta in the
+  language picker.
+- An invoice that charges GST/HST can be issued without the
+  organization's tax number. Set it on Organization → Profile before
+  invoicing; a customer claiming input tax credits needs it on invoices
+  of $100 or more.
+- Licence reminders are in the app only, not by email, on fixed days.
+- One gallery per product: no image of a variant's own, none on order
+  lines or the shipping screen.
+- No lock screen or switching user with a PIN, and no limit on a kept
+  session beyond thirty days.
+- No pro forma invoices; no deleting an account or leaving an
+  organization.
+
+Upgrade
+- Migrations 0041 to 0054. Render runs them on deploy; elsewhere run
+  `npm run migrate` in server.
+- Once, against a database that already holds data: `npm run
+  backfill:pinyin` in server, so existing Chinese names are found by
+  pinyin.
+- Files: `FILE_STORAGE=s3` with the `FILES_*` settings for the bucket
+  (see .env.example); `local` keeps them on disk under server/storage/.
+- Optional: `VITE_APP_NAME` names the product in the browser's tab.
