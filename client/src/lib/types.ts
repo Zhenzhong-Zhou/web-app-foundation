@@ -303,20 +303,12 @@ export interface ProductLicence {
   notes: string | null;
 }
 
-/** One tax a code charges (ADR-046). The rate is a percentage: "5.0000". */
-export interface TaxCodeComponent {
-  id: string;
-  name: string;
-  rate: string;
-}
-
-export interface TaxCode {
-  id: string;
-  name: string;
-  isActive: boolean;
-  /** Empty for an Exempt code, which charges nothing and says so. */
-  components: TaxCodeComponent[];
-}
+/**
+ * Tax codes, generated from the server's OpenAPI document (ADR-068, the
+ * phase 2 pilot). Re-exported here so their importers need no change; each
+ * module's types move out of this file the same way as it is converted.
+ */
+export type { TaxCode, TaxCodeComponent } from '../api/types.gen';
 
 export interface OrganizationAddress {
   line1: string;

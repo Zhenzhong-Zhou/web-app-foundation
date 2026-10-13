@@ -15,6 +15,7 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateTaxCodeDto } from './dto/create-tax-code.dto';
+import type { CreatedTaxCode, TaxCodeList } from './dto/tax-code-response.dto';
 import { UpdateTaxCodeDto } from './dto/update-tax-code.dto';
 import { TaxCodesService } from './tax-codes.service';
 
@@ -31,7 +32,7 @@ export class TaxCodesController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.TAX_CODES_VIEW)
-  async list() {
+  async list(): Promise<TaxCodeList> {
     return { taxCodes: await this.taxCodes.list() };
   }
 
@@ -45,7 +46,7 @@ export class TaxCodesController {
     // The components are the point: "who set PST to 8%" is the question.
     fields: ['name', 'components'],
   })
-  async create(@Body() dto: CreateTaxCodeDto) {
+  async create(@Body() dto: CreateTaxCodeDto): Promise<CreatedTaxCode> {
     return { taxCode: await this.taxCodes.create(dto) };
   }
 

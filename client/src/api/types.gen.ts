@@ -171,6 +171,23 @@ export type OrganizationAddressDto = {
     country: string;
 };
 
+export type TaxCodeComponent = {
+    id: string;
+    name: string;
+    rate: string;
+};
+
+export type TaxCode = {
+    id: string;
+    name: string;
+    isActive: boolean;
+    components: Array<TaxCodeComponent>;
+};
+
+export type TaxCodeList = {
+    taxCodes: Array<TaxCode>;
+};
+
 export type TaxCodeComponentDto = {
     name: string;
     rate: string;
@@ -179,6 +196,10 @@ export type TaxCodeComponentDto = {
 export type CreateTaxCodeDto = {
     name: string;
     components: Array<TaxCodeComponentDto>;
+};
+
+export type CreatedTaxCode = {
+    taxCode: TaxCode;
 };
 
 export type UpdateTaxCodeDto = {
@@ -1553,8 +1574,10 @@ export type TaxCodesControllerListV1Data = {
 };
 
 export type TaxCodesControllerListV1Responses = {
-    200: unknown;
+    200: TaxCodeList;
 };
+
+export type TaxCodesControllerListV1Response = TaxCodesControllerListV1Responses[keyof TaxCodesControllerListV1Responses];
 
 export type TaxCodesControllerCreateV1Data = {
     body: CreateTaxCodeDto;
@@ -1564,8 +1587,10 @@ export type TaxCodesControllerCreateV1Data = {
 };
 
 export type TaxCodesControllerCreateV1Responses = {
-    201: unknown;
+    201: CreatedTaxCode;
 };
+
+export type TaxCodesControllerCreateV1Response = TaxCodesControllerCreateV1Responses[keyof TaxCodesControllerCreateV1Responses];
 
 export type TaxCodesControllerUpdateV1Data = {
     body: UpdateTaxCodeDto;

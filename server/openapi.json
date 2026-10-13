@@ -1918,7 +1918,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxCodeList"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1940,7 +1947,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedTaxCode"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6926,6 +6940,65 @@
           "country"
         ]
       },
+      "TaxCodeComponent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "rate"
+        ]
+      },
+      "TaxCode": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxCodeComponent"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "isActive",
+          "components"
+        ]
+      },
+      "TaxCodeList": {
+        "type": "object",
+        "properties": {
+          "taxCodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxCode"
+            }
+          }
+        },
+        "required": [
+          "taxCodes"
+        ]
+      },
       "TaxCodeComponentDto": {
         "type": "object",
         "properties": {
@@ -6963,6 +7036,17 @@
         "required": [
           "name",
           "components"
+        ]
+      },
+      "CreatedTaxCode": {
+        "type": "object",
+        "properties": {
+          "taxCode": {
+            "$ref": "#/components/schemas/TaxCode"
+          }
+        },
+        "required": [
+          "taxCode"
         ]
       },
       "UpdateTaxCodeDto": {

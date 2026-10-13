@@ -215,6 +215,20 @@ committed, and neither is edited by hand.
 - **The shared lists are the server's.** The client imports `Permission`,
   `Locale`, `AuditAction` and `ErrorCode` from the generated types and keeps
   no copy of its own.
+- **A module's responses** (ADR-068, phase 2; tax codes were the pilot),
+  converted when a feature next touches the module:
+  - Declare each response as a class in the module's
+    `dto/*-response.dto.ts`, named as the client knows it (`TaxCode`), with
+    an envelope class for the body (`TaxCodeList`, `CreatedTaxCode`). The
+    CLI plugin describes them from their types. Names are global in the
+    document, so name a class by what it is.
+  - Give the controller's methods those return types.
+  - Project in the service: return exactly the declared fields, never a
+    spread table row, which would also send `organizationId` and
+    timestamps the client never reads.
+  - `npm run api`, then in `client/src/lib/types.ts` replace the module's
+    interfaces with re-exports from `../api/types.gen`, so importers stay
+    unchanged.
 
 ## Error codes
 
