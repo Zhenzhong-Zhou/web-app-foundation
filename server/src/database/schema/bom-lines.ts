@@ -82,7 +82,10 @@ export const bomLines = pgTable(
      *
      * Not on the variant, for exactly that reason.
      */
-    supplyType: text('supply_type').notNull().default('stocked'),
+    supplyType: text('supply_type')
+      .$type<'stocked' | 'external'>()
+      .notNull()
+      .default('stocked'),
 
     notes: text('notes'),
 

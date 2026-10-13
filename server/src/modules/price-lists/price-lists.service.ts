@@ -20,6 +20,7 @@ import { itemName } from '../stock/item-name';
 import type { Tx } from '../stock/stock.service';
 import type { CreatePriceListDto } from './dto/create-price-list.dto';
 import type { ListPriceListsDto } from './dto/list-price-lists.dto';
+import type { PriceList, PriceListDetail } from './dto/price-list-response.dto';
 import type { SetPriceListItemDto } from './dto/set-price-list-item.dto';
 import type { UpdatePriceListDto } from './dto/update-price-list.dto';
 
@@ -34,7 +35,7 @@ export class PriceListsService {
   constructor(private readonly tenantDb: TenantDb) {}
 
   /** Every list, with how many items each prices, for the list page. */
-  list(query: ListPriceListsDto) {
+  list(query: ListPriceListsDto): Promise<PriceList[]> {
     return this.tenantDb.transaction((tx, organizationId) =>
       tx
         .select({
@@ -63,7 +64,7 @@ export class PriceListsService {
   }
 
   /** One list and every item on it, ordered by SKU. */
-  findById(priceListId: string) {
+  findById(priceListId: string): Promise<PriceListDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const list = await this.load(tx, organizationId, priceListId);
 
@@ -91,8 +92,13 @@ export class PriceListsService {
         )
         .orderBy(asc(productVariants.sku));
 
+      // The list's own fields (ADR-068), not its row.
       return {
-        ...list,
+        id: list.id,
+        name: list.name,
+        direction: list.direction,
+        currency: list.currency,
+        isActive: list.isActive,
         items: items.map(({ productName, variantName, ...item }) => ({
           ...item,
           description: itemName(productName, variantName),

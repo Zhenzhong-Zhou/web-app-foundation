@@ -47,7 +47,7 @@ export const priceLists = pgTable(
 
     name: text('name').notNull(),
 
-    direction: text('direction').notNull(),
+    direction: text('direction').$type<PriceListDirection>().notNull(),
 
     currency: char('currency', { length: 3 }).notNull(),
 

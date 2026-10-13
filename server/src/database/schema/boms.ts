@@ -15,6 +15,11 @@ import { organizations } from './organizations';
 import { productLicences } from './product-licences';
 import { productVariants } from './product-variants';
 
+/** A recipe's lifecycle (ADR-029): drafted, promoted to active, archived. */
+export const BOM_STATUSES = ['draft', 'active', 'archived'] as const;
+
+export type BomStatus = (typeof BOM_STATUSES)[number];
+
 /**
  * A recipe: what one variant is made of (ADR-029).
  *
@@ -87,7 +92,7 @@ export const boms = pgTable(
      * convention, because the failure mode is a picker silently choosing
      * between two recipes.
      */
-    status: text('status').notNull().default('draft'),
+    status: text('status').$type<BomStatus>().notNull().default('draft'),
 
     /**
      * The registration this formulation is made under, when there is one.

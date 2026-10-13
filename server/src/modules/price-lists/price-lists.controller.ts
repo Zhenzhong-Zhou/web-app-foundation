@@ -25,6 +25,11 @@ import { RequirePermissions } from '../../core/authorization/require-permissions
 import { localeOf } from '../../i18n/translate';
 import { CreatePriceListDto } from './dto/create-price-list.dto';
 import { ListPriceListsDto } from './dto/list-price-lists.dto';
+import type {
+  PriceListEnvelope,
+  PriceListItemEnvelope,
+  PriceListList,
+} from './dto/price-list-response.dto';
 import { SetPriceListItemDto } from './dto/set-price-list-item.dto';
 import { UpdatePriceListDto } from './dto/update-price-list.dto';
 import { PRICE_LIST_COLUMNS } from './price-list-exports';
@@ -40,7 +45,7 @@ export class PriceListsController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PRICE_LISTS_VIEW)
-  async list(@Query() query: ListPriceListsDto) {
+  async list(@Query() query: ListPriceListsDto): Promise<PriceListList> {
     return { priceLists: await this.priceLists.list(query) };
   }
 
@@ -73,7 +78,9 @@ export class PriceListsController {
 
   @Get(':id')
   @RequirePermissions(PERMISSIONS.PRICE_LISTS_VIEW)
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<PriceListEnvelope> {
     return { priceList: await this.priceLists.findById(id) };
   }
 
@@ -86,8 +93,9 @@ export class PriceListsController {
       response.priceList.id,
     fields: ['name', 'direction', 'currency'],
   })
-  async create(@Body() dto: CreatePriceListDto) {
-    return { priceList: await this.priceLists.create(dto) };
+  async create(@Body() dto: CreatePriceListDto): Promise<PriceListEnvelope> {
+    const created = await this.priceLists.create(dto);
+    return { priceList: await this.priceLists.findById(created.id) };
   }
 
   @Patch(':id')
@@ -119,8 +127,13 @@ export class PriceListsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Param('variantId', ParseUUIDPipe) variantId: string,
     @Body() dto: SetPriceListItemDto,
-  ) {
-    return { item: await this.priceLists.setItem(id, variantId, dto) };
+  ): Promise<PriceListItemEnvelope> {
+    await this.priceLists.setItem(id, variantId, dto);
+    // As the list shows it: with its SKU and name beside the price.
+    const list = await this.priceLists.findById(id);
+    const item = list.items.find((each) => each.variantId === variantId);
+    if (!item) throw new Error(`${variantId} is not on price list ${id}`);
+    return { item };
   }
 
   @Delete(':id/items/:variantId')

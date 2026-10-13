@@ -44,8 +44,8 @@ with this one, this one is current.
   were all unknown until typed), products and product licences
   (`products-responses`). Since `response-contract`, the e2e suite holds
   every JSON response to the document with its objects closed, so each
-  conversion is checked as it lands. Next, in order: BOMs and price lists;
-  partners; production orders and
+  conversion is checked as it lands. BOMs and price lists followed
+  (`boms-responses`). Next, in order: partners; production orders and
   RMAs; account, auth, users, people, roles, organization and files; home,
   recent, lookup, notifications and health; then `client/src/lib/types.ts`
   replaced by direct imports from `client/src/api/`.
