@@ -90,6 +90,7 @@
     "@types/supertest": "^7.0.0",
     "@types/ua-parser-js": "^0.7.39",
     "@vitest/coverage-v8": "^5.0.4",
+    "ajv": "^8.20.0",
     "dotenv": "^18.0.5",
     "drizzle-kit": "^0.31.10",
     "eslint": "^10.11.0",
