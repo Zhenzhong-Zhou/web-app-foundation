@@ -383,6 +383,7 @@
   "home.empty.returnsOpen": "没有未结退货。",
   "home.empty.toReceive": "没有待收货的订单。",
   "home.empty.toShip": "没有待发货的订单。",
+  "home.expiringDays": "更改天数",
   "home.greeting.afternoon": "下午好，{name}",
   "home.greeting.evening": "晚上好，{name}",
   "home.greeting.morning": "早上好，{name}",
