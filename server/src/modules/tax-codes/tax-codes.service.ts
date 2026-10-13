@@ -15,6 +15,7 @@ import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { CreateTaxCodeDto } from './dto/create-tax-code.dto';
 import type { TaxCodeComponentDto } from './dto/tax-code-component.dto';
+import type { TaxCode, TaxCodeComponent } from './dto/tax-code-response.dto';
 import type { UpdateTaxCodeDto } from './dto/update-tax-code.dto';
 
 /**
@@ -31,7 +32,7 @@ export class TaxCodesService {
   constructor(private readonly tenantDb: TenantDb) {}
 
   /** Active codes first, then by name; each with its components. */
-  async list() {
+  async list(): Promise<TaxCode[]> {
     const codes = await this.tenantDb.select(taxCodes, undefined, {
       orderBy: [desc(taxCodes.isActive), asc(taxCodes.name)],
     });
@@ -49,10 +50,7 @@ export class TaxCodesService {
       byCode.set(component.taxCodeId, list);
     }
 
-    return codes.map((code) => ({
-      ...code,
-      components: byCode.get(code.id) ?? [],
-    }));
+    return codes.map((code) => taxCodeOf(code, byCode.get(code.id) ?? []));
   }
 
   /** For invoicing: a code in this tenant, or 404. */
@@ -69,7 +67,7 @@ export class TaxCodesService {
     return code;
   }
 
-  async create(input: CreateTaxCodeDto) {
+  async create(input: CreateTaxCodeDto): Promise<TaxCode> {
     this.assertDistinctNames(input.components);
 
     try {
@@ -87,7 +85,7 @@ export class TaxCodesService {
             input.components,
           );
 
-          return { ...code, components };
+          return taxCodeOf(code, components);
         },
       );
 
@@ -221,4 +219,25 @@ export class TaxCodesService {
     }
     throw error;
   }
+}
+
+/**
+ * A code as the API returns it (ADR-068): its own fields and its
+ * components', never the whole row, which would also send the organization
+ * it belongs to and when it was written.
+ */
+function taxCodeOf(
+  code: { id: string; name: string; isActive: boolean },
+  components: TaxCodeComponent[],
+): TaxCode {
+  return {
+    id: code.id,
+    name: code.name,
+    isActive: code.isActive,
+    components: components.map(componentOf),
+  };
+}
+
+function componentOf({ id, name, rate }: TaxCodeComponent): TaxCodeComponent {
+  return { id, name, rate };
 }
