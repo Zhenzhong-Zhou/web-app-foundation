@@ -221,10 +221,14 @@ message, and the screen keys on the code, never on the words.
 
 ## Tests
 
-- Unit tests sit beside their source: `users.service.spec.ts`.
-- Integration tests live in `test/` and end in `.e2e-spec.ts`.
-- Every integration test calls `await app.close()` in `afterAll`, or the `pg` pool stays
-  open and Jest hangs without explaining why.
+- Both sides test with Vitest (ADR-067). On the server, unit tests sit
+  beside their source (`users.service.spec.ts`, `npm test`), and
+  integration tests live in `test/` and end in `.e2e-spec.ts` (`npm run
+  test:e2e`, one file at a time).
+- Vitest does not type-check. A type error in a spec fails `npm run
+  typecheck`, which CI and `scripts/verify.sh` run, not the test run.
+- Every integration test calls `await app.close()` in `afterAll`, or the
+  `pg` pool stays open and the run hangs without explaining why.
 - One integration test per feature as it's built (ADR-008).
 - **`docs/manual-checks.md` moves with the code.** A commit that changes what a
   person sees, or a rule they work under, updates its checks in the same
