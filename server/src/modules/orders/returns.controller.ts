@@ -16,6 +16,11 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { ReturnOrderDto } from './dto/return-order.dto';
+import type {
+  OrderReturn,
+  OrderReturnEnvelope,
+  ReturnableLine,
+} from './dto/shipment-response.dto';
 import { ReturnsService } from './returns.service';
 
 /**
@@ -31,14 +36,16 @@ export class ReturnsController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
-  list(@Param('id', ParseUUIDPipe) id: string) {
+  list(@Param('id', ParseUUIDPipe) id: string): Promise<OrderReturn[]> {
     return this.returns.listForOrder(id);
   }
 
   /** What can still come back, line by line and lot by lot. */
   @Get('returnable')
   @RequirePermissions(PERMISSIONS.ORDERS_RECEIVE)
-  returnable(@Param('id', ParseUUIDPipe) id: string) {
+  returnable(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ReturnableLine[]> {
     return this.returns.returnable(id);
   }
 
@@ -54,7 +61,14 @@ export class ReturnsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ReturnOrderDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return { orderReturn: await this.returns.receive(id, dto, user.userId) };
+  ): Promise<OrderReturnEnvelope> {
+    const received = await this.returns.receive(id, dto, user.userId);
+    // As the order's list of returns shows it: there is no single read.
+    const all = await this.returns.listForOrder(id);
+    const orderReturn = all.find((each) => each.id === received.id);
+    if (!orderReturn) {
+      throw new Error(`Return ${received.id} is not on order ${id}`);
+    }
+    return { orderReturn };
   }
 }

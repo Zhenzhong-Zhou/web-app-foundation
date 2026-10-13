@@ -20,6 +20,7 @@ import { inVariantOrder } from '../stock/availability';
 import { StockService, type Tx } from '../stock/stock.service';
 import { trackedVariants } from '../stock/tracked-variants';
 import type { ReturnOrderDto } from './dto/return-order.dto';
+import type { OrderReturn } from './dto/shipment-response.dto';
 import { loadOrder } from './load-order';
 import { withLotItems } from './lot-items';
 import { lineFor, type OrderLine, requestedLines } from './order-line-lookup';
@@ -274,10 +275,18 @@ export class ReturnsService {
   }
 
   /** An order's returns, newest first, each with what came back by lot. */
-  async listForOrder(orderId: string) {
+  async listForOrder(orderId: string): Promise<OrderReturn[]> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
+      // The fields the API returns (ADR-068), not the row.
       const headers = await tx
-        .select()
+        .select({
+          id: orderReturns.id,
+          toLocationId: orderReturns.toLocationId,
+          returnAuthorizationId: orderReturns.returnAuthorizationId,
+          reason: orderReturns.reason,
+          note: orderReturns.note,
+          createdAt: orderReturns.createdAt,
+        })
         .from(orderReturns)
         .where(
           and(

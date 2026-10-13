@@ -330,6 +330,23 @@ export type UpdateLotDto = {
     expiresAt?: string;
 };
 
+export type Availability = {
+    variantId: string;
+    sku: string;
+    unitOfMeasure: string;
+    onHand: string;
+    held: string;
+    free: string;
+    backordered: string;
+};
+
+export type LineHold = {
+    lineId: string;
+    outstanding: string;
+    held: string;
+    short: string;
+};
+
 export type OrderSummary = {
     id: string;
     partnerId: string;
@@ -542,6 +559,60 @@ export type ReceiptEnvelope = {
     movement: ReceivedMovement;
 };
 
+export type ShipmentItem = {
+    sku: string;
+    description: string;
+    unitOfMeasure: string;
+    lotCode: string | null;
+    expiresAt: string | null;
+    quantity: string;
+};
+
+export type Shipment = {
+    id: string;
+    fromLocationId: string;
+    carrier: string | null;
+    trackingNumber: string | null;
+    note: string | null;
+    voidedAt: string | null;
+    voidReason: string | null;
+    createdAt: string;
+    items: Array<ShipmentItem>;
+};
+
+export type SlipOrder = {
+    id: string;
+    reference: string | null;
+    partnerName: string;
+};
+
+export type SlipShipTo = {
+    label: string | null;
+    line1: string;
+    line2: string | null;
+    city: string | null;
+    region: string | null;
+    postalCode: string | null;
+    country: string | null;
+};
+
+export type PackingSlip = {
+    id: string;
+    createdAt: string;
+    carrier: string | null;
+    trackingNumber: string | null;
+    note: string | null;
+    voidedAt: string | null;
+    voidReason: string | null;
+    fromLocationName: string;
+    organizationName: string;
+    language: 'en' | 'fr-CA' | 'zh-Hans';
+    secondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+    order: SlipOrder;
+    shipTo: SlipShipTo | null;
+    items: Array<ShipmentItem>;
+};
+
 export type PreviewLineDto = {
     lineId: string;
     quantity: string;
@@ -550,6 +621,29 @@ export type PreviewLineDto = {
 export type PreviewShipmentDto = {
     fromLocationId: string;
     lines: Array<PreviewLineDto>;
+};
+
+export type ShipmentPlanLot = {
+    lotId: string;
+    code: string;
+    expiresAt: string | null;
+    onHand: string;
+    take: string;
+    taken: boolean;
+};
+
+export type ShipmentPlanLine = {
+    lineId: string;
+    sku: string;
+    quantity: string;
+    tracksLots: boolean;
+    lots: Array<ShipmentPlanLot>;
+    shortBy: string | null;
+    exceedsOutstanding: boolean;
+};
+
+export type ShipmentPlan = {
+    lines: Array<ShipmentPlanLine>;
 };
 
 export type ShipLotDto = {
@@ -571,8 +665,40 @@ export type ShipOrderDto = {
     note?: string;
 };
 
+export type ShipmentEnvelope = {
+    shipment: PackingSlip;
+};
+
 export type VoidShipmentDto = {
     reason: string;
+};
+
+export type OrderReturn = {
+    id: string;
+    toLocationId: string;
+    returnAuthorizationId: string | null;
+    reason: string | null;
+    note: string | null;
+    createdAt: string;
+    items: Array<ShipmentItem>;
+};
+
+export type ReturnableLot = {
+    lotId: string;
+    code: string;
+    expiresAt: string | null;
+    shipped: string;
+    returned: string;
+};
+
+export type ReturnableLine = {
+    lineId: string;
+    sku: string;
+    unitOfMeasure: string;
+    tracksLots: boolean;
+    quantityFulfilled: string;
+    quantityReturned: string;
+    lots: Array<ReturnableLot>;
 };
 
 export type ReturnLotDto = {
@@ -592,6 +718,10 @@ export type ReturnOrderDto = {
     lines: Array<ReturnLineDto>;
     reason?: string;
     note?: string;
+};
+
+export type OrderReturnEnvelope = {
+    orderReturn: OrderReturn;
 };
 
 export type CreatePartnerDto = {
@@ -2442,8 +2572,10 @@ export type AvailabilityControllerListV1Data = {
 };
 
 export type AvailabilityControllerListV1Responses = {
-    200: unknown;
+    200: Array<Availability>;
 };
+
+export type AvailabilityControllerListV1Response = AvailabilityControllerListV1Responses[keyof AvailabilityControllerListV1Responses];
 
 export type AvailabilityControllerForOrderV1Data = {
     body?: never;
@@ -2455,8 +2587,10 @@ export type AvailabilityControllerForOrderV1Data = {
 };
 
 export type AvailabilityControllerForOrderV1Responses = {
-    200: unknown;
+    200: Array<LineHold>;
 };
+
+export type AvailabilityControllerForOrderV1Response = AvailabilityControllerForOrderV1Responses[keyof AvailabilityControllerForOrderV1Responses];
 
 export type LookupControllerLookupV1Data = {
     body?: never;
@@ -2756,9 +2890,7 @@ export type ShipmentsControllerListV1Data = {
 };
 
 export type ShipmentsControllerListV1Responses = {
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<Shipment>;
 };
 
 export type ShipmentsControllerListV1Response = ShipmentsControllerListV1Responses[keyof ShipmentsControllerListV1Responses];
@@ -2773,8 +2905,10 @@ export type ShipmentsControllerShipV1Data = {
 };
 
 export type ShipmentsControllerShipV1Responses = {
-    201: unknown;
+    201: ShipmentEnvelope;
 };
+
+export type ShipmentsControllerShipV1Response = ShipmentsControllerShipV1Responses[keyof ShipmentsControllerShipV1Responses];
 
 export type ShipmentsControllerSlipV1Data = {
     body?: never;
@@ -2787,8 +2921,10 @@ export type ShipmentsControllerSlipV1Data = {
 };
 
 export type ShipmentsControllerSlipV1Responses = {
-    200: unknown;
+    200: PackingSlip;
 };
+
+export type ShipmentsControllerSlipV1Response = ShipmentsControllerSlipV1Responses[keyof ShipmentsControllerSlipV1Responses];
 
 export type ShipmentsControllerPreviewV1Data = {
     body: PreviewShipmentDto;
@@ -2800,8 +2936,10 @@ export type ShipmentsControllerPreviewV1Data = {
 };
 
 export type ShipmentsControllerPreviewV1Responses = {
-    200: unknown;
+    200: ShipmentPlan;
 };
+
+export type ShipmentsControllerPreviewV1Response = ShipmentsControllerPreviewV1Responses[keyof ShipmentsControllerPreviewV1Responses];
 
 export type ShipmentsControllerVoidV1Data = {
     body: VoidShipmentDto;
@@ -2829,9 +2967,7 @@ export type ReturnsControllerListV1Data = {
 };
 
 export type ReturnsControllerListV1Responses = {
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<OrderReturn>;
 };
 
 export type ReturnsControllerListV1Response = ReturnsControllerListV1Responses[keyof ReturnsControllerListV1Responses];
@@ -2846,8 +2982,10 @@ export type ReturnsControllerReceiveV1Data = {
 };
 
 export type ReturnsControllerReceiveV1Responses = {
-    201: unknown;
+    201: OrderReturnEnvelope;
 };
+
+export type ReturnsControllerReceiveV1Response = ReturnsControllerReceiveV1Responses[keyof ReturnsControllerReceiveV1Responses];
 
 export type ReturnsControllerReturnableV1Data = {
     body?: never;
@@ -2859,9 +2997,7 @@ export type ReturnsControllerReturnableV1Data = {
 };
 
 export type ReturnsControllerReturnableV1Responses = {
-    200: Array<{
-        [key: string]: unknown;
-    }>;
+    200: Array<ReturnableLine>;
 };
 
 export type ReturnsControllerReturnableV1Response = ReturnsControllerReturnableV1Responses[keyof ReturnsControllerReturnableV1Responses];

@@ -3,6 +3,7 @@ import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { AvailabilityService } from './availability.service';
+import type { Availability, LineHold } from './dto/availability-response.dto';
 import { ListAvailabilityDto } from './dto/list-availability.dto';
 
 /**
@@ -15,13 +16,13 @@ export class AvailabilityController {
 
   @Get('stock/availability')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  list(@Query() query: ListAvailabilityDto) {
+  list(@Query() query: ListAvailabilityDto): Promise<Availability[]> {
     return this.availability.list(query.promised === 'true');
   }
 
   @Get('orders/:id/holds')
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
-  forOrder(@Param('id', ParseUUIDPipe) id: string) {
+  forOrder(@Param('id', ParseUUIDPipe) id: string): Promise<LineHold[]> {
     return this.availability.forOrder(id);
   }
 }
