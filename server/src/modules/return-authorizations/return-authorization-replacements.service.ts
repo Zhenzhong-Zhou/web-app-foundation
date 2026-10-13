@@ -168,7 +168,7 @@ export class ReturnAuthorizationReplacementsService {
               unitPrice: priced ? '0' : null,
               currency: priced ? line.currency : null,
               // Zero on purpose, not from a list (ADR-049).
-              priceSource: priced ? 'manual' : null,
+              priceSource: priced ? ('manual' as const) : null,
             };
           }),
         );

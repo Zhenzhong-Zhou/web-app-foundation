@@ -120,7 +120,7 @@ export const orderLines = pgTable(
      * one, or typed (ADR-049). Stored, so how a line was priced survives the
      * list changing afterwards.
      */
-    priceSource: text('price_source'),
+    priceSource: text('price_source').$type<'list' | 'manual'>(),
 
     /** The list, when priceSource is 'list'. */
     priceListId: uuid('price_list_id').references(() => priceLists.id, {

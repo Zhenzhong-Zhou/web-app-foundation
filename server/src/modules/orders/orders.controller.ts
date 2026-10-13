@@ -29,6 +29,13 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { DuplicateOrderDto } from './dto/duplicate-order.dto';
 import { ListOrdersDto } from './dto/list-orders.dto';
 import { AddOrderLineDto, UpdateOrderLineDto } from './dto/order-line.dto';
+import type {
+  AddedOrderLineEnvelope,
+  OrderDetail,
+  OrderEnvelope,
+  OrderPage,
+  ReceiptEnvelope,
+} from './dto/order-response.dto';
 import { ReceiveLineDto } from './dto/receive-line.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { ORDER_COLUMNS } from './order-exports';
@@ -52,7 +59,7 @@ export class OrdersController {
    */
   @Get()
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
-  list(@Query() query: ListOrdersDto) {
+  list(@Query() query: ListOrdersDto): Promise<OrderPage> {
     return this.orders.list(query);
   }
 
@@ -84,7 +91,7 @@ export class OrdersController {
 
   @Get(':id')
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
-  find(@Param('id', ParseUUIDPipe) id: string) {
+  find(@Param('id', ParseUUIDPipe) id: string): Promise<OrderDetail> {
     return this.orders.findById(id);
   }
 
@@ -99,8 +106,9 @@ export class OrdersController {
   async create(
     @Body() dto: CreateOrderDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return { order: await this.lifecycle.create(dto, user.userId) };
+  ): Promise<OrderEnvelope> {
+    const created = await this.lifecycle.create(dto, user.userId);
+    return { order: await this.orders.findById(created.id) };
   }
 
   /**
@@ -123,8 +131,9 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: DuplicateOrderDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return { order: await this.lifecycle.duplicate(id, dto, user.userId) };
+  ): Promise<OrderEnvelope> {
+    const copy = await this.lifecycle.duplicate(id, dto, user.userId);
+    return { order: await this.orders.findById(copy.id) };
   }
 
   /**
@@ -165,8 +174,19 @@ export class OrdersController {
   async addLine(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddOrderLineDto,
-  ) {
-    return { line: await this.lines.addLine(id, dto) };
+  ): Promise<AddedOrderLineEnvelope> {
+    const added = await this.lines.addLine(id, dto);
+    // As the order's detail shows it, so one line has one shape, with the
+    // notice when the list had no price.
+    const order = await this.orders.findById(id);
+    const line = order.lines.find((each) => each.id === added.id);
+    if (!line) throw new Error(`Line ${added.id} is not on order ${id}`);
+    return {
+      line: {
+        ...line,
+        ...(added.priceNotice ? { priceNotice: added.priceNotice } : {}),
+      },
+    };
   }
 
   @Patch(':id/lines/:lineId')
@@ -283,9 +303,8 @@ export class OrdersController {
     @Param('lineId', ParseUUIDPipe) lineId: string,
     @Body() dto: ReceiveLineDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return {
-      movement: await this.receipts.receive(id, lineId, dto, user.userId),
-    };
+  ): Promise<ReceiptEnvelope> {
+    const movement = await this.receipts.receive(id, lineId, dto, user.userId);
+    return { movement: { id: movement.id } };
   }
 }

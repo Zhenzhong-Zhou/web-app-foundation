@@ -330,6 +330,126 @@ export type UpdateLotDto = {
     expiresAt?: string;
 };
 
+export type OrderSummary = {
+    id: string;
+    partnerId: string;
+    partnerName: string;
+    direction: 'sale' | 'purchase';
+    isSample: boolean;
+    status: 'draft' | 'cancelled' | 'confirmed' | 'fulfilled';
+    reference: string | null;
+    expectedAt: string | null;
+    createdAt: string;
+    lineCount: number;
+    quantityOrdered: string;
+    quantityFulfilled: string;
+};
+
+export type OrderPage = {
+    entries: Array<OrderSummary>;
+    nextCursor: string | null;
+};
+
+export type OrderTotal = {
+    currency: string;
+    amount: string;
+};
+
+export type OrderMoney = {
+    currency: string | null;
+    invoiced: string;
+    credited: string;
+    netInvoiced: string;
+    notInvoiced: string;
+};
+
+export type OrderCounts = {
+    shipments: number;
+    voidedShipments: number;
+    returns: number;
+    documents: number;
+};
+
+export type OrderQuantities = {
+    unit: string;
+    ordered: string;
+    fulfilled: string;
+    returned: string;
+    outstanding: string;
+};
+
+export type OrderInvoiceRow = {
+    id: string;
+    number: string | null;
+    status: 'draft' | 'issued' | 'voided';
+    date: string | null;
+    total: string | null;
+    currency: string;
+    shippedAt: string;
+    quantity: string;
+};
+
+export type OrderCreditRow = {
+    id: string;
+    number: string;
+    date: string;
+    total: string;
+    currency: string;
+    reason: string;
+    isVoid: boolean;
+    invoiceNumber: string | null;
+    quantity: string;
+};
+
+export type OrderDocuments = {
+    invoices: Array<OrderInvoiceRow>;
+    creditNotes: Array<OrderCreditRow>;
+};
+
+export type OrderLine = {
+    id: string;
+    variantId: string;
+    sku: string;
+    description: string;
+    quantityOrdered: string;
+    quantityFulfilled: string;
+    quantityReturned: string;
+    quantityCredited: string;
+    quantityUnsettled: string;
+    quantityOutstanding: string;
+    unitPrice: string | null;
+    currency: string | null;
+    priceSource: 'list' | 'manual' | null;
+    priceListId: string | null;
+    priceListName: string | null;
+    lineTotal: string | null;
+    isComplete: boolean;
+    isClosedShort: boolean;
+    closedReason: string | null;
+};
+
+export type OrderDetail = {
+    id: string;
+    partnerId: string;
+    partnerName: string;
+    direction: 'sale' | 'purchase';
+    isSample: boolean;
+    fullyFulfilled: boolean;
+    duplicatedFromId: string | null;
+    status: 'draft' | 'cancelled' | 'confirmed' | 'fulfilled';
+    reference: string | null;
+    expectedAt: string | null;
+    note: string | null;
+    totals: Array<OrderTotal>;
+    totalsComplete: boolean;
+    money: OrderMoney | null;
+    unsettledReturns: number;
+    counts: OrderCounts;
+    quantities: OrderQuantities | null;
+    documents: OrderDocuments | null;
+    lines: Array<OrderLine>;
+};
+
 export type CreateOrderLineDto = {
     variantId: string;
     quantityOrdered: string;
@@ -345,6 +465,10 @@ export type CreateOrderDto = {
     expectedAt?: string;
     note?: string;
     lines: Array<CreateOrderLineDto>;
+};
+
+export type OrderEnvelope = {
+    order: OrderDetail;
 };
 
 export type DuplicateOrderDto = {
@@ -366,6 +490,33 @@ export type AddOrderLineDto = {
     currency?: string;
 };
 
+export type AddedOrderLine = {
+    id: string;
+    variantId: string;
+    sku: string;
+    description: string;
+    quantityOrdered: string;
+    quantityFulfilled: string;
+    quantityReturned: string;
+    quantityCredited: string;
+    quantityUnsettled: string;
+    quantityOutstanding: string;
+    unitPrice: string | null;
+    currency: string | null;
+    priceSource: 'list' | 'manual' | null;
+    priceListId: string | null;
+    priceListName: string | null;
+    lineTotal: string | null;
+    isComplete: boolean;
+    isClosedShort: boolean;
+    closedReason: string | null;
+    priceNotice?: string;
+};
+
+export type AddedOrderLineEnvelope = {
+    line: AddedOrderLine;
+};
+
 export type UpdateOrderLineDto = {
     quantityOrdered: string;
     unitPrice?: string;
@@ -381,6 +532,14 @@ export type ReceiveLineDto = {
     quantity: string;
     lot?: MovementLotDto;
     note?: string;
+};
+
+export type ReceivedMovement = {
+    id: string;
+};
+
+export type ReceiptEnvelope = {
+    movement: ReceivedMovement;
 };
 
 export type PreviewLineDto = {
@@ -2386,8 +2545,10 @@ export type OrdersControllerListV1Data = {
 };
 
 export type OrdersControllerListV1Responses = {
-    200: unknown;
+    200: OrderPage;
 };
+
+export type OrdersControllerListV1Response = OrdersControllerListV1Responses[keyof OrdersControllerListV1Responses];
 
 export type OrdersControllerCreateV1Data = {
     body: CreateOrderDto;
@@ -2397,8 +2558,10 @@ export type OrdersControllerCreateV1Data = {
 };
 
 export type OrdersControllerCreateV1Responses = {
-    201: unknown;
+    201: OrderEnvelope;
 };
+
+export type OrdersControllerCreateV1Response = OrdersControllerCreateV1Responses[keyof OrdersControllerCreateV1Responses];
 
 export type OrdersControllerExportOrdersV1Data = {
     body?: never;
@@ -2437,8 +2600,10 @@ export type OrdersControllerFindV1Data = {
 };
 
 export type OrdersControllerFindV1Responses = {
-    200: unknown;
+    200: OrderDetail;
 };
+
+export type OrdersControllerFindV1Response = OrdersControllerFindV1Responses[keyof OrdersControllerFindV1Responses];
 
 export type OrdersControllerUpdateV1Data = {
     body: UpdateOrderDto;
@@ -2465,8 +2630,10 @@ export type OrdersControllerDuplicateV1Data = {
 };
 
 export type OrdersControllerDuplicateV1Responses = {
-    201: unknown;
+    201: OrderEnvelope;
 };
+
+export type OrdersControllerDuplicateV1Response = OrdersControllerDuplicateV1Responses[keyof OrdersControllerDuplicateV1Responses];
 
 export type OrdersControllerAddLineV1Data = {
     body: AddOrderLineDto;
@@ -2478,8 +2645,10 @@ export type OrdersControllerAddLineV1Data = {
 };
 
 export type OrdersControllerAddLineV1Responses = {
-    201: unknown;
+    201: AddedOrderLineEnvelope;
 };
+
+export type OrdersControllerAddLineV1Response = OrdersControllerAddLineV1Responses[keyof OrdersControllerAddLineV1Responses];
 
 export type OrdersControllerRemoveLineV1Data = {
     body?: never;
@@ -2572,8 +2741,10 @@ export type OrdersControllerReceiveV1Data = {
 };
 
 export type OrdersControllerReceiveV1Responses = {
-    201: unknown;
+    201: ReceiptEnvelope;
 };
+
+export type OrdersControllerReceiveV1Response = OrdersControllerReceiveV1Responses[keyof OrdersControllerReceiveV1Responses];
 
 export type ShipmentsControllerListV1Data = {
     body?: never;

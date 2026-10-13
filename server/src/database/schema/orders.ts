@@ -62,7 +62,7 @@ export const orders = pgTable(
       .notNull()
       .references(() => partners.id, { onDelete: 'restrict' }),
 
-    direction: text('direction').notNull(),
+    direction: text('direction').$type<OrderDirection>().notNull(),
 
     /**
      * A sale that is a sample: sent to a customer or prospect, usually at no
@@ -71,7 +71,7 @@ export const orders = pgTable(
      */
     isSample: boolean('is_sample').notNull().default(false),
 
-    status: text('status').notNull().default('draft'),
+    status: text('status').$type<OrderStatus>().notNull().default('draft'),
 
     /**
      * When the order was confirmed: its place in line when stock is short
