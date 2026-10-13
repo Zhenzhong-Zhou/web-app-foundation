@@ -1,4 +1,4 @@
-import type { InvoiceSummary } from '../api/types.gen';
+import type { InvoiceSummary, OrderSummary } from '../api/types.gen';
 import type { Locale } from './locales';
 
 /**
@@ -123,30 +123,26 @@ export interface PartnerDetail extends Partner {
   contacts: Contact[];
 }
 
-export type OrderDirection = 'purchase' | 'sale';
-
 /**
- * One lifecycle for both directions (ADR-041). `fulfilled` reads as
- * "Received" on a purchase and "Shipped" on a sale.
+ * Orders, generated from the server's OpenAPI document (ADR-068, phase 2),
+ * re-exported so their importers need no change. Direction and status are
+ * read from the generated summary: one lifecycle for both directions
+ * (ADR-041), where `fulfilled` reads as "Received" on a purchase and
+ * "Shipped" on a sale.
  */
-export type OrderStatus = 'draft' | 'confirmed' | 'fulfilled' | 'cancelled';
+export type {
+  OrderCreditRow,
+  OrderDetail,
+  OrderInvoiceRow,
+  OrderLine,
+  OrderMoney,
+  OrderPage,
+  OrderSummary,
+} from '../api/types.gen';
 
-export interface OrderSummary {
-  id: string;
-  partnerId: string;
-  partnerName: string;
-  direction: OrderDirection;
-  /** A sale sent as a sample (ADR-042). Always false on a purchase. */
-  isSample: boolean;
-  status: OrderStatus;
-  reference: string | null;
-  expectedAt: CalendarDay | null;
-  createdAt: string;
-  lineCount: number;
-  /** numeric(18,4) as a string — never parsed into a JS number (ADR-025). */
-  quantityOrdered: string;
-  quantityFulfilled: string;
-}
+export type OrderDirection = OrderSummary['direction'];
+
+export type OrderStatus = OrderSummary['status'];
 
 export interface Lot {
   id: string;
@@ -165,127 +161,6 @@ export interface VariantOption {
   type: string;
   unitOfMeasure: string;
   tracksLots: boolean;
-}
-
-export interface OrderLine {
-  id: string;
-  variantId: string;
-  /** Snapshotted when the order was raised (ADR-023). */
-  sku: string;
-  description: string;
-  quantityOrdered: string;
-  quantityFulfilled: string;
-  /** Customer returns, beside fulfilled rather than subtracted (ADR-043). */
-  quantityReturned: string;
-  /**
-   * Credited on a credit note, voiding's left out (ADR-055): beside
-   * Returned, the gap is what nobody has settled. Zero on a purchase.
-   */
-  quantityCredited: string;
-  /** On returns with no RMA yet (ADR-047). Zero on a purchase or sample. */
-  quantityUnsettled: string;
-  quantityOutstanding: string;
-  unitPrice: string | null;
-  currency: string | null;
-  /** Where the price came from (ADR-049): a list, typed, or not yet priced. */
-  priceSource: 'list' | 'manual' | null;
-  priceListId: string | null;
-  /** The list's current name, for "from Wholesale CAD". */
-  priceListName: string | null;
-  lineTotal: string | null;
-  isComplete: boolean;
-  /** No more is coming (ADR-034). The quantities above stay as they were. */
-  isClosedShort: boolean;
-  closedReason: string | null;
-}
-
-/**
- * A sale's money (ADR-055), summed by the server: never added up here.
- * Invoiced and credited include tax and count issued documents only;
- * not yet invoiced is before tax and unrounded, for formatMoney to round.
- */
-export interface OrderMoney {
-  currency: string | null;
-  invoiced: string;
-  credited: string;
-  netInvoiced: string;
-  notInvoiced: string;
-}
-
-/** An invoice on a sale, as its "Invoices and credits" tab lists it. */
-export interface OrderInvoiceRow {
-  id: string;
-  /** Null on a draft: a number is given at issue (ADR-046). */
-  number: string | null;
-  status: InvoiceStatus;
-  date: CalendarDay | null;
-  total: string | null;
-  currency: string;
-  /** When the shipment it bills left. */
-  shippedAt: string;
-  quantity: string;
-}
-
-/** A credit note on a sale's invoice, for the same tab. Always issued. */
-export interface OrderCreditRow {
-  id: string;
-  number: string;
-  date: CalendarDay;
-  total: string;
-  currency: string;
-  reason: string;
-  /** The full credit that voided an invoice (ADR-046). */
-  isVoid: boolean;
-  invoiceNumber: string | null;
-  quantity: string;
-}
-
-/** What GET /orders/:id returns — the order with its lines. */
-export interface OrderDetail {
-  id: string;
-  partnerId: string;
-  partnerName: string;
-  direction: OrderDirection;
-  /** A sale sent as a sample (ADR-042). Always false on a purchase. */
-  isSample: boolean;
-  /** Every line received or shipped, or closed short. */
-  fullyFulfilled: boolean;
-  /** Set when this order was raised by duplicating another (ADR-031). */
-  duplicatedFromId: string | null;
-  status: OrderStatus;
-  reference: string | null;
-  expectedAt: CalendarDay | null;
-  totals: { currency: string; amount: string }[];
-  totalsComplete: boolean;
-  /** Null on a purchase or a sample: neither is invoiced here. */
-  money: OrderMoney | null;
-  /** Returns received with no RMA, nobody yet deciding what they settle. */
-  unsettledReturns: number;
-  /** How many records each tab holds; voided shipments included. */
-  counts: {
-    shipments: number;
-    voidedShipments: number;
-    returns: number;
-    documents: number;
-  };
-  /**
-   * The quantities summed, when every line counts in one unit. Null when
-   * they differ: bottles and kilograms add up to nothing.
-   */
-  quantities: {
-    unit: string;
-    ordered: string;
-    fulfilled: string;
-    returned: string;
-    outstanding: string;
-  } | null;
-  /** A sale's invoices and credit notes; null on a purchase or sample. */
-  documents: {
-    invoices: OrderInvoiceRow[];
-    creditNotes: OrderCreditRow[];
-  } | null;
-  note: string | null;
-  lines: OrderLine[];
 }
 
 export type BomStatus = 'draft' | 'active' | 'archived';

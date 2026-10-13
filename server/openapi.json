@@ -3540,7 +3540,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderPage"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3562,7 +3569,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3719,7 +3733,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetail"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3783,7 +3804,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3816,7 +3844,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddedOrderLineEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -4030,7 +4065,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -7566,6 +7608,556 @@
           }
         }
       },
+      "OrderSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "partnerId": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "sale",
+              "purchase"
+            ]
+          },
+          "isSample": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "cancelled",
+              "confirmed",
+              "fulfilled"
+            ]
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expectedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lineCount": {
+            "type": "number"
+          },
+          "quantityOrdered": {
+            "type": "string"
+          },
+          "quantityFulfilled": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "partnerId",
+          "partnerName",
+          "direction",
+          "isSample",
+          "status",
+          "reference",
+          "expectedAt",
+          "createdAt",
+          "lineCount",
+          "quantityOrdered",
+          "quantityFulfilled"
+        ]
+      },
+      "OrderPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderSummary"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "OrderTotal": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currency",
+          "amount"
+        ]
+      },
+      "OrderMoney": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "invoiced": {
+            "type": "string"
+          },
+          "credited": {
+            "type": "string"
+          },
+          "netInvoiced": {
+            "type": "string"
+          },
+          "notInvoiced": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currency",
+          "invoiced",
+          "credited",
+          "netInvoiced",
+          "notInvoiced"
+        ]
+      },
+      "OrderCounts": {
+        "type": "object",
+        "properties": {
+          "shipments": {
+            "type": "number"
+          },
+          "voidedShipments": {
+            "type": "number"
+          },
+          "returns": {
+            "type": "number"
+          },
+          "documents": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "shipments",
+          "voidedShipments",
+          "returns",
+          "documents"
+        ]
+      },
+      "OrderQuantities": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "type": "string"
+          },
+          "ordered": {
+            "type": "string"
+          },
+          "fulfilled": {
+            "type": "string"
+          },
+          "returned": {
+            "type": "string"
+          },
+          "outstanding": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "unit",
+          "ordered",
+          "fulfilled",
+          "returned",
+          "outstanding"
+        ]
+      },
+      "OrderInvoiceRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "issued",
+              "voided"
+            ]
+          },
+          "date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "total": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "shippedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "status",
+          "date",
+          "total",
+          "currency",
+          "shippedAt",
+          "quantity"
+        ]
+      },
+      "OrderCreditRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "total": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "isVoid": {
+            "type": "boolean"
+          },
+          "invoiceNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "date",
+          "total",
+          "currency",
+          "reason",
+          "isVoid",
+          "invoiceNumber",
+          "quantity"
+        ]
+      },
+      "OrderDocuments": {
+        "type": "object",
+        "properties": {
+          "invoices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderInvoiceRow"
+            }
+          },
+          "creditNotes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderCreditRow"
+            }
+          }
+        },
+        "required": [
+          "invoices",
+          "creditNotes"
+        ]
+      },
+      "OrderLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantityOrdered": {
+            "type": "string"
+          },
+          "quantityFulfilled": {
+            "type": "string"
+          },
+          "quantityReturned": {
+            "type": "string"
+          },
+          "quantityCredited": {
+            "type": "string"
+          },
+          "quantityUnsettled": {
+            "type": "string"
+          },
+          "quantityOutstanding": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priceSource": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "list",
+              "manual",
+              null
+            ]
+          },
+          "priceListId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priceListName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lineTotal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isComplete": {
+            "type": "boolean"
+          },
+          "isClosedShort": {
+            "type": "boolean"
+          },
+          "closedReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "sku",
+          "description",
+          "quantityOrdered",
+          "quantityFulfilled",
+          "quantityReturned",
+          "quantityCredited",
+          "quantityUnsettled",
+          "quantityOutstanding",
+          "unitPrice",
+          "currency",
+          "priceSource",
+          "priceListId",
+          "priceListName",
+          "lineTotal",
+          "isComplete",
+          "isClosedShort",
+          "closedReason"
+        ]
+      },
+      "OrderDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "partnerId": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "sale",
+              "purchase"
+            ]
+          },
+          "isSample": {
+            "type": "boolean"
+          },
+          "fullyFulfilled": {
+            "type": "boolean"
+          },
+          "duplicatedFromId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "cancelled",
+              "confirmed",
+              "fulfilled"
+            ]
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expectedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "totals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderTotal"
+            }
+          },
+          "totalsComplete": {
+            "type": "boolean"
+          },
+          "money": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrderMoney"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unsettledReturns": {
+            "type": "number"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/OrderCounts"
+          },
+          "quantities": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrderQuantities"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrderDocuments"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLine"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "partnerId",
+          "partnerName",
+          "direction",
+          "isSample",
+          "fullyFulfilled",
+          "duplicatedFromId",
+          "status",
+          "reference",
+          "expectedAt",
+          "note",
+          "totals",
+          "totalsComplete",
+          "money",
+          "unsettledReturns",
+          "counts",
+          "quantities",
+          "documents",
+          "lines"
+        ]
+      },
       "CreateOrderLineDto": {
         "type": "object",
         "properties": {
@@ -7630,6 +8222,17 @@
           "lines"
         ]
       },
+      "OrderEnvelope": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/OrderDetail"
+          }
+        },
+        "required": [
+          "order"
+        ]
+      },
       "DuplicateOrderDto": {
         "type": "object",
         "properties": {
@@ -7689,6 +8292,129 @@
           "quantityOrdered"
         ]
       },
+      "AddedOrderLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantityOrdered": {
+            "type": "string"
+          },
+          "quantityFulfilled": {
+            "type": "string"
+          },
+          "quantityReturned": {
+            "type": "string"
+          },
+          "quantityCredited": {
+            "type": "string"
+          },
+          "quantityUnsettled": {
+            "type": "string"
+          },
+          "quantityOutstanding": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priceSource": {
+            "enum": [
+              "list",
+              "manual",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priceListId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priceListName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lineTotal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isComplete": {
+            "type": "boolean"
+          },
+          "isClosedShort": {
+            "type": "boolean"
+          },
+          "closedReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priceNotice": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "sku",
+          "description",
+          "quantityOrdered",
+          "quantityFulfilled",
+          "quantityReturned",
+          "quantityCredited",
+          "quantityUnsettled",
+          "quantityOutstanding",
+          "unitPrice",
+          "currency",
+          "priceSource",
+          "priceListId",
+          "priceListName",
+          "lineTotal",
+          "isComplete",
+          "isClosedShort",
+          "closedReason"
+        ]
+      },
+      "AddedOrderLineEnvelope": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "$ref": "#/components/schemas/AddedOrderLine"
+          }
+        },
+        "required": [
+          "line"
+        ]
+      },
       "UpdateOrderLineDto": {
         "type": "object",
         "properties": {
@@ -7740,6 +8466,28 @@
         "required": [
           "toLocationId",
           "quantity"
+        ]
+      },
+      "ReceivedMovement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ReceiptEnvelope": {
+        "type": "object",
+        "properties": {
+          "movement": {
+            "$ref": "#/components/schemas/ReceivedMovement"
+          }
+        },
+        "required": [
+          "movement"
         ]
       },
       "PreviewLineDto": {

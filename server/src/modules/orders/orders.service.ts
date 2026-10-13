@@ -25,21 +25,13 @@ import { t } from '../../i18n/translate';
 import { partnerMatches } from '../partners/partner-search';
 import { itemName } from '../stock/item-name';
 import { ListOrdersDto } from './dto/list-orders.dto';
+import type {
+  OrderDetail,
+  OrderPage,
+  OrderQuantities,
+} from './dto/order-response.dto';
 
 const DEFAULT_LIMIT = 25;
-
-/**
- * An order's quantities summed, all its lines counting in one unit.
- * Exported because findById's return type names it, and the controller
- * returning that type has to be able to name it too (TS4053).
- */
-export interface OrderQuantities {
-  unit: string;
-  ordered: string;
-  fulfilled: string;
-  returned: string;
-  outstanding: string;
-}
 
 /** Draft and confirmed: the documents somebody still has to do something about. */
 const OPEN_STATUSES = ['draft', 'confirmed'] as const;
@@ -78,7 +70,7 @@ export class OrdersService {
    * its last decimal place (ADR-025) — the client renders what Postgres
    * computed and does no arithmetic on it.
    */
-  async list(query: ListOrdersDto) {
+  async list(query: ListOrdersDto): Promise<OrderPage> {
     const limit = query.limit ?? DEFAULT_LIMIT;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -184,7 +176,7 @@ export class OrdersService {
    * means parsing them into doubles (ADR-025) — Postgres knows the answer and
    * a boolean survives the trip intact.
    */
-  async findById(orderId: string) {
+  async findById(orderId: string): Promise<OrderDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [order] = await tx
         .select({
@@ -198,7 +190,6 @@ export class OrdersService {
           expectedAt: orders.expectedAt,
           note: orders.note,
           duplicatedFromId: orders.duplicatedFromId,
-          createdAt: orders.createdAt,
 
           /**
            * True when no line is short. `bool_and` over zero lines returns
