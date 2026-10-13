@@ -50,10 +50,11 @@ export interface AuditRecord {
 /**
  * Human text for an action key, in the reader's language (ADR-054).
  *
- * Named from AUDIT_ACTION_NAMES, which a CI check holds to the server's
- * list: a language cannot be derived from a key, so the old rule of
- * spelling every key out stopped being enough. It remains the fallback, in
- * English, for an action recorded before a client that knows its name.
+ * Named from AUDIT_ACTION_NAMES, which the generated AuditAction holds to
+ * the server's list: a language cannot be derived from a key, so the old
+ * rule of spelling every key out stopped being enough. It remains the
+ * fallback, in English, for an action recorded before a client that knows
+ * its name.
  */
 export function describe(action: string): string {
   if (action in AUDIT_ACTION_NAMES) {

@@ -15,7 +15,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
-import { api, ERROR_CODES } from '../lib/api';
+import { api, hasCode } from '../lib/api';
 import { formatMoney } from '../lib/format';
 import type { InvoiceDetail } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
@@ -83,7 +83,7 @@ export function IssueInvoiceDialog({
   /** Where the refusal is put right, keyed on its code, never its words. */
   function remedy(): { to: string; label: string } | null {
     if (
-      errorCode === ERROR_CODES.organizationAddressMissing &&
+      hasCode(errorCode, 'organization_address_missing') &&
       can('organizations.update')
     ) {
       return {
@@ -95,7 +95,7 @@ export function IssueInvoiceDialog({
       };
     }
     if (
-      errorCode === ERROR_CODES.organizationTaxNumberMissing &&
+      hasCode(errorCode, 'organization_tax_number_missing') &&
       can('organizations.update')
     ) {
       return {
@@ -107,7 +107,7 @@ export function IssueInvoiceDialog({
       };
     }
     if (
-      errorCode === ERROR_CODES.customerBillingAddressMissing &&
+      hasCode(errorCode, 'customer_billing_address_missing') &&
       can('partners.update')
     ) {
       return {

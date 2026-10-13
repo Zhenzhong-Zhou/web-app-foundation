@@ -7,9 +7,8 @@
  * a catalogue and an entry here, not a migration, and a stored tag no longer
  * listed falls back to English instead of failing.
  *
- * The client keeps its own copy (client/src/lib/locales.ts), since the two
- * packages share no files; server/scripts/check-client-locales.js fails CI
- * when they disagree.
+ * The client's list is generated from the OpenAPI document (ADR-068), where
+ * this one appears as the Locale enum.
  */
 export const SUPPORTED_LOCALES = ['en', 'fr-CA', 'zh-Hans'] as const;
 

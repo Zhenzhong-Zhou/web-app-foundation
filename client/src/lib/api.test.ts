@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '../test/setup';
-import { api, ApiError, ERROR_CODES } from './api';
+import { api, ApiError } from './api';
 
 /** The error api() throws for a request, for asserting on its fields. */
 async function failureOf(path: string): Promise<ApiError> {
@@ -103,6 +103,6 @@ describe('api', () => {
     const error = await failureOf('/things/refused');
 
     expect(error.message).toBe('Set the address first');
-    expect(error.code).toBe(ERROR_CODES.organizationAddressMissing);
+    expect(error.code).toBe('organization_address_missing');
   });
 });

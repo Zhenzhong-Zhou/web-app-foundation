@@ -110,10 +110,9 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
   }
 
   /**
-   * The action vocabulary, from the log rather than a constant: the client
-   * cannot import the server's AUDIT_ACTIONS, and a duplicated list drifts.
-   * It also offers only what has happened, so the filter never contains an
-   * option that returns nothing.
+   * The action vocabulary, from the log rather than the generated list
+   * (ADR-068): it offers only what has happened, so the filter never
+   * contains an option that returns nothing.
    */
   useEffect(() => {
     // Your own page offers no action filter: the vocabulary is the log's.

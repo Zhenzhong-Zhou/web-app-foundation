@@ -1,3 +1,4 @@
+import type { ErrorCode } from '../api/types.gen';
 import { intl } from '../i18n/intl';
 
 const BASE = '/api/v1';
@@ -9,9 +10,10 @@ export class ApiError extends Error {
   /** Seconds, from the throttler's Retry-After header on a 429. */
   readonly retryAfterSeconds?: number;
   /**
-   * What the refusal is, when the server says (ERROR_CODES below). The
-   * message is for the person and changes with the language; a screen that
-   * offers a way out keys on this instead.
+   * What the refusal is, when the server says: one of the generated
+   * ErrorCode, read with hasCode below. The message is for the person and
+   * changes with the language; a screen that offers a way out keys on this
+   * instead.
    */
   readonly code?: string;
 
@@ -32,19 +34,14 @@ export class ApiError extends Error {
 }
 
 /**
- * The codes the server puts beside a refusal's message (conventions.md,
- * "Error codes"), copied from server/src/common/error-codes.ts: the
- * packages share no files. check-client-error-codes.js fails CI when the
- * two lists differ.
+ * Whether a refusal carries a code (conventions.md, "Error codes"). The
+ * code is typed by the generated ErrorCode (ADR-068), so a screen keying on
+ * one the server no longer sends fails to compile, rather than offering a
+ * way out that never appears.
  */
-export const ERROR_CODES = {
-  /** No registered address, which every invoice prints (ADR-046, ADR-061). */
-  organizationAddressMissing: 'organization_address_missing',
-  /** The customer has no billing address to invoice to (ADR-046). */
-  customerBillingAddressMissing: 'customer_billing_address_missing',
-  /** An invoice charges tax, and the seller has no tax number (ADR-046). */
-  organizationTaxNumberMissing: 'organization_tax_number_missing',
-} as const;
+export function hasCode(errorCode: string | null, code: ErrorCode): boolean {
+  return errorCode === code;
+}
 
 /**
  * What a failed request says to the person who made it: the server's own

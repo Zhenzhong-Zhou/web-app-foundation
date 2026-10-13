@@ -1,13 +1,14 @@
 import { defineMessages } from 'react-intl';
 
+import type { AuditAction } from '../api/types.gen';
+
 /**
  * Every action the audit log records, by name in the reader's language
- * (ADR-054). The keys are the server's (server/src/core/audit/audit-actions.ts);
- * server/scripts/check-client-audit-actions.js fails CI when this list and
- * the server's disagree, so a new action cannot arrive unnamed. An action
- * missing here anyway is still spelled out from its key, in English.
+ * (ADR-054). Keyed by the generated AuditAction (ADR-068): an action the
+ * server adds without a name here, or a name for one it no longer records,
+ * fails to compile, so a new action cannot arrive unnamed.
  */
-export const AUDIT_ACTION_NAMES = defineMessages({
+export const AUDIT_ACTION_NAMES = defineMessages<AuditAction>({
   'bom.archived': {
     id: 'audit.action.bomArchived',
     defaultMessage: 'Recipe archived',

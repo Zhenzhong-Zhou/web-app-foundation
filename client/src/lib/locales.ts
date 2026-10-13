@@ -1,15 +1,16 @@
-/**
- * The languages the app speaks (ADR-054), as BCP 47 tags. English is the
- * source every catalogue is translated from and what anything missing falls
- * back to.
- *
- * The server keeps the same list (server/src/common/locales.ts), since the
- * two packages share no files; server/scripts/check-client-locales.js fails
- * CI when they disagree.
- */
-export const SUPPORTED_LOCALES = ['en', 'fr-CA', 'zh-Hans'] as const;
+import { Locale } from '../api/types.gen';
 
-export type Locale = (typeof SUPPORTED_LOCALES)[number];
+/**
+ * The languages the app speaks (ADR-054), as BCP 47 tags, in the server's
+ * order. English is the source every catalogue is translated from and what
+ * anything missing falls back to.
+ *
+ * Generated from the server's OpenAPI document (ADR-068), so the list the
+ * client offers is the list the server accepts.
+ */
+export const SUPPORTED_LOCALES: readonly Locale[] = Object.values(Locale);
+
+export type { Locale };
 
 export const DEFAULT_LOCALE: Locale = 'en';
 
