@@ -3,6 +3,7 @@ import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { SearchLotsDto } from './dto/search-lots.dto';
+import type { LotMatch } from './dto/stock-response.dto';
 import { LotTraceService } from './lot-trace.service';
 
 /**
@@ -16,7 +17,7 @@ export class LotTraceController {
   /** Find a lot by the start of its code: how a recall usually begins. */
   @Get('search')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  search(@Query() query: SearchLotsDto) {
+  search(@Query() query: SearchLotsDto): Promise<LotMatch[]> {
     return this.traces.search(query.code);
   }
 

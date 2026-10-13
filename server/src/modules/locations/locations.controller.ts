@@ -15,6 +15,7 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateLocationDto } from './dto/create-location.dto';
+import type { CreatedLocation, Location } from './dto/location-response.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { LocationsService } from './locations.service';
 
@@ -30,7 +31,7 @@ export class LocationsController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.LOCATIONS_VIEW)
-  list() {
+  list(): Promise<Location[]> {
     return this.locations.list();
   }
 
@@ -43,7 +44,7 @@ export class LocationsController {
     resourceId: (response: { location: { id: string } }) =>
       response.location.id,
   })
-  async create(@Body() dto: CreateLocationDto) {
+  async create(@Body() dto: CreateLocationDto): Promise<CreatedLocation> {
     return { location: await this.locations.create(dto) };
   }
 

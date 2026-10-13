@@ -12,6 +12,7 @@ import { locations, stockLevels } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { CreateLocationDto } from './dto/create-location.dto';
+import type { Location } from './dto/location-response.dto';
 import type { UpdateLocationDto } from './dto/update-location.dto';
 
 /** A tree this deep is a data-entry mistake, not a warehouse. */
@@ -30,13 +31,14 @@ export class LocationsService {
    * tens of rows — and the client needs the flat list anyway, for the parent
    * picker on the create form.
    */
-  list() {
-    return this.tenantDb.select(locations, undefined, {
+  async list(): Promise<Location[]> {
+    const rows = await this.tenantDb.select(locations, undefined, {
       orderBy: asc(locations.name),
     });
+    return rows.map(locationOf);
   }
 
-  async create(input: CreateLocationDto) {
+  async create(input: CreateLocationDto): Promise<Location> {
     if (input.parentId) {
       await this.assertCanBeParent(input.parentId);
 
@@ -56,7 +58,7 @@ export class LocationsService {
         .returning();
 
       this.logger.log(`Location ${location.id} created`);
-      return location;
+      return locationOf(location);
     } catch (error) {
       if (isUniqueViolation(error)) {
         // Codes are unique within a parent, not globally: Bin 5 in two aisles
@@ -227,4 +229,20 @@ export class LocationsService {
 
     return row?.parentId ?? null;
   }
+}
+
+/**
+ * A location as the API returns it (ADR-068): the tree's fields, not the
+ * row, which would also send the organization it belongs to.
+ */
+function locationOf(row: Location): Location {
+  return {
+    id: row.id,
+    type: row.type,
+    name: row.name,
+    code: row.code,
+    parentId: row.parentId,
+    isAvailable: row.isAvailable,
+    isActive: row.isActive,
+  };
 }

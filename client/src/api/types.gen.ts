@@ -306,6 +306,29 @@ export type CancelProductionOrderDto = {
   reason: string;
 };
 
+export type StockRow = {
+  id: string;
+  variantId: string;
+  sku: string;
+  productName: string;
+  variantName: string | null;
+  coverFileId: string | null;
+  unitOfMeasure: string;
+  locationId: string;
+  locationName: string;
+  locationCode: string | null;
+  lotId: string | null;
+  lotCode: string | null;
+  lotExpiresAt: string | null;
+  lotIsAssigned: boolean | null;
+  quantity: string;
+};
+
+export type StockPage = {
+  entries: Array<StockRow>;
+  nextCursor: string | null;
+};
+
 export type MovementLotDto = {
   code: string;
   expiresAt?: string;
@@ -333,9 +356,67 @@ export type RecordMovementDto = {
   note?: string;
 };
 
+export type RecordedMovement = {
+  id: string;
+  variantId: string;
+  sku: string;
+  lotId: string | null;
+  fromLocationId: string | null;
+  toLocationId: string | null;
+  quantity: string;
+  reason: string;
+  reasonDetail: string | null;
+  referenceType: string | null;
+  referenceId: string | null;
+  note: string | null;
+  createdAt: string;
+};
+
+export type RecordedMovementEnvelope = {
+  movement: RecordedMovement;
+};
+
+export type StockCounts = {
+  expiring: number;
+  needsCost: number;
+};
+
+export type Movement = {
+  id: string;
+  sku: string;
+  quantity: string;
+  reason: string;
+  reasonDetail: string | null;
+  note: string | null;
+  fromLocationName: string | null;
+  toLocationName: string | null;
+  lotCode: string | null;
+  actorEmail: string | null;
+  createdAt: string;
+};
+
+export type MovementPage = {
+  entries: Array<Movement>;
+  nextCursor: string | null;
+};
+
+export type Lot = {
+  id: string;
+  code: string;
+  expiresAt: string | null;
+  isAssigned: boolean;
+};
+
 export type UpdateLotDto = {
   code?: string;
   expiresAt?: string;
+};
+
+export type LotMatch = {
+  id: string;
+  code: string;
+  expiresAt: string | null;
+  sku: string;
 };
 
 export type Availability = {
@@ -1091,11 +1172,25 @@ export type RecordOpenedDto = {
   id: string;
 };
 
+export type Location = {
+  id: string;
+  type: string;
+  name: string;
+  code: string | null;
+  parentId: string | null;
+  isAvailable: boolean;
+  isActive: boolean;
+};
+
 export type CreateLocationDto = {
   type: 'site' | 'zone' | 'aisle' | 'shelf' | 'bin';
   name: string;
   code?: string;
   parentId?: string;
+};
+
+export type CreatedLocation = {
+  location: Location;
 };
 
 export type UpdateLocationDto = {
@@ -2733,8 +2828,11 @@ export type StockControllerListV1Data = {
 };
 
 export type StockControllerListV1Responses = {
-  200: unknown;
+  200: StockPage;
 };
+
+export type StockControllerListV1Response =
+  StockControllerListV1Responses[keyof StockControllerListV1Responses];
 
 export type StockControllerExportInventoryV1Data = {
   body?: never;
@@ -2789,8 +2887,11 @@ export type StockControllerListMovementsV1Data = {
 };
 
 export type StockControllerListMovementsV1Responses = {
-  200: unknown;
+  200: MovementPage;
 };
+
+export type StockControllerListMovementsV1Response =
+  StockControllerListMovementsV1Responses[keyof StockControllerListMovementsV1Responses];
 
 export type StockControllerRecordV1Data = {
   body: RecordMovementDto;
@@ -2800,8 +2901,11 @@ export type StockControllerRecordV1Data = {
 };
 
 export type StockControllerRecordV1Responses = {
-  201: unknown;
+  201: RecordedMovementEnvelope;
 };
+
+export type StockControllerRecordV1Response =
+  StockControllerRecordV1Responses[keyof StockControllerRecordV1Responses];
 
 export type StockControllerCountsV1Data = {
   body?: never;
@@ -2822,8 +2926,11 @@ export type StockControllerCountsV1Data = {
 };
 
 export type StockControllerCountsV1Responses = {
-  200: unknown;
+  200: StockCounts;
 };
+
+export type StockControllerCountsV1Response =
+  StockControllerCountsV1Responses[keyof StockControllerCountsV1Responses];
 
 export type StockControllerExportMovementsV1Data = {
   body?: never;
@@ -2869,8 +2976,11 @@ export type StockControllerListLotsV1Data = {
 };
 
 export type StockControllerListLotsV1Responses = {
-  200: unknown;
+  200: Array<Lot>;
 };
+
+export type StockControllerListLotsV1Response =
+  StockControllerListLotsV1Responses[keyof StockControllerListLotsV1Responses];
 
 export type StockControllerUpdateLotV1Data = {
   body: UpdateLotDto;
@@ -2898,8 +3008,11 @@ export type LotTraceControllerSearchV1Data = {
 };
 
 export type LotTraceControllerSearchV1Responses = {
-  200: unknown;
+  200: Array<LotMatch>;
 };
+
+export type LotTraceControllerSearchV1Response =
+  LotTraceControllerSearchV1Responses[keyof LotTraceControllerSearchV1Responses];
 
 export type LotTraceControllerTraceV1Data = {
   body?: never;
@@ -3984,8 +4097,11 @@ export type LocationsControllerListV1Data = {
 };
 
 export type LocationsControllerListV1Responses = {
-  200: unknown;
+  200: Array<Location>;
 };
+
+export type LocationsControllerListV1Response =
+  LocationsControllerListV1Responses[keyof LocationsControllerListV1Responses];
 
 export type LocationsControllerCreateV1Data = {
   body: CreateLocationDto;
@@ -3995,8 +4111,11 @@ export type LocationsControllerCreateV1Data = {
 };
 
 export type LocationsControllerCreateV1Responses = {
-  201: unknown;
+  201: CreatedLocation;
 };
+
+export type LocationsControllerCreateV1Response =
+  LocationsControllerCreateV1Responses[keyof LocationsControllerCreateV1Responses];
 
 export type LocationsControllerUpdateV1Data = {
   body: UpdateLocationDto;
