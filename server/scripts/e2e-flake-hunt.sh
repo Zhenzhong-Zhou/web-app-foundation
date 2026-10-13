@@ -25,7 +25,7 @@ failed_runs=()
 for i in $(seq 1 "$RUNS"); do
   printf 'run %s/%s ... ' "$i" "$RUNS"
   # shellcheck disable=SC2209
-  if NODE_ENV=test npx jest --config ./test/jest-e2e.json --runInBand \
+  if NODE_ENV=test npx vitest run --project e2e \
        ${PATTERN:+"$PATTERN"} >"$OUT/run-$i.log" 2>&1; then
     echo pass
   else
@@ -42,7 +42,7 @@ echo "$((RUNS - failed)) of $RUNS runs passed."
 
 echo
 echo "Failing tests, by how often:"
-if ! for i in "${failed_runs[@]}"; do grep -h '●' "$OUT/run-$i.log"; done | sed 's/^ *//' | sort | uniq -c | sort -rn \
+if ! for i in "${failed_runs[@]}"; do grep -h ' FAIL ' "$OUT/run-$i.log"; done | sed 's/^ *//' | sort | uniq -c | sort -rn \
      | grep .; then
   echo "  (none named — see the log ends below)"
 fi
@@ -51,7 +51,7 @@ echo
 echo "Per failing run:"
 for i in "${failed_runs[@]}"; do
   f="$OUT/run-$i.log"
-  line=$(grep -m1 -E 'expected [0-9]+|Exceeded timeout|Test suite failed to run' "$f")
+  line=$(grep -m1 -E 'expected |Test timed out|Failed to load' "$f")
   if [ -n "$line" ]; then
     echo "  run-$i: $line"
   else

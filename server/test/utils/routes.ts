@@ -37,7 +37,7 @@ export interface Route {
  * wiring. No configureApp either: versioning and pipes do not matter to
  * metadata. Shutdown hooks do — DatabaseModule closes the pg pool in
  * onApplicationShutdown, and without them app.close() leaves the sockets
- * open and Jest never exits.
+ * open and the test run never exits.
  */
 export async function createRouteReadingApp(): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({

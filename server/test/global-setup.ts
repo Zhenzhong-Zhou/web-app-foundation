@@ -1,8 +1,9 @@
 import { config } from 'dotenv';
 import { Client } from 'pg';
 
-// Jest runs this outside Nest, so ConfigModule has not loaded the shared
-// root .env yet; the same reason drizzle.config.ts loads it itself.
+// Vitest runs this in its own process, outside Nest, so ConfigModule has
+// not loaded the shared root .env yet; the same reason drizzle.config.ts
+// loads it itself.
 config({ path: '../.env', quiet: true });
 
 /** Fixed and arbitrary: the key every e2e run takes on the test database. */
@@ -19,8 +20,11 @@ export const E2E_LOCK_KEY = 4_802_048;
  * A session-level advisory lock, held on a dedicated connection for the whole
  * run. Tied to the connection, so a crashed or interrupted run releases it by
  * dying; nothing is left behind to clean up.
+ *
+ * Returns the teardown, which Vitest runs once the last suite has finished:
+ * closing the connection releases the lock.
  */
-export default async function globalSetup(): Promise<void> {
+export default async function globalSetup(): Promise<() => Promise<void>> {
   const url = process.env.DATABASE_URL_TEST;
 
   if (!url) {
@@ -46,6 +50,7 @@ export default async function globalSetup(): Promise<void> {
     );
   }
 
-  // Read back in globalTeardown, which shares this global scope.
-  (globalThis as { __E2E_LOCK__?: Client }).__E2E_LOCK__ = client;
+  return async () => {
+    await client.end();
+  };
 }

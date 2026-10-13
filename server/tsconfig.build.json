@@ -8,6 +8,7 @@
     "test",
     "dist",
     "drizzle.config.ts",
+    "vitest.config.mts",
     "perf",
     "**/*spec.ts"
   ]
