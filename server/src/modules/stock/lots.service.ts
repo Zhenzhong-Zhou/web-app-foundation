@@ -11,6 +11,7 @@ import { lots } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { ListLotsDto } from './dto/list-lots.dto';
+import type { Lot } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
 
 /**
@@ -37,10 +38,13 @@ export class LotsService {
    * Expiry comes along because it is how someone spots the other mistake:
    * typing a code that exists but belongs to a different run.
    */
-  listLots(query: ListLotsDto) {
-    return this.tenantDb.select(lots, eq(lots.variantId, query.variantId), {
-      orderBy: desc(lots.createdAt),
-    });
+  async listLots(query: ListLotsDto): Promise<Lot[]> {
+    const rows = await this.tenantDb.select(
+      lots,
+      eq(lots.variantId, query.variantId),
+      { orderBy: desc(lots.createdAt) },
+    );
+    return rows.map(lotOf);
   }
 
   /**
@@ -102,4 +106,12 @@ export class LotsService {
 
     this.logger.log(`Lot ${lotId} updated`);
   }
+}
+
+/**
+ * A lot as the API returns it (ADR-068): what the receive dialogs show, not
+ * the row, which would also send the organization and when it arrived.
+ */
+function lotOf({ id, code, expiresAt, isAssigned }: Lot): Lot {
+  return { id, code, expiresAt, isAssigned };
 }

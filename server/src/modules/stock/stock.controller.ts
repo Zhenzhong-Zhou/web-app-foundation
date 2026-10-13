@@ -29,6 +29,13 @@ import { ListLotsDto } from './dto/list-lots.dto';
 import { ListMovementsDto } from './dto/list-movements.dto';
 import { ListStockDto } from './dto/list-stock.dto';
 import { RecordMovementDto } from './dto/record-movement.dto';
+import type {
+  Lot,
+  MovementPage,
+  RecordedMovementEnvelope,
+  StockCounts,
+  StockPage,
+} from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
 import { LotsService } from './lots.service';
 import { StockService } from './stock.service';
@@ -58,7 +65,7 @@ export class StockController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  list(@Query() query: ListStockDto) {
+  list(@Query() query: ListStockDto): Promise<StockPage> {
     return this.reads.list(query);
   }
 
@@ -101,26 +108,44 @@ export class StockController {
   async record(
     @Body() dto: RecordMovementDto,
     @CurrentUser() user: RequestContext,
-  ) {
+  ): Promise<RecordedMovementEnvelope> {
     /**
      * @Audited sits above this and does not replace it. The movement carries
      * actor_id itself and not-null (ADR-023): a manual adjustment with no name
      * attached is precisely the row someone will ask about, and the audit log
      * answers a different question with a different retention.
      */
-    return { movement: await this.stock.record(dto, user.userId) };
+    const movement = await this.stock.record(dto, user.userId);
+    // As the ledger stores it, without the organization or the actor's id.
+    return {
+      movement: {
+        id: movement.id,
+        variantId: movement.variantId,
+        sku: movement.sku,
+        lotId: movement.lotId,
+        fromLocationId: movement.fromLocationId,
+        toLocationId: movement.toLocationId,
+        quantity: movement.quantity,
+        reason: movement.reason,
+        reasonDetail: movement.reasonDetail,
+        referenceType: movement.referenceType,
+        referenceId: movement.referenceId,
+        note: movement.note,
+        createdAt: movement.createdAt,
+      },
+    };
   }
 
   /** Counts beside the inventory's quick filters (ADR-055). */
   @Get('counts')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  counts(@Query() query: ListStockDto) {
+  counts(@Query() query: ListStockDto): Promise<StockCounts> {
     return this.reads.counts(query);
   }
 
   @Get('movements')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  listMovements(@Query() query: ListMovementsDto) {
+  listMovements(@Query() query: ListMovementsDto): Promise<MovementPage> {
     return this.reads.listMovements(query);
   }
 
@@ -152,7 +177,7 @@ export class StockController {
 
   @Get('lots')
   @RequirePermissions(PERMISSIONS.STOCK_VIEW)
-  listLots(@Query() query: ListLotsDto) {
+  listLots(@Query() query: ListLotsDto): Promise<Lot[]> {
     return this.lots.listLots(query);
   }
 

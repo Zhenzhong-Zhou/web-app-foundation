@@ -2713,7 +2713,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockPage"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2862,7 +2869,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordedMovementEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2955,7 +2969,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovementPage"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3065,7 +3086,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockCounts"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3199,7 +3227,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Lot"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3256,7 +3294,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LotMatch"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5871,7 +5919,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Location"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5893,7 +5951,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedLocation"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -7566,6 +7631,115 @@
           "reason"
         ]
       },
+      "StockRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "coverFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "locationCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotExpiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotIsAssigned": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "sku",
+          "productName",
+          "variantName",
+          "coverFileId",
+          "unitOfMeasure",
+          "locationId",
+          "locationName",
+          "locationCode",
+          "lotId",
+          "lotCode",
+          "lotExpiresAt",
+          "lotIsAssigned",
+          "quantity"
+        ]
+      },
+      "StockPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockRow"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
       "MovementLotDto": {
         "type": "object",
         "properties": {
@@ -7643,6 +7817,230 @@
           "reason"
         ]
       },
+      "RecordedMovement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fromLocationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toLocationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "reasonDetail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "sku",
+          "lotId",
+          "fromLocationId",
+          "toLocationId",
+          "quantity",
+          "reason",
+          "reasonDetail",
+          "referenceType",
+          "referenceId",
+          "note",
+          "createdAt"
+        ]
+      },
+      "RecordedMovementEnvelope": {
+        "type": "object",
+        "properties": {
+          "movement": {
+            "$ref": "#/components/schemas/RecordedMovement"
+          }
+        },
+        "required": [
+          "movement"
+        ]
+      },
+      "StockCounts": {
+        "type": "object",
+        "properties": {
+          "expiring": {
+            "type": "number"
+          },
+          "needsCost": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "expiring",
+          "needsCost"
+        ]
+      },
+      "Movement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "reasonDetail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fromLocationName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toLocationName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actorEmail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "quantity",
+          "reason",
+          "reasonDetail",
+          "note",
+          "fromLocationName",
+          "toLocationName",
+          "lotCode",
+          "actorEmail",
+          "createdAt"
+        ]
+      },
+      "MovementPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Movement"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "Lot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isAssigned": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "expiresAt",
+          "isAssigned"
+        ]
+      },
       "UpdateLotDto": {
         "type": "object",
         "properties": {
@@ -7655,6 +8053,32 @@
             "type": "string"
           }
         }
+      },
+      "LotMatch": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sku": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "expiresAt",
+          "sku"
+        ]
       },
       "Availability": {
         "type": "object",
@@ -10892,6 +11316,47 @@
           "id"
         ]
       },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isAvailable": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "name",
+          "code",
+          "parentId",
+          "isAvailable",
+          "isActive"
+        ]
+      },
       "CreateLocationDto": {
         "type": "object",
         "properties": {
@@ -10922,6 +11387,17 @@
         "required": [
           "type",
           "name"
+        ]
+      },
+      "CreatedLocation": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          }
+        },
+        "required": [
+          "location"
         ]
       },
       "UpdateLocationDto": {
