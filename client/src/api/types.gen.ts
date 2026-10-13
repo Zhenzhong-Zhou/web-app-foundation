@@ -1201,16 +1201,148 @@ export type UpdateLocationDto = {
   isActive?: boolean;
 };
 
+export type ValuationPool = {
+  variantId: string;
+  sku: string;
+  lotId: string | null;
+  lotCode: string | null;
+  quantity: string;
+  value: string;
+  unitCost: string;
+  provisional: boolean;
+};
+
+export type StockValuation = {
+  currency: string | null;
+  total: string;
+  provisional: boolean;
+  pools: Array<ValuationPool>;
+};
+
+export type StockValuationEnvelope = {
+  valuation: StockValuation;
+};
+
+export type LotCostEntry = {
+  id: string;
+  kind: 'issued' | 'movement' | 'run_close' | 'correction' | 'opening';
+  reason: string | null;
+  quantity: string;
+  value: string;
+  unitPrice: string | null;
+  currency: string | null;
+  exchangeRate: string | null;
+  needsCost: boolean;
+  referenceType: string | null;
+  referenceId: string | null;
+  createdAt: string;
+};
+
+export type LotCost = {
+  currency: string | null;
+  lotId: string;
+  lotCode: string;
+  sku: string;
+  quantity: string;
+  value: string;
+  unitCost: string | null;
+  provisional: boolean;
+  entries: Array<LotCostEntry>;
+};
+
+export type LotCostEnvelope = {
+  lotCost: LotCost;
+};
+
+export type RunCostConsumed = {
+  sku: string;
+  lotCode: string | null;
+  quantity: string;
+  value: string;
+};
+
+export type RunCostOutput = {
+  lotCode: string | null;
+  quantity: string;
+  value: string;
+};
+
+export type RunCost = {
+  currency: string | null;
+  runId: string;
+  reference: string | null;
+  sku: string;
+  status: 'draft' | 'cancelled' | 'released' | 'completed';
+  closed: boolean;
+  quantityProduced: string;
+  materialCost: string | null;
+  unitCost: string | null;
+  provisional: boolean;
+  consumed: Array<RunCostConsumed>;
+  outputs: Array<RunCostOutput>;
+};
+
+export type RunCostEnvelope = {
+  runCost: RunCost;
+};
+
+export type NeedsCostEntry = {
+  id: string;
+  kind: 'issued' | 'movement' | 'run_close' | 'correction' | 'opening';
+  reason: string | null;
+  sku: string;
+  variantId: string;
+  lotId: string | null;
+  lotCode: string | null;
+  quantity: string;
+  unitPrice: string | null;
+  currency: string | null;
+  referenceType: string | null;
+  referenceId: string | null;
+  createdAt: string;
+};
+
+export type NeedsCostPage = {
+  entries: Array<NeedsCostEntry>;
+  nextCursor: string | null;
+};
+
 export type SetCostDto = {
   unitPrice: string;
   currency: string;
   exchangeRate?: string;
 };
 
+export type CorrectedCost = {
+  valuationId: string;
+  value: string;
+  held: string;
+  issued: string;
+};
+
+export type CorrectedCostEnvelope = {
+  cost: CorrectedCost;
+};
+
+export type ExchangeRate = {
+  id: string;
+  currency: string;
+  rateDate: string;
+  rate: string;
+};
+
+export type ExchangeRateList = {
+  rates: Array<ExchangeRate>;
+};
+
 export type SetExchangeRateDto = {
   currency: string;
   rateDate: string;
   rate: string;
+};
+
+export type ExchangeRateEnvelope = {
+  rate: ExchangeRate;
 };
 
 export type CreatePriceListDto = {
@@ -4141,8 +4273,11 @@ export type CostsControllerStockValuationV1Data = {
 };
 
 export type CostsControllerStockValuationV1Responses = {
-  200: unknown;
+  200: StockValuationEnvelope;
 };
+
+export type CostsControllerStockValuationV1Response =
+  CostsControllerStockValuationV1Responses[keyof CostsControllerStockValuationV1Responses];
 
 export type CostsControllerExportValuationV1Data = {
   body?: never;
@@ -4171,8 +4306,11 @@ export type CostsControllerLotCostV1Data = {
 };
 
 export type CostsControllerLotCostV1Responses = {
-  200: unknown;
+  200: LotCostEnvelope;
 };
+
+export type CostsControllerLotCostV1Response =
+  CostsControllerLotCostV1Responses[keyof CostsControllerLotCostV1Responses];
 
 export type CostsControllerRunCostV1Data = {
   body?: never;
@@ -4184,8 +4322,11 @@ export type CostsControllerRunCostV1Data = {
 };
 
 export type CostsControllerRunCostV1Responses = {
-  200: unknown;
+  200: RunCostEnvelope;
 };
+
+export type CostsControllerRunCostV1Response =
+  CostsControllerRunCostV1Responses[keyof CostsControllerRunCostV1Responses];
 
 export type CostsControllerNeedsCostV1Data = {
   body?: never;
@@ -4198,8 +4339,11 @@ export type CostsControllerNeedsCostV1Data = {
 };
 
 export type CostsControllerNeedsCostV1Responses = {
-  200: unknown;
+  200: NeedsCostPage;
 };
+
+export type CostsControllerNeedsCostV1Response =
+  CostsControllerNeedsCostV1Responses[keyof CostsControllerNeedsCostV1Responses];
 
 export type CostsControllerSetCostV1Data = {
   body: SetCostDto;
@@ -4211,8 +4355,11 @@ export type CostsControllerSetCostV1Data = {
 };
 
 export type CostsControllerSetCostV1Responses = {
-  200: unknown;
+  200: CorrectedCostEnvelope;
 };
+
+export type CostsControllerSetCostV1Response =
+  CostsControllerSetCostV1Responses[keyof CostsControllerSetCostV1Responses];
 
 export type CostsControllerListRatesV1Data = {
   body?: never;
@@ -4224,8 +4371,11 @@ export type CostsControllerListRatesV1Data = {
 };
 
 export type CostsControllerListRatesV1Responses = {
-  200: unknown;
+  200: ExchangeRateList;
 };
+
+export type CostsControllerListRatesV1Response =
+  CostsControllerListRatesV1Responses[keyof CostsControllerListRatesV1Responses];
 
 export type CostsControllerSetRateV1Data = {
   body: SetExchangeRateDto;
@@ -4235,8 +4385,11 @@ export type CostsControllerSetRateV1Data = {
 };
 
 export type CostsControllerSetRateV1Responses = {
-  200: unknown;
+  200: ExchangeRateEnvelope;
 };
+
+export type CostsControllerSetRateV1Response =
+  CostsControllerSetRateV1Responses[keyof CostsControllerSetRateV1Responses];
 
 export type PriceListsControllerListV1Data = {
   body?: never;

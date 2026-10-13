@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
+import type { ValuationKind } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { baseCurrency } from '../stock/rates';
@@ -10,10 +11,97 @@ import {
   type CorrectedCost,
   type CostInput,
 } from '../stock/revaluation';
+import type {
+  LotCost,
+  NeedsCostPage,
+  RunCost,
+  StockValuation,
+} from './dto/cost-response.dto';
 import type { ListNeedsCostDto } from './dto/list-needs-cost.dto';
 import { openNeedsCost } from './open-needs-cost';
 
-type Row = Record<string, unknown>;
+/*
+ * The rows of the raw queries below, as Postgres returns them: numeric and
+ * the computed amounts as decimal strings, timestamps as Dates. Typed, so
+ * the responses built from them are checked against what the API declares
+ * (ADR-068) rather than passing through as unknown.
+ */
+interface PoolRow {
+  variant_id: string;
+  sku: string;
+  lot_id: string | null;
+  lot_code: string | null;
+  quantity: string;
+  value: string;
+  unit_cost: string;
+  provisional: boolean;
+}
+
+interface LotRow {
+  id: string;
+  code: string;
+  variant_id: string;
+  sku: string;
+}
+
+interface BalanceRow {
+  quantity: string;
+  value: string;
+  unit_cost: string | null;
+  provisional: boolean;
+}
+
+interface EntryRow {
+  id: string;
+  kind: ValuationKind;
+  quantity: string;
+  value: string;
+  unit_price: string | null;
+  currency: string | null;
+  exchange_rate: string | null;
+  needs_cost: boolean;
+  reference_type: string | null;
+  reference_id: string | null;
+  created_at: Date;
+  reason: string | null;
+}
+
+interface RunRow {
+  id: string;
+  status: RunCost['status'];
+  reference: string | null;
+  quantity_produced: string;
+  sku: string;
+}
+
+interface MovedRow {
+  sku: string;
+  lot_code: string | null;
+  quantity: string;
+  value: string;
+}
+
+interface OutputRow {
+  lot_code: string | null;
+  quantity: string;
+  value: string;
+}
+
+interface NeedsCostRow {
+  id: string;
+  kind: ValuationKind;
+  sku: string;
+  variant_id: string;
+  lot_id: string | null;
+  lot_code: string | null;
+  quantity: string;
+  unit_price: string | null;
+  currency: string | null;
+  created_at: Date;
+  reason: string | null;
+  reference_type: string | null;
+  reference_id: string | null;
+}
 
 /**
  * What stock, lots and batches cost (ADR-048). Reads only, apart from the
@@ -44,7 +132,7 @@ export class CostsService {
   }
 
   /** Everything on hand, pool by pool, and what it is worth together. */
-  stockValuation() {
+  stockValuation(): Promise<StockValuation> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const base = await baseCurrency(tx, organizationId);
 
@@ -94,7 +182,7 @@ export class CostsService {
           and p.quantity > 0
       `);
 
-      const rows = pools.rows as Row[];
+      const rows = pools.rows as unknown as PoolRow[];
 
       return {
         currency: base,
@@ -115,7 +203,7 @@ export class CostsService {
   }
 
   /** One lot: what its pool holds, and the rows that made it so. */
-  lotCost(lotId: string) {
+  lotCost(lotId: string): Promise<LotCost> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const found = await tx.execute(sql`
         select l.id, l.code, l.variant_id, pv.sku
@@ -125,7 +213,7 @@ export class CostsService {
           and l.organization_id = ${organizationId}::uuid
       `);
 
-      const [lot] = found.rows as Row[];
+      const [lot] = found.rows as unknown as LotRow[];
       if (!lot)
         throw new NotFoundException(
           t({ id: 'costs.suchLot', defaultMessage: 'No such lot' }),
@@ -145,11 +233,11 @@ export class CostsService {
                ) as provisional
         from valuation_pools p
         where p.organization_id = ${organizationId}::uuid
-          and p.variant_id = ${lot.variant_id as string}::uuid
+          and p.variant_id = ${lot.variant_id}::uuid
           and p.lot_id = ${lotId}::uuid
       `);
 
-      const [balance] = pool.rows as Row[];
+      const [balance] = pool.rows as unknown as BalanceRow[];
 
       // Newest first and capped: a lot's history is short, and the cap keeps
       // a long-lived one from pulling its whole life into a page.
@@ -160,7 +248,7 @@ export class CostsService {
         from stock_valuations v
         left join stock_movements m on m.id = v.movement_id
         where v.organization_id = ${organizationId}::uuid
-          and v.variant_id = ${lot.variant_id as string}::uuid
+          and v.variant_id = ${lot.variant_id}::uuid
           and v.lot_id = ${lotId}::uuid
         order by v.id desc
         limit 100
@@ -175,7 +263,7 @@ export class CostsService {
         value: balance?.value ?? '0.000000',
         unitCost: balance?.unit_cost ?? null,
         provisional: balance?.provisional ?? false,
-        entries: (entries.rows as Row[]).map((row) => ({
+        entries: (entries.rows as unknown as EntryRow[]).map((row) => ({
           id: row.id,
           kind: row.kind,
           reason: row.reason,
@@ -201,7 +289,7 @@ export class CostsService {
    * Nothing is costed until close, because consumption is only written then
    * (ADR-032).
    */
-  runCost(runId: string) {
+  runCost(runId: string): Promise<RunCost> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const found = await tx.execute(sql`
         select po.id, po.status, po.reference, po.quantity_produced,
@@ -212,7 +300,7 @@ export class CostsService {
           and po.organization_id = ${organizationId}::uuid
       `);
 
-      const [run] = found.rows as Row[];
+      const [run] = found.rows as unknown as RunRow[];
       if (!run)
         throw new NotFoundException(
           t({
@@ -242,9 +330,9 @@ export class CostsService {
 
       const totals = await tx.execute(sql`
         select c.material,
-               case when ${run.quantity_produced as string}::numeric > 0
+               case when ${run.quantity_produced}::numeric > 0
                     then round(
-                      c.material / ${run.quantity_produced as string}::numeric,
+                      c.material / ${run.quantity_produced}::numeric,
                       6
                     ) end as unit_cost
         from (
@@ -317,13 +405,13 @@ export class CostsService {
         unitCost: closed ? summary.unit_cost : null,
         provisional:
           closed && (waiting.rows[0] as { provisional: boolean }).provisional,
-        consumed: (consumed.rows as Row[]).map((row) => ({
+        consumed: (consumed.rows as unknown as MovedRow[]).map((row) => ({
           sku: row.sku,
           lotCode: row.lot_code,
           quantity: row.quantity,
           value: row.value,
         })),
-        outputs: (outputs.rows as Row[]).map((row) => ({
+        outputs: (outputs.rows as unknown as OutputRow[]).map((row) => ({
           lotCode: row.lot_code,
           quantity: row.quantity,
           value: row.value,
@@ -336,7 +424,7 @@ export class CostsService {
    * The to-do list: every row still waiting for a cost, newest first, keyset
    * on the UUIDv7 id as the ledger reads are (ADR-018).
    */
-  needsCost(query: ListNeedsCostDto) {
+  needsCost(query: ListNeedsCostDto): Promise<NeedsCostPage> {
     const limit = query.limit ?? 50;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -355,8 +443,8 @@ export class CostsService {
         limit ${limit + 1}
       `);
 
-      const entries = (rows.rows as Row[]).map((row) => ({
-        id: row.id as string,
+      const entries = (rows.rows as unknown as NeedsCostRow[]).map((row) => ({
+        id: row.id,
         kind: row.kind,
         reason: row.reason,
         sku: row.sku,

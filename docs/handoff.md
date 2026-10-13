@@ -40,7 +40,8 @@ with this one, this one is current.
   twice), orders (`orders-responses`, then `orders-shipments-responses`
   for shipments, returns and holds, with stock availability), stock and
   locations (`stock-responses`; the lot trace goes with production, whose
-  licence fields it carries). Next, in order: costs; products,
+  licence fields it carries), costs (`costs-responses`, whose raw rows
+  were all unknown until typed). Next, in order: products,
   BOMs, price lists and product licences; partners; production orders and
   RMAs; account, auth, users, people, roles, organization and files; home,
   recent, lookup, notifications and health; then `client/src/lib/types.ts`

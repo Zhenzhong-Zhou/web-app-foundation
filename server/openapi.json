@@ -6005,7 +6005,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockValuationEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6058,7 +6065,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LotCostEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6081,7 +6095,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunCostEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6115,7 +6136,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NeedsCostPage"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6148,7 +6176,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrectedCostEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6171,7 +6206,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRateList"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6193,7 +6235,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeRateEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -11427,6 +11476,482 @@
           }
         }
       },
+      "ValuationPool": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "string"
+          },
+          "provisional": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "variantId",
+          "sku",
+          "lotId",
+          "lotCode",
+          "quantity",
+          "value",
+          "unitCost",
+          "provisional"
+        ]
+      },
+      "StockValuation": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "total": {
+            "type": "string"
+          },
+          "provisional": {
+            "type": "boolean"
+          },
+          "pools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValuationPool"
+            }
+          }
+        },
+        "required": [
+          "currency",
+          "total",
+          "provisional",
+          "pools"
+        ]
+      },
+      "StockValuationEnvelope": {
+        "type": "object",
+        "properties": {
+          "valuation": {
+            "$ref": "#/components/schemas/StockValuation"
+          }
+        },
+        "required": [
+          "valuation"
+        ]
+      },
+      "LotCostEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "issued",
+              "movement",
+              "run_close",
+              "correction",
+              "opening"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exchangeRate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "needsCost": {
+            "type": "boolean"
+          },
+          "referenceType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "reason",
+          "quantity",
+          "value",
+          "unitPrice",
+          "currency",
+          "exchangeRate",
+          "needsCost",
+          "referenceType",
+          "referenceId",
+          "createdAt"
+        ]
+      },
+      "LotCost": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotId": {
+            "type": "string"
+          },
+          "lotCode": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provisional": {
+            "type": "boolean"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LotCostEntry"
+            }
+          }
+        },
+        "required": [
+          "currency",
+          "lotId",
+          "lotCode",
+          "sku",
+          "quantity",
+          "value",
+          "unitCost",
+          "provisional",
+          "entries"
+        ]
+      },
+      "LotCostEnvelope": {
+        "type": "object",
+        "properties": {
+          "lotCost": {
+            "$ref": "#/components/schemas/LotCost"
+          }
+        },
+        "required": [
+          "lotCost"
+        ]
+      },
+      "RunCostConsumed": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string"
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sku",
+          "lotCode",
+          "quantity",
+          "value"
+        ]
+      },
+      "RunCostOutput": {
+        "type": "object",
+        "properties": {
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lotCode",
+          "quantity",
+          "value"
+        ]
+      },
+      "RunCost": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "runId": {
+            "type": "string"
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sku": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "cancelled",
+              "released",
+              "completed"
+            ]
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "quantityProduced": {
+            "type": "string"
+          },
+          "materialCost": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitCost": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provisional": {
+            "type": "boolean"
+          },
+          "consumed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunCostConsumed"
+            }
+          },
+          "outputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunCostOutput"
+            }
+          }
+        },
+        "required": [
+          "currency",
+          "runId",
+          "reference",
+          "sku",
+          "status",
+          "closed",
+          "quantityProduced",
+          "materialCost",
+          "unitCost",
+          "provisional",
+          "consumed",
+          "outputs"
+        ]
+      },
+      "RunCostEnvelope": {
+        "type": "object",
+        "properties": {
+          "runCost": {
+            "$ref": "#/components/schemas/RunCost"
+          }
+        },
+        "required": [
+          "runCost"
+        ]
+      },
+      "NeedsCostEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "issued",
+              "movement",
+              "run_close",
+              "correction",
+              "opening"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sku": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "reason",
+          "sku",
+          "variantId",
+          "lotId",
+          "lotCode",
+          "quantity",
+          "unitPrice",
+          "currency",
+          "referenceType",
+          "referenceId",
+          "createdAt"
+        ]
+      },
+      "NeedsCostPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NeedsCostEntry"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
       "SetCostDto": {
         "type": "object",
         "properties": {
@@ -11445,6 +11970,77 @@
           "currency"
         ]
       },
+      "CorrectedCost": {
+        "type": "object",
+        "properties": {
+          "valuationId": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "held": {
+            "type": "string"
+          },
+          "issued": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "valuationId",
+          "value",
+          "held",
+          "issued"
+        ]
+      },
+      "CorrectedCostEnvelope": {
+        "type": "object",
+        "properties": {
+          "cost": {
+            "$ref": "#/components/schemas/CorrectedCost"
+          }
+        },
+        "required": [
+          "cost"
+        ]
+      },
+      "ExchangeRate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "rateDate": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "currency",
+          "rateDate",
+          "rate"
+        ]
+      },
+      "ExchangeRateList": {
+        "type": "object",
+        "properties": {
+          "rates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExchangeRate"
+            }
+          }
+        },
+        "required": [
+          "rates"
+        ]
+      },
       "SetExchangeRateDto": {
         "type": "object",
         "properties": {
@@ -11461,6 +12057,17 @@
         "required": [
           "currency",
           "rateDate",
+          "rate"
+        ]
+      },
+      "ExchangeRateEnvelope": {
+        "type": "object",
+        "properties": {
+          "rate": {
+            "$ref": "#/components/schemas/ExchangeRate"
+          }
+        },
+        "required": [
           "rate"
         ]
       },

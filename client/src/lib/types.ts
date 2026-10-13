@@ -1,4 +1,8 @@
-import type { InvoiceSummary, OrderSummary } from '../api/types.gen';
+import type {
+  InvoiceSummary,
+  LotCostEntry,
+  OrderSummary,
+} from '../api/types.gen';
 import type { Locale } from './locales';
 
 /**
@@ -530,109 +534,23 @@ export interface ReturnAuthorizationDetail {
   lines: ReturnAuthorizationLine[];
 }
 
-export type ValuationKind =
-  'movement' | 'run_close' | 'correction' | 'issued' | 'opening';
+/**
+ * What stock, lots and batches cost (ADR-048), generated from the server's
+ * OpenAPI document (ADR-068, phase 2), re-exported so their importers need
+ * no change.
+ */
+export type {
+  CorrectedCost,
+  ExchangeRate,
+  LotCost,
+  LotCostEntry,
+  NeedsCostEntry,
+  NeedsCostPage,
+  RunCost,
+  StockValuation,
+} from '../api/types.gen';
 
-/** What the stock on hand is worth, pool by pool (ADR-048). */
-export interface StockValuation {
-  /** Null until the organization has a base currency. */
-  currency: string | null;
-  total: string;
-  /** True while anything below depends on a row still waiting for a cost. */
-  provisional: boolean;
-  pools: {
-    variantId: string;
-    sku: string;
-    lotId: string | null;
-    lotCode: string | null;
-    quantity: string;
-    value: string;
-    unitCost: string;
-    provisional: boolean;
-  }[];
-}
-
-/** A valuation still waiting for a cost: the to-do list (ADR-048). */
-export interface NeedsCostEntry {
-  id: string;
-  kind: ValuationKind;
-  /** The movement's reason; null for the opening balance. */
-  reason: string | null;
-  sku: string;
-  variantId: string;
-  lotId: string | null;
-  lotCode: string | null;
-  quantity: string;
-  /** Set when a price is known but its rate is not. */
-  unitPrice: string | null;
-  currency: string | null;
-  referenceType: string | null;
-  referenceId: string | null;
-  createdAt: string;
-}
-
-/** One currency's rate into the base currency, for one day. */
-export interface ExchangeRate {
-  id: string;
-  currency: string;
-  /** YYYY-MM-DD. */
-  rateDate: string;
-  rate: string;
-}
-
-/** What one batch cost to make: material only (ADR-048). */
-export interface RunCost {
-  currency: string | null;
-  runId: string;
-  reference: string | null;
-  sku: string;
-  status: 'draft' | 'released' | 'completed' | 'cancelled';
-  closed: boolean;
-  quantityProduced: string;
-  /** Null until the run closes; consumption is written then. */
-  materialCost: string | null;
-  /** Null until close, and when nothing was made. */
-  unitCost: string | null;
-  provisional: boolean;
-  consumed: {
-    sku: string;
-    lotCode: string | null;
-    quantity: string;
-    value: string;
-  }[];
-  outputs: { lotCode: string | null; quantity: string; value: string }[];
-}
-
-/** One valuation row in a lot's history. */
-export interface LotCostEntry {
-  id: string;
-  kind: ValuationKind;
-  reason: string | null;
-  /** Signed: negative for stock leaving. */
-  quantity: string;
-  value: string;
-  unitPrice: string | null;
-  currency: string | null;
-  exchangeRate: string | null;
-  needsCost: boolean;
-  referenceType: string | null;
-  referenceId: string | null;
-  createdAt: string;
-}
-
-/** What one lot is worth, and how it got there. */
-export interface LotCost {
-  currency: string | null;
-  lotId: string;
-  lotCode: string;
-  sku: string;
-  quantity: string;
-  value: string;
-  /** Null when none is on hand. */
-  unitCost: string | null;
-  provisional: boolean;
-  entries: LotCostEntry[];
-}
+export type ValuationKind = LotCostEntry['kind'];
 
 export type PriceListDirection = 'sale' | 'purchase';
 

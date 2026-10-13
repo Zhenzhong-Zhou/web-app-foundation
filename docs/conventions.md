@@ -236,6 +236,9 @@ committed, and neither is edited by hand.
     back as its list shows it.
   - A list read with `select()` sends every column; select the declared
     fields instead.
+  - A raw query's rows get a type of their own (`interface PoolRow`), as
+    Postgres returns them, never `Record<string, unknown>`: a response
+    built from unknowns cannot be checked against its declaration.
   - `npm run api`, then in `client/src/lib/types.ts` replace the module's
     interfaces with re-exports from `../api/types.gen`, so importers stay
     unchanged.
