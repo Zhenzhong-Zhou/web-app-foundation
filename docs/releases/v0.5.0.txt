@@ -1,35 +1,99 @@
-v0.5.0 — trust the numbers
+v0.5.0 — money, performance, backups and languages
 
-Licences checked when a run is released, calendar days kept as days,
-the app fast under load and backed up, and every screen in the reader's
-language.
+The first full release since v0.3.0: what v0.4 built (never tagged on its
+own), licence status at release, performance testing, calendar days kept
+as days, backups, and the app in three languages.
+
+Invoicing (ADR-046)
+- An invoice bills exactly one shipment: drafted, then issued with the
+  next number in a gapless series per organization, every amount stored,
+  and the seller, bill-to and ship-to copied as they stood.
+- Tax codes with one or more components; "Exempt" is a code with none.
+- A sale is priced, in one currency, before it is confirmed. Samples are
+  never invoiced.
+- Void issues a full credit note and frees the shipment to be invoiced
+  again. "Mark shipped/received" is now "Close order" (#24).
+- Printable invoices and credit notes, with the organization's registered
+  address and tax number.
+
+Returns and credit (ADR-047)
+- Return authorizations (RMAs), numbered, with a resolution per line:
+  credit, replace or none.
+- Partial credit notes, capped by value, by tax component and by what the
+  RMA authorized. A replacement is a draft sale at zero.
+
+Cost (ADR-048)
+- Every stock movement is valued: a lot carries what it cost, stock
+  without lots a running average. A purchase is valued at its order price
+  and the day's exchange rate; without either it waits under "needs a
+  cost".
+- A production run's material cost is posted to its batch at close.
+- A base currency per organization, an exchange-rate page, and a Stock
+  value page, lot by lot. Costs are visible to the Owner only by default.
+
+Price lists (ADR-049)
+- Sale and purchase lists, one currency each, named per customer or
+  supplier, with an organization default for customers.
+- A new order line takes the list's price and keeps it; "Use list price"
+  applies it again on request.
 
 Licences at release (ADR-050)
-- A run checks its product licence the day it is released: in force,
-  expiring, expired or withdrawn, with the organization's policy for
-  each (allow, ask for an override, or block).
-- An override is recorded with its reason; a withdrawn licence always
-  blocks.
+- A run checks its product licence the day it is released. An expired or
+  not-yet-valid licence is refused, overridden with a reason, or allowed,
+  as the organization chooses; a withdrawn licence always blocks.
+- The run records the licence and how it stood, shown on the run page and
+  in the lot trace.
 
 Performance (ADR-051)
-- Every list pages by keyset, not by offset.
-- A Performance workflow seeds a large organization and checks query
-  plans and response budgets (p95), on demand and weekly.
+- Every list pages by keyset rather than offset.
+- seed:volume, npm run perf and perf:plans, with response budgets (p95)
+  and a Performance workflow, and the fixes its first runs asked for.
+  Every budget passed; issuing an invoice takes 25 ms p95 against a
+  500 ms budget.
 
 Calendar days (ADR-052, #20)
-- Expected dates, expiry dates and document dates are calendar days,
-  stored as dates, never shifted by a time zone.
+- Expiry dates, expected dates and licence dates are calendar days,
+  stored as dates and never shifted by a time zone.
 
 Backups, phase 1 (ADR-053)
-- A nightly logical backup to a separate bucket, kept 30 days and locked
-  against deletion, and a monthly drill that restores one and checks it.
+- A nightly encrypted backup to a separate, locked bucket, and a monthly
+  drill that restores one and checks it.
 
 Languages (ADR-054)
-- English, French (Canada) and Simplified Chinese, chosen per person.
-- Documents print in the customer's language, or two side by side;
-  product names in other languages, required where an organization says.
-- Notifications and emails in the reader's language.
+- English, French (Canada) and Simplified Chinese, chosen per person on
+  the Account page, or following the browser.
+- Packing slips, invoices and credit notes print in their customer's one
+  or two languages (French with English, Chinese alone), whatever the
+  person printing reads.
+- Product and variant names in other languages; an organization can
+  require them on invoices.
+- The server's refusals, validation messages, emails and notifications in
+  the reader's or recipient's language.
 
 Fixes
 - Duplicating an order no longer repeats what was received (#42).
+- A sale stays in one currency from its first priced line.
 - Dependencies updated.
+
+Tested
+- 659 server e2e, 64 server unit, 175 client unit and 65 Playwright
+  tests, all passing.
+
+Known limitations
+- French and Chinese are unreviewed drafts, marked beta in the language
+  picker; expect awkward wording in places.
+- The packing slip prints products' own names only; invoices and credit
+  notes carry names in both languages.
+- Pro forma invoices, margin, payments, and costs beyond material
+  (freight, duty, labour) are not built yet.
+- A top-up at run close can still take stock held for a sale (#28).
+- The production database is on Render's Free plan, used only to test
+  backups; it needs a paid plan or another host before real data.
+
+Upgrade
+- Migrations 0031 to 0040. Render runs them on deploy; elsewhere run
+  `npm run migrate` in server, then `npm run seed` so existing Owners
+  receive the new permissions.
+- Set the base currency (Settings → Organization) before the first costed
+  receipt. Stock already on hand opens at zero and shows under "needs a
+  cost" until its cost is set.
