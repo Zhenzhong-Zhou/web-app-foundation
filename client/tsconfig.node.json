@@ -20,6 +20,7 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": [
+    "openapi-ts.config.ts",
     "vite.config.ts",
     "playwright.config.ts",
     "playwright.screenshots.config.ts",

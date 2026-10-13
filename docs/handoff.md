@@ -27,12 +27,16 @@ with this one, this one is current.
   refused with `organization_tax_number_missing` and linked to Profile
   (`invoice-tax-number`, MC-711). Tax profiles by country are deferred in
   the same amendment, until the first customer or legal entity outside
-  Canada. The client's error codes are now checked against the server's
-  in CI, like the other copied lists.
-- **Next, in Bob's order:** **ADR-068**, generated client types from the
-  server's OpenAPI (#19), replacing the four copied lists and their checks;
-  then **ADR-069**, account deletion (ADR-012 already settles the audit
-  side: anonymize the person, keep the rows).
+  Canada.
+- **ADR-068** (#19): phase 1 on `adr-068-openapi`. The server writes
+  `server/openapi.json`, the client's types are generated from it into
+  `client/src/api/`, the four shared lists come from them, and one contract
+  check in CI and `scripts/verify.sh` replaces the four copy checks. After
+  any API change: `npm run api` in `server/`, and commit both files.
+  Phase 2 next, alongside other work: each module's responses declared,
+  until `client/src/lib/types.ts` is gone.
+- **Next, in Bob's order:** **ADR-069**, account deletion (ADR-012 already
+  settles the audit side: anonymize the person, keep the rows).
 - **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),
   a GitHub pre-release; its tag ran the Performance workflow's full
   budgets. v0.7.0 follows once those pass and the release candidate has

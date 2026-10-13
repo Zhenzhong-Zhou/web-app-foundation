@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ApiError, ERROR_CODES } from './api';
+import { ApiError } from './api';
 import { useSubmit } from './use-submit';
 
 /**
@@ -124,7 +124,7 @@ describe('useSubmit', () => {
             409,
             undefined,
             undefined,
-            ERROR_CODES.organizationAddressMissing,
+            'organization_address_missing',
           ),
         ),
       );

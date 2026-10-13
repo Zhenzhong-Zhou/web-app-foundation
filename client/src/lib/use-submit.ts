@@ -18,9 +18,9 @@ import { ApiError, messageFor } from './api';
  * the reason this hook exists: said once, it cannot be forgotten on the next
  * dialog, and it cannot fire for a save that failed.
  *
- * `errorCode` is the refusal's code when the server gave one (ERROR_CODES in
- * lib/api.ts), for a dialog that can offer the way out, such as a link to
- * the setting that is missing. Set and cleared with `error`.
+ * `errorCode` is the refusal's code when the server gave one, read with
+ * hasCode in lib/api.ts, for a dialog that can offer the way out, such as a
+ * link to the setting that is missing. Set and cleared with `error`.
  */
 export function useSubmit(
   onDone: () => void | Promise<void>,

@@ -9,7 +9,14 @@ import formatjs from 'eslint-plugin-formatjs';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export default defineConfig([
-  globalIgnores(['dist', 'e2e/.output', 'e2e/.auth', 'playwright-report']),
+  // src/api/ is generated from the server's OpenAPI document (ADR-068).
+  globalIgnores([
+    'dist',
+    'e2e/.output',
+    'e2e/.auth',
+    'playwright-report',
+    'src/api',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

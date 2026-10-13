@@ -12,6 +12,10 @@
 # (docker compose up -d) and ../.env. The two end-to-end suites use their
 # own databases and run one after the other, never together.
 #
+# The API contract runs in both modes (ADR-068): it regenerates
+# server/openapi.json and client/src/api/, and stops if either changed,
+# leaving the fresh files in place to commit.
+#
 # Not run here, though CI runs it: npm run seed:demo, which would add a demo
 # organization to the dev database on every run. Run it after changing a
 # service the demo calls (handoff, Moving code).
@@ -29,16 +33,33 @@ fi
 
 step() { printf '\n== %s\n\n' "$*"; }
 
+contract() {
+  step 'API contract: the committed document and client types are current'
+  (cd server && npm run api)
+  local changed
+  changed="$(git status --porcelain -- server/openapi.json client/src/api)"
+  if [[ -n "$changed" ]]; then
+    echo "$changed"
+    echo 'The API changed without its regenerated files. Commit them' >&2
+    echo '(conventions.md, "The API contract").' >&2
+    exit 1
+  fi
+}
+
 if $quick; then
   step 'Server: format, lint, types, checks, build, unit tests'
   (cd server && npm run format:check && npm run lint:ci && npm run typecheck \
     && npm run checks && npm run build && npm test)
+
+  contract
 
   step 'Client: format, lint, catalogues, build, unit tests'
   (cd client && npm run verify)
 else
   step 'Server: format, lint, types, checks, build, unit and e2e tests'
   (cd server && npm run verify)
+
+  contract
 
   step 'Client: format, lint, catalogues, build, unit tests, Playwright'
   (cd client && npm run verify:all)

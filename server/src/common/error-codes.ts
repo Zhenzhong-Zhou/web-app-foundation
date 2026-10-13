@@ -10,8 +10,9 @@
  *
  * Added one at a time, where a screen has something to offer; most refusals
  * carry none. Never renamed or removed once released: a browser still
- * running the previous client may be keying on it. The client's copy is
- * ERROR_CODES in client/src/lib/api.ts, since the packages share no files.
+ * running the previous client may be keying on it. The client's type is
+ * generated from the OpenAPI document, where this list is the ErrorCode
+ * enum (ADR-068).
  */
 export const ERROR_CODES = {
   /** No registered address, which every invoice prints (ADR-046, ADR-061). */

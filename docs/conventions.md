@@ -202,6 +202,20 @@ three:
   reader's: its words go through `useDocumentText`, its figures through
   the document's locale.
 
+## The API contract
+
+The server describes its API in `server/openapi.json`, and the client's
+types in `client/src/api/` are generated from it (ADR-068). Both are
+committed, and neither is edited by hand.
+
+- **After changing the API** (a route, a DTO, or one of the shared lists:
+  permissions, languages, audit actions, error codes), run `npm run api` in
+  `server/`, which writes the document and regenerates the client's types,
+  and commit both with the change. CI fails if either is out of date.
+- **The shared lists are the server's.** The client imports `Permission`,
+  `Locale`, `AuditAction` and `ErrorCode` from the generated types and keeps
+  no copy of its own.
+
 ## Error codes
 
 A refusal's message is for a person: it changes with the language
@@ -211,10 +225,11 @@ message, and the screen keys on the code, never on the words.
 
 - **Opt in, one at a time.** `withCode(t(...), ERROR_CODES.x)` on the
   thrown response. Most refusals carry none, and need none.
-- **One list on each side:** `server/src/common/error-codes.ts`, and
-  `ERROR_CODES` in `client/src/lib/api.ts`, since the packages share no
-  files. `scripts/check-client-error-codes.js` fails CI when they differ,
-  and the exception filter sends only the codes on the server's list.
+- **One list, on the server:** `server/src/common/error-codes.ts`. The
+  client's `ErrorCode` type is generated from it (ADR-068), and a screen
+  checks a refusal with `hasCode(errorCode, '…')`, so a code the server no
+  longer sends fails to compile. The exception filter sends only the codes
+  on the list.
 - **snake_case, named for what is wrong**, not for the screen that offers
   the fix: `organization_address_missing`.
 - **Never renamed or removed once released:** a browser still running the
