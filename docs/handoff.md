@@ -13,7 +13,10 @@ with this one, this one is current.
   Organization page in tabs, product images, people (photos, the People
   page, last active), licence expiry reminders (#17), staying signed in
   (Keep me signed in, an organization's idle sign-out), covers in the
-  lookup, and the gallery's zooming viewer. PRs through #85.
+  lookup, the gallery's zooming viewer, and the invoice refusals' links to
+  Organization → Profile and to the customer (`invoice-refusal-link`,
+  ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
+  "Error codes"). PRs through #86, then that branch.
 - **Migrations:** through **0054** on `main`. Render should hold **55**
   rows in `drizzle.__drizzle_migrations` once deployed. Next is **0055**.
   After any new migration: `npm run migrate:all`.
@@ -39,7 +42,7 @@ with this one, this one is current.
   backfill (`npm run backfill:pinyin` against the external URL with
   `?sslmode=no-verify`); confirm 55 migrations.
 - **Manual checks due:** MC-1601 and MC-1602 (an upload in R2, the
-  nightly copy), MC-1701, MC-1702, MC-1801, MC-1901, MC-2001, MC-2101,
+  nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
   MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
   photos and 同事 on a phone.
 - **Issues:** confirm #26 and #28 are closed (they merged without
@@ -48,10 +51,6 @@ with this one, this one is current.
 
 ### Still to do, in code
 
-- **Invoice refusal → Profile.** An invoice refused for a missing
-  registered address or tax number shows the server's message alone; a
-  link to Organization → Profile would save a search (ADR-061's
-  amendment).
 - **The typo lookup** sits at 270 ms of its 300 ms budget; one query per
   pass if it ever fails.
 - **Mailpit in the Performance workflow**, to quieten harmless email

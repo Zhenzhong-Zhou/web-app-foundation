@@ -6297,6 +6297,21 @@ the organization.
   Exchange rates open Money. The refusal to issue an invoice without an
   address is the server's message, shown as it comes, with no link yet.
 
+*Amended (12 October 2026):*
+
+- **The refusal to issue links to Profile.** The server puts
+  `code: "organization_address_missing"` beside its message
+  (conventions.md, "Error codes"), and the Issue dialog shows, under the
+  message, a link to Profile for whoever holds `organizations.update`;
+  anyone else gets the message alone, as Profile is a page they cannot
+  change. Only the address is refused: the tax number stays optional, as
+  ADR-046 left it, since a business not registered for GST/HST has none
+  to print. MC-1703.
+- **The customer's billing address the same way.** Refused for a customer
+  with no billing address (`customer_billing_address_missing`), the dialog
+  links to the customer's page, for whoever holds `partners.update`.
+  MC-702.
+
 **Considered and not done.**
 
 - **One long page with an index down the side.** Shorter to build, and

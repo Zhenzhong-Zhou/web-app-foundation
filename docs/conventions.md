@@ -202,6 +202,23 @@ three:
   reader's: its words go through `useDocumentText`, its figures through
   the document's locale.
 
+## Error codes
+
+A refusal's message is for a person: it changes with the language
+(ADR-054) and with the copy. Where a screen can offer the way out, such as
+a link to the setting that is missing, the server adds a `code` beside the
+message, and the screen keys on the code, never on the words.
+
+- **Opt in, one at a time.** `withCode(t(...), ERROR_CODES.x)` on the
+  thrown response. Most refusals carry none, and need none.
+- **One list on each side:** `server/src/common/error-codes.ts`, and
+  `ERROR_CODES` in `client/src/lib/api.ts`, since the packages share no
+  files. The exception filter sends only the codes on the server's list.
+- **snake_case, named for what is wrong**, not for the screen that offers
+  the fix: `organization_address_missing`.
+- **Never renamed or removed once released:** a browser still running the
+  previous client may be keying on it.
+
 ## Tests
 
 - Unit tests sit beside their source: `users.service.spec.ts`.
