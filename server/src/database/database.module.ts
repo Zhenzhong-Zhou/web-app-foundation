@@ -76,8 +76,8 @@ export class DatabaseModule implements OnApplicationShutdown {
 
   /**
    * Requires app.enableShutdownHooks() in main.ts. Without this the pool keeps
-   * its sockets open: Jest hangs after tests, and SIGTERM in production drops
-   * in-flight queries instead of draining them.
+   * its sockets open: the tests hang after running, and SIGTERM in production
+   * drops in-flight queries instead of draining them.
    */
   async onApplicationShutdown(signal?: string): Promise<void> {
     this.logger.log(`Closing pg pool (${signal ?? 'shutdown'})`);

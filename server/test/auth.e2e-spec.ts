@@ -97,7 +97,7 @@ describe('Auth (e2e)', () => {
       //
       // The user row is inserted before provisioning runs, so without one
       // transaction it would survive this failure.
-      const spy = jest
+      const spy = vi
         .spyOn(provisioning, 'provisionOrganization')
         .mockRejectedValueOnce(new Error('provisioning failed'));
 

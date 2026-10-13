@@ -96,7 +96,7 @@ Four decisions shape everything else:
 | ORM / migrations | Drizzle ORM + drizzle-kit               |
 | Frontend         | React + TypeScript (Vite) + Material UI |
 | Mail             | Mailpit in dev, Resend in production    |
-| Tests (server)   | Jest + Supertest                        |
+| Tests (server)   | Vitest + Supertest                      |
 | Tests (client)   | Vitest + MSW, Playwright end to end     |
 
 ---
@@ -162,9 +162,9 @@ Run from `server/`.
 | `npm run checks`                    | The snapshot, client-list and catalogue checks CI runs                               |
 | `npm run verify`                    | What CI runs: format, lint, checks, build, unit and integration tests                |
 
-A schema change touches three databases — dev, the one Jest uses and the one
-Playwright uses — and `npm run migrate:all` applies it to all three. A failing
-schema-invariant test is usually one of them left behind.
+A schema change touches three databases — dev, the one the server's tests
+use and the one Playwright uses — and `npm run migrate:all` applies it to all
+three. A failing schema-invariant test is usually one of them left behind.
 
 From `client/`: `npm run dev`, `npm run build`, `npm run lint`, `npm test`
 (Vitest), `npm run test:e2e` for the browser suite (Playwright, on its own stack on

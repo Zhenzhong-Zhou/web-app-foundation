@@ -109,8 +109,8 @@ jobs:
           cache-dependency-path: server/package-lock.json
 
       # The two extra databases the service container does not create. They are
-      # separate so that a Jest run cannot truncate tables underneath a browser
-      # run — the same reasoning .env.example gives.
+      # separate so that a server e2e run cannot truncate tables underneath a
+      # browser run — the same reasoning .env.example gives.
       - name: Create test databases
         env:
           PGPASSWORD: ci_password

@@ -12,7 +12,7 @@ describe('Health (e2e)', () => {
 
   afterAll(async () => {
     // Triggers DatabaseModule.onApplicationShutdown, which ends the pg pool.
-    // Without this Jest hangs on an open socket and blames itself.
+    // Without this the run hangs on an open socket and blames itself.
     await app.close();
   });
 

@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { IsOptional, validateSync } from 'class-validator';
+import type { MockInstance } from 'vitest';
 
 import { IsCalendarDay } from './calendar-day';
 
@@ -29,10 +30,12 @@ function read(day: unknown) {
  */
 describe('IsCalendarDay', () => {
   const original = process.env.CALENDAR_DAY_INPUT;
-  let warn: jest.SpyInstance;
+  let warn: MockInstance;
 
   beforeEach(() => {
-    warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    warn = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
   });
 
   afterEach(() => {

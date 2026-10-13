@@ -27,7 +27,7 @@ import { permissions } from '../../src/database/schema';
  *   );
  *
  * Callers must `await app.close()` in afterAll, or the pg pool stays open and
- * Jest hangs without explaining why.
+ * the test run hangs without explaining why.
  */
 export async function createTestApp(
   customize?: (builder: TestingModuleBuilder) => TestingModuleBuilder,

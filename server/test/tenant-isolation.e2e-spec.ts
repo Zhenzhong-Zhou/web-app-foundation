@@ -178,8 +178,9 @@ describe('Tenant isolation (e2e)', () => {
 
   it('rejects tables without organization_id at compile time', () => {
     // @ts-expect-error users is global identity and has no organization_id
-    // (ADR-004). If this line ever stops erroring, ts-jest fails the suite —
-    // which is the regression this test exists to catch.
+    // (ADR-004). If this line ever stops erroring, `npm run typecheck` fails,
+    // in CI and in verify.sh — which is the regression this test exists to
+    // catch. Vitest itself does not type-check, as ts-jest did.
     const rejected = () => tenantDb.select(users);
 
     expect(typeof rejected).toBe('function');

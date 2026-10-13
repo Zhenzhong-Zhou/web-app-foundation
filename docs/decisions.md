@@ -827,6 +827,13 @@ Corollary: check peer ranges *before* installing — `npm view <pkg>
 peerDependencies` — rather than letting npm discover the conflict. Throttler is
 what blocks Nest 12 today; the next major may be blocked by something else.
 
+*Amended by ADR-067 (October 2026):* throttler 6.7.1 and nestjs-pino
+5.3.1 accept Nest 12, so the table's first row no longer holds. Nest 12,
+with intl-messageformat 12, now waits on the server's tests leaving
+Jest, which ADR-067 decides. TypeScript 7 is also held by ts-jest (`<7`,
+gone with ADR-067) and by the Nest CLI, which needs TypeScript 7.1's
+programmatic API.
+
 ---
 
 ## ADR-020 — Client routes fall into three categories, not two
@@ -6840,6 +6847,115 @@ the bottle would say which at a glance.
 
 ---
 
+## ADR-067 — The server's tests on Vitest, then Nest 12 (amends ADR-019)
+
+**Context.** `npm outdated` lists three majors on the server, each held
+for a different reason (the `npm audit` branch, October 2026):
+
+- **Nest 12.** ADR-019 held it for `@nestjs/throttler`, whose peer range
+  stopped at Nest 11. That has lifted: throttler 6.7.1 and nestjs-pino
+  5.3.1 both accept `^12`. What holds it now is how Nest 12 ships: every
+  `@nestjs/*` package is an ES module only.
+- **intl-messageformat 12.** ES modules only since 11, which is why
+  `translate.ts` stayed on 10. The client's react-intl already runs
+  12.1.3, so the two sides format ICU messages with two versions of the
+  engine `translate.ts` chose so that they would agree.
+- **TypeScript 7.** typescript-eslint, on both sides, accepts only
+  `<6.1.0`; ts-jest only `<7`; and the Nest CLI needs TypeScript 7.1's
+  programmatic API.
+
+The first two meet the same wall. The server is CommonJS, and Node 26
+loads an ES module from CommonJS (`require(esm)`), so the running server
+would be fine. Its tests would not: they run under Jest through ts-jest,
+and Jest's module loader does not load ES modules without an
+experimental flag. 22 unit and 47 e2e spec files stand between the
+server and both upgrades. The client already uses Vitest 5, and Nest
+moved its own repositories and samples from Jest to Vitest for Nest 12.
+
+**Decision — the server's tests run on Vitest, as the client's do.**
+
+- Vitest at the client's major. One config, two projects: unit
+  (`src/**/*.spec.ts`), in parallel as now; e2e (`test/**/*.e2e-spec.ts`),
+  one file at a time as `--runInBand` does now, since every suite resets
+  the one database, with the existing global setup and teardown.
+- Globals on, so `describe`, `it`, `expect` and `beforeAll` read as they
+  do. The one `jest.spyOn` becomes `vi.spyOn`.
+- The scripts keep their names (`npm test`, `npm run test:e2e`,
+  `test:watch`, `test:cov`, `test:debug`), so CI, `scripts/verify.sh` and
+  habit stay as they are.
+- Jest, ts-jest, `@types/jest`, the `jest` block in `package.json` and
+  `test/jest-e2e.json` go.
+- Nest's dependency injection reads the constructor types TypeScript
+  emits as decorator metadata, so the test transform must emit them as
+  `tsc` does. Vite 8's own transform (Oxc) first, with legacy decorators
+  and decorator metadata on; `unplugin-swc`, the setup Nest's
+  documentation gives, if Oxc's output does not boot the app. A spike
+  settles it before anything else moves: one e2e suite green on Vitest.
+- Nothing else changes in this step: Nest 11, the same tests, the same
+  assertions. A test that passes on Jest and fails on Vitest is a
+  difference in the runner, fixed there, never an assertion loosened.
+
+**Decision — then Nest 12 and intl-messageformat 12, together.**
+
+- Every `@nestjs/*` package to 12: common, core, platform-express,
+  testing, config, cli and schematics. Throttler 6.7.1 and nestjs-pino
+  5.3.1 already accept it. intl-messageformat 10 to 12, so both sides run
+  one engine again; its breaking changes are the ES modules (11) and
+  TypeScript 5.4 or newer (12), both met.
+- The server stays CommonJS. Both load through `require(esm)`, so
+  converting the server to ES modules is not needed for either, and is
+  its own decision (below).
+- Installed by name rather than by `nest upgrade`, so every change in
+  the commit is one made and read here; `nest upgrade`'s report is still
+  read for anything it would have changed.
+- Checked beyond the suites: `smoke-auth.sh` against a running server,
+  since ADR-019's reason holds and only it exercises the real rate
+  limiter, which every e2e suite replaces; `seed`, `seed:demo` and the
+  Performance plan check, which CI runs; and `@nestjs/config`'s
+  `validate` option, which `validateEnv` uses, with its stricter
+  `ConfigService.get()` types.
+
+**Decision — TypeScript 7 waits for what holds it.** Overriding a peer
+range is what ADR-019 rules out, and the Nest CLI cannot build with it
+yet. Its triggers are under *Deferred*.
+
+**Consequences.**
+
+- Built as two pull requests, each revertable on its own:
+    1. `adr-067-vitest`: this ADR; the spike, then the switch (server);
+       the Tests section of `conventions.md` and the handoff (docs).
+       Every suite green on Nest 11.
+    2. `nest-12`: Nest 12 and intl-messageformat 12 (server); the
+       handoff and release notes (docs).
+- With ts-jest gone, one of TypeScript 7's three blockers goes too, and
+  so does the `sprintf-js` audit finding, which sits in Jest's coverage
+  chain.
+- One test runner for the repository: a spec reads the same on both
+  sides, and one set of habits applies.
+
+**Considered and not done.**
+
+- **Jest with its experimental ES module support**
+  (`--experimental-vm-modules`). Experimental for years, every run
+  behind a Node flag, and ts-jest's TypeScript cap stays.
+- **The server as an ES module project** (`"type": "module"`). Every
+  relative import gains `.js`, `__dirname` and JSON imports change, and
+  drizzle-kit, ts-node and the scripts move with it. Not needed while
+  `require(esm)` loads both packages. Trigger: a dependency that uses
+  top-level await, which `require(esm)` cannot load.
+- **Reaching TypeScript 7 now with `--legacy-peer-deps`.** ADR-019.
+
+**Deferred — each with what brings it in.**
+
+- **TypeScript 7**, on both sides, in a branch of its own under
+  ADR-019, once typescript-eslint's peer range includes 7. The server
+  also needs the Nest CLI to support it (TypeScript 7.1's API) and an e2e
+  boot showing TypeScript 7 still emits decorator metadata, checked
+  explicitly rather than assumed. The client has no decorators and needs
+  only the first.
+
+---
+
 ## Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -7373,6 +7489,7 @@ they exist so the reasoning is not rediscovered from scratch.
 | Audit write path                       | Interceptor, opt in per route, writes only            | ADR-018          |
 | Audit pagination                       | Keyset on UUIDv7 cursor                               | ADR-018          |
 | Dependency upgrades vs. peer conflicts | Never override; a blocked upgrade waits               | ADR-019          |
+| Server test runner                     | Vitest, as the client; Nest 12 after it               | ADR-067          |
 | Client route protection                | Three categories: protected, auth-only, public        | ADR-020          |
 | Component library                      | Material UI, CSS variables, three color modes         | ADR-021          |
 | Auditing account actions               | Separate account_events table, 90-day retention       | ADR-022          |
