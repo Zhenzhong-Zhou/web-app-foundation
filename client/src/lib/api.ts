@@ -41,6 +41,8 @@ export const ERROR_CODES = {
   organizationAddressMissing: 'organization_address_missing',
   /** The customer has no billing address to invoice to (ADR-046). */
   customerBillingAddressMissing: 'customer_billing_address_missing',
+  /** An invoice charges tax, and the seller has no tax number (ADR-046). */
+  organizationTaxNumberMissing: 'organization_tax_number_missing',
 } as const;
 
 /**

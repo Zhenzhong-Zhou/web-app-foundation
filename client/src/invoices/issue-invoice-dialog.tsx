@@ -29,9 +29,10 @@ import { todayLocal } from './calendar-day';
  * The date defaults to the person's own today, sent as a calendar day —
  * the server does not guess one in UTC.
  *
- * Refused for want of an address, it links to where that address is set
- * (ADR-061): the organization's to Organization → Profile, the customer's
- * billing address to the customer's page, each for whoever may set it.
+ * Refused for want of an address or the tax number, it links to where that
+ * is set (ADR-061): the organization's address and tax number to
+ * Organization → Profile, the customer's billing address to the customer's
+ * page, each for whoever may set it.
  * Anyone else gets the server's message alone: a page they cannot change
  * would be a dead end.
  */
@@ -89,6 +90,18 @@ export function IssueInvoiceDialog({
         to: '/settings/organization',
         label: intl.formatMessage({
           id: 'invoices.issue.setAddress',
+          defaultMessage: 'Set it on Organization → Profile',
+        }),
+      };
+    }
+    if (
+      errorCode === ERROR_CODES.organizationTaxNumberMissing &&
+      can('organizations.update')
+    ) {
+      return {
+        to: '/settings/organization',
+        label: intl.formatMessage({
+          id: 'invoices.issue.setTaxNumber',
           defaultMessage: 'Set it on Organization → Profile',
         }),
       };

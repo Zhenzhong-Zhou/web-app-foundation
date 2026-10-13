@@ -234,6 +234,12 @@ second organization.
   preview exactly.
 - **MC-710** Crediting more than is left on an invoice, or on an RMA line, is
   refused with a message that says what is left, not a server error.
+- **MC-711** A taxed invoice needs the seller's tax number (ADR-046,
+  amended). Clear the tax number on Organization → Profile and issue a draft
+  with GST: it is refused, saying to set the tax number, and "Set it on
+  Organization → Profile" opens Profile. Set the number, go Back and issue:
+  it goes through and prints the number. A draft whose lines are all
+  exempt issues without a number. In 中文 the link reads 前往“组织 → 概况”设置.
 
 ## 8. Cost
 
@@ -979,3 +985,4 @@ first.
 - 2026-10-12: ADR-066, covers in the lookup: MC-2201.
 - 2026-10-12: ADR-061's links from the invoice refusals, to Profile and to
   the customer: MC-1703 added, MC-702 rewritten.
+- 2026-10-13: ADR-046 amended, a taxed invoice needs the tax number: MC-711.

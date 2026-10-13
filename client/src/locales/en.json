@@ -609,6 +609,7 @@
   "invoices.issue.intro": "{partner} will be invoiced <b>{amount}</b>. Once issued it gets its number and cannot be edited; a mistake is corrected by voiding it with a credit note.",
   "invoices.issue.pending": "Issuing…",
   "invoices.issue.setAddress": "Set it on Organization → Profile",
+  "invoices.issue.setTaxNumber": "Set it on Organization → Profile",
   "invoices.issue.title": "Issue this invoice?",
   "invoices.issue.untaxed": "{skus} {count, plural, one {has} other {have}} no tax code yet.",
   "invoices.issued": "Invoice issued",
