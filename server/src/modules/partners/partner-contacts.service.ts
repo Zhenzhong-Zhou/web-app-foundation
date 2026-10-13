@@ -6,7 +6,9 @@ import { contacts } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { CreateContactDto } from './dto/create-contact.dto';
+import type { Contact } from './dto/partner-response.dto';
 import type { UpdateContactDto } from './dto/update-contact.dto';
+import { contactOf } from './partner-views';
 import { PartnersService } from './partners.service';
 
 /**
@@ -28,12 +30,15 @@ export class PartnerContactsService {
    * name that vanished is harder to explain than one shown as inactive. The
    * order form filters them out instead.
    */
-  async list(partnerId: string) {
+  async list(partnerId: string): Promise<Contact[]> {
     await this.partners.findById(partnerId);
 
-    return this.tenantDb.select(contacts, eq(contacts.partnerId, partnerId), {
-      orderBy: [asc(contacts.name)],
-    });
+    const rows = await this.tenantDb.select(
+      contacts,
+      eq(contacts.partnerId, partnerId),
+      { orderBy: [asc(contacts.name)] },
+    );
+    return rows.map(contactOf);
   }
 
   async create(partnerId: string, input: CreateContactDto) {

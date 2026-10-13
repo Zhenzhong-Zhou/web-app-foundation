@@ -14,6 +14,7 @@ import { users } from '../../database/schema';
 import { t } from '../../i18n/translate';
 import { AccountEventService } from './account-event.service';
 import { AuthTokenService } from './auth-token.service';
+import type { AccountEvent } from './dto/account-event-response.dto';
 import type { ChangePasswordDto } from './dto/change-password.dto';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
 import { PasswordService } from './password.service';
@@ -206,7 +207,7 @@ export class AccountService {
    * AccountEventService directly: the controller has one dependency and every
    * other route goes through here.
    */
-  listEvents(context: RequestContext) {
+  async listEvents(context: RequestContext): Promise<AccountEvent[]> {
     return this.events.listForUser(context.userId);
   }
 

@@ -11,7 +11,9 @@ import { addresses } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { CreateAddressDto } from './dto/create-address.dto';
+import type { Address } from './dto/partner-response.dto';
 import type { UpdateAddressDto } from './dto/update-address.dto';
+import { addressOf } from './partner-views';
 import { PartnersService } from './partners.service';
 
 /**
@@ -38,12 +40,15 @@ export class PartnerAddressesService {
    * Defaults first, then billing, then alphabetical by label — the order a
    * picker wants, so the client never re-sorts.
    */
-  async list(partnerId: string) {
+  async list(partnerId: string): Promise<Address[]> {
     await this.partners.findById(partnerId);
 
-    return this.tenantDb.select(addresses, eq(addresses.partnerId, partnerId), {
-      orderBy: [asc(addresses.label)],
-    });
+    const rows = await this.tenantDb.select(
+      addresses,
+      eq(addresses.partnerId, partnerId),
+      { orderBy: [asc(addresses.label)] },
+    );
+    return rows.map(addressOf);
   }
 
   async create(partnerId: string, input: CreateAddressDto) {

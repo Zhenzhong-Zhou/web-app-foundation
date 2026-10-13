@@ -45,8 +45,8 @@ with this one, this one is current.
   (`products-responses`). Since `response-contract`, the e2e suite holds
   every JSON response to the document with its objects closed, so each
   conversion is checked as it lands. BOMs and price lists followed
-  (`boms-responses`). Next, in order: partners; production orders and
-  RMAs; account, auth, users, people, roles, organization and files; home,
+  (`boms-responses`), then partners (`partners-responses`). Next, in
+  order: production orders and RMAs, with the lot trace; account, auth, users, people, roles, organization and files; home,
   recent, lookup, notifications and health; then `client/src/lib/types.ts`
   replaced by direct imports from `client/src/api/`.
 - **Next, in Bob's order:** **ADR-069**, account deletion (ADR-012 already

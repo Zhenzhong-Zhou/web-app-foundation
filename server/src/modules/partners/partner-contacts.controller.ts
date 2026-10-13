@@ -16,8 +16,10 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateContactDto } from './dto/create-contact.dto';
+import type { Contact, ContactEnvelope } from './dto/partner-response.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
 import { PartnerContactsService } from './partner-contacts.service';
+import { contactOf } from './partner-views';
 
 @Controller({ path: 'partners/:partnerId/contacts', version: '1' })
 export class PartnerContactsController {
@@ -25,7 +27,9 @@ export class PartnerContactsController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PARTNERS_VIEW)
-  list(@Param('partnerId', ParseUUIDPipe) partnerId: string) {
+  list(
+    @Param('partnerId', ParseUUIDPipe) partnerId: string,
+  ): Promise<Contact[]> {
     return this.contacts.list(partnerId);
   }
 
@@ -40,8 +44,9 @@ export class PartnerContactsController {
   async create(
     @Param('partnerId', ParseUUIDPipe) partnerId: string,
     @Body() dto: CreateContactDto,
-  ) {
-    return { contact: await this.contacts.create(partnerId, dto) };
+  ): Promise<ContactEnvelope> {
+    const created = await this.contacts.create(partnerId, dto);
+    return { contact: contactOf(created) };
   }
 
   @Patch(':id')

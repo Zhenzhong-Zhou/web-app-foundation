@@ -30,6 +30,18 @@ import type { Locale } from './locales';
 export type CalendarDay = string;
 
 /**
+ * Partners with their addresses and contacts, generated from the server's
+ * OpenAPI document (ADR-068), re-exported so their importers need no
+ * change.
+ */
+export type {
+  Address,
+  Contact,
+  Partner,
+  PartnerDetail,
+} from '../api/types.gen';
+
+/**
  * Recipes and price lists, generated from the server's OpenAPI document
  * (ADR-068), re-exported so their importers need no change.
  */
@@ -73,56 +85,6 @@ export type {
   StockPage,
   StockRow,
 } from '../api/types.gen';
-
-export interface Partner {
-  id: string;
-  name: string;
-  code: string | null;
-  taxId: string | null;
-  /** The lists this partner's orders take default prices from (ADR-049). */
-  salePriceListId: string | null;
-  purchasePriceListId: string | null;
-  /**
-   * What its documents print in (ADR-054). Null on the first means the
-   * organization's pair; the second is only ever set with a first.
-   */
-  documentLanguage: Locale | null;
-  documentSecondLanguage: Locale | null;
-  notes: string | null;
-  isActive: boolean;
-}
-
-export interface Address {
-  id: string;
-  label: string | null;
-  line1: string;
-  line2: string | null;
-  city: string | null;
-  region: string | null;
-  postalCode: string | null;
-  country: string;
-  isBilling: boolean;
-  isShipping: boolean;
-  isDefault: boolean;
-  isActive: boolean;
-}
-
-export interface Contact {
-  id: string;
-  name: string;
-  role: string | null;
-  email: string | null;
-  phone: string | null;
-  notes: string | null;
-  isPrimary: boolean;
-  isActive: boolean;
-}
-
-/** What GET /partners/:id returns — the partner with its children embedded. */
-export interface PartnerDetail extends Partner {
-  addresses: Address[];
-  contacts: Contact[];
-}
 
 /**
  * Orders, generated from the server's OpenAPI document (ADR-068, phase 2),
