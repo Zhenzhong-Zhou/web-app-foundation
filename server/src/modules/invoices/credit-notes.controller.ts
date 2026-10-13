@@ -16,6 +16,10 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { localeOf } from '../../i18n/translate';
+import type {
+  CreditNoteEnvelope,
+  CreditNotePage,
+} from './dto/credit-note-response.dto';
 import { ListCreditNotesDto } from './dto/list-credit-notes.dto';
 import { CREDIT_NOTE_COLUMNS } from './invoice-exports';
 import { InvoicesService } from './invoices.service';
@@ -33,7 +37,7 @@ export class CreditNotesController {
   /** Every credit note, newest first, with its date range and search. */
   @Get()
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
-  list(@Query() query: ListCreditNotesDto) {
+  list(@Query() query: ListCreditNotesDto): Promise<CreditNotePage> {
     return this.invoices.listCreditNotes(query);
   }
 
@@ -68,7 +72,9 @@ export class CreditNotesController {
 
   @Get(':id')
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
-  async get(@Param('id', ParseUUIDPipe) id: string) {
+  async get(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<CreditNoteEnvelope> {
     return { creditNote: await this.invoices.findCreditNote(id) };
   }
 }

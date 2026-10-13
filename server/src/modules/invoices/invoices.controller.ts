@@ -27,6 +27,12 @@ import { localeOf } from '../../i18n/translate';
 import { CreditNotesService } from './credit-notes.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { CreditInvoiceDto, PreviewCreditDto } from './dto/credit-invoice.dto';
+import type {
+  CreditNoteEnvelope,
+  CreditPreviewEnvelope,
+  VoidedInvoice,
+} from './dto/credit-note-response.dto';
+import type { InvoiceEnvelope, InvoicePage } from './dto/invoice-response.dto';
 import { IssueInvoiceDto } from './dto/issue-invoice.dto';
 import { ListInvoicesDto } from './dto/list-invoices.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
@@ -52,7 +58,7 @@ export class InvoicesController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
-  list(@Query() query: ListInvoicesDto) {
+  list(@Query() query: ListInvoicesDto): Promise<InvoicePage> {
     return this.invoices.list(query);
   }
 
@@ -84,7 +90,7 @@ export class InvoicesController {
 
   @Get(':id')
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
-  async get(@Param('id', ParseUUIDPipe) id: string) {
+  async get(@Param('id', ParseUUIDPipe) id: string): Promise<InvoiceEnvelope> {
     return { invoice: await this.invoices.findById(id) };
   }
 
@@ -100,8 +106,9 @@ export class InvoicesController {
   async create(
     @Body() dto: CreateInvoiceDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return { invoice: await this.drafts.createDraft(dto, user.userId) };
+  ): Promise<InvoiceEnvelope> {
+    const draft = await this.drafts.createDraft(dto, user.userId);
+    return { invoice: await this.invoices.findById(draft.id) };
   }
 
   @Patch(':id')
@@ -159,8 +166,9 @@ export class InvoicesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: IssueInvoiceDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return { invoice: await this.issuing.issue(id, dto, user.userId) };
+  ): Promise<InvoiceEnvelope> {
+    await this.issuing.issue(id, dto, user.userId);
+    return { invoice: await this.invoices.findById(id) };
   }
 
   /**
@@ -184,8 +192,12 @@ export class InvoicesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: VoidInvoiceDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return this.issuing.void(id, dto, user.userId);
+  ): Promise<VoidedInvoice> {
+    const { creditNote } = await this.issuing.void(id, dto, user.userId);
+    return {
+      invoice: await this.invoices.findById(id),
+      creditNote: await this.invoices.findCreditNote(creditNote.id),
+    };
   }
 
   /**
@@ -200,7 +212,7 @@ export class InvoicesController {
   async previewCredit(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: PreviewCreditDto,
-  ) {
+  ): Promise<CreditPreviewEnvelope> {
     return { credit: await this.creditNotes.preview(id, dto) };
   }
 
@@ -226,8 +238,9 @@ export class InvoicesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreditInvoiceDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return { creditNote: await this.creditNotes.issue(id, dto, user.userId) };
+  ): Promise<CreditNoteEnvelope> {
+    const issued = await this.creditNotes.issue(id, dto, user.userId);
+    return { creditNote: await this.invoices.findCreditNote(issued.id) };
   }
 
   /**

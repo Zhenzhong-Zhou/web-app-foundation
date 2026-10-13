@@ -521,6 +521,127 @@ export type LinkReturnDto = {
     returnId: string;
 };
 
+export type InvoiceSummary = {
+    id: string;
+    number: string | null;
+    status: 'draft' | 'issued' | 'voided';
+    orderId: string;
+    orderReference: string | null;
+    shipmentId: string;
+    partnerId: string;
+    partnerName: string;
+    currency: string;
+    invoiceDate: string | null;
+    dueDate: string | null;
+    subtotal: string | null;
+    taxTotal: string | null;
+    total: string | null;
+    credited: string;
+    net: string | null;
+    createdAt: string;
+};
+
+export type InvoicePage = {
+    entries: Array<InvoiceSummary>;
+    nextCursor: string | null;
+};
+
+export type InvoiceLine = {
+    id: string;
+    orderLineId: string;
+    variantId: string;
+    sku: string;
+    description: string;
+    secondDescription: string | null;
+    quantity: string;
+    unitPrice: string;
+    taxCodeId: string | null;
+    taxCodeName: string | null;
+    netAmount: string | null;
+};
+
+export type InvoiceTax = {
+    name: string;
+    rate: string;
+    taxableAmount: string;
+    amount: string;
+};
+
+export type InvoiceAmountsLine = {
+    id: string;
+    netAmount: string;
+};
+
+export type InvoiceAmounts = {
+    lines: Array<InvoiceAmountsLine>;
+    taxes: Array<InvoiceTax>;
+    subtotal: string;
+    taxTotal: string;
+    total: string;
+};
+
+export type InvoiceCreditNote = {
+    id: string;
+    number: string;
+    creditDate: string;
+    reason: string;
+    isVoid: boolean;
+    total: string;
+};
+
+export type InvoiceDetail = {
+    id: string;
+    number: string | null;
+    status: 'draft' | 'issued' | 'voided';
+    orderId: string;
+    orderReference: string | null;
+    shipmentId: string;
+    partnerId: string;
+    partnerName: string;
+    currency: string;
+    invoiceDate: string | null;
+    dueDate: string | null;
+    note: string | null;
+    subtotal: string | null;
+    taxTotal: string | null;
+    total: string | null;
+    shipToLabel: string | null;
+    shipToLine1: string | null;
+    shipToLine2: string | null;
+    shipToCity: string | null;
+    shipToRegion: string | null;
+    shipToPostalCode: string | null;
+    shipToCountry: string | null;
+    issuedAt: string | null;
+    voidedAt: string | null;
+    voidReason: string | null;
+    lines: Array<InvoiceLine>;
+    taxes: Array<InvoiceTax> | null;
+    preview: InvoiceAmounts | null;
+    creditNotes: Array<InvoiceCreditNote>;
+    language: 'en' | 'fr-CA' | 'zh-Hans';
+    secondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+    sellerName: string | null;
+    sellerTaxNumber: string | null;
+    sellerLine1: string | null;
+    sellerLine2: string | null;
+    sellerCity: string | null;
+    sellerRegion: string | null;
+    sellerPostalCode: string | null;
+    sellerCountry: string | null;
+    billToName: string | null;
+    billToLine1: string | null;
+    billToLine2: string | null;
+    billToCity: string | null;
+    billToRegion: string | null;
+    billToPostalCode: string | null;
+    billToCountry: string | null;
+};
+
+export type InvoiceEnvelope = {
+    invoice: InvoiceDetail;
+};
+
 export type CreateInvoiceDto = {
     shipmentId: string;
     taxCodeId?: string;
@@ -546,6 +667,57 @@ export type VoidInvoiceDto = {
     creditDate: string;
 };
 
+export type CreditNoteLine = {
+    id: string;
+    invoiceLineId: string;
+    sku: string;
+    description: string;
+    secondDescription: string | null;
+    quantity: string;
+    unitPrice: string;
+    taxCodeName: string | null;
+    netAmount: string;
+};
+
+export type CreditNoteDetail = {
+    id: string;
+    number: string;
+    invoiceId: string;
+    invoiceNumber: string | null;
+    invoiceDate: string | null;
+    currency: string;
+    creditDate: string;
+    reason: string;
+    isVoid: boolean;
+    subtotal: string;
+    taxTotal: string;
+    total: string;
+    lines: Array<CreditNoteLine>;
+    taxes: Array<InvoiceTax>;
+    language: 'en' | 'fr-CA' | 'zh-Hans';
+    secondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+    sellerName: string | null;
+    sellerTaxNumber: string | null;
+    sellerLine1: string | null;
+    sellerLine2: string | null;
+    sellerCity: string | null;
+    sellerRegion: string | null;
+    sellerPostalCode: string | null;
+    sellerCountry: string | null;
+    billToName: string | null;
+    billToLine1: string | null;
+    billToLine2: string | null;
+    billToCity: string | null;
+    billToRegion: string | null;
+    billToPostalCode: string | null;
+    billToCountry: string | null;
+};
+
+export type VoidedInvoice = {
+    invoice: InvoiceDetail;
+    creditNote: CreditNoteDetail;
+};
+
 export type CreditLineDto = {
     invoiceLineId: string;
     quantity: string;
@@ -557,10 +729,56 @@ export type PreviewCreditDto = {
     lines: Array<CreditLineDto>;
 };
 
+export type CreditPreviewLine = {
+    invoiceLineId: string;
+    returnAuthorizationLineId: string | null;
+    sku: string;
+    description: string;
+    secondDescription: string | null;
+    taxCodeName: string | null;
+    quantity: string;
+    unitPrice: string;
+    netAmount: string;
+};
+
+export type CreditPreview = {
+    lines: Array<CreditPreviewLine>;
+    taxes: Array<InvoiceTax>;
+    subtotal: string;
+    taxTotal: string;
+    total: string;
+};
+
+export type CreditPreviewEnvelope = {
+    credit: CreditPreview;
+};
+
 export type CreditInvoiceDto = {
     lines: Array<CreditLineDto>;
     reason: string;
     creditDate: string;
+};
+
+export type CreditNoteEnvelope = {
+    creditNote: CreditNoteDetail;
+};
+
+export type CreditNoteSummary = {
+    id: string;
+    number: string;
+    invoiceId: string;
+    invoiceNumber: string | null;
+    partnerId: string;
+    partnerName: string;
+    currency: string;
+    creditDate: string;
+    total: string;
+    isVoid: boolean;
+};
+
+export type CreditNotePage = {
+    entries: Array<CreditNoteSummary>;
+    nextCursor: string | null;
 };
 
 export type RecordOpenedDto = {
@@ -2779,8 +2997,10 @@ export type InvoicesControllerListV1Data = {
 };
 
 export type InvoicesControllerListV1Responses = {
-    200: unknown;
+    200: InvoicePage;
 };
+
+export type InvoicesControllerListV1Response = InvoicesControllerListV1Responses[keyof InvoicesControllerListV1Responses];
 
 export type InvoicesControllerCreateV1Data = {
     body: CreateInvoiceDto;
@@ -2790,8 +3010,10 @@ export type InvoicesControllerCreateV1Data = {
 };
 
 export type InvoicesControllerCreateV1Responses = {
-    201: unknown;
+    201: InvoiceEnvelope;
 };
+
+export type InvoicesControllerCreateV1Response = InvoicesControllerCreateV1Responses[keyof InvoicesControllerCreateV1Responses];
 
 export type InvoicesControllerExportInvoicesV1Data = {
     body?: never;
@@ -2845,8 +3067,10 @@ export type InvoicesControllerGetV1Data = {
 };
 
 export type InvoicesControllerGetV1Responses = {
-    200: unknown;
+    200: InvoiceEnvelope;
 };
+
+export type InvoicesControllerGetV1Response = InvoicesControllerGetV1Responses[keyof InvoicesControllerGetV1Responses];
 
 export type InvoicesControllerUpdateV1Data = {
     body: UpdateInvoiceDto;
@@ -2889,8 +3113,10 @@ export type InvoicesControllerIssueV1Data = {
 };
 
 export type InvoicesControllerIssueV1Responses = {
-    200: unknown;
+    200: InvoiceEnvelope;
 };
+
+export type InvoicesControllerIssueV1Response = InvoicesControllerIssueV1Responses[keyof InvoicesControllerIssueV1Responses];
 
 export type InvoicesControllerVoidV1Data = {
     body: VoidInvoiceDto;
@@ -2902,8 +3128,10 @@ export type InvoicesControllerVoidV1Data = {
 };
 
 export type InvoicesControllerVoidV1Responses = {
-    200: unknown;
+    200: VoidedInvoice;
 };
+
+export type InvoicesControllerVoidV1Response = InvoicesControllerVoidV1Responses[keyof InvoicesControllerVoidV1Responses];
 
 export type InvoicesControllerPreviewCreditV1Data = {
     body: PreviewCreditDto;
@@ -2915,8 +3143,10 @@ export type InvoicesControllerPreviewCreditV1Data = {
 };
 
 export type InvoicesControllerPreviewCreditV1Responses = {
-    200: unknown;
+    200: CreditPreviewEnvelope;
 };
+
+export type InvoicesControllerPreviewCreditV1Response = InvoicesControllerPreviewCreditV1Responses[keyof InvoicesControllerPreviewCreditV1Responses];
 
 export type InvoicesControllerCreditV1Data = {
     body: CreditInvoiceDto;
@@ -2928,8 +3158,10 @@ export type InvoicesControllerCreditV1Data = {
 };
 
 export type InvoicesControllerCreditV1Responses = {
-    201: unknown;
+    201: CreditNoteEnvelope;
 };
+
+export type InvoicesControllerCreditV1Response = InvoicesControllerCreditV1Responses[keyof InvoicesControllerCreditV1Responses];
 
 export type CreditNotesControllerListV1Data = {
     body?: never;
@@ -2949,8 +3181,10 @@ export type CreditNotesControllerListV1Data = {
 };
 
 export type CreditNotesControllerListV1Responses = {
-    200: unknown;
+    200: CreditNotePage;
 };
+
+export type CreditNotesControllerListV1Response = CreditNotesControllerListV1Responses[keyof CreditNotesControllerListV1Responses];
 
 export type CreditNotesControllerExportCreditNotesV1Data = {
     body?: never;
@@ -2988,8 +3222,10 @@ export type CreditNotesControllerGetV1Data = {
 };
 
 export type CreditNotesControllerGetV1Responses = {
-    200: unknown;
+    200: CreditNoteEnvelope;
 };
+
+export type CreditNotesControllerGetV1Response = CreditNotesControllerGetV1Responses[keyof CreditNotesControllerGetV1Responses];
 
 export type RecentControllerClearV1Data = {
     body?: never;

@@ -215,8 +215,8 @@ committed, and neither is edited by hand.
 - **The shared lists are the server's.** The client imports `Permission`,
   `Locale`, `AuditAction` and `ErrorCode` from the generated types and keeps
   no copy of its own.
-- **A module's responses** (ADR-068, phase 2; tax codes were the pilot),
-  converted when a feature next touches the module:
+- **A module's responses** (ADR-068, phase 2; tax codes were the pilot,
+  then every module in turn, straight through):
   - Declare each response as a class in the module's
     `dto/*-response.dto.ts`, named as the client knows it (`TaxCode`), with
     an envelope class for the body (`TaxCodeList`, `CreatedTaxCode`). The
@@ -226,6 +226,12 @@ committed, and neither is edited by hand.
   - Project in the service: return exactly the declared fields, never a
     spread table row, which would also send `organizationId` and
     timestamps the client never reads.
+  - A paged list returns a page class per item type, `InvoicePage` with
+    `entries` and `nextCursor`, since the document cannot describe a
+    generic.
+  - A write that returns the resource returns the same detail class as
+    reading it, fetched after the write, never the row from `INSERT` or
+    `UPDATE`: one shape per resource, whichever call the client made.
   - `npm run api`, then in `client/src/lib/types.ts` replace the module's
     interfaces with re-exports from `../api/types.gen`, so importers stay
     unchanged.
