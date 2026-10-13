@@ -1,0 +1,4 @@
+# Generated files: collapsed in GitHub reviews, and left out of the
+# language statistics. They change only through npm run api (ADR-068).
+server/openapi.json linguist-generated=true
+client/src/api/** linguist-generated=true
