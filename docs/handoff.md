@@ -38,8 +38,9 @@ with this one, this one is current.
   codes (the pilot), invoices and credit notes (`invoices-responses`,
   which settled the page class and found `CreditNoteSummary` declared
   twice), orders (`orders-responses`, then `orders-shipments-responses`
-  for shipments, returns and holds, with stock availability). Next, in
-  order: stock, costs and locations; products,
+  for shipments, returns and holds, with stock availability), stock and
+  locations (`stock-responses`; the lot trace goes with production, whose
+  licence fields it carries). Next, in order: costs; products,
   BOMs, price lists and product licences; partners; production orders and
   RMAs; account, auth, users, people, roles, organization and files; home,
   recent, lookup, notifications and health; then `client/src/lib/types.ts`
