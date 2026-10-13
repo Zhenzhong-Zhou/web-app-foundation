@@ -731,14 +731,23 @@ describe('Invoices (e2e)', () => {
         .set({ taxCodeId: null })
         .where(eq(invoiceLines.id, untaxed.id));
 
-      await issue(org, r.invoice.id).expect(409);
+      const refused = body<{ message: string; code?: string }>(
+        await issue(org, r.invoice.id).expect(409),
+      );
+      // Codes come where a screen has something to offer; this refusal,
+      // like most, carries its message alone.
+      expect(refused).not.toHaveProperty('code');
 
       const detail = await readIssued(org, r.invoice.id);
       expect(detail.status).toBe('draft');
       expect(detail.number).toBeNull();
     });
 
-    it('refuses without the organization’s registered address', async () => {
+    /**
+     * The code is what the Issue dialog links to Profile on (ADR-061): the
+     * same in every language, while the message follows the reader's.
+     */
+    it('refuses without the organization’s registered address, with its code', async () => {
       const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       await org.agent
@@ -747,10 +756,21 @@ describe('Invoices (e2e)', () => {
         .expect(201);
       const invoice = await draft(org, s.shipmentId, await taxCode(org));
 
-      await issue(org, invoice.id).expect(409);
+      const english = body<{ message: string; code?: string }>(
+        await issue(org, invoice.id).expect(409),
+      );
+      const french = body<{ message: string; code?: string }>(
+        await issue(org, invoice.id)
+          .set('Accept-Language', 'fr-CA')
+          .expect(409),
+      );
+
+      expect(english.code).toBe('organization_address_missing');
+      expect(french.code).toBe('organization_address_missing');
+      expect(french.message).not.toBe(english.message);
     });
 
-    it('refuses when the customer has no billing address', async () => {
+    it('refuses when the customer has no billing address, with its code', async () => {
       const org = await registerOrganization(app, 'alpha');
       const s = await shipped(org);
       await org.agent
@@ -759,7 +779,12 @@ describe('Invoices (e2e)', () => {
         .expect(204);
       const invoice = await draft(org, s.shipmentId, await taxCode(org));
 
-      await issue(org, invoice.id).expect(409);
+      const refused = body<{ message: string; code?: string }>(
+        await issue(org, invoice.id).expect(409),
+      );
+
+      // What the Issue dialog links to the customer on (ADR-061).
+      expect(refused.code).toBe('customer_billing_address_missing');
     });
 
     it('refuses a due date before the invoice date', async () => {

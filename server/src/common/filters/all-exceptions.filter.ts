@@ -10,11 +10,17 @@ import { HttpAdapterHost } from '@nestjs/core';
 import type { Request } from 'express';
 
 import { isTranslatable, localeOf, t, translate } from '../../i18n/translate';
+import { codeOf, type ErrorCode } from '../error-codes';
 
 interface ErrorBody {
   statusCode: number;
   error: string;
   message: string | string[];
+  /**
+   * What a client can act on, beside the message a person reads. Only on
+   * the refusals that have one (error-codes.ts).
+   */
+  code?: ErrorCode;
   path: string;
   timestamp: string;
   requestId?: string;
@@ -24,6 +30,9 @@ interface ErrorBody {
  * One error shape for the whole API. Clients parse a single contract instead of
  * guessing whether a failure came from a controller, a pipe, or an unhandled
  * throw somewhere in a service.
+ *
+ * A refusal a screen can offer a way out of also carries a `code`, which
+ * stays the same in every language while the message does not.
  *
  * @Catch() with no arguments catches everything, including non-Error values.
  */
@@ -42,11 +51,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const status: HttpStatus = isHttp
       ? exception.getStatus()
       : HttpStatus.INTERNAL_SERVER_ERROR;
+    const code = isHttp ? codeOf(exception.getResponse()) : undefined;
 
     const body: ErrorBody = {
       statusCode: status,
       error: HttpStatus[status] ?? 'INTERNAL_SERVER_ERROR',
       message: this.messageFor(exception, isHttp, req),
+      ...(code ? { code } : {}),
       path: httpAdapter.getRequestUrl(req) as string,
       timestamp: new Date().toISOString(),
       requestId: req.id,
