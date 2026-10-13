@@ -1,8 +1,10 @@
+import Add from '@mui/icons-material/Add';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import Close from '@mui/icons-material/Close';
 import ImageOutlined from '@mui/icons-material/ImageOutlined';
 import MoreVert from '@mui/icons-material/MoreVert';
+import Remove from '@mui/icons-material/Remove';
 import {
   Alert,
   Box,
@@ -658,9 +660,16 @@ function byPosition(a: ProductImage, b: ProductImage): number {
   return a.position - b.position;
 }
 
+/** How far the viewer zooms, and by how much a button or a wheel turn. */
+const ZOOM_MIN = 1;
+const ZOOM_MAX = 4;
+const ZOOM_STEP = 0.2;
+
 /**
- * One image at full size (ADR-062): Esc closes, ← → move between images,
- * a swipe does on a phone, a double-click or double-tap zooms in and out.
+ * One image at full size (ADR-062), as the canvas drew it: zoom with the
+ * − and + buttons, the scroll wheel, a pinch or a double-click; drag to
+ * look around once zoomed; ← → and a swipe move between images; Esc
+ * closes.
  */
 function Viewer({
   images,
@@ -676,13 +685,50 @@ function Viewer({
   onClose: () => void;
 }) {
   const intl = useIntl();
-  const [zoomed, setZoomed] = useState(false);
-  const start = useRef<number | null>(null);
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  // While a finger or the mouse moves it, the image follows without easing.
+  const [dragging, setDragging] = useState(false);
+  const frame = useRef<HTMLDivElement>(null);
+  // Pointers down now, for a drag, a swipe or a pinch.
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const gesture = useRef<{
+    startX: number;
+    startY: number;
+    from: { x: number; y: number };
+    pinch: number | null;
+    scaleAtPinch: number;
+  } | null>(null);
   const image = images[index];
+
+  /** Within the frame: a zoomed image never slides out of view. */
+  const clamped = useCallback(
+    (next: { x: number; y: number }, atScale: number) => {
+      const box = frame.current?.getBoundingClientRect();
+      if (!box || atScale <= 1) return { x: 0, y: 0 };
+      const maxX = ((atScale - 1) * box.width) / 2;
+      const maxY = ((atScale - 1) * box.height) / 2;
+      return {
+        x: Math.min(maxX, Math.max(-maxX, next.x)),
+        y: Math.min(maxY, Math.max(-maxY, next.y)),
+      };
+    },
+    [],
+  );
+
+  const zoomTo = useCallback(
+    (next: number) => {
+      const bounded = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next));
+      setScale(bounded);
+      setOffset((current) => clamped(current, bounded));
+    },
+    [clamped],
+  );
 
   const go = useCallback(
     (step: number) => {
-      setZoomed(false);
+      setScale(1);
+      setOffset({ x: 0, y: 0 });
       onMove((index + step + images.length) % images.length);
     },
     [index, images.length, onMove],
@@ -692,10 +738,23 @@ function Viewer({
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft') go(-1);
       if (event.key === 'ArrowRight') go(1);
+      if (event.key === '+' || event.key === '=') zoomTo(scale + ZOOM_STEP);
+      if (event.key === '-') zoomTo(scale - ZOOM_STEP);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [go]);
+  }, [go, scale, zoomTo]);
+
+  const distance = () => {
+    const [a, b] = [...pointers.current.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
+
+  const controlSx = {
+    border: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: 1.5,
+  };
 
   return (
     <Dialog
@@ -728,6 +787,7 @@ function Viewer({
           <IconButton
             color="inherit"
             onClick={onClose}
+            sx={controlSx}
             aria-label={intl.formatMessage({
               id: 'common.close',
               defaultMessage: 'Close',
@@ -760,42 +820,88 @@ function Viewer({
           <ChevronLeft fontSize="large" />
         </IconButton>
         <Box
+          ref={frame}
+          onWheel={(event) =>
+            zoomTo(scale + (event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP))
+          }
+          onDoubleClick={() => zoomTo(scale > 1 ? 1 : 2)}
           onPointerDown={(event) => {
-            start.current = event.clientX;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            pointers.current.set(event.pointerId, {
+              x: event.clientX,
+              y: event.clientY,
+            });
+            setDragging(true);
+            gesture.current = {
+              startX: event.clientX,
+              startY: event.clientY,
+              from: offset,
+              pinch: pointers.current.size === 2 ? distance() : null,
+              scaleAtPinch: scale,
+            };
+          }}
+          onPointerMove={(event) => {
+            if (!pointers.current.has(event.pointerId) || !gesture.current) {
+              return;
+            }
+            pointers.current.set(event.pointerId, {
+              x: event.clientX,
+              y: event.clientY,
+            });
+            const now = gesture.current;
+            if (pointers.current.size === 2 && now.pinch) {
+              zoomTo((now.scaleAtPinch * distance()) / now.pinch);
+            } else if (scale > 1) {
+              setOffset(
+                clamped(
+                  {
+                    x: now.from.x + event.clientX - now.startX,
+                    y: now.from.y + event.clientY - now.startY,
+                  },
+                  scale,
+                ),
+              );
+            }
           }}
           onPointerUp={(event) => {
-            if (start.current === null || zoomed) return;
-            const moved = event.clientX - start.current;
-            start.current = null;
-            if (Math.abs(moved) > 60) go(moved < 0 ? 1 : -1);
+            const now = gesture.current;
+            pointers.current.delete(event.pointerId);
+            if (pointers.current.size > 0) return;
+            gesture.current = null;
+            setDragging(false);
+            // Not zoomed: a long enough sideways drag is a swipe.
+            if (now && scale === 1 && now.pinch === null) {
+              const moved = event.clientX - now.startX;
+              if (Math.abs(moved) > 60) go(moved < 0 ? 1 : -1);
+            }
           }}
-          onDoubleClick={() => setZoomed((value) => !value)}
+          onPointerCancel={(event) => {
+            pointers.current.delete(event.pointerId);
+            gesture.current = null;
+            setDragging(false);
+          }}
           sx={{
             height: '100%',
-            overflow: zoomed ? 'auto' : 'hidden',
-            touchAction: zoomed ? 'auto' : 'pan-y',
+            overflow: 'hidden',
+            touchAction: 'none',
+            cursor: scale > 1 ? 'grab' : 'zoom-in',
+            '&:active': { cursor: scale > 1 ? 'grabbing' : 'zoom-in' },
           }}
         >
           <Box
             component="img"
             src={src(image.fileId, 'full')}
             alt={describe(index)}
-            sx={
-              zoomed
-                ? {
-                    display: 'block',
-                    width: '200%',
-                    maxWidth: 'none',
-                    cursor: 'zoom-out',
-                  }
-                : {
-                    display: 'block',
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                    cursor: 'zoom-in',
-                  }
-            }
+            draggable={false}
+            sx={{
+              display: 'block',
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+              transition: dragging ? 'none' : 'transform 120ms ease-out',
+              userSelect: 'none',
+            }}
           />
         </Box>
         <IconButton
@@ -810,16 +916,68 @@ function Viewer({
           <ChevronRight fontSize="large" />
         </IconButton>
       </Box>
-      <Typography
-        variant="body2"
-        sx={{ textAlign: 'center', p: 1.5, color: '#C9D0DC' }}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={{ xs: 1, sm: 2 }}
+        sx={{
+          p: 1.5,
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#C9D0DC',
+        }}
       >
-        {intl.formatMessage({
-          id: 'products.gallery.viewerHint',
-          defaultMessage:
-            'Double-click or double-tap to zoom. ← → between images, Esc closes. On a phone, swipe.',
-        })}
-      </Typography>
+        <Typography variant="body2" sx={{ textAlign: 'center' }}>
+          {scale > 1
+            ? intl.formatMessage({
+                id: 'products.gallery.viewerHintZoomed',
+                defaultMessage:
+                  'Zoomed in. Scroll, pinch or double-click to zoom; drag to look around. ← → between images, Esc closes. On a phone, swipe.',
+              })
+            : intl.formatMessage({
+                id: 'products.gallery.viewerHint',
+                defaultMessage:
+                  'Scroll, pinch or double-click to zoom. ← → between images, Esc closes. On a phone, swipe.',
+              })}
+        </Typography>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <IconButton
+            color="inherit"
+            size="small"
+            sx={controlSx}
+            disabled={scale <= ZOOM_MIN}
+            onClick={() => zoomTo(scale - ZOOM_STEP)}
+            aria-label={intl.formatMessage({
+              id: 'products.gallery.zoomOut',
+              defaultMessage: 'Zoom out',
+            })}
+          >
+            <Remove fontSize="small" />
+          </IconButton>
+          <Typography
+            variant="body2"
+            aria-live="polite"
+            sx={{ minWidth: 48, textAlign: 'center' }}
+          >
+            {intl.formatNumber(scale, {
+              style: 'percent',
+              maximumFractionDigits: 0,
+            })}
+          </Typography>
+          <IconButton
+            color="inherit"
+            size="small"
+            sx={controlSx}
+            disabled={scale >= ZOOM_MAX}
+            onClick={() => zoomTo(scale + ZOOM_STEP)}
+            aria-label={intl.formatMessage({
+              id: 'products.gallery.zoomIn',
+              defaultMessage: 'Zoom in',
+            })}
+          >
+            <Add fontSize="small" />
+          </IconButton>
+        </Stack>
+      </Stack>
     </Dialog>
   );
 }
