@@ -16,24 +16,13 @@ import { useState } from 'react';
 import { type IntlShape, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { SessionSummary } from '../api/types.gen';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
 import { relativeTime } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { RecentActivity } from './recent-activity';
-
-interface SessionSummary {
-  id: string;
-  issuedAt: string;
-  lastSeenAt: string;
-  expiresAt: string;
-  ip: string | null;
-  browser: string | null;
-  os: string | null;
-  /** The session making this request. Revoking it is disabled. */
-  current: boolean;
-}
 
 /** "Chrome on macOS", degrading as far as the agent allows. */
 function describe(session: SessionSummary, intl: IntlShape): string {
