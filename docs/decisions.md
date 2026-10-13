@@ -6402,6 +6402,10 @@ Whoever has `products.view` sees them.
   image is removed; Undo puts it back and nothing is sent.
 - **Uploads report progress** through XMLHttpRequest, the one browser API
   that does; the rest of the app keeps `api()`.
+- **The viewer zooms as the canvas drew it**: − and + with the level
+  between them, the scroll wheel, a pinch and a double-click, 100 to
+  400%, and a drag to look around once zoomed. First built with a
+  double-click alone and a scrollbar.
 
 **Considered and not done.**
 
