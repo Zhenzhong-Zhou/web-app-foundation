@@ -1,0 +1,35 @@
+v0.5.0 — trust the numbers
+
+Licences checked when a run is released, calendar days kept as days,
+the app fast under load and backed up, and every screen in the reader's
+language.
+
+Licences at release (ADR-050)
+- A run checks its product licence the day it is released: in force,
+  expiring, expired or withdrawn, with the organization's policy for
+  each (allow, ask for an override, or block).
+- An override is recorded with its reason; a withdrawn licence always
+  blocks.
+
+Performance (ADR-051)
+- Every list pages by keyset, not by offset.
+- A Performance workflow seeds a large organization and checks query
+  plans and response budgets (p95), on demand and weekly.
+
+Calendar days (ADR-052, #20)
+- Expected dates, expiry dates and document dates are calendar days,
+  stored as dates, never shifted by a time zone.
+
+Backups, phase 1 (ADR-053)
+- A nightly logical backup to a separate bucket, kept 30 days and locked
+  against deletion, and a monthly drill that restores one and checks it.
+
+Languages (ADR-054)
+- English, French (Canada) and Simplified Chinese, chosen per person.
+- Documents print in the customer's language, or two side by side;
+  product names in other languages, required where an organization says.
+- Notifications and emails in the reader's language.
+
+Fixes
+- Duplicating an order no longer repeats what was received (#42).
+- Dependencies updated.

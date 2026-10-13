@@ -1,7 +1,77 @@
-# web-app-foundation — handoff, v0.5.0 tagged, the UI pass (ADR-055) built
+# web-app-foundation — handoff, 12 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
+
+## Now, 12 October 2026: read this first
+
+The sections after this one are the longer history; where they disagree
+with this one, this one is current.
+
+- **On `main`:** ADR-055 to ADR-066, all built and merged: the UI pass,
+  search, dates and export, Home, file storage (R2), branding, the
+  Organization page in tabs, product images, people (photos, the People
+  page, last active), licence expiry reminders (#17), staying signed in
+  (Keep me signed in, an organization's idle sign-out), covers in the
+  lookup, and the gallery's zooming viewer. PRs through #85.
+- **Migrations:** through **0054** on `main`. Render should hold **55**
+  rows in `drizzle.__drizzle_migrations` once deployed. Next is **0055**.
+  After any new migration: `npm run migrate:all`.
+- **Next ADR:** **ADR-067**, not chosen yet.
+- **Release:** **v0.6.0-rc.2** is tagged on #79's merge (5fbd119), before
+  licence reminders, the account fixes, sessions, the lookup covers and
+  the viewer. With those merged, the next candidate is **v0.6.0-rc.3**,
+  then v0.6.0 when the manual checks pass. `docs/releases/v0.5.0.txt` is written; v0.6.0's at its final.
+- **Working agreements** are below, unchanged: one PR per feature, ADR
+  first; chores ride along; commits authored Zhenzhong Zhou
+  <bob0823.zhou@gmail.com>; a file roadmap in every answer that changes
+  code; designs on the Claude Design canvas
+  (<https://claude.ai/artifact/RqG3iKw4V41is3w1go53EJ>) before building;
+  PR title and description always given, with "Fixes #N" when it does.
+  New from this round: when lint reformats a file under `client/e2e/`
+  or `src/`, commit it as a fixup, never restore it (CI's format check
+  covers `e2e/`).
+
+### Still to do, by hand
+
+- **Render:** change the database password (it was pasted in a chat);
+  confirm `FILE_STORAGE=s3` and the `FILES_*` variables; run the pinyin
+  backfill (`npm run backfill:pinyin` against the external URL with
+  `?sslmode=no-verify`); confirm 55 migrations.
+- **Manual checks due:** MC-1601 and MC-1602 (an upload in R2, the
+  nightly copy), MC-1701, MC-1702, MC-1801, MC-1901, MC-2001, MC-2101,
+  MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
+  photos and 同事 on a phone.
+- **Issues:** confirm #26 and #28 are closed (they merged without
+  "Fixes"); #17 closed itself.
+- **Branches:** prune the merged ones (`scripts/prune-branches.sh`).
+
+### Still to do, in code
+
+- **Invoice refusal → Profile.** An invoice refused for a missing
+  registered address or tax number shows the server's message alone; a
+  link to Organization → Profile would save a search (ADR-061's
+  amendment).
+- **The typo lookup** sits at 270 ms of its 300 ms budget; one query per
+  pass if it ever fails.
+- **Mailpit in the Performance workflow**, to quieten harmless email
+  errors in its logs.
+- **`npm audit`**, a small branch of its own.
+- **Account deletion** does not exist yet. When it does, ADR-063 says it
+  deletes the person's photo with it.
+
+### Deferred, each waiting for its trigger (in the ADRs)
+
+- Product images: a variant's own image; images on order lines and the
+  shipping screen; a catalogue outside the app (ADR-062).
+- People: faces in notifications and recently opened; a manager, mobile
+  number and working hours; a live "online now" (ADR-063).
+- Licences: email for reminders; an organization's own notice days
+  (ADR-064); site licences (#18); suspended, cancelled, superseded (#16).
+- Sessions: lock screen and switch user with a PIN, for a native app or
+  shared scanners, handhelds or kiosks; a maximum session length
+  (ADR-065).
+- Open decisions: leaving or deleting an organization.
 
 ## Where things stand
 
@@ -20,10 +90,9 @@ and price lists proposing the price of a new line.
   part 2). The Performance workflow ran on `main` on 2 October 2026 at small
   scale and passed. Its notes are a GitHub pre-release only;
   `docs/releases/v0.5.0.txt` is written at v0.5.0's final.
-- Migrations: through **0053** (licence reminders, ADR-064) on `main`,
-  and **0054** (staying signed in, ADR-065) on `sessions`. Render runs
-  them on deploy (`drizzle.__drizzle_migrations` holds 55 rows once 0054
-  is deployed). Next is **0055**.
+- Migrations: through **0054** (staying signed in, ADR-065) on `main`.
+  Render runs them on deploy (`drizzle.__drizzle_migrations` holds 55
+  rows once 0054 is deployed). Next is **0055**.
   After any new migration: `npm run migrate:all` (dev, test and e2e).
 - ADRs: through **ADR-053**, all built and merged: ADR-050 (licence status
   at release), ADR-051 (performance), ADR-052 (calendar days as `date`,
@@ -664,8 +733,7 @@ display-name test, or wait a minute between runs.
 ## Open GitHub issues
 
 - #16 licence status for suspended, cancelled, superseded
-- #17 licence expiry notification (60 days) — built on
-  `licence-reminders` (ADR-064): 60, 30 and 7 days and on the day
+- #17 licence expiry notification — done (ADR-064), closed by PR #81
 - #18 site licences on the organization or a partner. ADR-050's amendment
   sketches where it is heading: one register of credentials with a type
   and what it applies to — site licences gating making at a site,
