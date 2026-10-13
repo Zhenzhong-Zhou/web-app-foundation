@@ -41,8 +41,9 @@ with this one, this one is current.
   for shipments, returns and holds, with stock availability), stock and
   locations (`stock-responses`; the lot trace goes with production, whose
   licence fields it carries), costs (`costs-responses`, whose raw rows
-  were all unknown until typed). Next, in order: products,
-  BOMs, price lists and product licences; partners; production orders and
+  were all unknown until typed), products and product licences
+  (`products-responses`). Next, in order: BOMs and price lists;
+  partners; production orders and
   RMAs; account, auth, users, people, roles, organization and files; home,
   recent, lookup, notifications and health; then `client/src/lib/types.ts`
   replaced by direct imports from `client/src/api/`.

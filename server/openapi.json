@@ -1402,7 +1402,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductSummary"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1424,7 +1434,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1474,7 +1491,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/VariantOption"
                   }
                 }
               }
@@ -1501,7 +1518,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDetail"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1565,7 +1589,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VariantEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1713,7 +1744,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductImageList"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1744,7 +1782,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductImageList"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1789,7 +1834,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductLicence"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1811,7 +1866,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenceEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6732,6 +6794,306 @@
           "roleId"
         ]
       },
+      "ProductSummary": {
+        "type": "object",
+        "properties": {
+          "coverFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "coverFileId",
+          "id",
+          "type",
+          "name",
+          "description",
+          "isActive"
+        ]
+      },
+      "VariantOption": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "variantName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "productName": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "tracksLots": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "variantName",
+          "productName",
+          "type",
+          "unitOfMeasure",
+          "tracksLots"
+        ]
+      },
+      "ProductTranslation": {
+        "type": "object",
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "locale",
+          "name",
+          "description"
+        ]
+      },
+      "VariantTranslation": {
+        "type": "object",
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locale",
+          "name"
+        ]
+      },
+      "Variant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "tracksLots": {
+            "type": "boolean"
+          },
+          "weightGrams": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "lengthMm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "widthMm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "heightMm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "caseQuantity": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "translations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariantTranslation"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "name",
+          "unitOfMeasure",
+          "isActive",
+          "tracksLots",
+          "weightGrams",
+          "lengthMm",
+          "widthMm",
+          "heightMm",
+          "caseQuantity"
+        ]
+      },
+      "StoredImageSize": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "bytes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "width",
+          "height",
+          "bytes"
+        ]
+      },
+      "ImageSizes": {
+        "type": "object",
+        "properties": {
+          "thumb": {
+            "$ref": "#/components/schemas/StoredImageSize"
+          },
+          "display": {
+            "$ref": "#/components/schemas/StoredImageSize"
+          },
+          "full": {
+            "$ref": "#/components/schemas/StoredImageSize"
+          }
+        }
+      },
+      "ProductImage": {
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          },
+          "sizes": {
+            "$ref": "#/components/schemas/ImageSizes"
+          }
+        },
+        "required": [
+          "fileId",
+          "position",
+          "sizes"
+        ]
+      },
+      "ProductDetail": {
+        "type": "object",
+        "properties": {
+          "translations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductTranslation"
+            }
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Variant"
+            }
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "translations",
+          "variants",
+          "images",
+          "id",
+          "type",
+          "name",
+          "description",
+          "isActive"
+        ]
+      },
       "CreateVariantDto": {
         "type": "object",
         "properties": {
@@ -6809,6 +7171,17 @@
           "variant"
         ]
       },
+      "ProductEnvelope": {
+        "type": "object",
+        "properties": {
+          "product": {
+            "$ref": "#/components/schemas/ProductDetail"
+          }
+        },
+        "required": [
+          "product"
+        ]
+      },
       "UpdateProductDto": {
         "type": "object",
         "properties": {
@@ -6825,6 +7198,17 @@
             "type": "boolean"
           }
         }
+      },
+      "VariantEnvelope": {
+        "type": "object",
+        "properties": {
+          "variant": {
+            "$ref": "#/components/schemas/Variant"
+          }
+        },
+        "required": [
+          "variant"
+        ]
       },
       "UpdateVariantDto": {
         "type": "object",
@@ -6960,6 +7344,20 @@
           "fileId"
         ]
       },
+      "ProductImageList": {
+        "type": "object",
+        "properties": {
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
+          }
+        },
+        "required": [
+          "images"
+        ]
+      },
       "OrderProductImagesDto": {
         "type": "object",
         "properties": {
@@ -6974,6 +7372,50 @@
         },
         "required": [
           "fileIds"
+        ]
+      },
+      "ProductLicence": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "authority": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "issuedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "authority",
+          "isActive",
+          "issuedAt",
+          "expiresAt",
+          "notes"
         ]
       },
       "CreateProductLicenceDto": {
@@ -7007,6 +7449,17 @@
         "required": [
           "number",
           "authority"
+        ]
+      },
+      "LicenceEnvelope": {
+        "type": "object",
+        "properties": {
+          "licence": {
+            "$ref": "#/components/schemas/ProductLicence"
+          }
+        },
+        "required": [
+          "licence"
         ]
       },
       "UpdateProductLicenceDto": {

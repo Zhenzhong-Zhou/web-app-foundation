@@ -60,6 +60,80 @@ export type UpdateUserDto = {
   roleId: string;
 };
 
+export type ProductSummary = {
+  coverFileId: string | null;
+  id: string;
+  type: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+};
+
+export type VariantOption = {
+  id: string;
+  sku: string;
+  variantName: string | null;
+  productName: string;
+  type: string;
+  unitOfMeasure: string;
+  tracksLots: boolean;
+};
+
+export type ProductTranslation = {
+  locale: 'en' | 'fr-CA' | 'zh-Hans';
+  name: string;
+  description: string | null;
+};
+
+export type VariantTranslation = {
+  locale: 'en' | 'fr-CA' | 'zh-Hans';
+  name: string;
+};
+
+export type Variant = {
+  id: string;
+  sku: string;
+  name: string | null;
+  unitOfMeasure: string;
+  isActive: boolean;
+  tracksLots: boolean;
+  weightGrams: number | null;
+  lengthMm: number | null;
+  widthMm: number | null;
+  heightMm: number | null;
+  caseQuantity: number | null;
+  translations?: Array<VariantTranslation>;
+};
+
+export type StoredImageSize = {
+  width: number;
+  height: number;
+  bytes: number;
+};
+
+export type ImageSizes = {
+  thumb?: StoredImageSize;
+  display?: StoredImageSize;
+  full?: StoredImageSize;
+};
+
+export type ProductImage = {
+  fileId: string;
+  position: number;
+  sizes: ImageSizes;
+};
+
+export type ProductDetail = {
+  translations: Array<ProductTranslation>;
+  variants: Array<Variant>;
+  images: Array<ProductImage>;
+  id: string;
+  type: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+};
+
 export type CreateVariantDto = {
   sku: string;
   name?: string;
@@ -79,10 +153,18 @@ export type CreateProductDto = {
   variant: CreateVariantDto;
 };
 
+export type ProductEnvelope = {
+  product: ProductDetail;
+};
+
 export type UpdateProductDto = {
   name?: string;
   description?: string;
   isActive?: boolean;
+};
+
+export type VariantEnvelope = {
+  variant: Variant;
 };
 
 export type UpdateVariantDto = {
@@ -120,8 +202,22 @@ export type AddProductImageDto = {
   fileId: string;
 };
 
+export type ProductImageList = {
+  images: Array<ProductImage>;
+};
+
 export type OrderProductImagesDto = {
   fileIds: Array<string>;
+};
+
+export type ProductLicence = {
+  id: string;
+  number: string;
+  authority: string;
+  isActive: boolean;
+  issuedAt: string | null;
+  expiresAt: string | null;
+  notes: string | null;
 };
 
 export type CreateProductLicenceDto = {
@@ -130,6 +226,10 @@ export type CreateProductLicenceDto = {
   issuedAt?: string | null;
   expiresAt?: string | null;
   notes?: string;
+};
+
+export type LicenceEnvelope = {
+  licence: ProductLicence;
 };
 
 export type UpdateProductLicenceDto = {
@@ -2365,8 +2465,11 @@ export type ProductsControllerListV1Data = {
 };
 
 export type ProductsControllerListV1Responses = {
-  200: unknown;
+  200: Array<ProductSummary>;
 };
+
+export type ProductsControllerListV1Response =
+  ProductsControllerListV1Responses[keyof ProductsControllerListV1Responses];
 
 export type ProductsControllerCreateV1Data = {
   body: CreateProductDto;
@@ -2376,8 +2479,11 @@ export type ProductsControllerCreateV1Data = {
 };
 
 export type ProductsControllerCreateV1Responses = {
-  201: unknown;
+  201: ProductEnvelope;
 };
+
+export type ProductsControllerCreateV1Response =
+  ProductsControllerCreateV1Responses[keyof ProductsControllerCreateV1Responses];
 
 export type ProductsControllerExportProductsV1Data = {
   body?: never;
@@ -2404,9 +2510,7 @@ export type ProductsControllerListVariantsV1Data = {
 };
 
 export type ProductsControllerListVariantsV1Responses = {
-  200: Array<{
-    [key: string]: unknown;
-  }>;
+  200: Array<VariantOption>;
 };
 
 export type ProductsControllerListVariantsV1Response =
@@ -2422,8 +2526,11 @@ export type ProductsControllerFindV1Data = {
 };
 
 export type ProductsControllerFindV1Responses = {
-  200: unknown;
+  200: ProductDetail;
 };
+
+export type ProductsControllerFindV1Response =
+  ProductsControllerFindV1Responses[keyof ProductsControllerFindV1Responses];
 
 export type ProductsControllerUpdateV1Data = {
   body: UpdateProductDto;
@@ -2451,8 +2558,11 @@ export type ProductsControllerAddVariantV1Data = {
 };
 
 export type ProductsControllerAddVariantV1Responses = {
-  201: unknown;
+  201: VariantEnvelope;
 };
+
+export type ProductsControllerAddVariantV1Response =
+  ProductsControllerAddVariantV1Responses[keyof ProductsControllerAddVariantV1Responses];
 
 export type ProductsControllerUpdateVariantV1Data = {
   body: UpdateVariantDto;
@@ -2514,8 +2624,11 @@ export type ProductsControllerAddImageV1Data = {
 };
 
 export type ProductsControllerAddImageV1Responses = {
-  201: unknown;
+  201: ProductImageList;
 };
+
+export type ProductsControllerAddImageV1Response =
+  ProductsControllerAddImageV1Responses[keyof ProductsControllerAddImageV1Responses];
 
 export type ProductsControllerOrderImagesV1Data = {
   body: OrderProductImagesDto;
@@ -2527,8 +2640,11 @@ export type ProductsControllerOrderImagesV1Data = {
 };
 
 export type ProductsControllerOrderImagesV1Responses = {
-  200: unknown;
+  200: ProductImageList;
 };
+
+export type ProductsControllerOrderImagesV1Response =
+  ProductsControllerOrderImagesV1Responses[keyof ProductsControllerOrderImagesV1Responses];
 
 export type ProductsControllerRemoveImageV1Data = {
   body?: never;
@@ -2555,8 +2671,11 @@ export type ProductLicencesControllerListV1Data = {
 };
 
 export type ProductLicencesControllerListV1Responses = {
-  200: unknown;
+  200: Array<ProductLicence>;
 };
+
+export type ProductLicencesControllerListV1Response =
+  ProductLicencesControllerListV1Responses[keyof ProductLicencesControllerListV1Responses];
 
 export type ProductLicencesControllerCreateV1Data = {
   body: CreateProductLicenceDto;
@@ -2566,8 +2685,11 @@ export type ProductLicencesControllerCreateV1Data = {
 };
 
 export type ProductLicencesControllerCreateV1Responses = {
-  201: unknown;
+  201: LicenceEnvelope;
 };
+
+export type ProductLicencesControllerCreateV1Response =
+  ProductLicencesControllerCreateV1Responses[keyof ProductLicencesControllerCreateV1Responses];
 
 export type ProductLicencesControllerUpdateV1Data = {
   body: UpdateProductLicenceDto;

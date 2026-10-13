@@ -28,6 +28,16 @@ import type { Locale } from './locales';
 export type CalendarDay = string;
 
 /**
+ * Products' images, the variant picker's options and product licences,
+ * generated from the server's OpenAPI document (ADR-068).
+ */
+export type {
+  ProductImage,
+  ProductLicence,
+  VariantOption,
+} from '../api/types.gen';
+
+/**
  * Stock, lots, movements and locations, generated from the server's
  * OpenAPI document (ADR-068, phase 2), re-exported so their importers need
  * no change.
@@ -42,13 +52,6 @@ export type {
   StockPage,
   StockRow,
 } from '../api/types.gen';
-
-/** One image of a product's gallery (ADR-062), in its three sizes. */
-export interface ProductImage {
-  fileId: string;
-  /** From 0; the first is the cover. */
-  position: number;
-}
 
 export interface Partner {
   id: string;
@@ -121,32 +124,7 @@ export type OrderDirection = OrderSummary['direction'];
 
 export type OrderStatus = OrderSummary['status'];
 
-/** The flat variant list behind any picker — stock hangs off variants, not products (ADR-023). */
-export interface VariantOption {
-  id: string;
-  sku: string;
-  variantName: string | null;
-  productName: string;
-  type: string;
-  unitOfMeasure: string;
-  tracksLots: boolean;
-}
-
 export type BomStatus = 'draft' | 'active' | 'archived';
-
-/** A recipe header. Lines arrive only from GET /boms/:id (ADR-029). */
-/** A registration a formulation is made and sold under: an NPN, a DIN. */
-export interface ProductLicence {
-  id: string;
-  number: string;
-  authority: string;
-  isActive: boolean;
-  /** When it took effect. Null when nobody recorded it. */
-  issuedAt: CalendarDay | null;
-  /** Null for schemes that do not expire, which includes an NPN. */
-  expiresAt: CalendarDay | null;
-  notes: string | null;
-}
 
 /**
  * Tax codes, generated from the server's OpenAPI document (ADR-068, the

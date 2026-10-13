@@ -16,6 +16,7 @@ import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
+import type { ProductSummary } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
@@ -23,43 +24,17 @@ import { FilterRow } from '../components/filter-row';
 import { PageHeader } from '../components/page-header';
 import { ProductCover } from '../components/product-cover';
 import { StatusChip } from '../components/status-chip';
-import type { Locale } from '../lib/locales';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { CreateProductDialog } from './create-product-dialog';
 import { productTypeLabel } from './product-types';
 
-/** A variant's name in one language (ADR-054). On the detail read only. */
-export interface VariantTranslation {
-  locale: Locale;
-  name: string;
-}
-
-export interface Variant {
-  id: string;
-  sku: string;
-  name: string | null;
-  unitOfMeasure: string;
-  isActive: boolean;
-  tracksLots: boolean;
-  weightGrams: number | null;
-  lengthMm: number | null;
-  widthMm: number | null;
-  heightMm: number | null;
-  caseQuantity: number | null;
-  translations?: VariantTranslation[];
-}
-
-export interface Product {
-  id: string;
-  type: string;
-  name: string;
-  description: string | null;
-  isActive: boolean;
-  /** Its cover (ADR-062), or null. */
-  coverFileId?: string | null;
-}
+/**
+ * Products and their variants, generated from the server's OpenAPI document
+ * (ADR-068), re-exported here for the files that import them from this page.
+ */
+export type { Variant, VariantTranslation } from '../api/types.gen';
 
 export function ProductsPage() {
   const intl = useIntl();
@@ -70,7 +45,7 @@ export function ProductsPage() {
     error,
     loading,
     reload,
-  } = useResource<Product[]>('/products');
+  } = useResource<ProductSummary[]>('/products');
   const [creating, setCreating] = useState(false);
   // From the address too: the lookup's "Show all" opens it narrowed.
   const [params] = useSearchParams();
