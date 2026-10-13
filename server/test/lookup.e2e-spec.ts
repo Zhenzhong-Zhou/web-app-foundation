@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { inArray } from 'drizzle-orm';
+import sharp from 'sharp';
 
 import {
   type Database,
@@ -24,6 +25,7 @@ interface LookupResponse {
       id: string;
       title: string;
       detail: string | null;
+      coverFileId: string | null;
       close: boolean;
     }[];
   }[];
@@ -125,6 +127,40 @@ describe('Lookup (e2e)', () => {
     expect(titles(await lookup(alpha, '明德'), 'partner')).toEqual([
       '明德药房',
     ]);
+  });
+
+  // ADR-066: an item's result carries its product's cover; others none.
+  it("shows an item's cover, and none for other kinds", async () => {
+    const alpha = await stocked('alpha');
+    const [product] = body<{ id: string; name: string }[]>(
+      await alpha.agent.get('/v1/products').expect(200),
+    ).filter((row) => row.name === 'Focus 60ct');
+    const photo = await sharp({
+      create: { width: 400, height: 400, channels: 3, background: '#2a6' },
+    })
+      .jpeg()
+      .toBuffer();
+    const fileId = body<{ file: { id: string } }>(
+      await alpha.agent
+        .post('/v1/files/product-image')
+        .attach('file', photo, 'focus.jpg')
+        .expect(201),
+    ).file.id;
+    await alpha.agent
+      .post(`/v1/products/${product.id}/images`)
+      .send({ fileId })
+      .expect(201);
+
+    const groups = await lookup(alpha, 'focus-60');
+    const item = groups.find((group) => group.kind === 'item')?.results[0];
+    expect(item?.coverFileId).toBe(fileId);
+
+    const lots = (await lookup(alpha, 'BF-2609')).find(
+      (group) => group.kind === 'lot',
+    );
+    expect(lots?.results.every((result) => result.coverFileId === null)).toBe(
+      true,
+    );
   });
 
   it('forgives a typo with a close match, after any exact one', async () => {

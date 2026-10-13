@@ -9,13 +9,15 @@ import { Box } from '@mui/material';
 export function ProductCover({
   fileId,
   name,
+  size = 40,
 }: {
   fileId: string | null | undefined;
   name: string;
+  size?: number;
 }) {
   const frame = {
-    width: 40,
-    height: 40,
+    width: size,
+    height: size,
     flex: 'none',
     borderRadius: 1,
     border: 1,

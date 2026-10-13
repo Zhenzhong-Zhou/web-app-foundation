@@ -16,6 +16,7 @@ import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
 import { ExpiryChip } from '../components/expiry-chip';
+import { ProductCover } from '../components/product-cover';
 import { OPEN_LOOKUP } from '../errors/open-lookup';
 import { api } from '../lib/api';
 import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
@@ -269,37 +270,52 @@ function LookupField({
               )}
             </Typography>
           ) : (
-            <Stack sx={{ minWidth: 0, width: '100%' }}>
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ alignItems: 'center', minWidth: 0 }}
-              >
-                <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
-                  {option.result.title}
-                </Typography>
-                {option.result.close && (
-                  <Typography variant="caption" color="text.secondary">
-                    {intl.formatMessage({
-                      id: 'search.close',
-                      defaultMessage: 'close match',
-                    })}
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{ alignItems: 'center', minWidth: 0, width: '100%' }}
+            >
+              {/* An item shows its product's cover, or the plain tile, so
+                items line up either way (ADR-066). */}
+              {option.kind === 'item' && (
+                <ProductCover
+                  fileId={option.result.coverFileId}
+                  name={option.result.title}
+                  size={32}
+                />
+              )}
+              <Stack sx={{ minWidth: 0, width: '100%' }}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: 'center', minWidth: 0 }}
+                >
+                  <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+                    {option.result.title}
                   </Typography>
-                )}
-              </Stack>
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ alignItems: 'center', minWidth: 0 }}
-              >
-                {option.result.detail && (
-                  <Typography variant="caption" color="text.secondary" noWrap>
-                    {option.result.detail}
-                  </Typography>
-                )}
-                {option.result.expiresAt && (
-                  <ExpiryChip expiresAt={option.result.expiresAt} />
-                )}
+                  {option.result.close && (
+                    <Typography variant="caption" color="text.secondary">
+                      {intl.formatMessage({
+                        id: 'search.close',
+                        defaultMessage: 'close match',
+                      })}
+                    </Typography>
+                  )}
+                </Stack>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: 'center', minWidth: 0 }}
+                >
+                  {option.result.detail && (
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {option.result.detail}
+                    </Typography>
+                  )}
+                  {option.result.expiresAt && (
+                    <ExpiryChip expiresAt={option.result.expiresAt} />
+                  )}
+                </Stack>
               </Stack>
             </Stack>
           )}
