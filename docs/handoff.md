@@ -16,15 +16,15 @@ with this one, this one is current.
   lookup, the gallery's zooming viewer, and the invoice refusals' links to
   Organization → Profile and to the customer (`invoice-refusal-link`,
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
-  "Error codes"). PRs through #86, then that branch.
+  "Error codes"). PRs through #87.
 - **Migrations:** through **0054** on `main`. Render should hold **55**
   rows in `drizzle.__drizzle_migrations` once deployed. Next is **0055**.
   After any new migration: `npm run migrate:all`.
 - **Next ADR:** **ADR-067**, not chosen yet.
-- **Release:** **v0.6.0-rc.2** is tagged on #79's merge (5fbd119), before
-  licence reminders, the account fixes, sessions, the lookup covers and
-  the viewer. With those merged, the next candidate is **v0.6.0-rc.3**,
-  then v0.6.0 when the manual checks pass. `docs/releases/v0.5.0.txt` is written; v0.6.0's at its final.
+- **Release:** **v0.6.0** is tagged on #87's merge (b18cdf0), straight
+  after rc.2, with no rc.3. Its notes and v0.5.0's, in full, are the GitHub
+  releases and `docs/releases/`. Release notes are release notes only:
+  they say nothing of manual checks or the walkthrough. Next is v0.7.0.
 - **Working agreements** are below, unchanged: one PR per feature, ADR
   first; chores ride along; commits authored Zhenzhong Zhou
   <bob0823.zhou@gmail.com>; a file roadmap in every answer that changes
@@ -53,8 +53,6 @@ with this one, this one is current.
 
 - **The typo lookup** sits at 270 ms of its 300 ms budget; one query per
   pass if it ever fails.
-- **Mailpit in the Performance workflow**, to quieten harmless email
-  errors in its logs.
 - **`npm audit`**, a small branch of its own.
 - **Account deletion** does not exist yet. When it does, ADR-063 says it
   deletes the person's photo with it.
