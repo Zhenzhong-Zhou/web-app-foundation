@@ -232,6 +232,10 @@ committed, and neither is edited by hand.
   - A write that returns the resource returns the same detail class as
     reading it, fetched after the write, never the row from `INSERT` or
     `UPDATE`: one shape per resource, whichever call the client made.
+    Where the resource has no read of its own, such as a return, it comes
+    back as its list shows it.
+  - A list read with `select()` sends every column; select the declared
+    fields instead.
   - `npm run api`, then in `client/src/lib/types.ts` replace the module's
     interfaces with re-exports from `../api/types.gen`, so importers stay
     unchanged.
