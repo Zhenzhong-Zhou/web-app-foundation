@@ -2466,7 +2466,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunPage"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2488,7 +2495,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductionOrderEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2511,7 +2525,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunDetail"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2574,7 +2595,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuePlan"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2607,7 +2635,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleasedRun"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2640,7 +2675,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutputEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2673,7 +2715,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClosedRun"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2706,7 +2755,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelledRun"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3430,7 +3486,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LotTrace"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -8202,6 +8265,552 @@
           }
         }
       },
+      "ProductionRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "outputVariantId": {
+            "type": "string"
+          },
+          "bomId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "partnerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "quantityPlanned": {
+            "type": "string"
+          },
+          "quantityProduced": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "cancelled",
+              "released",
+              "completed"
+            ]
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceAuthority": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceStatusAtRelease": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "none",
+              "current",
+              "expired",
+              "not_in_force",
+              null
+            ]
+          },
+          "licenceOverriddenBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceOverrideReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "outputVariantId",
+          "bomId",
+          "partnerId",
+          "locationId",
+          "quantityPlanned",
+          "quantityProduced",
+          "status",
+          "reference",
+          "licenceId",
+          "licenceNumber",
+          "licenceAuthority",
+          "licenceStatusAtRelease",
+          "licenceOverriddenBy",
+          "licenceOverrideReason",
+          "notes",
+          "createdAt"
+        ]
+      },
+      "RunPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductionRun"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "RunLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "componentVariantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "quantityPlanned": {
+            "type": "string"
+          },
+          "quantityConsumed": {
+            "type": "string"
+          },
+          "supplyType": {
+            "type": "string",
+            "enum": [
+              "stocked",
+              "external"
+            ]
+          },
+          "sourceLocationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "externalLotCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "componentVariantId",
+          "sku",
+          "unitOfMeasure",
+          "quantityPlanned",
+          "quantityConsumed",
+          "supplyType",
+          "sourceLocationId",
+          "externalLotCode"
+        ]
+      },
+      "ComponentLot": {
+        "type": "object",
+        "properties": {
+          "componentVariantId": {
+            "type": "string"
+          },
+          "lotId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "issued": {
+            "type": "string"
+          },
+          "consumed": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "componentVariantId",
+          "lotId",
+          "code",
+          "expiresAt",
+          "issued",
+          "consumed"
+        ]
+      },
+      "RunDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "outputVariantId": {
+            "type": "string"
+          },
+          "bomId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "partnerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "quantityPlanned": {
+            "type": "string"
+          },
+          "quantityProduced": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "cancelled",
+              "released",
+              "completed"
+            ],
+            "type": "string"
+          },
+          "reference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceAuthority": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceStatusAtRelease": {
+            "enum": [
+              "none",
+              "current",
+              "expired",
+              "not_in_force",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceOverriddenBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceOverrideReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "licenceOverriddenByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunLine"
+            }
+          },
+          "componentLots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComponentLot"
+            }
+          },
+          "outputLots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "outputVariantId",
+          "bomId",
+          "partnerId",
+          "locationId",
+          "quantityPlanned",
+          "quantityProduced",
+          "status",
+          "reference",
+          "licenceId",
+          "licenceNumber",
+          "licenceAuthority",
+          "licenceStatusAtRelease",
+          "licenceOverriddenBy",
+          "licenceOverrideReason",
+          "notes",
+          "createdAt",
+          "licenceOverriddenByName",
+          "lines",
+          "componentLots",
+          "outputLots"
+        ]
+      },
+      "IssuePlanLot": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "onHand": {
+            "type": "string"
+          },
+          "take": {
+            "type": "string"
+          },
+          "taken": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lotId",
+          "code",
+          "expiresAt",
+          "onHand",
+          "take",
+          "taken"
+        ]
+      },
+      "IssuePlanLine": {
+        "type": "object",
+        "properties": {
+          "componentVariantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "tracksLots": {
+            "type": "boolean"
+          },
+          "supplyType": {
+            "type": "string",
+            "enum": [
+              "stocked",
+              "external"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "lots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssuePlanLot"
+            }
+          },
+          "shortBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "componentVariantId",
+          "sku",
+          "unitOfMeasure",
+          "tracksLots",
+          "supplyType",
+          "quantity",
+          "lots",
+          "shortBy"
+        ]
+      },
+      "CheckedLicence": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "authority": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "authority",
+          "issuedAt",
+          "expiresAt"
+        ]
+      },
+      "LicenceCheck": {
+        "type": "object",
+        "properties": {
+          "licence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CheckedLicence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "none",
+              "current",
+              "expired",
+              "not_in_force",
+              "withdrawn"
+            ]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "block",
+              "override",
+              "allow"
+            ]
+          }
+        },
+        "required": [
+          "licence",
+          "status",
+          "outcome"
+        ]
+      },
+      "IssuePlan": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssuePlanLine"
+            }
+          },
+          "licenceCheck": {
+            "$ref": "#/components/schemas/LicenceCheck"
+          }
+        },
+        "required": [
+          "lines",
+          "licenceCheck"
+        ]
+      },
       "CreateProductionOrderDto": {
         "type": "object",
         "properties": {
@@ -8237,6 +8846,17 @@
           "outputVariantId",
           "locationId",
           "quantityPlanned"
+        ]
+      },
+      "ProductionOrderEnvelope": {
+        "type": "object",
+        "properties": {
+          "productionOrder": {
+            "$ref": "#/components/schemas/RunDetail"
+          }
+        },
+        "required": [
+          "productionOrder"
         ]
       },
       "UpdateProductionOrderDto": {
@@ -8370,6 +8990,20 @@
           "sourceLocationId"
         ]
       },
+      "ReleasedRun": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunLine"
+            }
+          }
+        },
+        "required": [
+          "lines"
+        ]
+      },
       "OutputLotDto": {
         "type": "object",
         "properties": {
@@ -8408,6 +9042,98 @@
           "quantity"
         ]
       },
+      "RecordedMovement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "lotId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fromLocationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toLocationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "reasonDetail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "variantId",
+          "sku",
+          "lotId",
+          "fromLocationId",
+          "toLocationId",
+          "quantity",
+          "reason",
+          "reasonDetail",
+          "referenceType",
+          "referenceId",
+          "note",
+          "createdAt"
+        ]
+      },
+      "OutputEnvelope": {
+        "type": "object",
+        "properties": {
+          "movement": {
+            "$ref": "#/components/schemas/RecordedMovement"
+          }
+        },
+        "required": [
+          "movement"
+        ]
+      },
       "ConsumedLineDto": {
         "type": "object",
         "properties": {
@@ -8440,6 +9166,81 @@
           }
         }
       },
+      "LineVariance": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "componentVariantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "quantityPlanned": {
+            "type": "string"
+          },
+          "quantityConsumed": {
+            "type": "string"
+          },
+          "variance": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "lineId",
+          "componentVariantId",
+          "sku",
+          "quantityPlanned",
+          "quantityConsumed",
+          "variance"
+        ]
+      },
+      "OutputVariance": {
+        "type": "object",
+        "properties": {
+          "quantityPlanned": {
+            "type": "string"
+          },
+          "quantityProduced": {
+            "type": "string"
+          },
+          "variance": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "quantityPlanned",
+          "quantityProduced",
+          "variance"
+        ]
+      },
+      "ClosedRun": {
+        "type": "object",
+        "properties": {
+          "variances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineVariance"
+            }
+          },
+          "outputVariance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OutputVariance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "variances",
+          "outputVariance"
+        ]
+      },
       "CancelProductionOrderDto": {
         "type": "object",
         "properties": {
@@ -8451,6 +9252,20 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "CancelledRun": {
+        "type": "object",
+        "properties": {
+          "strandedLines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunLine"
+            }
+          }
+        },
+        "required": [
+          "strandedLines"
         ]
       },
       "StockRow": {
@@ -8639,87 +9454,6 @@
           "reason"
         ]
       },
-      "RecordedMovement": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "variantId": {
-            "type": "string"
-          },
-          "sku": {
-            "type": "string"
-          },
-          "lotId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "fromLocationId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "toLocationId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "reason": {
-            "type": "string"
-          },
-          "reasonDetail": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "referenceType": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "referenceId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "note": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "variantId",
-          "sku",
-          "lotId",
-          "fromLocationId",
-          "toLocationId",
-          "quantity",
-          "reason",
-          "reasonDetail",
-          "referenceType",
-          "referenceId",
-          "note",
-          "createdAt"
-        ]
-      },
       "RecordedMovementEnvelope": {
         "type": "object",
         "properties": {
@@ -8900,6 +9634,314 @@
           "code",
           "expiresAt",
           "sku"
+        ]
+      },
+      "TracedLot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sku": {
+            "type": "string"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "expiresAt",
+          "sku",
+          "unitOfMeasure",
+          "description"
+        ]
+      },
+      "LotBalance": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "isAvailable": {
+            "type": "boolean"
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "locationName",
+          "isAvailable",
+          "quantity"
+        ]
+      },
+      "LotSource": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "production",
+              "receipt"
+            ]
+          },
+          "at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "orderReference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supplierName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "runId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "runReference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceAuthority": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceStatusAtRelease": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "none",
+              "current",
+              "expired",
+              "not_in_force",
+              null
+            ]
+          },
+          "licenceOverrideReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceOverriddenByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "at",
+          "quantity",
+          "orderId",
+          "orderReference",
+          "supplierName",
+          "runId",
+          "runReference",
+          "licenceId",
+          "licenceNumber",
+          "licenceAuthority",
+          "licenceStatusAtRelease",
+          "licenceOverrideReason",
+          "licenceOverriddenByName"
+        ]
+      },
+      "RelatedLot": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "depth": {
+            "type": "number"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "runReference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "lotId",
+          "code",
+          "sku",
+          "depth",
+          "runId",
+          "runReference"
+        ]
+      },
+      "LotRecipient": {
+        "type": "object",
+        "properties": {
+          "partnerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "partnerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "orderId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "orderReference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isSampleOrder": {
+            "type": "boolean"
+          },
+          "lotId": {
+            "type": "string"
+          },
+          "lotCode": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "shipped": {
+            "type": "string"
+          },
+          "sampled": {
+            "type": "string"
+          },
+          "returned": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "partnerId",
+          "partnerName",
+          "orderId",
+          "orderReference",
+          "isSampleOrder",
+          "lotId",
+          "lotCode",
+          "sku",
+          "shipped",
+          "sampled",
+          "returned"
+        ]
+      },
+      "LotTrace": {
+        "type": "object",
+        "properties": {
+          "lot": {
+            "$ref": "#/components/schemas/TracedLot"
+          },
+          "balances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LotBalance"
+            }
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LotSource"
+            }
+          },
+          "madeFrom": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedLot"
+            }
+          },
+          "wentInto": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedLot"
+            }
+          },
+          "recipients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LotRecipient"
+            }
+          }
+        },
+        "required": [
+          "lot",
+          "balances",
+          "sources",
+          "madeFrom",
+          "wentInto",
+          "recipients"
         ]
       },
       "Availability": {

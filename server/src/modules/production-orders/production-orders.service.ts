@@ -26,12 +26,14 @@ import type {
   ListProductionOrdersDto,
   UpdateProductionOrderDto,
 } from './dto/production-order.dto';
+import type { RunDetail, RunPage } from './dto/production-order-response.dto';
 import type {
   CancelProductionOrderDto,
   IssuePlanQueryDto,
 } from './dto/transitions.dto';
 import { checkLicence } from './licence-check';
 import { assertStatus, loadForIssue, loadWithin } from './run-guards';
+import { runLineOf, runOf } from './run-views';
 
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
 
@@ -109,7 +111,7 @@ export class ProductionOrdersService {
    * wrong exactly once, on a final page that happens to be full, and the
    * symptom is a Load more button that returns nothing.
    */
-  async list(query: ListProductionOrdersDto) {
+  async list(query: ListProductionOrdersDto): Promise<RunPage> {
     const limit = query.limit ?? DEFAULT_LIMIT;
 
     const filters = [
@@ -135,7 +137,7 @@ export class ProductionOrdersService {
       { orderBy: [desc(productionOrders.id)], limit: limit + 1 },
     );
 
-    return pageOf(rows, limit);
+    return pageOf(rows.map(runOf), limit);
   }
 
   async findById(runId: string) {
@@ -163,7 +165,7 @@ export class ProductionOrdersService {
    * The output dialog needs them to offer joining an open lot instead of
    * asking someone to retype a code.
    */
-  async findDetail(runId: string) {
+  async findDetail(runId: string): Promise<RunDetail> {
     const run = await this.findById(runId);
 
     const [lines, outputLots] = await Promise.all([
@@ -184,11 +186,11 @@ export class ProductionOrdersService {
     ]);
 
     return {
-      ...run,
+      ...runOf(run),
       licenceOverriddenByName: run.licenceOverriddenBy
         ? await this.nameOf(run.licenceOverriddenBy)
         : null,
-      lines,
+      lines: lines.map(runLineOf),
       componentLots: await this.componentLots(run),
       outputLots: [
         ...new Set(

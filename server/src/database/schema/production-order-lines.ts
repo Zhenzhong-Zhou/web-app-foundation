@@ -75,7 +75,10 @@ export const productionOrderLines = pgTable(
      * overridable here. This is where "we supply the extract, they supply the
      * capsules and the bottle" is recorded.
      */
-    supplyType: text('supply_type').notNull().default('stocked'),
+    supplyType: text('supply_type')
+      .$type<'stocked' | 'external'>()
+      .notNull()
+      .default('stocked'),
 
     /**
      * Which leaf this component is picked from, recorded at release.

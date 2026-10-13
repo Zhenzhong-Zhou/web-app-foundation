@@ -31,6 +31,16 @@ export const RELEASE_LICENCE_STATUSES = [
 
 export type ReleaseLicenceStatus = (typeof RELEASE_LICENCE_STATUSES)[number];
 
+/** A run's lifecycle (ADR-030, ADR-032). */
+export const RUN_STATUSES = [
+  'draft',
+  'released',
+  'completed',
+  'cancelled',
+] as const;
+
+export type RunStatus = (typeof RUN_STATUSES)[number];
+
 /**
  * A run: making one variant out of others (ADR-030).
  *
@@ -133,7 +143,7 @@ export const productionOrders = pgTable(
      * cancelled — abandoned. Terminal. Anything already issued is returned by
      *             its own movements, not by unwinding this row.
      */
-    status: text('status').notNull().default('draft'),
+    status: text('status').$type<RunStatus>().notNull().default('draft'),
 
     /**
      * What people call this run — a batch number, a works order from the

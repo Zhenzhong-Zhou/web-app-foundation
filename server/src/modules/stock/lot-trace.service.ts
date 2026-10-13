@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
 import { searchTerms } from '../../common/search';
+import type { ReleaseLicenceStatus } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { itemName } from './item-name';
@@ -243,7 +244,7 @@ export class LotTraceService {
       licence_id: string | null;
       licence_number: string | null;
       licence_authority: string | null;
-      licence_status_at_release: string | null;
+      licence_status_at_release: ReleaseLicenceStatus | null;
       licence_override_reason: string | null;
       licence_overridden_by_name: string | null;
     }[];
