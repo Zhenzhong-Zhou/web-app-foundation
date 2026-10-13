@@ -33,8 +33,12 @@ with this one, this one is current.
   `client/src/api/`, the four shared lists come from them, and one contract
   check in CI and `scripts/verify.sh` replaces the four copy checks. After
   any API change: `npm run api` in `server/`, and commit both files.
-  Phase 2 next, alongside other work: each module's responses declared,
-  until `client/src/lib/types.ts` is gone.
+  Phase 2 piloted on tax codes (`adr-068-pilot-tax-codes`): responses as
+  classes, projected in the service, re-exported in the client's
+  `types.ts`; the steps are in conventions.md, "The API contract". Every
+  other module converts when a feature next touches it, until
+  `client/src/lib/types.ts` holds only re-exports and is replaced. Invoices
+  will be the first paged list, which settles a page class per item type.
 - **Next, in Bob's order:** **ADR-069**, account deletion (ADR-012 already
   settles the audit side: anonymize the person, keep the rows).
 - **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),
