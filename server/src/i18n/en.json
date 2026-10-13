@@ -119,6 +119,7 @@
   "invoices.saleInvoiced": "Only a sale is invoiced",
   "invoices.samplesInvoicedTheyShip": "Samples are not invoiced — they ship and trace like sales, but nobody pays for them",
   "invoices.setOrganizationSRegistered": "Set the organization’s registered address before issuing — every invoice prints it",
+  "invoices.setOrganizationSTaxNumber": "Set the organization’s tax number before issuing — an invoice that charges tax prints it",
   "invoices.shipmentCarriedNothing": "That shipment carried nothing",
   "invoices.shipmentInvoiceVoidBefore": "That shipment already has an invoice — void it before billing the shipment again",
   "invoices.shipmentWasVoidedNothing": "That shipment was voided — nothing left, so there is nothing to bill",

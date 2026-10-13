@@ -119,6 +119,7 @@
   "invoices.saleInvoiced": "只有销售才开具发票",
   "invoices.samplesInvoicedTheyShip": "样品不开具发票——它们像销售一样发货和追溯，但无人付款",
   "invoices.setOrganizationSRegistered": "开具前请先设置组织的注册地址——每张发票都会打印它",
+  "invoices.setOrganizationSTaxNumber": "开具前请先设置组织的税号——含税的发票都会打印税号",
   "invoices.shipmentCarriedNothing": "此次发货没有任何物品",
   "invoices.shipmentInvoiceVoidBefore": "此次发货已有发票——请先作废再重新开票",
   "invoices.shipmentWasVoidedNothing": "此次发货已作废——没有货物发出，因此无需开票",

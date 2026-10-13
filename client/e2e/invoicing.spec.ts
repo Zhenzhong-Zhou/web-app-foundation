@@ -34,6 +34,12 @@ async function seedShipment(
       data: { line1: '100 Main St', city: 'Vancouver', country: 'CA' },
     }),
   );
+  // A taxed invoice needs the seller's tax number (ADR-046, amended).
+  await ok(
+    await api.patch('/v1/organization', {
+      data: { taxRegistrationNumber: '123456789 RT0001' },
+    }),
+  );
 
   const { partner } = await created<{ partner: { id: string } }>(
     await api.post('/v1/partners', {
