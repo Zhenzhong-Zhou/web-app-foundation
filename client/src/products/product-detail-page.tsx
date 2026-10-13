@@ -16,39 +16,28 @@ import { useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
+import type { ProductDetail } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { RecipePanel } from '../boms/recipe-panel';
 import { PageHeader } from '../components/page-header';
 import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
-import { LANGUAGE_NAMES, type Locale } from '../lib/locales';
+import { LANGUAGE_NAMES } from '../lib/locales';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
-import type { ProductImage } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { AddVariantDialog } from './add-variant-dialog';
 import { EditVariantDialog } from './edit-variant-dialog';
 import { ProductGallery } from './product-gallery';
 import { productTypeLabel } from './product-types';
-import type { Product, Variant } from './products-page';
+import type { Variant } from './products-page';
 import { TranslationsDialog } from './translations-dialog';
 import { VariantRow } from './variant-row';
 
-/** A product's name and description in one language (ADR-054). */
-export interface ProductTranslation {
-  locale: Locale;
-  name: string;
-  description: string | null;
-}
-
-export interface ProductDetail extends Product {
-  translations: ProductTranslation[];
-  variants: Variant[];
-  /** Its gallery, the cover first (ADR-062). */
-  images: ProductImage[];
-}
+/** The product's detail and translations, generated (ADR-068). */
+export type { ProductDetail, ProductTranslation } from '../api/types.gen';
 
 export function ProductDetailPage() {
   const intl = useIntl();
