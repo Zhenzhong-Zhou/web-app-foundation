@@ -67,7 +67,17 @@ export const envSchema = z.object({
   // CI; `s3` in a bucket, which needs the five FILES_S3_* and FILES_BUCKET.
   FILE_STORAGE: z.enum(['local', 's3']).default('local'),
   FILES_LOCAL_DIR: z.string().min(1).default('storage'),
-  FILES_S3_ENDPOINT: z.url().optional(),
+  // The account's address alone. The bucket is FILES_BUCKET, and the client
+  // adds it to the path itself, so an address that already ends in the
+  // bucket stores every file one folder down, under the bucket's own name,
+  // where the nightly copy and the restore drill do not look.
+  FILES_S3_ENDPOINT: z
+    .url()
+    .refine(
+      (value) => new URL(value).pathname === '/',
+      'the account address only, with nothing after the host; the bucket goes in FILES_BUCKET',
+    )
+    .optional(),
   FILES_S3_REGION: z.string().min(1).default('auto'),
   FILES_BUCKET: z.string().min(1).optional(),
   FILES_S3_ACCESS_KEY_ID: z.string().min(1).optional(),

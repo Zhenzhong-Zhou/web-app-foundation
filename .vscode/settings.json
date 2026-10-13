@@ -52,10 +52,9 @@
   "debug.javascript.autoAttachFilter": "onlyWithFlag",
 
   // --- Tests ----------------------------------------------------------------
-  // Jest lives in server/ only; the Vitest and Playwright extensions find
-  // client/'s configs on their own.
-  "jest.virtualFolders": [{ "name": "server", "rootPath": "server" }],
-  "jest.runMode": "on-demand",
+  // Vitest on both sides (ADR-067): the Vitest extension finds
+  // server/vitest.config.mts and client/vitest.config.ts on its own, and the
+  // Playwright extension client/'s playwright.config.ts.
 
   // --- Search ---------------------------------------------------------------
   // Generated or bulky output: drizzle snapshots, compiled catalogues,
