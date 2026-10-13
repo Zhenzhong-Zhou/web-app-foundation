@@ -21,8 +21,10 @@ with this one, this one is current.
   rows in `drizzle.__drizzle_migrations` once deployed. Next is **0055**.
   After any new migration: `npm run migrate:all`.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
-  intl-messageformat 12; TypeScript 7 waits): PR 1, the switch to Vitest,
-  on `adr-067-vitest`; PR 2, `nest-12`, after it. Next is **ADR-068**.
+  intl-messageformat 12): the switch to Vitest merged; Nest 12 and
+  intl-messageformat 12 on `nest-12`. TypeScript 7 waits for
+  typescript-eslint and the Nest CLI (ADR-067, *Deferred*). Next is
+  **ADR-068**.
 - **Release:** **v0.6.0** is tagged on #87's merge (b18cdf0), straight
   after rc.2, with no rc.3. Its notes and v0.5.0's, in full, are the GitHub
   releases and `docs/releases/`. Release notes are release notes only:
