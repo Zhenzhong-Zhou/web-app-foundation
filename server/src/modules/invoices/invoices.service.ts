@@ -3,6 +3,7 @@ import { and, asc, eq, or, sql } from 'drizzle-orm';
 
 import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
+import type { Locale } from '../../common/locales';
 import { codeMatches, searchTerms } from '../../common/search';
 import { pagedBy } from '../../common/sorted-page';
 import { documentLanguages } from '../../core/organizations/document-languages';
@@ -20,6 +21,12 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { partnerMatches } from '../partners/partner-search';
+import { partiesOf } from './document-parties';
+import type {
+  CreditNoteDetail,
+  CreditNotePage,
+} from './dto/credit-note-response.dto';
+import type { InvoiceDetail, InvoicePage } from './dto/invoice-response.dto';
 import type { ListCreditNotesDto } from './dto/list-credit-notes.dto';
 import type { ListInvoicesDto } from './dto/list-invoices.dto';
 import { computeAmounts } from './invoice-amounts';
@@ -39,7 +46,7 @@ const DEFAULT_LIMIT = 50;
 export class InvoicesService {
   constructor(private readonly tenantDb: TenantDb) {}
 
-  async list(query: ListInvoicesDto) {
+  async list(query: ListInvoicesDto): Promise<InvoicePage> {
     const limit = query.limit ?? DEFAULT_LIMIT;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -143,7 +150,7 @@ export class InvoicesService {
    * so a quarter's could be neither shown nor exported. Each with its
    * invoice's number and its partner, for the row and the export.
    */
-  async listCreditNotes(query: ListCreditNotesDto) {
+  async listCreditNotes(query: ListCreditNotesDto): Promise<CreditNotePage> {
     const limit = query.limit ?? DEFAULT_LIMIT;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -224,7 +231,7 @@ export class InvoicesService {
     });
   }
 
-  async findById(invoiceId: string) {
+  async findById(invoiceId: string): Promise<InvoiceDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [invoice] = await tx
         .select({
@@ -295,10 +302,36 @@ export class InvoicesService {
         )
         .orderBy(asc(creditNotes.id));
 
+      // The fields the API returns (ADR-068), not the row: that would also
+      // send the organization it belongs to and who wrote it.
+      const row = invoice.invoice;
       const base = {
-        ...invoice.invoice,
-        partnerName: invoice.partnerName,
+        id: row.id,
+        number: row.number,
+        status: row.status,
+        orderId: row.orderId,
         orderReference: invoice.orderReference,
+        shipmentId: row.shipmentId,
+        partnerId: row.partnerId,
+        partnerName: invoice.partnerName,
+        currency: row.currency,
+        invoiceDate: row.invoiceDate,
+        dueDate: row.dueDate,
+        note: row.note,
+        subtotal: row.subtotal,
+        taxTotal: row.taxTotal,
+        total: row.total,
+        ...partiesOf(row),
+        shipToLabel: row.shipToLabel,
+        shipToLine1: row.shipToLine1,
+        shipToLine2: row.shipToLine2,
+        shipToCity: row.shipToCity,
+        shipToRegion: row.shipToRegion,
+        shipToPostalCode: row.shipToPostalCode,
+        shipToCountry: row.shipToCountry,
+        issuedAt: row.issuedAt,
+        voidedAt: row.voidedAt,
+        voidReason: row.voidReason,
         lines,
         creditNotes: credits,
       };
@@ -344,12 +377,19 @@ export class InvoicesService {
         )
         .orderBy(asc(invoiceTaxes.name), asc(invoiceTaxes.rate));
 
-      return { ...base, taxes, preview: null };
+      return {
+        ...base,
+        // Stored at issue, which the issued shape check holds (ADR-054).
+        language: row.language as Locale,
+        secondLanguage: row.secondLanguage,
+        taxes,
+        preview: null,
+      };
     });
   }
 
   /** A credit note with its lines and tax lines, for reading and printing. */
-  async findCreditNote(creditNoteId: string) {
+  async findCreditNote(creditNoteId: string): Promise<CreditNoteDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [row] = await tx
         .select({
@@ -411,10 +451,24 @@ export class InvoicesService {
         )
         .orderBy(asc(creditNoteTaxes.name), asc(creditNoteTaxes.rate));
 
+      // The fields the API returns (ADR-068), not the row.
+      const note = row.creditNote;
       return {
-        ...row.creditNote,
+        id: note.id,
+        number: note.number,
+        invoiceId: note.invoiceId,
         invoiceNumber: row.invoiceNumber,
         invoiceDate: row.invoiceDate,
+        currency: note.currency,
+        creditDate: note.creditDate,
+        reason: note.reason,
+        isVoid: note.isVoid,
+        subtotal: note.subtotal,
+        taxTotal: note.taxTotal,
+        total: note.total,
+        ...partiesOf(note),
+        language: note.language,
+        secondLanguage: note.secondLanguage,
         lines,
         taxes,
       };

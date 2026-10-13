@@ -76,7 +76,7 @@ export const invoices = pgTable(
       .notNull()
       .references(() => partners.id, { onDelete: 'restrict' }),
 
-    status: text('status').notNull().default('draft'),
+    status: text('status').$type<InvoiceStatus>().notNull().default('draft'),
 
     /**
      * Assigned at issue from document_sequences, never at draft: a deleted

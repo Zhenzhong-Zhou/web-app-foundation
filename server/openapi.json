@@ -5006,7 +5006,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoicePage"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5028,7 +5035,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5180,7 +5194,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5306,7 +5327,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5339,7 +5367,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoidedInvoice"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5372,7 +5407,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditPreviewEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5405,7 +5447,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5506,7 +5555,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNotePage"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5645,7 +5701,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditNoteEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -8222,6 +8285,638 @@
           "returnId"
         ]
       },
+      "InvoiceSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "issued",
+              "voided"
+            ]
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "orderReference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shipmentId": {
+            "type": "string"
+          },
+          "partnerId": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "invoiceDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subtotal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taxTotal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "total": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "credited": {
+            "type": "string"
+          },
+          "net": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "status",
+          "orderId",
+          "orderReference",
+          "shipmentId",
+          "partnerId",
+          "partnerName",
+          "currency",
+          "invoiceDate",
+          "dueDate",
+          "subtotal",
+          "taxTotal",
+          "total",
+          "credited",
+          "net",
+          "createdAt"
+        ]
+      },
+      "InvoicePage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceSummary"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "InvoiceLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderLineId": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "secondDescription": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "string"
+          },
+          "taxCodeId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taxCodeName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "netAmount": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "orderLineId",
+          "variantId",
+          "sku",
+          "description",
+          "secondDescription",
+          "quantity",
+          "unitPrice",
+          "taxCodeId",
+          "taxCodeName",
+          "netAmount"
+        ]
+      },
+      "InvoiceTax": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "string"
+          },
+          "taxableAmount": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "rate",
+          "taxableAmount",
+          "amount"
+        ]
+      },
+      "InvoiceAmountsLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "netAmount": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "netAmount"
+        ]
+      },
+      "InvoiceAmounts": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceAmountsLine"
+            }
+          },
+          "taxes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceTax"
+            }
+          },
+          "subtotal": {
+            "type": "string"
+          },
+          "taxTotal": {
+            "type": "string"
+          },
+          "total": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lines",
+          "taxes",
+          "subtotal",
+          "taxTotal",
+          "total"
+        ]
+      },
+      "InvoiceCreditNote": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "creditDate": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "isVoid": {
+            "type": "boolean"
+          },
+          "total": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "creditDate",
+          "reason",
+          "isVoid",
+          "total"
+        ]
+      },
+      "InvoiceDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "issued",
+              "voided"
+            ]
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "orderReference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shipmentId": {
+            "type": "string"
+          },
+          "partnerId": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "invoiceDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subtotal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taxTotal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "total": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shipToLabel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shipToLine1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shipToLine2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shipToCity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shipToRegion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shipToPostalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "shipToCountry": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "voidedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "voidReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLine"
+            }
+          },
+          "taxes": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/InvoiceTax"
+            }
+          },
+          "preview": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InvoiceAmounts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "creditNotes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceCreditNote"
+            }
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          },
+          "secondLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "sellerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerTaxNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerLine1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerLine2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerCity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerRegion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerPostalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerCountry": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToLine1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToLine2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToCity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToRegion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToPostalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToCountry": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "status",
+          "orderId",
+          "orderReference",
+          "shipmentId",
+          "partnerId",
+          "partnerName",
+          "currency",
+          "invoiceDate",
+          "dueDate",
+          "note",
+          "subtotal",
+          "taxTotal",
+          "total",
+          "shipToLabel",
+          "shipToLine1",
+          "shipToLine2",
+          "shipToCity",
+          "shipToRegion",
+          "shipToPostalCode",
+          "shipToCountry",
+          "issuedAt",
+          "voidedAt",
+          "voidReason",
+          "lines",
+          "taxes",
+          "preview",
+          "creditNotes",
+          "language",
+          "secondLanguage",
+          "sellerName",
+          "sellerTaxNumber",
+          "sellerLine1",
+          "sellerLine2",
+          "sellerCity",
+          "sellerRegion",
+          "sellerPostalCode",
+          "sellerCountry",
+          "billToName",
+          "billToLine1",
+          "billToLine2",
+          "billToCity",
+          "billToRegion",
+          "billToPostalCode",
+          "billToCountry"
+        ]
+      },
+      "InvoiceEnvelope": {
+        "type": "object",
+        "properties": {
+          "invoice": {
+            "$ref": "#/components/schemas/InvoiceDetail"
+          }
+        },
+        "required": [
+          "invoice"
+        ]
+      },
       "CreateInvoiceDto": {
         "type": "object",
         "properties": {
@@ -8300,6 +8995,272 @@
           "creditDate"
         ]
       },
+      "CreditNoteLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "invoiceLineId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "secondDescription": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "string"
+          },
+          "taxCodeName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "netAmount": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "invoiceLineId",
+          "sku",
+          "description",
+          "secondDescription",
+          "quantity",
+          "unitPrice",
+          "taxCodeName",
+          "netAmount"
+        ]
+      },
+      "CreditNoteDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "invoiceId": {
+            "type": "string"
+          },
+          "invoiceNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "invoiceDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "creditDate": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "isVoid": {
+            "type": "boolean"
+          },
+          "subtotal": {
+            "type": "string"
+          },
+          "taxTotal": {
+            "type": "string"
+          },
+          "total": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditNoteLine"
+            }
+          },
+          "taxes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceTax"
+            }
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          },
+          "secondLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "sellerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerTaxNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerLine1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerLine2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerCity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerRegion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerPostalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sellerCountry": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToLine1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToLine2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToCity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToRegion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToPostalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "billToCountry": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "invoiceId",
+          "invoiceNumber",
+          "invoiceDate",
+          "currency",
+          "creditDate",
+          "reason",
+          "isVoid",
+          "subtotal",
+          "taxTotal",
+          "total",
+          "lines",
+          "taxes",
+          "language",
+          "secondLanguage",
+          "sellerName",
+          "sellerTaxNumber",
+          "sellerLine1",
+          "sellerLine2",
+          "sellerCity",
+          "sellerRegion",
+          "sellerPostalCode",
+          "sellerCountry",
+          "billToName",
+          "billToLine1",
+          "billToLine2",
+          "billToCity",
+          "billToRegion",
+          "billToPostalCode",
+          "billToCountry"
+        ]
+      },
+      "VoidedInvoice": {
+        "type": "object",
+        "properties": {
+          "invoice": {
+            "$ref": "#/components/schemas/InvoiceDetail"
+          },
+          "creditNote": {
+            "$ref": "#/components/schemas/CreditNoteDetail"
+          }
+        },
+        "required": [
+          "invoice",
+          "creditNote"
+        ]
+      },
       "CreditLineDto": {
         "type": "object",
         "properties": {
@@ -8340,6 +9301,102 @@
           "lines"
         ]
       },
+      "CreditPreviewLine": {
+        "type": "object",
+        "properties": {
+          "invoiceLineId": {
+            "type": "string"
+          },
+          "returnAuthorizationLineId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sku": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "secondDescription": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "taxCodeName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "string"
+          },
+          "netAmount": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "invoiceLineId",
+          "returnAuthorizationLineId",
+          "sku",
+          "description",
+          "secondDescription",
+          "taxCodeName",
+          "quantity",
+          "unitPrice",
+          "netAmount"
+        ]
+      },
+      "CreditPreview": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditPreviewLine"
+            }
+          },
+          "taxes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceTax"
+            }
+          },
+          "subtotal": {
+            "type": "string"
+          },
+          "taxTotal": {
+            "type": "string"
+          },
+          "total": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lines",
+          "taxes",
+          "subtotal",
+          "taxTotal",
+          "total"
+        ]
+      },
+      "CreditPreviewEnvelope": {
+        "type": "object",
+        "properties": {
+          "credit": {
+            "$ref": "#/components/schemas/CreditPreview"
+          }
+        },
+        "required": [
+          "credit"
+        ]
+      },
       "CreditInvoiceDto": {
         "type": "object",
         "properties": {
@@ -8365,6 +9422,88 @@
           "lines",
           "reason",
           "creditDate"
+        ]
+      },
+      "CreditNoteEnvelope": {
+        "type": "object",
+        "properties": {
+          "creditNote": {
+            "$ref": "#/components/schemas/CreditNoteDetail"
+          }
+        },
+        "required": [
+          "creditNote"
+        ]
+      },
+      "CreditNoteSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "invoiceId": {
+            "type": "string"
+          },
+          "invoiceNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "partnerId": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "creditDate": {
+            "type": "string"
+          },
+          "total": {
+            "type": "string"
+          },
+          "isVoid": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "invoiceId",
+          "invoiceNumber",
+          "partnerId",
+          "partnerName",
+          "currency",
+          "creditDate",
+          "total",
+          "isVoid"
+        ]
+      },
+      "CreditNotePage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditNoteSummary"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
         ]
       },
       "RecordOpenedDto": {
