@@ -18,11 +18,22 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { movementOf } from '../stock/movement-view';
 import {
   CreateProductionOrderDto,
   ListProductionOrdersDto,
   UpdateProductionOrderDto,
 } from './dto/production-order.dto';
+import type {
+  CancelledRun,
+  ClosedRun,
+  IssuePlan,
+  OutputEnvelope,
+  ProductionOrderEnvelope,
+  ReleasedRun,
+  RunDetail,
+  RunPage,
+} from './dto/production-order-response.dto';
 import {
   CancelProductionOrderDto,
   CloseProductionOrderDto,
@@ -34,6 +45,7 @@ import { LicenceOverrideGuard } from './licence-override.guard';
 import { ProductionCloseService } from './production-close.service';
 import { ProductionExecutionService } from './production-execution.service';
 import { ProductionOrdersService } from './production-orders.service';
+import { runLineOf } from './run-views';
 
 @Controller({ path: 'production-orders', version: '1' })
 export class ProductionOrdersController {
@@ -45,14 +57,14 @@ export class ProductionOrdersController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.PRODUCTION_VIEW)
-  list(@Query() query: ListProductionOrdersDto) {
+  list(@Query() query: ListProductionOrdersDto): Promise<RunPage> {
     return this.runs.list(query);
   }
 
   /** The run, its lines with planned against consumed, and its output lots. */
   @Get(':id')
   @RequirePermissions(PERMISSIONS.PRODUCTION_VIEW)
-  find(@Param('id', ParseUUIDPipe) id: string) {
+  find(@Param('id', ParseUUIDPipe) id: string): Promise<RunDetail> {
     return this.runs.findDetail(id);
   }
 
@@ -66,7 +78,7 @@ export class ProductionOrdersController {
   issuePlan(
     @Param('id', ParseUUIDPipe) id: string,
     @Query() query: IssuePlanQueryDto,
-  ) {
+  ): Promise<IssuePlan> {
     return this.runs.issuePlan(id, query);
   }
 
@@ -79,8 +91,11 @@ export class ProductionOrdersController {
     resourceId: (response: { productionOrder: { id: string } }) =>
       response.productionOrder.id,
   })
-  async create(@Body() dto: CreateProductionOrderDto) {
-    return { productionOrder: await this.runs.create(dto) };
+  async create(
+    @Body() dto: CreateProductionOrderDto,
+  ): Promise<ProductionOrderEnvelope> {
+    const created = await this.runs.create(dto);
+    return { productionOrder: await this.runs.findDetail(created.id) };
   }
 
   @Patch(':id')
@@ -121,8 +136,9 @@ export class ProductionOrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ReleaseProductionOrderDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return { lines: await this.execution.release(id, dto, user.userId) };
+  ): Promise<ReleasedRun> {
+    const lines = await this.execution.release(id, dto, user.userId);
+    return { lines: lines.map(runLineOf) };
   }
 
   /** Repeatable: a batch spanning days posts here more than once. */
@@ -138,10 +154,9 @@ export class ProductionOrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RecordOutputDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return {
-      movement: await this.execution.recordOutput(id, dto, user.userId),
-    };
+  ): Promise<OutputEnvelope> {
+    const movement = await this.execution.recordOutput(id, dto, user.userId);
+    return { movement: movementOf(movement) };
   }
 
   /**
@@ -162,7 +177,7 @@ export class ProductionOrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CloseProductionOrderDto,
     @CurrentUser() user: RequestContext,
-  ) {
+  ): Promise<ClosedRun> {
     return this.closing.close(id, dto, user.userId);
   }
 
@@ -183,7 +198,8 @@ export class ProductionOrdersController {
   async cancel(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CancelProductionOrderDto,
-  ) {
-    return this.runs.cancel(id, dto);
+  ): Promise<CancelledRun> {
+    const { strandedLines } = await this.runs.cancel(id, dto);
+    return { strandedLines: strandedLines.map(runLineOf) };
   }
 }

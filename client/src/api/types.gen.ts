@@ -381,6 +381,117 @@ export type UpdateBomLineDto = {
   notes?: string;
 };
 
+export type ProductionRun = {
+  id: string;
+  outputVariantId: string;
+  bomId: string | null;
+  partnerId: string | null;
+  locationId: string;
+  quantityPlanned: string;
+  quantityProduced: string;
+  status: 'draft' | 'cancelled' | 'released' | 'completed';
+  reference: string | null;
+  licenceId: string | null;
+  licenceNumber: string | null;
+  licenceAuthority: string | null;
+  licenceStatusAtRelease:
+    'none' | 'current' | 'expired' | 'not_in_force' | null;
+  licenceOverriddenBy: string | null;
+  licenceOverrideReason: string | null;
+  notes: string | null;
+  createdAt: string;
+};
+
+export type RunPage = {
+  entries: Array<ProductionRun>;
+  nextCursor: string | null;
+};
+
+export type RunLine = {
+  id: string;
+  componentVariantId: string;
+  sku: string;
+  unitOfMeasure: string;
+  quantityPlanned: string;
+  quantityConsumed: string;
+  supplyType: 'stocked' | 'external';
+  sourceLocationId: string | null;
+  externalLotCode: string | null;
+};
+
+export type ComponentLot = {
+  componentVariantId: string;
+  lotId: string;
+  code: string;
+  expiresAt: string | null;
+  issued: string;
+  consumed: string;
+};
+
+export type RunDetail = {
+  id: string;
+  outputVariantId: string;
+  bomId: string | null;
+  partnerId: string | null;
+  locationId: string;
+  quantityPlanned: string;
+  quantityProduced: string;
+  status: 'draft' | 'cancelled' | 'released' | 'completed';
+  reference: string | null;
+  licenceId: string | null;
+  licenceNumber: string | null;
+  licenceAuthority: string | null;
+  licenceStatusAtRelease:
+    'none' | 'current' | 'expired' | 'not_in_force' | null;
+  licenceOverriddenBy: string | null;
+  licenceOverrideReason: string | null;
+  notes: string | null;
+  createdAt: string;
+  licenceOverriddenByName: string | null;
+  lines: Array<RunLine>;
+  componentLots: Array<ComponentLot>;
+  outputLots: Array<string>;
+};
+
+export type IssuePlanLot = {
+  lotId: string;
+  code: string;
+  expiresAt: string | null;
+  onHand: string;
+  take: string;
+  taken: boolean;
+};
+
+export type IssuePlanLine = {
+  componentVariantId: string;
+  sku: string;
+  unitOfMeasure: string;
+  tracksLots: boolean;
+  supplyType: 'stocked' | 'external';
+  quantity: string;
+  lots: Array<IssuePlanLot>;
+  shortBy: string | null;
+};
+
+export type CheckedLicence = {
+  id: string;
+  number: string;
+  authority: string;
+  issuedAt: string | null;
+  expiresAt: string | null;
+};
+
+export type LicenceCheck = {
+  licence: CheckedLicence | null;
+  status: 'none' | 'current' | 'expired' | 'not_in_force' | 'withdrawn';
+  outcome: 'block' | 'override' | 'allow';
+};
+
+export type IssuePlan = {
+  lines: Array<IssuePlanLine>;
+  licenceCheck: LicenceCheck;
+};
+
 export type CreateProductionOrderDto = {
   outputVariantId: string;
   bomId?: string;
@@ -389,6 +500,10 @@ export type CreateProductionOrderDto = {
   quantityPlanned: string;
   reference?: string;
   notes?: string;
+};
+
+export type ProductionOrderEnvelope = {
+  productionOrder: RunDetail;
 };
 
 export type UpdateProductionOrderDto = {
@@ -426,6 +541,10 @@ export type ReleaseProductionOrderDto = {
   licenceOverride?: LicenceOverrideDto | null;
 };
 
+export type ReleasedRun = {
+  lines: Array<RunLine>;
+};
+
 export type OutputLotDto = {
   code: string;
   expiresAt?: string;
@@ -438,6 +557,26 @@ export type RecordOutputDto = {
   note?: string;
 };
 
+export type RecordedMovement = {
+  id: string;
+  variantId: string;
+  sku: string;
+  lotId: string | null;
+  fromLocationId: string | null;
+  toLocationId: string | null;
+  quantity: string;
+  reason: string;
+  reasonDetail: string | null;
+  referenceType: string | null;
+  referenceId: string | null;
+  note: string | null;
+  createdAt: string;
+};
+
+export type OutputEnvelope = {
+  movement: RecordedMovement;
+};
+
 export type ConsumedLineDto = {
   lineId: string;
   quantityConsumed: string;
@@ -448,8 +587,32 @@ export type CloseProductionOrderDto = {
   note?: string;
 };
 
+export type LineVariance = {
+  lineId: string;
+  componentVariantId: string;
+  sku: string;
+  quantityPlanned: string;
+  quantityConsumed: string;
+  variance: number;
+};
+
+export type OutputVariance = {
+  quantityPlanned: string;
+  quantityProduced: string;
+  variance: number;
+};
+
+export type ClosedRun = {
+  variances: Array<LineVariance>;
+  outputVariance: OutputVariance | null;
+};
+
 export type CancelProductionOrderDto = {
   reason: string;
+};
+
+export type CancelledRun = {
+  strandedLines: Array<RunLine>;
 };
 
 export type StockRow = {
@@ -502,22 +665,6 @@ export type RecordMovementDto = {
   note?: string;
 };
 
-export type RecordedMovement = {
-  id: string;
-  variantId: string;
-  sku: string;
-  lotId: string | null;
-  fromLocationId: string | null;
-  toLocationId: string | null;
-  quantity: string;
-  reason: string;
-  reasonDetail: string | null;
-  referenceType: string | null;
-  referenceId: string | null;
-  note: string | null;
-  createdAt: string;
-};
-
 export type RecordedMovementEnvelope = {
   movement: RecordedMovement;
 };
@@ -563,6 +710,72 @@ export type LotMatch = {
   code: string;
   expiresAt: string | null;
   sku: string;
+};
+
+export type TracedLot = {
+  id: string;
+  code: string;
+  expiresAt: string | null;
+  sku: string;
+  unitOfMeasure: string;
+  description: string;
+};
+
+export type LotBalance = {
+  locationId: string;
+  locationName: string;
+  isAvailable: boolean;
+  quantity: string;
+};
+
+export type LotSource = {
+  kind: 'production' | 'receipt';
+  at: string;
+  quantity: string;
+  orderId: string | null;
+  orderReference: string | null;
+  supplierName: string | null;
+  runId: string | null;
+  runReference: string | null;
+  licenceId: string | null;
+  licenceNumber: string | null;
+  licenceAuthority: string | null;
+  licenceStatusAtRelease:
+    'none' | 'current' | 'expired' | 'not_in_force' | null;
+  licenceOverrideReason: string | null;
+  licenceOverriddenByName: string | null;
+};
+
+export type RelatedLot = {
+  lotId: string;
+  code: string;
+  sku: string;
+  depth: number;
+  runId: string;
+  runReference: string | null;
+};
+
+export type LotRecipient = {
+  partnerId: string | null;
+  partnerName: string | null;
+  orderId: string | null;
+  orderReference: string | null;
+  isSampleOrder: boolean;
+  lotId: string;
+  lotCode: string;
+  sku: string;
+  shipped: string;
+  sampled: string;
+  returned: string;
+};
+
+export type LotTrace = {
+  lot: TracedLot;
+  balances: Array<LotBalance>;
+  sources: Array<LotSource>;
+  madeFrom: Array<RelatedLot>;
+  wentInto: Array<RelatedLot>;
+  recipients: Array<LotRecipient>;
 };
 
 export type Availability = {
@@ -3117,8 +3330,11 @@ export type ProductionOrdersControllerListV1Data = {
 };
 
 export type ProductionOrdersControllerListV1Responses = {
-  200: unknown;
+  200: RunPage;
 };
+
+export type ProductionOrdersControllerListV1Response =
+  ProductionOrdersControllerListV1Responses[keyof ProductionOrdersControllerListV1Responses];
 
 export type ProductionOrdersControllerCreateV1Data = {
   body: CreateProductionOrderDto;
@@ -3128,8 +3344,11 @@ export type ProductionOrdersControllerCreateV1Data = {
 };
 
 export type ProductionOrdersControllerCreateV1Responses = {
-  201: unknown;
+  201: ProductionOrderEnvelope;
 };
+
+export type ProductionOrdersControllerCreateV1Response =
+  ProductionOrdersControllerCreateV1Responses[keyof ProductionOrdersControllerCreateV1Responses];
 
 export type ProductionOrdersControllerFindV1Data = {
   body?: never;
@@ -3141,8 +3360,11 @@ export type ProductionOrdersControllerFindV1Data = {
 };
 
 export type ProductionOrdersControllerFindV1Responses = {
-  200: unknown;
+  200: RunDetail;
 };
+
+export type ProductionOrdersControllerFindV1Response =
+  ProductionOrdersControllerFindV1Responses[keyof ProductionOrdersControllerFindV1Responses];
 
 export type ProductionOrdersControllerUpdateV1Data = {
   body: UpdateProductionOrderDto;
@@ -3172,8 +3394,11 @@ export type ProductionOrdersControllerIssuePlanV1Data = {
 };
 
 export type ProductionOrdersControllerIssuePlanV1Responses = {
-  200: unknown;
+  200: IssuePlan;
 };
+
+export type ProductionOrdersControllerIssuePlanV1Response =
+  ProductionOrdersControllerIssuePlanV1Responses[keyof ProductionOrdersControllerIssuePlanV1Responses];
 
 export type ProductionOrdersControllerReleaseV1Data = {
   body: ReleaseProductionOrderDto;
@@ -3185,8 +3410,11 @@ export type ProductionOrdersControllerReleaseV1Data = {
 };
 
 export type ProductionOrdersControllerReleaseV1Responses = {
-  200: unknown;
+  200: ReleasedRun;
 };
+
+export type ProductionOrdersControllerReleaseV1Response =
+  ProductionOrdersControllerReleaseV1Responses[keyof ProductionOrdersControllerReleaseV1Responses];
 
 export type ProductionOrdersControllerRecordOutputV1Data = {
   body: RecordOutputDto;
@@ -3198,8 +3426,11 @@ export type ProductionOrdersControllerRecordOutputV1Data = {
 };
 
 export type ProductionOrdersControllerRecordOutputV1Responses = {
-  201: unknown;
+  201: OutputEnvelope;
 };
+
+export type ProductionOrdersControllerRecordOutputV1Response =
+  ProductionOrdersControllerRecordOutputV1Responses[keyof ProductionOrdersControllerRecordOutputV1Responses];
 
 export type ProductionOrdersControllerCloseV1Data = {
   body: CloseProductionOrderDto;
@@ -3211,8 +3442,11 @@ export type ProductionOrdersControllerCloseV1Data = {
 };
 
 export type ProductionOrdersControllerCloseV1Responses = {
-  200: unknown;
+  200: ClosedRun;
 };
+
+export type ProductionOrdersControllerCloseV1Response =
+  ProductionOrdersControllerCloseV1Responses[keyof ProductionOrdersControllerCloseV1Responses];
 
 export type ProductionOrdersControllerCancelV1Data = {
   body: CancelProductionOrderDto;
@@ -3224,8 +3458,11 @@ export type ProductionOrdersControllerCancelV1Data = {
 };
 
 export type ProductionOrdersControllerCancelV1Responses = {
-  200: unknown;
+  200: CancelledRun;
 };
+
+export type ProductionOrdersControllerCancelV1Response =
+  ProductionOrdersControllerCancelV1Responses[keyof ProductionOrdersControllerCancelV1Responses];
 
 export type StockControllerListV1Data = {
   body?: never;
@@ -3442,8 +3679,11 @@ export type LotTraceControllerTraceV1Data = {
 };
 
 export type LotTraceControllerTraceV1Responses = {
-  200: unknown;
+  200: LotTrace;
 };
+
+export type LotTraceControllerTraceV1Response =
+  LotTraceControllerTraceV1Responses[keyof LotTraceControllerTraceV1Responses];
 
 export type AvailabilityControllerListV1Data = {
   body?: never;

@@ -38,6 +38,7 @@ import type {
 } from './dto/stock-response.dto';
 import { UpdateLotDto } from './dto/update-lot.dto';
 import { LotsService } from './lots.service';
+import { movementOf } from './movement-view';
 import { StockService } from './stock.service';
 import { MOVEMENT_COLUMNS, STOCK_COLUMNS } from './stock-exports';
 import { StockReadsService } from './stock-reads.service';
@@ -115,25 +116,7 @@ export class StockController {
      * attached is precisely the row someone will ask about, and the audit log
      * answers a different question with a different retention.
      */
-    const movement = await this.stock.record(dto, user.userId);
-    // As the ledger stores it, without the organization or the actor's id.
-    return {
-      movement: {
-        id: movement.id,
-        variantId: movement.variantId,
-        sku: movement.sku,
-        lotId: movement.lotId,
-        fromLocationId: movement.fromLocationId,
-        toLocationId: movement.toLocationId,
-        quantity: movement.quantity,
-        reason: movement.reason,
-        reasonDetail: movement.reasonDetail,
-        referenceType: movement.referenceType,
-        referenceId: movement.referenceId,
-        note: movement.note,
-        createdAt: movement.createdAt,
-      },
-    };
+    return { movement: movementOf(await this.stock.record(dto, user.userId)) };
   }
 
   /** Counts beside the inventory's quick filters (ADR-055). */
