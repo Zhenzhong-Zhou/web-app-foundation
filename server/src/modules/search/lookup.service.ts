@@ -29,6 +29,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { partnerMatches } from '../partners/partner-search';
 import { itemMatches } from '../products/item-search';
+import { coverOf } from '../products/product-images';
 
 /** At most this many of each kind (ADR-056). */
 export const LOOKUP_LIMIT = 5;
@@ -55,6 +56,8 @@ export interface LookupResult {
   expiresAt: string | null;
   /** An item's product, which is the page it opens. */
   productId: string | null;
+  /** An item's product's cover (ADR-066); null for every other kind. */
+  coverFileId: string | null;
   /** Found by similarity, after the exact matches (a typo). */
   close: boolean;
 }
@@ -90,6 +93,7 @@ const NONE = {
   status: sql<string | null>`null`,
   expiresAt: sql<string | null>`null`,
   productId: sql<string | null>`null`,
+  coverFileId: sql<string | null>`null`,
 };
 
 /**
@@ -181,6 +185,7 @@ export class LookupService {
               status: orders.status,
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
+              coverFileId: NONE.coverFileId,
             })
             .from(orders)
             .innerJoin(partners, eq(partners.id, orders.partnerId))
@@ -226,6 +231,7 @@ export class LookupService {
               status: invoices.status,
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
+              coverFileId: NONE.coverFileId,
             })
             .from(invoices)
             .innerJoin(partners, eq(partners.id, invoices.partnerId))
@@ -258,6 +264,7 @@ export class LookupService {
               status: NONE.status,
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
+              coverFileId: NONE.coverFileId,
             })
             .from(creditNotes)
             .innerJoin(partners, eq(partners.id, creditNotes.partnerId))
@@ -289,6 +296,7 @@ export class LookupService {
               status: NONE.status,
               expiresAt: sql<string | null>`${lots.expiresAt}::text`,
               productId: NONE.productId,
+              coverFileId: NONE.coverFileId,
             })
             .from(lots)
             .innerJoin(productVariants, eq(productVariants.id, lots.variantId))
@@ -325,6 +333,8 @@ export class LookupService {
               status: NONE.status,
               expiresAt: NONE.expiresAt,
               productId: products.id,
+              // Its product's cover, as Products shows it (ADR-066).
+              coverFileId: coverOf(),
             })
             .from(productVariants)
             .innerJoin(products, eq(products.id, productVariants.productId))
@@ -361,6 +371,7 @@ export class LookupService {
               status: NONE.status,
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
+              coverFileId: NONE.coverFileId,
             })
             .from(partners)
             .where(
@@ -396,6 +407,7 @@ export class LookupService {
               status: productionOrders.status,
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
+              coverFileId: NONE.coverFileId,
             })
             .from(productionOrders)
             .innerJoin(
@@ -430,6 +442,7 @@ export class LookupService {
               status: returnAuthorizations.status,
               expiresAt: NONE.expiresAt,
               productId: NONE.productId,
+              coverFileId: NONE.coverFileId,
             })
             .from(returnAuthorizations)
             .innerJoin(

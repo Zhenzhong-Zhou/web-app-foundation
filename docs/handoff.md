@@ -41,7 +41,8 @@ and price lists proposing the price of a new line.
   `people` (migration 0052, MC-1901), merged (PR #79). **ADR-064**
   (licence expiry reminders, #17) is merged (PR #81). **ADR-065**
   (staying signed in) is built on `sessions` (migration 0054, MC-2101).
-  Next is **ADR-066**: covers in the item lookup.
+  **ADR-066** (covers in the lookup) is built on `lookup-covers`, after
+  `sessions`. Next is **ADR-067**.
 - Tests at the last local run: on `ui-design-pass` (7 October 2026),
   client vitest 210 in 44 files and Playwright 73 in CI, 71 on Bob's Mac
   (Firefox runs in CI and with `E2E_FIREFOX=1`: Playwright's build cannot

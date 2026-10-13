@@ -1093,6 +1093,8 @@ export interface LookupResult {
   status: string | null;
   expiresAt: CalendarDay | null;
   productId: string | null;
+  /** An item's product's cover (ADR-066); null for other kinds. */
+  coverFileId: string | null;
   /** Found by similarity, after the exact matches: a typo. */
   close: boolean;
 }

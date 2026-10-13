@@ -21,6 +21,7 @@ const ANSWER: LookupResponse = {
           status: null,
           expiresAt: null,
           productId: null,
+          coverFileId: null,
           close: false,
         },
       ],
@@ -35,6 +36,7 @@ const ANSWER: LookupResponse = {
           status: null,
           expiresAt: null,
           productId: 'product-1',
+          coverFileId: 'file-1',
           close: true,
         },
       ],
@@ -87,6 +89,12 @@ describe('LookupBox', () => {
 
     await user.type(box, 'f');
     expect(await screen.findByText('Lots')).toBeTruthy();
+    // An item shows its product's cover (ADR-066); a lot shows none.
+    expect(
+      (await screen.findByRole('img', { name: 'Focus 60ct' })).getAttribute(
+        'src',
+      ),
+    ).toBe('/api/v1/files/file-1?size=thumb');
     expect(screen.getByText('BF-2609')).toBeTruthy();
     expect(screen.getByText('Items')).toBeTruthy();
     // A typo's result says so.
