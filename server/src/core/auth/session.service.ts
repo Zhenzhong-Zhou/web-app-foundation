@@ -13,6 +13,10 @@ export interface SessionInfo {
   sessionId: string;
   userId: string;
   currentOrgId: string | null;
+  /** The person's choice at sign-in (ADR-065). */
+  keepSignedIn: boolean;
+  /** When it was last used before this request, for the idle policy. */
+  lastSeenAt: Date;
 }
 
 export interface NewSession {
@@ -20,10 +24,19 @@ export interface NewSession {
   token: string;
   sessionId: string;
   expiresAt: Date;
+  /** Unticked, the cookie ends with the browser (ADR-065). */
+  keepSignedIn: boolean;
 }
 
 /** Skip the last_seen_at write if it was updated within this window. */
 const LAST_SEEN_WRITE_INTERVAL_MS = 60_000;
+
+/**
+ * A session not kept (ADR-065), for a computer others use: two hours idle
+ * and twelve in all, whatever the browser does with its cookie.
+ */
+export const UNKEPT_IDLE_MS = 2 * 60 * 60 * 1000;
+const UNKEPT_ABSOLUTE_MS = 12 * 60 * 60 * 1000;
 
 /**
  * Opaque server-side sessions (ADR-011). Revocation is deletion; there is no
@@ -70,12 +83,16 @@ export class SessionService {
     userId: string,
     currentOrgId: string | null,
     meta: { ip?: string; userAgent?: string } = {},
+    { keepSignedIn = true }: { keepSignedIn?: boolean } = {},
   ): Promise<NewSession> {
     // Lazy sweep instead of a scheduled job (ADR-005).
     await this.sweepExpired(userId);
 
     const token = randomBytes(32).toString('base64url');
-    const expiresAt = new Date(Date.now() + this.absoluteMs);
+    // Not kept: twelve hours in all, whatever the browser does (ADR-065).
+    const expiresAt = new Date(
+      Date.now() + (keepSignedIn ? this.absoluteMs : UNKEPT_ABSOLUTE_MS),
+    );
 
     const [row] = await this.db
       .insert(sessions)
@@ -84,12 +101,13 @@ export class SessionService {
         userId,
         currentOrgId,
         expiresAt,
+        keepSignedIn,
         ip: meta.ip,
         userAgent: meta.userAgent,
       })
       .returning({ id: sessions.id });
 
-    return { token, sessionId: row.id, expiresAt };
+    return { token, sessionId: row.id, expiresAt, keepSignedIn };
   }
 
   /**
@@ -114,6 +132,7 @@ export class SessionService {
         userId: sessions.userId,
         currentOrgId: sessions.currentOrgId,
         lastSeenAt: sessions.lastSeenAt,
+        keepSignedIn: sessions.keepSignedIn,
       })
       .from(sessions)
       .where(
@@ -127,6 +146,14 @@ export class SessionService {
       );
 
     if (!row) return null;
+
+    // Not kept: two hours idle, before anything moves it (ADR-065).
+    if (
+      !row.keepSignedIn &&
+      now.getTime() - row.lastSeenAt.getTime() > UNKEPT_IDLE_MS
+    ) {
+      return null;
+    }
 
     // One UPDATE per request per user is significant write traffic for a
     // column read at minute granularity. Throttle it. A background request
@@ -146,6 +173,9 @@ export class SessionService {
       sessionId: row.id,
       userId: row.userId,
       currentOrgId: row.currentOrgId,
+      keepSignedIn: row.keepSignedIn,
+      // As it was before this request, for the organization's policy.
+      lastSeenAt: row.lastSeenAt,
     };
   }
 

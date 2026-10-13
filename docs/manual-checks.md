@@ -815,6 +815,21 @@ await fetch(`${api}/v1/files/product-image`, {
   Change it to today: "expires today". Renew it a year out: nothing more
   until 60 days before the new date. In 中文 the notice reads naturally.
 
+## 21. Staying signed in (ADR-065)
+
+- **MC-2101** Sign in with Keep me signed in unticked: close the browser
+  entirely and reopen it: signed out. Sign in again on that browser: the
+  box starts unticked. On a personal laptop it stays ticked. As an owner,
+  Organization → Security: 15 minutes, for sign-ins without Keep me
+  signed in. On the unticked computer, leave the app alone 14 minutes:
+  the warning shows with a countdown, also in the tab's title; Enter keeps
+  you in. Start editing an order and leave it: the warning adds that
+  unsaved changes will be lost. Let it run out: the sign-in page says
+  why, and signing in returns you to the page. With two tabs open, use
+  one and the other does not warn; sign out from the warning in one and
+  the other signs out too. A ticked laptop is not signed out. Set
+  Everyone: it is. In 中文 the sign-in page reads 保持登录.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -943,3 +958,4 @@ first.
 - 2026-10-09: ADR-062, product images: MC-1801.
 - 2026-10-09: ADR-063, people: MC-1901.
 - 2026-10-09: ADR-064, licence expiry reminders: MC-2001.
+- 2026-10-09: ADR-065, staying signed in: MC-2101.

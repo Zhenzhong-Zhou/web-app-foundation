@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { type Blocker, useBlocker } from 'react-router-dom';
 
+import { markDirty } from './unsaved-registry';
+
 /**
  * Leaving a form with changes asks first (issue #54, conventions.md).
  *
@@ -25,6 +27,9 @@ export function useUnsavedChanges(dirty: boolean): {
       !released.current &&
       currentLocation.pathname !== nextLocation.pathname,
   );
+
+  // Counted while dirty, so the idle warning can say so (ADR-065).
+  useEffect(() => (dirty ? markDirty() : undefined), [dirty]);
 
   useEffect(() => {
     if (!dirty) return;

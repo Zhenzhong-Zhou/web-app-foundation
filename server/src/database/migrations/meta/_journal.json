@@ -379,6 +379,13 @@
       "when": 1791584135896,
       "tag": "0053_licence_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1791589982741,
+      "tag": "0054_sessions",
+      "breakpoints": true
     }
   ]
 }

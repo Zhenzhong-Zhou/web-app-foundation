@@ -16,6 +16,12 @@ export interface RequestContext {
   organizationId: string | null;
   /** Null whenever organizationId is. Step 4's permission guard reads this. */
   roleId: string | null;
+  /**
+   * How long this session may sit idle before it is signed out, when that
+   * is short enough to warn about: not kept, or under the organization's
+   * policy (ADR-065). Null for the long, ordinary session.
+   */
+  idleLimitMs: number | null;
   /** Captured per request, not read off the session row: ADR-012 requires
    *  these at event time, and the session's values are from its creation. */
   ip?: string;

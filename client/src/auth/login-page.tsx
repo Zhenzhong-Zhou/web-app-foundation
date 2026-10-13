@@ -1,10 +1,19 @@
-import { Alert, Button, Link, TextField } from '@mui/material';
+import {
+  Alert,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  Link,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { PasswordField } from '../components/password-field';
 import { api } from '../lib/api';
+import { KEEP_SIGNED_IN, SIGNED_OUT_REASON } from '../lib/session-keys';
 import { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
 import { authMessageFor } from './auth-message';
@@ -20,6 +29,17 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Remembered by this browser: unticked once on a shared computer, it
+  // starts unticked there next time (ADR-065).
+  const [keepSignedIn, setKeepSignedIn] = useState(
+    () => window.localStorage.getItem(KEEP_SIGNED_IN) !== 'false',
+  );
+  // Signed out for inactivity: said once, then forgotten.
+  const [idleMinutes] = useState(() => {
+    const reason = window.sessionStorage.getItem(SIGNED_OUT_REASON);
+    window.sessionStorage.removeItem(SIGNED_OUT_REASON);
+    return reason ? Number(reason) : null;
+  });
 
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -29,8 +49,9 @@ export function LoginPage() {
     try {
       await api('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, keepSignedIn }),
       });
+      window.localStorage.setItem(KEEP_SIGNED_IN, String(keepSignedIn));
 
       // The login response carries { user }; /auth/me carries user,
       // organization and permissions. Reading through keeps one shape and one
@@ -57,6 +78,18 @@ export function LoginPage() {
       {/* Alert renders role="alert", so a screen reader announces the failure
           without the user tabbing back to find it. */}
       {error && <Alert severity="error">{error}</Alert>}
+      {idleMinutes !== null && !error && (
+        <Alert severity="info">
+          {intl.formatMessage(
+            {
+              id: 'auth.signedOutIdle',
+              defaultMessage:
+                'You were signed out after {minutes, plural, one {# minute} other {# minutes}} without activity. Sign in to carry on where you were.',
+            },
+            { minutes: idleMinutes },
+          )}
+        </Alert>
+      )}
 
       <TextField
         id="email"
@@ -94,6 +127,36 @@ export function LoginPage() {
       {/* Disabled in flight: a double submit revokes the session the first
           request just issued and creates another (ADR-015), leaving churn in
           the active-sessions screen that nobody caused. */}
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={keepSignedIn}
+            onChange={(event) => setKeepSignedIn(event.target.checked)}
+          />
+        }
+        label={
+          <span>
+            {intl.formatMessage({
+              id: 'auth.keepSignedIn',
+              defaultMessage: 'Keep me signed in',
+            })}
+            <Typography
+              component="span"
+              variant="body2"
+              color="text.secondary"
+              sx={{ display: 'block' }}
+            >
+              {intl.formatMessage({
+                id: 'auth.keepSignedInHint',
+                defaultMessage:
+                  'Untick on a computer others use: you’re signed out when the browser closes, or after two hours idle.',
+              })}
+            </Typography>
+          </span>
+        }
+        sx={{ alignItems: 'flex-start', '& .MuiCheckbox-root': { pt: 0.5 } }}
+      />
+
       <Button type="submit" variant="contained" disabled={submitting}>
         {submitting
           ? intl.formatMessage({

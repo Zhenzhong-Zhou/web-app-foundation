@@ -17,13 +17,16 @@ export const SESSION_COOKIE_NAME = 'sid';
 export function sessionCookieOptions(
   expiresAt: Date,
   isProduction: boolean,
+  keepSignedIn = true,
 ): CookieOptions {
   return {
     httpOnly: true,
     secure: isProduction,
     sameSite: 'lax',
     path: '/',
-    expires: expiresAt,
+    // Not kept (ADR-065): no expiry, so the cookie ends with the browser.
+    // The server's own limits hold whatever the browser restores.
+    ...(keepSignedIn ? { expires: expiresAt } : {}),
   };
 }
 

@@ -32,6 +32,7 @@ import {
   OrganizationDocumentLanguages,
   RequiredNameLanguages,
 } from './document-languages-form';
+import { IdleSignOutForm } from './idle-sign-out-form';
 
 /**
  * The Organization page's tabs (ADR-061), Profile first. Branding is only
@@ -39,7 +40,7 @@ import {
  * without changing it, and every member sees its result anyway.
  */
 const READ_TABS = ['profile', 'money', 'documents', 'stock'] as const;
-const ORGANIZATION_TABS = [...READ_TABS, 'branding'] as const;
+const ORGANIZATION_TABS = [...READ_TABS, 'branding', 'security'] as const;
 type OrganizationTab = (typeof ORGANIZATION_TABS)[number];
 
 const TAB_LABEL = defineMessages({
@@ -48,6 +49,7 @@ const TAB_LABEL = defineMessages({
   documents: { id: 'settings.org.tab.documents', defaultMessage: 'Documents' },
   stock: { id: 'settings.org.tab.stock', defaultMessage: 'Stock' },
   branding: { id: 'settings.org.tab.branding', defaultMessage: 'Branding' },
+  security: { id: 'settings.org.tab.security', defaultMessage: 'Security' },
 });
 
 /**
@@ -261,6 +263,19 @@ export function OrganizationPage() {
                 logoFileId={organization.logoFileId}
                 accentColor={organization.accentColor}
                 rail={organization.rail}
+                onSaved={reloadAll}
+              />,
+            )}
+          {canUpdate &&
+            panel(
+              'security',
+              <IdleSignOutForm
+                key={[
+                  organization.idleSignOutMinutes,
+                  organization.idleSignOutScope,
+                ].join()}
+                minutes={organization.idleSignOutMinutes}
+                scope={organization.idleSignOutScope}
                 onSaved={reloadAll}
               />,
             )}

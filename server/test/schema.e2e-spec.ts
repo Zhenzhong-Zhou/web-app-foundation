@@ -9,6 +9,7 @@ import {
   ACCOUNT_EVENT_ACTIONS,
   DOCUMENT_TYPES,
   FILE_KINDS,
+  IDLE_SIGN_OUT_SCOPES,
   INVOICE_STATUSES,
   MOVEMENT_REASONS,
   ORDER_DIRECTIONS,
@@ -100,6 +101,7 @@ describe('schema invariants', () => {
     ['order_lines_price_source_check', ORDER_LINE_PRICE_SOURCES],
     ['files_kind_check', FILE_KINDS],
     ['organizations_rail_check', ORGANIZATION_RAILS],
+    ['organizations_idle_sign_out_scope_check', IDLE_SIGN_OUT_SCOPES],
   ])('%s', (constraintName, values) => {
     it('accepts every value the code can write', async () => {
       const result = await db.execute(sql`

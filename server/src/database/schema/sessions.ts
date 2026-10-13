@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   inet,
   pgTable,
@@ -52,6 +53,13 @@ export const sessions = pgTable(
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
+
+    /**
+     * Keep me signed in (ADR-065): the person's choice at sign-in. Ticked,
+     * the long limits; unticked, a cookie that ends with the browser and a
+     * session held to two hours idle and twelve in all.
+     */
+    keepSignedIn: boolean('keep_signed_in').notNull().default(true),
 
     // For the "your active sessions" screen. Personal data — ADR-012's
     // retention rules apply.

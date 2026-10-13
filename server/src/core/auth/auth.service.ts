@@ -76,6 +76,11 @@ export interface CurrentSession {
   } | null;
   /** Empty when there is no organization: permissions come from a role. */
   permissions: Permission[];
+  /**
+   * How long this session may sit idle before it is signed out, when the
+   * page should warn about it; null for an ordinary session (ADR-065).
+   */
+  idleLimitMs?: number | null;
 }
 
 /**
@@ -292,7 +297,9 @@ export class AuthService implements OnModuleInit {
       if (previous) await this.sessions.revoke(previous.sessionId);
     }
 
-    const session = await this.sessions.create(row.id, currentOrgId, meta);
+    const session = await this.sessions.create(row.id, currentOrgId, meta, {
+      keepSignedIn: input.keepSignedIn ?? true,
+    });
 
     await this.events.record(row.id, 'session.created', meta);
 
@@ -369,6 +376,7 @@ export class AuthService implements OnModuleInit {
         locale: user.locale,
         photoFileId: user.photoFileId,
       },
+      idleLimitMs: context.idleLimitMs,
     };
 
     // Both are null together: roleId comes from the membership that produced

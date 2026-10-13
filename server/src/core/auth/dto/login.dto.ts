@@ -1,4 +1,10 @@
-import { IsEmail, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 import { normalizeEmail } from '../../../common/dto/normalize-email';
 
@@ -17,4 +23,12 @@ export class LoginDto {
   @IsString()
   @MaxLength(128)
   password!: string;
+
+  /**
+   * Keep me signed in (ADR-065), ticked unless the person says otherwise:
+   * unticked on a computer others use.
+   */
+  @IsOptional()
+  @IsBoolean()
+  keepSignedIn?: boolean;
 }

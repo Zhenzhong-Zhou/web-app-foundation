@@ -64,6 +64,9 @@ export class OrganizationController {
       'logoOnDocuments',
       'expiryWarningDays',
       'expiryCriticalDays',
+      // Sign out after inactivity (ADR-065).
+      'idleSignOutMinutes',
+      'idleSignOutScope',
     ],
   })
   async update(@Body() dto: UpdateOrganizationDto): Promise<void> {
