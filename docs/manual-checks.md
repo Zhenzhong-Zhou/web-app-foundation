@@ -830,6 +830,13 @@ await fetch(`${api}/v1/files/product-image`, {
   the other signs out too. A ticked laptop is not signed out. Set
   Everyone: it is. In 中文 the sign-in page reads 保持登录.
 
+## 22. Covers in the lookup (ADR-066)
+
+- **MC-2201** Press / and type part of a product's name: its items show
+  the product's cover beside the title; a product with no photo shows the
+  plain tile, and the rows line up. Lots, orders and partners look as
+  before. On a phone the cover fits the row.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -959,3 +966,4 @@ first.
 - 2026-10-09: ADR-063, people: MC-1901.
 - 2026-10-09: ADR-064, licence expiry reminders: MC-2001.
 - 2026-10-09: ADR-065, staying signed in: MC-2101.
+- 2026-10-12: ADR-066, covers in the lookup: MC-2201.
