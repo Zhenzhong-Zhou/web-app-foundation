@@ -79,7 +79,10 @@ export const returnAuthorizations = pgTable(
       onDelete: 'restrict',
     }),
 
-    status: text('status').notNull().default('open'),
+    status: text('status')
+      .$type<ReturnAuthorizationStatus>()
+      .notNull()
+      .default('open'),
 
     /** Why the customer is sending it back: the first thing anyone asks. */
     reason: text('reason').notNull(),

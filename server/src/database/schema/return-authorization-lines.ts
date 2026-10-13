@@ -57,7 +57,7 @@ export const returnAuthorizationLines = pgTable(
 
     quantity: numeric('quantity', { precision: 18, scale: 4 }).notNull(),
 
-    resolution: text('resolution').notNull(),
+    resolution: text('resolution').$type<ReturnResolution>().notNull(),
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

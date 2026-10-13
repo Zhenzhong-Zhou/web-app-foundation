@@ -19,6 +19,11 @@ import { RequirePermissions } from '../../core/authorization/require-permissions
 import { CreateReturnAuthorizationDto } from './dto/create-return-authorization.dto';
 import { LinkReturnDto } from './dto/link-return.dto';
 import { ListReturnAuthorizationsDto } from './dto/list-return-authorizations.dto';
+import type {
+  ReplacementEnvelope,
+  ReturnAuthorizationEnvelope,
+  ReturnAuthorizationPage,
+} from './dto/return-authorization-response.dto';
 import { ReturnAuthorizationReceiptsService } from './return-authorization-receipts.service';
 import { ReturnAuthorizationReplacementsService } from './return-authorization-replacements.service';
 import { ReturnAuthorizationsService } from './return-authorizations.service';
@@ -41,13 +46,17 @@ export class ReturnAuthorizationsController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.RETURN_AUTHORIZATIONS_VIEW)
-  list(@Query() query: ListReturnAuthorizationsDto) {
+  list(
+    @Query() query: ListReturnAuthorizationsDto,
+  ): Promise<ReturnAuthorizationPage> {
     return this.rmas.list(query);
   }
 
   @Get(':id')
   @RequirePermissions(PERMISSIONS.RETURN_AUTHORIZATIONS_VIEW)
-  async get(@Param('id', ParseUUIDPipe) id: string) {
+  async get(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ReturnAuthorizationEnvelope> {
     return { returnAuthorization: await this.rmas.findById(id) };
   }
 
@@ -65,8 +74,9 @@ export class ReturnAuthorizationsController {
   async create(
     @Body() dto: CreateReturnAuthorizationDto,
     @CurrentUser() user: RequestContext,
-  ) {
-    return { returnAuthorization: await this.rmas.create(dto, user.userId) };
+  ): Promise<ReturnAuthorizationEnvelope> {
+    const created = await this.rmas.create(dto, user.userId);
+    return { returnAuthorization: await this.rmas.findById(created.id) };
   }
 
   @Post(':id/cancel')
@@ -136,7 +146,10 @@ export class ReturnAuthorizationsController {
   async raiseReplacement(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: RequestContext,
-  ) {
-    return { order: await this.replacements.raiseReplacement(id, user.userId) };
+  ): Promise<ReplacementEnvelope> {
+    // By id: the order is read through its own route, and the orders
+    // module depends on this one, so it cannot be read from here.
+    const order = await this.replacements.raiseReplacement(id, user.userId);
+    return { order: { id: order.id } };
   }
 }

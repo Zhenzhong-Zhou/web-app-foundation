@@ -5107,7 +5107,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReturnAuthorizationPage"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5129,7 +5136,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReturnAuthorizationEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5152,7 +5166,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReturnAuthorizationEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -5254,7 +5275,14 @@
         ],
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplacementEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -12186,6 +12214,238 @@
           }
         }
       },
+      "ReturnAuthorizationSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed",
+              "cancelled"
+            ]
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "orderReference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "partnerId": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "expectsGoods": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "status",
+          "orderId",
+          "orderReference",
+          "partnerId",
+          "partnerName",
+          "reason",
+          "expectsGoods",
+          "createdAt"
+        ]
+      },
+      "ReturnAuthorizationPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReturnAuthorizationSummary"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "ReturnAuthorizationLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderLineId": {
+            "type": "string"
+          },
+          "variantId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "credit",
+              "none"
+            ]
+          },
+          "quantityReceived": {
+            "type": "string"
+          },
+          "quantityCredited": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "orderLineId",
+          "variantId",
+          "sku",
+          "quantity",
+          "resolution",
+          "quantityReceived",
+          "quantityCredited"
+        ]
+      },
+      "ReturnAuthorizationDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed",
+              "cancelled"
+            ]
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "orderReference": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "partnerId": {
+            "type": "string"
+          },
+          "partnerName": {
+            "type": "string"
+          },
+          "invoiceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "invoiceNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "expectsGoods": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "closedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cancelledAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReturnAuthorizationLine"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "status",
+          "orderId",
+          "orderReference",
+          "partnerId",
+          "partnerName",
+          "invoiceId",
+          "invoiceNumber",
+          "reason",
+          "expectsGoods",
+          "note",
+          "createdAt",
+          "closedAt",
+          "cancelledAt",
+          "lines"
+        ]
+      },
+      "ReturnAuthorizationEnvelope": {
+        "type": "object",
+        "properties": {
+          "returnAuthorization": {
+            "$ref": "#/components/schemas/ReturnAuthorizationDetail"
+          }
+        },
+        "required": [
+          "returnAuthorization"
+        ]
+      },
       "ReturnAuthorizationLineDto": {
         "type": "object",
         "properties": {
@@ -12259,6 +12519,28 @@
         },
         "required": [
           "returnId"
+        ]
+      },
+      "ReplacementOrder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ReplacementEnvelope": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "$ref": "#/components/schemas/ReplacementOrder"
+          }
+        },
+        "required": [
+          "order"
         ]
       },
       "InvoiceSummary": {

@@ -1305,6 +1305,58 @@ export type UpdateContactDto = {
   isActive?: boolean;
 };
 
+export type ReturnAuthorizationSummary = {
+  id: string;
+  number: string;
+  status: 'open' | 'closed' | 'cancelled';
+  orderId: string;
+  orderReference: string | null;
+  partnerId: string;
+  partnerName: string;
+  reason: string;
+  expectsGoods: boolean;
+  createdAt: string;
+};
+
+export type ReturnAuthorizationPage = {
+  entries: Array<ReturnAuthorizationSummary>;
+  nextCursor: string | null;
+};
+
+export type ReturnAuthorizationLine = {
+  id: string;
+  orderLineId: string;
+  variantId: string;
+  sku: string;
+  quantity: string;
+  resolution: 'replace' | 'credit' | 'none';
+  quantityReceived: string;
+  quantityCredited: string;
+};
+
+export type ReturnAuthorizationDetail = {
+  id: string;
+  number: string;
+  status: 'open' | 'closed' | 'cancelled';
+  orderId: string;
+  orderReference: string | null;
+  partnerId: string;
+  partnerName: string;
+  invoiceId: string | null;
+  invoiceNumber: string | null;
+  reason: string;
+  expectsGoods: boolean;
+  note: string | null;
+  createdAt: string;
+  closedAt: string | null;
+  cancelledAt: string | null;
+  lines: Array<ReturnAuthorizationLine>;
+};
+
+export type ReturnAuthorizationEnvelope = {
+  returnAuthorization: ReturnAuthorizationDetail;
+};
+
 export type ReturnAuthorizationLineDto = {
   lineId: string;
   quantity: string;
@@ -1322,6 +1374,14 @@ export type CreateReturnAuthorizationDto = {
 
 export type LinkReturnDto = {
   returnId: string;
+};
+
+export type ReplacementOrder = {
+  id: string;
+};
+
+export type ReplacementEnvelope = {
+  order: ReplacementOrder;
 };
 
 export type InvoiceSummary = {
@@ -4376,8 +4436,11 @@ export type ReturnAuthorizationsControllerListV1Data = {
 };
 
 export type ReturnAuthorizationsControllerListV1Responses = {
-  200: unknown;
+  200: ReturnAuthorizationPage;
 };
+
+export type ReturnAuthorizationsControllerListV1Response =
+  ReturnAuthorizationsControllerListV1Responses[keyof ReturnAuthorizationsControllerListV1Responses];
 
 export type ReturnAuthorizationsControllerCreateV1Data = {
   body: CreateReturnAuthorizationDto;
@@ -4387,8 +4450,11 @@ export type ReturnAuthorizationsControllerCreateV1Data = {
 };
 
 export type ReturnAuthorizationsControllerCreateV1Responses = {
-  201: unknown;
+  201: ReturnAuthorizationEnvelope;
 };
+
+export type ReturnAuthorizationsControllerCreateV1Response =
+  ReturnAuthorizationsControllerCreateV1Responses[keyof ReturnAuthorizationsControllerCreateV1Responses];
 
 export type ReturnAuthorizationsControllerGetV1Data = {
   body?: never;
@@ -4400,8 +4466,11 @@ export type ReturnAuthorizationsControllerGetV1Data = {
 };
 
 export type ReturnAuthorizationsControllerGetV1Responses = {
-  200: unknown;
+  200: ReturnAuthorizationEnvelope;
 };
+
+export type ReturnAuthorizationsControllerGetV1Response =
+  ReturnAuthorizationsControllerGetV1Responses[keyof ReturnAuthorizationsControllerGetV1Responses];
 
 export type ReturnAuthorizationsControllerCancelV1Data = {
   body?: never;
@@ -4461,8 +4530,11 @@ export type ReturnAuthorizationsControllerRaiseReplacementV1Data = {
 };
 
 export type ReturnAuthorizationsControllerRaiseReplacementV1Responses = {
-  201: unknown;
+  201: ReplacementEnvelope;
 };
+
+export type ReturnAuthorizationsControllerRaiseReplacementV1Response =
+  ReturnAuthorizationsControllerRaiseReplacementV1Responses[keyof ReturnAuthorizationsControllerRaiseReplacementV1Responses];
 
 export type InvoicesControllerListV1Data = {
   body?: never;
