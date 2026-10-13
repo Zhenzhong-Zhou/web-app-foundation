@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 
+import { ERROR_CODES, withCode } from '../../common/error-codes';
 import { recordContext } from '../../core/audit/audit-context';
 import { documentLanguages } from '../../core/organizations/document-languages';
 import { registeredAddress } from '../../core/organizations/registered-address';
@@ -487,13 +488,17 @@ export class InvoiceIssuingService {
 
     const address = await registeredAddress(tx, organizationId);
 
+    // The code is what the Issue dialog links to Profile on (ADR-061).
     if (!address) {
       throw new ConflictException(
-        t({
-          id: 'invoices.setOrganizationSRegistered',
-          defaultMessage:
-            'Set the organization’s registered address before issuing — every invoice prints it',
-        }),
+        withCode(
+          t({
+            id: 'invoices.setOrganizationSRegistered',
+            defaultMessage:
+              'Set the organization’s registered address before issuing — every invoice prints it',
+          }),
+          ERROR_CODES.organizationAddressMissing,
+        ),
       );
     }
 
@@ -544,14 +549,18 @@ export class InvoiceIssuingService {
           ),
         );
 
+      // The Issue dialog links to the customer on this code (ADR-061).
       throw new ConflictException(
-        t(
-          {
-            id: 'invoices.nameBillingAddressAdd',
-            defaultMessage:
-              '{name} has no billing address — add one before issuing',
-          },
-          { name: partner?.name ?? 'This customer' },
+        withCode(
+          t(
+            {
+              id: 'invoices.nameBillingAddressAdd',
+              defaultMessage:
+                '{name} has no billing address — add one before issuing',
+            },
+            { name: partner?.name ?? 'This customer' },
+          ),
+          ERROR_CODES.customerBillingAddressMissing,
         ),
       );
     }
