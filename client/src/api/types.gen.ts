@@ -41,6 +41,14 @@ export type ChangePasswordDto = {
   newPassword: string;
 };
 
+export type AccountEvent = {
+  id: string;
+  action: string;
+  ip: string | null;
+  userAgent: string | null;
+  createdAt: string;
+};
+
 export type WorkDetailsDto = {
   jobTitle?: string | null;
   department?: string | null;
@@ -1923,9 +1931,7 @@ export type AccountControllerListEventsV1Data = {
 };
 
 export type AccountControllerListEventsV1Responses = {
-  200: {
-    [key: string]: unknown;
-  };
+  200: Array<AccountEvent>;
 };
 
 export type AccountControllerListEventsV1Response =

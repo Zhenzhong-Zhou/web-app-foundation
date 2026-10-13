@@ -20,6 +20,7 @@ export {
   type AccountControllerUpdateProfileV1Data,
   type AccountControllerUpdateProfileV1Response,
   type AccountControllerUpdateProfileV1Responses,
+  type AccountEvent,
   type AddedOrderLine,
   type AddedOrderLineEnvelope,
   type AddOrderLineDto,

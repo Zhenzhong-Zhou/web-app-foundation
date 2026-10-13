@@ -270,7 +270,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccountEvent"
+                  }
                 }
               }
             }
@@ -6832,6 +6835,40 @@
         "required": [
           "currentPassword",
           "newPassword"
+        ]
+      },
+      "AccountEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "ip": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "userAgent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "ip",
+          "userAgent",
+          "createdAt"
         ]
       },
       "WorkDetailsDto": {

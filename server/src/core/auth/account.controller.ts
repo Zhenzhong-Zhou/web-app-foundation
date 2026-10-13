@@ -23,6 +23,7 @@ import { AccountService } from './account.service';
 import { AccountPhotoService, AVATAR_MAX_BYTES } from './account-photo.service';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { CurrentUser } from './current-user.decorator';
+import type { AccountEvent } from './dto/account-event-response.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import type { RequestContext } from './request-context';
@@ -81,7 +82,7 @@ export class AccountController {
    * happened; this is where somebody goes next to ask what else has.
    */
   @Get('events')
-  listEvents(@CurrentUser() context: RequestContext) {
+  listEvents(@CurrentUser() context: RequestContext): Promise<AccountEvent[]> {
     return this.account.listEvents(context);
   }
 
