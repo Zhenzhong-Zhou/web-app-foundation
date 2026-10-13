@@ -12,6 +12,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../../src/database/database.module';
 import { permissions } from '../../src/database/schema';
+import { ResponseContractInterceptor } from './response-contract';
 
 /**
  * Boots the real application for an integration test.
@@ -37,6 +38,8 @@ export async function createTestApp(
 
   const moduleRef = await builder.compile();
   const app = configureApp(moduleRef.createNestApplication());
+  // Every JSON response held to the contract in openapi.json (ADR-068).
+  app.useGlobalInterceptors(new ResponseContractInterceptor());
 
   // Listen once, on the address supertest connects to. Left unstarted,
   // supertest opens a fresh ephemeral port per request on `::` and connects

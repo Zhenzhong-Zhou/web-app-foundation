@@ -7145,6 +7145,30 @@ budgets are untouched.
 
   Trigger: the first AI integration built on this application.
 
+**Amended, October 2026: a response carries exactly what it declares.**
+Phase 2 found that most modules returned table rows, spread into the
+response or read with `select()`: each organization's id, who created
+and voided a document, the pinyin columns the lookup searches by, the
+reminder bookkeeping on a licence. Nothing secret, and tenant isolation
+held, but none of it was the client's to read, and a contract that
+describes it promises it. The compiler could not catch it: TypeScript
+rejects an extra property on an object literal, not on a spread row.
+
+So a response is projected to its declared class, and the e2e suite
+holds every JSON response to `server/openapi.json` with each object
+schema closed (`test/utils/response-contract.ts`). A field the document
+does not declare fails the test that made the request, naming the route
+and the field; so does a declared field that is missing or of the wrong
+type. Test-only: production loads none of it. A route the document does
+not describe yet is skipped, so the check covers each module as phase 2
+converts it, and every response once it is done.
+
+Rejected: validating responses in production, which costs every request
+and turns a contract slip into a 500 a customer sees rather than a test
+a developer fixes; and class-transformer's `excludeExtraneousValues`,
+which strips what is undeclared instead of reporting it, hiding the
+mistake, and needs every field decorated a second time.
+
 ---
 
 ## Open decisions

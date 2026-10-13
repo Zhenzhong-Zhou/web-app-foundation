@@ -239,6 +239,12 @@ committed, and neither is edited by hand.
   - A raw query's rows get a type of their own (`interface PoolRow`), as
     Postgres returns them, never `Record<string, unknown>`: a response
     built from unknowns cannot be checked against its declaration.
+- **The e2e suite checks every response against the document** (ADR-068,
+  amended): each object schema is closed, so a field the contract does
+  not declare fails the test that made the request, as does a declared
+  one missing or mistyped. The failure names the route and the field. Fix
+  the projection; if the API changed on purpose, run `npm run api` first,
+  since the check reads the committed `openapi.json`.
   - `npm run api`, then in `client/src/lib/types.ts` replace the module's
     interfaces with re-exports from `../api/types.gen`, so importers stay
     unchanged.

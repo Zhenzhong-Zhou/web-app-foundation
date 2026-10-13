@@ -42,7 +42,9 @@ with this one, this one is current.
   locations (`stock-responses`; the lot trace goes with production, whose
   licence fields it carries), costs (`costs-responses`, whose raw rows
   were all unknown until typed), products and product licences
-  (`products-responses`). Next, in order: BOMs and price lists;
+  (`products-responses`). Since `response-contract`, the e2e suite holds
+  every JSON response to the document with its objects closed, so each
+  conversion is checked as it lands. Next, in order: BOMs and price lists;
   partners; production orders and
   RMAs; account, auth, users, people, roles, organization and files; home,
   recent, lookup, notifications and health; then `client/src/lib/types.ts`
