@@ -10,17 +10,10 @@ import type { Locale } from './locales';
  * other's rows did not carry.
  *
  * These describe the API's responses, not the database. A column the client
- * never reads does not belong here.
+ * never reads does not belong here. Module by module, they are becoming
+ * re-exports of the types generated from the server's OpenAPI document
+ * (ADR-068), which the compiler holds to what the server sends.
  */
-export interface Location {
-  id: string;
-  type: string;
-  name: string;
-  code: string | null;
-  parentId: string | null;
-  isAvailable: boolean;
-  isActive: boolean;
-}
 
 /**
  * A calendar day, YYYY-MM-DD, as the API sends and takes it (ADR-052): an
@@ -30,47 +23,27 @@ export interface Location {
  */
 export type CalendarDay = string;
 
-export interface Movement {
-  id: string;
-  /** Snapshotted at the time (ADR-023) — not joined from the variant. */
-  sku: string;
-  quantity: string;
-  reason: string;
-  reasonDetail: string | null;
-  note: string | null;
-  fromLocationName: string | null;
-  toLocationName: string | null;
-  lotCode: string | null;
-  /** Null when the actor was anonymised (ADR-012). */
-  actorEmail: string | null;
-  createdAt: string;
-}
+/**
+ * Stock, lots, movements and locations, generated from the server's
+ * OpenAPI document (ADR-068, phase 2), re-exported so their importers need
+ * no change.
+ */
+export type {
+  Location,
+  Lot,
+  LotMatch,
+  Movement,
+  MovementPage,
+  StockCounts,
+  StockPage,
+  StockRow,
+} from '../api/types.gen';
 
 /** One image of a product's gallery (ADR-062), in its three sizes. */
 export interface ProductImage {
   fileId: string;
   /** From 0; the first is the cover. */
   position: number;
-}
-
-export interface StockRow {
-  /** The stock row itself; also the list's cursor (ADR-051). */
-  id: string;
-  variantId: string;
-  sku: string;
-  productName: string;
-  variantName: string | null;
-  /** The product's cover (ADR-062), or null. */
-  coverFileId: string | null;
-  unitOfMeasure: string;
-  locationId: string;
-  locationName: string;
-  lotId: string | null;
-  lotCode: string | null;
-  lotExpiresAt: CalendarDay | null;
-  lotIsAssigned: boolean | null;
-  /** A decimal string from numeric(18, 4). Never parsed — see ADR-025. */
-  quantity: string;
 }
 
 export interface Partner {
@@ -143,14 +116,6 @@ export type {
 export type OrderDirection = OrderSummary['direction'];
 
 export type OrderStatus = OrderSummary['status'];
-
-export interface Lot {
-  id: string;
-  code: string;
-  expiresAt: CalendarDay | null;
-  /** True when the receiver invented the code — see MovementLotDto. */
-  isAssigned: boolean;
-}
 
 /** The flat variant list behind any picker — stock hangs off variants, not products (ADR-023). */
 export interface VariantOption {
@@ -448,14 +413,6 @@ export type {
   Shipment,
   ShipmentPlanLine,
 } from '../api/types.gen';
-
-/** A lot matched by the start of its code (ADR-044). */
-export interface LotMatch {
-  id: string;
-  code: string;
-  expiresAt: CalendarDay | null;
-  sku: string;
-}
 
 /** A lot connected through production, up or down the chain. */
 export interface RelatedLot {
