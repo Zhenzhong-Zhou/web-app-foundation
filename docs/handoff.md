@@ -53,8 +53,15 @@ with this one, this one is current.
   (`organization-responses`: members, people, roles, profile, uploads).
   The last group followed (`remaining-responses`: audit with account
   activity, notifications, home, recent, lookup, health), so every JSON
-  response is declared and checked. Next and last: `client/src/lib/types.ts`,
-  now only re-exports, replaced by direct imports from `client/src/api/`.
+  response is declared and checked. Phase 2 closed with `types-ts-removed`:
+  `client/src/lib/types.ts` is gone, the client imports the generated
+  types from `client/src/api/types.gen`, and the few names screens switch
+  on (`OrderStatus`, `CalendarDay`) live in `client/src/lib/api-names.ts`,
+  each read from a generated type. #19 is done.
+- **Next, after phase 2:** a small PR with `docs/principles.md`,
+  `CLAUDE.md`, and two project skills in `.claude/skills/` (a code review
+  against conventions.md and the principles, and a usability walkthrough
+  as a persona).
 - **Next, in Bob's order:** **ADR-069**, account deletion (ADR-012 already
   settles the audit side: anonymize the person, keep the rows).
 - **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),
@@ -536,8 +543,9 @@ purpose.** Do not re-review them unless the code around them changes:
   location): required against optional; each DTO states its own shape.
 - Controller import headers and schema column blocks: declarations, not
   rules.
-- `lib/types.ts` against `costs.e2e-spec.ts`, and `audit/audit-format.ts`
-  against `audit.e2e-spec.ts`: separate packages; #19 replaces the types.
+- The e2e specs' own response interfaces against the generated types:
+  separate packages, and the specs describe what a test reads, not the
+  whole response.
 - Login, register and reset: their form-state and submit blocks skip
   `useSubmit` because they navigate away on success. Forgot-password keeps
   its own message: it must not repeat the server's words.
@@ -891,7 +899,7 @@ display-name test, or wait a minute between runs.
   - `server/src/core/…` (organizations, audit, authorization);
   - `server/src/database/schema/…` and `…/migrations/…`;
   - `server/test/…`;
-  - `client/src/…` (feature folders, `lib/types.ts`, `auth/permissions.ts`);
+  - `client/src/…` (feature folders, `lib/api-names.ts`, `auth/permissions.ts`);
   - `client/e2e/…`;
   - `docs/decisions.md`.
 

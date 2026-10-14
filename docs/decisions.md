@@ -7169,6 +7169,16 @@ a developer fixes; and class-transformer's `excludeExtraneousValues`,
 which strips what is undeclared instead of reporting it, hiding the
 mistake, and needs every field decorated a second time.
 
+**Phase 2 done, October 2026.** Every module's responses are declared,
+projected to their classes and checked by the e2e suite, and
+`client/src/lib/types.ts` is gone: the client imports the generated
+types directly, and keeps in `client/src/lib/api-names.ts` only the
+names its screens switch on, each read from a generated type. The
+conversion found what the copies had hidden: a credit-note type declared
+twice and merged into one neither response matched, an account history
+the document called an object, columns typed as text that only ever
+held a known list, and rows sent whole across most modules.
+
 ---
 
 ## Open decisions
