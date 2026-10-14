@@ -34,6 +34,11 @@ concurrency:
 env:
   FULL_E2E: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-e2e') }}
 
+# Reads the repository and uploads artifacts, which needs nothing more
+# (CodeQL: a workflow without permissions gets the token's defaults).
+permissions:
+  contents: read
+
 jobs:
   client:
     name: Client — lint, types, unit

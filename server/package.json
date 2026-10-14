@@ -119,6 +119,10 @@
     "argon2@0.45.1": true,
     "@parcel/watcher@2.6.0": true,
     "esbuild@0.18.20": true,
-    "esbuild@0.25.12": true
+    "esbuild@0.25.12": true,
+    "@scarf/scarf": false
+  },
+  "scarfSettings": {
+    "enabled": false
   }
 }

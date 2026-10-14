@@ -66,12 +66,26 @@ with this one, this one is current.
   `/usability-walkthrough` (a task walked as a persona from
   `personas.md`). `scripts/verify.sh` now runs the Markdown check
   first.
+- **Security fixes** (`security-fixes`, #113): CodeQL's first scan of
+  `main` found six alerts, all fixed. The SVG check in
+  `server/src/core/files/sniff.ts` backtracked exponentially on a run of
+  comments that never reaches `<svg`: about 140 fit in the kilobyte it
+  reads, enough to hold the event loop for good, so one upload could stop
+  the server answering anyone. It now reads the prolog one item at a
+  time. `ci.yml` and `perf.yml` declare `contents: read`.
+  `@scarf/scarf`'s install script, from `swagger-ui-dist`, is denied in
+  `allowScripts`, and `scarfSettings` turns its reporting off. The four
+  Dependabot alerts are dismissed, not fixed: js-yaml, pinned upstream by
+  the type generator, is dev-only and reads only our own spec; esbuild's
+  flaw is in a dev server drizzle-kit never starts. Neither has a fixed
+  parent release, and ADR-019 rules out overrides.
 - **Next, in Bob's order:** **ADR-069**, account deletion (ADR-012 already
   settles the audit side: anonymize the person, keep the rows).
 - **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),
   a GitHub pre-release; its tag ran the Performance workflow's full
   budgets. v0.7.0 follows once those pass and the release candidate has
   run in production for a few days, with its notes in `docs/releases/`.
+  Those notes list the SVG upload fix from #113, which rc.1 lacks.
   v0.6.0 and v0.5.0's notes are the GitHub releases and `docs/releases/`.
   Release notes are release notes only: they say nothing of manual checks
   or the walkthrough.
