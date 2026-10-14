@@ -49,10 +49,11 @@ with this one, this one is current.
   runs with the lot trace (`production-responses`), RMAs
   (`rmas-responses`), the person's own account (`account-responses`: me,
   sign-in, devices, photo, work details; events went ahead with
-  partners). Next, in order: users, people, roles, organization and
-  files; then audit with account activity, notifications, home, recent,
-  lookup and health; then `client/src/lib/types.ts` replaced by direct
-  imports from `client/src/api/`.
+  partners), the organization's people and settings
+  (`organization-responses`: members, people, roles, profile, uploads).
+  Next: audit with account activity, notifications, home, recent, lookup
+  and health; then `client/src/lib/types.ts` replaced by direct imports
+  from `client/src/api/`.
 - **Next, in Bob's order:** **ADR-069**, account deletion (ADR-012 already
   settles the audit side: anonymize the person, keep the rows).
 - **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),
