@@ -251,11 +251,13 @@ export class AccountDeletionService {
    * its own transaction. A block that applies now cancels that deletion,
    * recorded in the account history, and the person is emailed what to do.
    * One that fails is logged and left for the next run, without holding up
-   * the rest (ADR-069).
+   * the rest (ADR-069), as is a photo an earlier run could not erase.
    */
   async completeDue(
     now = new Date(),
   ): Promise<{ completed: number; blocked: number; failed: number }> {
+    await this.eraseLeftoverPhotos();
+
     const due = await this.db
       .select({ id: users.id })
       .from(users)
@@ -431,8 +433,9 @@ export class AccountDeletionService {
         })
         .where(eq(users.id, userId));
 
-      // Released with the row that pointed at it, so a file the erase
-      // below cannot remove is the purge's in 30 days (ADR-059), not kept.
+      // Released with the row that pointed at it: a file the erase below
+      // cannot remove is tried again on the next run, and is the purge's
+      // in 30 days should every run fail (ADR-059).
       if (user.photoFileId) {
         await tx
           .update(files)
@@ -451,11 +454,37 @@ export class AccountDeletionService {
         await this.photos.erase(userId, outcome.photoFileId);
       } catch (error) {
         this.logger.error(
-          `Could not erase the photo of ${userId}; the purge will: ${String(error)}`,
+          `Could not erase the photo of ${userId}; the next run will: ${String(error)}`,
         );
       }
     }
     return { kind: 'completed' };
+  }
+
+  /**
+   * The photos of accounts already deleted, which an erase after the
+   * commit could not remove, tried again on every run. The run starts at
+   * startup and the purge does not, so on a server that sleeps the purge
+   * may never reach them, and a face the person took back is not kept
+   * (ADR-063). The release stays, as the purge's backstop.
+   */
+  private async eraseLeftoverPhotos(): Promise<void> {
+    const leftovers = await this.db
+      .select({ id: files.id, userId: users.id })
+      .from(files)
+      .innerJoin(users, eq(users.id, files.userId))
+      .where(and(eq(files.kind, 'avatar'), isNotNull(users.deletedAt)));
+
+    for (const { id, userId } of leftovers) {
+      try {
+        await this.photos.erase(userId, id);
+        this.logger.log(`Photo of deleted account ${userId} erased`);
+      } catch (error) {
+        this.logger.error(
+          `Could not erase the photo of ${userId}; the next run will: ${String(error)}`,
+        );
+      }
+    }
   }
 
   /**

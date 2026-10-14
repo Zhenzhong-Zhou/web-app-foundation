@@ -580,10 +580,11 @@ describe('Account deletion (e2e)', () => {
 
     /**
      * The photo's file is erased after the deletion commits, so storage
-     * that fails cannot undo it; the file, released with it, is the
-     * purge's (ADR-059).
+     * that fails cannot undo it. The next run erases it, since the purge
+     * may never run on a server that sleeps; the file is released all the
+     * same, as the purge's backstop (ADR-059, ADR-063).
      */
-    it('completes when the photo cannot be erased, leaving it to the purge', async () => {
+    it('completes when the photo cannot be erased, and erases it on the next run', async () => {
       const { member, memberId } = await team();
       const { photoFileId } = body<{ photoFileId: string }>(
         await member
@@ -600,19 +601,29 @@ describe('Account deletion (e2e)', () => {
       const erase = vi
         .spyOn(app.get(AccountPhotoService), 'erase')
         .mockRejectedValueOnce(new Error('Storage unavailable'));
+      const deletion = app.get(AccountDeletionService);
 
-      expect(await app.get(AccountDeletionService).completeDue()).toEqual({
+      expect(await deletion.completeDue()).toEqual({
         completed: 1,
         blocked: 0,
         failed: 0,
       });
-      erase.mockRestore();
-
       const [file] = await db
         .select({ releasedAt: files.releasedAt })
         .from(files)
         .where(eq(files.id, photoFileId));
       expect(file.releasedAt).not.toBeNull();
+
+      // Storage back: the next run, with nothing due, erases the photo.
+      erase.mockRestore();
+      expect(await deletion.completeDue()).toEqual({
+        completed: 0,
+        blocked: 0,
+        failed: 0,
+      });
+      expect(
+        await db.select().from(files).where(eq(files.id, photoFileId)),
+      ).toEqual([]);
     });
 
     it('completes the others when one fails, and tries it again next time', async () => {
