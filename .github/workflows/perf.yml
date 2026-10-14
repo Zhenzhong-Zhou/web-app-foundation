@@ -47,6 +47,11 @@ concurrency:
   group: ${{ github.event_name == 'pull_request' && format('performance-plans-{0}', github.ref) || 'performance' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Reads the repository and uploads artifacts, which needs nothing more
+# (CodeQL: a workflow without permissions gets the token's defaults).
+permissions:
+  contents: read
+
 jobs:
   perf:
     name: Performance, ${{ inputs.mode || (github.event_name == 'pull_request' && 'plans') || 'full' }}
