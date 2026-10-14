@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 
 import type { INestApplication } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import sharp from 'sharp';
 
 import { todayUtc } from '../src/common/today';
 import {
@@ -17,6 +18,7 @@ import {
   accountEvents,
   auditLog,
   authTokens,
+  files,
   memberships,
   notifications,
   recentRecords,
@@ -46,6 +48,20 @@ interface Me {
 }
 
 const DAY = 24 * 60 * 60 * 1000;
+
+/** A photo to upload: any JPEG the avatar sizes can be made from. */
+function photo(): Promise<Buffer> {
+  return sharp({
+    create: {
+      width: 300,
+      height: 300,
+      channels: 3,
+      background: { r: 200, g: 160, b: 120 },
+    },
+  })
+    .jpeg()
+    .toBuffer();
+}
 
 /** A YYYY-MM-DD day as the English email names it, unconverted. */
 function longDay(day: string): string {
@@ -375,6 +391,12 @@ describe('Account deletion (e2e)', () => {
         .expect(200);
 
       // Something of each kind ADR-069 removes, so none is gone vacuously.
+      const { photoFileId } = body<{ photoFileId: string }>(
+        await member
+          .post('/v1/account/photo')
+          .attach('file', await photo(), 'me.jpg')
+          .expect(201),
+      );
       await member
         .patch('/v1/account/profile')
         .send({ locale: 'fr-CA' })
@@ -439,6 +461,9 @@ describe('Account deletion (e2e)', () => {
       expect(row.deletedAt).not.toBeNull();
 
       expect(await theirs()).toEqual([0, 0, 0, 0, 0, 0]);
+      expect(
+        await db.select().from(files).where(eq(files.id, photoFileId)),
+      ).toEqual([]);
 
       const kept = await db
         .select({ action: auditLog.action })
@@ -507,6 +532,89 @@ describe('Account deletion (e2e)', () => {
       );
     });
 
+    /**
+     * Keep my account, pressed after the run picked the person out and
+     * before it reached them: the deletion is asked again under lock, and
+     * the account stays (ADR-069).
+     */
+    it('leaves an account kept after the run picked it out', async () => {
+      const { member, email, memberId } = await team();
+      await member
+        .post('/v1/account/deletion')
+        .send({ password: PASSWORD })
+        .expect(200);
+      await due(memberId);
+
+      // The person's deletion is the run's first transaction: Keep goes
+      // just before it opens.
+      const transaction = db.transaction.bind(db) as Database['transaction'];
+      const keep = vi
+        .spyOn(db, 'transaction')
+        .mockImplementationOnce(async (run, config) => {
+          await member.delete('/v1/account/deletion').expect(204);
+          return transaction(run, config);
+        });
+
+      expect(await app.get(AccountDeletionService).completeDue()).toEqual({
+        completed: 0,
+        blocked: 0,
+        failed: 0,
+      });
+      keep.mockRestore();
+
+      const [row] = await db
+        .select({
+          email: users.email,
+          deletionScheduledAt: users.deletionScheduledAt,
+          deletedAt: users.deletedAt,
+        })
+        .from(users)
+        .where(eq(users.id, memberId));
+      expect(row).toEqual({
+        email,
+        deletionScheduledAt: null,
+        deletedAt: null,
+      });
+      await member.get('/v1/auth/me').expect(200);
+    });
+
+    /**
+     * The photo's file is erased after the deletion commits, so storage
+     * that fails cannot undo it; the file, released with it, is the
+     * purge's (ADR-059).
+     */
+    it('completes when the photo cannot be erased, leaving it to the purge', async () => {
+      const { member, memberId } = await team();
+      const { photoFileId } = body<{ photoFileId: string }>(
+        await member
+          .post('/v1/account/photo')
+          .attach('file', await photo(), 'me.jpg')
+          .expect(201),
+      );
+      await member
+        .post('/v1/account/deletion')
+        .send({ password: PASSWORD })
+        .expect(200);
+      await due(memberId);
+
+      const erase = vi
+        .spyOn(app.get(AccountPhotoService), 'erase')
+        .mockRejectedValueOnce(new Error('Storage unavailable'));
+
+      expect(await app.get(AccountDeletionService).completeDue()).toEqual({
+        completed: 1,
+        blocked: 0,
+        failed: 0,
+      });
+      erase.mockRestore();
+
+      const [file] = await db
+        .select({ releasedAt: files.releasedAt })
+        .from(files)
+        .where(eq(files.id, photoFileId));
+      expect(file.releasedAt).not.toBeNull();
+    });
+
     it('completes the others when one fails, and tries it again next time', async () => {
       const { owner, member, memberId } = await team();
       const second = await addMember(
@@ -525,15 +633,11 @@ describe('Account deletion (e2e)', () => {
       await due(memberId);
       await due(secondId);
 
-      // Storage down for the first member's photo, whichever comes first.
-      // Neither has a photo, so for the other there is nothing to remove.
+      // The database refuses the first deletion's transaction, whichever
+      // of the two it is, and takes the second.
       const failing = vi
-        .spyOn(app.get(AccountPhotoService), 'removeFor')
-        .mockImplementation((userId) =>
-          userId === memberId
-            ? Promise.reject(new Error('Storage unavailable'))
-            : Promise.resolve(false),
-        );
+        .spyOn(db, 'transaction')
+        .mockRejectedValueOnce(new Error('Database unavailable'));
       const deletion = app.get(AccountDeletionService);
 
       expect(await deletion.completeDue()).toEqual({
@@ -541,11 +645,13 @@ describe('Account deletion (e2e)', () => {
         blocked: 0,
         failed: 1,
       });
-      const [kept] = await db
-        .select({ deletedAt: users.deletedAt })
+      const kept = await db
+        .select({ id: users.id })
         .from(users)
-        .where(eq(users.id, memberId));
-      expect(kept.deletedAt).toBeNull();
+        .where(
+          and(inArray(users.id, [memberId, secondId]), isNull(users.deletedAt)),
+        );
+      expect(kept).toHaveLength(1);
 
       failing.mockRestore();
       expect(await deletion.completeDue()).toEqual({

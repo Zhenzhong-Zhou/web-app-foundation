@@ -28,6 +28,7 @@ import {
   accountEvents,
   auditLog,
   authTokens,
+  files,
   memberships,
   notifications,
   organizations,
@@ -78,6 +79,17 @@ function todayWhereDaysEndLast(now: Date): string {
   return todayUtc(new Date(now.getTime() - 12 * HOUR));
 }
 
+/**
+ * A deletion whose day has ended everywhere and that has not completed:
+ * how the run picks people out, and how each is asked again under lock.
+ */
+function dueBy(now: Date) {
+  return and(
+    lt(users.deletionScheduledAt, todayWhereDaysEndLast(now)),
+    isNull(users.deletedAt),
+  );
+}
+
 /** What stands in for the person once the deletion completes (ADR-012). */
 const DELETED_NAME = 'Deleted User';
 
@@ -89,6 +101,12 @@ interface Block {
   organizationId: string;
   organizationName: string;
 }
+
+/** What became of one deletion the run picked out. */
+type Outcome =
+  | { kind: 'completed' }
+  | { kind: 'skipped' }
+  | { kind: 'blocked'; block: Block };
 
 /**
  * Leaving an organization, and deleting your account (ADR-069). Both are
@@ -241,12 +259,7 @@ export class AccountDeletionService {
     const due = await this.db
       .select({ id: users.id })
       .from(users)
-      .where(
-        and(
-          lt(users.deletionScheduledAt, todayWhereDaysEndLast(now)),
-          isNull(users.deletedAt),
-        ),
-      );
+      .where(dueBy(now));
 
     let completed = 0;
     let blocked = 0;
@@ -254,13 +267,13 @@ export class AccountDeletionService {
 
     for (const { id } of due) {
       try {
-        const block = await this.complete(id, now);
-        if (block) {
+        const outcome = await this.complete(id, now);
+        if (outcome.kind === 'blocked') {
           await this.unschedule(id, (to) =>
-            deletionBlockedMail(to, refusalMessage(block)),
+            deletionBlockedMail(to, refusalMessage(outcome.block)),
           );
           blocked += 1;
-        } else {
+        } else if (outcome.kind === 'completed') {
           completed += 1;
         }
       } catch (error) {
@@ -358,10 +371,21 @@ export class AccountDeletionService {
    * every foreign key names, the audit log and the records they made
    * (ADR-012, ADR-069). Each organization they belonged to records it.
    * A block that applies now is returned instead, with nothing changed:
-   * checked under the organizations' locks, as leaving is.
+   * checked under the organizations' locks, as leaving is. A deletion no
+   * longer due, kept since the run picked the person out, is skipped.
    */
-  private async complete(userId: string, now: Date): Promise<Block | null> {
-    const block = await this.db.transaction(async (tx) => {
+  private async complete(userId: string, now: Date): Promise<Outcome> {
+    const outcome = await this.db.transaction(async (tx) => {
+      // The person's row held to the end, and the deletion asked again: a
+      // Keep my account that came first has cleared the day, and one that
+      // comes now waits for this to finish, and finds nothing to keep.
+      const [user] = await tx
+        .select({ photoFileId: users.photoFileId })
+        .from(users)
+        .where(and(eq(users.id, userId), dueBy(now)))
+        .for('update');
+      if (!user) return { kind: 'skipped' } as const;
+
       const held = await tx
         .select({ organizationId: memberships.organizationId })
         .from(memberships)
@@ -372,13 +396,7 @@ export class AccountDeletionService {
       );
 
       const [block] = await this.blocksFor(tx, userId);
-      if (block) return block;
-
-      // The photo goes in a transaction of its own, opened inside this one:
-      // after the block check, so a block leaves it in place, and before
-      // the rest, so storage that fails rolls this back to be tried again
-      // on the next run (ADR-069).
-      await this.photos.removeFor(userId);
+      if (block) return { kind: 'blocked', block } as const;
 
       if (held.length > 0) {
         await tx.insert(auditLog).values(
@@ -412,11 +430,32 @@ export class AccountDeletionService {
           deletedAt: now,
         })
         .where(eq(users.id, userId));
-      return null;
-    });
 
-    if (!block) this.logger.log(`Account ${userId} deleted`);
-    return block;
+      // Released with the row that pointed at it, so a file the erase
+      // below cannot remove is the purge's in 30 days (ADR-059), not kept.
+      if (user.photoFileId) {
+        await tx
+          .update(files)
+          .set({ releasedAt: now })
+          .where(eq(files.id, user.photoFileId));
+      }
+      return { kind: 'completed', photoFileId: user.photoFileId } as const;
+    });
+    if (outcome.kind !== 'completed') return outcome;
+
+    this.logger.log(`Account ${userId} deleted`);
+    // After the commit, so nothing holds the person's row while storage
+    // answers; the deletion stands whether or not it does.
+    if (outcome.photoFileId) {
+      try {
+        await this.photos.erase(userId, outcome.photoFileId);
+      } catch (error) {
+        this.logger.error(
+          `Could not erase the photo of ${userId}; the purge will: ${String(error)}`,
+        );
+      }
+    }
+    return { kind: 'completed' };
   }
 
   /**
