@@ -9,7 +9,7 @@ import PrecisionManufacturingOutlined from '@mui/icons-material/PrecisionManufac
 import VerifiedOutlined from '@mui/icons-material/VerifiedOutlined';
 import { defineMessages, type MessageDescriptor } from 'react-intl';
 
-import type { HomeKind } from '../lib/types';
+import type { HomeKind } from '../lib/api-names';
 
 /**
  * What each Home card is (ADR-058): its name, icon, the list its "See all"

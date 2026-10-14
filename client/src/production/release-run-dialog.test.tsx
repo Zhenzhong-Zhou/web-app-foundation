@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import type { LicenceCheck, ProductionRun } from '../lib/types';
+import type { LicenceCheck, ProductionRun } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { ReleaseRunDialog } from './release-run-dialog';

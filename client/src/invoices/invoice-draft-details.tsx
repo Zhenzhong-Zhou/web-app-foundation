@@ -2,10 +2,10 @@ import { Button, MenuItem, Paper, Stack, TextField } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { InvoiceDetail, TaxCode } from '../api/types.gen';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { BLANK_LINE } from '../lib/format';
-import type { InvoiceDetail, TaxCode } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
 /**

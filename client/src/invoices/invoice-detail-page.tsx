@@ -22,6 +22,13 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import type {
+  InvoiceDetail,
+  InvoiceLine,
+  InvoiceTax,
+  ReturnAuthorizationDetail,
+  TaxCode,
+} from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
@@ -37,13 +44,6 @@ import {
 } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
-import type {
-  InvoiceDetail,
-  InvoiceLine,
-  InvoiceTax,
-  ReturnAuthorizationDetail,
-  TaxCode,
-} from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { formatRate } from '../settings/tax-rate';

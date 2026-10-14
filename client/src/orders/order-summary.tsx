@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { OrderDetail } from '../api/types.gen';
 import { StatusChip } from '../components/status-chip';
 import {
   displayQuantity,
@@ -11,7 +12,6 @@ import {
   NO_VALUE,
   SEPARATOR,
 } from '../lib/format';
-import type { OrderDetail } from '../lib/types';
 import { displayWithUnit } from '../products/units';
 import { doneLabel } from './status';
 

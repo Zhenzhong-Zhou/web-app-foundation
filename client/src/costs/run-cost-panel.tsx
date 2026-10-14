@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { useIntl } from 'react-intl';
 
+import type { RunCost } from '../api/types.gen';
 import { LabelledValue } from '../components/labelled-value';
 import {
   formatMoney,
@@ -21,7 +22,6 @@ import {
   formatUnitCost,
   NO_VALUE,
 } from '../lib/format';
-import type { RunCost } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 

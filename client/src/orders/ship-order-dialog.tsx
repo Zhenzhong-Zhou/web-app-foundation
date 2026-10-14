@@ -18,6 +18,12 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type {
+  Location,
+  OrderDetail,
+  OrderLine,
+  ShipmentPlanLine,
+} from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
@@ -28,12 +34,6 @@ import {
   SEPARATOR,
   toApiDecimal,
 } from '../lib/format';
-import type {
-  Location,
-  OrderDetail,
-  OrderLine,
-  ShipmentPlanLine,
-} from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
 /**

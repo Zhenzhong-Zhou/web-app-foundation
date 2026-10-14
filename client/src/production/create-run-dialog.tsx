@@ -11,6 +11,13 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type {
+  Bom,
+  Location,
+  Partner,
+  ProductionRun,
+  VariantOption,
+} from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
@@ -20,13 +27,6 @@ import {
   groupedNumberMessage,
   toApiDecimal,
 } from '../lib/format';
-import type {
-  Bom,
-  Location,
-  Partner,
-  ProductionRun,
-  VariantOption,
-} from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
 const EMPTY = {

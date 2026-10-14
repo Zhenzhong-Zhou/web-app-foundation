@@ -12,6 +12,7 @@ import {
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { OrderDetail } from '../api/types.gen';
 import { EmptyState } from '../components/empty-state';
 import { StatusChip } from '../components/status-chip';
 import { invoiceStatus } from '../invoices/invoice-status';
@@ -22,7 +23,6 @@ import {
   formatMoney,
   NO_VALUE,
 } from '../lib/format';
-import type { OrderDetail } from '../lib/types';
 import { STATUS_TONES } from '../theme/status';
 
 /**

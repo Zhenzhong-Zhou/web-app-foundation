@@ -12,10 +12,10 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
+import type { InvoicePage, InvoiceSummary, Shipment } from '../api/types.gen';
 import { api, ApiError, messageFor } from '../lib/api';
 import { formatDate, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { InvoicePage, InvoiceSummary, Shipment } from '../lib/types';
 import { LotItemsTable } from './lot-items-table';
 import { VoidShipmentDialog } from './void-shipment-dialog';
 

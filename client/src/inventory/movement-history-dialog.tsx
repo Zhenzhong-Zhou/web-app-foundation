@@ -18,10 +18,10 @@ import {
 } from '@mui/material';
 import { useIntl } from 'react-intl';
 
+import type { Movement, StockRow } from '../api/types.gen';
 import { FormError } from '../components/form-error';
 import { LoadMoreButton } from '../components/load-more-button';
 import { formatMoment, formatQuantity, relativeTime } from '../lib/format';
-import type { Movement, StockRow } from '../lib/types';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { describeMovement } from './describe-movement';
 import {

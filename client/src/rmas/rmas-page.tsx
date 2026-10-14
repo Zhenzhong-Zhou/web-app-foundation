@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
+import type { ReturnAuthorizationSummary } from '../api/types.gen';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { FilterRow } from '../components/filter-row';
@@ -22,12 +23,9 @@ import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { fromAddress } from '../lib/address-filter';
+import type { ReturnAuthorizationStatus } from '../lib/api-names';
 import { type DayRange, withInstants } from '../lib/date-range';
 import { formatDate } from '../lib/format';
-import type {
-  ReturnAuthorizationStatus,
-  ReturnAuthorizationSummary,
-} from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch, withSearch } from '../lib/use-list-search';

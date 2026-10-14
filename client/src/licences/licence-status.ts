@@ -1,7 +1,7 @@
 import { defineMessages } from 'react-intl';
 
+import type { ProductLicence } from '../api/types.gen';
 import { intl } from '../i18n/intl';
-import type { ProductLicence } from '../lib/types';
 
 const WORDS = defineMessages({
   withdrawn: { id: 'licences.status.withdrawn', defaultMessage: 'Withdrawn' },

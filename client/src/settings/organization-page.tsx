@@ -14,6 +14,7 @@ import {
 import { type ReactNode, type SubmitEvent, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
+import type { OrganizationProfile } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
@@ -21,7 +22,7 @@ import { CurrencyField } from '../components/currency-field';
 import { PageHeader } from '../components/page-header';
 import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
-import type { LicencePolicy, OrganizationProfile } from '../lib/types';
+import type { LicencePolicy } from '../lib/api-names';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';

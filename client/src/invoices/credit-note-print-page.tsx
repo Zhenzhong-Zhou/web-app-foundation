@@ -2,6 +2,7 @@ import { Alert, Box, Skeleton, Stack, Typography } from '@mui/material';
 import { defineMessages, useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
+import type { CreditNoteDetail } from '../api/types.gen';
 import { useDocumentText } from '../components/document-text';
 import {
   PrintLines,
@@ -11,7 +12,6 @@ import {
 } from '../components/print-sheet';
 import { PRINTED } from '../components/printed-words';
 import { formatDay } from '../lib/format';
-import type { CreditNoteDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 

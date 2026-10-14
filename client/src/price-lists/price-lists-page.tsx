@@ -16,12 +16,12 @@ import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
+import type { PriceList } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { openDialog } from '../lib/open-dialog';
-import type { PriceList } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { CreatePriceListDialog } from './create-price-list-dialog';

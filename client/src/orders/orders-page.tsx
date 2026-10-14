@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
+import type { OrderSummary } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
@@ -27,9 +28,9 @@ import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { fromAddress } from '../lib/address-filter';
+import type { OrderDirection } from '../lib/api-names';
 import { type DayRange, withDays } from '../lib/date-range';
 import { displayQuantity, formatDay, NO_VALUE } from '../lib/format';
-import type { OrderDirection, OrderSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch, withSearch } from '../lib/use-list-search';

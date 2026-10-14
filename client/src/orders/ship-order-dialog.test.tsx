@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import type { Location, OrderDetail, OrderLine } from '../lib/types';
+import type { Location, OrderDetail, OrderLine } from '../api/types.gen';
 import { orderLine } from '../test/factories';
 import { server } from '../test/setup';
 import { ShipOrderDialog } from './ship-order-dialog';

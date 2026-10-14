@@ -10,6 +10,7 @@ import {
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { InvoiceLine, TaxCode } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
@@ -18,7 +19,6 @@ import {
   groupedNumberMessage,
   toApiDecimal,
 } from '../lib/format';
-import type { InvoiceLine, TaxCode } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
 /**

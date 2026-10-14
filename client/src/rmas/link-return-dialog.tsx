@@ -11,11 +11,11 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { OrderReturn } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { formatDate, formatQuantity, SEPARATOR } from '../lib/format';
-import type { OrderReturn } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
 /**

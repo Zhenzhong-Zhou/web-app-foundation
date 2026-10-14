@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
+import type { PriceListDetail, PriceListItem } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
@@ -26,7 +27,6 @@ import { api, messageFor } from '../lib/api';
 import { formatUnitCost, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
-import type { PriceListDetail, PriceListItem } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { EditPriceListDialog } from './edit-price-list-dialog';

@@ -17,6 +17,7 @@ import type { ReactNode } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
+import type { CreditNoteDetail } from '../api/types.gen';
 import { PageHeader } from '../components/page-header';
 import {
   displayQuantity,
@@ -25,7 +26,6 @@ import {
   NO_VALUE,
   SEPARATOR,
 } from '../lib/format';
-import type { CreditNoteDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { formatRate } from '../settings/tax-rate';

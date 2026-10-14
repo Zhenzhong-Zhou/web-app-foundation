@@ -10,6 +10,7 @@ import {
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { Location, OrderLine } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { LotFields } from '../inventory/lot-fields';
@@ -20,7 +21,6 @@ import {
   nameAndCode,
   toApiDecimal,
 } from '../lib/format';
-import type { Location, OrderLine } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 import { withUnit } from '../products/units';

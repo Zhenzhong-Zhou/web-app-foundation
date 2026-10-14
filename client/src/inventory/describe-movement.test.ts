@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Movement } from '../lib/types';
+import type { Movement } from '../api/types.gen';
 import { describeMovement } from './describe-movement';
 
 function movement(

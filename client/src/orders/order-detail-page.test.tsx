@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import type { OrderDetail } from '../lib/types';
+import type { OrderDetail } from '../api/types.gen';
 import { orderLine } from '../test/factories';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';

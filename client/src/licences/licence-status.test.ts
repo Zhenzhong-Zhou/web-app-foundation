@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ProductLicence } from '../lib/types';
+import type { ProductLicence } from '../api/types.gen';
 import { licenceStatus } from './licence-status';
 
 /**

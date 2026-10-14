@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import type { Bom, BomDetail } from '../api/types.gen';
 import { api, messageFor } from '../lib/api';
-import type { Bom, BomDetail } from '../lib/types';
 
 /**
  * A variant's recipe versions, and the one to show: the one the caller just

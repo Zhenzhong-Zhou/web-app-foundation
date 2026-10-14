@@ -18,8 +18,6 @@ import { resetDatabase } from './utils/reset-db';
 
 interface Notification {
   id: string;
-  userId: string;
-  organizationId: string | null;
   type: string;
   title: string;
   body: string | null;
@@ -162,8 +160,13 @@ describe('Notifications (e2e)', () => {
 
       // No organization: this belongs to a person, and a user may belong to
       // none. That nullable column is why notifications are scoped by
-      // recipient rather than by tenant (ADR-036).
-      expect(entries[0].organizationId).toBeNull();
+      // recipient rather than by tenant (ADR-036). Read from the row, since
+      // the API sends neither owner nor organization (ADR-068).
+      const [stored] = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.id, entries[0].id));
+      expect(stored.organizationId).toBeNull();
       expect(entries[0].readAt).toBeNull();
     });
 
@@ -407,7 +410,12 @@ describe('Notifications (e2e)', () => {
 
       expect((await list(alpha)).entries).toHaveLength(1);
       expect((await list(beta)).entries).toHaveLength(1);
-      expect((await list(alpha)).entries[0].userId).toBe(alpha.userId);
+      const [mine] = (await list(alpha)).entries;
+      const [stored] = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.id, mine.id));
+      expect(stored.userId).toBe(alpha.userId);
 
       expect(await db.select().from(notifications)).toHaveLength(2);
     });

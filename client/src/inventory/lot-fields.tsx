@@ -2,9 +2,9 @@ import { Autocomplete, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { Lot } from '../api/types.gen';
 import { api } from '../lib/api';
 import { formatDay, SEPARATOR } from '../lib/format';
-import type { Lot } from '../lib/types';
 
 /** The lot as the form holds it: expiry as the date input gives it. */
 export type LotInput = { code: string; expiresAt: string };

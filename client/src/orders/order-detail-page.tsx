@@ -12,22 +12,22 @@ import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
+import type {
+  LineHold,
+  Location,
+  OrderDetail,
+  OrderLine,
+} from '../api/types.gen';
 import { HistoryEntries } from '../audit/history-entries';
 import { useCan } from '../auth/permissions';
 import { DetailLayout } from '../components/detail-layout';
 import { PageHeader } from '../components/page-header';
 import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
+import type { OrderStatus } from '../lib/api-names';
 import { formatDay, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
-import type {
-  LineHold,
-  Location,
-  OrderDetail,
-  OrderLine,
-  OrderStatus,
-} from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useTab } from '../lib/use-tab';
 import { leavesOf } from '../locations/tree';

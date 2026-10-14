@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
-import type { StockRow } from '../lib/types';
+import type { StockRow } from '../api/types.gen';
 import type { MoveMode } from './move-stock-dialog';
 
 type Choice = MoveMode | 'history' | 'lot' | 'trace';

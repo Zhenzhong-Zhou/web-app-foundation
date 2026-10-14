@@ -1,7 +1,7 @@
 import { Paper, Stack, Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
 
-import type { InvoiceDetail } from '../lib/types';
+import type { InvoiceDetail } from '../api/types.gen';
 import { oneLine } from './calendar-day';
 
 /** Who issued it and who pays, as they were copied at issue. */

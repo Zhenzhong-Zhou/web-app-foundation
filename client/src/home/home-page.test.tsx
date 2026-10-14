@@ -5,7 +5,7 @@ import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { HomeResponse } from '../lib/types';
+import type { HomeResponse } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { HomePage } from './home-page';

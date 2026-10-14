@@ -16,11 +16,11 @@ import {
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { ProductLicence } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { formatDay, NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { ProductLicence } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { EditLicenceDialog } from './edit-licence-dialog';

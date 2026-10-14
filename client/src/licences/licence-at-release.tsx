@@ -2,11 +2,11 @@ import { Link } from '@mui/material';
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { nameAndCode, NO_VALUE } from '../lib/format';
 import type {
   LicenceAtReleaseFields,
   LicenceStatusAtRelease,
-} from '../lib/types';
+} from '../lib/api-names';
+import { nameAndCode, NO_VALUE } from '../lib/format';
 
 /**
  * What a batch was made under, as the run page and the lot trace both say

@@ -16,6 +16,7 @@ import { useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
+import type { Partner } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
@@ -24,7 +25,6 @@ import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
 import { NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { Partner } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { CreatePartnerDialog } from './create-partner-dialog';

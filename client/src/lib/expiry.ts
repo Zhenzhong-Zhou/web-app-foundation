@@ -1,5 +1,5 @@
 import type { ToneName } from '../theme/tokens';
-import type { CalendarDay } from './types';
+import type { CalendarDay } from './api-names';
 
 /** When a lot's expiry turns amber, then red: within so many days. */
 export interface ExpiryDays {

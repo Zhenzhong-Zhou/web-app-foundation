@@ -17,6 +17,11 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type {
+  CreditPreview,
+  InvoiceDetail,
+  ReturnAuthorizationDetail,
+} from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, messageFor } from '../lib/api';
@@ -26,11 +31,6 @@ import {
   groupedNumberMessage,
   toApiDecimal,
 } from '../lib/format';
-import type {
-  CreditPreview,
-  InvoiceDetail,
-  ReturnAuthorizationDetail,
-} from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { formatRate } from '../settings/tax-rate';
 import { todayLocal } from './calendar-day';

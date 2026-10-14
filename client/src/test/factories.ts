@@ -1,4 +1,4 @@
-import type { OrderLine } from '../lib/types';
+import type { OrderLine } from '../api/types.gen';
 
 /**
  * An order line for a client test, complete, with whatever the case is about

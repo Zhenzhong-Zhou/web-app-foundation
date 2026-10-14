@@ -12,10 +12,10 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 
+import type { Location, Partner, StockRow } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { api } from '../lib/api';
 import { groupedNumberMessage, nameAndCode, toApiDecimal } from '../lib/format';
-import type { Location, Partner, StockRow } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { unitLabel, withUnit } from '../products/units';
 import { REASON_DETAILS, reasonDetailLabel } from './movement-reasons';

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import type { RunCost } from '../lib/types';
+import type { RunCost } from '../api/types.gen';
 import { server } from '../test/setup';
 import { RunCostPanel } from './run-cost-panel';
 

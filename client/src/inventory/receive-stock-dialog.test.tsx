@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Location } from '../lib/types';
+import type { Location } from '../api/types.gen';
 import { apiError } from '../test/handlers';
 import { server } from '../test/setup';
 import { ReceiveStockDialog } from './receive-stock-dialog';

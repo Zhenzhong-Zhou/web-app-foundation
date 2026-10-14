@@ -1,7 +1,7 @@
 import { defineMessages } from 'react-intl';
 
 import { intl } from '../i18n/intl';
-import type { OrderDirection, OrderStatus } from '../lib/types';
+import type { OrderDirection, OrderStatus } from '../lib/api-names';
 
 const WORDS = defineMessages({
   draft: { id: 'orders.status.draft', defaultMessage: 'Draft' },

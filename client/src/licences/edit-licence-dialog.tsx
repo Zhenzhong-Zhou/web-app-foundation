@@ -11,10 +11,10 @@ import {
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { ProductLicence } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import type { ProductLicence } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
 /**

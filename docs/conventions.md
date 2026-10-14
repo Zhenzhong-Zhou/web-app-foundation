@@ -245,9 +245,10 @@ committed, and neither is edited by hand.
   one missing or mistyped. The failure names the route and the field. Fix
   the projection; if the API changed on purpose, run `npm run api` first,
   since the check reads the committed `openapi.json`.
-  - `npm run api`, then in `client/src/lib/types.ts` replace the module's
-    interfaces with re-exports from `../api/types.gen`, so importers stay
-    unchanged.
+  - `npm run api`, then import the generated types where the client
+    reads them, from `client/src/api/types.gen`. A name a screen switches
+    on goes in `client/src/lib/api-names.ts`, read from a generated type
+    (`OrderSummary['status']`), never written out again.
 
 ## Error codes
 

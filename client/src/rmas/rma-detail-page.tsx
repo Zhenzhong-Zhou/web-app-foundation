@@ -22,6 +22,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 
+import type {
+  InvoicePage,
+  InvoiceSummary,
+  ReturnAuthorizationDetail,
+} from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
@@ -36,11 +41,6 @@ import {
 } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
-import type {
-  InvoicePage,
-  InvoiceSummary,
-  ReturnAuthorizationDetail,
-} from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';

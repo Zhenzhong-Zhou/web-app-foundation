@@ -2,11 +2,11 @@ import { Alert, Box, Button, Paper, Skeleton, Stack } from '@mui/material';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { Location } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { openDialog } from '../lib/open-dialog';
-import type { Location } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { CreateLocationDialog } from './create-location-dialog';

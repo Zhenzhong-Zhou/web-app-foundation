@@ -16,17 +16,17 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type {
+  OrderReturn,
+  ReturnAuthorizationPage,
+  ReturnAuthorizationSummary,
+} from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
 import { formatDate, formatQuantity, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type {
-  OrderReturn,
-  ReturnAuthorizationPage,
-  ReturnAuthorizationSummary,
-} from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { LotItemsTable } from './lot-items-table';
 import { returnReasonLabel } from './return-reasons';

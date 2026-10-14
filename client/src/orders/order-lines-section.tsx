@@ -20,10 +20,10 @@ import {
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { LineHold, OrderDetail, OrderLine } from '../api/types.gen';
 import { StatusChip } from '../components/status-chip';
 import { displayQuantity, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { LineHold, OrderDetail, OrderLine } from '../lib/types';
 import { doneLabel } from './status';
 
 /**

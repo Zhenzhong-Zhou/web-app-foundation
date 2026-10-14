@@ -11,7 +11,8 @@ import {
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { GettingStartedStep, HomeResponse } from '../lib/types';
+import type { HomeResponse } from '../api/types.gen';
+import type { GettingStartedStep } from '../lib/api-names';
 
 interface StepMeta {
   title: MessageDescriptor;

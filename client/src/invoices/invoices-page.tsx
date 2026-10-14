@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
+import type { InvoiceSummary } from '../api/types.gen';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
@@ -24,9 +25,9 @@ import { PageHeader } from '../components/page-header';
 import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { fromAddress } from '../lib/address-filter';
+import type { InvoiceStatus } from '../lib/api-names';
 import { type DayRange, withDays } from '../lib/date-range';
 import { formatDay, formatMoney, NO_VALUE } from '../lib/format';
-import type { InvoiceStatus, InvoiceSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch, withSearch } from '../lib/use-list-search';

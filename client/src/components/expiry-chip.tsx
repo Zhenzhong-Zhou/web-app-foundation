@@ -1,9 +1,9 @@
 import { Box } from '@mui/material';
 import { useIntl } from 'react-intl';
 
+import type { CalendarDay } from '../lib/api-names';
 import { daysUntil, expiryTone } from '../lib/expiry';
 import { formatDay, NO_VALUE } from '../lib/format';
-import type { CalendarDay } from '../lib/types';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { StatusChip } from './status-chip';
 

@@ -16,13 +16,13 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { ExchangeRate, OrganizationProfile } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { api, messageFor } from '../lib/api';
 import { formatDay, formatQuantity } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { ExchangeRate, OrganizationProfile } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { ExchangeRateDialog } from './exchange-rate-dialog';
 
