@@ -9,6 +9,7 @@ import {
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { Role } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { PasswordField } from '../components/password-field';
@@ -21,11 +22,6 @@ import {
   PASSWORD_MIN_LENGTH,
 } from '../lib/validation';
 import { roleLabel } from './role-names';
-
-interface Role {
-  id: string;
-  name: string;
-}
 
 const EMPTY = { name: '', email: '', password: '' };
 

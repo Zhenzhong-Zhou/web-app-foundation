@@ -3,13 +3,13 @@ import type {
   InvoiceSummary,
   LotCostEntry,
   OrderSummary,
+  OrganizationProfile,
   PriceList,
   ProductionRun,
   ReturnAuthorizationLine,
   ReturnAuthorizationSummary,
   RunDetail,
 } from '../api/types.gen';
-import type { Locale } from './locales';
 
 /**
  * Shapes the server returns, shared rather than redeclared per feature.
@@ -32,6 +32,15 @@ import type { Locale } from './locales';
  * is already this shape, so a form sends it as typed.
  */
 export type CalendarDay = string;
+
+/**
+ * The organization's profile and registered address, generated from the
+ * server's OpenAPI document (ADR-068).
+ */
+export type {
+  OrganizationAddress,
+  OrganizationProfile,
+} from '../api/types.gen';
 
 /**
  * Return authorizations (ADR-047), generated from the server's OpenAPI
@@ -171,57 +180,12 @@ export type OrderStatus = OrderSummary['status'];
  */
 export type { TaxCode, TaxCodeComponent } from '../api/types.gen';
 
-export interface OrganizationAddress {
-  line1: string;
-  line2: string | null;
-  city: string | null;
-  region: string | null;
-  postalCode: string | null;
-  country: string;
-}
-
-/** What every invoice prints as the seller (ADR-046). */
-export interface OrganizationProfile {
-  id: string;
-  name: string;
-  slug: string;
-  taxRegistrationNumber: string | null;
-  /** Null until set; no invoice can be issued before it is. */
-  address: OrganizationAddress | null;
-  /** ISO 4217; null until set. Stock is valued in it (ADR-048). */
-  baseCurrency: string | null;
-  /** The sale list for customers with none of their own (ADR-049). */
-  defaultSalePriceListId: string | null;
-  /** What release does with a licence not yet in force (ADR-050). */
-  licenceNotInForcePolicy: LicencePolicy;
-  /** What release does with an expired licence (ADR-050). */
-  licenceExpiredPolicy: LicencePolicy;
-  /** Whether a recipe with no licence is refused at release. */
-  licenceRequired: boolean;
-  /** What documents print in, unless a partner says otherwise (ADR-054). */
-  documentLanguage: Locale;
-  documentSecondLanguage: Locale | null;
-  /** Languages an invoice may not be issued in while a name is missing. */
-  requiredNameLanguages: Locale[];
-  /** Branding (ADR-060): the logo file, the saved accent, the rail. */
-  logoFileId: string | null;
-  accentColor: string | null;
-  rail: 'dark' | 'light';
-  logoOnDocuments: boolean;
-  /** When a lot counts as expiring here (ADR-060). */
-  expiryWarningDays: number;
-  expiryCriticalDays: number;
-  /** Sign out after inactivity (ADR-065): minutes, or null for Off. */
-  idleSignOutMinutes: number | null;
-  idleSignOutScope: 'unticked' | 'everyone';
-}
-
 /**
  * What release does with a licence in a given state (ADR-050): refuse,
  * refuse unless someone with production.override_licence gives a reason, or
  * let it through.
  */
-export type LicencePolicy = 'block' | 'override' | 'allow';
+export type LicencePolicy = OrganizationProfile['licenceExpiredPolicy'];
 
 /**
  * Invoices and credit notes, generated from the server's OpenAPI document
