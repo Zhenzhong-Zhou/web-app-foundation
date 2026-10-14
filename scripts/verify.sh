@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# What CI runs, on this machine and in CI's order: the server's checks and
-# both its suites, then the client's checks, unit tests and the Playwright
-# suite. Stops at the first failure, so the last heading printed is what
-# failed.
+# What CI runs, on this machine and in CI's order: the Markdown check, the
+# server's checks and both its suites, then the client's checks, unit tests
+# and the Playwright suite. Stops at the first failure, so the last heading
+# printed is what failed.
 #
 #   scripts/verify.sh            everything, about as long as CI takes
 #   scripts/verify.sh --quick    format, lint, types, checks, build and unit
@@ -33,6 +33,13 @@ fi
 
 step() { printf '\n== %s\n\n' "$*"; }
 
+# The docs workflow's check, at the version it pins, with the repository's
+# .markdownlint-cli2.jsonc. The first run downloads it.
+markdown() {
+  step 'Markdown: every .md file, as the docs workflow checks it'
+  npx --yes markdownlint-cli2@0.23.3
+}
+
 contract() {
   step 'API contract: the committed document and client types are current'
   (cd server && npm run api)
@@ -45,6 +52,8 @@ contract() {
     exit 1
   fi
 }
+
+markdown
 
 if $quick; then
   step 'Server: format, lint, types, checks, build, unit tests'
