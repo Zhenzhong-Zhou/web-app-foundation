@@ -1,7 +1,7 @@
 {
   "account.blocks.lastOwner": "Vous êtes le seul propriétaire de {organization}. Désignez d’abord un autre membre comme propriétaire.",
   "account.blocks.onlyMember": "Vous êtes le seul membre de {organization}, qui resterait sans personne. Ajoutez d’abord un autre membre et désignez-le comme propriétaire.",
-  "account.leave.noOrganization": "Vous ne travaillez dans aucune organisation",
+  "account.leave.noOrganization": "Vous ne travaillez dans aucune organisation, il n’y en a donc aucune à quitter.",
   "account.password.noneSet": "Ce compte n’a pas de mot de passe. Utilisez plutôt le lien de réinitialisation.",
   "account.password.wrong": "Ce mot de passe est incorrect",
   "account.photo.missing": "Choisissez une photo à téléverser",

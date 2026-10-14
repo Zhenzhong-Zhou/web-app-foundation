@@ -165,6 +165,17 @@ describe('Account deletion (e2e)', () => {
         .expect(200);
     });
 
+    it('says why there is nothing to leave, once no organization is left', async () => {
+      const { member } = await team();
+      await member.delete('/v1/account/membership').expect(204);
+
+      const res = await member.delete('/v1/account/membership').expect(400);
+
+      expect(body<{ message: string }>(res).message).toBe(
+        'You are not working in an organization, so there is none to leave.',
+      );
+    });
+
     it('lets an Owner leave once another member is Owner', async () => {
       const { owner } = await team('Owner');
 

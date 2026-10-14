@@ -120,7 +120,8 @@ export class AccountDeletionService {
       throw new BadRequestException(
         t({
           id: 'account.leave.noOrganization',
-          defaultMessage: 'You are not working in an organization',
+          defaultMessage:
+            'You are not working in an organization, so there is none to leave.',
         }),
       );
     }

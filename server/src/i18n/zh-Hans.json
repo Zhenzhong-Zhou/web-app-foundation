@@ -1,7 +1,7 @@
 {
   "account.blocks.lastOwner": "您是 {organization} 唯一的所有者。请先将另一位成员设为所有者。",
   "account.blocks.onlyMember": "您是 {organization} 唯一的成员，离开后它将无人管理。请先添加另一位成员，并将其设为所有者。",
-  "account.leave.noOrganization": "您当前不在任何组织中",
+  "account.leave.noOrganization": "您当前不在任何组织中，因此没有可离开的组织。",
   "account.password.noneSet": "此账户未设置密码。请改用重置链接。",
   "account.password.wrong": "密码不正确",
   "account.photo.missing": "请选择要上传的照片",

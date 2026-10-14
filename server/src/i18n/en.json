@@ -1,7 +1,7 @@
 {
   "account.blocks.lastOwner": "You are the only Owner of {organization}. Make another member an Owner first.",
   "account.blocks.onlyMember": "You are the only member of {organization}, so it would be left with no one. Add another member and make them an Owner first.",
-  "account.leave.noOrganization": "You are not working in an organization",
+  "account.leave.noOrganization": "You are not working in an organization, so there is none to leave.",
   "account.password.noneSet": "This account has no password set. Use the reset link instead.",
   "account.password.wrong": "That password is not correct",
   "account.photo.missing": "Choose a photo to upload",
