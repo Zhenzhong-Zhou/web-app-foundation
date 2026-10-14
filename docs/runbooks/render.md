@@ -34,8 +34,9 @@ goes for `BACKUP_S3_ENDPOINT` in GitHub's secrets, which nothing checks.
 - **The web service sleeps after 15 minutes without a request,** and the
   next request waits about a minute while it starts. The hourly jobs run
   inside it, so while it sleeps they do not: licence reminders (ADR-064)
-  arrive late or on the next visit, and released files are purged late
-  (ADR-059). Nothing is lost; it is only late.
+  arrive late or on the next visit, account deletions that have come due
+  complete on the next visit (ADR-069), and released files are purged
+  late (ADR-059). Nothing is lost; it is only late.
 - Render may restart either at any time, and only one free database can be
   active per workspace.
 
