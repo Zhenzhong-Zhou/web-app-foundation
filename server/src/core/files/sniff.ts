@@ -46,7 +46,16 @@ function isSvg(bytes: Buffer): boolean {
     .toString('utf8')
     .replace(/^\uFEFF/, '')
     .trimStart();
-  return /^(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(
-    text,
-  );
+  // One prolog item at a time, each match consuming text, so the work is
+  // linear in the input. A single pattern with two runs of comments around
+  // an optional doctype can match the same comments either way, and
+  // backtracks badly on text that never reaches <svg (CodeQL).
+  let rest = text;
+  for (let item = PROLOG_ITEM.exec(rest); item; item = PROLOG_ITEM.exec(rest)) {
+    rest = rest.slice(item[0].length);
+  }
+  return /^<svg[\s>]/i.test(rest);
 }
+
+/** What may come before an SVG's root element: one at a time. */
+const PROLOG_ITEM = /^(?:<\?xml[^>]*>|<!--[\s\S]*?-->|<!DOCTYPE[^>]*>)\s*/i;

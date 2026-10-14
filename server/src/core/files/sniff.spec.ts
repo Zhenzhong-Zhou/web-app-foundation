@@ -25,6 +25,19 @@ describe('sniff', () => {
     ).toBe('image/svg+xml');
   });
 
+  /**
+   * The text CodeQL warned about: a run of comments that never reaches an
+   * <svg. Read one prolog item at a time, it is refused at once rather than
+   * after trying every way of splitting the comments between two runs.
+   */
+  it('refuses a run of comments that never reaches <svg, quickly', () => {
+    const comments = Buffer.from('<!---->'.repeat(140) + '<html>');
+    const started = performance.now();
+
+    expect(sniff(comments)).toBeNull();
+    expect(performance.now() - started).toBeLessThan(100);
+  });
+
   it('goes by the bytes, never the name or the browser', () => {
     expect(sniff(Buffer.from('hello, I am a PNG'))).toBeNull();
     expect(sniff(Buffer.from('<html><svg></svg></html>'))).toBeNull();
