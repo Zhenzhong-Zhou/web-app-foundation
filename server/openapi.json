@@ -490,7 +490,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCount"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -532,7 +539,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPage"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -722,7 +736,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/AuditPage"
                 }
               }
             }
@@ -1207,7 +1221,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/AuditPage"
                 }
               }
             }
@@ -3689,7 +3703,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupResponse"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -3712,7 +3733,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeResponse"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6220,7 +6248,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentList"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6844,7 +6879,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6858,7 +6900,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Readiness"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -7496,76 +7545,80 @@
           "file"
         ]
       },
-      "Person": {
+      "UnreadCount": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "count"
+        ]
+      },
+      "Notification": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "name": {
+          "type": {
             "type": "string"
           },
-          "email": {
+          "title": {
             "type": "string"
           },
-          "photoFileId": {
+          "body": {
             "type": [
               "string",
               "null"
             ]
           },
-          "roleId": {
-            "type": "string"
-          },
-          "roleName": {
-            "type": "string"
-          },
-          "jobTitle": {
+          "resourceType": {
             "type": [
               "string",
               "null"
             ]
           },
-          "department": {
+          "resourceId": {
             "type": [
               "string",
               "null"
             ]
           },
-          "location": {
+          "readAt": {
+            "format": "date-time",
             "type": [
               "string",
               "null"
             ]
           },
-          "workPhone": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "extension": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "memberSince": {
+          "createdAt": {
             "format": "date-time",
             "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "body",
+          "resourceType",
+          "resourceId",
+          "readAt",
+          "createdAt"
+        ]
+      },
+      "NotificationPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
           },
-          "active": {
-            "type": "string",
-            "enum": [
-              "today",
-              "week",
-              "month",
-              "older",
-              "never"
-            ]
-          },
-          "lastActiveAt": {
-            "format": "date-time",
+          "nextCursor": {
             "type": [
               "string",
               "null"
@@ -7573,19 +7626,8 @@
           }
         },
         "required": [
-          "id",
-          "name",
-          "email",
-          "photoFileId",
-          "roleId",
-          "roleName",
-          "jobTitle",
-          "department",
-          "location",
-          "workPhone",
-          "extension",
-          "memberSince",
-          "active"
+          "entries",
+          "nextCursor"
         ]
       },
       "AuditRecord": {
@@ -7677,6 +7719,119 @@
           "ip",
           "userAgent",
           "createdAt"
+        ]
+      },
+      "AuditPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditRecord"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
+      "Person": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "photoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "roleId": {
+            "type": "string"
+          },
+          "roleName": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "workPhone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "extension": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "memberSince": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "active": {
+            "type": "string",
+            "enum": [
+              "today",
+              "week",
+              "month",
+              "older",
+              "never"
+            ]
+          },
+          "lastActiveAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "photoFileId",
+          "roleId",
+          "roleName",
+          "jobTitle",
+          "department",
+          "location",
+          "workPhone",
+          "extension",
+          "memberSince",
+          "active"
         ]
       },
       "PersonDetail": {
@@ -11176,6 +11331,247 @@
           "outstanding",
           "held",
           "short"
+        ]
+      },
+      "LookupResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "detail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "productId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "coverFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "close": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "detail",
+          "status",
+          "expiresAt",
+          "productId",
+          "coverFileId",
+          "close"
+        ]
+      },
+      "LookupGroup": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "invoice",
+              "order",
+              "lot",
+              "partner",
+              "creditNote",
+              "returnAuthorization",
+              "item",
+              "productionRun"
+            ]
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LookupResult"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "results"
+        ]
+      },
+      "LookupResponse": {
+        "type": "object",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LookupGroup"
+            }
+          }
+        },
+        "required": [
+          "groups"
+        ]
+      },
+      "GettingStartedSteps": {
+        "type": "object",
+        "properties": {
+          "organization": {
+            "type": "boolean"
+          },
+          "location": {
+            "type": "boolean"
+          },
+          "product": {
+            "type": "boolean"
+          },
+          "partner": {
+            "type": "boolean"
+          },
+          "receipt": {
+            "type": "boolean"
+          },
+          "invoice": {
+            "type": "boolean"
+          },
+          "team": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "organization",
+          "location",
+          "product",
+          "partner",
+          "receipt",
+          "invoice",
+          "team"
+        ]
+      },
+      "GettingStarted": {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "$ref": "#/components/schemas/GettingStartedSteps"
+          },
+          "teamSkipped": {
+            "type": "boolean"
+          },
+          "dismissed": {
+            "type": "boolean"
+          },
+          "complete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "steps",
+          "teamSkipped",
+          "dismissed",
+          "complete"
+        ]
+      },
+      "HomeRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "detail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "due": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "late": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "detail",
+          "due",
+          "late"
+        ]
+      },
+      "HomeCard": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "production",
+              "expiring",
+              "toShip",
+              "toReceive",
+              "costsWaiting",
+              "invoicesToIssue",
+              "returnsOpen",
+              "licences"
+            ]
+          },
+          "count": {
+            "type": "number"
+          },
+          "late": {
+            "type": "number"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HomeRow"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "count",
+          "late",
+          "rows"
+        ]
+      },
+      "HomeResponse": {
+        "type": "object",
+        "properties": {
+          "gettingStarted": {
+            "$ref": "#/components/schemas/GettingStarted"
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HomeCard"
+            }
+          }
+        },
+        "required": [
+          "gettingStarted",
+          "cards"
         ]
       },
       "OrderSummary": {
@@ -14912,6 +15308,64 @@
           "nextCursor"
         ]
       },
+      "RecentEntry": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "invoice",
+              "order",
+              "lot",
+              "product",
+              "partner",
+              "run",
+              "return",
+              "priceList"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "detail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "openedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "title",
+          "detail",
+          "openedAt"
+        ]
+      },
+      "RecentList": {
+        "type": "object",
+        "properties": {
+          "recent": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecentEntry"
+            }
+          }
+        },
+        "required": [
+          "recent"
+        ]
+      },
       "RecordOpenedDto": {
         "type": "object",
         "properties": {
@@ -15832,6 +16286,47 @@
         },
         "required": [
           "item"
+        ]
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "uptime": {
+            "type": "number"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "commit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "uptime",
+          "timestamp",
+          "commit"
+        ]
+      },
+      "Readiness": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "database"
         ]
       },
       "Permission": {

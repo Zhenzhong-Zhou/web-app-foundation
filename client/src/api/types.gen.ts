@@ -204,21 +204,24 @@ export type UploadedFileEnvelope = {
   file: StoredFile;
 };
 
-export type Person = {
+export type UnreadCount = {
+  count: number;
+};
+
+export type Notification = {
   id: string;
-  name: string;
-  email: string;
-  photoFileId: string | null;
-  roleId: string;
-  roleName: string;
-  jobTitle: string | null;
-  department: string | null;
-  location: string | null;
-  workPhone: string | null;
-  extension: string | null;
-  memberSince: string;
-  active: 'today' | 'week' | 'month' | 'older' | 'never';
-  lastActiveAt?: string | null;
+  type: string;
+  title: string;
+  body: string | null;
+  resourceType: string | null;
+  resourceId: string | null;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export type NotificationPage = {
+  entries: Array<Notification>;
+  nextCursor: string | null;
 };
 
 export type AuditRecord = {
@@ -237,6 +240,28 @@ export type AuditRecord = {
   ip: string | null;
   userAgent: string | null;
   createdAt: string;
+};
+
+export type AuditPage = {
+  entries: Array<AuditRecord>;
+  nextCursor: string | null;
+};
+
+export type Person = {
+  id: string;
+  name: string;
+  email: string;
+  photoFileId: string | null;
+  roleId: string;
+  roleName: string;
+  jobTitle: string | null;
+  department: string | null;
+  location: string | null;
+  workPhone: string | null;
+  extension: string | null;
+  memberSince: string;
+  active: 'today' | 'week' | 'month' | 'older' | 'never';
+  lastActiveAt?: string | null;
 };
 
 export type PersonDetail = {
@@ -1067,6 +1092,79 @@ export type LineHold = {
   outstanding: string;
   held: string;
   short: string;
+};
+
+export type LookupResult = {
+  id: string;
+  title: string;
+  detail: string | null;
+  status: string | null;
+  expiresAt: string | null;
+  productId: string | null;
+  coverFileId: string | null;
+  close: boolean;
+};
+
+export type LookupGroup = {
+  kind:
+    | 'invoice'
+    | 'order'
+    | 'lot'
+    | 'partner'
+    | 'creditNote'
+    | 'returnAuthorization'
+    | 'item'
+    | 'productionRun';
+  results: Array<LookupResult>;
+};
+
+export type LookupResponse = {
+  groups: Array<LookupGroup>;
+};
+
+export type GettingStartedSteps = {
+  organization: boolean;
+  location: boolean;
+  product: boolean;
+  partner: boolean;
+  receipt: boolean;
+  invoice: boolean;
+  team: boolean;
+};
+
+export type GettingStarted = {
+  steps: GettingStartedSteps;
+  teamSkipped: boolean;
+  dismissed: boolean;
+  complete: boolean;
+};
+
+export type HomeRow = {
+  id: string;
+  title: string;
+  detail: string | null;
+  due: string | null;
+  late: boolean;
+};
+
+export type HomeCard = {
+  kind:
+    | 'production'
+    | 'expiring'
+    | 'toShip'
+    | 'toReceive'
+    | 'costsWaiting'
+    | 'invoicesToIssue'
+    | 'returnsOpen'
+    | 'licences';
+  count: number;
+  late: number;
+  rows: Array<HomeRow>;
+};
+
+export type HomeResponse = {
+  gettingStarted: GettingStarted;
+  cards: Array<HomeCard>;
 };
 
 export type OrderSummary = {
@@ -1918,6 +2016,26 @@ export type CreditNotePage = {
   nextCursor: string | null;
 };
 
+export type RecentEntry = {
+  kind:
+    | 'invoice'
+    | 'order'
+    | 'lot'
+    | 'product'
+    | 'partner'
+    | 'run'
+    | 'return'
+    | 'priceList';
+  id: string;
+  title: string | null;
+  detail: string | null;
+  openedAt: string;
+};
+
+export type RecentList = {
+  recent: Array<RecentEntry>;
+};
+
 export type RecordOpenedDto = {
   kind:
     | 'order'
@@ -2156,6 +2274,18 @@ export type SetPriceListItemDto = {
 
 export type PriceListItemEnvelope = {
   item: PriceListItem;
+};
+
+export type Health = {
+  status: string;
+  uptime: number;
+  timestamp: string;
+  commit: string | null;
+};
+
+export type Readiness = {
+  status: string;
+  database: string;
 };
 
 export const Permission = {
@@ -2607,8 +2737,11 @@ export type NotificationsControllerUnreadCountV1Data = {
 };
 
 export type NotificationsControllerUnreadCountV1Responses = {
-  200: unknown;
+  200: UnreadCount;
 };
+
+export type NotificationsControllerUnreadCountV1Response =
+  NotificationsControllerUnreadCountV1Responses[keyof NotificationsControllerUnreadCountV1Responses];
 
 export type NotificationsControllerListV1Data = {
   body?: never;
@@ -2624,8 +2757,11 @@ export type NotificationsControllerListV1Data = {
 };
 
 export type NotificationsControllerListV1Responses = {
-  200: unknown;
+  200: NotificationPage;
 };
+
+export type NotificationsControllerListV1Response =
+  NotificationsControllerListV1Responses[keyof NotificationsControllerListV1Responses];
 
 export type NotificationsControllerMarkReadV1Data = {
   body?: never;
@@ -2742,9 +2878,7 @@ export type AuditControllerListV1Data = {
 };
 
 export type AuditControllerListV1Responses = {
-  200: {
-    [key: string]: unknown;
-  };
+  200: AuditPage;
 };
 
 export type AuditControllerListV1Response =
@@ -3017,9 +3151,7 @@ export type WorkControllerActivityV1Data = {
 };
 
 export type WorkControllerActivityV1Responses = {
-  200: {
-    [key: string]: unknown;
-  };
+  200: AuditPage;
 };
 
 export type WorkControllerActivityV1Response =
@@ -4093,8 +4225,11 @@ export type LookupControllerLookupV1Data = {
 };
 
 export type LookupControllerLookupV1Responses = {
-  200: unknown;
+  200: LookupResponse;
 };
+
+export type LookupControllerLookupV1Response =
+  LookupControllerLookupV1Responses[keyof LookupControllerLookupV1Responses];
 
 export type HomeControllerGetV1Data = {
   body?: never;
@@ -4106,8 +4241,11 @@ export type HomeControllerGetV1Data = {
 };
 
 export type HomeControllerGetV1Responses = {
-  200: unknown;
+  200: HomeResponse;
 };
+
+export type HomeControllerGetV1Response =
+  HomeControllerGetV1Responses[keyof HomeControllerGetV1Responses];
 
 export type HomeControllerShowV1Data = {
   body?: never;
@@ -5126,8 +5264,11 @@ export type RecentControllerListV1Data = {
 };
 
 export type RecentControllerListV1Responses = {
-  200: unknown;
+  200: RecentList;
 };
+
+export type RecentControllerListV1Response =
+  RecentControllerListV1Responses[keyof RecentControllerListV1Responses];
 
 export type RecentControllerRecordV1Data = {
   body: RecordOpenedDto;
@@ -5436,8 +5577,11 @@ export type HealthControllerCheckData = {
 };
 
 export type HealthControllerCheckResponses = {
-  200: unknown;
+  200: Health;
 };
+
+export type HealthControllerCheckResponse =
+  HealthControllerCheckResponses[keyof HealthControllerCheckResponses];
 
 export type HealthControllerReadyData = {
   body?: never;
@@ -5447,5 +5591,8 @@ export type HealthControllerReadyData = {
 };
 
 export type HealthControllerReadyResponses = {
-  200: unknown;
+  200: Readiness;
 };
+
+export type HealthControllerReadyResponse =
+  HealthControllerReadyResponses[keyof HealthControllerReadyResponses];

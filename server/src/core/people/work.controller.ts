@@ -18,6 +18,7 @@ import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { recordContext } from '../audit/audit-context';
 import { AUDIT_COLUMNS } from '../audit/audit-exports';
 import { Audited } from '../audit/audited.decorator';
+import type { AuditPage } from '../audit/dto/audit-response.dto';
 import { ListAuditDto } from '../audit/dto/list-audit.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
@@ -56,7 +57,7 @@ export class WorkController {
   activity(
     @CurrentUser() context: RequestContext,
     @Query() query: ListAuditDto,
-  ) {
+  ): Promise<AuditPage> {
     return this.audit.list({ ...query, actorId: context.userId });
   }
 

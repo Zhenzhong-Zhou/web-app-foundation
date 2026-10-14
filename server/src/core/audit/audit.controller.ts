@@ -10,6 +10,7 @@ import { AUDIT_ACTIONS } from './audit-actions';
 import { recordContext } from './audit-context';
 import { AUDIT_COLUMNS } from './audit-exports';
 import { Audited } from './audited.decorator';
+import type { AuditPage } from './dto/audit-response.dto';
 import { ListAuditDto } from './dto/list-audit.dto';
 
 @Controller({ path: 'audit', version: '1' })
@@ -22,7 +23,7 @@ export class AuditController {
    */
   @Get()
   @RequirePermissions(PERMISSIONS.AUDIT_VIEW)
-  list(@Query() query: ListAuditDto) {
+  list(@Query() query: ListAuditDto): Promise<AuditPage> {
     return this.audit.list(query);
   }
 
@@ -64,7 +65,7 @@ export class AuditController {
    */
   @Get('actions')
   @RequirePermissions(PERMISSIONS.AUDIT_VIEW)
-  listActions() {
+  listActions(): Promise<string[]> {
     return this.audit.listActions();
   }
 }

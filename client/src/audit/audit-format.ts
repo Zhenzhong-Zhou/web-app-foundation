@@ -10,32 +10,12 @@ import { AUDIT_ACTION_NAMES } from './audit-actions';
  * start calling the same event something different from the log.
  */
 
-export interface AuditRecord {
-  id: string;
-  action: string;
-  resourceType: string | null;
-  resourceId: string | null;
-  /**
-   * What the resource was called when this happened (ADR-038). Snapshotted,
-   * so it may differ from the record's name today — which is the point. Null
-   * on rows from before it was recorded, and for member events.
-   */
-  resourceLabel: string | null;
-  actorId: string | null;
-  /** Joined server-side: a tombstoned actor is not in GET /v1/users. */
-  actorEmail: string | null;
-  /** Their name and photo, for their face (ADR-063). */
-  actorName?: string | null;
-  actorPhotoFileId?: string | null;
-  /**
-   * What a field was set to, for the routes that name fields (ADR-018). Not
-   * before and after — the interceptor runs after the handler and never saw
-   * the old row.
-   */
-  payload: Record<string, unknown> | null;
-  ip: string | null;
-  createdAt: string;
-}
+/**
+ * One entry of the audit log, generated from the server's OpenAPI document
+ * (ADR-068). Its resource label is what the record was called then
+ * (ADR-038), and its payload what a field was set to (ADR-018).
+ */
+export type { AuditRecord } from '../api/types.gen';
 
 /**
  * Wording for actions where the derived text reads badly. An override, not a

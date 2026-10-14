@@ -1,6 +1,9 @@
 import type {
   Bom,
+  HomeCard,
+  HomeResponse,
   InvoiceSummary,
+  LookupResponse,
   LotCostEntry,
   OrderSummary,
   OrganizationProfile,
@@ -244,77 +247,23 @@ export type {
 
 export type ValuationKind = LotCostEntry['kind'];
 
+/**
+ * The top bar's lookup and Home's cards, generated from the server's
+ * OpenAPI document (ADR-068), re-exported so their importers need no
+ * change.
+ */
+export type {
+  HomeCard,
+  HomeResponse,
+  HomeRow,
+  LookupResponse,
+  LookupResult,
+} from '../api/types.gen';
+
 /** Kinds of record the top bar's lookup finds (ADR-056). */
-export type LookupKind =
-  | 'order'
-  | 'invoice'
-  | 'creditNote'
-  | 'lot'
-  | 'item'
-  | 'partner'
-  | 'productionRun'
-  | 'returnAuthorization';
-
-/** One record the lookup found; the client builds its address. */
-export interface LookupResult {
-  id: string;
-  title: string;
-  detail: string | null;
-  status: string | null;
-  expiresAt: CalendarDay | null;
-  productId: string | null;
-  /** An item's product's cover (ADR-066); null for other kinds. */
-  coverFileId: string | null;
-  /** Found by similarity, after the exact matches: a typo. */
-  close: boolean;
-}
-
-/** What GET /lookup returns: kinds in the order to show them. */
-export interface LookupResponse {
-  groups: { kind: LookupKind; results: LookupResult[] }[];
-}
+export type LookupKind = LookupResponse['groups'][number]['kind'];
 
 /** Home's cards (ADR-058), in the order of a working day. */
-export type HomeKind =
-  | 'toShip'
-  | 'toReceive'
-  | 'expiring'
-  | 'costsWaiting'
-  | 'invoicesToIssue'
-  | 'returnsOpen'
-  | 'production'
-  | 'licences';
+export type HomeKind = HomeCard['kind'];
 
-export interface HomeRow {
-  id: string;
-  title: string;
-  detail: string | null;
-  due: CalendarDay | null;
-  late: boolean;
-}
-
-export interface HomeCard {
-  kind: HomeKind;
-  count: number;
-  late: number;
-  rows: HomeRow[];
-}
-
-export type GettingStartedStep =
-  | 'organization'
-  | 'location'
-  | 'product'
-  | 'partner'
-  | 'receipt'
-  | 'invoice'
-  | 'team';
-
-export interface HomeResponse {
-  gettingStarted: {
-    steps: Record<GettingStartedStep, boolean>;
-    teamSkipped: boolean;
-    dismissed: boolean;
-    complete: boolean;
-  };
-  cards: HomeCard[];
-}
+export type GettingStartedStep = keyof HomeResponse['gettingStarted']['steps'];

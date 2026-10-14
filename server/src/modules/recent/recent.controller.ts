@@ -15,6 +15,7 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PermissionsService } from '../../core/authorization/permissions.service';
 import { t } from '../../i18n/translate';
 import { ListRecentDto } from './dto/list-recent.dto';
+import type { RecentList } from './dto/recent-response.dto';
 import { RecordOpenedDto } from './dto/record-opened.dto';
 import { RECENT_PERMISSION, RecentService } from './recent.service';
 
@@ -40,7 +41,7 @@ export class RecentController {
   async list(
     @CurrentUser() user: RequestContext,
     @Query() query: ListRecentDto,
-  ) {
+  ): Promise<RecentList> {
     return {
       recent: await this.recent.list(
         user.userId,

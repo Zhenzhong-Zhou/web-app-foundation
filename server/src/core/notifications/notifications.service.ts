@@ -263,16 +263,22 @@ export class NotificationsService {
       .orderBy(desc(notifications.id))
       .limit(limit + 1);
 
-    // Stored as t() made it, so read back as one.
+    // Stored as t() made it, so read back as one; and only the fields the
+    // API returns (ADR-068), not the row's owner or message ids.
     return pageOf(
-      rows.map(({ titleMessage, bodyMessage, ...row }) => ({
-        ...row,
-        title: titleMessage
-          ? translate(titleMessage as Translatable, locale)
+      rows.map((row) => ({
+        id: row.id,
+        type: row.type,
+        title: row.titleMessage
+          ? translate(row.titleMessage as Translatable, locale)
           : row.title,
-        body: bodyMessage
-          ? translate(bodyMessage as Translatable, locale)
+        body: row.bodyMessage
+          ? translate(row.bodyMessage as Translatable, locale)
           : row.body,
+        resourceType: row.resourceType,
+        resourceId: row.resourceId,
+        readAt: row.readAt,
+        createdAt: row.createdAt,
       })),
       limit,
     );

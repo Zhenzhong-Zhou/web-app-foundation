@@ -14,19 +14,9 @@ import { type MouseEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
+import type { Notification } from '../api/types.gen';
 import { api } from '../lib/api';
 import { relativeTime } from '../lib/format';
-
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  body: string | null;
-  resourceType: string | null;
-  resourceId: string | null;
-  readAt: string | null;
-  createdAt: string;
-}
 
 /** How often the badge re-checks while the app is open. */
 const POLL_MS = 60_000;

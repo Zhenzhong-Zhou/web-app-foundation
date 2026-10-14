@@ -51,9 +51,10 @@ with this one, this one is current.
   sign-in, devices, photo, work details; events went ahead with
   partners), the organization's people and settings
   (`organization-responses`: members, people, roles, profile, uploads).
-  Next: audit with account activity, notifications, home, recent, lookup
-  and health; then `client/src/lib/types.ts` replaced by direct imports
-  from `client/src/api/`.
+  The last group followed (`remaining-responses`: audit with account
+  activity, notifications, home, recent, lookup, health), so every JSON
+  response is declared and checked. Next and last: `client/src/lib/types.ts`,
+  now only re-exports, replaced by direct imports from `client/src/api/`.
 - **Next, in Bob's order:** **ADR-069**, account deletion (ADR-012 already
   settles the audit side: anonymize the person, keep the rows).
 - **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),
