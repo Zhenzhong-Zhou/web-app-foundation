@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { INestApplication } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
@@ -14,7 +16,10 @@ import {
 import {
   accountEvents,
   auditLog,
+  authTokens,
   memberships,
+  notifications,
+  recentRecords,
   sessions,
   users,
 } from '../src/database/schema';
@@ -281,6 +286,55 @@ describe('Account deletion (e2e)', () => {
         .post('/v1/account/deletion')
         .send({ password: PASSWORD })
         .expect(200);
+
+      // Something of each kind ADR-069 removes, so none is gone vacuously.
+      await member
+        .patch('/v1/account/profile')
+        .send({ locale: 'fr-CA' })
+        .expect(204);
+      await authedAgent(app)
+        .post('/v1/auth/forgot-password')
+        .send({ email })
+        .expect(202);
+      await db.insert(recentRecords).values({
+        organizationId: owner.organizationId,
+        userId: memberId,
+        kind: 'product',
+        recordId: randomUUID(),
+      });
+      await db.insert(notifications).values({
+        organizationId: owner.organizationId,
+        userId: memberId,
+        type: 'production.variance',
+        title: 'A run used more than planned',
+      });
+
+      /** How many of each are the person's, in ADR-069's table order. */
+      const theirs = async () =>
+        (
+          await Promise.all([
+            db.select().from(sessions).where(eq(sessions.userId, memberId)),
+            db.select().from(authTokens).where(eq(authTokens.userId, memberId)),
+            db
+              .select()
+              .from(accountEvents)
+              .where(eq(accountEvents.userId, memberId)),
+            db
+              .select()
+              .from(notifications)
+              .where(eq(notifications.userId, memberId)),
+            db
+              .select()
+              .from(recentRecords)
+              .where(eq(recentRecords.userId, memberId)),
+            db
+              .select()
+              .from(memberships)
+              .where(eq(memberships.userId, memberId)),
+          ])
+        ).map((rows) => rows.length);
+      expect((await theirs()).every((count) => count > 0)).toBe(true);
+
       await due(memberId);
 
       const result = await app.get(AccountDeletionService).completeDue();
@@ -291,20 +345,13 @@ describe('Account deletion (e2e)', () => {
         email: `deleted-${memberId}@invalid`,
         name: 'Deleted User',
         passwordHash: null,
+        locale: null,
         photoFileId: null,
         deletionScheduledAt: null,
       });
       expect(row.deletedAt).not.toBeNull();
 
-      const left = await Promise.all([
-        db.select().from(memberships).where(eq(memberships.userId, memberId)),
-        db.select().from(sessions).where(eq(sessions.userId, memberId)),
-        db
-          .select()
-          .from(accountEvents)
-          .where(eq(accountEvents.userId, memberId)),
-      ]);
-      expect(left.map((rows) => rows.length)).toEqual([0, 0, 0]);
+      expect(await theirs()).toEqual([0, 0, 0, 0, 0, 0]);
 
       const kept = await db
         .select({ action: auditLog.action })
