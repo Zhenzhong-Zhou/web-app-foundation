@@ -14,6 +14,7 @@ import { getRequestContext } from '../auth/request-context';
 import { PERMISSIONS } from '../authorization/permissions';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
 import { OrganizationAddressDto } from './dto/organization-address.dto';
+import type { OrganizationEnvelope } from './dto/organization-response.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { OrganizationsService } from './organizations.service';
 
@@ -30,7 +31,7 @@ export class OrganizationController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.ORGANIZATIONS_VIEW)
-  async get() {
+  async get(): Promise<OrganizationEnvelope> {
     return { organization: await this.organization.get() };
   }
 

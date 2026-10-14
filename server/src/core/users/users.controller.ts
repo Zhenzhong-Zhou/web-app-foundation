@@ -21,6 +21,7 @@ import { RequirePermissions } from '../authorization/require-permissions.decorat
 import { activeSince } from '../people/people.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import type { Member, UserEnvelope } from './dto/user-response.dto';
 import { UsersService } from './users.service';
 
 @Controller({ path: 'users', version: '1' })
@@ -34,7 +35,7 @@ export class UsersController {
   // permission still gates it, because a future role need not.
   @Get()
   @RequirePermissions(PERMISSIONS.USERS_VIEW)
-  async list(@CurrentUser() user: RequestContext) {
+  async list(@CurrentUser() user: RequestContext): Promise<Member[]> {
     // Last active as People shows it (ADR-063): roughly for everyone, the
     // time itself only for those who may read the history.
     const exact =
@@ -60,7 +61,7 @@ export class UsersController {
     resourceType: 'user',
     resourceId: (response: { user: { id: string } }) => response.user.id,
   })
-  async create(@Body() dto: CreateUserDto) {
+  async create(@Body() dto: CreateUserDto): Promise<UserEnvelope> {
     return { user: await this.users.create(dto) };
   }
 

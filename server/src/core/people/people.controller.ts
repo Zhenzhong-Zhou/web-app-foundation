@@ -15,6 +15,7 @@ import type { RequestContext } from '../auth/request-context';
 import { PERMISSIONS } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
+import type { Person, PersonDetail } from './dto/person-response.dto';
 import { PhotoSizeDto } from './dto/work-details.dto';
 import { PeopleService } from './people.service';
 
@@ -32,7 +33,7 @@ export class PeopleController {
 
   @Get()
   @RequirePermissions(PERMISSIONS.USERS_VIEW)
-  async list(@CurrentUser() user: RequestContext) {
+  async list(@CurrentUser() user: RequestContext): Promise<Person[]> {
     return this.people.list(await this.held(user));
   }
 
@@ -41,7 +42,7 @@ export class PeopleController {
   async find(
     @CurrentUser() user: RequestContext,
     @Param('userId', ParseUUIDPipe) userId: string,
-  ) {
+  ): Promise<PersonDetail> {
     const person = await this.people.find(userId, await this.held(user));
     // Your own page shows no activity: your work is on your Account page.
     if (userId === user.userId) delete person.recentActivity;
