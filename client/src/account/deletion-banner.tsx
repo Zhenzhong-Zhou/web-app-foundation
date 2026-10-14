@@ -1,10 +1,10 @@
 import { Alert, Box, Button } from '@mui/material';
-import { useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import { useAuth } from '../auth/use-auth';
-import { api, messageFor } from '../lib/api';
+import { api } from '../lib/api';
 import { formatDay } from '../lib/format';
+import { useSubmit } from '../lib/use-submit';
 
 /**
  * On every page while a deletion is pending (ADR-069): the day after which
@@ -15,8 +15,7 @@ import { formatDay } from '../lib/format';
 export function DeletionBanner() {
   const intl = useIntl();
   const { session, refresh } = useAuth();
-  const [keeping, setKeeping] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { submitting, error, submit } = useSubmit(refresh);
 
   const due = session?.user.deletionScheduledAt;
   if (!due) return null;
@@ -30,15 +29,10 @@ export function DeletionBanner() {
         <Button
           variant="text"
           size="small"
-          disabled={keeping}
-          onClick={() => {
-            setKeeping(true);
-            setError(null);
-            void api('/account/deletion', { method: 'DELETE' })
-              .then(() => refresh())
-              .catch((caught: unknown) => setError(messageFor(caught)))
-              .finally(() => setKeeping(false));
-          }}
+          disabled={submitting}
+          onClick={() =>
+            void submit(() => api('/account/deletion', { method: 'DELETE' }))
+          }
         >
           {intl.formatMessage({
             id: 'account.deletion.keep',

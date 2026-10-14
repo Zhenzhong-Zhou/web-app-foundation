@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
@@ -34,11 +34,10 @@ describe('LeaveOrDelete', () => {
       screen.getByRole('button', { name: 'Delete my account' }),
     );
     await userEvent.type(screen.getByLabelText(/Your password/), 'secret');
-    const dialog = screen.getByRole('dialog');
     await userEvent.click(
-      Array.from(dialog.querySelectorAll('button')).find(
-        (button) => button.textContent === 'Delete my account',
-      )!,
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Delete my account',
+      }),
     );
 
     expect(sent).toEqual([{ password: 'secret' }]);

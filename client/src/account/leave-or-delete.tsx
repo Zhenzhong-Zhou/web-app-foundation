@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   Link,
@@ -15,48 +14,35 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../auth/use-auth';
+import { DialogFooter } from '../components/dialog-footer';
+import { FormError } from '../components/form-error';
 import { PasswordField } from '../components/password-field';
-import { api, ApiError, download, hasCode, messageFor } from '../lib/api';
+import { api, download, hasCode, messageFor } from '../lib/api';
 import { formatDay } from '../lib/format';
+import { openDialog } from '../lib/open-dialog';
+import { useSubmit } from '../lib/use-submit';
 import { PASSWORD_MAX_LENGTH } from '../lib/validation';
-
-interface Refusal {
-  message: string;
-  code: string | null;
-}
-
-function refusalOf(caught: unknown): Refusal {
-  return {
-    message: messageFor(caught),
-    code: caught instanceof ApiError ? (caught.code ?? null) : null,
-  };
-}
 
 /**
  * The refusal, and the way past it (ADR-069): both blocks are settled on
  * the Members page, by making another member Owner.
  */
-function RefusalAlert({ refusal }: { refusal: Refusal }) {
+function Refusal({ error, code }: { error: string; code: string | null }) {
   const intl = useIntl();
   const settledOnMembers =
-    hasCode(refusal.code, 'only_member') ||
-    hasCode(refusal.code, 'last_owner_with_members');
+    hasCode(code, 'only_member') || hasCode(code, 'last_owner_with_members');
 
   return (
-    <Alert severity="error">
-      {refusal.message}
+    <FormError message={error}>
       {settledOnMembers && (
-        <>
-          {' '}
-          <Link component={RouterLink} to="/members">
-            {intl.formatMessage({
-              id: 'account.leave.goToMembers',
-              defaultMessage: 'Go to Members',
-            })}
-          </Link>
-        </>
+        <Link component={RouterLink} to="/members">
+          {intl.formatMessage({
+            id: 'account.leave.goToMembers',
+            defaultMessage: 'Go to Members',
+          })}
+        </Link>
       )}
-    </Alert>
+    </FormError>
   );
 }
 
@@ -71,9 +57,16 @@ export function LeaveOrDelete() {
   const { session, refresh } = useAuth();
   const [dialog, setDialog] = useState<'leave' | 'delete' | null>(null);
   const [password, setPassword] = useState('');
-  const [refusal, setRefusal] = useState<Refusal | null>(null);
-  const [busy, setBusy] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const leaving = useSubmit(async () => {
+    close();
+    await refresh();
+    void navigate('/');
+  });
+  const deleting = useSubmit(async () => {
+    close();
+    await refresh();
+  });
 
   if (!session) return null;
   const organization = session.organization;
@@ -82,7 +75,8 @@ export function LeaveOrDelete() {
   function close() {
     setDialog(null);
     setPassword('');
-    setRefusal(null);
+    leaving.reset();
+    deleting.reset();
   }
 
   async function exportData() {
@@ -94,43 +88,16 @@ export function LeaveOrDelete() {
     }
   }
 
-  async function leave() {
-    setBusy(true);
-    setRefusal(null);
-    try {
-      await api('/account/membership', { method: 'DELETE' });
-      close();
-      await refresh();
-      void navigate('/');
-    } catch (caught) {
-      setRefusal(refusalOf(caught));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function requestDeletion(event: SubmitEvent) {
+  function requestDeletion(event: SubmitEvent) {
     event.preventDefault();
-    setBusy(true);
-    setRefusal(null);
-    try {
-      await api('/account/deletion', {
+    void deleting.submit(() =>
+      api('/account/deletion', {
         method: 'POST',
         body: JSON.stringify({ password }),
-      });
-      close();
-      await refresh();
-    } catch (caught) {
-      setRefusal(refusalOf(caught));
-    } finally {
-      setBusy(false);
-    }
+      }),
+    );
   }
 
-  const cancel = intl.formatMessage({
-    id: 'common.cancel',
-    defaultMessage: 'Cancel',
-  });
   const deleteAccount = intl.formatMessage({
     id: 'account.deletion.delete',
     defaultMessage: 'Delete my account',
@@ -176,7 +143,10 @@ export function LeaveOrDelete() {
           })}
         </Button>
         {organization && (
-          <Button variant="outlined" onClick={() => setDialog('leave')}>
+          <Button
+            variant="outlined"
+            onClick={openDialog(() => setDialog('leave'))}
+          >
             {intl.formatMessage(
               {
                 id: 'account.leave.button',
@@ -190,14 +160,19 @@ export function LeaveOrDelete() {
           <Button
             variant="outlined"
             color="error"
-            onClick={() => setDialog('delete')}
+            onClick={openDialog(() => setDialog('delete'))}
           >
             {deleteAccount}
           </Button>
         )}
       </Stack>
 
-      <Dialog open={dialog === 'leave'} onClose={close} fullWidth maxWidth="sm">
+      <Dialog
+        open={dialog === 'leave'}
+        onClose={leaving.submitting ? undefined : close}
+        fullWidth
+        maxWidth="sm"
+      >
         <DialogTitle>
           {intl.formatMessage(
             {
@@ -219,28 +194,34 @@ export function LeaveOrDelete() {
                 { organization: organization?.name ?? '' },
               )}
             </Typography>
-            {refusal && <RefusalAlert refusal={refusal} />}
+            {leaving.error && (
+              <Refusal error={leaving.error} code={leaving.errorCode} />
+            )}
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={close}>{cancel}</Button>
-          <Button
-            color="error"
-            variant="contained"
-            disabled={busy}
-            onClick={() => void leave()}
-          >
-            {intl.formatMessage({
-              id: 'account.leave.confirm',
-              defaultMessage: 'Leave',
-            })}
-          </Button>
-        </DialogActions>
+        <DialogFooter
+          submitting={leaving.submitting}
+          onCancel={close}
+          label={intl.formatMessage({
+            id: 'account.leave.confirm',
+            defaultMessage: 'Leave',
+          })}
+          pendingLabel={intl.formatMessage({
+            id: 'account.leave.pending',
+            defaultMessage: 'Leaving…',
+          })}
+          destructive
+          onConfirm={() =>
+            void leaving.submit(() =>
+              api('/account/membership', { method: 'DELETE' }),
+            )
+          }
+        />
       </Dialog>
 
       <Dialog
         open={dialog === 'delete'}
-        onClose={close}
+        onClose={deleting.submitting ? undefined : close}
         fullWidth
         maxWidth="sm"
       >
@@ -274,7 +255,9 @@ export function LeaveOrDelete() {
                     'Want a copy first? Download your data before you go.',
                 })}
               </Typography>
-              {refusal && <RefusalAlert refusal={refusal} />}
+              {deleting.error && (
+                <Refusal error={deleting.error} code={deleting.errorCode} />
+              )}
               <PasswordField
                 id="deletionPassword"
                 label={intl.formatMessage({
@@ -290,17 +273,17 @@ export function LeaveOrDelete() {
               />
             </Stack>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={close}>{cancel}</Button>
-            <Button
-              type="submit"
-              color="error"
-              variant="contained"
-              disabled={busy || password.length === 0}
-            >
-              {deleteAccount}
-            </Button>
-          </DialogActions>
+          <DialogFooter
+            submitting={deleting.submitting}
+            onCancel={close}
+            label={deleteAccount}
+            pendingLabel={intl.formatMessage({
+              id: 'account.deletion.confirming',
+              defaultMessage: 'Confirming…',
+            })}
+            disabled={password.length === 0}
+            destructive
+          />
         </form>
       </Dialog>
     </Stack>
