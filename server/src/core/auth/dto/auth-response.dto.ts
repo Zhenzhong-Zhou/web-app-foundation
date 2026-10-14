@@ -18,6 +18,8 @@ export class SessionUser {
   locale!: Locale | null;
   /** Their photo (ADR-063), or null. */
   photoFileId?: string | null;
+  /** Set while a deletion is pending (ADR-069): every page says so. */
+  deletionScheduledAt?: Date | null;
 }
 
 /** The organization's look, applied on load (ADR-060). */

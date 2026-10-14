@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   NotFoundException,
@@ -20,9 +21,14 @@ import { Throttle } from '@nestjs/throttler';
 import { t } from '../../i18n/translate';
 import type { UploadedBinary } from '../files/files.service';
 import { AccountService } from './account.service';
+import { AccountDeletionService } from './account-deletion.service';
 import { AccountPhotoService, AVATAR_MAX_BYTES } from './account-photo.service';
 import { AllowNoOrganization } from './allow-no-organization.decorator';
 import { CurrentUser } from './current-user.decorator';
+import type {
+  AccountExport,
+  DeletionScheduled,
+} from './dto/account-deletion-response.dto';
 import type { AccountEvent } from './dto/account-event-response.dto';
 import type {
   PasswordChanged,
@@ -30,6 +36,7 @@ import type {
   SessionSummary,
 } from './dto/auth-response.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { DeleteAccountDto } from './dto/delete-account.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import type { RequestContext } from './request-context';
 
@@ -47,6 +54,7 @@ export class AccountController {
   constructor(
     private readonly account: AccountService,
     private readonly photo: AccountPhotoService,
+    private readonly deletion: AccountDeletionService,
   ) {}
 
   @Patch('profile')
@@ -142,5 +150,45 @@ export class AccountController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async removePhoto(@CurrentUser() context: RequestContext): Promise<void> {
     await this.photo.remove(context);
+  }
+
+  /**
+   * Leave the organization this session is working in (ADR-069). The
+   * account stays; the session moves to another organization, or none.
+   */
+  @Delete('membership')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async leaveOrganization(
+    @CurrentUser() context: RequestContext,
+  ): Promise<void> {
+    await this.deletion.leave(context);
+  }
+
+  /**
+   * Ask for the account to be deleted in 30 days (ADR-069). Rate limited
+   * as the password change is: the password check is a guessing oracle.
+   */
+  @Post('deletion')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 300_000 } })
+  requestDeletion(
+    @CurrentUser() context: RequestContext,
+    @Body() dto: DeleteAccountDto,
+  ): Promise<DeletionScheduled> {
+    return this.deletion.request(context, dto.password);
+  }
+
+  /** Keep the account: the pending deletion is cancelled. */
+  @Delete('deletion')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async cancelDeletion(@CurrentUser() context: RequestContext): Promise<void> {
+    await this.deletion.cancel(context);
+  }
+
+  /** Everything that is the person's own, as a JSON file (ADR-069). */
+  @Get('export')
+  @Header('Content-Disposition', 'attachment; filename="account-export.json"')
+  exportData(@CurrentUser() context: RequestContext): Promise<AccountExport> {
+    return this.deletion.export(context);
   }
 }

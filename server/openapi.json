@@ -382,6 +382,84 @@
         ]
       }
     },
+    "/v1/account/membership": {
+      "delete": {
+        "operationId": "AccountController_leaveOrganization_v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Account"
+        ]
+      }
+    },
+    "/v1/account/deletion": {
+      "post": {
+        "operationId": "AccountController_requestDeletion_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionScheduled"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Account"
+        ]
+      },
+      "delete": {
+        "operationId": "AccountController_cancelDeletion_v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Account"
+        ]
+      }
+    },
+    "/v1/account/export": {
+      "get": {
+        "operationId": "AccountController_exportData_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountExport"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Account"
+        ]
+      }
+    },
     "/v1/roles": {
       "get": {
         "operationId": "RolesController_list_v1",
@@ -614,6 +692,8 @@
                 "user.created",
                 "user.role_changed",
                 "member.removed",
+                "member.left",
+                "user.account_deleted",
                 "product.created",
                 "product.updated",
                 "product.variant_added",
@@ -770,6 +850,8 @@
                 "user.created",
                 "user.role_changed",
                 "member.removed",
+                "member.left",
+                "user.account_deleted",
                 "product.created",
                 "product.updated",
                 "product.variant_added",
@@ -1099,6 +1181,8 @@
                 "user.created",
                 "user.role_changed",
                 "member.removed",
+                "member.left",
+                "user.account_deleted",
                 "product.created",
                 "product.updated",
                 "product.variant_added",
@@ -1255,6 +1339,8 @@
                 "user.created",
                 "user.role_changed",
                 "member.removed",
+                "member.left",
+                "user.account_deleted",
                 "product.created",
                 "product.updated",
                 "product.variant_added",
@@ -6958,6 +7044,13 @@
               "string",
               "null"
             ]
+          },
+          "deletionScheduledAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -7451,6 +7544,263 @@
         },
         "required": [
           "photoFileId"
+        ]
+      },
+      "DeleteAccountDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "DeletionScheduled": {
+        "type": "object",
+        "properties": {
+          "deletionScheduledAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deletionScheduledAt"
+        ]
+      },
+      "ExportedProfile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "locale": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "emailVerifiedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deletionScheduledAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "locale",
+          "emailVerifiedAt",
+          "createdAt",
+          "deletionScheduledAt"
+        ]
+      },
+      "ExportedMembership": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "roleName": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "workPhone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "extension": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "joinedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organizationId",
+          "organizationName",
+          "roleName",
+          "jobTitle",
+          "department",
+          "location",
+          "workPhone",
+          "extension",
+          "joinedAt"
+        ]
+      },
+      "ExportedNotification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "readAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organizationId",
+          "type",
+          "title",
+          "body",
+          "readAt",
+          "createdAt"
+        ]
+      },
+      "ExportedRecent": {
+        "type": "object",
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "recordId": {
+            "type": "string"
+          },
+          "openedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organizationId",
+          "kind",
+          "recordId",
+          "openedAt"
+        ]
+      },
+      "AccountExport": {
+        "type": "object",
+        "properties": {
+          "exportedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ExportedProfile"
+          },
+          "memberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportedMembership"
+            }
+          },
+          "devices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionSummary"
+            }
+          },
+          "accountHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountEvent"
+            }
+          },
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportedNotification"
+            }
+          },
+          "recentlyOpened": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportedRecent"
+            }
+          }
+        },
+        "required": [
+          "exportedAt",
+          "profile",
+          "memberships",
+          "devices",
+          "accountHistory",
+          "notifications",
+          "recentlyOpened"
         ]
       },
       "Role": {
@@ -16401,6 +16751,8 @@
           "user.created",
           "user.role_changed",
           "member.removed",
+          "member.left",
+          "user.account_deleted",
           "product.created",
           "product.updated",
           "product.variant_added",
@@ -16474,7 +16826,9 @@
         "enum": [
           "organization_address_missing",
           "customer_billing_address_missing",
-          "organization_tax_number_missing"
+          "organization_tax_number_missing",
+          "last_owner_with_members",
+          "only_member"
         ]
       },
       "ApiVocabulary": {

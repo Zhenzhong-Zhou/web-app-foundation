@@ -140,7 +140,20 @@ export class AccountPhotoService {
 
   /** Takes the photo away and deletes it; initials show from now on. */
   async remove(context: RequestContext): Promise<void> {
-    const userId = context.userId;
+    if (!(await this.removeFor(context.userId))) return;
+
+    await this.events.record(context.userId, 'account.profile_updated', {
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
+  }
+
+  /**
+   * The photo and its file gone, by user rather than session, and nothing
+   * recorded: also how a completed account deletion clears it (ADR-069),
+   * which removes the account history with it. True when there was one.
+   */
+  async removeFor(userId: string): Promise<boolean> {
     const previous = await this.db.transaction(async (tx) => {
       const [user] = await tx
         .select({ photoFileId: users.photoFileId })
@@ -154,14 +167,11 @@ export class AccountPhotoService {
         .where(eq(users.id, userId));
       return user.photoFileId;
     });
-    if (!previous) return;
+    if (!previous) return false;
 
     await this.erase(userId, previous);
-    await this.events.record(userId, 'account.profile_updated', {
-      ip: context.ip,
-      userAgent: context.userAgent,
-    });
     this.logger.log(`Photo removed for ${userId}`);
+    return true;
   }
 
   /** Bytes first, then the row: a row without bytes would be a lie. */

@@ -6,6 +6,8 @@ import { FilesModule } from '../files/files.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
+import { AccountDeletionService } from './account-deletion.service';
+import { AccountDeletionTimer } from './account-deletion.timer';
 import { AccountEventService } from './account-event.service';
 import { AccountPhotoService } from './account-photo.service';
 import { AuthController } from './auth.controller';
@@ -28,6 +30,8 @@ import { SessionContextMiddleware } from './session-context.middleware';
     AccountService,
     AccountEventService,
     AccountPhotoService,
+    AccountDeletionService,
+    AccountDeletionTimer,
   ],
   // Exported for the guard, and for password-change flows that must revoke
   // other sessions (ADR-011). AuthTokenService is exported so admin-created
