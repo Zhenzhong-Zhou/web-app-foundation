@@ -87,11 +87,18 @@ amends in `docs/decisions.md`.
 
 ## 4. Report
 
-Group findings, most serious first:
+Label every finding **(introduced)**, when the change brings it, or
+**(pre-existing)**, when it was there before. Group the introduced ones,
+most serious first:
 
 - **Must fix**: breaks a rule, a test, or the contract.
 - **Should fix**: works, but against a convention or a principle.
-- **Worth considering**: a simpler or clearer way.
+- **Worth considering**: a simpler or clearer way. The three most
+  valuable only, then one line saying how many were left out.
+
+Pre-existing findings go last, under **Noticed, not this PR's**. They are
+never counted as must or should fix, however serious: the change did not
+bring them.
 
 Write each as `path:line`, what is wrong, the rule it breaks (the ADR,
 the convention or the principle), and the fix. End with one line on
