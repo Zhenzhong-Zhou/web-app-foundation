@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { todayUtc } from '../src/common/today';
 import {
@@ -87,6 +87,22 @@ describe('Account deletion (e2e)', () => {
     return user.id;
   }
 
+  /** Until this many connections are waiting on a lock, for up to 5s. */
+  async function waitingOnLocks(count: number): Promise<void> {
+    const until = Date.now() + 5000;
+    for (;;) {
+      const { rows } = await db.execute<{ waiting: number }>(sql`
+        select count(*)::int as waiting from pg_stat_activity
+        where datname = current_database() and wait_event_type = 'Lock'
+      `);
+      if (rows[0].waiting >= count) return;
+      if (Date.now() > until) {
+        throw new Error(`${rows[0].waiting} of ${count} waiting on a lock`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+  }
+
   /** An organization with its Owner and one more member. */
   async function team(roleName = 'Viewer') {
     const owner = await registerOrganization(app, 'alpha');
@@ -153,6 +169,43 @@ describe('Account deletion (e2e)', () => {
       const { owner } = await team('Owner');
 
       await owner.agent.delete('/v1/account/membership').expect(204);
+    });
+
+    /**
+     * Each would see the other still there and go, leaving the
+     * organization with no one (ADR-069), unless the second waits for the
+     * first on the organization's lock. The test holds the membership rows
+     * until both requests are waiting on a lock, so they overlap every
+     * time rather than by luck.
+     */
+    it('lets only one of two Owners leaving at once go', async () => {
+      const { owner, member } = await team('Owner');
+      // Marked active now, so neither request's own once-a-minute write to
+      // its membership waits on the rows held below.
+      await owner.agent.get('/v1/auth/me').expect(200);
+      await member.get('/v1/auth/me').expect(200);
+
+      let leaving!: Promise<{ status: number }[]>;
+      await db.transaction(async (tx) => {
+        await tx
+          .select({ id: memberships.id })
+          .from(memberships)
+          .where(eq(memberships.organizationId, owner.organizationId))
+          .for('update');
+        leaving = Promise.all([
+          owner.agent.delete('/v1/account/membership'),
+          member.delete('/v1/account/membership'),
+        ]);
+        await waitingOnLocks(2);
+      });
+      const results = await leaving;
+
+      expect(results.map((res) => res.status).sort()).toEqual([204, 409]);
+      const remaining = await db
+        .select({ userId: memberships.userId })
+        .from(memberships)
+        .where(eq(memberships.organizationId, owner.organizationId));
+      expect(remaining).toHaveLength(1);
     });
   });
 

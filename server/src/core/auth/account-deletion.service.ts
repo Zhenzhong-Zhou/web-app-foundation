@@ -7,7 +7,17 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { and, asc, desc, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  sql,
+} from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
 import { todayUtc } from '../../common/today';
@@ -116,6 +126,7 @@ export class AccountDeletionService {
     }
 
     await this.db.transaction(async (tx) => {
+      await lockOrganizations(tx, [organizationId]);
       const block = (await this.blocksFor(tx, context.userId)).find(
         (each) => each.organizationId === organizationId,
       );
@@ -236,17 +247,15 @@ export class AccountDeletionService {
 
     for (const { id } of due) {
       try {
-        const [block] = await this.blocksFor(this.db, id);
+        const block = await this.complete(id, now);
         if (block) {
           await this.unschedule(id, (to) =>
             deletionBlockedMail(to, refusalMessage(block)),
           );
           blocked += 1;
-          continue;
+        } else {
+          completed += 1;
         }
-
-        await this.complete(id, now);
-        completed += 1;
       } catch (error) {
         failed += 1;
         this.logger.error(
@@ -341,15 +350,28 @@ export class AccountDeletionService {
    * Anonymize the person and remove what is theirs, keeping the row that
    * every foreign key names, the audit log and the records they made
    * (ADR-012, ADR-069). Each organization they belonged to records it.
+   * A block that applies now is returned instead, with nothing changed:
+   * checked under the organizations' locks, as leaving is.
    */
-  private async complete(userId: string, now: Date): Promise<void> {
-    await this.photos.removeFor(userId);
-
-    await this.db.transaction(async (tx) => {
+  private async complete(userId: string, now: Date): Promise<Block | null> {
+    const block = await this.db.transaction(async (tx) => {
       const held = await tx
         .select({ organizationId: memberships.organizationId })
         .from(memberships)
         .where(eq(memberships.userId, userId));
+      await lockOrganizations(
+        tx,
+        held.map(({ organizationId }) => organizationId),
+      );
+
+      const [block] = await this.blocksFor(tx, userId);
+      if (block) return block;
+
+      // The photo goes in a transaction of its own, opened inside this one:
+      // after the block check, so a block leaves it in place, and before
+      // the rest, so storage that fails rolls this back to be tried again
+      // on the next run (ADR-069).
+      await this.photos.removeFor(userId);
 
       if (held.length > 0) {
         await tx.insert(auditLog).values(
@@ -383,9 +405,11 @@ export class AccountDeletionService {
           deletedAt: now,
         })
         .where(eq(users.id, userId));
+      return null;
     });
 
-    this.logger.log(`Account ${userId} deleted`);
+    if (!block) this.logger.log(`Account ${userId} deleted`);
+    return block;
   }
 
   /**
@@ -483,6 +507,27 @@ export class AccountDeletionService {
       this.logger.error(`Could not email ${userId}: ${String(error)}`);
     }
   }
+}
+
+/**
+ * Holds the organizations until the transaction ends, so the blocks are
+ * checked one person at a time: two Owners leaving at once would each see
+ * the other still there, and both go (ADR-069). No key update, so it waits
+ * only for another such lock, not for writes that merely refer to the
+ * organization; in id order, so two holders of the same set cannot
+ * deadlock.
+ */
+async function lockOrganizations(
+  tx: Transaction,
+  organizationIds: string[],
+): Promise<void> {
+  if (organizationIds.length === 0) return;
+  await tx
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(inArray(organizations.id, organizationIds))
+    .orderBy(asc(organizations.id))
+    .for('no key update');
 }
 
 /** The refusal for a block: why, and what to do next (ADR-069). */
