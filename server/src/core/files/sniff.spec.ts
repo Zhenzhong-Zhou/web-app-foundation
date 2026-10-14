@@ -28,10 +28,12 @@ describe('sniff', () => {
   /**
    * The text CodeQL warned about: a run of comments that never reaches an
    * <svg. Read one prolog item at a time, it is refused at once rather than
-   * after trying every way of splitting the comments between two runs.
+   * after trying every way of grouping the comments. Twenty-six are enough:
+   * a pattern that backtracks takes most of a second to several seconds on
+   * them, so a regression fails here instead of hanging the run.
    */
   it('refuses a run of comments that never reaches <svg, quickly', () => {
-    const comments = Buffer.from('<!---->'.repeat(140) + '<html>');
+    const comments = Buffer.from('<!---->'.repeat(26) + '<html>');
     const started = performance.now();
 
     expect(sniff(comments)).toBeNull();
