@@ -121,6 +121,12 @@ Pairs currently being watched rather than extracted:
   password rules, and have already drifted once. Extract to validation constants
   — not a shared DTO, which the rule above forbids — at the fourth DTO, or the
   first time a rule changes in one and not the other.
+- The hourly timers, `files-purge.timer.ts`, `licence-reminders.timer.ts`
+  and `account-deletion.timer.ts`, are one class around a different call:
+  three, but watched rather than extracted, since they already differ. The
+  purge does not run at startup, and one helper for all three would first
+  need ADR-059 to say whether it should. Extract at the fourth timer, or the
+  first time a fix to one has to be made in the others.
 
 Test helpers follow the same rule with one addition: extract *knowledge* (a
 library's interface shape, a stub that must match a real service) and leave
