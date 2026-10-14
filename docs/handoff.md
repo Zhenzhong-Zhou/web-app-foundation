@@ -79,8 +79,17 @@ with this one, this one is current.
   the type generator, is dev-only and reads only our own spec; esbuild's
   flaw is in a dev server drizzle-kit never starts. Neither has a fixed
   parent release, and ADR-019 rules out overrides.
-- **Next, in Bob's order:** **ADR-069**, account deletion (ADR-012 already
-  settles the audit side: anonymize the person, keep the rows).
+- **ADR-069** (`adr-069-account-deletion`): leaving an organization,
+  deleting your account after 30 days, and exporting your own data.
+  Only the person deletes their account; an Owner removes a member. The
+  only member of an organization, and its only Owner while others
+  remain, can do neither (`only_member`, `last_owner_with_members`).
+  `AccountDeletionTimer` completes due deletions hourly, cancelling one a
+  block now applies to; migration 0055.
+- **Next:** organization deletion, ADR-069's deferral. Its trigger, the
+  first paying customer, is near, and until it exists a person alone in
+  their organization, which is everyone who registers, cannot delete
+  their account.
 - **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),
   a GitHub pre-release; its tag ran the Performance workflow's full
   budgets. v0.7.0 follows once those pass and the release candidate has
@@ -124,8 +133,6 @@ with this one, this one is current.
 
 - **The typo lookup** sits at 270 ms of its 300 ms budget; one query per
   pass if it ever fails.
-- **Account deletion** does not exist yet. When it does, ADR-063 says it
-  deletes the person's photo with it.
 
 ### Deferred, each waiting for its trigger (in the ADRs)
 
