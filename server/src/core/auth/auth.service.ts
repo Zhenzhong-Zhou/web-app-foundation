@@ -58,8 +58,11 @@ export interface CurrentSession {
     locale: Locale | null;
     /** Their photo (ADR-063); null shows their initials. */
     photoFileId?: string | null;
-    /** Set while a deletion is pending (ADR-069): every page says so. */
-    deletionScheduledAt?: Date | null;
+    /**
+     * The deletion day, YYYY-MM-DD, while one is pending (ADR-069): every
+     * page says so.
+     */
+    deletionScheduledAt?: string | null;
   };
   /** Null when the caller belongs to no organization — see SessionGuard. */
   organization: {

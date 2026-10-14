@@ -9,7 +9,11 @@ import type { SessionSummary } from './auth-response.dto';
 
 /** POST /account/deletion: when the account will be deleted. */
 export class DeletionScheduled {
-  deletionScheduledAt!: Date;
+  /**
+   * The deletion day, YYYY-MM-DD (ADR-052): completed once it has ended in
+   * every time zone (ADR-069).
+   */
+  deletionScheduledAt!: string;
 }
 
 /** Who the person is, as the account holds it. */
@@ -20,8 +24,8 @@ export class ExportedProfile {
   locale!: Locale | null;
   emailVerifiedAt!: Date | null;
   createdAt!: Date;
-  /** Set while a deletion is pending (ADR-069). */
-  deletionScheduledAt!: Date | null;
+  /** The deletion day, YYYY-MM-DD, while one is pending (ADR-069). */
+  deletionScheduledAt!: string | null;
 }
 
 /** One organization the person belongs to, and their details there. */

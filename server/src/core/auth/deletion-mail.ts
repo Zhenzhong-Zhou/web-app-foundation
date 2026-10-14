@@ -11,12 +11,16 @@ export interface DeletionMailContext {
   clientUrl: string;
 }
 
-/** A day in the reader's language, as UTC: the date the deletion is due. */
-function dayOf(at: Date, locale: Locale): string {
+/**
+ * The deletion day, YYYY-MM-DD, in the reader's language and unconverted
+ * (ADR-052): read and shown in UTC, it comes back the same day, as the
+ * banner shows it (ADR-069).
+ */
+function dayOf(day: string, locale: Locale): string {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'long',
     timeZone: 'UTC',
-  }).format(at);
+  }).format(new Date(`${day}T00:00:00Z`));
 }
 
 /**
@@ -49,18 +53,21 @@ function compose(
   return { to: context.to, subject: say(subject), text, html };
 }
 
-/** The deletion is scheduled: when, and how to keep the account. */
+/**
+ * The deletion is scheduled: after which day, and how to keep the
+ * account. After, not on: it completes once the day has ended everywhere.
+ */
 export function deletionScheduledMail(
   context: DeletionMailContext,
-  dueAt: Date,
+  day: string,
 ): Mail {
-  const date = dayOf(dueAt, context.locale);
+  const date = dayOf(day, context.locale);
   return compose(
     context,
     t(
       {
         id: 'mail.deletion.scheduled.subject',
-        defaultMessage: 'Your account will be deleted on {date}',
+        defaultMessage: 'Your account will be deleted after {date}',
       },
       { date },
     ),
@@ -69,7 +76,7 @@ export function deletionScheduledMail(
         {
           id: 'mail.deletion.scheduled.when',
           defaultMessage:
-            'You asked for your account to be deleted. It will be deleted on {date}, and every other device has been signed out.',
+            'You asked for your account to be deleted. It will be deleted after {date}, and every other device has been signed out.',
         },
         { date },
       ),

@@ -1,7 +1,12 @@
 import type { INestApplication } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
-import { AccountDeletionService } from '../src/core/auth/account-deletion.service';
+import { todayUtc } from '../src/common/today';
+import {
+  AccountDeletionService,
+  deletionDayFor,
+} from '../src/core/auth/account-deletion.service';
+import { AccountPhotoService } from '../src/core/auth/account-photo.service';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -36,6 +41,14 @@ interface Me {
 }
 
 const DAY = 24 * 60 * 60 * 1000;
+
+/** A YYYY-MM-DD day as the English email names it, unconverted. */
+function longDay(day: string): string {
+  return new Intl.DateTimeFormat('en', {
+    dateStyle: 'long',
+    timeZone: 'UTC',
+  }).format(new Date(`${day}T00:00:00Z`));
+}
 
 /**
  * Leaving an organization, and deleting your account (ADR-069): the two
@@ -159,7 +172,7 @@ describe('Account deletion (e2e)', () => {
       expect(body<Refusal>(res).code).toBe('only_member');
     });
 
-    it('schedules it 30 days ahead, signs out other devices and emails the date', async () => {
+    it('sets the day 30 days ahead, signs out other devices and emails the day', async () => {
       const { member, email, memberId } = await team();
       const other = authedAgent(app);
       await other
@@ -167,23 +180,28 @@ describe('Account deletion (e2e)', () => {
         .send({ email, password: PASSWORD })
         .expect(200);
 
+      const before = new Date();
       const res = await member
         .post('/v1/account/deletion')
         .send({ password: PASSWORD })
         .expect(200);
+      const after = new Date();
 
-      const due = new Date(
-        body<{ deletionScheduledAt: string }>(res).deletionScheduledAt,
-      );
-      expect(Math.abs(due.getTime() - Date.now() - 30 * DAY)).toBeLessThan(
-        60_000,
-      );
+      // A calendar day (ADR-052), 30 days ahead, whichever side of midnight
+      // the request fell.
+      const day = body<{ deletionScheduledAt: string }>(
+        res,
+      ).deletionScheduledAt;
+      expect([deletionDayFor(before), deletionDayFor(after)]).toContain(day);
 
       await other.get('/v1/auth/me').expect(401);
       const me = body<Me>(await member.get('/v1/auth/me').expect(200));
-      expect(me.user.deletionScheduledAt).toBe(due.toISOString());
+      expect(me.user.deletionScheduledAt).toBe(day);
 
-      expect(mail.lastTo(email)?.subject).toMatch(/will be deleted on/);
+      // The email names the same day, unconverted, as the banner does.
+      expect(mail.lastTo(email)?.subject).toBe(
+        `Your account will be deleted after ${longDay(day)}`,
+      );
 
       const events = await db
         .select({ action: accountEvents.action })
@@ -226,12 +244,35 @@ describe('Account deletion (e2e)', () => {
   });
 
   describe('completing a deletion', () => {
+    /** A deletion day two days gone: ended in every time zone. */
     async function due(memberId: string): Promise<void> {
       await db
         .update(users)
-        .set({ deletionScheduledAt: new Date(Date.now() - DAY) })
+        .set({ deletionScheduledAt: todayUtc(new Date(Date.now() - 2 * DAY)) })
         .where(eq(users.id, memberId));
     }
+
+    it('waits until the deletion day has ended in every time zone', async () => {
+      const { member, memberId } = await team();
+      await member
+        .post('/v1/account/deletion')
+        .send({ password: PASSWORD })
+        .expect(200);
+      await db
+        .update(users)
+        .set({ deletionScheduledAt: '2026-11-14' })
+        .where(eq(users.id, memberId));
+      const deletion = app.get(AccountDeletionService);
+
+      // 11:59 UTC on the 15th is still the 14th at UTC−12, where days end
+      // last; at noon the 14th has ended everywhere.
+      expect(
+        await deletion.completeDue(new Date('2026-11-15T11:59:00Z')),
+      ).toEqual({ completed: 0, blocked: 0, failed: 0 });
+      expect(
+        await deletion.completeDue(new Date('2026-11-15T12:00:00Z')),
+      ).toEqual({ completed: 1, blocked: 0, failed: 0 });
+    });
 
     it('anonymizes the person and keeps the audit log and their records', async () => {
       const { owner, member, email, memberId } = await team('Admin');
@@ -243,7 +284,7 @@ describe('Account deletion (e2e)', () => {
       await due(memberId);
 
       const result = await app.get(AccountDeletionService).completeDue();
-      expect(result).toEqual({ completed: 1, blocked: 0 });
+      expect(result).toEqual({ completed: 1, blocked: 0, failed: 0 });
 
       const [row] = await db.select().from(users).where(eq(users.id, memberId));
       expect(row).toMatchObject({
@@ -313,7 +354,7 @@ describe('Account deletion (e2e)', () => {
       await due(memberId);
 
       const result = await app.get(AccountDeletionService).completeDue();
-      expect(result).toEqual({ completed: 0, blocked: 1 });
+      expect(result).toEqual({ completed: 0, blocked: 1, failed: 0 });
 
       const [row] = await db.select().from(users).where(eq(users.id, memberId));
       expect(row.deletionScheduledAt).toBeNull();
@@ -321,6 +362,63 @@ describe('Account deletion (e2e)', () => {
       expect(mail.lastTo(email)?.subject).toBe(
         'Your account could not be deleted',
       );
+
+      // The history says why the deletion went, not only that it was asked.
+      const events = await db
+        .select({ action: accountEvents.action })
+        .from(accountEvents)
+        .where(eq(accountEvents.userId, memberId));
+      expect(events.map((event) => event.action)).toContain(
+        'account.deletion_cancelled',
+      );
+    });
+
+    it('completes the others when one fails, and tries it again next time', async () => {
+      const { owner, member, memberId } = await team();
+      const second = await addMember(
+        app,
+        owner,
+        'second@alpha.example.com',
+        'Viewer',
+      );
+      const secondId = await userIdOf('second@alpha.example.com');
+      for (const agent of [member, second]) {
+        await agent
+          .post('/v1/account/deletion')
+          .send({ password: PASSWORD })
+          .expect(200);
+      }
+      await due(memberId);
+      await due(secondId);
+
+      // Storage down for the first member's photo, whichever comes first.
+      // Neither has a photo, so for the other there is nothing to remove.
+      const failing = vi
+        .spyOn(app.get(AccountPhotoService), 'removeFor')
+        .mockImplementation((userId) =>
+          userId === memberId
+            ? Promise.reject(new Error('Storage unavailable'))
+            : Promise.resolve(false),
+        );
+      const deletion = app.get(AccountDeletionService);
+
+      expect(await deletion.completeDue()).toEqual({
+        completed: 1,
+        blocked: 0,
+        failed: 1,
+      });
+      const [kept] = await db
+        .select({ deletedAt: users.deletedAt })
+        .from(users)
+        .where(eq(users.id, memberId));
+      expect(kept.deletedAt).toBeNull();
+
+      failing.mockRestore();
+      expect(await deletion.completeDue()).toEqual({
+        completed: 1,
+        blocked: 0,
+        failed: 0,
+      });
     });
   });
 

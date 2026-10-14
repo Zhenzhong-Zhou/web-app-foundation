@@ -7046,7 +7046,6 @@
             ]
           },
           "deletionScheduledAt": {
-            "format": "date-time",
             "type": [
               "string",
               "null"
@@ -7562,7 +7561,6 @@
         "type": "object",
         "properties": {
           "deletionScheduledAt": {
-            "format": "date-time",
             "type": "string"
           }
         },
@@ -7606,7 +7604,6 @@
             "type": "string"
           },
           "deletionScheduledAt": {
-            "format": "date-time",
             "type": [
               "string",
               "null"

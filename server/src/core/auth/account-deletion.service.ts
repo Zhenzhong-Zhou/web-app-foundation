@@ -7,10 +7,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { and, desc, eq, isNull, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, lt, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
 import { DEFAULT_LOCALE } from '../../common/locales';
+import { todayUtc } from '../../common/today';
 import type { Env } from '../../config/env';
 import type { Database, Transaction } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
@@ -44,10 +45,27 @@ import { PasswordService } from './password.service';
 import type { RequestContext } from './request-context';
 import { SessionService } from './session.service';
 
-const DAY = 24 * 60 * 60 * 1000;
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
 
 /** How long a requested deletion waits before it completes (ADR-012). */
 export const DELETION_GRACE_DAYS = 30;
+
+/**
+ * The deletion day for a request made now: 30 days ahead, a calendar day
+ * (ADR-052), named as it is in the email and on every page (ADR-069).
+ */
+export function deletionDayFor(now: Date): string {
+  return todayUtc(new Date(now.getTime() + DELETION_GRACE_DAYS * DAY));
+}
+
+/**
+ * Today where a day ends last, at UTC−12, twelve hours behind UTC. A
+ * deletion day before it has ended in every time zone (ADR-069).
+ */
+function todayWhereDaysEndLast(now: Date): string {
+  return todayUtc(new Date(now.getTime() - 12 * HOUR));
+}
 
 /** What stands in for the person once the deletion completes (ADR-012). */
 export const DELETED_NAME = 'Deleted User';
@@ -143,14 +161,14 @@ export class AccountDeletionService {
   }
 
   /**
-   * Schedule the account's deletion 30 days ahead, confirmed with the
-   * password. Every other device is signed out, and an email gives the
-   * date. Asking again while one is pending changes nothing.
+   * Set the deletion day 30 days ahead, confirmed with the password. Every
+   * other device is signed out, and an email names the day. Asking again
+   * while one is pending changes nothing.
    */
   async request(
     context: RequestContext,
     password: string,
-  ): Promise<{ deletionScheduledAt: Date }> {
+  ): Promise<{ deletionScheduledAt: string }> {
     const [user] = await this.db
       .select({
         passwordHash: users.passwordHash,
@@ -187,9 +205,7 @@ export class AccountDeletionService {
     const [block] = await this.blocksFor(this.db, context.userId);
     if (block) throw refusalFor(block);
 
-    const deletionScheduledAt = new Date(
-      Date.now() + DELETION_GRACE_DAYS * DAY,
-    );
+    const deletionScheduledAt = deletionDayFor(new Date());
     await this.db
       .update(users)
       .set({ deletionScheduledAt })
@@ -207,7 +223,7 @@ export class AccountDeletionService {
     );
 
     this.logger.log(
-      `${context.userId} scheduled for deletion on ${deletionScheduledAt.toISOString()}`,
+      `${context.userId} scheduled for deletion after ${deletionScheduledAt}`,
     );
     return { deletionScheduledAt };
   }
@@ -237,40 +253,57 @@ export class AccountDeletionService {
   }
 
   /**
-   * Complete every deletion that has come due, each in its own
-   * transaction. A block that applies now cancels that deletion, and the
-   * person is emailed what to do (ADR-069).
+   * Complete every deletion whose day has ended in every time zone, each in
+   * its own transaction. A block that applies now cancels that deletion,
+   * recorded in the account history, and the person is emailed what to do.
+   * One that fails is logged and left for the next run, without holding up
+   * the rest (ADR-069).
    */
   async completeDue(
     now = new Date(),
-  ): Promise<{ completed: number; blocked: number }> {
+  ): Promise<{ completed: number; blocked: number; failed: number }> {
     const due = await this.db
       .select({ id: users.id })
       .from(users)
-      .where(and(lte(users.deletionScheduledAt, now), isNull(users.deletedAt)));
+      .where(
+        and(
+          lt(users.deletionScheduledAt, todayWhereDaysEndLast(now)),
+          isNull(users.deletedAt),
+        ),
+      );
 
     let completed = 0;
     let blocked = 0;
+    let failed = 0;
 
     for (const { id } of due) {
-      const [block] = await this.blocksFor(this.db, id);
-      if (block) {
-        await this.db
-          .update(users)
-          .set({ deletionScheduledAt: null })
-          .where(eq(users.id, id));
-        await this.send(id, (to) =>
-          deletionBlockedMail(to, refusalMessage(block)),
-        );
-        blocked += 1;
-        continue;
-      }
+      try {
+        const [block] = await this.blocksFor(this.db, id);
+        if (block) {
+          await this.db
+            .update(users)
+            .set({ deletionScheduledAt: null })
+            .where(eq(users.id, id));
+          await this.events.record(id, 'account.deletion_cancelled');
+          await this.send(id, (to) =>
+            deletionBlockedMail(to, refusalMessage(block)),
+          );
+          blocked += 1;
+          continue;
+        }
 
-      await this.complete(id, now);
-      completed += 1;
+        await this.complete(id, now);
+        completed += 1;
+      } catch (error) {
+        failed += 1;
+        this.logger.error(
+          `Could not complete the deletion of ${id}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
     }
 
-    return { completed, blocked };
+    return { completed, blocked, failed };
   }
 
   /** What is the person's own, as JSON (ADR-069). */

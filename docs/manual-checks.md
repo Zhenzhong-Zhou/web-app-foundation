@@ -867,15 +867,16 @@ await fetch(`${api}/v1/files/product-image`, {
   organization's records. Delete my account: a wrong password is refused;
   the right one closes the dialog, the banner shows the date 30 days
   ahead on every page, your other browser is signed out, and an email
-  (Mailpit) gives the date. Keep my account in the banner: it goes, and
+  (Mailpit) says the account will be deleted after that day, 30 days
+  ahead. Keep my account in the banner: it goes, and
   a second email says so. In 中文 the dialog, the banner and the emails
   are in Chinese.
-- **MC-2303** Request deletion again, then set it due in the database
-  (`update users set deletion_scheduled_at = now() - interval '1 day'`)
-  and leave the server running for the hourly run: the account is
-  gone, signing in fails, Audit shows Deleted User against its old
-  entries and "Account deleted", and the email can register a new
-  account.
+- **MC-2303** Request deletion again, then set its day two days back in
+  the database (`update users set deletion_scheduled_at = current_date - 2`)
+  and restart the server, which runs the deletions at startup: the
+  account is gone, signing in fails, Audit shows Deleted User against
+  its old entries and "Account deleted", and the email can register a
+  new account.
 
 ## Regressions
 
