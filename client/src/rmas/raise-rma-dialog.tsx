@@ -20,20 +20,16 @@ import { type SubmitEvent, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
+import type { InvoicePage, InvoiceSummary, OrderLine } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import type { ReturnResolution } from '../lib/api-names';
 import {
   formatQuantity,
   groupedNumberMessage,
   toApiDecimal,
 } from '../lib/format';
-import type {
-  InvoicePage,
-  InvoiceSummary,
-  OrderLine,
-  ReturnResolution,
-} from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { resolutionLabel, RESOLUTIONS } from './rma-labels';
 

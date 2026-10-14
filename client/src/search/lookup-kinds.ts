@@ -1,6 +1,7 @@
 import { defineMessages, type MessageDescriptor } from 'react-intl';
 
-import type { LookupKind, LookupResult } from '../lib/types';
+import type { LookupResult } from '../api/types.gen';
+import type { LookupKind } from '../lib/api-names';
 
 /** Each kind's heading in the results (ADR-056). */
 export const KIND_LABELS: Record<LookupKind, MessageDescriptor> =

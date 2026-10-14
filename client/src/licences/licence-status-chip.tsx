@@ -1,6 +1,6 @@
 import { Chip } from '@mui/material';
 
-import type { ProductLicence } from '../lib/types';
+import type { ProductLicence } from '../api/types.gen';
 import { licenceStatus } from './licence-status';
 
 /**

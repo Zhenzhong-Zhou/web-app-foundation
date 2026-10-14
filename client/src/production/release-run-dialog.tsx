@@ -18,6 +18,13 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { type IntlShape, useIntl } from 'react-intl';
 
+import type {
+  Bom,
+  IssuePlan,
+  IssuePlanLine,
+  LicenceCheck,
+  ProductionRun,
+} from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
@@ -30,13 +37,6 @@ import {
   SEPARATOR,
   toApiDecimal,
 } from '../lib/format';
-import type {
-  Bom,
-  IssuePlan,
-  IssuePlanLine,
-  LicenceCheck,
-  ProductionRun,
-} from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { withUnit } from '../products/units';
 

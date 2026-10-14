@@ -15,13 +15,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
+import type { LookupResponse, LookupResult } from '../api/types.gen';
 import { ExpiryChip } from '../components/expiry-chip';
 import { ProductCover } from '../components/product-cover';
 import { OPEN_LOOKUP } from '../errors/open-lookup';
 import { api } from '../lib/api';
+import type { LookupKind } from '../lib/api-names';
 import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
 import { RECENT_KIND_LABELS, recentTitle } from '../lib/recent-labels';
-import type { LookupKind, LookupResponse, LookupResult } from '../lib/types';
 import { KIND_LABELS, listOf, pathOf } from './lookup-kinds';
 
 /** The server's minimum, after trimming (ADR-056). */

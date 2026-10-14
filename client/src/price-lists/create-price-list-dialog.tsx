@@ -13,7 +13,7 @@ import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import type { PriceListDirection } from '../lib/types';
+import type { PriceListDirection } from '../lib/api-names';
 import { useSubmit } from '../lib/use-submit';
 
 /**

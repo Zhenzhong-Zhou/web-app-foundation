@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import type { Lot } from '../lib/types';
+import type { Lot } from '../api/types.gen';
 import { server } from '../test/setup';
 import { LotFields, type LotInput } from './lot-fields';
 

@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import type { LookupResponse } from '../lib/types';
+import type { LookupResponse } from '../api/types.gen';
 import { server } from '../test/setup';
 import { TestProviders } from '../test/test-providers';
 import { LookupBox } from './lookup-box';

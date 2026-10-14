@@ -13,6 +13,7 @@ import { type ReactNode, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
+import type { Address, Contact, PartnerDetail } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
@@ -20,7 +21,6 @@ import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
-import type { Address, Contact, PartnerDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { PartnerPriceLists } from '../price-lists/partner-price-lists';

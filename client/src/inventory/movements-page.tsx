@@ -19,6 +19,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { Location, Movement, VariantOption } from '../api/types.gen';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
@@ -31,7 +32,6 @@ import {
   itemName,
   relativeTime,
 } from '../lib/format';
-import type { Location, Movement, VariantOption } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { leavesOf } from '../locations/tree';

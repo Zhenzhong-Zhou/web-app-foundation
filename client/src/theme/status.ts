@@ -6,7 +6,7 @@ import type {
   OrderStatus,
   ReturnAuthorizationStatus,
   RunStatus,
-} from '../lib/types';
+} from '../lib/api-names';
 import type { ToneName } from './tokens';
 
 /**

@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { CreditNoteSummary } from '../api/types.gen';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { EmptyState } from '../components/empty-state';
 import { ExportButton } from '../components/export-button';
@@ -26,7 +27,6 @@ import { SortHeader } from '../components/sort-header';
 import { StatusChip } from '../components/status-chip';
 import { type DayRange, withDays } from '../lib/date-range';
 import { formatCredit, formatDay, NO_VALUE } from '../lib/format';
-import type { CreditNoteSummary } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSearch, withSearch } from '../lib/use-list-search';

@@ -1,8 +1,8 @@
 import type { IntlShape } from 'react-intl';
 
+import type { TaxCode } from '../api/types.gen';
 import { intl as readerIntl } from '../i18n/intl';
 import { formatQuantity } from '../lib/format';
-import type { TaxCode } from '../lib/types';
 
 /**
  * "5.0000" as "5%". The server sends numeric(7,4) as a string, so the

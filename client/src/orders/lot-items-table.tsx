@@ -10,9 +10,9 @@ import {
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { Shipment } from '../api/types.gen';
 import { ExpiryChip } from '../components/expiry-chip';
 import { NO_VALUE } from '../lib/format';
-import type { Shipment } from '../lib/types';
 import { displayWithUnit } from '../products/units';
 
 /**

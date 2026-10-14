@@ -1,4 +1,4 @@
-import type { Movement } from '../lib/types';
+import type { Movement } from '../api/types.gen';
 
 /**
  * How a movement reads in a table: a sign for the quantity, and where.

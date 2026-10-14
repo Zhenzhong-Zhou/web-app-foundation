@@ -22,6 +22,7 @@ import {
 } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { NeedsCostEntry, StockValuation } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
@@ -36,7 +37,6 @@ import {
   NO_VALUE,
 } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { NeedsCostEntry, StockValuation } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { SetCostDialog } from './set-cost-dialog';
 

@@ -12,12 +12,12 @@ import { type ReactNode, type SubmitEvent, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { InvoiceDetail } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, hasCode } from '../lib/api';
 import { formatMoney } from '../lib/format';
-import type { InvoiceDetail } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { todayLocal } from './calendar-day';
 

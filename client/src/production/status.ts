@@ -1,7 +1,7 @@
 import { defineMessages } from 'react-intl';
 
 import { intl } from '../i18n/intl';
-import type { RunStatus } from '../lib/types';
+import type { RunStatus } from '../lib/api-names';
 
 /**
  * Worded as the state of the work rather than the state of the row: "released"

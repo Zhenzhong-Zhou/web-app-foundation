@@ -29,8 +29,8 @@ import {
 } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { ProductImage } from '../api/types.gen';
 import { api, messageFor } from '../lib/api';
-import type { ProductImage } from '../lib/types';
 import { uploadProductImage, type UploadState } from './upload-image';
 
 /** ADR-062's limit, as the server holds it. */

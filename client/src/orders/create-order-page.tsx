@@ -18,17 +18,18 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
+import type { Partner, VariantOption } from '../api/types.gen';
 import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
 import { api } from '../lib/api';
+import type { OrderDirection } from '../lib/api-names';
 import {
   BLANK_LINE,
   groupedNumberMessage,
   nameAndCode,
   toApiDecimal,
 } from '../lib/format';
-import type { OrderDirection, Partner, VariantOption } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
 import { unitLabel } from '../products/units';

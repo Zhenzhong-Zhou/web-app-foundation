@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import type { VariantOption } from '../api/types.gen';
 import { api } from './api';
-import type { VariantOption } from './types';
 
 /**
  * The catalogue, fetched each time `active` turns true — when a dialog opens,

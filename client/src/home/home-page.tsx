@@ -13,13 +13,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { HomeCard, HomeResponse, HomeRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { StatusChip } from '../components/status-chip';
 import { api } from '../lib/api';
 import { dayOf } from '../lib/date-range';
 import { formatDay } from '../lib/format';
-import type { HomeCard, HomeResponse, HomeRow } from '../lib/types';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { GettingStarted } from './getting-started';
 import { CARDS, daysUntil } from './home-cards';

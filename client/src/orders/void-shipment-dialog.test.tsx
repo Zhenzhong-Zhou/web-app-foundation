@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Shipment } from '../lib/types';
+import type { Shipment } from '../api/types.gen';
 import { server } from '../test/setup';
 import { VoidShipmentDialog } from './void-shipment-dialog';
 

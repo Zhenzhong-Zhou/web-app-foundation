@@ -13,11 +13,11 @@ import {
 import { defineMessages, useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
+import type { PackingSlip } from '../api/types.gen';
 import { useDocumentText } from '../components/document-text';
 import { PrintBanner, PrintSheet } from '../components/print-sheet';
 import { PRINTED } from '../components/printed-words';
 import { formatDate, formatDay, formatQuantity, NO_VALUE } from '../lib/format';
-import type { PackingSlip } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { unitLabel } from '../products/units';

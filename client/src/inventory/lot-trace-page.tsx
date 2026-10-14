@@ -24,6 +24,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import type { LotMatch, LotTrace } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
 import { LotCostPanel } from '../costs/lot-cost-panel';
@@ -37,7 +38,6 @@ import {
   SEPARATOR,
 } from '../lib/format';
 import { useRecordOpened } from '../lib/recent';
-import type { LotMatch, LotTrace } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { LicenceAtRelease } from '../licences/licence-at-release';

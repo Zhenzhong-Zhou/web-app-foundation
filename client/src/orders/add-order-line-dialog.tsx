@@ -8,13 +8,13 @@ import {
 import { type SubmitEvent, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { OrderDetail } from '../api/types.gen';
 import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { VariantPicker } from '../components/variant-picker';
 import { api } from '../lib/api';
 import { groupedNumberMessage, toApiDecimal } from '../lib/format';
-import type { OrderDetail } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 import { unitLabel } from '../products/units';

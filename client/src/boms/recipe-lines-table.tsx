@@ -14,9 +14,9 @@ import {
 } from '@mui/material';
 import { useIntl } from 'react-intl';
 
+import type { BomLine } from '../api/types.gen';
 import { formatQuantity } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { BomLine } from '../lib/types';
 import { withUnit } from '../products/units';
 
 /** The remove button's mark: a symbol, the same in every language. */

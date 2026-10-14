@@ -2,6 +2,7 @@ import { Alert, Box, Skeleton, Stack, Typography } from '@mui/material';
 import { defineMessages, useIntl } from 'react-intl';
 import { useParams } from 'react-router-dom';
 
+import type { InvoiceDetail, InvoiceLine } from '../api/types.gen';
 import { useDocumentText } from '../components/document-text';
 import {
   PrintBanner,
@@ -12,7 +13,6 @@ import {
 } from '../components/print-sheet';
 import { PRINTED } from '../components/printed-words';
 import { formatDay } from '../lib/format';
-import type { InvoiceDetail, InvoiceLine } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 

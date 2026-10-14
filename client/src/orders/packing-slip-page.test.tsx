@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import type { PackingSlip } from '../lib/types';
+import type { PackingSlip } from '../api/types.gen';
 import { server } from '../test/setup';
 import { PackingSlipPage } from './packing-slip-page';
 

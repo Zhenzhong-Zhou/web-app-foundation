@@ -1,7 +1,8 @@
 import { Button, Stack } from '@mui/material';
 
+import type { OrderDetail } from '../api/types.gen';
+import type { OrderStatus } from '../lib/api-names';
 import { openDialog } from '../lib/open-dialog';
-import type { OrderDetail, OrderStatus } from '../lib/types';
 import { NEXT_STATUSES, transitionLabel } from './status';
 
 /**

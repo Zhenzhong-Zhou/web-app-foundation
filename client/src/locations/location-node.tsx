@@ -1,10 +1,10 @@
 import { Button, Chip, Stack, Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
 
+import type { Location } from '../api/types.gen';
 import { StatusChip } from '../components/status-chip';
 import { SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { Location } from '../lib/types';
 import { locationTypeLabel } from './location-types';
 import { childrenOf } from './tree';
 

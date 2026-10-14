@@ -16,9 +16,9 @@ import type { ReactNode } from 'react';
 import { type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { InvoiceTax } from '../api/types.gen';
 import { useBranding } from '../auth/use-branding';
 import { formatMoney, formatQuantity, NO_VALUE } from '../lib/format';
-import type { InvoiceTax } from '../lib/types';
 import { formatRate } from '../settings/tax-rate';
 import { PAPER_THEME } from '../theme/paper';
 import type { DocumentText } from './document-text';

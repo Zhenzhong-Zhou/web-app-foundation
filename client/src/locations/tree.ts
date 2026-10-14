@@ -1,4 +1,4 @@
-import type { Location } from '../lib/types';
+import type { Location } from '../api/types.gen';
 
 /**
  * The server returns the tree flat, ordered by name, and the client nests it —

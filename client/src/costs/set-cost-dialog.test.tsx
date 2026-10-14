@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { NeedsCostEntry } from '../lib/types';
+import type { NeedsCostEntry } from '../api/types.gen';
 import { apiError } from '../test/handlers';
 import { server } from '../test/setup';
 import { SetCostDialog } from './set-cost-dialog';

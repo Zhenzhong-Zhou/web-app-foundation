@@ -11,12 +11,17 @@ import {
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type {
+  Bom,
+  BomLine,
+  ProductLicence,
+  VariantOption,
+} from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { api, messageFor } from '../lib/api';
 import { formatQuantity, nameAndCode } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import type { Bom, BomLine, ProductLicence, VariantOption } from '../lib/types';
 import { licenceStatus } from '../licences/licence-status';
 import { LicenceStatusChip } from '../licences/licence-status-chip';
 import type { Variant } from '../products/products-page';

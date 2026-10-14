@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { PriceList } from '../lib/types';
+import type { PriceList } from '../api/types.gen';
 import { server } from '../test/setup';
 import { PriceListPicker } from './price-list-picker';
 

@@ -1,8 +1,8 @@
 import { Autocomplete, TextField } from '@mui/material';
 import { useIntl } from 'react-intl';
 
+import type { VariantOption } from '../api/types.gen';
 import { itemName } from '../lib/format';
-import type { VariantOption } from '../lib/types';
 
 /** "WIDGET-1 — Widget (Large)": the SKU first, because it is what people type. */
 function labelFor(option: VariantOption): string {

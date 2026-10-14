@@ -1,7 +1,7 @@
 import { defineMessages } from 'react-intl';
 
+import type { Bom } from '../api/types.gen';
 import { intl } from '../i18n/intl';
-import type { Bom } from '../lib/types';
 
 /**
  * A recipe version's status by name, in the reader's language (ADR-054).

@@ -9,16 +9,17 @@ import {
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { OrderLine } from '../api/types.gen';
 import { CurrencyField } from '../components/currency-field';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
+import type { OrderStatus } from '../lib/api-names';
 import {
   formatQuantity,
   groupedNumberMessage,
   toApiDecimal,
 } from '../lib/format';
-import type { OrderLine, OrderStatus } from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 
 /**

@@ -22,6 +22,7 @@ import {
 } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { LotCost, LotCostEntry } from '../api/types.gen';
 import { LabelledValue } from '../components/labelled-value';
 import {
   formatDate,
@@ -30,7 +31,6 @@ import {
   formatUnitCost,
   NO_VALUE,
 } from '../lib/format';
-import type { LotCost, LotCostEntry } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 

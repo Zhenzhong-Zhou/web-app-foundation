@@ -2,9 +2,10 @@ import { MenuItem, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { PriceList } from '../api/types.gen';
 import { api } from '../lib/api';
+import type { PriceListDirection } from '../lib/api-names';
 import { nameAndCode } from '../lib/format';
-import type { PriceList, PriceListDirection } from '../lib/types';
 
 /**
  * Chooses a list of one direction, or none (ADR-049).

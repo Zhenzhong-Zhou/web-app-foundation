@@ -19,6 +19,7 @@ import { Fragment, type ReactNode, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
+import type { LineVariance, OutputVariance, RunDetail } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { LabelledValue } from '../components/labelled-value';
@@ -28,7 +29,6 @@ import { LoadFailure } from '../errors/load-failure';
 import { displayQuantity, NO_VALUE, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
-import type { LineVariance, OutputVariance, RunDetail } from '../lib/types';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { LicenceAtRelease } from '../licences/licence-at-release';

@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { useIntl } from 'react-intl';
 
-import type { OrderDirection } from '../lib/types';
+import type { OrderDirection } from '../lib/api-names';
 
 /**
  * Asks before closing an order that has not been fully received or shipped.

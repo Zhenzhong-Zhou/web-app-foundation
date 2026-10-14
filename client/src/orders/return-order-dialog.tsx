@@ -17,6 +17,14 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type {
+  Location,
+  ReturnableLine,
+  ReturnAuthorizationDetail,
+  ReturnAuthorizationLine,
+  ReturnAuthorizationPage,
+  ReturnAuthorizationSummary,
+} from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, ApiError } from '../lib/api';
@@ -27,14 +35,6 @@ import {
   NO_VALUE,
   toApiDecimal,
 } from '../lib/format';
-import type {
-  Location,
-  ReturnableLine,
-  ReturnAuthorizationDetail,
-  ReturnAuthorizationLine,
-  ReturnAuthorizationPage,
-  ReturnAuthorizationSummary,
-} from '../lib/types';
 import { useSubmit } from '../lib/use-submit';
 import { unitLabel } from '../products/units';
 import { RETURN_REASONS, returnReasonLabel } from './return-reasons';
