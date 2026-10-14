@@ -5,6 +5,8 @@ import type {
   OrderSummary,
   PriceList,
   ProductionRun,
+  ReturnAuthorizationLine,
+  ReturnAuthorizationSummary,
   RunDetail,
 } from '../api/types.gen';
 import type { Locale } from './locales';
@@ -30,6 +32,21 @@ import type { Locale } from './locales';
  * is already this shape, so a form sends it as typed.
  */
 export type CalendarDay = string;
+
+/**
+ * Return authorizations (ADR-047), generated from the server's OpenAPI
+ * document (ADR-068), re-exported so their importers need no change.
+ */
+export type {
+  ReturnAuthorizationDetail,
+  ReturnAuthorizationLine,
+  ReturnAuthorizationPage,
+  ReturnAuthorizationSummary,
+} from '../api/types.gen';
+
+export type ReturnResolution = ReturnAuthorizationLine['resolution'];
+
+export type ReturnAuthorizationStatus = ReturnAuthorizationSummary['status'];
 
 /**
  * Production runs, their issue plans and variances, and a lot's trace,
@@ -244,63 +261,6 @@ export type {
 
 /** Stock availability and a sale line's hold (ADR-045), generated (ADR-068). */
 export type { Availability, LineHold } from '../api/types.gen';
-
-export type ReturnResolution = 'credit' | 'replace' | 'none';
-
-export type ReturnAuthorizationStatus = 'open' | 'closed' | 'cancelled';
-
-/** A row in the returns list (ADR-047). */
-export interface ReturnAuthorizationSummary {
-  id: string;
-  number: string;
-  status: ReturnAuthorizationStatus;
-  orderId: string;
-  orderReference: string | null;
-  partnerId: string;
-  partnerName: string;
-  reason: string;
-  expectsGoods: boolean;
-  createdAt: string;
-}
-
-export interface ReturnAuthorizationPage {
-  entries: ReturnAuthorizationSummary[];
-  nextCursor: string | null;
-}
-
-/** One item on an RMA, with what has happened to it so far. */
-export interface ReturnAuthorizationLine {
-  id: string;
-  orderLineId: string;
-  variantId: string;
-  sku: string;
-  /** Authorized: the ceiling for returns and credits against this line. */
-  quantity: string;
-  resolution: ReturnResolution;
-  quantityReceived: string;
-  quantityCredited: string;
-}
-
-export interface ReturnAuthorizationDetail {
-  id: string;
-  number: string;
-  status: ReturnAuthorizationStatus;
-  orderId: string;
-  orderReference: string | null;
-  partnerId: string;
-  partnerName: string;
-  /** The invoice the customer quoted, if any; the credit defaults to it. */
-  invoiceId: string | null;
-  invoiceNumber: string | null;
-  reason: string;
-  /** False when the customer was told to keep or destroy the goods. */
-  expectsGoods: boolean;
-  note: string | null;
-  createdAt: string;
-  closedAt: string | null;
-  cancelledAt: string | null;
-  lines: ReturnAuthorizationLine[];
-}
 
 /**
  * What stock, lots and batches cost (ADR-048), generated from the server's

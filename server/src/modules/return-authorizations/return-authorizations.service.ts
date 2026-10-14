@@ -28,6 +28,10 @@ import { requestedLines } from '../orders/order-line-lookup';
 import { partnerMatches } from '../partners/partner-search';
 import type { CreateReturnAuthorizationDto } from './dto/create-return-authorization.dto';
 import type { ListReturnAuthorizationsDto } from './dto/list-return-authorizations.dto';
+import type {
+  ReturnAuthorizationDetail,
+  ReturnAuthorizationPage,
+} from './dto/return-authorization-response.dto';
 import { linesWithProgress } from './lines-with-progress';
 import { lockOpen } from './lock-open';
 
@@ -48,7 +52,9 @@ export class ReturnAuthorizationsService {
 
   constructor(private readonly tenantDb: TenantDb) {}
 
-  async list(query: ListReturnAuthorizationsDto) {
+  async list(
+    query: ListReturnAuthorizationsDto,
+  ): Promise<ReturnAuthorizationPage> {
     const limit = query.limit ?? DEFAULT_LIMIT;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
@@ -103,7 +109,9 @@ export class ReturnAuthorizationsService {
    * it, and what has been credited — the three figures anyone deciding the
    * next step needs side by side.
    */
-  async findById(returnAuthorizationId: string) {
+  async findById(
+    returnAuthorizationId: string,
+  ): Promise<ReturnAuthorizationDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [row] = await tx
         .select({
@@ -137,11 +145,25 @@ export class ReturnAuthorizationsService {
         returnAuthorizationId,
       );
 
+      // The fields the API returns (ADR-068), not the row: that would also
+      // send the organization and who created, closed or cancelled it.
+      const rma = row.rma;
       return {
-        ...row.rma,
-        partnerName: row.partnerName,
+        id: rma.id,
+        number: rma.number,
+        status: rma.status,
+        orderId: rma.orderId,
         orderReference: row.orderReference,
+        partnerId: rma.partnerId,
+        partnerName: row.partnerName,
+        invoiceId: rma.invoiceId,
         invoiceNumber: row.invoiceNumber,
+        reason: rma.reason,
+        expectsGoods: rma.expectsGoods,
+        note: rma.note,
+        createdAt: rma.createdAt,
+        closedAt: rma.closedAt,
+        cancelledAt: rma.cancelledAt,
         lines,
       };
     });
