@@ -19,6 +19,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 
 import { t } from '../../i18n/translate';
+import { AUDIT_ACTIONS } from '../audit/audit-actions';
+import { Audited } from '../audit/audited.decorator';
 import type { UploadedBinary } from '../files/files.service';
 import { AccountService } from './account.service';
 import { AccountDeletionService } from './account-deletion.service';
@@ -38,7 +40,7 @@ import type {
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import type { RequestContext } from './request-context';
+import { getRequestContext, type RequestContext } from './request-context';
 
 /**
  * Account, not membership. Every route is @AllowNoOrganization: a user with
@@ -158,6 +160,11 @@ export class AccountController {
    */
   @Delete('membership')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Audited({
+    action: AUDIT_ACTIONS.MEMBER_LEFT,
+    resourceType: 'user',
+    resourceId: (_response, request) => getRequestContext(request)?.userId,
+  })
   async leaveOrganization(
     @CurrentUser() context: RequestContext,
   ): Promise<void> {

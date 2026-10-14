@@ -7,10 +7,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { and, desc, eq, isNull, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
-import { DEFAULT_LOCALE } from '../../common/locales';
 import { todayUtc } from '../../common/today';
 import type { Env } from '../../config/env';
 import type { Database, Transaction } from '../../database/database.module';
@@ -27,12 +26,12 @@ import {
   sessions,
   users,
 } from '../../database/schema';
-import { t, type Translatable } from '../../i18n/translate';
+import { recipientLocale, t, type Translatable } from '../../i18n/translate';
 import { type Mail, MailService } from '../../shared/mail/mail.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { SYSTEM_ROLES } from '../authorization/permissions';
 import { AccountService } from './account.service';
-import { AccountEventService } from './account-event.service';
+import { AccountEventService, type EventMeta } from './account-event.service';
 import { AccountPhotoService } from './account-photo.service';
 import {
   deletionBlockedMail,
@@ -40,8 +39,10 @@ import {
   type DeletionMailContext,
   deletionScheduledMail,
 } from './deletion-mail';
-import type { AccountExport } from './dto/account-deletion-response.dto';
-import { PasswordService } from './password.service';
+import type {
+  AccountExport,
+  DeletionScheduled,
+} from './dto/account-deletion-response.dto';
 import type { RequestContext } from './request-context';
 import { SessionService } from './session.service';
 
@@ -49,7 +50,7 @@ const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
 /** How long a requested deletion waits before it completes (ADR-012). */
-export const DELETION_GRACE_DAYS = 30;
+const DELETION_GRACE_DAYS = 30;
 
 /**
  * The deletion day for a request made now: 30 days ahead, a calendar day
@@ -68,13 +69,14 @@ function todayWhereDaysEndLast(now: Date): string {
 }
 
 /** What stands in for the person once the deletion completes (ADR-012). */
-export const DELETED_NAME = 'Deleted User';
+const DELETED_NAME = 'Deleted User';
 
 type Executor = Database | Transaction;
 
 /** Why a person cannot leave an organization, or delete their account. */
 interface Block {
-  code: 'only_member' | 'last_owner_with_members';
+  code: typeof ERROR_CODES.onlyMember | typeof ERROR_CODES.lastOwnerWithMembers;
+  organizationId: string;
   organizationName: string;
 }
 
@@ -89,7 +91,6 @@ export class AccountDeletionService {
 
   constructor(
     @Inject(UNSAFE_GLOBAL_DB) private readonly db: Database,
-    private readonly passwords: PasswordService,
     private readonly sessions: SessionService,
     private readonly events: AccountEventService,
     private readonly account: AccountService,
@@ -129,21 +130,12 @@ export class AccountDeletionService {
           ),
         );
 
-      await tx.insert(auditLog).values({
-        organizationId,
-        actorId: context.userId,
-        action: AUDIT_ACTIONS.MEMBER_LEFT,
-        resourceType: 'user',
-        resourceId: context.userId,
-        ip: context.ip,
-        userAgent: context.userAgent,
-      });
-
+      // The oldest membership left, as signing in picks one.
       const [next] = await tx
         .select({ organizationId: memberships.organizationId })
         .from(memberships)
         .where(eq(memberships.userId, context.userId))
-        .orderBy(memberships.createdAt)
+        .orderBy(asc(memberships.id))
         .limit(1);
 
       await tx
@@ -168,37 +160,15 @@ export class AccountDeletionService {
   async request(
     context: RequestContext,
     password: string,
-  ): Promise<{ deletionScheduledAt: string }> {
+  ): Promise<DeletionScheduled> {
+    await this.account.confirmPassword(context.userId, password);
+
     const [user] = await this.db
-      .select({
-        passwordHash: users.passwordHash,
-        deletionScheduledAt: users.deletionScheduledAt,
-      })
+      .select({ deletionScheduledAt: users.deletionScheduledAt })
       .from(users)
       .where(eq(users.id, context.userId));
 
-    // As changing the password: an account with no password cannot prove
-    // it is the person asking, so the reset link is the way in first.
-    if (!user?.passwordHash) {
-      throw new BadRequestException(
-        t({
-          id: 'account.password.noneSet',
-          defaultMessage:
-            'This account has no password set. Use the reset link instead.',
-        }),
-      );
-    }
-
-    if (!(await this.passwords.verify(user.passwordHash, password))) {
-      throw new UnauthorizedException(
-        t({
-          id: 'account.password.wrong',
-          defaultMessage: 'That password is not correct',
-        }),
-      );
-    }
-
-    if (user.deletionScheduledAt) {
+    if (user?.deletionScheduledAt) {
       return { deletionScheduledAt: user.deletionScheduledAt };
     }
 
@@ -230,26 +200,14 @@ export class AccountDeletionService {
 
   /** Keep the account. Nothing to cancel is not an error. */
   async cancel(context: RequestContext): Promise<void> {
-    const cancelled = await this.db
-      .update(users)
-      .set({ deletionScheduledAt: null })
-      .where(
-        and(
-          eq(users.id, context.userId),
-          sql`${users.deletionScheduledAt} is not null`,
-        ),
-      )
-      .returning({ id: users.id });
-    if (cancelled.length === 0) return;
-
-    await this.events.record(context.userId, 'account.deletion_cancelled', {
-      ip: context.ip,
-      userAgent: context.userAgent,
-    });
-
-    await this.send(context.userId, (to) => deletionCancelledMail(to));
-
-    this.logger.log(`${context.userId} cancelled their deletion`);
+    const cancelled = await this.unschedule(
+      context.userId,
+      deletionCancelledMail,
+      { ip: context.ip, userAgent: context.userAgent },
+    );
+    if (cancelled) {
+      this.logger.log(`${context.userId} cancelled their deletion`);
+    }
   }
 
   /**
@@ -280,12 +238,7 @@ export class AccountDeletionService {
       try {
         const [block] = await this.blocksFor(this.db, id);
         if (block) {
-          await this.db
-            .update(users)
-            .set({ deletionScheduledAt: null })
-            .where(eq(users.id, id));
-          await this.events.record(id, 'account.deletion_cancelled');
-          await this.send(id, (to) =>
+          await this.unschedule(id, (to) =>
             deletionBlockedMail(to, refusalMessage(block)),
           );
           blocked += 1;
@@ -324,65 +277,54 @@ export class AccountDeletionService {
       .where(eq(users.id, userId));
     if (!profile) throw new UnauthorizedException();
 
-    const membershipRows = await this.db
-      .select({
-        organizationId: memberships.organizationId,
-        organizationName: organizations.name,
-        roleName: roles.name,
-        jobTitle: memberships.jobTitle,
-        department: memberships.department,
-        location: memberships.location,
-        workPhone: memberships.workPhone,
-        extension: memberships.extension,
-        joinedAt: memberships.createdAt,
-      })
-      .from(memberships)
-      .innerJoin(
-        organizations,
-        eq(organizations.id, memberships.organizationId),
-      )
-      .innerJoin(roles, eq(roles.id, memberships.roleId))
-      .where(eq(memberships.userId, userId))
-      .orderBy(memberships.createdAt);
-
-    const devices = await this.account.listSessions(context);
-
-    const history = await this.db
-      .select({
-        id: accountEvents.id,
-        action: accountEvents.action,
-        ip: accountEvents.ip,
-        userAgent: accountEvents.userAgent,
-        createdAt: accountEvents.createdAt,
-      })
-      .from(accountEvents)
-      .where(eq(accountEvents.userId, userId))
-      .orderBy(desc(accountEvents.id));
-
-    const notificationRows = await this.db
-      .select({
-        id: notifications.id,
-        organizationId: notifications.organizationId,
-        type: notifications.type,
-        title: notifications.title,
-        body: notifications.body,
-        readAt: notifications.readAt,
-        createdAt: notifications.createdAt,
-      })
-      .from(notifications)
-      .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.id));
-
-    const recentRows = await this.db
-      .select({
-        organizationId: recentRecords.organizationId,
-        kind: recentRecords.kind,
-        recordId: recentRecords.recordId,
-        openedAt: recentRecords.openedAt,
-      })
-      .from(recentRecords)
-      .where(eq(recentRecords.userId, userId))
-      .orderBy(desc(recentRecords.openedAt));
+    const [membershipRows, devices, history, notificationRows, recentRows] =
+      await Promise.all([
+        this.db
+          .select({
+            organizationId: memberships.organizationId,
+            organizationName: organizations.name,
+            roleName: roles.name,
+            jobTitle: memberships.jobTitle,
+            department: memberships.department,
+            location: memberships.location,
+            workPhone: memberships.workPhone,
+            extension: memberships.extension,
+            joinedAt: memberships.createdAt,
+          })
+          .from(memberships)
+          .innerJoin(
+            organizations,
+            eq(organizations.id, memberships.organizationId),
+          )
+          .innerJoin(roles, eq(roles.id, memberships.roleId))
+          .where(eq(memberships.userId, userId))
+          .orderBy(memberships.createdAt),
+        this.account.listSessions(context),
+        this.events.listForUser(userId, null),
+        this.db
+          .select({
+            id: notifications.id,
+            organizationId: notifications.organizationId,
+            type: notifications.type,
+            title: notifications.title,
+            body: notifications.body,
+            readAt: notifications.readAt,
+            createdAt: notifications.createdAt,
+          })
+          .from(notifications)
+          .where(eq(notifications.userId, userId))
+          .orderBy(desc(notifications.id)),
+        this.db
+          .select({
+            organizationId: recentRecords.organizationId,
+            kind: recentRecords.kind,
+            recordId: recentRecords.recordId,
+            openedAt: recentRecords.openedAt,
+          })
+          .from(recentRecords)
+          .where(eq(recentRecords.userId, userId))
+          .orderBy(desc(recentRecords.openedAt)),
+      ]);
 
     return {
       exportedAt: new Date(),
@@ -409,17 +351,19 @@ export class AccountDeletionService {
         .from(memberships)
         .where(eq(memberships.userId, userId));
 
-      for (const { organizationId } of held) {
-        await tx.insert(auditLog).values({
-          organizationId,
-          actorId: userId,
-          action: AUDIT_ACTIONS.USER_ACCOUNT_DELETED,
-          resourceType: 'user',
-          resourceId: userId,
-        });
+      if (held.length > 0) {
+        await tx.insert(auditLog).values(
+          held.map(({ organizationId }) => ({
+            organizationId,
+            actorId: userId,
+            action: AUDIT_ACTIONS.USER_ACCOUNT_DELETED,
+            resourceType: 'user',
+            resourceId: userId,
+          })),
+        );
       }
 
-      await tx.delete(recentRecords).where(eq(recentRecords.userId, userId));
+      // Recent records go with the memberships, by cascade.
       await tx.delete(memberships).where(eq(memberships.userId, userId));
       await tx.delete(sessions).where(eq(sessions.userId, userId));
       await tx.delete(authTokens).where(eq(authTokens.userId, userId));
@@ -451,7 +395,7 @@ export class AccountDeletionService {
   private async blocksFor(
     executor: Executor,
     userId: string,
-  ): Promise<(Block & { organizationId: string })[]> {
+  ): Promise<Block[]> {
     const rows = await executor
       .select({
         organizationId: memberships.organizationId,
@@ -478,17 +422,39 @@ export class AccountDeletionService {
       .innerJoin(roles, eq(roles.id, memberships.roleId))
       .where(eq(memberships.userId, userId));
 
-    return rows.flatMap((row): (Block & { organizationId: string })[] => {
+    return rows.flatMap((row): Block[] => {
       const base = {
         organizationId: row.organizationId,
         organizationName: row.organizationName,
       };
-      if (row.others === 0) return [{ ...base, code: 'only_member' }];
+      if (row.others === 0) return [{ ...base, code: ERROR_CODES.onlyMember }];
       if (row.isOwner && row.otherOwners === 0) {
-        return [{ ...base, code: 'last_owner_with_members' }];
+        return [{ ...base, code: ERROR_CODES.lastOwnerWithMembers }];
       }
       return [];
     });
+  }
+
+  /**
+   * The pending deletion cancelled, recorded, and the person emailed: by
+   * them, or because a block applies when it comes due. False when there
+   * was none to cancel.
+   */
+  private async unschedule(
+    userId: string,
+    build: (context: DeletionMailContext) => Mail,
+    meta?: EventMeta,
+  ): Promise<boolean> {
+    const cancelled = await this.db
+      .update(users)
+      .set({ deletionScheduledAt: null })
+      .where(and(eq(users.id, userId), isNotNull(users.deletionScheduledAt)))
+      .returning({ id: users.id });
+    if (cancelled.length === 0) return false;
+
+    await this.events.record(userId, 'account.deletion_cancelled', meta);
+    await this.send(userId, build);
+    return true;
   }
 
   /** An email to the person, in their language, if they can be reached. */
@@ -505,7 +471,7 @@ export class AccountDeletionService {
     try {
       await this.mail.send(
         build({
-          locale: user.locale ?? DEFAULT_LOCALE,
+          locale: recipientLocale(user.locale),
           to: user.email,
           name: user.name,
           clientUrl: this.config.get('CLIENT_URL', { infer: true }),
@@ -541,12 +507,5 @@ function refusalMessage(block: Block): Translatable {
 }
 
 function refusalFor(block: Block): ConflictException {
-  return new ConflictException(
-    withCode(
-      refusalMessage(block),
-      block.code === 'only_member'
-        ? ERROR_CODES.onlyMember
-        : ERROR_CODES.lastOwnerWithMembers,
-    ),
-  );
+  return new ConflictException(withCode(refusalMessage(block), block.code));
 }

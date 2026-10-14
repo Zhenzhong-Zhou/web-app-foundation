@@ -124,24 +124,26 @@ export class AccountEventService {
     }
   }
 
-  /** Backs a future "recent activity" panel on the sessions screen. */
-  listForUser(userId: string, limit = 50) {
-    return (
-      this.db
-        .select({
-          id: accountEvents.id,
-          action: accountEvents.action,
-          ip: accountEvents.ip,
-          userAgent: accountEvents.userAgent,
-          createdAt: accountEvents.createdAt,
-        })
-        .from(accountEvents)
-        .where(eq(accountEvents.userId, userId))
-        // id, not created_at: UUIDv7 is time-sortable (ADR-010) and the index
-        // is already on (user_id, id).
-        .orderBy(desc(accountEvents.id))
-        .limit(limit)
-    );
+  /**
+   * Backs a future "recent activity" panel on the sessions screen; with no
+   * limit, the whole history, as the account export takes it (ADR-069).
+   */
+  listForUser(userId: string, limit: number | null = 50) {
+    const query = this.db
+      .select({
+        id: accountEvents.id,
+        action: accountEvents.action,
+        ip: accountEvents.ip,
+        userAgent: accountEvents.userAgent,
+        createdAt: accountEvents.createdAt,
+      })
+      .from(accountEvents)
+      .where(eq(accountEvents.userId, userId))
+      // id, not created_at: UUIDv7 is time-sortable (ADR-010) and the index
+      // is already on (user_id, id).
+      .orderBy(desc(accountEvents.id))
+      .$dynamic();
+    return limit === null ? query : query.limit(limit);
   }
 
   /**

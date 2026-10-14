@@ -56,10 +56,6 @@ const NOT_AUDITED = new Map<string, string>([
   ],
   ['AccountController.setPhoto', 'Account events (ADR-022, ADR-063)'],
   ['AccountController.removePhoto', 'Account events (ADR-022, ADR-063)'],
-  [
-    'AccountController.leaveOrganization',
-    'The service writes member.left itself: the membership, and with it the tenant, is gone before an interceptor could (ADR-069)',
-  ],
   ['AccountController.requestDeletion', 'Account events (ADR-022, ADR-069)'],
   ['AccountController.cancelDeletion', 'Account events (ADR-022, ADR-069)'],
   [
