@@ -17,7 +17,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/use-auth';
 import { PasswordField } from '../components/password-field';
 import { api, ApiError, download, hasCode, messageFor } from '../lib/api';
-import { formatDate } from '../lib/format';
+import { formatDay } from '../lib/format';
 import { PASSWORD_MAX_LENGTH } from '../lib/validation';
 
 interface Refusal {
@@ -161,9 +161,9 @@ export function LeaveOrDelete() {
             {
               id: 'account.deletion.pending',
               defaultMessage:
-                'Your account will be deleted on {date}. Keep it from the banner at the top of any page.',
+                'Your account will be deleted after {date}. Keep it from the banner at the top of any page.',
             },
-            { date: formatDate(due) },
+            { date: formatDay(due) },
           )}
         </Alert>
       )}

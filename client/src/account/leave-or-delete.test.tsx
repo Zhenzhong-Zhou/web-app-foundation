@@ -19,9 +19,7 @@ describe('LeaveOrDelete', () => {
     server.use(
       http.post('/api/v1/account/deletion', async ({ request }) => {
         sent.push(await request.json());
-        return HttpResponse.json({
-          deletionScheduledAt: '2026-11-13T12:00:00.000Z',
-        });
+        return HttpResponse.json({ deletionScheduledAt: '2026-11-13' });
       }),
     );
     const refresh = vi.fn(() => Promise.resolve());
@@ -86,13 +84,15 @@ describe('LeaveOrDelete', () => {
       <MemoryRouter>
         <LeaveOrDelete />
       </MemoryRouter>,
-      { user: { deletionScheduledAt: '2026-11-13T12:00:00.000Z' } },
+      { user: { deletionScheduledAt: '2026-11-13' } },
     );
 
     expect(
       screen.queryByRole('button', { name: 'Delete my account' }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText(/will be deleted on/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/will be deleted after Nov 13, 2026/),
+    ).toBeInTheDocument();
   });
 });
 
@@ -101,6 +101,20 @@ describe('DeletionBanner', () => {
     const { container } = renderWithAuth(<DeletionBanner />);
 
     expect(container).toBeEmptyDOMElement();
+  });
+
+  /**
+   * The day as it was sent, as the email names it (ADR-052, ADR-069): read
+   * in the browser's zone, 13 Nov showed as 12 Nov west of UTC.
+   */
+  it('names the deletion day as it was sent', () => {
+    renderWithAuth(<DeletionBanner />, {
+      user: { deletionScheduledAt: '2026-11-13' },
+    });
+
+    expect(
+      screen.getByText(/will be deleted after Nov 13, 2026/),
+    ).toBeInTheDocument();
   });
 
   it('keeps the account when asked', async () => {
@@ -113,7 +127,7 @@ describe('DeletionBanner', () => {
     );
     const refresh = vi.fn(() => Promise.resolve());
     renderWithAuth(<DeletionBanner />, {
-      user: { deletionScheduledAt: '2026-11-13T12:00:00.000Z' },
+      user: { deletionScheduledAt: '2026-11-13' },
       refresh,
     });
 
@@ -123,5 +137,28 @@ describe('DeletionBanner', () => {
 
     expect(cancelled).toBe(true);
     expect(refresh).toHaveBeenCalled();
+  });
+
+  it('says so when the account could not be kept', async () => {
+    server.use(
+      http.delete('/api/v1/account/deletion', () => HttpResponse.error()),
+    );
+    const refresh = vi.fn(() => Promise.resolve());
+    renderWithAuth(<DeletionBanner />, {
+      user: { deletionScheduledAt: '2026-11-13' },
+      refresh,
+    });
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Keep my account' }),
+    );
+
+    expect(
+      await screen.findByText('Could not reach the server.'),
+    ).toBeInTheDocument();
+    expect(refresh).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', { name: 'Keep my account' }),
+    ).toBeEnabled();
   });
 });

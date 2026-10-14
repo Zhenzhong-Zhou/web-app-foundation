@@ -865,12 +865,14 @@ await fetch(`${api}/v1/files/product-image`, {
 - **MC-2302** As that Viewer, Download your data: a JSON file with your
   profile, memberships, devices and account history, and nothing of the
   organization's records. Delete my account: a wrong password is refused;
-  the right one closes the dialog, the banner shows the date 30 days
+  the right one closes the dialog, the banner names the day 30 days
   ahead on every page, your other browser is signed out, and an email
-  (Mailpit) says the account will be deleted after that day, 30 days
-  ahead. Keep my account in the banner: it goes, and
-  a second email says so. In 中文 the dialog, the banner and the emails
-  are in Chinese.
+  (Mailpit) says the account will be deleted after that same day. With
+  the computer's time zone set to Vancouver, asked for after 17:00, the
+  banner and the email still name the same day. With the server stopped,
+  Keep my account says it could not reach the server and the banner
+  stays; with it running, the banner goes, and a second email says so.
+  In 中文 the dialog, the banner and the emails are in Chinese.
 - **MC-2303** Request deletion again, then set its day two days back in
   the database (`update users set deletion_scheduled_at = current_date - 2`)
   and restart the server, which runs the deletions at startup: the
