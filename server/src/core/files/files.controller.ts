@@ -22,6 +22,7 @@ import type { RequestContext } from '../auth/request-context';
 import { PERMISSIONS } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
+import type { UploadedFileEnvelope } from './dto/file-response.dto';
 import { ReadFileDto } from './dto/read-file.dto';
 import { KIND_RULES } from './file-kinds';
 import {
@@ -58,7 +59,7 @@ export class FilesController {
   uploadLogo(
     @CurrentUser() user: RequestContext,
     @UploadedFile() file: UploadedBinary | undefined,
-  ) {
+  ): Promise<UploadedFileEnvelope> {
     return this.keep('logo', user, file);
   }
 
@@ -68,7 +69,7 @@ export class FilesController {
   uploadProductImage(
     @CurrentUser() user: RequestContext,
     @UploadedFile() file: UploadedBinary | undefined,
-  ) {
+  ): Promise<UploadedFileEnvelope> {
     return this.keep('product_image', user, file);
   }
 

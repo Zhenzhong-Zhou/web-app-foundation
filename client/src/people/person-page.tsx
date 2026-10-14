@@ -19,7 +19,7 @@ import { LoadFailure } from '../errors/load-failure';
 import { relativeTime, SEPARATOR } from '../lib/format';
 import { useResource } from '../lib/use-resource';
 import { roleLabel } from '../members/role-names';
-import { activeLabel, type Person, phoneLine } from './people-types';
+import { activeLabel, type PersonDetail, phoneLine } from './people-types';
 
 /**
  * A person's page (ADR-063): who they are and how to reach them, only the
@@ -33,7 +33,7 @@ export function PersonPage() {
     data: person,
     error,
     failure,
-  } = useResource<Person>(`/people/${userId ?? ''}`);
+  } = useResource<PersonDetail>(`/people/${userId ?? ''}`);
 
   const peopleLabel = intl.formatMessage({
     id: 'people.title',

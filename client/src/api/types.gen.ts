@@ -175,6 +175,88 @@ export type PhotoSet = {
   photoFileId: string;
 };
 
+export type Role = {
+  id: string;
+  name: string;
+};
+
+export type StoredFileSize = {
+  width: number;
+  height: number;
+  bytes: number;
+};
+
+export type FileSizes = {
+  thumb?: StoredFileSize;
+  display?: StoredFileSize;
+  full?: StoredFileSize;
+};
+
+export type StoredFile = {
+  id: string;
+  kind: 'logo' | 'product_image' | 'avatar';
+  contentType: string;
+  sizes: FileSizes;
+  createdAt: string;
+};
+
+export type UploadedFileEnvelope = {
+  file: StoredFile;
+};
+
+export type Person = {
+  id: string;
+  name: string;
+  email: string;
+  photoFileId: string | null;
+  roleId: string;
+  roleName: string;
+  jobTitle: string | null;
+  department: string | null;
+  location: string | null;
+  workPhone: string | null;
+  extension: string | null;
+  memberSince: string;
+  active: 'today' | 'week' | 'month' | 'older' | 'never';
+  lastActiveAt?: string | null;
+};
+
+export type AuditRecord = {
+  id: string;
+  action: string;
+  resourceType: string | null;
+  resourceId: string | null;
+  resourceLabel: string | null;
+  payload: {
+    [key: string]: unknown;
+  } | null;
+  actorId: string | null;
+  actorEmail: string | null;
+  actorName: string | null;
+  actorPhotoFileId: string | null;
+  ip: string | null;
+  userAgent: string | null;
+  createdAt: string;
+};
+
+export type PersonDetail = {
+  id: string;
+  name: string;
+  email: string;
+  photoFileId: string | null;
+  roleId: string;
+  roleName: string;
+  jobTitle: string | null;
+  department: string | null;
+  location: string | null;
+  workPhone: string | null;
+  extension: string | null;
+  memberSince: string;
+  active: 'today' | 'week' | 'month' | 'older' | 'never';
+  lastActiveAt?: string | null;
+  recentActivity?: Array<AuditRecord>;
+};
+
 export type WorkDetails = {
   jobTitle: string | null;
   department: string | null;
@@ -191,11 +273,32 @@ export type WorkDetailsDto = {
   extension?: string | null;
 };
 
+export type Member = {
+  id: string;
+  email: string;
+  name: string;
+  roleId: string;
+  photoFileId?: string | null;
+  active: 'today' | 'week' | 'month' | 'older' | 'never';
+  lastActiveAt?: string | null;
+};
+
 export type CreateUserDto = {
   email: string;
   name: string;
   password: string;
   roleId: string;
+};
+
+export type CreatedMember = {
+  id: string;
+  email: string;
+  name: string;
+  roleId: string;
+};
+
+export type UserEnvelope = {
+  user: CreatedMember;
 };
 
 export type UpdateUserDto = {
@@ -381,6 +484,43 @@ export type UpdateProductLicenceDto = {
   issuedAt?: string | null;
   expiresAt?: string | null;
   notes?: string;
+};
+
+export type OrganizationAddress = {
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string;
+};
+
+export type OrganizationProfile = {
+  id: string;
+  name: string;
+  slug: string;
+  taxRegistrationNumber: string | null;
+  address: OrganizationAddress | null;
+  baseCurrency: string | null;
+  defaultSalePriceListId: string | null;
+  licenceNotInForcePolicy: 'block' | 'override' | 'allow';
+  licenceExpiredPolicy: 'block' | 'override' | 'allow';
+  licenceRequired: boolean;
+  documentLanguage: 'en' | 'fr-CA' | 'zh-Hans';
+  documentSecondLanguage: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  requiredNameLanguages: Array<'en' | 'fr-CA' | 'zh-Hans'>;
+  logoFileId: string | null;
+  accentColor: string | null;
+  rail: 'dark' | 'light';
+  logoOnDocuments: boolean;
+  expiryWarningDays: number;
+  expiryCriticalDays: number;
+  idleSignOutMinutes: number | null;
+  idleSignOutScope: 'unticked' | 'everyone';
+};
+
+export type OrganizationEnvelope = {
+  organization: OrganizationProfile;
 };
 
 export type UpdateOrganizationDto = {
@@ -2410,8 +2550,11 @@ export type RolesControllerListV1Data = {
 };
 
 export type RolesControllerListV1Responses = {
-  200: unknown;
+  200: Array<Role>;
 };
+
+export type RolesControllerListV1Response =
+  RolesControllerListV1Responses[keyof RolesControllerListV1Responses];
 
 export type FilesControllerUploadLogoV1Data = {
   body?: never;
@@ -2421,8 +2564,11 @@ export type FilesControllerUploadLogoV1Data = {
 };
 
 export type FilesControllerUploadLogoV1Responses = {
-  201: unknown;
+  201: UploadedFileEnvelope;
 };
+
+export type FilesControllerUploadLogoV1Response =
+  FilesControllerUploadLogoV1Responses[keyof FilesControllerUploadLogoV1Responses];
 
 export type FilesControllerUploadProductImageV1Data = {
   body?: never;
@@ -2432,8 +2578,11 @@ export type FilesControllerUploadProductImageV1Data = {
 };
 
 export type FilesControllerUploadProductImageV1Responses = {
-  201: unknown;
+  201: UploadedFileEnvelope;
 };
+
+export type FilesControllerUploadProductImageV1Response =
+  FilesControllerUploadProductImageV1Responses[keyof FilesControllerUploadProductImageV1Responses];
 
 export type FilesControllerReadV1Data = {
   body?: never;
@@ -2717,9 +2866,7 @@ export type PeopleControllerListV1Data = {
 };
 
 export type PeopleControllerListV1Responses = {
-  200: Array<{
-    [key: string]: unknown;
-  }>;
+  200: Array<Person>;
 };
 
 export type PeopleControllerListV1Response =
@@ -2735,9 +2882,7 @@ export type PeopleControllerFindV1Data = {
 };
 
 export type PeopleControllerFindV1Responses = {
-  200: {
-    [key: string]: unknown;
-  };
+  200: PersonDetail;
 };
 
 export type PeopleControllerFindV1Response =
@@ -2982,8 +3127,11 @@ export type UsersControllerListV1Data = {
 };
 
 export type UsersControllerListV1Responses = {
-  200: unknown;
+  200: Array<Member>;
 };
+
+export type UsersControllerListV1Response =
+  UsersControllerListV1Responses[keyof UsersControllerListV1Responses];
 
 export type UsersControllerCreateV1Data = {
   body: CreateUserDto;
@@ -2993,8 +3141,11 @@ export type UsersControllerCreateV1Data = {
 };
 
 export type UsersControllerCreateV1Responses = {
-  201: unknown;
+  201: UserEnvelope;
 };
+
+export type UsersControllerCreateV1Response =
+  UsersControllerCreateV1Responses[keyof UsersControllerCreateV1Responses];
 
 export type UsersControllerRemoveV1Data = {
   body?: never;
@@ -3286,8 +3437,11 @@ export type OrganizationControllerGetV1Data = {
 };
 
 export type OrganizationControllerGetV1Responses = {
-  200: unknown;
+  200: OrganizationEnvelope;
 };
+
+export type OrganizationControllerGetV1Response =
+  OrganizationControllerGetV1Responses[keyof OrganizationControllerGetV1Responses];
 
 export type OrganizationControllerUpdateV1Data = {
   body: UpdateOrganizationDto;

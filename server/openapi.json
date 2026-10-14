@@ -388,7 +388,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Role"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -402,7 +412,14 @@
         "parameters": [],
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadedFileEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -416,7 +433,14 @@
         "parameters": [],
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadedFileEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -909,7 +933,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/Person"
                   }
                 }
               }
@@ -940,7 +964,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PersonDetail"
                 }
               }
             }
@@ -1364,7 +1388,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Member"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1386,7 +1420,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1972,7 +2013,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationEnvelope"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -7356,6 +7404,379 @@
           "photoFileId"
         ]
       },
+      "Role": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "StoredFileSize": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "bytes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "width",
+          "height",
+          "bytes"
+        ]
+      },
+      "FileSizes": {
+        "type": "object",
+        "properties": {
+          "thumb": {
+            "$ref": "#/components/schemas/StoredFileSize"
+          },
+          "display": {
+            "$ref": "#/components/schemas/StoredFileSize"
+          },
+          "full": {
+            "$ref": "#/components/schemas/StoredFileSize"
+          }
+        }
+      },
+      "StoredFile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "logo",
+              "product_image",
+              "avatar"
+            ]
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "sizes": {
+            "$ref": "#/components/schemas/FileSizes"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "contentType",
+          "sizes",
+          "createdAt"
+        ]
+      },
+      "UploadedFileEnvelope": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "$ref": "#/components/schemas/StoredFile"
+          }
+        },
+        "required": [
+          "file"
+        ]
+      },
+      "Person": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "photoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "roleId": {
+            "type": "string"
+          },
+          "roleName": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "workPhone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "extension": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "memberSince": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "active": {
+            "type": "string",
+            "enum": [
+              "today",
+              "week",
+              "month",
+              "older",
+              "never"
+            ]
+          },
+          "lastActiveAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "photoFileId",
+          "roleId",
+          "roleName",
+          "jobTitle",
+          "department",
+          "location",
+          "workPhone",
+          "extension",
+          "memberSince",
+          "active"
+        ]
+      },
+      "AuditRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "resourceType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resourceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resourceLabel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "payload": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          },
+          "actorId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actorEmail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actorName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actorPhotoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ip": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "userAgent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "resourceType",
+          "resourceId",
+          "resourceLabel",
+          "payload",
+          "actorId",
+          "actorEmail",
+          "actorName",
+          "actorPhotoFileId",
+          "ip",
+          "userAgent",
+          "createdAt"
+        ]
+      },
+      "PersonDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "photoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "roleId": {
+            "type": "string"
+          },
+          "roleName": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "workPhone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "extension": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "memberSince": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "active": {
+            "enum": [
+              "today",
+              "week",
+              "month",
+              "older",
+              "never"
+            ],
+            "type": "string"
+          },
+          "lastActiveAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recentActivity": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditRecord"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "photoFileId",
+          "roleId",
+          "roleName",
+          "jobTitle",
+          "department",
+          "location",
+          "workPhone",
+          "extension",
+          "memberSince",
+          "active"
+        ]
+      },
       "WorkDetails": {
         "type": "object",
         "properties": {
@@ -7440,6 +7861,53 @@
           }
         }
       },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roleId": {
+            "type": "string"
+          },
+          "photoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "active": {
+            "type": "string",
+            "enum": [
+              "today",
+              "week",
+              "month",
+              "older",
+              "never"
+            ]
+          },
+          "lastActiveAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "roleId",
+          "active"
+        ]
+      },
       "CreateUserDto": {
         "type": "object",
         "properties": {
@@ -7468,6 +7936,40 @@
           "name",
           "password",
           "roleId"
+        ]
+      },
+      "CreatedMember": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roleId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "roleId"
+        ]
+      },
+      "UserEnvelope": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/CreatedMember"
+          }
+        },
+        "required": [
+          "user"
         ]
       },
       "UpdateUserDto": {
@@ -8181,6 +8683,216 @@
             "maxLength": 1000
           }
         }
+      },
+      "OrganizationAddress": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "region": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "line1",
+          "line2",
+          "city",
+          "region",
+          "postalCode",
+          "country"
+        ]
+      },
+      "OrganizationProfile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "taxRegistrationNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrganizationAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "baseCurrency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "defaultSalePriceListId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "licenceNotInForcePolicy": {
+            "type": "string",
+            "enum": [
+              "block",
+              "override",
+              "allow"
+            ]
+          },
+          "licenceExpiredPolicy": {
+            "type": "string",
+            "enum": [
+              "block",
+              "override",
+              "allow"
+            ]
+          },
+          "licenceRequired": {
+            "type": "boolean"
+          },
+          "documentLanguage": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          },
+          "documentSecondLanguage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans",
+              null
+            ]
+          },
+          "requiredNameLanguages": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "en",
+                "fr-CA",
+                "zh-Hans"
+              ]
+            }
+          },
+          "logoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "accentColor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rail": {
+            "type": "string",
+            "enum": [
+              "dark",
+              "light"
+            ]
+          },
+          "logoOnDocuments": {
+            "type": "boolean"
+          },
+          "expiryWarningDays": {
+            "type": "number"
+          },
+          "expiryCriticalDays": {
+            "type": "number"
+          },
+          "idleSignOutMinutes": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "idleSignOutScope": {
+            "type": "string",
+            "enum": [
+              "unticked",
+              "everyone"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "taxRegistrationNumber",
+          "address",
+          "baseCurrency",
+          "defaultSalePriceListId",
+          "licenceNotInForcePolicy",
+          "licenceExpiredPolicy",
+          "licenceRequired",
+          "documentLanguage",
+          "documentSecondLanguage",
+          "requiredNameLanguages",
+          "logoFileId",
+          "accentColor",
+          "rail",
+          "logoOnDocuments",
+          "expiryWarningDays",
+          "expiryCriticalDays",
+          "idleSignOutMinutes",
+          "idleSignOutScope"
+        ]
+      },
+      "OrganizationEnvelope": {
+        "type": "object",
+        "properties": {
+          "organization": {
+            "$ref": "#/components/schemas/OrganizationProfile"
+          }
+        },
+        "required": [
+          "organization"
+        ]
       },
       "UpdateOrganizationDto": {
         "type": "object",

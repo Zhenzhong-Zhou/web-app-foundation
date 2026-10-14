@@ -1,30 +1,16 @@
 import { defineMessages, type IntlShape } from 'react-intl';
 
-import type { AuditRecord } from '../audit/audit-format';
+import type { Person } from '../api/types.gen';
+
+/**
+ * The organization's people, generated from the server's OpenAPI document
+ * (ADR-068): the directory's Person, and the PersonDetail one person's
+ * page reads, with their recent activity for those who may see it.
+ */
+export type { Person, PersonDetail } from '../api/types.gen';
 
 /** How recently someone was here, as everyone sees it (ADR-063). */
-export type ActiveSince = 'today' | 'week' | 'month' | 'older' | 'never';
-
-/** One of the organization's people, as GET /v1/people gives them. */
-export interface Person {
-  id: string;
-  name: string;
-  email: string;
-  photoFileId: string | null;
-  roleId: string;
-  roleName: string;
-  jobTitle: string | null;
-  department: string | null;
-  location: string | null;
-  workPhone: string | null;
-  extension: string | null;
-  memberSince: string;
-  active: ActiveSince;
-  /** Only for those who may read the history. */
-  lastActiveAt?: string | null;
-  /** The last 20 things they did, likewise; on a person's page only. */
-  recentActivity?: AuditRecord[];
-}
+export type ActiveSince = Person['active'];
 
 const ACTIVE = defineMessages<ActiveSince>({
   today: { id: 'people.active.today', defaultMessage: 'Active today' },

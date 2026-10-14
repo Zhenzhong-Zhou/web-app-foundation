@@ -17,6 +17,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { Member, Role } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
@@ -26,26 +27,9 @@ import { formatMoment } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
-import { activeLabel, type ActiveSince } from '../people/people-types';
+import { activeLabel } from '../people/people-types';
 import { CreateMemberDialog } from './create-member-dialog.tsx';
 import { roleLabel } from './role-names';
-
-interface Member {
-  id: string;
-  email: string;
-  name: string;
-  roleId: string;
-  /** Their photo (ADR-063); null shows their initials. */
-  photoFileId?: string | null;
-  /** Roughly for everyone, the time too with the history (ADR-063). */
-  active: ActiveSince;
-  lastActiveAt?: string | null;
-}
-
-interface Role {
-  id: string;
-  name: string;
-}
 
 export function MembersPage() {
   const intl = useIntl();

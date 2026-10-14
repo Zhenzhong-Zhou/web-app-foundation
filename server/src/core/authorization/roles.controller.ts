@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 
+import type { Role } from './dto/role-response.dto';
 import { RequirePermissions } from './require-permissions.decorator';
 import { RolesService } from './roles.service';
 
@@ -21,7 +22,7 @@ export class RolesController {
    */
   @Get()
   @RequirePermissions('users.view')
-  list() {
+  list(): Promise<Role[]> {
     return this.roles.listForOrganization();
   }
 }

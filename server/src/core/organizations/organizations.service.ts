@@ -20,6 +20,7 @@ import { FilesService } from '../files/files.service';
 import { normalizeHex, safeAccent } from './accent';
 import { assertLanguagePair } from './document-languages';
 import type { OrganizationAddressDto } from './dto/organization-address.dto';
+import type { OrganizationProfile } from './dto/organization-response.dto';
 import type { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { registeredAddress } from './registered-address';
 
@@ -41,7 +42,7 @@ export class OrganizationsService {
     private readonly files: FilesService,
   ) {}
 
-  async get() {
+  async get(): Promise<OrganizationProfile> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [organization] = await tx
         .select({
@@ -79,7 +80,21 @@ export class OrganizationsService {
 
       const address = await registeredAddress(tx, organizationId);
 
-      return { ...organization, address: address ?? null };
+      // The address's printed fields (ADR-068), not its row, which would
+      // also send its owner and the flags the partners' addresses use.
+      return {
+        ...organization,
+        address: address
+          ? {
+              line1: address.line1,
+              line2: address.line2,
+              city: address.city,
+              region: address.region,
+              postalCode: address.postalCode,
+              country: address.country,
+            }
+          : null,
+      };
     });
   }
 
