@@ -9,16 +9,9 @@ import {
 import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { WorkDetails as Details } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
 import { api, messageFor } from '../lib/api';
-
-interface Details {
-  jobTitle: string | null;
-  department: string | null;
-  location: string | null;
-  workPhone: string | null;
-  extension: string | null;
-}
 
 const FIELDS = [
   'jobTitle',

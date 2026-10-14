@@ -4,12 +4,111 @@ export type ClientOptions = {
   baseUrl: string;
 };
 
+export type SessionUser = {
+  id: string;
+  email: string;
+  name: string;
+  emailVerified: boolean;
+  locale: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  photoFileId?: string | null;
+};
+
+export type OrganizationBranding = {
+  logoFileId: string | null;
+  accentColor: string | null;
+  rail: 'dark' | 'light';
+  logoOnDocuments: boolean;
+  expiryWarningDays: number;
+  expiryCriticalDays: number;
+};
+
+export type SessionOrganization = {
+  id: string;
+  name: string;
+  roleId: string;
+  branding: OrganizationBranding;
+};
+
+export type CurrentSession = {
+  user: SessionUser;
+  organization: SessionOrganization | null;
+  permissions: Array<
+    | 'users.view'
+    | 'users.create'
+    | 'users.update'
+    | 'users.delete'
+    | 'roles.view'
+    | 'roles.assign'
+    | 'organizations.view'
+    | 'organizations.update'
+    | 'audit.view'
+    | 'products.view'
+    | 'products.create'
+    | 'products.update'
+    | 'product_licences.view'
+    | 'product_licences.create'
+    | 'product_licences.update'
+    | 'tax_codes.view'
+    | 'tax_codes.create'
+    | 'tax_codes.update'
+    | 'invoices.view'
+    | 'invoices.create'
+    | 'invoices.update'
+    | 'invoices.delete'
+    | 'invoices.issue'
+    | 'return_authorizations.view'
+    | 'return_authorizations.create'
+    | 'return_authorizations.update'
+    | 'locations.view'
+    | 'locations.create'
+    | 'locations.update'
+    | 'stock.view'
+    | 'stock.move'
+    | 'stock.adjust'
+    | 'costs.view'
+    | 'costs.update'
+    | 'price_lists.view'
+    | 'price_lists.create'
+    | 'price_lists.update'
+    | 'partners.view'
+    | 'partners.create'
+    | 'partners.update'
+    | 'orders.view'
+    | 'orders.create'
+    | 'orders.update'
+    | 'orders.receive'
+    | 'orders.ship'
+    | 'boms.view'
+    | 'boms.create'
+    | 'boms.update'
+    | 'production.view'
+    | 'production.create'
+    | 'production.release'
+    | 'production.complete'
+    | 'production.override_licence'
+  >;
+  idleLimitMs?: number | null;
+};
+
 export type RegisterDto = {
   email: string;
   password: string;
   name: string;
   organizationName: string;
   locale?: 'en' | 'fr-CA' | 'zh-Hans' | null;
+};
+
+export type AuthenticatedUser = {
+  id: string;
+  email: string;
+  name: string;
+  emailVerified: boolean;
+  locale: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  organizationId: string | null;
+};
+
+export type AuthenticatedUserEnvelope = {
+  user: AuthenticatedUser;
 };
 
 export type LoginDto = {
@@ -20,6 +119,14 @@ export type LoginDto = {
 
 export type VerifyEmailDto = {
   token: string;
+};
+
+export type VerifiedEmail = {
+  verified: boolean;
+};
+
+export type SentEmail = {
+  sent: boolean;
 };
 
 export type ForgotPasswordDto = {
@@ -41,12 +148,39 @@ export type ChangePasswordDto = {
   newPassword: string;
 };
 
+export type PasswordChanged = {
+  otherSessionsRevoked: number;
+};
+
+export type SessionSummary = {
+  id: string;
+  issuedAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  ip: string | null;
+  browser: string | null;
+  os: string | null;
+  current: boolean;
+};
+
 export type AccountEvent = {
   id: string;
   action: string;
   ip: string | null;
   userAgent: string | null;
   createdAt: string;
+};
+
+export type PhotoSet = {
+  photoFileId: string;
+};
+
+export type WorkDetails = {
+  jobTitle: string | null;
+  department: string | null;
+  location: string | null;
+  workPhone: string | null;
+  extension: string | null;
 };
 
 export type WorkDetailsDto = {
@@ -2058,9 +2192,7 @@ export type AuthControllerMeV1Data = {
 };
 
 export type AuthControllerMeV1Responses = {
-  200: {
-    [key: string]: unknown;
-  };
+  200: CurrentSession;
 };
 
 export type AuthControllerMeV1Response =
@@ -2074,8 +2206,11 @@ export type AuthControllerRegisterV1Data = {
 };
 
 export type AuthControllerRegisterV1Responses = {
-  201: unknown;
+  201: AuthenticatedUserEnvelope;
 };
+
+export type AuthControllerRegisterV1Response =
+  AuthControllerRegisterV1Responses[keyof AuthControllerRegisterV1Responses];
 
 export type AuthControllerLoginV1Data = {
   body: LoginDto;
@@ -2085,8 +2220,11 @@ export type AuthControllerLoginV1Data = {
 };
 
 export type AuthControllerLoginV1Responses = {
-  200: unknown;
+  200: AuthenticatedUserEnvelope;
 };
+
+export type AuthControllerLoginV1Response =
+  AuthControllerLoginV1Responses[keyof AuthControllerLoginV1Responses];
 
 export type AuthControllerLogoutV1Data = {
   body?: never;
@@ -2110,8 +2248,11 @@ export type AuthControllerVerifyEmailV1Data = {
 };
 
 export type AuthControllerVerifyEmailV1Responses = {
-  200: unknown;
+  200: VerifiedEmail;
 };
+
+export type AuthControllerVerifyEmailV1Response =
+  AuthControllerVerifyEmailV1Responses[keyof AuthControllerVerifyEmailV1Responses];
 
 export type AuthControllerResendVerificationV1Data = {
   body?: never;
@@ -2124,8 +2265,11 @@ export type AuthControllerResendVerificationV1Data = {
 };
 
 export type AuthControllerResendVerificationV1Responses = {
-  202: unknown;
+  202: SentEmail;
 };
+
+export type AuthControllerResendVerificationV1Response =
+  AuthControllerResendVerificationV1Responses[keyof AuthControllerResendVerificationV1Responses];
 
 export type AuthControllerForgotPasswordV1Data = {
   body: ForgotPasswordDto;
@@ -2138,8 +2282,11 @@ export type AuthControllerForgotPasswordV1Data = {
 };
 
 export type AuthControllerForgotPasswordV1Responses = {
-  202: unknown;
+  202: SentEmail;
 };
+
+export type AuthControllerForgotPasswordV1Response =
+  AuthControllerForgotPasswordV1Responses[keyof AuthControllerForgotPasswordV1Responses];
 
 export type AuthControllerResetPasswordV1Data = {
   body: ResetPasswordDto;
@@ -2177,8 +2324,11 @@ export type AccountControllerChangePasswordV1Data = {
 };
 
 export type AccountControllerChangePasswordV1Responses = {
-  200: unknown;
+  200: PasswordChanged;
 };
+
+export type AccountControllerChangePasswordV1Response =
+  AccountControllerChangePasswordV1Responses[keyof AccountControllerChangePasswordV1Responses];
 
 export type AccountControllerListSessionsV1Data = {
   body?: never;
@@ -2188,9 +2338,7 @@ export type AccountControllerListSessionsV1Data = {
 };
 
 export type AccountControllerListSessionsV1Responses = {
-  200: Array<{
-    [key: string]: unknown;
-  }>;
+  200: Array<SessionSummary>;
 };
 
 export type AccountControllerListSessionsV1Response =
@@ -2248,8 +2396,11 @@ export type AccountControllerSetPhotoV1Data = {
 };
 
 export type AccountControllerSetPhotoV1Responses = {
-  201: unknown;
+  201: PhotoSet;
 };
+
+export type AccountControllerSetPhotoV1Response =
+  AccountControllerSetPhotoV1Responses[keyof AccountControllerSetPhotoV1Responses];
 
 export type RolesControllerListV1Data = {
   body?: never;
@@ -2616,9 +2767,7 @@ export type WorkControllerDetailsV1Data = {
 };
 
 export type WorkControllerDetailsV1Responses = {
-  200: {
-    [key: string]: unknown;
-  };
+  200: WorkDetails;
 };
 
 export type WorkControllerDetailsV1Response =

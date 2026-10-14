@@ -22,6 +22,7 @@ import { ListAuditDto } from '../audit/dto/list-audit.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
 import { WorkDetailsDto } from './dto/work-details.dto';
+import type { WorkDetails } from './dto/work-response.dto';
 import { WorkService } from './work.service';
 
 /**
@@ -37,7 +38,7 @@ export class WorkController {
   ) {}
 
   @Get('details')
-  details(@CurrentUser() context: RequestContext) {
+  details(@CurrentUser() context: RequestContext): Promise<WorkDetails> {
     return this.work.details(context.userId);
   }
 

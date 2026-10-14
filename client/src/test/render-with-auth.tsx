@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
+import type { Permission } from '../api/types.gen';
 import { AuthContext, type AuthState } from '../auth/auth-context';
 
 /**
@@ -41,7 +42,9 @@ export function renderWithAuth(
           expiryCriticalDays: 30,
         },
       },
-      permissions,
+      // Specs list permissions as plain strings; the session holds them
+      // as the server's names (ADR-068).
+      permissions: permissions as Permission[],
     },
     loading: false,
     error: null,
