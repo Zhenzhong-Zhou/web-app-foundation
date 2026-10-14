@@ -17,8 +17,11 @@ const ENTRY: AuditRecord = {
   resourceLabel: 'Widget',
   actorId: 'user-1',
   actorEmail: 'owner@alpha.example.com',
+  actorName: 'Owner',
+  actorPhotoFileId: null,
   payload: { sku: { from: 'WIDGET-1', to: 'RENAMED-1' } },
   ip: null,
+  userAgent: null,
   createdAt: new Date().toISOString(),
 };
 

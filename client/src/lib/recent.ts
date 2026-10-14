@@ -1,26 +1,17 @@
 import { useEffect } from 'react';
 
+import type { RecentEntry } from '../api/types.gen';
 import { api } from './api';
 
-/** The kinds of record whose opening is remembered (ADR-058). */
-export type RecentKind =
-  | 'order'
-  | 'invoice'
-  | 'lot'
-  | 'product'
-  | 'partner'
-  | 'run'
-  | 'return'
-  | 'priceList';
+/**
+ * A record recently opened, generated from the server's OpenAPI document
+ * (ADR-068). Its title is null where the record has no name yet, as a
+ * draft invoice has none.
+ */
+export type { RecentEntry } from '../api/types.gen';
 
-export interface RecentEntry {
-  kind: RecentKind;
-  id: string;
-  /** Null where the record has no name yet: a draft invoice. */
-  title: string | null;
-  detail: string | null;
-  openedAt: string;
-}
+/** The kinds of record whose opening is remembered (ADR-058). */
+export type RecentKind = RecentEntry['kind'];
 
 /** Where each kind's page is. */
 export const RECENT_PATHS: Record<RecentKind, (id: string) => string> = {
