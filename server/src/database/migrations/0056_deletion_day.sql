@@ -1,0 +1,1 @@
+ALTER TABLE "users" ALTER COLUMN "deletion_scheduled_at" SET DATA TYPE date;

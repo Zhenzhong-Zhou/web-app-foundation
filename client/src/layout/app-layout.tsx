@@ -25,6 +25,7 @@ import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, Outlet } from 'react-router-dom';
 
+import { DeletionBanner } from '../account/deletion-banner';
 import { useAuth } from '../auth/use-auth';
 import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
@@ -385,6 +386,7 @@ export function AppLayout() {
         <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
           <Stack spacing={3}>
             <UnverifiedBanner />
+            <DeletionBanner />
             {/* Inside the page so the rail and the bar survive: a person
                 whose page broke should be able to click away from it. */}
             {/* Signs out after inactivity, warning a minute before (ADR-065). */}

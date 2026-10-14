@@ -37,7 +37,8 @@ Karpathy's observations on LLM coding pitfalls
 ## Rules of this repository
 
 - **Commits and pull requests.** Commits are authored
-  `Zhenzhong Zhou <bob0823.zhou@gmail.com>`. One pull request per
+  `Zhenzhong Zhou <bob0823.zhou@gmail.com>`; a commit made with Claude
+  Code may carry its `Co-Authored-By` trailer. One pull request per
   feature: the ADR or amendment first, then server, client and docs
   commits. PR descriptions are plain Markdown.
 - **Before pushing.** `scripts/verify.sh`, or `--quick` without the
@@ -54,7 +55,8 @@ Karpathy's observations on LLM coding pitfalls
   `client/src/lib/api-names.ts`, read from a generated type.
 - **Migrations.** `npm run migrate:new -- --name <name>` in `server/`,
   then `npm run migrate:all`, which applies it to the dev, test and e2e
-  databases.
+  databases. The steps between, and what to check in the generated SQL,
+  are under Process in the handoff's working agreements.
 - **Money and quantities** are decimal strings, never JavaScript numbers
   (ADR-025), and totals come from the server (ADR-055). Calendar days
   are `YYYY-MM-DD` strings (ADR-052).
@@ -65,8 +67,8 @@ Karpathy's observations on LLM coding pitfalls
   released, and a message that says what to do next.
 - **Languages.** Every message id exists in `en`, `fr-CA` and `zh-Hans`
   (ADR-054).
-- **Audit.** Writes are `@Audited`; free text stays out of the payload
-  (ADR-018).
+- **Audit.** Writes are `@Audited`, or listed in `NOT_AUDITED` with a
+  reason; free text stays out of the payload (ADR-018).
 - **Lint autofixes** under `client/e2e/` or `src/` are committed as a
   fixup, never restored.
 

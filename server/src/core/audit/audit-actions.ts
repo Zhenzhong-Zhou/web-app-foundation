@@ -15,6 +15,13 @@ export const AUDIT_ACTIONS = {
   USER_ROLE_CHANGED: 'user.role_changed',
   /** Membership removed. The account still exists — see ADR-012 for deletion. */
   MEMBER_REMOVED: 'member.removed',
+  /** A member left of their own accord; the account still exists (ADR-069). */
+  MEMBER_LEFT: 'member.left',
+  /**
+   * A member's account was deleted when its 30 days ran out (ADR-069). The
+   * actor is the person, now shown as Deleted User.
+   */
+  USER_ACCOUNT_DELETED: 'user.account_deleted',
 
   PRODUCT_CREATED: 'product.created',
   PRODUCT_UPDATED: 'product.updated',

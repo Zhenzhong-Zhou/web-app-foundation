@@ -21,6 +21,16 @@ export const ERROR_CODES = {
   customerBillingAddressMissing: 'customer_billing_address_missing',
   /** An invoice charges tax, and the seller has no tax number (ADR-046). */
   organizationTaxNumberMissing: 'organization_tax_number_missing',
+  /**
+   * The only Owner of an organization with other members cannot leave it
+   * or delete their account until another member is Owner (ADR-069).
+   */
+  lastOwnerWithMembers: 'last_owner_with_members',
+  /**
+   * The only member of an organization cannot leave it or delete their
+   * account while it exists (ADR-069).
+   */
+  onlyMember: 'only_member',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

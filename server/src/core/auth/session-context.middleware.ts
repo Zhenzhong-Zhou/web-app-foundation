@@ -117,6 +117,7 @@ export class SessionContextMiddleware implements NestMiddleware {
       // whenever it was created.
       ip: req.ip,
       userAgent: req.headers['user-agent'],
+      language: req.headers['accept-language'],
     };
   }
 

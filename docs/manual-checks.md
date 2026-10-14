@@ -411,6 +411,10 @@ folder by folder; these check what is already in place.
   email and the bell's notification are in the account's language. Close
   an order line short: a member set to English reads "will not be
   delivered in full" while a member set to Français reads it in French.
+  Signed in to an account with no language chosen
+  (`update users set locale = null`), the browser's language set to
+  Français: change the password, then delete the account and keep it.
+  The three emails are in French.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -853,6 +857,33 @@ await fetch(`${api}/v1/files/product-image`, {
   plain tile, and the rows line up. Lots, orders and partners look as
   before. On a phone the cover fits the row.
 
+## 23. Leaving and deleting (ADR-069)
+
+- **MC-2301** As a Viewer in an organization with an Owner, Account → Your
+  data and your account → Leave: the dialog says what happens; Leave signs
+  you out of the organization and Home shows no organization, and you can
+  still sign in. As the Owner, Audit lists "Left the organization". As
+  the only Owner of an organization with other members, Leave is refused
+  with a Go to Members link; on your own in a new organization, Leave is
+  refused as its only member, with the same link.
+- **MC-2302** As that Viewer, Download your data: a JSON file with your
+  profile, memberships, devices and account history, and nothing of the
+  organization's records. Delete my account: a wrong password is refused;
+  the right one closes the dialog, the banner names the day 30 days
+  ahead on every page, your other browser is signed out, and an email
+  (Mailpit) says the account will be deleted after that same day. With
+  the computer's time zone set to Vancouver, asked for after 17:00, the
+  banner and the email still name the same day. With the server stopped,
+  Keep my account says it could not reach the server and the banner
+  stays; with it running, the banner goes, and a second email says so.
+  In 中文 the dialog, the banner and the emails are in Chinese.
+- **MC-2303** Request deletion again, then set its day two days back in
+  the database (`update users set deletion_scheduled_at = current_date - 2`)
+  and restart the server, which runs the deletions at startup: the
+  account is gone, signing in fails, Audit shows Deleted User against
+  its old entries and "Account deleted", and the email can register a
+  new account.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -986,3 +1017,8 @@ first.
 - 2026-10-12: ADR-061's links from the invoice refusals, to Profile and to
   the customer: MC-1703 added, MC-702 rewritten.
 - 2026-10-13: ADR-046 amended, a taxed invoice needs the tax number: MC-711.
+- 2026-10-14: ADR-069, leaving an organization and deleting your account:
+  section 23, MC-2301 to MC-2303.
+- 2026-10-14: ADR-054, the password change and the deletion emails in the
+  language of the request for an account with none chosen: MC-1414
+  extended.

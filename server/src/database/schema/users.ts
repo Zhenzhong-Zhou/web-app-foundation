@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   type AnyPgColumn,
+  date,
   pgTable,
   text,
   timestamp,
@@ -52,9 +53,9 @@ export const users = pgTable(
 
     // ADR-012 deletion flow: request sets deletion_scheduled_at, a 30-day
     // grace window follows, then deleted_at is set and the row anonymised.
-    deletionScheduledAt: timestamp('deletion_scheduled_at', {
-      withTimezone: true,
-    }),
+    // The deletion day, a calendar day (ADR-052), completed once it has
+    // ended in every time zone (ADR-069).
+    deletionScheduledAt: date('deletion_scheduled_at', { mode: 'string' }),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
 
     ...timestamps,

@@ -386,6 +386,20 @@
       "when": 1791589982741,
       "tag": "0054_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1791955585936,
+      "tag": "0055_account_deletion",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1792002174099,
+      "tag": "0056_deletion_day",
+      "breakpoints": true
     }
   ]
 }

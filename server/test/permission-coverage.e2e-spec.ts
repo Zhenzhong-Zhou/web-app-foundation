@@ -41,6 +41,13 @@ const SELF_SERVICE = new Map<string, string>([
   ['AccountController.listEvents', 'Your own account history'],
   ['AccountController.setPhoto', 'Your own photo, set only by you (ADR-063)'],
   ['AccountController.removePhoto', 'As above'],
+  [
+    'AccountController.leaveOrganization',
+    'Leaving an organization yourself (ADR-069)',
+  ],
+  ['AccountController.requestDeletion', 'Deleting your own account (ADR-069)'],
+  ['AccountController.cancelDeletion', 'As above'],
+  ['AccountController.exportData', 'Your own data (ADR-069)'],
   ['WorkController.details', 'Your own details at work (ADR-063)'],
   ['WorkController.updateDetails', 'As above'],
   [

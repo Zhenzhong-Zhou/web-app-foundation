@@ -26,6 +26,11 @@ export interface RequestContext {
    *  these at event time, and the session's values are from its creation. */
   ip?: string;
   userAgent?: string;
+  /**
+   * The request's Accept-Language: the language of an email this request
+   * causes, for someone who has not chosen one (ADR-054).
+   */
+  language?: string;
 }
 
 // A symbol rather than a declaration-merged property on Express's Request:

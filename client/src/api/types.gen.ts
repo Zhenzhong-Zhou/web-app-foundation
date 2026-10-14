@@ -11,6 +11,7 @@ export type SessionUser = {
   emailVerified: boolean;
   locale: 'en' | 'fr-CA' | 'zh-Hans' | null;
   photoFileId?: string | null;
+  deletionScheduledAt?: string | null;
 };
 
 export type OrganizationBranding = {
@@ -173,6 +174,63 @@ export type AccountEvent = {
 
 export type PhotoSet = {
   photoFileId: string;
+};
+
+export type DeleteAccountDto = {
+  password: string;
+};
+
+export type DeletionScheduled = {
+  deletionScheduledAt: string;
+};
+
+export type ExportedProfile = {
+  id: string;
+  email: string;
+  name: string;
+  locale: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  emailVerifiedAt: string | null;
+  createdAt: string;
+  deletionScheduledAt: string | null;
+};
+
+export type ExportedMembership = {
+  organizationId: string;
+  organizationName: string;
+  roleName: string;
+  jobTitle: string | null;
+  department: string | null;
+  location: string | null;
+  workPhone: string | null;
+  extension: string | null;
+  joinedAt: string;
+};
+
+export type ExportedNotification = {
+  id: string;
+  organizationId: string | null;
+  type: string;
+  title: string;
+  body: string | null;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export type ExportedRecent = {
+  organizationId: string;
+  kind: string;
+  recordId: string;
+  openedAt: string;
+};
+
+export type AccountExport = {
+  exportedAt: string;
+  profile: ExportedProfile;
+  memberships: Array<ExportedMembership>;
+  devices: Array<SessionSummary>;
+  accountHistory: Array<AccountEvent>;
+  notifications: Array<ExportedNotification>;
+  recentlyOpened: Array<ExportedRecent>;
 };
 
 export type Role = {
@@ -2358,6 +2416,8 @@ export const AuditAction = {
   USER_CREATED: 'user.created',
   USER_ROLE_CHANGED: 'user.role_changed',
   MEMBER_REMOVED: 'member.removed',
+  MEMBER_LEFT: 'member.left',
+  USER_ACCOUNT_DELETED: 'user.account_deleted',
   PRODUCT_CREATED: 'product.created',
   PRODUCT_UPDATED: 'product.updated',
   PRODUCT_VARIANT_ADDED: 'product.variant_added',
@@ -2433,6 +2493,8 @@ export const ErrorCode = {
   ORGANIZATION_ADDRESS_MISSING: 'organization_address_missing',
   CUSTOMER_BILLING_ADDRESS_MISSING: 'customer_billing_address_missing',
   ORGANIZATION_TAX_NUMBER_MISSING: 'organization_tax_number_missing',
+  LAST_OWNER_WITH_MEMBERS: 'last_owner_with_members',
+  ONLY_MEMBER: 'only_member',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -2672,6 +2734,62 @@ export type AccountControllerSetPhotoV1Responses = {
 export type AccountControllerSetPhotoV1Response =
   AccountControllerSetPhotoV1Responses[keyof AccountControllerSetPhotoV1Responses];
 
+export type AccountControllerLeaveOrganizationV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/account/membership';
+};
+
+export type AccountControllerLeaveOrganizationV1Responses = {
+  204: void;
+};
+
+export type AccountControllerLeaveOrganizationV1Response =
+  AccountControllerLeaveOrganizationV1Responses[keyof AccountControllerLeaveOrganizationV1Responses];
+
+export type AccountControllerCancelDeletionV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/account/deletion';
+};
+
+export type AccountControllerCancelDeletionV1Responses = {
+  204: void;
+};
+
+export type AccountControllerCancelDeletionV1Response =
+  AccountControllerCancelDeletionV1Responses[keyof AccountControllerCancelDeletionV1Responses];
+
+export type AccountControllerRequestDeletionV1Data = {
+  body: DeleteAccountDto;
+  path?: never;
+  query?: never;
+  url: '/v1/account/deletion';
+};
+
+export type AccountControllerRequestDeletionV1Responses = {
+  200: DeletionScheduled;
+};
+
+export type AccountControllerRequestDeletionV1Response =
+  AccountControllerRequestDeletionV1Responses[keyof AccountControllerRequestDeletionV1Responses];
+
+export type AccountControllerExportDataV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/account/export';
+};
+
+export type AccountControllerExportDataV1Responses = {
+  200: AccountExport;
+};
+
+export type AccountControllerExportDataV1Response =
+  AccountControllerExportDataV1Responses[keyof AccountControllerExportDataV1Responses];
+
 export type RolesControllerListV1Data = {
   body?: never;
   path?: never;
@@ -2802,6 +2920,8 @@ export type AuditControllerListV1Data = {
       | 'user.created'
       | 'user.role_changed'
       | 'member.removed'
+      | 'member.left'
+      | 'user.account_deleted'
       | 'product.created'
       | 'product.updated'
       | 'product.variant_added'
@@ -2896,6 +3016,8 @@ export type AuditControllerExportAuditV1Data = {
       | 'user.created'
       | 'user.role_changed'
       | 'member.removed'
+      | 'member.left'
+      | 'user.account_deleted'
       | 'product.created'
       | 'product.updated'
       | 'product.variant_added'
@@ -3075,6 +3197,8 @@ export type WorkControllerActivityV1Data = {
       | 'user.created'
       | 'user.role_changed'
       | 'member.removed'
+      | 'member.left'
+      | 'user.account_deleted'
       | 'product.created'
       | 'product.updated'
       | 'product.variant_added'
@@ -3169,6 +3293,8 @@ export type WorkControllerExportActivityV1Data = {
       | 'user.created'
       | 'user.role_changed'
       | 'member.removed'
+      | 'member.left'
+      | 'user.account_deleted'
       | 'product.created'
       | 'product.updated'
       | 'product.variant_added'

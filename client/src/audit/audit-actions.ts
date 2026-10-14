@@ -81,6 +81,10 @@ export const AUDIT_ACTION_NAMES = defineMessages<AuditAction>({
     id: 'audit.action.locationUpdated',
     defaultMessage: 'Location updated',
   },
+  'member.left': {
+    id: 'audit.action.memberLeft',
+    defaultMessage: 'Left the organization',
+  },
   'member.removed': {
     id: 'audit.action.memberRemoved',
     defaultMessage: 'Member removed',
@@ -276,6 +280,10 @@ export const AUDIT_ACTION_NAMES = defineMessages<AuditAction>({
   'tax_code.updated': {
     id: 'audit.action.taxCodeUpdated',
     defaultMessage: 'Tax code updated',
+  },
+  'user.account_deleted': {
+    id: 'audit.action.userAccountDeleted',
+    defaultMessage: 'Account deleted',
   },
   'user.created': {
     id: 'audit.action.userCreated',

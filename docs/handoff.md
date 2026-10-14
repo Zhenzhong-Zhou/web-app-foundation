@@ -17,8 +17,9 @@ with this one, this one is current.
   Organization → Profile and to the customer (`invoice-refusal-link`,
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
   "Error codes"). PRs through #87.
-- **Migrations:** through **0054** on `main`; Render holds **55** rows in
-  `drizzle.__drizzle_migrations`. Next is **0055**.
+- **Migrations:** through **0056** on `main` once #114 merges (0055 and
+  0056 are ADR-069's); Render holds **55** rows in
+  `drizzle.__drizzle_migrations` until it deploys. Next is **0057**.
   After any new migration: `npm run migrate:all`.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
@@ -79,8 +80,20 @@ with this one, this one is current.
   the type generator, is dev-only and reads only our own spec; esbuild's
   flaw is in a dev server drizzle-kit never starts. Neither has a fixed
   parent release, and ADR-019 rules out overrides.
-- **Next, in Bob's order:** **ADR-069**, account deletion (ADR-012 already
-  settles the audit side: anonymize the person, keep the rows).
+- **ADR-069** (`adr-069-account-deletion`): leaving an organization,
+  deleting your account after 30 days, and exporting your own data.
+  Only the person deletes their account; an Owner removes a member. The
+  only member of an organization, and its only Owner while others
+  remain, can do neither (`only_member`, `last_owner_with_members`).
+  The deletion day is a calendar day, completed once it has ended in
+  every time zone; `AccountDeletionTimer` runs at startup and hourly,
+  cancelling a deletion a block now applies to. Migrations 0055 and
+  0056. A block in another organization waits for invitations (ADR-069,
+  *Deferred*).
+- **Next:** organization deletion, ADR-069's deferral. Its trigger, the
+  first paying customer, is near, and until it exists a person alone in
+  their organization, which is everyone who registers, cannot delete
+  their account.
 - **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),
   a GitHub pre-release; its tag ran the Performance workflow's full
   budgets. v0.7.0 follows once those pass and the release candidate has
@@ -124,8 +137,6 @@ with this one, this one is current.
 
 - **The typo lookup** sits at 270 ms of its 300 ms budget; one query per
   pass if it ever fails.
-- **Account deletion** does not exist yet. When it does, ADR-063 says it
-  deletes the person's photo with it.
 
 ### Deferred, each waiting for its trigger (in the ADRs)
 

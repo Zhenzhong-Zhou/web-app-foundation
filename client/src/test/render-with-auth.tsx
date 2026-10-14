@@ -2,7 +2,11 @@ import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 import type { Permission } from '../api/types.gen';
-import { AuthContext, type AuthState } from '../auth/auth-context';
+import {
+  AuthContext,
+  type AuthState,
+  type CurrentSession,
+} from '../auth/auth-context';
 
 /**
  * Renders inside AuthContext, for any component that calls useAuth.
@@ -18,7 +22,11 @@ import { AuthContext, type AuthState } from '../auth/auth-context';
  */
 export function renderWithAuth(
   ui: ReactElement,
-  { permissions = [] as string[] } = {},
+  {
+    permissions = [] as string[],
+    user = {} as Partial<CurrentSession['user']>,
+    refresh = () => Promise.resolve(),
+  } = {},
 ) {
   const state: AuthState = {
     session: {
@@ -28,6 +36,7 @@ export function renderWithAuth(
         name: 'Owner',
         emailVerified: true,
         locale: null,
+        ...user,
       },
       organization: {
         id: 'org-1',
@@ -48,7 +57,7 @@ export function renderWithAuth(
     },
     loading: false,
     error: null,
-    refresh: () => Promise.resolve(),
+    refresh,
   };
 
   return render(

@@ -164,8 +164,12 @@ export class AccountPhotoService {
     this.logger.log(`Photo removed for ${userId}`);
   }
 
-  /** Bytes first, then the row: a row without bytes would be a lie. */
-  private async erase(userId: string, fileId: string): Promise<void> {
+  /**
+   * Bytes first, then the row: a row without bytes would be a lie. Also
+   * how a completed account deletion purges the photo it cleared, once
+   * its transaction has committed (ADR-069).
+   */
+  async erase(userId: string, fileId: string): Promise<void> {
     await Promise.all(
       SIZES.map((size) => this.storage.delete(keyOf(userId, fileId, size))),
     );

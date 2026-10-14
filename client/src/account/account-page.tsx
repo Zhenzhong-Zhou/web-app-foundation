@@ -15,14 +15,16 @@ import { Link as RouterLink } from 'react-router-dom';
 import { PageHeader } from '../components/page-header';
 import { AccountPhoto } from './account-photo';
 import { ChangePasswordForm } from './change-password-form';
+import { LeaveOrDelete } from './leave-or-delete';
 import { ProfileForm } from './profile-form';
 import { RecentWork } from './recent-work';
 import { WorkDetailsForm } from './work-details-form';
 
 /**
  * Your account (ADR-063): who you are, with your photo beside it; your
- * details at work, which colleagues see; signing in and security; and
- * your recent work. Each its own card, in that order.
+ * details at work, which colleagues see; signing in and security; your
+ * recent work; and your data and your account (ADR-069). Each its own
+ * card, in that order.
  */
 export function AccountPage() {
   const intl = useIntl();
@@ -127,6 +129,11 @@ export function AccountPage() {
 
       <Paper variant="outlined" sx={{ p: 3 }}>
         <RecentWork />
+      </Paper>
+
+      {/* Last, as the actions that end things are (ADR-069). */}
+      <Paper variant="outlined" sx={{ p: 3 }}>
+        <LeaveOrDelete />
       </Paper>
     </Stack>
   );

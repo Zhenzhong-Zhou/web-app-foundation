@@ -58,6 +58,11 @@ export interface CurrentSession {
     locale: Locale | null;
     /** Their photo (ADR-063); null shows their initials. */
     photoFileId?: string | null;
+    /**
+     * The deletion day, YYYY-MM-DD, while one is pending (ADR-069): every
+     * page says so.
+     */
+    deletionScheduledAt?: string | null;
   };
   /** Null when the caller belongs to no organization — see SessionGuard. */
   organization: {
@@ -357,6 +362,7 @@ export class AuthService implements OnModuleInit {
         emailVerifiedAt: users.emailVerifiedAt,
         locale: users.locale,
         photoFileId: users.photoFileId,
+        deletionScheduledAt: users.deletionScheduledAt,
       })
       .from(users)
       .where(eq(users.id, context.userId));
@@ -375,6 +381,7 @@ export class AuthService implements OnModuleInit {
         emailVerified: user.emailVerifiedAt !== null,
         locale: user.locale,
         photoFileId: user.photoFileId,
+        deletionScheduledAt: user.deletionScheduledAt,
       },
       idleLimitMs: context.idleLimitMs,
     };

@@ -87,6 +87,40 @@ export class AccountService {
   }
 
   /**
+   * The person's current password, asked again by what a stolen session
+   * must not do alone: changing the password, deleting the account
+   * (ADR-069). Throws when it is not theirs.
+   */
+  async confirmPassword(userId: string, password: string): Promise<void> {
+    const [user] = await this.db
+      .select({ passwordHash: users.passwordHash })
+      .from(users)
+      .where(eq(users.id, userId));
+
+    // password_hash is nullable — an account bootstrapped without one, or an
+    // anonymised row (ADR-012). Neither can prove knowledge of a current
+    // password, so neither may confirm with one; reset is the path.
+    if (!user?.passwordHash) {
+      throw new BadRequestException(
+        t({
+          id: 'account.password.noneSet',
+          defaultMessage:
+            'This account has no password set. Use the reset link instead.',
+        }),
+      );
+    }
+
+    if (!(await this.passwords.verify(user.passwordHash, password))) {
+      throw new UnauthorizedException(
+        t({
+          id: 'account.password.wrong',
+          defaultMessage: 'That password is not correct',
+        }),
+      );
+    }
+  }
+
+  /**
    * Requires the current password even though the caller is authenticated.
    *
    * Without it a stolen session converts into a permanent takeover: the
@@ -101,37 +135,7 @@ export class AccountService {
     context: RequestContext,
     dto: ChangePasswordDto,
   ): Promise<number> {
-    const [user] = await this.db
-      .select({ passwordHash: users.passwordHash })
-      .from(users)
-      .where(eq(users.id, context.userId));
-
-    // password_hash is nullable — an account bootstrapped without one, or an
-    // anonymised row (ADR-012). Neither can prove knowledge of a current
-    // password, so neither may change one this way; reset is the path.
-    if (!user?.passwordHash) {
-      throw new BadRequestException(
-        t({
-          id: 'account.password.noneSet',
-          defaultMessage:
-            'This account has no password set. Use the reset link instead.',
-        }),
-      );
-    }
-
-    const matches = await this.passwords.verify(
-      user.passwordHash,
-      dto.currentPassword,
-    );
-
-    if (!matches) {
-      throw new UnauthorizedException(
-        t({
-          id: 'account.password.wrong',
-          defaultMessage: 'That password is not correct',
-        }),
-      );
-    }
+    await this.confirmPassword(context.userId, dto.currentPassword);
 
     const passwordHash = await this.passwords.hash(dto.newPassword);
     await this.db
@@ -154,6 +158,7 @@ export class AccountService {
     await this.events.record(context.userId, 'account.password_changed', {
       ip: context.ip,
       userAgent: context.userAgent,
+      language: context.language,
     });
 
     this.logger.log(
