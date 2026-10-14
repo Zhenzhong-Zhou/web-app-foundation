@@ -58,10 +58,14 @@ with this one, this one is current.
   types from `client/src/api/types.gen`, and the few names screens switch
   on (`OrderStatus`, `CalendarDay`) live in `client/src/lib/api-names.ts`,
   each read from a generated type. #19 is done.
-- **Next, after phase 2:** a small PR with `docs/principles.md`,
-  `CLAUDE.md`, and two project skills in `.claude/skills/` (a code review
-  against conventions.md and the principles, and a usability walkthrough
-  as a persona).
+- **Principles and skills** (`principles-and-skills`):
+  `docs/principles.md`, a draft drawn from the ADRs for Bob to edit;
+  `CLAUDE.md`, the rules in brief with four working habits adapted from
+  the Karpathy-derived guidelines; and two project skills,
+  `/code-review` (this repository's rules, replacing the bundled one) and
+  `/usability-walkthrough` (a task walked as a persona from
+  `personas.md`). `scripts/verify.sh` now runs the Markdown check
+  first.
 - **Next, in Bob's order:** **ADR-069**, account deletion (ADR-012 already
   settles the audit side: anonymize the person, keep the rows).
 - **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),

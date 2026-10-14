@@ -324,7 +324,11 @@ licences beyond the product's own — site, wholesale and business licences.
 - [`docs/conventions.md`](docs/conventions.md) — naming and code organisation rules
 - [`docs/manual-checks.md`](docs/manual-checks.md) — what to check by hand before a
   release, each check with an id
+- [`docs/principles.md`](docs/principles.md) — what the product aims for, and
+  the ADRs that hold to each aim
 - [`docs/handoff.md`](docs/handoff.md) — where the work stands and what is next
+- [`CLAUDE.md`](CLAUDE.md) — the rules in brief for Claude, with two project
+  skills in `.claude/skills/`: `/code-review` and `/usability-walkthrough`
 - [`docs/releases/`](docs/releases) — the notes each tagged release was made with
 
 Both are worth reading before a change that touches money, quantities, or the
