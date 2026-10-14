@@ -381,6 +381,9 @@ trigger for introducing Redis, alongside BullMQ (ADR-005).
 
 ## ADR-012 — Account deletion, audit retention, and cascade defaults
 
+> **Amended by [ADR-069](#adr-069--deleting-your-account-and-leaving-an-organization-amends-adr-012).**
+> An organization's only member is not deleted with it: they cannot delete their account while it exists. The export is the person's own data, not the rows they authored, which belong to the organization. Everything else stands.
+
 **Context.** The right to erasure conflicts with an audit log whose value depends on being
 complete and tamper-evident. Statutory retention periods can also override an erasure
 request outright. Deleting audit rows defeats their purpose; refusing to delete anything
@@ -7181,7 +7184,7 @@ held a known list, and rows sent whole across most modules.
 
 ---
 
-## ADR-069 — Deleting your account, and leaving an organization
+## ADR-069 — Deleting your account, and leaving an organization (amends ADR-012)
 
 **Context.** ADR-012 set the policy for account deletion before most of
 what a person now leaves behind existed: a 30-day window, the person
@@ -7231,18 +7234,28 @@ refusal with a code, and each says what to do next:
 **Decision — deleting is requested, then completed 30 days later.**
 
 - **Requesting.** On the Account page, confirmed with the password. The
-  account is scheduled for deletion 30 days ahead; every other device is
-  signed out; an email in the person's language gives the date and says
-  how to cancel. The blocks are checked first.
+  deletion day is set 30 days ahead; every other device is signed out; an
+  email in the person's language names the day and says how to cancel.
+  The blocks are checked first.
+- **The deletion day** is a calendar day (ADR-052), shown as it is in the
+  email and on every page, never converted to a time zone. The server
+  knows no one's time zone, so a moment would name a different day in
+  Vancouver than in UTC, and an email could promise a day the deletion
+  came before. The deletion completes only once that day has ended in
+  every time zone, at noon UTC the day after, so whoever reads the day
+  has all of it.
 - **The 30 days.** The person can still sign in and work, and export their
-  data. Every page shows the date with a way to cancel. Cancelling clears
+  data. Every page shows the day with a way to cancel. Cancelling clears
   the schedule and is confirmed by email.
-- **Completing.** A timer, as the file purge runs (ADR-059), completes
-  each deletion that has come due, each in its own transaction. It checks
+- **Completing.** A timer, at startup and hourly as the licence reminders
+  run (ADR-064), completes each deletion whose day has ended everywhere,
+  each in its own transaction: one that fails is logged and left for the
+  next run, without holding up the rest. It checks
   the blocks again: a membership can change in 30 days. If one now
-  applies, the deletion is cancelled rather than left waiting, and the
-  person is emailed what changed and how to ask again: nothing has to
-  remember that the email went, and nothing is lost by asking twice.
+  applies, the deletion is cancelled rather than left waiting, the
+  account history records the cancellation, and the person is emailed
+  what changed and how to ask again: nothing has to remember that the
+  email went, and nothing is lost by asking twice.
 
 **Decision — what completing removes, and what it keeps.**
 
@@ -7284,9 +7297,18 @@ the window costs one timer.
 - **Accounts an organization owns.** Single sign-on, where the employer
   owns the login and may delete it. Trigger: the first customer who
   signs in through their own identity provider.
+- **A block in another organization.** A deletion is refused for a block
+  in any organization the person belongs to, and its way past is that
+  organization's Members page. Today a person belongs to one: adding a
+  member refuses an email that already has an account, and invitations
+  are deferred (ADR-006). Once a person can belong to two, the refusal
+  must name the blocking organization, as data beside its code, and
+  offer a switch to it, which nothing offers yet. Trigger: building
+  invitations.
 
 **Consequences.** `users.delete` keeps its meaning, removing a member;
 deleting an account needs no permission, being the person's own act.
+`users.deletion_scheduled_at` holds the deletion day, a `date` (ADR-052).
 `account_events` gains the request, the cancellation and leaving;
 `audit_log` gains leaving and a completed deletion. Three emails, in the
 three languages (ADR-054). After completion nothing can bring an account
