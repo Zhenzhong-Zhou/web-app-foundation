@@ -5,6 +5,7 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PermissionsService } from '../../core/authorization/permissions.service';
 import { localeOf } from '../../i18n/translate';
 import { LookupQueryDto } from './dto/lookup-query.dto';
+import type { LookupResponse } from './dto/lookup-response.dto';
 import { LookupService } from './lookup.service';
 
 /**
@@ -24,7 +25,7 @@ export class LookupController {
     @CurrentUser() user: RequestContext,
     @Query() query: LookupQueryDto,
     @Headers('accept-language') acceptLanguage?: string,
-  ) {
+  ): Promise<LookupResponse> {
     const held = new Set(
       user.roleId ? await this.permissions.listForRole(user.roleId) : [],
     );

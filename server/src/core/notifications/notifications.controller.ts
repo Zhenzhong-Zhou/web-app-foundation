@@ -14,6 +14,10 @@ import { localeOf } from '../../i18n/translate';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
 import { ListNotificationsDto } from './dto/list-notifications.dto';
+import type {
+  NotificationPage,
+  UnreadCount,
+} from './dto/notification-response.dto';
 import { NotificationsService } from './notifications.service';
 
 /**
@@ -45,7 +49,7 @@ export class NotificationsController {
    * Folding them would fetch twenty rows to render a number.
    */
   @Get('unread-count')
-  async unreadCount(@CurrentUser() user: RequestContext) {
+  async unreadCount(@CurrentUser() user: RequestContext): Promise<UnreadCount> {
     return { count: await this.notifications.unreadCount(user.userId) };
   }
 
@@ -58,7 +62,7 @@ export class NotificationsController {
     @CurrentUser() user: RequestContext,
     @Query() query: ListNotificationsDto,
     @Headers('accept-language') acceptLanguage?: string,
-  ) {
+  ): Promise<NotificationPage> {
     return this.notifications.list(
       user.userId,
       localeOf(acceptLanguage),

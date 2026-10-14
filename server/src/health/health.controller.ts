@@ -4,6 +4,7 @@ import { Pool } from 'pg';
 
 import { Public } from '../core/auth/public.decorator';
 import { PG_POOL } from '../database/database.module';
+import type { Health, Readiness } from './dto/health-response.dto';
 
 /**
  * ADR-013: operational endpoints are excluded from API versioning.
@@ -21,7 +22,7 @@ export class HealthController {
 
   /** Liveness: is the process up? Deliberately checks no dependencies. */
   @Get()
-  check() {
+  check(): Health {
     return {
       status: 'ok',
       uptime: process.uptime(),
@@ -43,7 +44,7 @@ export class HealthController {
    * here, not cause the orchestrator to kill and restart a healthy process.
    */
   @Get('ready')
-  async ready() {
+  async ready(): Promise<Readiness> {
     await this.pool.query('select 1');
     return { status: 'ready', database: 'up' };
   }

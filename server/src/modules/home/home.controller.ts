@@ -18,6 +18,7 @@ import { PERMISSIONS } from '../../core/authorization/permissions';
 import { PermissionsService } from '../../core/authorization/permissions.service';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { HomeQueryDto } from './dto/home-query.dto';
+import type { HomeResponse } from './dto/home-response.dto';
 import { HomeService } from './home.service';
 
 /**
@@ -32,7 +33,10 @@ export class HomeController {
   ) {}
 
   @Get()
-  async get(@CurrentUser() user: RequestContext, @Query() query: HomeQueryDto) {
+  async get(
+    @CurrentUser() user: RequestContext,
+    @Query() query: HomeQueryDto,
+  ): Promise<HomeResponse> {
     const held = new Set(
       user.roleId ? await this.permissions.listForRole(user.roleId) : [],
     );

@@ -22,3 +22,10 @@ export class AuditRecord {
   userAgent!: string | null;
   createdAt!: Date;
 }
+
+/** GET /audit and GET /account/activity: one page, newest first. */
+export class AuditPage {
+  entries!: AuditRecord[];
+  /** Pass as `before` for the next page; null when there is no more. */
+  nextCursor!: string | null;
+}
