@@ -411,6 +411,10 @@ folder by folder; these check what is already in place.
   email and the bell's notification are in the account's language. Close
   an order line short: a member set to English reads "will not be
   delivered in full" while a member set to Français reads it in French.
+  Signed in to an account with no language chosen
+  (`update users set locale = null`), the browser's language set to
+  Français: change the password, then delete the account and keep it.
+  The three emails are in French.
 - **MC-1405** *Skipped for now (6 October 2026): no fluent reviewer is
   available, so French and Chinese ship as unreviewed drafts, and release
   notes say so.* When one is: someone fluent in each language reads every
@@ -1015,3 +1019,6 @@ first.
 - 2026-10-13: ADR-046 amended, a taxed invoice needs the tax number: MC-711.
 - 2026-10-14: ADR-069, leaving an organization and deleting your account:
   section 23, MC-2301 to MC-2303.
+- 2026-10-14: ADR-054, the password change and the deletion emails in the
+  language of the request for an account with none chosen: MC-1414
+  extended.

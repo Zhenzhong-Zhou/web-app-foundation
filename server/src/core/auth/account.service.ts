@@ -158,6 +158,7 @@ export class AccountService {
     await this.events.record(context.userId, 'account.password_changed', {
       ip: context.ip,
       userAgent: context.userAgent,
+      language: context.language,
     });
 
     this.logger.log(

@@ -199,8 +199,10 @@ export class AccountDeletionService {
       userAgent: context.userAgent,
     });
 
-    await this.send(context.userId, (to) =>
-      deletionScheduledMail(to, deletionScheduledAt),
+    await this.send(
+      context.userId,
+      (to) => deletionScheduledMail(to, deletionScheduledAt),
+      context.language,
     );
 
     this.logger.log(
@@ -214,7 +216,11 @@ export class AccountDeletionService {
     const cancelled = await this.unschedule(
       context.userId,
       deletionCancelledMail,
-      { ip: context.ip, userAgent: context.userAgent },
+      {
+        ip: context.ip,
+        userAgent: context.userAgent,
+        language: context.language,
+      },
     );
     if (cancelled) {
       this.logger.log(`${context.userId} cancelled their deletion`);
@@ -477,14 +483,18 @@ export class AccountDeletionService {
     if (cancelled.length === 0) return false;
 
     await this.events.record(userId, 'account.deletion_cancelled', meta);
-    await this.send(userId, build);
+    await this.send(userId, build, meta?.language);
     return true;
   }
 
-  /** An email to the person, in their language, if they can be reached. */
+  /**
+   * An email to the person, if they can be reached: in their language, or
+   * else the language of the request that caused it (ADR-054).
+   */
   private async send(
     userId: string,
     build: (context: DeletionMailContext) => Mail,
+    language?: string,
   ): Promise<void> {
     const [user] = await this.db
       .select({ email: users.email, name: users.name, locale: users.locale })
@@ -495,7 +505,7 @@ export class AccountDeletionService {
     try {
       await this.mail.send(
         build({
-          locale: recipientLocale(user.locale),
+          locale: recipientLocale(user.locale, language),
           to: user.email,
           name: user.name,
           clientUrl: this.config.get('CLIENT_URL', { infer: true }),

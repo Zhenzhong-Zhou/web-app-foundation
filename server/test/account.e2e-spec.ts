@@ -164,6 +164,24 @@ describe('Account (e2e)', () => {
         .expect(200);
     });
 
+    /**
+     * Someone who has not chosen a language is written to in the one they
+     * asked in, rather than English (ADR-054).
+     */
+    it('emails the change in the language of the request, for someone with none chosen', async () => {
+      const agent = await register();
+
+      await agent
+        .post('/v1/account/password')
+        .set('Accept-Language', 'fr-CA')
+        .send({ currentPassword: PASSWORD, newPassword: NEW_PASSWORD })
+        .expect(200);
+
+      expect(mail.lastTo(EMAIL)?.subject).toBe(
+        'Votre mot de passe a été changé',
+      );
+    });
+
     it('signs out other devices and keeps the caller signed in', async () => {
       const agent = await register();
       const other = await signInAgain();

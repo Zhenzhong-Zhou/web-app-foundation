@@ -299,6 +299,29 @@ describe('Account deletion (e2e)', () => {
         'Your account will not be deleted',
       );
     });
+
+    /**
+     * Someone who has not chosen a language is written to in the one they
+     * asked in, rather than English (ADR-054).
+     */
+    it('emails in the language of the request, for someone with none chosen', async () => {
+      const { member, email } = await team();
+
+      await member
+        .post('/v1/account/deletion')
+        .set('Accept-Language', 'fr-CA')
+        .send({ password: PASSWORD })
+        .expect(200);
+      expect(mail.lastTo(email)?.subject).toMatch(
+        /^Votre compte sera supprimé après le /,
+      );
+
+      await member
+        .delete('/v1/account/deletion')
+        .set('Accept-Language', 'zh-Hans')
+        .expect(204);
+      expect(mail.lastTo(email)?.subject).toBe('您的账户不会被删除');
+    });
   });
 
   describe('completing a deletion', () => {
