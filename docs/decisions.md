@@ -6049,6 +6049,12 @@ setting, so a plan can raise it.
   elsewhere: a server that sleeps when idle purges whenever it wakes, and
   two instances purging at once only delete the same things twice. Not in
   tests, which call it with the time they need.
+
+  *Amended (October 2026):* at startup too, on the one timer the licence
+  reminders (ADR-064) and account deletions (ADR-069) run on. The server
+  sleeps after 15 minutes without a request, so an hourly timer alone
+  never fires on a server woken for less than an hour at a time. A run
+  at startup takes only what an hourly one would.
 - **Over the organization's limit is a 409**, saying the limit in MB; an
   upload over its kind's size is a 413, cut off on the stream.
 - **The bucket's location follows the app's host, not the backups'.**
