@@ -30,10 +30,15 @@ amends in `docs/decisions.md`.
 ### Shape of the change
 
 - One feature. A new decision arrives as an ADR or amendment in the
-  first commit; chores are commits of their own.
+  first commit; chores are commits of their own. Fixes go on the branch,
+  never in a follow-up pull request.
 - Commits authored `Zhenzhong Zhou <bob0823.zhou@gmail.com>`.
 - `docs/handoff.md` updated when the state of the work changed, and
   `docs/conventions.md` when a pattern did.
+- A commit that changes what a person sees, or a rule they work under,
+  updates `docs/manual-checks.md` in the same commit.
+- A client type change fixes the test fixtures that build that type in
+  the same commit.
 
 ### The API contract (ADR-068)
 
@@ -53,9 +58,17 @@ amends in `docs/decisions.md`.
   `YYYY-MM-DD` (ADR-052).
 - A new migration has its snapshot; the description says to run
   `npm run migrate:all`.
+- Hand-written parts of a migration (triggers, backfills) come after a
+  `--> statement-breakpoint`, and the generated SQL keeps
+  `NULLS NOT DISTINCT`.
 - A column holding a known list is typed by it (`$type<...>()`), the
   list matching its check constraint.
-- Writes `@Audited`, with no free text in the payload (ADR-018).
+- Writes `@Audited`, or listed in `NOT_AUDITED` with a reason, with no
+  free text in the payload (ADR-018).
+- Every route has `@RequirePermissions`. A new permission is Owner-only:
+  added to `PERMISSIONS` and its descriptions, never to the Admin or
+  Viewer lists, and to the client's list in the same commit. No
+  permission is seeded that nothing gates.
 
 ### Behaviour
 
