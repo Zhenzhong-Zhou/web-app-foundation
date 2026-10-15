@@ -258,7 +258,7 @@ export function CloseOrganizationDialog({
                     'Tax law expects your business to keep its books, often for six years or more. Download everything as one ZIP: a spreadsheet file for every kind of record, and your uploaded files.',
                 })}
               </Typography>
-              {fresh && last ? (
+              {last?.fresh ? (
                 <Typography
                   role="status"
                   sx={{
