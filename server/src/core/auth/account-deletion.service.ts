@@ -288,6 +288,23 @@ export class AccountDeletionService {
   }
 
   /**
+   * Cancel the deletion of an account scheduled with its organization, as
+   * that organization's is cancelled (ADR-070): recorded in the account's
+   * history, without an email of its own, since the organization's
+   * cancellation says both stay. Whoever cancelled it.
+   */
+  async cancelFor(userId: string, context: RequestContext): Promise<void> {
+    const cancelled = await this.unschedule(userId, undefined, {
+      ip: context.ip,
+      userAgent: context.userAgent,
+      language: context.language,
+    });
+    if (cancelled) {
+      this.logger.log(`Deletion of ${userId} cancelled with its organization`);
+    }
+  }
+
+  /**
    * Complete every deletion whose day has ended in every time zone, each in
    * its own transaction. A block that applies now cancels that deletion,
    * recorded in the account history, and the person is emailed what to do.

@@ -53,6 +53,8 @@ export function renderWithAuth(
         },
         deletionScheduledAt: null,
         deletionUnderWay: false,
+        deletionLastWeek: false,
+        deletionWithAccount: false,
         ...organization,
       },
       // Specs list permissions as plain strings; the session holds them

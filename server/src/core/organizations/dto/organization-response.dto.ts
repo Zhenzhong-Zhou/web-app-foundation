@@ -25,6 +25,13 @@ export class OrganizationLastExport {
   exportedAt!: Date;
   /** The person's name as it is now: Deleted User once they are gone. */
   exportedBy!: string;
+  /** Who, by id: two members can share a name. */
+  exportedById!: string;
+  /**
+   * Taken within the last 24 hours, so a deletion can rely on it
+   * (ADR-070): the server's clock, not the browser's.
+   */
+  fresh!: boolean;
 }
 
 export class OrganizationProfile {

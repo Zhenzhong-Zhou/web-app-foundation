@@ -1,0 +1,2 @@
+ALTER TABLE "organizations" ADD COLUMN "deletion_with_account_of" uuid;--> statement-breakpoint
+ALTER TABLE "organizations" ADD CONSTRAINT "organizations_deletion_with_account_of_users_id_fk" FOREIGN KEY ("deletion_with_account_of") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;

@@ -52,6 +52,16 @@ export class SessionOrganization {
    * the deletion can no longer be cancelled.
    */
   deletionUnderWay!: boolean;
+  /**
+   * Within the last 7 days before the day, by the server's UTC day: the
+   * banner can no longer be hidden (ADR-070, amended).
+   */
+  deletionLastWeek!: boolean;
+  /**
+   * The person's account goes with it, as its only member chose: one
+   * banner says both, and keeping either keeps both (ADR-070).
+   */
+  deletionWithAccount!: boolean;
 }
 
 /** GET /auth/me: everything the app needs to start. */

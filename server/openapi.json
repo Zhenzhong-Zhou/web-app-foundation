@@ -7210,6 +7210,12 @@
           },
           "deletionUnderWay": {
             "type": "boolean"
+          },
+          "deletionLastWeek": {
+            "type": "boolean"
+          },
+          "deletionWithAccount": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -7218,7 +7224,9 @@
           "roleId",
           "branding",
           "deletionScheduledAt",
-          "deletionUnderWay"
+          "deletionUnderWay",
+          "deletionLastWeek",
+          "deletionWithAccount"
         ]
       },
       "CurrentSession": {
@@ -9371,11 +9379,19 @@
           },
           "exportedBy": {
             "type": "string"
+          },
+          "exportedById": {
+            "type": "string"
+          },
+          "fresh": {
+            "type": "boolean"
           }
         },
         "required": [
           "exportedAt",
-          "exportedBy"
+          "exportedBy",
+          "exportedById",
+          "fresh"
         ]
       },
       "OrganizationProfile": {

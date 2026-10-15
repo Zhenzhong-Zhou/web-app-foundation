@@ -77,6 +77,8 @@ describe('CloseOrganizationDialog', () => {
     const sent = organizationWith({
       exportedAt: new Date(Date.now() - 60_000).toISOString(),
       exportedBy: 'Owner',
+      exportedById: 'user-1',
+      fresh: true,
     });
     const dialog = await open();
 
@@ -100,6 +102,8 @@ describe('CloseOrganizationDialog', () => {
     organizationWith({
       exportedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
       exportedBy: 'Mei Lin',
+      exportedById: 'user-2',
+      fresh: false,
     });
     const dialog = await open();
 

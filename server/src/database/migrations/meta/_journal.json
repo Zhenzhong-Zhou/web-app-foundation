@@ -414,6 +414,13 @@
       "when": 1792036532854,
       "tag": "0058_organization_deletion_reminder",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1792041180075,
+      "tag": "0059_organization_deletion_with_account",
+      "breakpoints": true
     }
   ]
 }

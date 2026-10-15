@@ -15,6 +15,7 @@ import {
   exportedTables,
   NOT_EXPORTED,
   organizationTables,
+  OWNED_THROUGH_PARENT,
 } from '../src/core/organizations/organization-tables';
 import {
   type Database,
@@ -52,6 +53,8 @@ interface Me {
     id: string;
     deletionScheduledAt: string | null;
     deletionUnderWay: boolean;
+    deletionLastWeek: boolean;
+    deletionWithAccount: boolean;
   } | null;
 }
 
@@ -217,7 +220,11 @@ describe('Organization deletion (e2e)', () => {
       expect(await read(alpha.agent)).toBeNull();
       await exportOf(alpha.agent);
 
-      expect(await read(alpha.agent)).toMatchObject({ exportedBy: 'Owner' });
+      expect(await read(alpha.agent)).toMatchObject({
+        exportedBy: 'Owner',
+        exportedById: alpha.userId,
+        fresh: true,
+      });
       expect(await read(admin)).toBeNull();
     });
 
@@ -245,6 +252,37 @@ describe('Organization deletion (e2e)', () => {
       for (const name of NOT_EXPORTED.keys()) {
         expect(organizationTables()).toContain(name);
       }
+    });
+
+    it('covers the tables owned through a parent, or says why not', async () => {
+      // Every foreign key that cascades, child to parent.
+      const { rows } = await db.execute<{ child: string; parent: string }>(sql`
+        select distinct child.relname as child, parent.relname as parent
+        from pg_constraint c
+        join pg_class child on child.oid = c.conrelid
+        join pg_class parent on parent.oid = c.confrelid
+        where c.contype = 'f' and c.confdeltype = 'c'
+          and c.connamespace = 'public'::regnamespace
+      `);
+
+      // Owned: the organization, and whatever cascades from what it owns,
+      // as far as the cascades go.
+      const owned = new Set(['organizations', ...organizationTables()]);
+      const through = new Set<string>();
+      for (let grew = true; grew;) {
+        grew = false;
+        for (const { child, parent } of rows) {
+          if (owned.has(parent) && !owned.has(child)) {
+            owned.add(child);
+            through.add(child);
+            grew = true;
+          }
+        }
+      }
+
+      expect([...through].sort()).toEqual(
+        [...OWNED_THROUGH_PARENT.keys()].sort(),
+      );
     });
   });
 
@@ -434,6 +472,23 @@ describe('Organization deletion (e2e)', () => {
         .from(organizations)
         .where(eq(organizations.id, alpha.organizationId));
       expect(cleared.remindedAt).toBeNull();
+    });
+
+    it('tells every browser when the last week has begun', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await setDay(
+        alpha.organizationId,
+        todayUtc(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
+      );
+      expect((await me(alpha.agent)).organization?.deletionLastWeek).toBe(
+        false,
+      );
+
+      await setDay(
+        alpha.organizationId,
+        todayUtc(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+      );
+      expect((await me(alpha.agent)).organization?.deletionLastWeek).toBe(true);
     });
 
     it('is not sent once the day has ended everywhere', async () => {
@@ -656,6 +711,66 @@ describe('Organization deletion (e2e)', () => {
       await both(alpha);
       await phone.get('/v1/auth/me').expect(401);
       await alpha.agent.get('/v1/auth/me').expect(200);
+    });
+
+    it('records whose account goes, rather than matching days', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const member = await addMember(
+        app,
+        alpha,
+        'member@alpha.example.com',
+        'Viewer',
+      );
+      // The member deletes their own account, the day the Owner closes it.
+      await member
+        .post('/v1/account/deletion')
+        .send({ password: PASSWORD })
+        .expect(200);
+      await alpha.agent
+        .post('/v1/organization/deletion')
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          declineExport: true,
+        })
+        .expect(200);
+
+      const session = await me(member);
+      expect(session.user.deletionScheduledAt).toBe(
+        session.organization?.deletionScheduledAt,
+      );
+      expect(session.organization?.deletionWithAccount).toBe(false);
+      expect(mail.lastTo('member@alpha.example.com')?.text).toContain(
+        'Your account stays',
+      );
+
+      // Cancelling the organization keeps the member's own request.
+      await alpha.agent.delete('/v1/organization/deletion').expect(204);
+      expect((await me(member)).user.deletionScheduledAt).not.toBeNull();
+    });
+
+    it('keeps both for the only member, even once others have joined', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await both(alpha);
+      expect((await me(alpha.agent)).organization?.deletionWithAccount).toBe(
+        true,
+      );
+      const second = await addMember(
+        app,
+        alpha,
+        'second@alpha.example.com',
+        'Owner',
+      );
+
+      await second.delete('/v1/organization/deletion').expect(204);
+
+      expect((await me(alpha.agent)).user.deletionScheduledAt).toBeNull();
+      expect(mail.lastTo(alpha.email)?.text).toContain(
+        'Your account will not be deleted either',
+      );
+      expect(mail.lastTo('second@alpha.example.com')?.text).not.toContain(
+        'Your account will not be deleted either',
+      );
     });
 
     it('is refused with others in the organization', async () => {

@@ -30,6 +30,8 @@ export type SessionOrganization = {
   branding: OrganizationBranding;
   deletionScheduledAt: string | null;
   deletionUnderWay: boolean;
+  deletionLastWeek: boolean;
+  deletionWithAccount: boolean;
 };
 
 export type CurrentSession = {
@@ -596,6 +598,8 @@ export type OrganizationAddress = {
 export type OrganizationLastExport = {
   exportedAt: string;
   exportedBy: string;
+  exportedById: string;
+  fresh: boolean;
 };
 
 export type OrganizationProfile = {

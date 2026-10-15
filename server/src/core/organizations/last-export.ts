@@ -6,6 +6,13 @@ import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import type { OrganizationLastExport } from './dto/organization-response.dto';
 
 /**
+ * How recent the export a deletion relies on must be (ADR-070). Decided
+ * here, once: the deletion refuses an older one, and the dialog says so
+ * from the same answer rather than its own clock.
+ */
+const EXPORT_FRESH_MS = 24 * 60 * 60 * 1000;
+
+/**
  * The organization's last full export, from the audit entry each one
  * writes (ADR-070), or null before the first.
  *
@@ -19,9 +26,14 @@ import type { OrganizationLastExport } from './dto/organization-response.dto';
 export async function lastExportOf(
   tx: Transaction,
   organizationId: string,
+  now: Date = new Date(),
 ): Promise<OrganizationLastExport | null> {
   const [entry] = await tx
-    .select({ exportedAt: auditLog.createdAt, exportedBy: users.name })
+    .select({
+      exportedAt: auditLog.createdAt,
+      exportedBy: users.name,
+      exportedById: users.id,
+    })
     .from(auditLog)
     .innerJoin(users, eq(users.id, auditLog.actorId))
     .where(
@@ -34,5 +46,9 @@ export async function lastExportOf(
     )
     .orderBy(desc(auditLog.createdAt))
     .limit(1);
-  return entry ?? null;
+  if (!entry) return null;
+  return {
+    ...entry,
+    fresh: entry.exportedAt.getTime() > now.getTime() - EXPORT_FRESH_MS,
+  };
 }

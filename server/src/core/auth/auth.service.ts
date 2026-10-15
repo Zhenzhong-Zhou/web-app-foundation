@@ -34,6 +34,7 @@ import { AccountEventService } from './account-event.service';
 import { AuthTokenService } from './auth-token.service';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
+import { inLastWeek } from './organization-deletion.service';
 import { PasswordService } from './password.service';
 import type { RequestContext } from './request-context';
 import { type NewSession, SessionService } from './session.service';
@@ -82,6 +83,8 @@ export interface CurrentSession {
     /** The deletion day while one is pending, and whether it is under way (ADR-070). */
     deletionScheduledAt: string | null;
     deletionUnderWay: boolean;
+    deletionLastWeek: boolean;
+    deletionWithAccount: boolean;
   } | null;
   /** Empty when there is no organization: permissions come from a role. */
   permissions: Permission[];
@@ -410,6 +413,7 @@ export class AuthService implements OnModuleInit {
           expiryWarningDays: organizations.expiryWarningDays,
           expiryCriticalDays: organizations.expiryCriticalDays,
           deletionScheduledAt: organizations.deletionScheduledAt,
+          deletionWithAccountOf: organizations.deletionWithAccountOf,
         })
         .from(organizations)
         .where(eq(organizations.id, context.organizationId)),
@@ -434,6 +438,11 @@ export class AuthService implements OnModuleInit {
         deletionUnderWay:
           organization.deletionScheduledAt !== null &&
           endedEverywhere(organization.deletionScheduledAt),
+        deletionLastWeek:
+          organization.deletionScheduledAt !== null &&
+          inLastWeek(organization.deletionScheduledAt),
+        deletionWithAccount:
+          organization.deletionWithAccountOf === context.userId,
       },
       permissions,
     };
