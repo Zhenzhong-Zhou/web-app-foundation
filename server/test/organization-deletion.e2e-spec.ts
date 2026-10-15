@@ -22,6 +22,7 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import {
+  accountEvents,
   auditLog,
   files,
   organizations,
@@ -35,6 +36,7 @@ import {
   longDay,
   PASSWORD,
   registerOrganization,
+  roleIdNamed,
 } from './utils/fixtures';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
@@ -475,6 +477,11 @@ describe('Organization deletion (e2e)', () => {
         body<{ deletionScheduledAt: string }>(again).deletionScheduledAt,
       ).toBe('2026-12-31');
       expect(mail.sent.length).toBe(sent);
+      const scheduled = await db
+        .select({ id: auditLog.id })
+        .from(auditLog)
+        .where(eq(auditLog.action, 'organization.deletion_scheduled'));
+      expect(scheduled).toHaveLength(1);
     });
   });
 
@@ -873,6 +880,80 @@ describe('Organization deletion (e2e)', () => {
       ).rejects.toMatchObject({
         cause: { constraint: 'users_deletion_with_organization_check' },
       });
+    });
+
+    it('keeps only the account of a person demoted since', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await both(alpha);
+      const second = await addMember(
+        app,
+        alpha,
+        'second@alpha.example.com',
+        'Owner',
+      );
+      await second
+        .patch(`/v1/users/${alpha.userId}`)
+        .send({
+          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+        })
+        .expect(204);
+
+      await alpha.agent.delete('/v1/account/deletion').expect(204);
+
+      // A Viewer may not keep the organization: only the account is kept.
+      expect((await me(alpha.agent)).user.deletionScheduledAt).toBeNull();
+      const [organization] = await db
+        .select({ day: organizations.deletionScheduledAt })
+        .from(organizations)
+        .where(eq(organizations.id, alpha.organizationId));
+      expect(organization.day).not.toBeNull();
+    });
+
+    it('is refused, not ignored, once the organization is going alone', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await alpha.agent
+        .post('/v1/organization/deletion')
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          declineExport: true,
+        })
+        .expect(200);
+
+      await alpha.agent
+        .post('/v1/organization/deletion')
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          declineExport: true,
+          deleteAccount: true,
+        })
+        .expect(409);
+      expect((await me(alpha.agent)).user.deletionScheduledAt).toBeNull();
+    });
+
+    it('records a colleague’s cancel on the account without their address', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await both(alpha);
+      const second = await addMember(
+        app,
+        alpha,
+        'second@alpha.example.com',
+        'Owner',
+      );
+
+      await second.delete('/v1/organization/deletion').expect(204);
+
+      const [kept] = await db
+        .select({ ip: accountEvents.ip, userAgent: accountEvents.userAgent })
+        .from(accountEvents)
+        .where(
+          and(
+            eq(accountEvents.userId, alpha.userId),
+            eq(accountEvents.action, 'account.deletion_cancelled'),
+          ),
+        );
+      expect(kept).toEqual({ ip: null, userAgent: null });
     });
 
     it('is refused with others in the organization', async () => {

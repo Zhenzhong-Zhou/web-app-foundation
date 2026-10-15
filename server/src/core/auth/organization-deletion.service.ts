@@ -35,7 +35,6 @@ import {
 import { t } from '../../i18n/translate';
 import type { Mail } from '../../shared/mail/mail.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
-import { recordContext } from '../audit/audit-context';
 import { SYSTEM_ROLES } from '../authorization/permissions';
 import { FILE_STORAGE, type FileStorage, keyOf } from '../files/file-storage';
 import { lastExportOf } from '../organizations/last-export';
@@ -135,6 +134,18 @@ export class OrganizationDeletionService {
     const outcome = await this.db.transaction(async (tx) => {
       const organization = await lockOrganization(tx, organizationId);
       if (organization.deletionScheduledAt) {
+        // Already going alone: asking for the account too must not be
+        // ignored in silence. The account's own deletion is the way, and
+        // nothing stops it while the organization is going (ADR-070).
+        if (dto.deleteAccount) {
+          throw new ConflictException(
+            t({
+              id: 'organization.deletion.alreadyScheduled',
+              defaultMessage:
+                'The organization is already being deleted. To delete your account as well, use Delete my account on the Account page.',
+            }),
+          );
+        }
         return {
           day: organization.deletionScheduledAt,
           scheduled: false,
@@ -180,6 +191,23 @@ export class OrganizationDeletionService {
         .update(organizations)
         .set({ deletionScheduledAt: day })
         .where(eq(organizations.id, organizationId));
+      // Here, not by @Audited: only a request that changed something is
+      // recorded; asking again while one is pending changes nothing.
+      await tx.insert(auditLog).values({
+        organizationId,
+        actorId: context.userId,
+        action: AUDIT_ACTIONS.ORGANIZATION_DELETION_SCHEDULED,
+        resourceType: 'organization',
+        resourceId: organizationId,
+        resourceLabel: organization.name,
+        payload: {
+          deletionScheduledAt: day,
+          export: dto.declineExport ? 'declined' : 'downloaded',
+          withAccount: dto.deleteAccount === true,
+        },
+        ip: context.ip,
+        userAgent: context.userAgent,
+      });
       return { day, scheduled: true, name: organization.name } as const;
     });
 
@@ -187,11 +215,6 @@ export class OrganizationDeletionService {
       if (dto.deleteAccount) {
         await this.accountDeletion.signOutForDeletion(context);
       }
-      recordContext({
-        deletionScheduledAt: outcome.day,
-        export: dto.declineExport ? 'declined' : 'downloaded',
-        withAccount: dto.deleteAccount === true,
-      });
       // Not awaited: the deletion has committed, and a slow mail provider
       // or a large team must not hold the answer (sendTo logs a failure).
       void this.tell(
@@ -220,7 +243,7 @@ export class OrganizationDeletionService {
    * day has ended everywhere. Nothing to cancel is not an error.
    */
   async cancel(context: RequestContext): Promise<void> {
-    await this.unschedule(this.organizationOf(context), context, false);
+    await this.unschedule(this.organizationOf(context), context);
   }
 
   /**
@@ -230,9 +253,11 @@ export class OrganizationDeletionService {
    * own cancel to handle.
    */
   async cancelTogether(context: RequestContext): Promise<boolean> {
-    // The account's link, while it is still a member there and the
+    // The account's link, while it is still an Owner there and the
     // organization's deletion still stands: otherwise the account's own
-    // cancel is the one that applies.
+    // cancel is the one that applies. An Owner, because only an Owner may
+    // keep an organization (ADR-070): one demoted since keeps their
+    // account alone.
     const [together] = await this.db
       .select({ organizationId: organizations.id })
       .from(users)
@@ -247,15 +272,17 @@ export class OrganizationDeletionService {
           eq(memberships.userId, users.id),
         ),
       )
+      .innerJoin(roles, eq(roles.id, memberships.roleId))
       .where(
         and(
           eq(users.id, context.userId),
           isNotNull(organizations.deletionScheduledAt),
+          eq(roles.name, SYSTEM_ROLES.OWNER),
         ),
       );
     if (!together) return false;
 
-    await this.unschedule(together.organizationId, context, true);
+    await this.unschedule(together.organizationId, context);
     return true;
   }
 
@@ -435,13 +462,13 @@ export class OrganizationDeletionService {
   /**
    * The deletion cancelled, refused once its day has ended everywhere;
    * the only member's account cancelled with it when they went together;
-   * every member emailed. From the Account page there is no @Audited
-   * route of the organization's, so the entry is written here.
+   * every member emailed. The audit entry is written here, by either
+   * route, and only when there was something to cancel: two Owners
+   * pressing Cancel at once record one cancellation, not two.
    */
   private async unschedule(
     organizationId: string,
     context: RequestContext,
-    audit: boolean,
   ): Promise<void> {
     const outcome = await this.db.transaction(async (tx) => {
       const organization = await lockOrganization(tx, organizationId);
@@ -467,18 +494,16 @@ export class OrganizationDeletionService {
         .where(eq(organizations.id, organizationId));
       // Scheduled together, cancelled together, whoever cancels.
       const kept = await this.accountDeletion.keepWith(tx, organizationId);
-      if (audit) {
-        await tx.insert(auditLog).values({
-          organizationId,
-          actorId: context.userId,
-          action: AUDIT_ACTIONS.ORGANIZATION_DELETION_CANCELLED,
-          resourceType: 'organization',
-          resourceId: organizationId,
-          resourceLabel: organization.name,
-          ip: context.ip,
-          userAgent: context.userAgent,
-        });
-      }
+      await tx.insert(auditLog).values({
+        organizationId,
+        actorId: context.userId,
+        action: AUDIT_ACTIONS.ORGANIZATION_DELETION_CANCELLED,
+        resourceType: 'organization',
+        resourceId: organizationId,
+        resourceLabel: organization.name,
+        ip: context.ip,
+        userAgent: context.userAgent,
+      });
       return { name: organization.name, members, kept };
     });
     if (!outcome) return;

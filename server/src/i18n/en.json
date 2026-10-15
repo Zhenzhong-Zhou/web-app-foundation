@@ -268,6 +268,7 @@
   "orders.unknownVariant": "Unknown variant",
   "orders.void.billed": "This shipment is billed on {number} — void the invoice first",
   "orders.void.draftInvoice": "This shipment has a draft invoice — delete it first",
+  "organization.deletion.alreadyScheduled": "The organization is already being deleted. To delete your account as well, use Delete my account on the Account page.",
   "organization.deletion.exportRequired": "Download the export first, or say you do not want it. Once the organization is deleted, nothing can make one.",
   "organization.deletion.nameMismatch": "Type the organization’s name exactly as it is shown, to confirm.",
   "organization.deletion.notOnlyMember": "Others are members too, so your account cannot go with the organization. Delete the organization alone, then your account from the Account page.",

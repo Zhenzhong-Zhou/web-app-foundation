@@ -89,6 +89,11 @@ function dueBy(now: Date) {
   return and(
     lt(users.deletionScheduledAt, todayWhereDaysEndLast(now)),
     isNull(users.deletedAt),
+    // An account going with its organization is the organization's run to
+    // complete, straight after it: this run taking it too would lock the
+    // person, then the organization through its key, while that run locks
+    // them the other way round, and Postgres would abort one (ADR-070).
+    isNull(users.deletionWithOrganizationId),
   );
 }
 
@@ -306,10 +311,16 @@ export class AccountDeletionService {
    * an email of its own, since the organization's says both stay.
    */
   async recordKept(userId: string, context: RequestContext): Promise<void> {
-    await this.events.record(userId, 'account.deletion_cancelled', {
-      ip: context.ip,
-      userAgent: context.userAgent,
-    });
+    // The request's address and browser are the canceller's: on anyone
+    // else's account they would tell that person more about a colleague
+    // than their role allows (ADR-022).
+    await this.events.record(
+      userId,
+      'account.deletion_cancelled',
+      userId === context.userId
+        ? { ip: context.ip, userAgent: context.userAgent }
+        : undefined,
+    );
     this.logger.log(`Deletion of ${userId} cancelled with its organization`);
   }
 

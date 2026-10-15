@@ -268,6 +268,7 @@
   "orders.unknownVariant": "未知的规格",
   "orders.void.billed": "此次发货已在 {number} 上开票——请先作废发票",
   "orders.void.draftInvoice": "此次发货有一张发票草稿——请先删除",
+  "organization.deletion.alreadyScheduled": "该组织已在删除中。如需同时删除您的账户，请在“账户”页面使用“删除我的账户”。",
   "organization.deletion.exportRequired": "请先下载导出文件，或说明您不需要。组织删除后，将无法再生成导出。",
   "organization.deletion.nameMismatch": "请按显示的样子准确输入组织名称以确认。",
   "organization.deletion.notOnlyMember": "还有其他成员，因此您的账户不能与组织一起删除。请先单独删除组织，然后在“账户”页面删除您的账户。",

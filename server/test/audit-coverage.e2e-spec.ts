@@ -55,6 +55,14 @@ const NOT_AUDITED = new Map<string, string>([
     'Account events: a self-action, not an act on somebody else (ADR-022)',
   ],
   ['AccountController.setPhoto', 'Account events (ADR-022, ADR-063)'],
+  [
+    'OrganizationDeletionController.requestDeletion',
+    'Audited by the service, only when a deletion is scheduled: asking again while one is pending changes nothing (ADR-018, ADR-070)',
+  ],
+  [
+    'OrganizationDeletionController.cancelDeletion',
+    'Audited by the service, only when there was a deletion to cancel, from this route or the Account page’s (ADR-018, ADR-070)',
+  ],
   ['AccountController.removePhoto', 'Account events (ADR-022, ADR-063)'],
   ['AccountController.requestDeletion', 'Account events (ADR-022, ADR-069)'],
   ['AccountController.cancelDeletion', 'Account events (ADR-022, ADR-069)'],

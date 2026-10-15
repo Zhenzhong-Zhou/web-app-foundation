@@ -268,6 +268,7 @@
   "orders.unknownVariant": "Variante inconnue",
   "orders.void.billed": "Cette expédition est facturée sur {number} — annulez d’abord la facture",
   "orders.void.draftInvoice": "Cette expédition a une facture brouillon — supprimez-la d’abord",
+  "organization.deletion.alreadyScheduled": "L’organisation est déjà en cours de suppression. Pour supprimer aussi votre compte, utilisez Supprimer mon compte sur la page Compte.",
   "organization.deletion.exportRequired": "Téléchargez d’abord l’exportation, ou indiquez que vous n’en voulez pas. Une fois l’organisation supprimée, plus rien ne permet d’en produire une.",
   "organization.deletion.nameMismatch": "Saisissez le nom de l’organisation exactement tel qu’il est affiché, pour confirmer.",
   "organization.deletion.notOnlyMember": "D’autres personnes sont aussi membres : votre compte ne peut donc pas être supprimé avec l’organisation. Supprimez l’organisation seule, puis votre compte depuis la page Compte.",
