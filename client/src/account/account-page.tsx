@@ -8,7 +8,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -29,6 +29,10 @@ import { WorkDetailsForm } from './work-details-form';
 export function AccountPage() {
   const intl = useIntl();
   const [changingPassword, setChangingPassword] = useState(false);
+  // Bumped whenever the last section closes a dialog, so the recent work
+  // above it reads again (#122).
+  const [changes, setChanges] = useState(0);
+  const changed = useCallback(() => setChanges((count) => count + 1), []);
 
   return (
     <Stack spacing={3}>
@@ -128,12 +132,12 @@ export function AccountPage() {
       </Dialog>
 
       <Paper variant="outlined" sx={{ p: 3 }}>
-        <RecentWork />
+        <RecentWork readAgain={changes} />
       </Paper>
 
       {/* Last, as the actions that end things are (ADR-069). */}
       <Paper variant="outlined" sx={{ p: 3 }}>
-        <LeaveOrDelete />
+        <LeaveOrDelete onChanged={changed} />
       </Paper>
     </Stack>
   );

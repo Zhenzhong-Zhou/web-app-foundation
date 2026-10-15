@@ -949,6 +949,11 @@ await fetch(`${api}/v1/files/product-image`, {
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R10** *(#122)* As the only member of an organization, on Account,
+  choose Delete my account: the dialog closes the organization too.
+  Download everything, then cancel: "Your recent work" lists Everything
+  downloaded at once. Open it again and confirm: Organization deletion
+  scheduled is listed too, with no reload.
 - **MC-R09** *(#119)* As a member whose account has no language chosen
   (`update users set locale = null`), with the browser in 简体中文, open
   Account: Language reads 未选择, with a line saying emails follow it once
@@ -1111,3 +1116,5 @@ first.
   MC-R08.
 - 2026-10-15: the Account page shows and saves the account's own language
   (#119): MC-R09.
+- 2026-10-15: the Account page's recent work reads again after its
+  dialogs close (#122): MC-R10.

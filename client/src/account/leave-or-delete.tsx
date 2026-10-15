@@ -67,8 +67,11 @@ function Refusal({ error, code }: { error: string; code: string | null }) {
  * Your data and your account (ADR-069): a copy of what is yours, leaving
  * the organization you are working in, and deleting the account, which
  * waits 30 days before it happens.
+ *
+ * `onChanged` is called whenever one of its dialogs closes, done or not,
+ * so the page can read again what they may have written (#122).
  */
-export function LeaveOrDelete() {
+export function LeaveOrDelete({ onChanged }: { onChanged?: () => void }) {
   const intl = useIntl();
   const navigate = useNavigate();
   const { session, refresh } = useAuth();
@@ -123,6 +126,7 @@ export function LeaveOrDelete() {
     setPassword('');
     leaving.reset();
     deleting.reset();
+    onChanged?.();
   }
 
   async function exportData() {
@@ -294,7 +298,10 @@ export function LeaveOrDelete() {
       <CloseOrganizationDialog
         open={dialog === 'both'}
         alone
-        onClose={() => setDialog(null)}
+        onClose={() => {
+          setDialog(null);
+          onChanged?.();
+        }}
         onScheduled={() => undefined}
       />
 
