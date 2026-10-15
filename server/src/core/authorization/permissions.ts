@@ -27,6 +27,10 @@ export const PERMISSIONS = {
 
   ORGANIZATIONS_VIEW: 'organizations.view',
   ORGANIZATIONS_UPDATE: 'organizations.update',
+  // Owner-only (ADR-070). Export apart from delete: everything the
+  // organization holds, useful without deleting anything.
+  ORGANIZATIONS_EXPORT: 'organizations.export',
+  ORGANIZATIONS_DELETE: 'organizations.delete',
 
   AUDIT_VIEW: 'audit.view',
 
@@ -121,6 +125,8 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'roles.assign': 'Change which role a member holds',
   'organizations.view': 'See organization settings',
   'organizations.update': 'Change organization settings',
+  'organizations.export': 'Download everything the organization holds',
+  'organizations.delete': 'Delete the organization, or cancel its deletion',
   'audit.view': 'Read the audit log',
   'products.view': 'See the product catalogue',
   'products.create': 'Add a product to the catalogue',

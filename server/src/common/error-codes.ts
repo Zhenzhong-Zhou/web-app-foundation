@@ -31,6 +31,16 @@ export const ERROR_CODES = {
    * account while it exists (ADR-069).
    */
   onlyMember: 'only_member',
+  /**
+   * Deleting an organization needs an export taken in the last 24 hours,
+   * or one declined (ADR-070).
+   */
+  organizationExportRequired: 'organization_export_required',
+  /**
+   * The deletion day has ended everywhere, so the deletion can no longer
+   * be cancelled (ADR-070).
+   */
+  organizationDeletionUnderWay: 'organization_deletion_under_way',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

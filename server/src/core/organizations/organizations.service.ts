@@ -22,6 +22,7 @@ import { assertLanguagePair } from './document-languages';
 import type { OrganizationAddressDto } from './dto/organization-address.dto';
 import type { OrganizationProfile } from './dto/organization-response.dto';
 import type { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { lastExportOf } from './last-export';
 import { registeredAddress } from './registered-address';
 
 /**
@@ -42,7 +43,13 @@ export class OrganizationsService {
     private readonly files: FilesService,
   ) {}
 
-  async get(): Promise<OrganizationProfile> {
+  /**
+   * With the last full export only for those who can take one (ADR-070,
+   * amended): who downloaded everything is no one else's business.
+   */
+  async get(
+    options: { withLastExport?: boolean } = {},
+  ): Promise<OrganizationProfile> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [organization] = await tx
         .select({
@@ -79,6 +86,9 @@ export class OrganizationsService {
         );
 
       const address = await registeredAddress(tx, organizationId);
+      const lastExport = options.withLastExport
+        ? await lastExportOf(tx, organizationId)
+        : null;
 
       // The address's printed fields (ADR-068), not its row, which would
       // also send its owner and the flags the partners' addresses use.
@@ -94,6 +104,7 @@ export class OrganizationsService {
               country: address.country,
             }
           : null,
+        lastExport,
       };
     });
   }

@@ -1,0 +1,1 @@
+ALTER TABLE "organizations" ADD COLUMN "deletion_reminded_at" timestamp with time zone;

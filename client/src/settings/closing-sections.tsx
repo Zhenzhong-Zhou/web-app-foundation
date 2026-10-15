@@ -1,0 +1,286 @@
+import DownloadIcon from '@mui/icons-material/Download';
+import { Box, Button, Paper, Stack, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
+
+import type { OrganizationProfile } from '../api/types.gen';
+import { useCan } from '../auth/permissions';
+import { useAuth } from '../auth/use-auth';
+import { FormError } from '../components/form-error';
+import { api, apiUrl } from '../lib/api';
+import { formatWhen } from '../lib/format';
+import { openDialog } from '../lib/open-dialog';
+import { useSubmit } from '../lib/use-submit';
+import { CloseOrganizationDialog } from './close-organization-dialog';
+import {
+  dayWithDaysLeft,
+  EXPORT_PATH,
+  exportedBy,
+} from './organization-deletion';
+
+/** How often, and for how long, a started download is checked on. */
+const POLL_MS = 3000;
+const POLL_FOR_MS = 10 * 60 * 1000;
+/** The server's clock may run a little behind the browser's. */
+const CLOCK_SLACK_MS = 60_000;
+
+/**
+ * The end of the Profile tab, for Owners (ADR-070): everything the
+ * organization holds as one download, and closing it, last, apart, and
+ * behind a dialog. Hidden from everyone else, who could use neither.
+ */
+export function ClosingSections({
+  organization,
+  onChanged,
+}: {
+  organization: OrganizationProfile;
+  /** The organization read again: its last export changed. */
+  onChanged: () => void | Promise<void>;
+}) {
+  const can = useCan();
+  const canExport = can('organizations.export');
+  const canDelete = can('organizations.delete');
+
+  // A download ends outside the page: read the last export again when the
+  // person comes back to it.
+  useEffect(() => {
+    if (!canExport) return;
+    const read = () => void onChanged();
+    window.addEventListener('focus', read);
+    return () => window.removeEventListener('focus', read);
+  }, [canExport, onChanged]);
+
+  return (
+    <>
+      {canExport && (
+        <DownloadEverything organization={organization} onChanged={onChanged} />
+      )}
+      {canDelete && <CloseOrganization onChanged={onChanged} />}
+    </>
+  );
+}
+
+function DownloadEverything({
+  organization,
+  onChanged,
+}: {
+  organization: OrganizationProfile;
+  onChanged: () => void | Promise<void>;
+}) {
+  const intl = useIntl();
+  const { session } = useAuth();
+  const last = organization.lastExport;
+  // A download ends outside the page, so the section asks every few
+  // seconds until the export it started is recorded, as the dialog does,
+  // rather than saying "Not downloaded yet" until the window regains focus.
+  const [downloadedAt, setDownloadedAt] = useState<number | null>(null);
+  const recorded =
+    downloadedAt !== null &&
+    last !== null &&
+    new Date(last.exportedAt).getTime() >= downloadedAt - CLOCK_SLACK_MS;
+  const downloading = downloadedAt !== null && !recorded;
+
+  useEffect(() => {
+    if (!downloading) return;
+    const polling = window.setInterval(() => void onChanged(), POLL_MS);
+    const stopping = window.setTimeout(
+      () => setDownloadedAt(null),
+      POLL_FOR_MS,
+    );
+    return () => {
+      window.clearInterval(polling);
+      window.clearTimeout(stopping);
+    };
+  }, [downloading, onChanged]);
+
+  return (
+    <Paper
+      variant="outlined"
+      component="section"
+      aria-labelledby="download-everything"
+      sx={{ p: 2 }}
+    >
+      <Stack spacing={1.5}>
+        <Typography variant="subtitle1" component="h2" id="download-everything">
+          {intl.formatMessage({
+            id: 'settings.export.title',
+            defaultMessage: 'Download everything',
+          })}
+        </Typography>
+        <Typography>
+          {intl.formatMessage({
+            id: 'settings.export.what',
+            defaultMessage:
+              'One ZIP with a spreadsheet file for every kind of record: orders, stock and lots, production, invoices and credit notes with their lines and tax, partners, price lists, the audit log. Every uploaded file comes with it, such as the logo and product images.',
+          })}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {intl.formatMessage({
+            id: 'settings.export.who',
+            defaultMessage:
+              'For your accountant, a year end, or moving to other software. Only Owners can download it, and each download is recorded in History.',
+          })}
+        </Typography>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' } }}
+        >
+          <Typography variant="body2" role="status">
+            {downloading
+              ? intl.formatMessage({
+                  id: 'settings.deletion.downloading',
+                  defaultMessage:
+                    'Downloading… The time of the download appears here once it has finished.',
+                })
+              : last
+                ? intl.formatMessage(
+                    {
+                      id: 'settings.export.last',
+                      defaultMessage: 'Last downloaded {when} by {who}',
+                    },
+                    {
+                      when: formatWhen(last.exportedAt),
+                      who: exportedBy(intl, last, session?.user.id),
+                    },
+                  )
+                : intl.formatMessage({
+                    id: 'settings.export.never',
+                    defaultMessage: 'Not downloaded yet',
+                  })}
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            href={apiUrl(EXPORT_PATH)}
+            download
+            onClick={() => setDownloadedAt(Date.now())}
+          >
+            {intl.formatMessage({
+              id: 'settings.deletion.download',
+              defaultMessage: 'Download everything (ZIP)',
+            })}
+          </Button>
+        </Stack>
+      </Stack>
+    </Paper>
+  );
+}
+
+function CloseOrganization({
+  onChanged,
+}: {
+  onChanged: () => void | Promise<void>;
+}) {
+  const intl = useIntl();
+  const { session, refresh } = useAuth();
+  const [open, setOpen] = useState(false);
+  const cancelling = useSubmit(refresh);
+
+  const organization = session?.organization;
+  if (!organization) return null;
+  const day = organization.deletionScheduledAt;
+  const underWay = organization.deletionStage === 'underWay';
+
+  return (
+    <Paper
+      variant="outlined"
+      component="section"
+      aria-labelledby="close-organization"
+      sx={{ p: 2, borderColor: 'error.light' }}
+    >
+      <Stack spacing={1.5}>
+        <Typography variant="subtitle1" component="h2" id="close-organization">
+          {intl.formatMessage({
+            id: 'settings.close.title',
+            defaultMessage: 'Close this organization',
+          })}
+        </Typography>
+
+        {day ? (
+          <>
+            <Typography>
+              {underWay
+                ? intl.formatMessage(
+                    {
+                      id: 'settings.close.underWay',
+                      defaultMessage:
+                        '{organization} is being deleted. The deletion day is over, so it can no longer be cancelled.',
+                    },
+                    { organization: organization.name },
+                  )
+                : intl.formatMessage(
+                    {
+                      id: 'settings.close.scheduled',
+                      defaultMessage:
+                        'Scheduled to be deleted after {day}. Only an Owner can cancel, until that day is over.',
+                    },
+                    { day: dayWithDaysLeft(intl, day) },
+                  )}
+            </Typography>
+            {cancelling.error && <FormError message={cancelling.error} />}
+            {!underWay && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="outlined"
+                  disabled={cancelling.submitting}
+                  onClick={() =>
+                    void cancelling.submit(() =>
+                      api('/organization/deletion', { method: 'DELETE' }),
+                    )
+                  }
+                >
+                  {intl.formatMessage({
+                    id: 'settings.close.cancel',
+                    defaultMessage: 'Cancel deletion',
+                  })}
+                </Button>
+              </Box>
+            )}
+          </>
+        ) : (
+          <>
+            <Typography>
+              {intl.formatMessage(
+                {
+                  id: 'settings.close.what',
+                  defaultMessage:
+                    '{organization} and everything in it are deleted 30 days after you ask. Until then everyone can keep working as usual. Only an Owner can cancel, until that day is over. Members keep their accounts.',
+                },
+                { organization: organization.name },
+              )}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {intl.formatMessage({
+                id: 'settings.close.export',
+                defaultMessage:
+                  'You’ll be asked to download everything first, since your business keeps its own records.',
+              })}
+            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={openDialog(() => setOpen(true))}
+              >
+                {intl.formatMessage({
+                  id: 'settings.close.button',
+                  defaultMessage: 'Close this organization…',
+                })}
+              </Button>
+            </Box>
+          </>
+        )}
+      </Stack>
+
+      <CloseOrganizationDialog
+        open={open}
+        // Settings closes the organization alone, for anyone; Delete my
+        // account is the way to delete both (ADR-070).
+        alone={false}
+        onClose={() => setOpen(false)}
+        onScheduled={onChanged}
+      />
+    </Paper>
+  );
+}

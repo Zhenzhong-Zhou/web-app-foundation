@@ -30,6 +30,7 @@ import {
   body,
   createE2eApp,
   createLocation,
+  longDay,
   PASSWORD,
   registerOrganization,
   roleIdNamed,
@@ -61,14 +62,6 @@ function photo(): Promise<Buffer> {
   })
     .jpeg()
     .toBuffer();
-}
-
-/** A YYYY-MM-DD day as the English email names it, unconverted. */
-function longDay(day: string): string {
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(`${day}T00:00:00Z`));
 }
 
 /**

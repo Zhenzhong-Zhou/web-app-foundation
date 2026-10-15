@@ -460,6 +460,49 @@
         ]
       }
     },
+    "/v1/organization/deletion": {
+      "post": {
+        "operationId": "OrganizationDeletionController_requestDeletion_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteOrganizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationDeletionScheduled"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OrganizationDeletion"
+        ]
+      },
+      "delete": {
+        "operationId": "OrganizationDeletionController_cancelDeletion_v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "OrganizationDeletion"
+        ]
+      }
+    },
     "/v1/roles": {
       "get": {
         "operationId": "RolesController_list_v1",
@@ -741,6 +784,9 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.exported",
+                "organization.deletion_scheduled",
+                "organization.deletion_cancelled",
                 "tax_code.created",
                 "tax_code.updated",
                 "invoice.created",
@@ -899,6 +945,9 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.exported",
+                "organization.deletion_scheduled",
+                "organization.deletion_cancelled",
                 "tax_code.created",
                 "tax_code.updated",
                 "invoice.created",
@@ -1230,6 +1279,9 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.exported",
+                "organization.deletion_scheduled",
+                "organization.deletion_cancelled",
                 "tax_code.created",
                 "tax_code.updated",
                 "invoice.created",
@@ -1388,6 +1440,9 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.exported",
+                "organization.deletion_scheduled",
+                "organization.deletion_cancelled",
                 "tax_code.created",
                 "tax_code.updated",
                 "invoice.created",
@@ -2143,6 +2198,28 @@
         "responses": {
           "204": {
             "description": ""
+          }
+        },
+        "tags": [
+          "Organization"
+        ]
+      }
+    },
+    "/v1/organization/export": {
+      "get": {
+        "operationId": "OrganizationController_exportAll_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -7012,6 +7089,21 @@
   "servers": [],
   "components": {
     "schemas": {
+      "DeletionOrganization": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
       "SessionUser": {
         "type": "object",
         "properties": {
@@ -7049,6 +7141,16 @@
             "type": [
               "string",
               "null"
+            ]
+          },
+          "deletionWithOrganization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeletionOrganization"
+              },
+              {
+                "type": "null"
+              }
             ]
           }
         },
@@ -7115,13 +7217,33 @@
           },
           "branding": {
             "$ref": "#/components/schemas/OrganizationBranding"
+          },
+          "deletionScheduledAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "deletionStage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "scheduled",
+              "lastWeek",
+              "underWay",
+              null
+            ]
           }
         },
         "required": [
           "id",
           "name",
           "roleId",
-          "branding"
+          "branding",
+          "deletionScheduledAt",
+          "deletionStage"
         ]
       },
       "CurrentSession": {
@@ -7153,6 +7275,8 @@
                 "roles.assign",
                 "organizations.view",
                 "organizations.update",
+                "organizations.export",
+                "organizations.delete",
                 "audit.view",
                 "products.view",
                 "products.create",
@@ -7798,6 +7922,40 @@
           "accountHistory",
           "notifications",
           "recentlyOpened"
+        ]
+      },
+      "DeleteOrganizationDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "organizationName": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "declineExport": {
+            "type": "boolean"
+          },
+          "deleteAccount": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "password",
+          "organizationName"
+        ]
+      },
+      "OrganizationDeletionScheduled": {
+        "type": "object",
+        "properties": {
+          "deletionScheduledAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "deletionScheduledAt"
         ]
       },
       "Role": {
@@ -9229,6 +9387,30 @@
           "country"
         ]
       },
+      "OrganizationLastExport": {
+        "type": "object",
+        "properties": {
+          "exportedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "exportedBy": {
+            "type": "string"
+          },
+          "exportedById": {
+            "type": "string"
+          },
+          "fresh": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "exportedAt",
+          "exportedBy",
+          "exportedById",
+          "fresh"
+        ]
+      },
       "OrganizationProfile": {
         "type": "object",
         "properties": {
@@ -9359,6 +9541,16 @@
               "unticked",
               "everyone"
             ]
+          },
+          "lastExport": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrganizationLastExport"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -9382,7 +9574,8 @@
           "expiryWarningDays",
           "expiryCriticalDays",
           "idleSignOutMinutes",
-          "idleSignOutScope"
+          "idleSignOutScope",
+          "lastExport"
         ]
       },
       "OrganizationEnvelope": {
@@ -16687,6 +16880,8 @@
           "roles.assign",
           "organizations.view",
           "organizations.update",
+          "organizations.export",
+          "organizations.delete",
           "audit.view",
           "products.view",
           "products.create",
@@ -16797,6 +16992,9 @@
           "production_order.cancelled",
           "organization.updated",
           "organization.address_updated",
+          "organization.exported",
+          "organization.deletion_scheduled",
+          "organization.deletion_cancelled",
           "tax_code.created",
           "tax_code.updated",
           "invoice.created",
@@ -16825,7 +17023,9 @@
           "customer_billing_address_missing",
           "organization_tax_number_missing",
           "last_owner_with_members",
-          "only_member"
+          "only_member",
+          "organization_export_required",
+          "organization_deletion_under_way"
         ]
       },
       "ApiVocabulary": {

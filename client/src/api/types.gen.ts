@@ -4,6 +4,11 @@ export type ClientOptions = {
   baseUrl: string;
 };
 
+export type DeletionOrganization = {
+  id: string;
+  name: string;
+};
+
 export type SessionUser = {
   id: string;
   email: string;
@@ -12,6 +17,7 @@ export type SessionUser = {
   locale: 'en' | 'fr-CA' | 'zh-Hans' | null;
   photoFileId?: string | null;
   deletionScheduledAt?: string | null;
+  deletionWithOrganization?: DeletionOrganization | null;
 };
 
 export type OrganizationBranding = {
@@ -28,6 +34,8 @@ export type SessionOrganization = {
   name: string;
   roleId: string;
   branding: OrganizationBranding;
+  deletionScheduledAt: string | null;
+  deletionStage: 'scheduled' | 'lastWeek' | 'underWay' | null;
 };
 
 export type CurrentSession = {
@@ -42,6 +50,8 @@ export type CurrentSession = {
     | 'roles.assign'
     | 'organizations.view'
     | 'organizations.update'
+    | 'organizations.export'
+    | 'organizations.delete'
     | 'audit.view'
     | 'products.view'
     | 'products.create'
@@ -231,6 +241,17 @@ export type AccountExport = {
   accountHistory: Array<AccountEvent>;
   notifications: Array<ExportedNotification>;
   recentlyOpened: Array<ExportedRecent>;
+};
+
+export type DeleteOrganizationDto = {
+  password: string;
+  organizationName: string;
+  declineExport?: boolean;
+  deleteAccount?: boolean;
+};
+
+export type OrganizationDeletionScheduled = {
+  deletionScheduledAt: string;
 };
 
 export type Role = {
@@ -578,6 +599,13 @@ export type OrganizationAddress = {
   country: string;
 };
 
+export type OrganizationLastExport = {
+  exportedAt: string;
+  exportedBy: string;
+  exportedById: string;
+  fresh: boolean;
+};
+
 export type OrganizationProfile = {
   id: string;
   name: string;
@@ -600,6 +628,7 @@ export type OrganizationProfile = {
   expiryCriticalDays: number;
   idleSignOutMinutes: number | null;
   idleSignOutScope: 'unticked' | 'everyone';
+  lastExport: OrganizationLastExport | null;
 };
 
 export type OrganizationEnvelope = {
@@ -2355,6 +2384,8 @@ export const Permission = {
   ROLES_ASSIGN: 'roles.assign',
   ORGANIZATIONS_VIEW: 'organizations.view',
   ORGANIZATIONS_UPDATE: 'organizations.update',
+  ORGANIZATIONS_EXPORT: 'organizations.export',
+  ORGANIZATIONS_DELETE: 'organizations.delete',
   AUDIT_VIEW: 'audit.view',
   PRODUCTS_VIEW: 'products.view',
   PRODUCTS_CREATE: 'products.create',
@@ -2465,6 +2496,9 @@ export const AuditAction = {
   PRODUCTION_ORDER_CANCELLED: 'production_order.cancelled',
   ORGANIZATION_UPDATED: 'organization.updated',
   ORGANIZATION_ADDRESS_UPDATED: 'organization.address_updated',
+  ORGANIZATION_EXPORTED: 'organization.exported',
+  ORGANIZATION_DELETION_SCHEDULED: 'organization.deletion_scheduled',
+  ORGANIZATION_DELETION_CANCELLED: 'organization.deletion_cancelled',
   TAX_CODE_CREATED: 'tax_code.created',
   TAX_CODE_UPDATED: 'tax_code.updated',
   INVOICE_CREATED: 'invoice.created',
@@ -2495,6 +2529,8 @@ export const ErrorCode = {
   ORGANIZATION_TAX_NUMBER_MISSING: 'organization_tax_number_missing',
   LAST_OWNER_WITH_MEMBERS: 'last_owner_with_members',
   ONLY_MEMBER: 'only_member',
+  ORGANIZATION_EXPORT_REQUIRED: 'organization_export_required',
+  ORGANIZATION_DELETION_UNDER_WAY: 'organization_deletion_under_way',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -2790,6 +2826,34 @@ export type AccountControllerExportDataV1Responses = {
 export type AccountControllerExportDataV1Response =
   AccountControllerExportDataV1Responses[keyof AccountControllerExportDataV1Responses];
 
+export type OrganizationDeletionControllerCancelDeletionV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/organization/deletion';
+};
+
+export type OrganizationDeletionControllerCancelDeletionV1Responses = {
+  204: void;
+};
+
+export type OrganizationDeletionControllerCancelDeletionV1Response =
+  OrganizationDeletionControllerCancelDeletionV1Responses[keyof OrganizationDeletionControllerCancelDeletionV1Responses];
+
+export type OrganizationDeletionControllerRequestDeletionV1Data = {
+  body: DeleteOrganizationDto;
+  path?: never;
+  query?: never;
+  url: '/v1/organization/deletion';
+};
+
+export type OrganizationDeletionControllerRequestDeletionV1Responses = {
+  200: OrganizationDeletionScheduled;
+};
+
+export type OrganizationDeletionControllerRequestDeletionV1Response =
+  OrganizationDeletionControllerRequestDeletionV1Responses[keyof OrganizationDeletionControllerRequestDeletionV1Responses];
+
 export type RolesControllerListV1Data = {
   body?: never;
   path?: never;
@@ -2969,6 +3033,9 @@ export type AuditControllerListV1Data = {
       | 'production_order.cancelled'
       | 'organization.updated'
       | 'organization.address_updated'
+      | 'organization.exported'
+      | 'organization.deletion_scheduled'
+      | 'organization.deletion_cancelled'
       | 'tax_code.created'
       | 'tax_code.updated'
       | 'invoice.created'
@@ -3065,6 +3132,9 @@ export type AuditControllerExportAuditV1Data = {
       | 'production_order.cancelled'
       | 'organization.updated'
       | 'organization.address_updated'
+      | 'organization.exported'
+      | 'organization.deletion_scheduled'
+      | 'organization.deletion_cancelled'
       | 'tax_code.created'
       | 'tax_code.updated'
       | 'invoice.created'
@@ -3246,6 +3316,9 @@ export type WorkControllerActivityV1Data = {
       | 'production_order.cancelled'
       | 'organization.updated'
       | 'organization.address_updated'
+      | 'organization.exported'
+      | 'organization.deletion_scheduled'
+      | 'organization.deletion_cancelled'
       | 'tax_code.created'
       | 'tax_code.updated'
       | 'invoice.created'
@@ -3342,6 +3415,9 @@ export type WorkControllerExportActivityV1Data = {
       | 'production_order.cancelled'
       | 'organization.updated'
       | 'organization.address_updated'
+      | 'organization.exported'
+      | 'organization.deletion_scheduled'
+      | 'organization.deletion_cancelled'
       | 'tax_code.created'
       | 'tax_code.updated'
       | 'invoice.created'
@@ -3714,6 +3790,20 @@ export type OrganizationControllerUpdateV1Responses = {
 
 export type OrganizationControllerUpdateV1Response =
   OrganizationControllerUpdateV1Responses[keyof OrganizationControllerUpdateV1Responses];
+
+export type OrganizationControllerExportAllV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/organization/export';
+};
+
+export type OrganizationControllerExportAllV1Responses = {
+  200: Blob | File;
+};
+
+export type OrganizationControllerExportAllV1Response =
+  OrganizationControllerExportAllV1Responses[keyof OrganizationControllerExportAllV1Responses];
 
 export type OrganizationControllerSetAddressV1Data = {
   body: OrganizationAddressDto;

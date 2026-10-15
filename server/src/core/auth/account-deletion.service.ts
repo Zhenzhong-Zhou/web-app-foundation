@@ -20,6 +20,7 @@ import {
 } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
+import type { Locale } from '../../common/locales';
 import { todayUtc } from '../../common/today';
 import type { Env } from '../../config/env';
 import type { Database, Transaction } from '../../database/database.module';
@@ -73,9 +74,10 @@ export function deletionDayFor(now: Date): string {
 
 /**
  * Today where a day ends last, at UTC−12, twelve hours behind UTC. A
- * deletion day before it has ended in every time zone (ADR-069).
+ * deletion day before it has ended in every time zone (ADR-069), and an
+ * organization's deletion can no longer be cancelled (ADR-070).
  */
-function todayWhereDaysEndLast(now: Date): string {
+export function todayWhereDaysEndLast(now: Date): string {
   return todayUtc(new Date(now.getTime() - 12 * HOUR));
 }
 
@@ -87,19 +89,29 @@ function dueBy(now: Date) {
   return and(
     lt(users.deletionScheduledAt, todayWhereDaysEndLast(now)),
     isNull(users.deletedAt),
+    // An account going with its organization is the organization's run to
+    // complete, straight after it: this run taking it too would lock the
+    // person, then the organization through its key, while that run locks
+    // them the other way round, and Postgres would abort one (ADR-070).
+    isNull(users.deletionWithOrganizationId),
   );
 }
 
 /** What stands in for the person once the deletion completes (ADR-012). */
 const DELETED_NAME = 'Deleted User';
 
-type Executor = Database | Transaction;
+export type Executor = Database | Transaction;
 
 /** Why a person cannot leave an organization, or delete their account. */
 interface Block {
   code: typeof ERROR_CODES.onlyMember | typeof ERROR_CODES.lastOwnerWithMembers;
   organizationId: string;
   organizationName: string;
+  /**
+   * The organization is itself scheduled for deletion (ADR-070): it blocks
+   * leaving, but not asking to delete the account, which waits for it.
+   */
+  goingToo: boolean;
 }
 
 /** What became of one deletion the run picked out. */
@@ -159,6 +171,9 @@ export class AccountDeletionService {
             eq(memberships.organizationId, organizationId),
           ),
         );
+      // An account deleted with this organization lets go of it here, by
+      // the trigger on memberships (migration 0061), as when an Owner
+      // removes a member: its own deletion stands, on its own day.
 
       // The oldest membership left, as signing in picks one.
       const [next] = await tx
@@ -202,21 +217,14 @@ export class AccountDeletionService {
       return { deletionScheduledAt: user.deletionScheduledAt };
     }
 
-    const [block] = await this.blocksFor(this.db, context.userId);
+    const block = (await this.blocksFor(this.db, context.userId)).find(
+      (each) => !each.goingToo,
+    );
     if (block) throw refusalFor(block);
 
     const deletionScheduledAt = deletionDayFor(new Date());
-    await this.db
-      .update(users)
-      .set({ deletionScheduledAt })
-      .where(eq(users.id, context.userId));
-
-    await this.sessions.revokeAllForUser(context.userId, context.sessionId);
-
-    await this.events.record(context.userId, 'account.deletion_requested', {
-      ip: context.ip,
-      userAgent: context.userAgent,
-    });
+    await this.schedule(this.db, context.userId, deletionScheduledAt);
+    await this.signOutForDeletion(context);
 
     await this.send(
       context.userId,
@@ -228,6 +236,40 @@ export class AccountDeletionService {
       `${context.userId} scheduled for deletion after ${deletionScheduledAt}`,
     );
     return { deletionScheduledAt };
+  }
+
+  /**
+   * The deletion day set: asked for here, or with the organization by its
+   * only member (ADR-070), in that request's transaction. Once it commits,
+   * signOutForDeletion() does the rest; the email is the caller's.
+   */
+  async schedule(
+    executor: Executor,
+    userId: string,
+    day: string,
+    withOrganizationId: string | null = null,
+  ): Promise<void> {
+    await executor
+      .update(users)
+      .set({
+        deletionScheduledAt: day,
+        deletionWithOrganizationId: withOrganizationId,
+      })
+      .where(eq(users.id, userId));
+  }
+
+  /**
+   * After a deletion is scheduled and committed: every other device signed
+   * out, and the request recorded. Not in the transaction, whose sessions
+   * and events are written on their own connections: a request that rolls
+   * back must not have signed anyone out.
+   */
+  async signOutForDeletion(context: RequestContext): Promise<void> {
+    await this.sessions.revokeAllForUser(context.userId, context.sessionId);
+    await this.events.record(context.userId, 'account.deletion_requested', {
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
   }
 
   /** Keep the account. Nothing to cancel is not an error. */
@@ -244,6 +286,42 @@ export class AccountDeletionService {
     if (cancelled) {
       this.logger.log(`${context.userId} cancelled their deletion`);
     }
+  }
+
+  /**
+   * The accounts going with an organization, kept with it in the
+   * transaction that cancels its deletion (ADR-070): both stay, or neither
+   * does. Their ids, for recordKept() once it commits.
+   */
+  async keepWith(
+    executor: Executor,
+    organizationId: string,
+  ): Promise<string[]> {
+    const kept = await executor
+      .update(users)
+      .set({ deletionScheduledAt: null, deletionWithOrganizationId: null })
+      .where(eq(users.deletionWithOrganizationId, organizationId))
+      .returning({ id: users.id });
+    return kept.map(({ id }) => id);
+  }
+
+  /**
+   * An account kept with its organization, by keepWith() in the
+   * organization's transaction (ADR-070): recorded in its history, without
+   * an email of its own, since the organization's says both stay.
+   */
+  async recordKept(userId: string, context: RequestContext): Promise<void> {
+    // The request's address and browser are the canceller's: on anyone
+    // else's account they would tell that person more about a colleague
+    // than their role allows (ADR-022).
+    await this.events.record(
+      userId,
+      'account.deletion_cancelled',
+      userId === context.userId
+        ? { ip: context.ip, userAgent: context.userAgent }
+        : undefined,
+    );
+    this.logger.log(`Deletion of ${userId} cancelled with its organization`);
   }
 
   /**
@@ -397,8 +475,12 @@ export class AccountDeletionService {
         held.map(({ organizationId }) => organizationId),
       );
 
-      const [block] = await this.blocksFor(tx, userId);
+      const blocks = await this.blocksFor(tx, userId);
+      const block = blocks.find((each) => !each.goingToo);
       if (block) return { kind: 'blocked', block } as const;
+      // Only organizations being deleted stand in the way: the account
+      // goes once they have, in their run or the next of this one (ADR-070).
+      if (blocks.length > 0) return { kind: 'skipped' } as const;
 
       if (held.length > 0) {
         await tx.insert(auditLog).values(
@@ -429,6 +511,7 @@ export class AccountDeletionService {
           emailVerifiedAt: null,
           photoFileId: null,
           deletionScheduledAt: null,
+          deletionWithOrganizationId: null,
           deletedAt: now,
         })
         .where(eq(users.id, userId));
@@ -499,6 +582,7 @@ export class AccountDeletionService {
       .select({
         organizationId: memberships.organizationId,
         organizationName: organizations.name,
+        goingToo: sql<boolean>`${organizations.deletionScheduledAt} is not null`,
         isOwner: sql<boolean>`${roles.name} = ${SYSTEM_ROLES.OWNER}`,
         others: sql<number>`(
           select count(*) from ${memberships} as other
@@ -525,6 +609,7 @@ export class AccountDeletionService {
       const base = {
         organizationId: row.organizationId,
         organizationName: row.organizationName,
+        goingToo: row.goingToo,
       };
       if (row.others === 0) return [{ ...base, code: ERROR_CODES.onlyMember }];
       if (row.isOwner && row.otherOwners === 0) {
@@ -546,7 +631,7 @@ export class AccountDeletionService {
   ): Promise<boolean> {
     const cancelled = await this.db
       .update(users)
-      .set({ deletionScheduledAt: null })
+      .set({ deletionScheduledAt: null, deletionWithOrganizationId: null })
       .where(and(eq(users.id, userId), isNotNull(users.deletionScheduledAt)))
       .returning({ id: users.id });
     if (cancelled.length === 0) return false;
@@ -566,24 +651,39 @@ export class AccountDeletionService {
     language?: string,
   ): Promise<void> {
     const [user] = await this.db
-      .select({ email: users.email, name: users.name, locale: users.locale })
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        locale: users.locale,
+      })
       .from(users)
       .where(and(eq(users.id, userId), isNull(users.deletedAt)));
-    if (!user) return;
+    if (user) await this.sendTo(user, build, language);
+  }
 
+  /**
+   * An email to someone already looked up: here, or each member of an
+   * organization being deleted (ADR-070).
+   */
+  async sendTo(
+    person: { id: string; email: string; name: string; locale: Locale | null },
+    build: (context: DeletionMailContext) => Mail,
+    language?: string,
+  ): Promise<void> {
     try {
       await this.mail.send(
         build({
-          locale: recipientLocale(user.locale, language),
-          to: user.email,
-          name: user.name,
+          locale: recipientLocale(person.locale, language),
+          to: person.email,
+          name: person.name,
           clientUrl: this.config.get('CLIENT_URL', { infer: true }),
         }),
       );
     } catch (error) {
       // The deletion itself stands; a lost email is logged, not thrown, as
       // the security emails are (ADR-037).
-      this.logger.error(`Could not email ${userId}: ${String(error)}`);
+      this.logger.error(`Could not email ${person.id}: ${String(error)}`);
     }
   }
 }
@@ -616,7 +716,7 @@ function refusalMessage(block: Block): Translatable {
         {
           id: 'account.blocks.onlyMember',
           defaultMessage:
-            'You are the only member of {organization}, so it would be left with no one. Add another member and make them an Owner first.',
+            'You are the only member of {organization}, so it would be left with no one. Add another member and make them an Owner first, or delete the organization, with your account if you like.',
         },
         { organization: block.organizationName },
       )

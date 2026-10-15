@@ -17,7 +17,7 @@
  */
 export type CsvValue = string | number | boolean | null | undefined;
 
-const BOM = '\uFEFF';
+export const BOM = '\uFEFF';
 const RISKY_START = /^[=+\-@\t\r]/;
 const PLAIN_NUMBER = /^-?\d+(\.\d+)?$/;
 const NEEDS_QUOTES = /[",\r\n]|^\s|\s$/;
@@ -32,8 +32,12 @@ export function csvField(value: CsvValue): string {
   return NEEDS_QUOTES.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
+/** One row, CRLF at its end: what a file streamed a row at a time writes. */
+export function csvRow(fields: CsvValue[]): string {
+  return `${fields.map(csvField).join(',')}\r\n`;
+}
+
 /** A whole file: the BOM, the header row, then a row per record. */
 export function toCsv(headers: string[], rows: CsvValue[][]): string {
-  const lines = [headers, ...rows].map((row) => row.map(csvField).join(','));
-  return `${BOM}${lines.join('\r\n')}\r\n`;
+  return `${BOM}${[headers, ...rows].map(csvRow).join('')}`;
 }

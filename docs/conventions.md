@@ -69,6 +69,16 @@ an arrow class property doesn't live on the prototype.
 
 ---
 
+## A new table and the organization's export
+
+- **A table with an `organization_id` is in the organization's export**
+  (ADR-070), every column, with nothing to add: unless it belongs to each
+  member rather than the organization, and is listed in `NOT_EXPORTED`
+  (`core/organizations/organization-tables.ts`) with its reason. A table
+  owned through a parent, with no `organization_id` of its own, goes in
+  `OWNED_THROUGH_PARENT` beside it, exported by hand or with its reason.
+  The export's coverage tests fail on a table that is neither.
+
 ## Module boundaries
 
 - One folder per module under `core/`, each with its own `*.module.ts`.
@@ -121,12 +131,6 @@ Pairs currently being watched rather than extracted:
   password rules, and have already drifted once. Extract to validation constants
   — not a shared DTO, which the rule above forbids — at the fourth DTO, or the
   first time a rule changes in one and not the other.
-- The hourly timers, `files-purge.timer.ts`, `licence-reminders.timer.ts`
-  and `account-deletion.timer.ts`, are one class around a different call:
-  three, but watched rather than extracted, since they already differ. The
-  purge does not run at startup, and one helper for all three would first
-  need ADR-059 to say whether it should. Extract at the fourth timer, or the
-  first time a fix to one has to be made in the others.
 
 Test helpers follow the same rule with one addition: extract *knowledge* (a
 library's interface shape, a stub that must match a real service) and leave

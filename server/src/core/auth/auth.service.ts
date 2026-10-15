@@ -31,8 +31,10 @@ import { provisionOrganization } from '../organizations/provision-organization';
 import { uniqueSlug } from '../organizations/slug';
 import { AccountEventService } from './account-event.service';
 import { AuthTokenService } from './auth-token.service';
+import type { DeletionStage } from './dto/auth-response.dto';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
+import { deletionStageOf } from './organization-deletion.service';
 import { PasswordService } from './password.service';
 import type { RequestContext } from './request-context';
 import { type NewSession, SessionService } from './session.service';
@@ -63,6 +65,8 @@ export interface CurrentSession {
      * page says so.
      */
     deletionScheduledAt?: string | null;
+    /** The organization the account's deletion goes with (ADR-070). */
+    deletionWithOrganization?: { id: string; name: string } | null;
   };
   /** Null when the caller belongs to no organization — see SessionGuard. */
   organization: {
@@ -78,6 +82,9 @@ export interface CurrentSession {
       expiryWarningDays: number;
       expiryCriticalDays: number;
     };
+    /** The deletion day while one is pending, and where it stands (ADR-070). */
+    deletionScheduledAt: string | null;
+    deletionStage: DeletionStage | null;
   } | null;
   /** Empty when there is no organization: permissions come from a role. */
   permissions: Permission[];
@@ -354,18 +361,48 @@ export class AuthService implements OnModuleInit {
    * next page load rather than at session expiry.
    */
   async me(context: RequestContext): Promise<CurrentSession> {
-    const [user] = await this.db
-      .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        emailVerifiedAt: users.emailVerifiedAt,
-        locale: users.locale,
-        photoFileId: users.photoFileId,
-        deletionScheduledAt: users.deletionScheduledAt,
-      })
-      .from(users)
-      .where(eq(users.id, context.userId));
+    // Independent reads, and this runs on every page load: the person,
+    // their organization and their permissions together, one round trip
+    // rather than two.
+    const organizationId = context.organizationId;
+    const roleId = context.roleId;
+    const [[user], organizationRows, permissions] = await Promise.all([
+      this.db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          emailVerifiedAt: users.emailVerifiedAt,
+          locale: users.locale,
+          photoFileId: users.photoFileId,
+          deletionScheduledAt: users.deletionScheduledAt,
+          deletionWithOrganizationId: users.deletionWithOrganizationId,
+          deletionWithOrganizationName: organizations.name,
+        })
+        .from(users)
+        .leftJoin(
+          organizations,
+          eq(organizations.id, users.deletionWithOrganizationId),
+        )
+        .where(eq(users.id, context.userId)),
+      organizationId
+        ? this.db
+            .select({
+              id: organizations.id,
+              name: organizations.name,
+              logoFileId: organizations.logoFileId,
+              accentColor: organizations.accentColor,
+              rail: organizations.rail,
+              logoOnDocuments: organizations.logoOnDocuments,
+              expiryWarningDays: organizations.expiryWarningDays,
+              expiryCriticalDays: organizations.expiryCriticalDays,
+              deletionScheduledAt: organizations.deletionScheduledAt,
+            })
+            .from(organizations)
+            .where(eq(organizations.id, organizationId))
+        : Promise.resolve([]),
+      roleId ? this.permissions.listForRole(roleId) : Promise.resolve([]),
+    ]);
 
     // A valid session pointing at no user should be impossible — sessions
     // cascade on delete, and ADR-012 tombstones rather than removing rows. If
@@ -382,41 +419,30 @@ export class AuthService implements OnModuleInit {
         locale: user.locale,
         photoFileId: user.photoFileId,
         deletionScheduledAt: user.deletionScheduledAt,
+        deletionWithOrganization:
+          user.deletionWithOrganizationId && user.deletionWithOrganizationName
+            ? {
+                id: user.deletionWithOrganizationId,
+                name: user.deletionWithOrganizationName,
+              }
+            : null,
       },
       idleLimitMs: context.idleLimitMs,
     };
 
     // Both are null together: roleId comes from the membership that produced
     // organizationId, so there is no state where one exists without the other.
-    if (!context.organizationId || !context.roleId) {
+    const [organization] = organizationRows;
+    if (!organizationId || !roleId || !organization) {
       return { ...base, organization: null, permissions: [] };
     }
-
-    // Independent reads, and this runs on every page load. Sequential await
-    // here costs a round trip for nothing.
-    const [[organization], permissions] = await Promise.all([
-      this.db
-        .select({
-          id: organizations.id,
-          name: organizations.name,
-          logoFileId: organizations.logoFileId,
-          accentColor: organizations.accentColor,
-          rail: organizations.rail,
-          logoOnDocuments: organizations.logoOnDocuments,
-          expiryWarningDays: organizations.expiryWarningDays,
-          expiryCriticalDays: organizations.expiryCriticalDays,
-        })
-        .from(organizations)
-        .where(eq(organizations.id, context.organizationId)),
-      this.permissions.listForRole(context.roleId),
-    ]);
 
     return {
       ...base,
       organization: {
         id: organization.id,
         name: organization.name,
-        roleId: context.roleId,
+        roleId,
         branding: {
           logoFileId: organization.logoFileId,
           accentColor: organization.accentColor,
@@ -425,6 +451,8 @@ export class AuthService implements OnModuleInit {
           expiryWarningDays: organization.expiryWarningDays,
           expiryCriticalDays: organization.expiryCriticalDays,
         },
+        deletionScheduledAt: organization.deletionScheduledAt,
+        deletionStage: deletionStageOf(organization.deletionScheduledAt),
       },
       permissions,
     };

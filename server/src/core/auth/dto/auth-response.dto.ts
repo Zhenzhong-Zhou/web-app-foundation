@@ -23,6 +23,18 @@ export class SessionUser {
    * page says so.
    */
   deletionScheduledAt?: string | null;
+  /**
+   * The organization this account's deletion goes with, when its only
+   * member deleted both in one step (ADR-070, amended): the account's,
+   * whichever organization the session is working in.
+   */
+  deletionWithOrganization?: DeletionOrganization | null;
+}
+
+/** An organization an account's deletion goes with. */
+export class DeletionOrganization {
+  id!: string;
+  name!: string;
 }
 
 /** The organization's look, applied on load (ADR-060). */
@@ -36,12 +48,27 @@ export class OrganizationBranding {
   expiryCriticalDays!: number;
 }
 
+/** Where an organization's pending deletion stands (ADR-070, amended). */
+export type DeletionStage = 'scheduled' | 'lastWeek' | 'underWay';
+
 /** The organization the session is working in, and the role it holds. */
 export class SessionOrganization {
   id!: string;
   name!: string;
   roleId!: string;
   branding!: OrganizationBranding;
+  /**
+   * The deletion day, YYYY-MM-DD, while one is pending (ADR-070): every
+   * member's banner names it.
+   */
+  deletionScheduledAt!: string | null;
+  /**
+   * Where the pending deletion stands, by the server's UTC day (ADR-070,
+   * amended): scheduled, its banner can be hidden for today; in its last
+   * week, it cannot; under way, its day has ended everywhere and it can no
+   * longer be cancelled. Null with no deletion pending.
+   */
+  deletionStage!: DeletionStage | null;
 }
 
 /** GET /auth/me: everything the app needs to start. */

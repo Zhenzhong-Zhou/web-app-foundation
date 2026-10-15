@@ -20,6 +20,20 @@ export class OrganizationAddress {
   country!: string;
 }
 
+/** The last full export (ADR-070, amended): when, and by whom. */
+export class OrganizationLastExport {
+  exportedAt!: Date;
+  /** The person's name as it is now: Deleted User once they are gone. */
+  exportedBy!: string;
+  /** Who, by id: two members can share a name. */
+  exportedById!: string;
+  /**
+   * Taken within the last 24 hours, so a deletion can rely on it
+   * (ADR-070): the server's clock, not the browser's.
+   */
+  fresh!: boolean;
+}
+
 export class OrganizationProfile {
   id!: string;
   name!: string;
@@ -49,6 +63,11 @@ export class OrganizationProfile {
   /** Sign out after inactivity (ADR-065): minutes, or null for off. */
   idleSignOutMinutes!: number | null;
   idleSignOutScope!: IdleSignOutScope;
+  /**
+   * The last full export, for those who can take one (ADR-070, amended);
+   * null for everyone else, and before the first.
+   */
+  lastExport!: OrganizationLastExport | null;
 }
 
 /** GET /organization. */

@@ -62,9 +62,10 @@ Karpathy's observations on LLM coding pitfalls
   are `YYYY-MM-DD` strings (ADR-052).
 - **Tenancy.** Every query goes through `TenantDb`; nothing reads across
   organizations (ADR-003).
-- **Refusals** carry a snake_case code from
-  `server/src/common/error-codes.ts`, never renamed or removed once
-  released, and a message that says what to do next.
+- **Refusals** carry a message that says what to do next. One whose
+  screen offers a way out, such as a link to the missing setting, also
+  carries a snake_case code from `server/src/common/error-codes.ts`, never
+  renamed or removed once released; most refusals carry none.
 - **Languages.** Every message id exists in `en`, `fr-CA` and `zh-Hans`
   (ADR-054).
 - **Audit.** Writes are `@Audited`, or listed in `NOT_AUDITED` with a

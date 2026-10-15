@@ -6,16 +6,25 @@ import {
   HttpStatus,
   Patch,
   Put,
+  Res,
 } from '@nestjs/common';
+import { ApiOkResponse, ApiProduces } from '@nestjs/swagger';
+import type { Response } from 'express';
 
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { Audited } from '../audit/audited.decorator';
-import { getRequestContext } from '../auth/request-context';
+import { CurrentUser } from '../auth/current-user.decorator';
+import {
+  getRequestContext,
+  type RequestContext,
+} from '../auth/request-context';
 import { PERMISSIONS } from '../authorization/permissions';
+import { PermissionsService } from '../authorization/permissions.service';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
 import { OrganizationAddressDto } from './dto/organization-address.dto';
 import type { OrganizationEnvelope } from './dto/organization-response.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { OrganizationExportService } from './organization-export.service';
 import { OrganizationsService } from './organizations.service';
 
 /**
@@ -27,12 +36,42 @@ import { OrganizationsService } from './organizations.service';
  */
 @Controller({ path: 'organization', version: '1' })
 export class OrganizationController {
-  constructor(private readonly organization: OrganizationsService) {}
+  constructor(
+    private readonly organization: OrganizationsService,
+    private readonly exports: OrganizationExportService,
+    private readonly permissions: PermissionsService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.ORGANIZATIONS_VIEW)
-  async get(): Promise<OrganizationEnvelope> {
-    return { organization: await this.organization.get() };
+  async get(
+    @CurrentUser() context: RequestContext,
+  ): Promise<OrganizationEnvelope> {
+    const granted = context.roleId
+      ? await this.permissions.listForRole(context.roleId)
+      : [];
+    return {
+      organization: await this.organization.get({
+        withLastExport: granted.includes(PERMISSIONS.ORGANIZATIONS_EXPORT),
+      }),
+    };
+  }
+
+  /**
+   * Everything the organization holds, as one ZIP (ADR-070). Audited by
+   * the export itself, before the response ends, rather than by @Audited,
+   * which would write after it: a deletion asked for straight after the
+   * download must find the entry.
+   */
+  @Get('export')
+  @RequirePermissions(PERMISSIONS.ORGANIZATIONS_EXPORT)
+  @ApiProduces('application/zip')
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  async exportAll(
+    @CurrentUser() context: RequestContext,
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.exports.writeTo(res, context);
   }
 
   @Patch()

@@ -13,6 +13,8 @@ import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
+import type { Member } from '../api/types.gen';
+import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -22,6 +24,7 @@ import { formatDay } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useSubmit } from '../lib/use-submit';
 import { PASSWORD_MAX_LENGTH } from '../lib/validation';
+import { CloseOrganizationDialog } from '../settings/close-organization-dialog';
 
 /**
  * The refusal, and the way past it (ADR-069): both blocks are settled on
@@ -29,8 +32,11 @@ import { PASSWORD_MAX_LENGTH } from '../lib/validation';
  */
 function Refusal({ error, code }: { error: string; code: string | null }) {
   const intl = useIntl();
+  const can = useCan();
   const settledOnMembers =
     hasCode(code, 'only_member') || hasCode(code, 'last_owner_with_members');
+  // The other way past being alone, as the refusal says (ADR-070).
+  const canClose = hasCode(code, 'only_member') && can('organizations.delete');
 
   return (
     <FormError message={error}>
@@ -41,6 +47,17 @@ function Refusal({ error, code }: { error: string; code: string | null }) {
             defaultMessage: 'Go to Members',
           })}
         </Link>
+      )}
+      {canClose && (
+        <>
+          {' · '}
+          <Link component={RouterLink} to="/settings/organization">
+            {intl.formatMessage({
+              id: 'account.leave.closeOrganization',
+              defaultMessage: 'Close the organization',
+            })}
+          </Link>
+        </>
       )}
     </FormError>
   );
@@ -55,7 +72,10 @@ export function LeaveOrDelete() {
   const intl = useIntl();
   const navigate = useNavigate();
   const { session, refresh } = useAuth();
-  const [dialog, setDialog] = useState<'leave' | 'delete' | null>(null);
+  const can = useCan();
+  const [dialog, setDialog] = useState<'leave' | 'delete' | 'both' | null>(
+    null,
+  );
   const [password, setPassword] = useState('');
   const [exportError, setExportError] = useState<string | null>(null);
   const leaving = useSubmit(async () => {
@@ -71,6 +91,32 @@ export function LeaveOrDelete() {
   if (!session) return null;
   const organization = session.organization;
   const due = session.user.deletionScheduledAt;
+
+  /**
+   * The only member of an organization deletes it with their account, in
+   * one step (ADR-070); anyone else deletes the account alone. Only an
+   * Owner can be alone in one, and an Owner can list the members.
+   */
+  async function askToDelete() {
+    // Already going alone, it cannot take the account with it: the
+    // account's own deletion is the one to ask for (ADR-070).
+    if (
+      organization &&
+      !organization.deletionScheduledAt &&
+      can('users.view')
+    ) {
+      try {
+        const members = await api<Member[]>('/users');
+        if (members.length === 1) {
+          setDialog('both');
+          return;
+        }
+      } catch {
+        // Unknown: the account's own dialog, whose refusal says what to do.
+      }
+    }
+    setDialog('delete');
+  }
 
   function close() {
     setDialog(null);
@@ -135,6 +181,32 @@ export function LeaveOrDelete() {
         </Alert>
       )}
 
+      {organization && can('organizations.export') && (
+        // Your data here; the company's records are elsewhere, and an
+        // Owner looking for them here should be told where (ADR-070).
+        <Typography variant="body2">
+          {intl.formatMessage(
+            {
+              id: 'account.export.organization',
+              defaultMessage:
+                'This is your own data. Everything {organization} holds is downloaded from <link>Settings → Organization</link>.',
+            },
+            {
+              organization: organization.name,
+              link: (chunks) => (
+                <Link
+                  underline="always"
+                  component={RouterLink}
+                  to="/settings/organization"
+                >
+                  {chunks}
+                </Link>
+              ),
+            },
+          )}
+        </Typography>
+      )}
+
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
         <Button variant="outlined" onClick={() => void exportData()}>
           {intl.formatMessage({
@@ -160,7 +232,7 @@ export function LeaveOrDelete() {
           <Button
             variant="outlined"
             color="error"
-            onClick={openDialog(() => setDialog('delete'))}
+            onClick={openDialog(() => void askToDelete())}
           >
             {deleteAccount}
           </Button>
@@ -218,6 +290,13 @@ export function LeaveOrDelete() {
           }
         />
       </Dialog>
+
+      <CloseOrganizationDialog
+        open={dialog === 'both'}
+        alone
+        onClose={() => setDialog(null)}
+        onScheduled={() => undefined}
+      />
 
       <Dialog
         open={dialog === 'delete'}

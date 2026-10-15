@@ -1,9 +1,9 @@
-# web-app-foundation — handoff, 12 October 2026
+# web-app-foundation — handoff, 15 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 12 October 2026: read this first
+## Now, 15 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
@@ -16,11 +16,16 @@ with this one, this one is current.
   lookup, the gallery's zooming viewer, and the invoice refusals' links to
   Organization → Profile and to the customer (`invoice-refusal-link`,
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
-  "Error codes"). PRs through #87.
-- **Migrations:** through **0056** on `main` once #114 merges (0055 and
-  0056 are ADR-069's); Render holds **55** rows in
-  `drizzle.__drizzle_migrations` until it deploys. Next is **0057**.
-  After any new migration: `npm run migrate:all`.
+  "Error codes"). Since then, through #114: ADR-067 to ADR-069 below.
+- **Migrations:** through **0056** on `main`, 57 files in
+  `server/src/database/migrations/` (0055 and 0056 are ADR-069's, merged
+  with #114). **0057 to 0061** are ADR-070's, on its branch: the deletion
+  day, the reminder, and whose account goes with it (0059 put it on the
+  organization, 0060 moved it to the account, 0061 added its check and
+  the trigger that clears it when a membership ends). Next is **0062**.
+  Render holds one row per file in `drizzle.__drizzle_migrations` once
+  `main` is deployed there: 57, then 62. After any new migration:
+  `npm run migrate:all`.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
   for typescript-eslint and the Nest CLI (ADR-067, *Deferred*).
@@ -29,7 +34,7 @@ with this one, this one is current.
   (`invoice-tax-number`, MC-711). Tax profiles by country are deferred in
   the same amendment, until the first customer or legal entity outside
   Canada.
-- **ADR-068** (#19): phase 1 on `adr-068-openapi`. The server writes
+- **ADR-068** (#19): merged; phase 1 was built on `adr-068-openapi`. The server writes
   `server/openapi.json`, the client's types are generated from it into
   `client/src/api/`, the four shared lists come from them, and one contract
   check in CI and `scripts/verify.sh` replaces the four copy checks. After
@@ -75,30 +80,61 @@ with this one, this one is current.
   the server answering anyone. It now reads the prolog one item at a
   time. `ci.yml` and `perf.yml` declare `contents: read`.
   `@scarf/scarf`'s install script, from `swagger-ui-dist`, is denied in
-  `allowScripts`, and `scarfSettings` turns its reporting off. The four
-  Dependabot alerts are dismissed, not fixed: js-yaml, pinned upstream by
-  the type generator, is dev-only and reads only our own spec; esbuild's
-  flaw is in a dev server drizzle-kit never starts. Neither has a fixed
-  parent release, and ADR-019 rules out overrides.
-- **ADR-069** (`adr-069-account-deletion`): leaving an organization,
-  deleting your account after 30 days, and exporting your own data.
+  `allowScripts`, and `scarfSettings` turns its reporting off. Dependabot's
+  alerts and `npm audit`'s findings are left open on purpose: all
+  dev-only, and none fixed in a release of the package that brings it in.
+  js-yaml sits under the type generator, which reads only our own spec;
+  esbuild under drizzle-kit, in a dev server it never starts; braces under
+  eslint-plugin-check-file, given patterns only from our own lint config
+  (Dependabot dismissed that alert itself). They close when those
+  packages ship fixed dependencies. `npm audit fix --force` would
+  downgrade drizzle-kit and the generator instead, and ADR-019 rules out
+  overrides.
+- **ADR-069** (`adr-069-account-deletion`, merged in #114): leaving an
+  organization, deleting your account after 30 days, and exporting your
+  own data.
   Only the person deletes their account; an Owner removes a member. The
   only member of an organization, and its only Owner while others
   remain, can do neither (`only_member`, `last_owner_with_members`).
   The deletion day is a calendar day, completed once it has ended in
   every time zone; `AccountDeletionTimer` runs at startup and hourly,
   cancelling a deletion a block now applies to. Migrations 0055 and
-  0056. A block in another organization waits for invitations (ADR-069,
-  *Deferred*).
-- **Next:** organization deletion, ADR-069's deferral. Its trigger, the
-  first paying customer, is near, and until it exists a person alone in
-  their organization, which is everyone who registers, cannot delete
-  their account.
-- **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),
-  a GitHub pre-release; its tag ran the Performance workflow's full
-  budgets. v0.7.0 follows once those pass and the release candidate has
-  run in production for a few days, with its notes in `docs/releases/`.
-  Those notes list the SVG upload fix from #113, which rc.1 lacks.
+  0056. Waiting on their triggers (ADR-069, *Deferred*): invitations
+  (ADR-006), and with them switching between organizations, which a
+  block in another organization needs; and accounts an organization owns,
+  through single sign-on.
+- **ADR-070** (`adr-070-organization-deletion`, built, PR to open):
+  closing an organization. Any Owner, with the password and the
+  organization's name typed, after a full export (a ZIP: a CSV per table
+  it owns, `members.csv`, `role_permissions.csv`, the files) taken in the
+  last 24 hours, or a decline. Thirty days, cancellable by any Owner
+  until the day has ended everywhere; a banner for every member (hidden
+  for today, never in the last week or once under way); every member
+  emailed when it is scheduled, 7 days before, cancelled and done. Then
+  the timer erases the files, moves the members' sessions, and deletes
+  the audit log and the organization, every table it owns following by
+  cascade. The only member deletes both in one step, recorded on the
+  account (`users.deletion_with_organization_id`, cleared with the
+  account's day, and by a trigger when the membership ends), the
+  organization first. The session says where a
+  deletion stands, `deletionStage`, on the server's UTC day.
+  Backups keep it until they age out and never bring it back (ADR-069
+  says the same). The service lives in `core/auth` beside account
+  deletion; the export in `core/organizations`, through `TenantDb`, its
+  transaction ending once the last table is read. The branch also holds
+  its chores: read-only commands for Claude Code, the review skill's
+  labelled findings, one `HourlyTimer` (ADR-059 amended), in-range
+  dependency updates, the refusal-code rule in CLAUDE.md and the review
+  skill brought to `error-codes.ts`'s (inside the manual-checks commit),
+  and the session's three reads together. Manual checks MC-2401 to
+  MC-2406. Three ADR-070 amendments were committed after the code they
+  describe; the PR description says which.
+- **Release:** **v0.7.0-rc.2** is tagged on `main` at #114's merge, a
+  GitHub pre-release whose notes list the SVG upload fix from #113, which
+  rc.1 (after #93, Nest 12) lacks. The Performance workflow its tag
+  started passed on 14 October 2026. Next: let it run in production for
+  a few days, then tag v0.7.0, with its notes in
+  `docs/releases/v0.7.0.txt`, listing the SVG fix too.
   v0.6.0 and v0.5.0's notes are the GitHub releases and `docs/releases/`.
   Release notes are release notes only: they say nothing of manual checks
   or the walkthrough.
@@ -114,7 +150,12 @@ with this one, this one is current.
 
 ### Still to do, by hand
 
-- **Render:** done on 13 October 2026. The free database was deleted and
+- **Render's free database expires on 12 November 2026.** Move to a paid
+  database, or create a free one again, empty, by the steps in
+  `docs/runbooks/render.md`. Before any real customer: a paid database and
+  web service, backups to the Canadian bucket, and every development
+  secret replaced (the runbook's "Before real customers' data"). Done on
+  13 October 2026: the free database was deleted and
   created again, which retired the password pasted in a chat and left no
   older rows for the pinyin backfill; 55 migrations applied; the
   environment's keys checked, with `MAIL_USER` and `MAIL_PASSWORD` removed
@@ -123,20 +164,74 @@ with this one, this one is current.
   file under a `waf-files/` folder inside the bucket. Corrected to the
   account's address alone, the stray folder deleted, the logo uploaded
   again to `<organization id>/…`, and GitHub's `BACKUP_S3_ENDPOINT` set
-  again the same way. The server now refuses such an endpoint at boot. The
-  new free database **expires on 12 November 2026**; replacing it, and what
-  changes before real data, are in `docs/runbooks/render.md`.
+  again the same way. The server now refuses such an endpoint at boot.
+- **Before v0.7.0:** walk sections 23 and 24 of `docs/manual-checks.md`
+  (MC-2301 to MC-2303, leaving and deleting; MC-2401 to MC-2406, closing
+  an organization); have the French and Chinese
+  wording checked by someone fluent (MC-1405); edit `docs/principles.md`
+  until it reads as Bob's.
 - **Manual checks due:** MC-1601 and MC-1602 (an upload in R2, the
   nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
   MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
   photos and 同事 on a phone.
-- **Issues:** #17, #26 and #28 are closed.
+- **Try `/usability-walkthrough`** on the deletion flows (ADR-069 and
+  ADR-070), as the novice bookkeeper reading Chinese, and show the
+  close dialog to someone who reads only Chinese (MC-2406).
+- **Open issues:** #16 (licence status for suspended, cancelled and
+  superseded), #18 (site licences), #25 (what the customer kept), #33 (one
+  hook for Load more keyset paging) and #41 (an organization's time zone
+  for today). `gh issue list` to review.
 - **Branches:** prune the merged ones (`scripts/prune-branches.sh`).
 
 ### Still to do, in code
 
 - **The typo lookup** sits at 270 ms of its 300 ms budget; one query per
   pass if it ever fails.
+- **An MUI warning,** logged twice by the Playwright run: "children must
+  be passed when using the TextField component with select". Harmless;
+  most likely the link-return dialog's select, which has no items while
+  its returns load (`client/src/rmas/link-return-dialog.tsx`). Fix it
+  when that screen is next touched.
+- **Targeted reviews, report only:** `server/src/core/files` and
+  `server/src/modules/invoices` at any quiet moment; `server/src/core/auth`
+  after ADR-070 lands.
+- **ADR-070, small and waiting:**
+  - From the walkthrough in Chinese, two decisions for before the first
+    customer: the export's CSVs carry English database names
+    (`bill_to_name`, `tax_total`), Postgres's own timestamps and audit
+    actions such as `user.created`, which a novice gives up on, so a
+    column glossary for the main tables in the README; and the ZIP has no
+    PDFs of the invoices and credit notes as issued, which a bookkeeper
+    expects to keep, so whether the export adds them.
+  - Older than ADR-070, found by the same walkthrough: the Account
+    page shows 简体中文 as chosen when no language is set, and Save stays
+    off, so it cannot be saved (a colleague's emails then go out in
+    English); the wrong-password message says nothing of what to do next,
+    and its field is not marked invalid; the app shell has no main
+    landmark and no skip link, so a keyboard user presses Tab 24 times to
+    reach the page (WCAG 2.4.1); and the Account page's recent activity
+    stays stale until a reload.
+  - Two narrow windows during completion: a cancel committing in the
+    second of the cutoff, after the run erased the files but before it
+    took the lock, keeps an organization whose files are gone; and an
+    upload between its row and its bytes can leave bytes no purge finds.
+    Closing both means a "deletion started" mark taken under the lock
+    before the files are erased. Each window is about a second wide.
+  - CLAUDE.md's reading list leaves out `docs/manual-checks.md`, and its
+    rules leave out the same-commit rule for manual checks; README.md's
+    note on `UNSAFE_GLOBAL_DB` calls the list closed, though eslint on
+    `main` allows more. One small docs chore.
+  - The export's README follows the browser's language, since a plain
+    link cannot send the app's; a `?locale=` on the link if anyone minds.
+  - About 20 foreign keys under an organization have no index, so the
+    cascade that deletes one may scan whole tables. It runs in the timer,
+    not a request; `EXPLAIN ANALYZE` a deletion on `seed:volume` before
+    the first large customer.
+  - Playwright in CI could run against `vite build` and `vite preview`
+    rather than the dev server: the shipped files, and no page reload
+    when the dev server meets a new dependency mid-run, as it did once
+    locally with a stale server. A chore of its own, since it lengthens
+    CI.
 
 ### Deferred, each waiting for its trigger (in the ADRs)
 
@@ -149,7 +244,6 @@ with this one, this one is current.
 - Sessions: lock screen and switch user with a PIN, for a native app or
   shared scanners, handhelds or kiosks; a maximum session length
   (ADR-065).
-- Open decisions: leaving or deleting an organization.
 
 ## Where things stand
 
@@ -811,24 +905,9 @@ display-name test, or wait a minute between runs.
 
 ## Open GitHub issues
 
-- #16 licence status for suspended, cancelled, superseded
-- #17 licence expiry notification — done (ADR-064), closed by PR #81
-- #18 site licences on the organization or a partner. ADR-050's amendment
-  sketches where it is heading: one register of credentials with a type
-  and what it applies to — site licences gating making at a site,
-  wholesale licences gating shipment, business licences only reminded.
-- #19 generated client types from OpenAPI (would also replace the client's
-  copied permission list)
-- #20 `date` column for calendar days — done (ADR-052), closed by PR #40
-- #25 show what the customer kept (shipped − returned)
-- #26 cancel check and update are not one transaction — fixed on
-  `fixes-orders-runs`: an order's header change runs in one transaction on
-  the order row, locked by `loadOrder`, which every line and stock change
-  to an order already goes through
-- #28 run-close top-up ignores holds and the lots picked at release —
-  fixed on `fixes-orders-runs`: the top-up is checked against holds like
-  release (ADR-045), and continues the lots release issued before opening
-  the next to expire (ADR-039 amended)
+Listed in the Now section, under "Still to do, by hand"; `gh issue list`
+for the current state. Where #18, site licences, is heading is sketched
+in ADR-050's amendment.
 
 ## Left over, small
 

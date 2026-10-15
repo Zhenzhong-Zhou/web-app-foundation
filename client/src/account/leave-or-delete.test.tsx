@@ -44,6 +44,53 @@ describe('LeaveOrDelete', () => {
     expect(refresh).toHaveBeenCalled();
   });
 
+  it('deletes the account alone once the organization is going alone', async () => {
+    renderWithAuth(
+      <MemoryRouter>
+        <LeaveOrDelete />
+      </MemoryRouter>,
+      {
+        permissions: ['users.view'],
+        organization: { deletionScheduledAt: '2026-11-14' },
+      },
+    );
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Delete my account' }),
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'Delete your account?' }),
+    ).toBeInTheDocument();
+  });
+
+  it('deletes the organization with the account, for its only member', async () => {
+    server.use(
+      http.get('/api/v1/users', () => HttpResponse.json([{ id: 'user-1' }])),
+      http.get('/api/v1/organization', () =>
+        HttpResponse.json({
+          organization: { name: 'Alpha Co', lastExport: null },
+        }),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter>
+        <LeaveOrDelete />
+      </MemoryRouter>,
+      { permissions: ['users.view'] },
+    );
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Delete my account' }),
+    );
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Delete your account and Alpha Co?',
+      }),
+    ).toBeInTheDocument();
+  });
+
   it('shows the refusal with the way past it, on Members', async () => {
     server.use(
       http.delete('/api/v1/account/membership', () =>
@@ -159,5 +206,27 @@ describe('DeletionBanner', () => {
     expect(
       screen.getByRole('button', { name: 'Keep my account' }),
     ).toBeEnabled();
+  });
+
+  it('says both, and keeps both, while working elsewhere', async () => {
+    const cancelled: string[] = [];
+    server.use(
+      http.delete('/api/v1/account/deletion', () => {
+        cancelled.push('account');
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderWithAuth(<DeletionBanner />, {
+      user: {
+        deletionScheduledAt: '2026-11-14',
+        deletionWithOrganization: { id: 'org-2', name: 'Beta Co' },
+      },
+    });
+
+    expect(
+      screen.getByText(/Your account and Beta Co will be deleted after/),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Keep both' }));
+    expect(cancelled).toEqual(['account']);
   });
 });

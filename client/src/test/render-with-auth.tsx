@@ -25,6 +25,7 @@ export function renderWithAuth(
   {
     permissions = [] as string[],
     user = {} as Partial<CurrentSession['user']>,
+    organization = {} as Partial<NonNullable<CurrentSession['organization']>>,
     refresh = () => Promise.resolve(),
   } = {},
 ) {
@@ -50,6 +51,10 @@ export function renderWithAuth(
           expiryWarningDays: 90,
           expiryCriticalDays: 30,
         },
+        deletionScheduledAt: null,
+        // Scheduled, as the server would say, whenever a spec sets a day.
+        deletionStage: organization.deletionScheduledAt ? 'scheduled' : null,
+        ...organization,
       },
       // Specs list permissions as plain strings; the session holds them
       // as the server's names (ADR-068).

@@ -19,6 +19,10 @@ export function DeletionBanner() {
 
   const due = session?.user.deletionScheduledAt;
   if (!due) return null;
+  // Deleted with an organization, as its only member (ADR-070). Working in
+  // it, its banner says both and keeps both; anywhere else, this one does.
+  const together = session.user.deletionWithOrganization;
+  if (together && together.id === session.organization?.id) return null;
 
   return (
     <Alert
@@ -34,21 +38,35 @@ export function DeletionBanner() {
             void submit(() => api('/account/deletion', { method: 'DELETE' }))
           }
         >
-          {intl.formatMessage({
-            id: 'account.deletion.keep',
-            defaultMessage: 'Keep my account',
-          })}
+          {together
+            ? intl.formatMessage({
+                id: 'settings.banner.keepBoth',
+                defaultMessage: 'Keep both',
+              })
+            : intl.formatMessage({
+                id: 'account.deletion.keep',
+                defaultMessage: 'Keep my account',
+              })}
         </Button>
       }
     >
-      {intl.formatMessage(
-        {
-          id: 'account.deletion.banner',
-          defaultMessage:
-            'Your account will be deleted after {date}. Until then you can keep it.',
-        },
-        { date: formatDay(due) },
-      )}
+      {together
+        ? intl.formatMessage(
+            {
+              id: 'account.deletion.bannerWith',
+              defaultMessage:
+                'Your account and {organization} will be deleted after {date}. Until then you can keep both.',
+            },
+            { date: formatDay(due), organization: together.name },
+          )
+        : intl.formatMessage(
+            {
+              id: 'account.deletion.banner',
+              defaultMessage:
+                'Your account will be deleted after {date}. Until then you can keep it.',
+            },
+            { date: formatDay(due) },
+          )}
       {error && <Box sx={{ mt: 1 }}>{error}</Box>}
     </Alert>
   );

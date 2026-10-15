@@ -884,6 +884,66 @@ await fetch(`${api}/v1/files/product-image`, {
   its old entries and "Account deleted", and the email can register a
   new account.
 
+## 24. Closing an organization (ADR-070)
+
+- **MC-2401** As an Owner, Organization → Profile ends with Download
+  everything and Close this organization; as an Admin or a Viewer, the tab
+  ends at the registered address. Download everything saves
+  `<organization>-export-<day>.zip` straight to disk. Opened: a README in
+  the browser's language; `organization.csv`, `members.csv`,
+  `role_permissions.csv` and a CSV per kind of record, each opening in
+  Excel or Numbers with Chinese and French names readable; invoices and
+  credit notes with their lines and tax; `files/` with the logo and
+  product images. Back on the page, the section says "Last downloaded …
+  by you", and History shows "Everything exported". Have a colleague with
+  your name download it too: the section names them, not "you". In 中文,
+  with the browser left in English, the README reads in Chinese.
+- **MC-2402** Close this organization…: Close organization is off, and
+  the line under it says what is still needed. It stays off until the
+  export is fresh or "I don't need a copy" is ticked, the name is
+  typed exactly, and the password is typed. With the last export moved
+  two days back (`update audit_log set created_at = now() - interval
+  '2 days' where action = 'organization.exported'`), the dialog names it
+  and asks to download again. A wrong password is refused. Confirmed: the
+  banner names the day 30 days ahead "(in 30 days)" on every page, with
+  Download everything and Cancel deletion; Mailpit has an email for every
+  member in their own language, the Owners' telling them to download
+  again, everyone else's that their account stays.
+- **MC-2403** As a member, the banner says an Owner asked, with nothing
+  to press but ×. × hides it until tomorrow in this browser only: a reload
+  keeps it hidden, another browser shows it. With the day 7 days ahead
+  (`update organizations set deletion_scheduled_at = current_date + 7`),
+  the banner has no ×, and after a server restart Mailpit has "Reminder:
+  … will be deleted after" for every member, once. As a second Owner,
+  Cancel deletion: the banner goes for everyone, and every member is
+  emailed that it will not be deleted.
+- **MC-2404** Schedule it again, then move the day two days back
+  (`update organizations set deletion_scheduled_at = current_date - 2`):
+  the banner turns red, says it is being deleted, and offers nothing;
+  Profile says it can no longer be cancelled. Restart the server, which
+  completes deletions at startup: the organization is gone, its folder
+  under `server/storage/` is gone, every member got "has been deleted",
+  and a member who belonged to it alone is still signed in, to no
+  organization, and can download their own data.
+- **MC-2405** Register a new organization. Account → Delete my account
+  opens "Delete your account and … ?", ending in Delete both. Confirmed:
+  one banner says both will go, with Keep both, and your other browser is
+  signed out. Keep both, from the banner or from the Account page, keeps
+  both. Delete both again, add a colleague as Owner, and have them cancel:
+  you are emailed that your account will not be deleted either. Delete
+  both once more, move both days two days back (`update organizations set
+  deletion_scheduled_at = current_date - 2` and the same on `users`), and
+  restart: the organization goes, then your account; signing in fails,
+  and the email can register again. Then the unlinking: Delete both, add a
+  colleague as Owner, and leave the organization (or have them remove
+  you, or make you a Viewer and then press Keep my account). Your
+  account's own deletion stands on its day, the organization's deletion
+  stands too, and nobody else's cancel touches your account.
+- **MC-2406** In 中文, on a phone: the Profile sections, the dialog with
+  its three steps, the banner and every email read in Chinese, and the
+  dialog fits the screen with its buttons reachable. Show it to someone
+  who reads only Chinese, and ask them to find how to cancel.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -1022,3 +1082,9 @@ first.
 - 2026-10-14: ADR-054, the password change and the deletion emails in the
   language of the request for an account with none chosen: MC-1414
   extended.
+- 2026-10-15: ADR-070, closing an organization: section 24, MC-2401 to
+  MC-2406.
+- 2026-10-15: MC-2401 says "by you" and checks the README's language;
+  MC-2405 adds an only member who leaves, is removed or is demoted.
+- 2026-10-15: section 24 reads "I don't need a copy", after the
+  walkthrough in Chinese.
