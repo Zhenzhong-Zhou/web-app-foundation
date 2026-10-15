@@ -4,6 +4,11 @@ export type ClientOptions = {
   baseUrl: string;
 };
 
+export type DeletionOrganization = {
+  id: string;
+  name: string;
+};
+
 export type SessionUser = {
   id: string;
   email: string;
@@ -12,6 +17,7 @@ export type SessionUser = {
   locale: 'en' | 'fr-CA' | 'zh-Hans' | null;
   photoFileId?: string | null;
   deletionScheduledAt?: string | null;
+  deletionWithOrganization?: DeletionOrganization | null;
 };
 
 export type OrganizationBranding = {
@@ -30,7 +36,6 @@ export type SessionOrganization = {
   branding: OrganizationBranding;
   deletionScheduledAt: string | null;
   deletionStage: 'scheduled' | 'lastWeek' | 'underWay' | null;
-  deletionWithAccount: boolean;
 };
 
 export type CurrentSession = {

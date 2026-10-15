@@ -166,17 +166,9 @@ export class AccountDeletionService {
             eq(memberships.organizationId, organizationId),
           ),
         );
-      // An account deleted with this organization no longer goes with it:
-      // its own deletion stands, on its own day (ADR-070).
-      await tx
-        .update(users)
-        .set({ deletionWithOrganizationId: null })
-        .where(
-          and(
-            eq(users.id, context.userId),
-            eq(users.deletionWithOrganizationId, organizationId),
-          ),
-        );
+      // An account deleted with this organization lets go of it here, by
+      // the trigger on memberships (migration 0061), as when an Owner
+      // removes a member: its own deletion stands, on its own day.
 
       // The oldest membership left, as signing in picks one.
       const [next] = await tx

@@ -203,6 +203,7 @@ export {
   type CurrentSession,
   type DeleteAccountDto,
   type DeleteOrganizationDto,
+  type DeletionOrganization,
   type DeletionScheduled,
   type DuplicateOrderDto,
   type ErrorBody,

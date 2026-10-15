@@ -7098,6 +7098,21 @@
   "servers": [],
   "components": {
     "schemas": {
+      "DeletionOrganization": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
       "SessionUser": {
         "type": "object",
         "properties": {
@@ -7135,6 +7150,16 @@
             "type": [
               "string",
               "null"
+            ]
+          },
+          "deletionWithOrganization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeletionOrganization"
+              },
+              {
+                "type": "null"
+              }
             ]
           }
         },
@@ -7219,9 +7244,6 @@
               "underWay",
               null
             ]
-          },
-          "deletionWithAccount": {
-            "type": "boolean"
           }
         },
         "required": [
@@ -7230,8 +7252,7 @@
           "roleId",
           "branding",
           "deletionScheduledAt",
-          "deletionStage",
-          "deletionWithAccount"
+          "deletionStage"
         ]
       },
       "CurrentSession": {

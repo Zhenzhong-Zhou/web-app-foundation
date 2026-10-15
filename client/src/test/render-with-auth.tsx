@@ -54,7 +54,6 @@ export function renderWithAuth(
         deletionScheduledAt: null,
         // Scheduled, as the server would say, whenever a spec sets a day.
         deletionStage: organization.deletionScheduledAt ? 'scheduled' : null,
-        deletionWithAccount: false,
         ...organization,
       },
       // Specs list permissions as plain strings; the session holds them

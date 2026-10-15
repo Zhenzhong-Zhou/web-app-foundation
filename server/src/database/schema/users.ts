@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   type AnyPgColumn,
+  check,
   date,
   index,
   pgTable,
@@ -61,9 +62,10 @@ export const users = pgTable(
     /**
      * The organization this account's deletion goes with, when its only
      * member deleted both in one step (ADR-070, amended). The account's,
-     * not the organization's: set and cleared with the account's day, so
-     * no cancel, completion or leaving can strand it, and cleared by the
-     * database when the organization is deleted.
+     * not the organization's: set and cleared with the account's day, and
+     * the database holds the rest: never without a day (the check below),
+     * cleared when the membership ends, however it ends (a trigger in
+     * migration 0061), and when the organization is deleted.
      */
     deletionWithOrganizationId: uuid(
       'deletion_with_organization_id',
@@ -85,5 +87,10 @@ export const users = pgTable(
     index('users_deletion_with_organization_id_idx')
       .on(t.deletionWithOrganizationId)
       .where(sql`${t.deletionWithOrganizationId} is not null`),
+    // An account goes with an organization only while it is going at all.
+    check(
+      'users_deletion_with_organization_check',
+      sql`${t.deletionWithOrganizationId} is null or ${t.deletionScheduledAt} is not null`,
+    ),
   ],
 );

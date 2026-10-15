@@ -65,6 +65,8 @@ export interface CurrentSession {
      * page says so.
      */
     deletionScheduledAt?: string | null;
+    /** The organization the account's deletion goes with (ADR-070). */
+    deletionWithOrganization?: { id: string; name: string } | null;
   };
   /** Null when the caller belongs to no organization — see SessionGuard. */
   organization: {
@@ -83,7 +85,6 @@ export interface CurrentSession {
     /** The deletion day while one is pending, and where it stands (ADR-070). */
     deletionScheduledAt: string | null;
     deletionStage: DeletionStage | null;
-    deletionWithAccount: boolean;
   } | null;
   /** Empty when there is no organization: permissions come from a role. */
   permissions: Permission[];
@@ -370,8 +371,13 @@ export class AuthService implements OnModuleInit {
         photoFileId: users.photoFileId,
         deletionScheduledAt: users.deletionScheduledAt,
         deletionWithOrganizationId: users.deletionWithOrganizationId,
+        deletionWithOrganizationName: organizations.name,
       })
       .from(users)
+      .leftJoin(
+        organizations,
+        eq(organizations.id, users.deletionWithOrganizationId),
+      )
       .where(eq(users.id, context.userId));
 
     // A valid session pointing at no user should be impossible — sessions
@@ -389,6 +395,13 @@ export class AuthService implements OnModuleInit {
         locale: user.locale,
         photoFileId: user.photoFileId,
         deletionScheduledAt: user.deletionScheduledAt,
+        deletionWithOrganization:
+          user.deletionWithOrganizationId && user.deletionWithOrganizationName
+            ? {
+                id: user.deletionWithOrganizationId,
+                name: user.deletionWithOrganizationName,
+              }
+            : null,
       },
       idleLimitMs: context.idleLimitMs,
     };
@@ -435,8 +448,6 @@ export class AuthService implements OnModuleInit {
         },
         deletionScheduledAt: organization.deletionScheduledAt,
         deletionStage: deletionStageOf(organization.deletionScheduledAt),
-        deletionWithAccount:
-          user.deletionWithOrganizationId === context.organizationId,
       },
       permissions,
     };

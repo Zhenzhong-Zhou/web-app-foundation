@@ -73,7 +73,9 @@ export function OrganizationDeletionBanner() {
   }
 
   const when = dayWithDaysLeft(intl, day);
-  const together = organization.deletionWithAccount;
+  // The account goes with this organization, as its only member chose.
+  const together =
+    session.user.deletionWithOrganization?.id === organization.id;
   const isOwner = can('organizations.delete');
   // Hidden for today only while merely scheduled: not in its last week.
   const hideable = organization.deletionStage === 'scheduled';

@@ -23,6 +23,18 @@ export class SessionUser {
    * page says so.
    */
   deletionScheduledAt?: string | null;
+  /**
+   * The organization this account's deletion goes with, when its only
+   * member deleted both in one step (ADR-070, amended): the account's,
+   * whichever organization the session is working in.
+   */
+  deletionWithOrganization?: DeletionOrganization | null;
+}
+
+/** An organization an account's deletion goes with. */
+export class DeletionOrganization {
+  id!: string;
+  name!: string;
 }
 
 /** The organization's look, applied on load (ADR-060). */
@@ -57,11 +69,6 @@ export class SessionOrganization {
    * longer be cancelled. Null with no deletion pending.
    */
   deletionStage!: DeletionStage | null;
-  /**
-   * The person's account goes with it, as its only member chose: one
-   * banner says both, and keeping either keeps both (ADR-070).
-   */
-  deletionWithAccount!: boolean;
 }
 
 /** GET /auth/me: everything the app needs to start. */

@@ -120,8 +120,11 @@ describe('OrganizationDeletionBanner', () => {
     );
     renderWithAuth(<OrganizationDeletionBanner />, {
       permissions: OWNER,
-      user: { deletionScheduledAt: day },
-      organization: { deletionScheduledAt: day, deletionWithAccount: true },
+      user: {
+        deletionScheduledAt: day,
+        deletionWithOrganization: { id: 'org-1', name: 'Alpha Co' },
+      },
+      organization: { deletionScheduledAt: day },
     });
 
     expect(

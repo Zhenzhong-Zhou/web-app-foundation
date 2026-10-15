@@ -48,12 +48,15 @@ interface Refusal {
 }
 
 interface Me {
-  user: { id: string; deletionScheduledAt?: string | null };
+  user: {
+    id: string;
+    deletionScheduledAt?: string | null;
+    deletionWithOrganization?: { id: string; name: string } | null;
+  };
   organization: {
     id: string;
     deletionScheduledAt: string | null;
     deletionStage: 'scheduled' | 'lastWeek' | 'underWay' | null;
-    deletionWithAccount: boolean;
   } | null;
 }
 
@@ -742,7 +745,7 @@ describe('Organization deletion (e2e)', () => {
       expect(session.user.deletionScheduledAt).toBe(
         session.organization?.deletionScheduledAt,
       );
-      expect(session.organization?.deletionWithAccount).toBe(false);
+      expect(session.user.deletionWithOrganization).toBeNull();
       expect(mail.lastTo('member@alpha.example.com')?.text).toContain(
         'Your account stays',
       );
@@ -755,9 +758,10 @@ describe('Organization deletion (e2e)', () => {
     it('keeps both for the only member, even once others have joined', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await both(alpha);
-      expect((await me(alpha.agent)).organization?.deletionWithAccount).toBe(
-        true,
-      );
+      expect((await me(alpha.agent)).user.deletionWithOrganization).toEqual({
+        id: alpha.organizationId,
+        name: ALPHA,
+      });
       const second = await addMember(
         app,
         alpha,
@@ -793,6 +797,40 @@ describe('Organization deletion (e2e)', () => {
         .from(organizations)
         .where(eq(organizations.id, alpha.organizationId));
       expect(organization.day).not.toBeNull();
+    });
+
+    it('lets go of the organization when an Owner removes the person', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await both(alpha);
+      const second = await addMember(
+        app,
+        alpha,
+        'second@alpha.example.com',
+        'Owner',
+      );
+
+      await second.delete(`/v1/users/${alpha.userId}`).expect(204);
+      expect((await me(alpha.agent)).user.deletionWithOrganization).toBeNull();
+
+      // Cancelling the organization no longer touches the removed person's
+      // account: it stays scheduled, and nobody tells them otherwise.
+      mail.reset();
+      await second.delete('/v1/organization/deletion').expect(204);
+      expect((await me(alpha.agent)).user.deletionScheduledAt).not.toBeNull();
+      expect(mail.lastTo(alpha.email)).toBeUndefined();
+    });
+
+    it('never links an account that is not going', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+
+      await expect(
+        db
+          .update(users)
+          .set({ deletionWithOrganizationId: alpha.organizationId })
+          .where(eq(users.id, alpha.userId)),
+      ).rejects.toMatchObject({
+        cause: { constraint: 'users_deletion_with_organization_check' },
+      });
     });
 
     it('is refused with others in the organization', async () => {
