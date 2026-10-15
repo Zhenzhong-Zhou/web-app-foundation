@@ -16,10 +16,7 @@ import {
 import { type ReactNode, type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import type {
-  OrganizationLastExport,
-  OrganizationProfile,
-} from '../api/types.gen';
+import type { OrganizationProfile } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -160,8 +157,7 @@ export function CloseOrganizationDialog({
 
   const organizationName = organization?.name ?? session?.organization?.name;
   const day = dayWithDaysLeft(intl, deletionDayFrom(new Date()));
-  const byWhom = (exported: OrganizationLastExport) =>
-    exportedBy(intl, exported, session?.user.id);
+  const who = last ? exportedBy(intl, last, session?.user.id) : null;
   const confirmLabel = alone
     ? intl.formatMessage({
         id: 'settings.deletion.confirmBoth',
@@ -271,7 +267,7 @@ export function CloseOrganizationDialog({
                       id: 'settings.deletion.downloaded',
                       defaultMessage: 'Downloaded {when}, by {who}',
                     },
-                    { when: formatWhen(last.exportedAt), who: byWhom(last) },
+                    { when: formatWhen(last.exportedAt), who },
                   )}
                 </Typography>
               ) : (
@@ -286,7 +282,7 @@ export function CloseOrganizationDialog({
                         },
                         {
                           when: formatWhen(last.exportedAt),
-                          who: byWhom(last),
+                          who,
                         },
                       )}
                     </Typography>

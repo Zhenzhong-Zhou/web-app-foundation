@@ -144,6 +144,7 @@ function CloseOrganization({
   const organization = session?.organization;
   if (!organization) return null;
   const day = organization.deletionScheduledAt;
+  const underWay = organization.deletionStage === 'underWay';
 
   return (
     <Paper
@@ -163,7 +164,7 @@ function CloseOrganization({
         {day ? (
           <>
             <Typography>
-              {organization.deletionStage === 'underWay'
+              {underWay
                 ? intl.formatMessage(
                     {
                       id: 'settings.close.underWay',
@@ -182,7 +183,7 @@ function CloseOrganization({
                   )}
             </Typography>
             {cancelling.error && <FormError message={cancelling.error} />}
-            {organization.deletionStage !== 'underWay' && (
+            {!underWay && (
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
                   variant="outlined"
