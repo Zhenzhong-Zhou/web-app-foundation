@@ -29,12 +29,12 @@ import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { provisionOrganization } from '../organizations/provision-organization';
 import { uniqueSlug } from '../organizations/slug';
-import { endedEverywhere } from './account-deletion.service';
 import { AccountEventService } from './account-event.service';
 import { AuthTokenService } from './auth-token.service';
+import type { DeletionStage } from './dto/auth-response.dto';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
-import { inLastWeek } from './organization-deletion.service';
+import { deletionStageOf } from './organization-deletion.service';
 import { PasswordService } from './password.service';
 import type { RequestContext } from './request-context';
 import { type NewSession, SessionService } from './session.service';
@@ -82,8 +82,7 @@ export interface CurrentSession {
     };
     /** The deletion day while one is pending, and whether it is under way (ADR-070). */
     deletionScheduledAt: string | null;
-    deletionUnderWay: boolean;
-    deletionLastWeek: boolean;
+    deletionStage: DeletionStage | null;
     deletionWithAccount: boolean;
   } | null;
   /** Empty when there is no organization: permissions come from a role. */
@@ -370,6 +369,7 @@ export class AuthService implements OnModuleInit {
         locale: users.locale,
         photoFileId: users.photoFileId,
         deletionScheduledAt: users.deletionScheduledAt,
+        deletionWithOrganizationId: users.deletionWithOrganizationId,
       })
       .from(users)
       .where(eq(users.id, context.userId));
@@ -413,7 +413,6 @@ export class AuthService implements OnModuleInit {
           expiryWarningDays: organizations.expiryWarningDays,
           expiryCriticalDays: organizations.expiryCriticalDays,
           deletionScheduledAt: organizations.deletionScheduledAt,
-          deletionWithAccountOf: organizations.deletionWithAccountOf,
         })
         .from(organizations)
         .where(eq(organizations.id, context.organizationId)),
@@ -435,14 +434,9 @@ export class AuthService implements OnModuleInit {
           expiryCriticalDays: organization.expiryCriticalDays,
         },
         deletionScheduledAt: organization.deletionScheduledAt,
-        deletionUnderWay:
-          organization.deletionScheduledAt !== null &&
-          endedEverywhere(organization.deletionScheduledAt),
-        deletionLastWeek:
-          organization.deletionScheduledAt !== null &&
-          inLastWeek(organization.deletionScheduledAt),
+        deletionStage: deletionStageOf(organization.deletionScheduledAt),
         deletionWithAccount:
-          organization.deletionWithAccountOf === context.userId,
+          user.deletionWithOrganizationId === context.organizationId,
       },
       permissions,
     };

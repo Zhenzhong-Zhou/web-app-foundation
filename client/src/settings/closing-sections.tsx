@@ -155,7 +155,7 @@ function CloseOrganization({
         {day ? (
           <>
             <Typography>
-              {organization.deletionUnderWay
+              {organization.deletionStage === 'underWay'
                 ? intl.formatMessage(
                     {
                       id: 'settings.close.underWay',
@@ -174,7 +174,7 @@ function CloseOrganization({
                   )}
             </Typography>
             {cancelling.error && <FormError message={cancelling.error} />}
-            {!organization.deletionUnderWay && (
+            {organization.deletionStage !== 'underWay' && (
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
                   variant="outlined"

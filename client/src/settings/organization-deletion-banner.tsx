@@ -57,7 +57,7 @@ export function OrganizationDeletionBanner() {
     return null;
   }
 
-  if (organization.deletionUnderWay) {
+  if (organization.deletionStage === 'underWay') {
     return (
       <Alert severity="error" className="no-print">
         {intl.formatMessage(
@@ -75,7 +75,8 @@ export function OrganizationDeletionBanner() {
   const when = dayWithDaysLeft(intl, day);
   const together = organization.deletionWithAccount;
   const isOwner = can('organizations.delete');
-  const hideable = !organization.deletionLastWeek;
+  // Hidden for today only while merely scheduled: not in its last week.
+  const hideable = organization.deletionStage === 'scheduled';
   const hideLabel = intl.formatMessage({
     id: 'settings.banner.hide',
     defaultMessage: 'Hide for today',

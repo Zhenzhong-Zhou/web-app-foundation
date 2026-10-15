@@ -43,11 +43,11 @@ import { AccountService } from './account.service';
 import {
   AccountDeletionService,
   deletionDayFor,
-  endedEverywhere,
   type Executor,
   todayWhereDaysEndLast,
 } from './account-deletion.service';
 import type { DeletionMailContext } from './deletion-mail';
+import type { DeletionStage } from './dto/auth-response.dto';
 import type { DeleteOrganizationDto } from './dto/delete-organization.dto';
 import type { OrganizationDeletionScheduled } from './dto/organization-deletion-response.dto';
 import {
@@ -76,9 +76,19 @@ function lastWeekCutoff(now: Date): string {
   return todayUtc(new Date(now.getTime() + REMIND_DAYS_BEFORE * DAY));
 }
 
-/** Whether a deletion day is within its last 7 days. */
-export function inLastWeek(day: string, now: Date = new Date()): boolean {
-  return day <= lastWeekCutoff(now);
+/**
+ * Where a deletion stands (ADR-070, amended): under way once its day has
+ * ended everywhere, in its last week from the reminder on, scheduled
+ * before. One function, so the session, the reminder and the cancel
+ * cannot draw the lines differently.
+ */
+export function deletionStageOf(
+  day: string | null,
+  now: Date = new Date(),
+): DeletionStage | null {
+  if (!day) return null;
+  if (day < todayWhereDaysEndLast(now)) return 'underWay';
+  return day <= lastWeekCutoff(now) ? 'lastWeek' : 'scheduled';
 }
 
 /** One member as the emails need them, and what they are to it. */
@@ -124,7 +134,6 @@ export class OrganizationDeletionService {
     await this.account.confirmPassword(context.userId, dto.password);
 
     const now = new Date();
-    const withAccountOf = dto.deleteAccount ? context.userId : null;
     const outcome = await this.db.transaction(async (tx) => {
       const organization = await lockOrganization(tx, organizationId);
       if (organization.deletionScheduledAt) {
@@ -161,12 +170,17 @@ export class OrganizationDeletionService {
             }),
           );
         }
-        await this.accountDeletion.schedule(tx, context.userId, day);
+        await this.accountDeletion.schedule(
+          tx,
+          context.userId,
+          day,
+          organizationId,
+        );
       }
 
       await tx
         .update(organizations)
-        .set({ deletionScheduledAt: day, deletionWithAccountOf: withAccountOf })
+        .set({ deletionScheduledAt: day })
         .where(eq(organizations.id, organizationId));
       return { day, scheduled: true, name: organization.name } as const;
     });
@@ -183,7 +197,7 @@ export class OrganizationDeletionService {
       // Not awaited: the deletion has committed, and a slow mail provider
       // or a large team must not hold the answer (sendTo logs a failure).
       void this.tell(
-        await membersOf(this.db, organizationId, withAccountOf),
+        await membersOf(this.db, organizationId),
         context,
         (mail, member) =>
           organizationDeletionScheduledMail(
@@ -218,12 +232,26 @@ export class OrganizationDeletionService {
    * own cancel to handle.
    */
   async cancelTogether(context: RequestContext): Promise<boolean> {
+    // The account's link, while it is still a member there and the
+    // organization's deletion still stands: otherwise the account's own
+    // cancel is the one that applies.
     const [together] = await this.db
       .select({ organizationId: organizations.id })
-      .from(organizations)
+      .from(users)
+      .innerJoin(
+        organizations,
+        eq(organizations.id, users.deletionWithOrganizationId),
+      )
+      .innerJoin(
+        memberships,
+        and(
+          eq(memberships.organizationId, organizations.id),
+          eq(memberships.userId, users.id),
+        ),
+      )
       .where(
         and(
-          eq(organizations.deletionWithAccountOf, context.userId),
+          eq(users.id, context.userId),
           isNotNull(organizations.deletionScheduledAt),
         ),
       );
@@ -287,14 +315,13 @@ export class OrganizationDeletionService {
         id: organizations.id,
         name: organizations.name,
         day: organizations.deletionScheduledAt,
-        withAccountOf: organizations.deletionWithAccountOf,
       });
 
     for (const organization of claimed) {
       try {
         const day = organization.day!;
         await this.tell(
-          await membersOf(this.db, organization.id, organization.withAccountOf),
+          await membersOf(this.db, organization.id),
           undefined,
           (mail, member) =>
             organizationDeletionReminderMail(
@@ -333,7 +360,6 @@ export class OrganizationDeletionService {
         .select({
           name: organizations.name,
           day: organizations.deletionScheduledAt,
-          withAccountOf: organizations.deletionWithAccountOf,
         })
         .from(organizations)
         .where(and(eq(organizations.id, organizationId), dueBy(now)))
@@ -344,11 +370,7 @@ export class OrganizationDeletionService {
       // since the erase above, and nothing comes after it.
       await this.eraseFiles(tx, organizationId, erased);
 
-      const members = await membersOf(
-        tx,
-        organizationId,
-        organization.withAccountOf,
-      );
+      const members = await membersOf(tx, organizationId);
 
       // Sessions cascade from the organization they work in, and would
       // sign every member out: each moves to the person's next
@@ -427,7 +449,7 @@ export class OrganizationDeletionService {
       const organization = await lockOrganization(tx, organizationId);
       const day = organization.deletionScheduledAt;
       if (!day) return null;
-      if (endedEverywhere(day)) {
+      if (deletionStageOf(day) === 'underWay') {
         throw new ConflictException(
           withCode(
             t({
@@ -440,19 +462,18 @@ export class OrganizationDeletionService {
         );
       }
 
-      const members = await membersOf(
-        tx,
-        organizationId,
-        organization.deletionWithAccountOf,
-      );
+      const members = await membersOf(tx, organizationId);
       await tx
         .update(organizations)
-        .set({
-          deletionScheduledAt: null,
-          deletionRemindedAt: null,
-          deletionWithAccountOf: null,
-        })
+        .set({ deletionScheduledAt: null, deletionRemindedAt: null })
         .where(eq(organizations.id, organizationId));
+      // Scheduled together, cancelled together, whoever cancels, and in
+      // this transaction: both stay, or neither does.
+      const kept = await tx
+        .update(users)
+        .set({ deletionScheduledAt: null, deletionWithOrganizationId: null })
+        .where(eq(users.deletionWithOrganizationId, organizationId))
+        .returning({ id: users.id });
       if (audit) {
         await tx.insert(auditLog).values({
           organizationId,
@@ -465,15 +486,14 @@ export class OrganizationDeletionService {
           userAgent: context.userAgent,
         });
       }
-      return { name: organization.name, members };
+      return { name: organization.name, members, kept };
     });
     if (!outcome) return;
 
-    // Scheduled together, cancelled together, whoever cancels: one email
-    // says both stay, so the account's own is not sent.
-    const together = outcome.members.find((member) => member.withAccount);
-    if (together) {
-      await this.accountDeletion.cancelFor(together.id, context);
+    // Recorded in each kept account's history; no email of the account's
+    // own, since the organization's says both stay.
+    for (const { id } of outcome.kept) {
+      await this.accountDeletion.recordKept(id, context);
     }
 
     // Not awaited, as when it was scheduled.
@@ -564,7 +584,6 @@ async function lockOrganization(tx: Transaction, organizationId: string) {
     .select({
       name: organizations.name,
       deletionScheduledAt: organizations.deletionScheduledAt,
-      deletionWithAccountOf: organizations.deletionWithAccountOf,
     })
     .from(organizations)
     .where(eq(organizations.id, organizationId))
@@ -585,28 +604,25 @@ async function memberCount(
 
 /**
  * Every member, and what each is to the organization: an Owner, and the
- * one whose account goes with it, as recorded when it was scheduled.
+ * one whose account goes with it, as their account records it. Read
+ * before a cancel clears that record.
  */
 async function membersOf(
   executor: Executor,
   organizationId: string,
-  withAccountOf: string | null,
 ): Promise<Member[]> {
-  const rows = await executor
+  return executor
     .select({
       id: users.id,
       email: users.email,
       name: users.name,
       locale: users.locale,
       isOwner: sql<boolean>`${roles.name} = ${SYSTEM_ROLES.OWNER}`,
+      withAccount: sql<boolean>`${users.deletionWithOrganizationId} is not distinct from ${organizationId}::uuid`,
     })
     .from(memberships)
     .innerJoin(users, eq(users.id, memberships.userId))
     .innerJoin(roles, eq(roles.id, memberships.roleId))
     .where(eq(memberships.organizationId, organizationId))
     .orderBy(memberships.id);
-  return rows.map((member) => ({
-    ...member,
-    withAccount: member.id === withAccountOf,
-  }));
 }

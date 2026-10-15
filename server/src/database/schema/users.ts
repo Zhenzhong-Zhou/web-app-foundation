@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   type AnyPgColumn,
   date,
+  index,
   pgTable,
   text,
   timestamp,
@@ -12,6 +13,7 @@ import {
 import type { Locale } from '../../common/locales';
 import { primaryKey, timestamps } from './columns';
 import { files } from './files';
+import { organizations } from './organizations';
 
 /**
  * Global identity. **No organization_id** — a user is not owned by an org
@@ -56,6 +58,16 @@ export const users = pgTable(
     // The deletion day, a calendar day (ADR-052), completed once it has
     // ended in every time zone (ADR-069).
     deletionScheduledAt: date('deletion_scheduled_at', { mode: 'string' }),
+    /**
+     * The organization this account's deletion goes with, when its only
+     * member deleted both in one step (ADR-070, amended). The account's,
+     * not the organization's: set and cleared with the account's day, so
+     * no cancel, completion or leaving can strand it, and cleared by the
+     * database when the organization is deleted.
+     */
+    deletionWithOrganizationId: uuid(
+      'deletion_with_organization_id',
+    ).references((): AnyPgColumn => organizations.id, { onDelete: 'set null' }),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
 
     ...timestamps,
@@ -68,5 +80,10 @@ export const users = pgTable(
     // anonymises the address to deleted-<uuid>@invalid, which frees the
     // original for re-registration.
     uniqueIndex('users_email_lower_key').on(sql`lower(${t.email})`),
+    // For the cascade that clears it when an organization is deleted, and
+    // for the Account page's cancel, which finds the organization by it.
+    index('users_deletion_with_organization_id_idx')
+      .on(t.deletionWithOrganizationId)
+      .where(sql`${t.deletionWithOrganizationId} is not null`),
   ],
 );

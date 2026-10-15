@@ -36,6 +36,9 @@ export class OrganizationBranding {
   expiryCriticalDays!: number;
 }
 
+/** Where an organization's pending deletion stands (ADR-070, amended). */
+export type DeletionStage = 'scheduled' | 'lastWeek' | 'underWay';
+
 /** The organization the session is working in, and the role it holds. */
 export class SessionOrganization {
   id!: string;
@@ -48,15 +51,12 @@ export class SessionOrganization {
    */
   deletionScheduledAt!: string | null;
   /**
-   * The day has ended everywhere: the organization is being deleted, and
-   * the deletion can no longer be cancelled.
+   * Where the pending deletion stands, by the server's UTC day (ADR-070,
+   * amended): scheduled, its banner can be hidden for today; in its last
+   * week, it cannot; under way, its day has ended everywhere and it can no
+   * longer be cancelled. Null with no deletion pending.
    */
-  deletionUnderWay!: boolean;
-  /**
-   * Within the last 7 days before the day, by the server's UTC day: the
-   * banner can no longer be hidden (ADR-070, amended).
-   */
-  deletionLastWeek!: boolean;
+  deletionStage!: DeletionStage | null;
   /**
    * The person's account goes with it, as its only member chose: one
    * banner says both, and keeping either keeps both (ADR-070).

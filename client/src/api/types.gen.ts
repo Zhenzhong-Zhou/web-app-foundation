@@ -29,8 +29,7 @@ export type SessionOrganization = {
   roleId: string;
   branding: OrganizationBranding;
   deletionScheduledAt: string | null;
-  deletionUnderWay: boolean;
-  deletionLastWeek: boolean;
+  deletionStage: 'scheduled' | 'lastWeek' | 'underWay' | null;
   deletionWithAccount: boolean;
 };
 

@@ -52,8 +52,8 @@ export function renderWithAuth(
           expiryCriticalDays: 30,
         },
         deletionScheduledAt: null,
-        deletionUnderWay: false,
-        deletionLastWeek: false,
+        // Scheduled, as the server would say, whenever a spec sets a day.
+        deletionStage: organization.deletionScheduledAt ? 'scheduled' : null,
         deletionWithAccount: false,
         ...organization,
       },

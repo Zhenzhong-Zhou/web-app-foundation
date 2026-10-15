@@ -7208,11 +7208,17 @@
               "null"
             ]
           },
-          "deletionUnderWay": {
-            "type": "boolean"
-          },
-          "deletionLastWeek": {
-            "type": "boolean"
+          "deletionStage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "scheduled",
+              "lastWeek",
+              "underWay",
+              null
+            ]
           },
           "deletionWithAccount": {
             "type": "boolean"
@@ -7224,8 +7230,7 @@
           "roleId",
           "branding",
           "deletionScheduledAt",
-          "deletionUnderWay",
-          "deletionLastWeek",
+          "deletionStage",
           "deletionWithAccount"
         ]
       },

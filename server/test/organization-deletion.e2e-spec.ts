@@ -52,8 +52,7 @@ interface Me {
   organization: {
     id: string;
     deletionScheduledAt: string | null;
-    deletionUnderWay: boolean;
-    deletionLastWeek: boolean;
+    deletionStage: 'scheduled' | 'lastWeek' | 'underWay' | null;
     deletionWithAccount: boolean;
   } | null;
 }
@@ -333,7 +332,7 @@ describe('Organization deletion (e2e)', () => {
       const day = deletionDayFor(new Date());
       expect((await me(member)).organization).toMatchObject({
         deletionScheduledAt: day,
-        deletionUnderWay: false,
+        deletionStage: 'scheduled',
       });
       for (const to of [alpha.email, 'member@alpha.example.com']) {
         expect(mail.lastTo(to)?.subject).toMatch(/^alpha Co will be deleted/);
@@ -474,18 +473,23 @@ describe('Organization deletion (e2e)', () => {
       expect(cleared.remindedAt).toBeNull();
     });
 
-    it('tells every browser when the last week has begun', async () => {
+    it('tells every browser where the deletion stands', async () => {
       const alpha = await registerOrganization(app, 'alpha');
+      const stage = async () =>
+        (await me(alpha.agent)).organization?.deletionStage;
+      expect(await stage()).toBeNull();
+
       await setDay(alpha.organizationId, deletionDayFor(new Date()));
-      expect((await me(alpha.agent)).organization?.deletionLastWeek).toBe(
-        false,
-      );
+      expect(await stage()).toBe('scheduled');
 
       await setDay(
         alpha.organizationId,
         todayUtc(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
       );
-      expect((await me(alpha.agent)).organization?.deletionLastWeek).toBe(true);
+      expect(await stage()).toBe('lastWeek');
+
+      await setDay(alpha.organizationId, LONG_AGO);
+      expect(await stage()).toBe('underWay');
     });
 
     it('is not sent once the day has ended everywhere', async () => {
@@ -529,7 +533,9 @@ describe('Organization deletion (e2e)', () => {
       const alpha = await registerOrganization(app, 'alpha');
       await setDay(alpha.organizationId, LONG_AGO);
 
-      expect((await me(alpha.agent)).organization?.deletionUnderWay).toBe(true);
+      expect((await me(alpha.agent)).organization?.deletionStage).toBe(
+        'underWay',
+      );
       const refused = await alpha.agent
         .delete('/v1/organization/deletion')
         .expect(409);
@@ -768,6 +774,25 @@ describe('Organization deletion (e2e)', () => {
       expect(mail.lastTo('second@alpha.example.com')?.text).not.toContain(
         'Your account will not be deleted either',
       );
+    });
+
+    it('lets go of the organization once the only member has left it', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await both(alpha);
+      await addMember(app, alpha, 'second@alpha.example.com', 'Owner');
+
+      // Having made a colleague Owner, the person who chose both leaves.
+      await alpha.agent.delete('/v1/account/membership').expect(204);
+      // Keeping their account now keeps their account, not the
+      // organization they no longer belong to.
+      await alpha.agent.delete('/v1/account/deletion').expect(204);
+
+      expect((await me(alpha.agent)).user.deletionScheduledAt).toBeNull();
+      const [organization] = await db
+        .select({ day: organizations.deletionScheduledAt })
+        .from(organizations)
+        .where(eq(organizations.id, alpha.organizationId));
+      expect(organization.day).not.toBeNull();
     });
 
     it('is refused with others in the organization', async () => {

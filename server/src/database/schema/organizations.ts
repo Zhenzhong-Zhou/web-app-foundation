@@ -22,7 +22,6 @@ import {
 } from './columns';
 import { files } from './files';
 import { priceLists } from './price-lists';
-import { users } from './users';
 
 /**
  * What release does with a licence in a given state (ADR-050): refuse it,
@@ -199,15 +198,6 @@ export const organizations = pgTable(
     deletionRemindedAt: timestamp('deletion_reminded_at', {
       withTimezone: true,
     }),
-    /**
-     * The only member whose account was scheduled with the organization,
-     * in one step (ADR-070): recorded, not guessed from matching days, so
-     * it is cancelled with it, and their banner and emails say both.
-     */
-    deletionWithAccountOf: uuid('deletion_with_account_of').references(
-      (): AnyPgColumn => users.id,
-      { onDelete: 'set null' },
-    ),
 
     ...timestamps,
   },

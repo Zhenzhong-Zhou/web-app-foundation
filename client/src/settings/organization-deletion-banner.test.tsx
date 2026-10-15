@@ -57,7 +57,10 @@ describe('OrganizationDeletionBanner', () => {
     renderWithAuth(<OrganizationDeletionBanner />, {
       permissions: OWNER,
       // The server's word that the last week has begun, by its UTC day.
-      organization: { deletionScheduledAt: inDays(7), deletionLastWeek: true },
+      organization: {
+        deletionScheduledAt: inDays(7),
+        deletionStage: 'lastWeek',
+      },
     });
 
     expect(screen.getByText(/in 7 days/)).toBeInTheDocument();
@@ -83,7 +86,10 @@ describe('OrganizationDeletionBanner', () => {
   it('says it is under way, with nothing to press', () => {
     renderWithAuth(<OrganizationDeletionBanner />, {
       permissions: OWNER,
-      organization: { deletionScheduledAt: inDays(-1), deletionUnderWay: true },
+      organization: {
+        deletionScheduledAt: inDays(-1),
+        deletionStage: 'underWay',
+      },
     });
 
     expect(screen.getByText(/is being deleted/)).toBeInTheDocument();

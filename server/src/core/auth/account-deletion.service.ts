@@ -81,11 +81,6 @@ export function todayWhereDaysEndLast(now: Date): string {
   return todayUtc(new Date(now.getTime() - 12 * HOUR));
 }
 
-/** Whether a deletion day has ended in every time zone (ADR-069, ADR-070). */
-export function endedEverywhere(day: string): boolean {
-  return day < todayWhereDaysEndLast(new Date());
-}
-
 /**
  * A deletion whose day has ended everywhere and that has not completed:
  * how the run picks people out, and how each is asked again under lock.
@@ -171,6 +166,17 @@ export class AccountDeletionService {
             eq(memberships.organizationId, organizationId),
           ),
         );
+      // An account deleted with this organization no longer goes with it:
+      // its own deletion stands, on its own day (ADR-070).
+      await tx
+        .update(users)
+        .set({ deletionWithOrganizationId: null })
+        .where(
+          and(
+            eq(users.id, context.userId),
+            eq(users.deletionWithOrganizationId, organizationId),
+          ),
+        );
 
       // The oldest membership left, as signing in picks one.
       const [next] = await tx
@@ -244,10 +250,14 @@ export class AccountDeletionService {
     executor: Executor,
     userId: string,
     day: string,
+    withOrganizationId: string | null = null,
   ): Promise<void> {
     await executor
       .update(users)
-      .set({ deletionScheduledAt: day })
+      .set({
+        deletionScheduledAt: day,
+        deletionWithOrganizationId: withOrganizationId,
+      })
       .where(eq(users.id, userId));
   }
 
@@ -282,20 +292,16 @@ export class AccountDeletionService {
   }
 
   /**
-   * Cancel the deletion of an account scheduled with its organization, as
-   * that organization's is cancelled (ADR-070): recorded in the account's
-   * history, without an email of its own, since the organization's
-   * cancellation says both stay. Whoever cancelled it.
+   * An account kept with its organization, whose cancel cleared its day in
+   * the organization's transaction (ADR-070): recorded in its history,
+   * without an email of its own, since the organization's says both stay.
    */
-  async cancelFor(userId: string, context: RequestContext): Promise<void> {
-    const cancelled = await this.unschedule(userId, undefined, {
+  async recordKept(userId: string, context: RequestContext): Promise<void> {
+    await this.events.record(userId, 'account.deletion_cancelled', {
       ip: context.ip,
       userAgent: context.userAgent,
-      language: context.language,
     });
-    if (cancelled) {
-      this.logger.log(`Deletion of ${userId} cancelled with its organization`);
-    }
+    this.logger.log(`Deletion of ${userId} cancelled with its organization`);
   }
 
   /**
@@ -485,6 +491,7 @@ export class AccountDeletionService {
           emailVerifiedAt: null,
           photoFileId: null,
           deletionScheduledAt: null,
+          deletionWithOrganizationId: null,
           deletedAt: now,
         })
         .where(eq(users.id, userId));
@@ -604,7 +611,7 @@ export class AccountDeletionService {
   ): Promise<boolean> {
     const cancelled = await this.db
       .update(users)
-      .set({ deletionScheduledAt: null })
+      .set({ deletionScheduledAt: null, deletionWithOrganizationId: null })
       .where(and(eq(users.id, userId), isNotNull(users.deletionScheduledAt)))
       .returning({ id: users.id });
     if (cancelled.length === 0) return false;
