@@ -7620,6 +7620,42 @@ write.
   cancelling, completion, the emails, e2e tests); then the client, after
   the design; then the docs (manual checks, the handoff).
 
+**Amendment (October 2026) — settled with the design.** Five points the
+canvas settled before the client was built:
+
+- **The export downloads as a file, and the server says when it was
+  last taken.** The browser saves the ZIP straight to disk, rather than
+  the page fetching it first, as the account's JSON export does: an
+  organization's ZIP can approach 1 GB with its files, too much to hold
+  in a tab, and a page cannot tell when a native download has finished.
+  So the organization's read carries the last full export, when and by
+  whom, from the audit entry each export writes. The Profile section
+  shows it ("Last downloaded 3 days ago by Mei Lin"), and the dialog
+  reads it again when the window regains focus, to know the 24 hours are
+  met.
+- **The name typed to confirm.** Besides the password, the dialog asks
+  for the organization's name, typed as it is, and the request carries
+  it; the server refuses one that does not match. The password says who
+  is asking, the name what they are about to delete, which matters most
+  to an Owner of more than one organization.
+- **Days left beside the day, and why Close is off.** The day reads
+  "after 14 November 2026 (in 30 days)", as expiry reads in days left
+  (ADR-055). While the export is neither taken nor declined, or the name
+  or the password is missing, a line under the buttons says what is
+  still needed: a disabled button alone does not.
+- **A reminder 7 days before.** Every member is emailed once, in their
+  language, when the deletion day is 7 days away, and Owners are told to
+  download everything again. The hourly timer sends it, and
+  `organizations.deletion_reminded_at` records that it went, so a run
+  repeated or two instances send it once; cancelling clears it.
+  Migration 0058.
+- **The banner can be hidden for today, not longer.** Its × hides it on
+  that device until the next day, when it comes back; kept in the
+  browser, since hiding it is the reader's own convenience and changes
+  nothing for anyone else. From 7 days before the day, the moment the
+  reminder goes out, it has no ×, so nobody misses the final week; nor
+  once the deletion is under way, when nothing can be done.
+
 ---
 
 ## Open decisions
