@@ -68,12 +68,17 @@ const MAIL_AT_ONCE = 5;
 const REMIND_DAYS_BEFORE = 7;
 
 /**
- * Whether a deletion day is within its last 7 days (ADR-070, amended): the
- * reminder goes, and the banner can no longer be hidden. The server's UTC
- * day, so the email and every browser agree.
+ * The last deletion day whose final 7 days have begun (ADR-070, amended):
+ * the reminder goes, and the banner can no longer be hidden. The server's
+ * UTC day, so the email and every browser agree.
  */
+function lastWeekCutoff(now: Date): string {
+  return todayUtc(new Date(now.getTime() + REMIND_DAYS_BEFORE * DAY));
+}
+
+/** Whether a deletion day is within its last 7 days. */
 export function inLastWeek(day: string, now: Date = new Date()): boolean {
-  return day <= todayUtc(new Date(now.getTime() + REMIND_DAYS_BEFORE * DAY));
+  return day <= lastWeekCutoff(now);
 }
 
 /** One member as the emails need them, and what they are to it. */
@@ -119,6 +124,7 @@ export class OrganizationDeletionService {
     await this.account.confirmPassword(context.userId, dto.password);
 
     const now = new Date();
+    const withAccountOf = dto.deleteAccount ? context.userId : null;
     const outcome = await this.db.transaction(async (tx) => {
       const organization = await lockOrganization(tx, organizationId);
       if (organization.deletionScheduledAt) {
@@ -160,14 +166,10 @@ export class OrganizationDeletionService {
 
       await tx
         .update(organizations)
-        .set({
-          deletionScheduledAt: day,
-          deletionWithAccountOf: dto.deleteAccount ? context.userId : null,
-        })
+        .set({ deletionScheduledAt: day, deletionWithAccountOf: withAccountOf })
         .where(eq(organizations.id, organizationId));
       return { day, scheduled: true, name: organization.name } as const;
     });
-    const withAccountOf = dto.deleteAccount ? context.userId : null;
 
     if (outcome.scheduled) {
       if (dto.deleteAccount) {
@@ -277,11 +279,7 @@ export class OrganizationDeletionService {
       .where(
         and(
           isNull(organizations.deletionRemindedAt),
-          lte(
-            organizations.deletionScheduledAt,
-            todayUtc(new Date(now.getTime() + REMIND_DAYS_BEFORE * DAY)),
-          ),
-          // inLastWeek, in SQL: the claim and the banner count alike.
+          lte(organizations.deletionScheduledAt, lastWeekCutoff(now)),
           not(dueBy(now)),
         ),
       )

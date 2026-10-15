@@ -265,17 +265,11 @@ export class AccountDeletionService {
     });
   }
 
-  /**
-   * Keep the account. Nothing to cancel is not an error. Without the email
-   * when the organization's cancellation, sent with it, says so (ADR-070).
-   */
-  async cancel(
-    context: RequestContext,
-    options: { email?: boolean } = {},
-  ): Promise<void> {
+  /** Keep the account. Nothing to cancel is not an error. */
+  async cancel(context: RequestContext): Promise<void> {
     const cancelled = await this.unschedule(
       context.userId,
-      options.email === false ? undefined : deletionCancelledMail,
+      deletionCancelledMail,
       {
         ip: context.ip,
         userAgent: context.userAgent,

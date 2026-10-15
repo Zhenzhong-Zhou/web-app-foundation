@@ -476,10 +476,7 @@ describe('Organization deletion (e2e)', () => {
 
     it('tells every browser when the last week has begun', async () => {
       const alpha = await registerOrganization(app, 'alpha');
-      await setDay(
-        alpha.organizationId,
-        todayUtc(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
-      );
+      await setDay(alpha.organizationId, deletionDayFor(new Date()));
       expect((await me(alpha.agent)).organization?.deletionLastWeek).toBe(
         false,
       );
