@@ -7608,8 +7608,11 @@ write.
   `organization.deletion_cancelled`.
 - Three emails and the README, in the three languages (ADR-054).
 - `OrganizationDeletionTimer` joins main.ts's list, ahead of account
-  deletion. Its service reads every organization, so it joins the files
-  eslint allows the global connection, with the reason beside it.
+  deletion. Its service lives in `core/auth`, beside account deletion,
+  which it shares the day, the emails and the only member's account with;
+  eslint already allows the global connection there, which completing
+  needs, since it reads every organization. The export, which reads one,
+  goes through `TenantDb` in `core/organizations`.
 - `yazl` as a dependency, `@types/yazl` as a dev dependency.
 - Where the export and the deletion sit in Settings, and the banner, are
   designed on the canvas before the client is built.
