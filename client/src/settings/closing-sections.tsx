@@ -3,14 +3,13 @@ import { Box, Button, Paper, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import type { Member, OrganizationProfile } from '../api/types.gen';
+import type { OrganizationProfile } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { FormError } from '../components/form-error';
 import { api, apiUrl } from '../lib/api';
 import { formatWhen } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { CloseOrganizationDialog } from './close-organization-dialog';
 import {
@@ -137,8 +136,6 @@ function CloseOrganization({
   const intl = useIntl();
   const { session, refresh } = useAuth();
   const [open, setOpen] = useState(false);
-  // Whether the Owner is alone in it: then the account goes with it.
-  const { data: members } = useResource<Member[]>('/users');
   const cancelling = useSubmit(refresh);
 
   const organization = session?.organization;
@@ -225,7 +222,6 @@ function CloseOrganization({
               <Button
                 variant="outlined"
                 color="error"
-                disabled={members === null}
                 onClick={openDialog(() => setOpen(true))}
               >
                 {intl.formatMessage({
@@ -240,7 +236,9 @@ function CloseOrganization({
 
       <CloseOrganizationDialog
         open={open}
-        alone={members?.length === 1}
+        // Settings closes the organization alone, for anyone; Delete my
+        // account is the way to delete both (ADR-070).
+        alone={false}
         onClose={() => setOpen(false)}
         onScheduled={onChanged}
       />

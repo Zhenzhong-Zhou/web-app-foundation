@@ -133,4 +133,36 @@ describe('OrganizationDeletionBanner', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Keep both' }));
     expect(cancelled).toEqual(['account']);
   });
+
+  it('cancels for an Owner, through the organization', async () => {
+    const cancelled: string[] = [];
+    server.use(
+      http.delete('/api/v1/organization/deletion', () => {
+        cancelled.push('organization');
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderWithAuth(<OrganizationDeletionBanner />, {
+      permissions: OWNER,
+      organization: { deletionScheduledAt: inDays(30) },
+    });
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Cancel deletion' }),
+    );
+    expect(cancelled).toEqual(['organization']);
+  });
+
+  it('comes back the day after it was hidden', () => {
+    const day = inDays(30);
+    localStorage.setItem(
+      'waf.hiddenDeletionBanner',
+      JSON.stringify({ organizationId: 'org-1', day, on: inDays(-1) }),
+    );
+    renderWithAuth(<OrganizationDeletionBanner />, {
+      organization: { deletionScheduledAt: day },
+    });
+
+    expect(screen.getByText(/as an Owner asked/)).toBeInTheDocument();
+  });
 });

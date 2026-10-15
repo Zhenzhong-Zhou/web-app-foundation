@@ -29,6 +29,7 @@ export function DialogFooter({
   destructive = false,
   cancelLabel,
   onConfirm,
+  describedBy,
 }: {
   submitting: boolean;
   onCancel: () => void;
@@ -42,6 +43,8 @@ export function DialogFooter({
   /** "Keep it", where Cancel would read as the action. */
   cancelLabel?: string;
   onConfirm?: () => void;
+  /** The id of what says why the action is off, for screen readers. */
+  describedBy?: string;
 }) {
   const intl = useIntl();
 
@@ -59,6 +62,7 @@ export function DialogFooter({
         color={destructive ? 'error' : 'primary'}
         disabled={submitting || disabled}
         onClick={onConfirm}
+        aria-describedby={describedBy}
       >
         {submitting ? pendingLabel : label}
       </Button>

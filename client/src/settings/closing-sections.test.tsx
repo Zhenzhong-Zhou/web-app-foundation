@@ -1,8 +1,11 @@
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import type { OrganizationProfile } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
+import { server } from '../test/setup';
 import { ClosingSections } from './closing-sections';
 
 /** The organization as its read returns it, with only what the section reads. */
@@ -49,5 +52,61 @@ describe('ClosingSections', () => {
     expect(
       screen.getByText(/^Last downloaded .* by Owner$/),
     ).toBeInTheDocument();
+  });
+
+  it('shows nothing to anyone but an Owner', () => {
+    const { container } = renderWithAuth(
+      <ClosingSections
+        organization={organizationWith(null)}
+        onChanged={() => undefined}
+      />,
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('offers Cancel deletion while scheduled, and nothing once under way', async () => {
+    const cancelled: string[] = [];
+    server.use(
+      http.delete('/api/v1/organization/deletion', () => {
+        cancelled.push('organization');
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { unmount } = renderWithAuth(
+      <ClosingSections
+        organization={organizationWith(null)}
+        onChanged={() => undefined}
+      />,
+      {
+        permissions: ['organizations.delete'],
+        organization: { deletionScheduledAt: '2026-11-14' },
+      },
+    );
+    expect(
+      screen.getByText(/Scheduled to be deleted after/),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Cancel deletion' }),
+    );
+    expect(cancelled).toEqual(['organization']);
+    unmount();
+
+    renderWithAuth(
+      <ClosingSections
+        organization={organizationWith(null)}
+        onChanged={() => undefined}
+      />,
+      {
+        permissions: ['organizations.delete'],
+        organization: {
+          deletionScheduledAt: '2026-01-01',
+          deletionStage: 'underWay',
+        },
+      },
+    );
+    expect(screen.getByText(/can no longer be cancelled/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Cancel deletion' }),
+    ).not.toBeInTheDocument();
   });
 });

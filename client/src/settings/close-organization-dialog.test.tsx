@@ -198,4 +198,56 @@ describe('CloseOrganizationDialog', () => {
       vi.useRealTimers();
     }
   });
+
+  it('offers the download again when the server finds the export too old', async () => {
+    let reads = 0;
+    server.use(
+      http.get('/api/v1/organization', () => {
+        reads += 1;
+        // Fresh when the dialog opens; stale by the time it is confirmed.
+        return HttpResponse.json({
+          organization: {
+            name: 'Alpha Co',
+            lastExport: {
+              exportedAt: new Date().toISOString(),
+              exportedBy: 'Owner',
+              exportedById: 'user-1',
+              fresh: reads === 1,
+            },
+          },
+        });
+      }),
+      http.post('/api/v1/organization/deletion', () =>
+        HttpResponse.json(
+          {
+            statusCode: 409,
+            code: 'organization_export_required',
+            message: 'Download the export first.',
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    const dialog = await open();
+    expect(await within(dialog).findByText(/by you$/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/\(in 30 days\)/)).toBeInTheDocument();
+
+    await userEvent.type(
+      screen.getByLabelText('Organization name'),
+      'Alpha Co',
+    );
+    await userEvent.type(screen.getByLabelText(/Your password/), 'secret');
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Close organization' }),
+    );
+
+    expect(
+      await within(dialog).findByRole('link', {
+        name: 'Download everything (ZIP)',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByLabelText(/I don’t want the export/),
+    ).toBeInTheDocument();
+  });
 });

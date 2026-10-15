@@ -44,6 +44,26 @@ describe('LeaveOrDelete', () => {
     expect(refresh).toHaveBeenCalled();
   });
 
+  it('deletes the account alone once the organization is going alone', async () => {
+    renderWithAuth(
+      <MemoryRouter>
+        <LeaveOrDelete />
+      </MemoryRouter>,
+      {
+        permissions: ['users.view'],
+        organization: { deletionScheduledAt: '2026-11-14' },
+      },
+    );
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Delete my account' }),
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'Delete your account?' }),
+    ).toBeInTheDocument();
+  });
+
   it('deletes the organization with the account, for its only member', async () => {
     server.use(
       http.get('/api/v1/users', () => HttpResponse.json([{ id: 'user-1' }])),

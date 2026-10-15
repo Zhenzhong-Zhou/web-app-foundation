@@ -32,8 +32,11 @@ import { CloseOrganizationDialog } from '../settings/close-organization-dialog';
  */
 function Refusal({ error, code }: { error: string; code: string | null }) {
   const intl = useIntl();
+  const can = useCan();
   const settledOnMembers =
     hasCode(code, 'only_member') || hasCode(code, 'last_owner_with_members');
+  // The other way past being alone, as the refusal says (ADR-070).
+  const canClose = hasCode(code, 'only_member') && can('organizations.delete');
 
   return (
     <FormError message={error}>
@@ -44,6 +47,17 @@ function Refusal({ error, code }: { error: string; code: string | null }) {
             defaultMessage: 'Go to Members',
           })}
         </Link>
+      )}
+      {canClose && (
+        <>
+          {' · '}
+          <Link component={RouterLink} to="/settings/organization">
+            {intl.formatMessage({
+              id: 'account.leave.closeOrganization',
+              defaultMessage: 'Close the organization',
+            })}
+          </Link>
+        </>
       )}
     </FormError>
   );
@@ -84,7 +98,13 @@ export function LeaveOrDelete() {
    * Owner can be alone in one, and an Owner can list the members.
    */
   async function askToDelete() {
-    if (organization && can('users.view')) {
+    // Already going alone, it cannot take the account with it: the
+    // account's own deletion is the one to ask for (ADR-070).
+    if (
+      organization &&
+      !organization.deletionScheduledAt &&
+      can('users.view')
+    ) {
       try {
         const members = await api<Member[]>('/users');
         if (members.length === 1) {

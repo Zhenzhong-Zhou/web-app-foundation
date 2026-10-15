@@ -21,12 +21,13 @@ import { useAuth } from '../auth/use-auth';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { PasswordField } from '../components/password-field';
-import { api, apiUrl, hasCode } from '../lib/api';
+import { api, ApiError, apiUrl, hasCode } from '../lib/api';
 import { formatWhen } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { PASSWORD_MAX_LENGTH } from '../lib/validation';
 import {
   dayWithDaysLeft,
+  DELETION_DAYS,
   deletionDayFrom,
   EXPORT_PATH,
   exportedBy,
@@ -66,6 +67,9 @@ export function CloseOrganizationDialog({
     null,
   );
   const [downloadedAt, setDownloadedAt] = useState<number | null>(null);
+  // Bumped when the server finds the export older than the day, so the
+  // dialog reads it again and offers the download and the decline.
+  const [readAgain, setReadAgain] = useState(0);
   const [declined, setDeclined] = useState(false);
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -104,7 +108,7 @@ export function CloseOrganizationDialog({
       window.clearInterval(polling);
       window.clearTimeout(stopping);
     };
-  }, [open, downloadedAt]);
+  }, [open, downloadedAt, readAgain]);
 
   function close() {
     setDeclined(false);
@@ -142,21 +146,35 @@ export function CloseOrganizationDialog({
   function submit(event: SubmitEvent) {
     event.preventDefault();
     if (missing.length > 0 || !organization) return;
-    void scheduling.submit(() =>
-      api('/organization/deletion', {
-        method: 'POST',
-        body: JSON.stringify({
-          organizationName: name,
-          password,
-          declineExport: !fresh && declined,
-          deleteAccount: alone,
-        }),
-      }),
-    );
+    void scheduling.submit(async () => {
+      try {
+        await api('/organization/deletion', {
+          method: 'POST',
+          body: JSON.stringify({
+            organizationName: name,
+            password,
+            declineExport: !fresh && declined,
+            deleteAccount: alone,
+          }),
+        });
+      } catch (error) {
+        // The day passed since the dialog read it: read it again, so the
+        // step offers the download and the decline instead of a green tick.
+        if (
+          error instanceof ApiError &&
+          hasCode(error.code ?? null, 'organization_export_required')
+        ) {
+          setReadAgain((count) => count + 1);
+        }
+        throw error;
+      }
+    });
   }
 
   const organizationName = organization?.name ?? session?.organization?.name;
-  const day = dayWithDaysLeft(intl, deletionDayFrom(new Date()));
+  // Thirty days ahead by definition: counted from the browser's own day, an
+  // evening west of UTC would read "in 31 days" (ADR-069's day is UTC).
+  const day = dayWithDaysLeft(intl, deletionDayFrom(new Date()), DELETION_DAYS);
   const who = last ? exportedBy(intl, last, session?.user.id) : null;
   const confirmLabel = alone
     ? intl.formatMessage({
@@ -272,7 +290,16 @@ export function CloseOrganizationDialog({
                 </Typography>
               ) : (
                 <>
-                  {last && (
+                  {downloadedAt !== null && (
+                    <Typography role="status" variant="body2">
+                      {intl.formatMessage({
+                        id: 'settings.deletion.downloading',
+                        defaultMessage:
+                          'Downloading… This step turns green once the download has finished.',
+                      })}
+                    </Typography>
+                  )}
+                  {last && downloadedAt === null && (
                     <Typography variant="body2" color="warning.dark">
                       {intl.formatMessage(
                         {
@@ -391,22 +418,13 @@ export function CloseOrganizationDialog({
             )}
           </Stack>
         </DialogContent>
-        <DialogFooter
-          submitting={scheduling.submitting}
-          onCancel={close}
-          label={confirmLabel}
-          pendingLabel={intl.formatMessage({
-            id: 'account.deletion.confirming',
-            defaultMessage: 'Confirming…',
-          })}
-          disabled={missing.length > 0}
-          destructive
-        />
         {missing.length > 0 && (
           <Typography
+            id="close-organization-missing"
+            role="status"
             variant="body2"
             color="text.secondary"
-            sx={{ px: 3, pb: 2, textAlign: 'right' }}
+            sx={{ px: 3, textAlign: 'right' }}
           >
             {intl.formatMessage(
               {
@@ -417,6 +435,20 @@ export function CloseOrganizationDialog({
             )}
           </Typography>
         )}
+        <DialogFooter
+          submitting={scheduling.submitting}
+          onCancel={close}
+          label={confirmLabel}
+          pendingLabel={intl.formatMessage({
+            id: 'account.deletion.confirming',
+            defaultMessage: 'Confirming…',
+          })}
+          disabled={missing.length > 0}
+          describedBy={
+            missing.length > 0 ? 'close-organization-missing' : undefined
+          }
+          destructive
+        />
       </form>
     </Dialog>
   );
