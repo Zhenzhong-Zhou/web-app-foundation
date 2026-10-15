@@ -21,6 +21,7 @@ import {
   type RequestContext,
 } from '../auth/request-context';
 import { PERMISSIONS } from '../authorization/permissions';
+import { PermissionsService } from '../authorization/permissions.service';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
 import { OrganizationAddressDto } from './dto/organization-address.dto';
 import type { OrganizationEnvelope } from './dto/organization-response.dto';
@@ -40,12 +41,22 @@ export class OrganizationController {
   constructor(
     private readonly organization: OrganizationsService,
     private readonly exports: OrganizationExportService,
+    private readonly permissions: PermissionsService,
   ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.ORGANIZATIONS_VIEW)
-  async get(): Promise<OrganizationEnvelope> {
-    return { organization: await this.organization.get() };
+  async get(
+    @CurrentUser() context: RequestContext,
+  ): Promise<OrganizationEnvelope> {
+    const granted = context.roleId
+      ? await this.permissions.listForRole(context.roleId)
+      : [];
+    return {
+      organization: await this.organization.get({
+        withLastExport: granted.includes(PERMISSIONS.ORGANIZATIONS_EXPORT),
+      }),
+    };
   }
 
   /**

@@ -7906,6 +7906,10 @@
             "type": "string",
             "maxLength": 128
           },
+          "organizationName": {
+            "type": "string",
+            "maxLength": 200
+          },
           "declineExport": {
             "type": "boolean"
           },
@@ -7914,7 +7918,8 @@
           }
         },
         "required": [
-          "password"
+          "password",
+          "organizationName"
         ]
       },
       "OrganizationDeletionScheduled": {
@@ -9357,6 +9362,22 @@
           "country"
         ]
       },
+      "OrganizationLastExport": {
+        "type": "object",
+        "properties": {
+          "exportedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "exportedBy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "exportedAt",
+          "exportedBy"
+        ]
+      },
       "OrganizationProfile": {
         "type": "object",
         "properties": {
@@ -9487,6 +9508,16 @@
               "unticked",
               "everyone"
             ]
+          },
+          "lastExport": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrganizationLastExport"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -9510,7 +9541,8 @@
           "expiryWarningDays",
           "expiryCriticalDays",
           "idleSignOutMinutes",
-          "idleSignOutScope"
+          "idleSignOutScope",
+          "lastExport"
         ]
       },
       "OrganizationEnvelope": {

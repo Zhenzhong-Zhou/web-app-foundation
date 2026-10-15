@@ -165,3 +165,70 @@ export function organizationDeletedMail(
     APP,
   );
 }
+
+/**
+ * Seven days before the day (ADR-070, amended): the last week's notice,
+ * Owners told to download everything again while they still can. It names
+ * the day rather than counting to it: on a server that slept through the
+ * week, it goes out late, and a count would be wrong.
+ */
+export function organizationDeletionReminderMail(
+  context: DeletionMailContext,
+  details: { organization: string; day: string },
+  side: MemberSide,
+): Mail {
+  const date = dayOf(details.day, context.locale);
+  const { organization } = details;
+  const paragraphs: Translatable[] = [
+    t(
+      {
+        id: 'mail.organizationDeletion.reminder.when',
+        defaultMessage:
+          '{organization} will be deleted after {date}, with its records, files and audit log.',
+      },
+      { organization, date },
+    ),
+    t({
+      id: 'mail.organizationDeletion.scheduled.until',
+      defaultMessage:
+        'Until then everyone can keep working as usual. Only an Owner can cancel the deletion, until that day is over.',
+    }),
+  ];
+  if (side.isOwner) {
+    paragraphs.push(
+      t({
+        id: 'mail.organizationDeletion.reminder.export',
+        defaultMessage:
+          'Download everything again now, from Settings, so your copy holds the last week too: once the organization is deleted, nothing can make one.',
+      }),
+    );
+  }
+  paragraphs.push(
+    side.withAccount
+      ? t({
+          id: 'mail.organizationDeletion.reminder.withAccount',
+          defaultMessage: 'Your account will be deleted straight after it.',
+        })
+      : t(
+          {
+            id: 'mail.organizationDeletion.scheduled.account',
+            defaultMessage:
+              'Your account stays: only your membership of {organization} ends.',
+          },
+          { organization },
+        ),
+  );
+
+  return compose(
+    context,
+    t(
+      {
+        id: 'mail.organizationDeletion.reminder.subject',
+        defaultMessage: 'Reminder: {organization} will be deleted after {date}',
+      },
+      { organization, date },
+    ),
+    paragraphs,
+    APP,
+  );
+}

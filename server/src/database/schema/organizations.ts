@@ -191,6 +191,13 @@ export const organizations = pgTable(
      * completed after.
      */
     deletionScheduledAt: date('deletion_scheduled_at', { mode: 'string' }),
+    /**
+     * When the members were reminded, 7 days before the day (ADR-070,
+     * amended): so it goes once. Cleared with the schedule.
+     */
+    deletionRemindedAt: timestamp('deletion_reminded_at', {
+      withTimezone: true,
+    }),
 
     ...timestamps,
   },

@@ -239,6 +239,7 @@ export type AccountExport = {
 
 export type DeleteOrganizationDto = {
   password: string;
+  organizationName: string;
   declineExport?: boolean;
   deleteAccount?: boolean;
 };
@@ -592,6 +593,11 @@ export type OrganizationAddress = {
   country: string;
 };
 
+export type OrganizationLastExport = {
+  exportedAt: string;
+  exportedBy: string;
+};
+
 export type OrganizationProfile = {
   id: string;
   name: string;
@@ -614,6 +620,7 @@ export type OrganizationProfile = {
   expiryCriticalDays: number;
   idleSignOutMinutes: number | null;
   idleSignOutScope: 'unticked' | 'everyone';
+  lastExport: OrganizationLastExport | null;
 };
 
 export type OrganizationEnvelope = {

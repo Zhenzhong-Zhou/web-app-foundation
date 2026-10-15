@@ -5,10 +5,11 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { and, count, eq, gt, lt, sql } from 'drizzle-orm';
+import { and, count, eq, gt, gte, isNull, lt, lte, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
 import type { Locale } from '../../common/locales';
+import { todayUtc } from '../../common/today';
 import type { Database, Transaction } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import {
@@ -42,12 +43,21 @@ import {
   type MemberSide,
   organizationDeletedMail,
   organizationDeletionCancelledMail,
+  organizationDeletionReminderMail,
   organizationDeletionScheduledMail,
 } from './organization-deletion-mail';
 import type { RequestContext } from './request-context';
 
+const DAY = 24 * 60 * 60 * 1000;
+
 /** How recent the export a deletion relies on must be (ADR-070). */
-const EXPORT_WITHIN_MS = 24 * 60 * 60 * 1000;
+const EXPORT_WITHIN_MS = DAY;
+
+/** Emails sent at once to an organization's members. */
+const MAIL_AT_ONCE = 5;
+
+/** How many days before the deletion day the reminder goes (ADR-070). */
+const REMIND_DAYS_BEFORE = 7;
 
 /** One member as the emails need them, and what they are to it. */
 interface Member extends MemberSide {
@@ -88,6 +98,7 @@ export class OrganizationDeletionService {
     dto: DeleteOrganizationDto,
   ): Promise<OrganizationDeletionScheduled> {
     const organizationId = this.organizationOf(context);
+    await this.confirmName(organizationId, dto.organizationName);
     await this.account.confirmPassword(context.userId, dto.password);
 
     const now = new Date();
@@ -140,7 +151,7 @@ export class OrganizationDeletionService {
             }),
           );
         }
-        await this.accountDeletion.schedule(tx, context, day);
+        await this.accountDeletion.schedule(tx, context.userId, day);
       }
 
       await tx
@@ -150,6 +161,9 @@ export class OrganizationDeletionService {
       return { day, scheduled: true, name: organization.name } as const;
     });
 
+    if (outcome.scheduled && dto.deleteAccount) {
+      await this.accountDeletion.signOutForDeletion(context);
+    }
     if (outcome.scheduled) {
       recordContext({
         deletionScheduledAt: outcome.day,
@@ -221,6 +235,8 @@ export class OrganizationDeletionService {
   async completeDue(
     now = new Date(),
   ): Promise<{ completed: number; failed: number }> {
+    await this.remindDue(now);
+
     const due = await this.db
       .select({ id: organizations.id })
       .from(organizations)
@@ -244,6 +260,58 @@ export class OrganizationDeletionService {
     // the same day, they waited for them to go first.
     if (completed > 0) await this.accountDeletion.completeDue(now);
     return { completed, failed };
+  }
+
+  /**
+   * The reminder, 7 days before the day (ADR-070, amended): each claimed
+   * by one statement, so a repeated run or a second instance sends it
+   * once. Not once the day has ended everywhere: then it is under way.
+   * One that fails is logged, and its members go without.
+   */
+  async remindDue(now = new Date()): Promise<number> {
+    const claimed = await this.db
+      .update(organizations)
+      .set({ deletionRemindedAt: now })
+      .where(
+        and(
+          isNull(organizations.deletionRemindedAt),
+          lte(
+            organizations.deletionScheduledAt,
+            todayUtc(new Date(now.getTime() + REMIND_DAYS_BEFORE * DAY)),
+          ),
+          gte(organizations.deletionScheduledAt, todayWhereDaysEndLast(now)),
+        ),
+      )
+      .returning({
+        id: organizations.id,
+        name: organizations.name,
+        day: organizations.deletionScheduledAt,
+      });
+
+    for (const organization of claimed) {
+      try {
+        const day = organization.day!;
+        await this.tell(
+          await membersOf(this.db, organization.id, day),
+          undefined,
+          (mail, member) =>
+            organizationDeletionReminderMail(
+              mail,
+              { organization: organization.name, day },
+              member,
+            ),
+        );
+        this.logger.log(
+          `Organization ${organization.id} reminded of its deletion`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Could not remind organization ${organization.id}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    }
+    return claimed.length;
   }
 
   /**
@@ -368,7 +436,7 @@ export class OrganizationDeletionService {
       const members = await membersOf(tx, organizationId, day);
       await tx
         .update(organizations)
-        .set({ deletionScheduledAt: null })
+        .set({ deletionScheduledAt: null, deletionRemindedAt: null })
         .where(eq(organizations.id, organizationId));
       if (audit) {
         await tx.insert(auditLog).values({
@@ -412,11 +480,44 @@ export class OrganizationDeletionService {
     actor: RequestContext | undefined,
     build: (mail: DeletionMailContext, member: Member) => Mail,
   ): Promise<void> {
-    for (const member of members) {
-      await this.accountDeletion.sendTo(
-        member,
-        (mail) => build(mail, member),
-        actor && member.id === actor.userId ? actor.language : undefined,
+    // A few at a time: one by one, a slow mail provider and a large team
+    // could hold the request past the host's timeout, after the deletion
+    // has already committed.
+    for (let at = 0; at < members.length; at += MAIL_AT_ONCE) {
+      await Promise.all(
+        members
+          .slice(at, at + MAIL_AT_ONCE)
+          .map((member) =>
+            this.accountDeletion.sendTo(
+              member,
+              (mail) => build(mail, member),
+              actor && member.id === actor.userId ? actor.language : undefined,
+            ),
+          ),
+      );
+    }
+  }
+
+  /**
+   * The organization's name, typed to confirm (ADR-070, amended): space
+   * around it forgiven, nothing else, so a wrong organization is never
+   * deleted by a reflex.
+   */
+  private async confirmName(
+    organizationId: string,
+    typed: string,
+  ): Promise<void> {
+    const [organization] = await this.db
+      .select({ name: organizations.name })
+      .from(organizations)
+      .where(eq(organizations.id, organizationId));
+    if (typed.trim() !== organization?.name.trim()) {
+      throw new BadRequestException(
+        t({
+          id: 'organization.deletion.nameMismatch',
+          defaultMessage:
+            'Type the organization’s name exactly as it is shown, to confirm.',
+        }),
       );
     }
   }

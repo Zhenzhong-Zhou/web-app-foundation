@@ -9,6 +9,14 @@ export class DeleteOrganizationDto {
   password!: string;
 
   /**
+   * The organization's name, typed to confirm what is being deleted
+   * (ADR-070, amended): refused unless it matches.
+   */
+  @IsString()
+  @MaxLength(200)
+  organizationName!: string;
+
+  /**
    * True to go ahead without the export. Otherwise one taken by an Owner
    * in the last 24 hours is required.
    */

@@ -220,7 +220,8 @@ export class AccountDeletionService {
     if (block) throw refusalFor(block);
 
     const deletionScheduledAt = deletionDayFor(new Date());
-    await this.schedule(this.db, context, deletionScheduledAt);
+    await this.schedule(this.db, context.userId, deletionScheduledAt);
+    await this.signOutForDeletion(context);
 
     await this.send(
       context.userId,
@@ -235,22 +236,29 @@ export class AccountDeletionService {
   }
 
   /**
-   * The deletion day set, every other device signed out, and the request
-   * recorded: asked for here, or with the organization by its only member
-   * (ADR-070), in that request's transaction. The email is the caller's.
+   * The deletion day set: asked for here, or with the organization by its
+   * only member (ADR-070), in that request's transaction. Once it commits,
+   * signOutForDeletion() does the rest; the email is the caller's.
    */
   async schedule(
     executor: Executor,
-    context: RequestContext,
+    userId: string,
     day: string,
   ): Promise<void> {
     await executor
       .update(users)
       .set({ deletionScheduledAt: day })
-      .where(eq(users.id, context.userId));
+      .where(eq(users.id, userId));
+  }
 
+  /**
+   * After a deletion is scheduled and committed: every other device signed
+   * out, and the request recorded. Not in the transaction, whose sessions
+   * and events are written on their own connections: a request that rolls
+   * back must not have signed anyone out.
+   */
+  async signOutForDeletion(context: RequestContext): Promise<void> {
     await this.sessions.revokeAllForUser(context.userId, context.sessionId);
-
     await this.events.record(context.userId, 'account.deletion_requested', {
       ip: context.ip,
       userAgent: context.userAgent,

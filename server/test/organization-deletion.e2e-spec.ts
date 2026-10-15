@@ -5,6 +5,7 @@ import type { INestApplication } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 import type TestAgent from 'supertest/lib/agent';
 
+import { todayUtc } from '../src/common/today';
 import {
   AccountDeletionService,
   deletionDayFor,
@@ -34,6 +35,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { RecordingMailService } from './utils/recording-mail';
+import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 import { shippedSale } from './utils/sales';
 import { readCsv, readZip } from './utils/zip';
@@ -56,6 +58,9 @@ interface Me {
 const SVG = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><rect width="200" height="100" fill="#2a6"/></svg>',
 );
+
+/** The organization registerOrganization(app, 'alpha') makes. */
+const ALPHA = 'alpha Co';
 
 /** A day long over everywhere: the deletion is due, and under way. */
 const LONG_AGO = '2026-01-01';
@@ -167,6 +172,14 @@ describe('Organization deletion (e2e)', () => {
       });
       const [organization] = readCsv(zip.get('organization.csv')!);
       expect(organization.id).toBe(alpha.organizationId);
+      // What each role may do, which has no organization_id of its own.
+      const granted = readCsv(zip.get('role_permissions.csv')!);
+      expect(granted).toContainEqual(
+        expect.objectContaining({
+          role: 'Owner',
+          permission: 'organizations.delete',
+        }),
+      );
 
       // The logo, as the file it is kept as.
       const [logo] = readCsv(zip.get('files.csv')!);
@@ -186,6 +199,26 @@ describe('Organization deletion (e2e)', () => {
         .where(eq(auditLog.action, 'organization.exported'));
       expect(entry.actorId).toBe(alpha.userId);
       expect(entry.payload).toMatchObject({ files: 1 });
+    });
+
+    it('is named on the organization, for those who can take one', async () => {
+      const alpha = await busy('alpha');
+      const admin = await addMember(
+        app,
+        alpha,
+        'admin@alpha.example.com',
+        'Admin',
+      );
+      type Read = { organization: { lastExport: unknown } };
+      const read = async (agent: TestAgent) =>
+        body<Read>(await agent.get('/v1/organization').expect(200)).organization
+          .lastExport;
+
+      expect(await read(alpha.agent)).toBeNull();
+      await exportOf(alpha.agent);
+
+      expect(await read(alpha.agent)).toMatchObject({ exportedBy: 'Owner' });
+      expect(await read(admin)).toBeNull();
     });
 
     it('is the Owners’ alone', async () => {
@@ -221,14 +254,14 @@ describe('Organization deletion (e2e)', () => {
 
       const refused = await alpha.agent
         .post('/v1/organization/deletion')
-        .send({ password: PASSWORD })
+        .send({ organizationName: ALPHA, password: PASSWORD })
         .expect(409);
       expect(body<Refusal>(refused).code).toBe('organization_export_required');
 
       await exportOf(alpha.agent);
       const res = await alpha.agent
         .post('/v1/organization/deletion')
-        .send({ password: PASSWORD })
+        .send({ organizationName: ALPHA, password: PASSWORD })
         .expect(200);
 
       expect(body<{ deletionScheduledAt: string }>(res)).toEqual({
@@ -252,7 +285,11 @@ describe('Organization deletion (e2e)', () => {
 
       await alpha.agent
         .post('/v1/organization/deletion')
-        .send({ password: PASSWORD, declineExport: true })
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          declineExport: true,
+        })
         .expect(200);
 
       const day = deletionDayFor(new Date());
@@ -278,6 +315,31 @@ describe('Organization deletion (e2e)', () => {
       expect(entry.payload).toMatchObject({ export: 'declined' });
     });
 
+    it('needs the organization’s name, typed as it is', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+
+      await alpha.agent
+        .post('/v1/organization/deletion')
+        .send({
+          organizationName: 'alpha',
+          password: PASSWORD,
+          declineExport: true,
+        })
+        .expect(400);
+      expect(
+        (await me(alpha.agent)).organization?.deletionScheduledAt,
+      ).toBeNull();
+
+      await alpha.agent
+        .post('/v1/organization/deletion')
+        .send({
+          organizationName: ' alpha Co ',
+          password: PASSWORD,
+          declineExport: true,
+        })
+        .expect(200);
+    });
+
     it('refuses a wrong password, and anyone but an Owner', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const admin = await addMember(
@@ -289,11 +351,19 @@ describe('Organization deletion (e2e)', () => {
 
       await alpha.agent
         .post('/v1/organization/deletion')
-        .send({ password: 'not-the-password', declineExport: true })
+        .send({
+          organizationName: ALPHA,
+          password: 'not-the-password',
+          declineExport: true,
+        })
         .expect(401);
       await admin
         .post('/v1/organization/deletion')
-        .send({ password: PASSWORD, declineExport: true })
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          declineExport: true,
+        })
         .expect(403);
       await admin.delete('/v1/organization/deletion').expect(403);
 
@@ -307,7 +377,11 @@ describe('Organization deletion (e2e)', () => {
       const ask = () =>
         alpha.agent
           .post('/v1/organization/deletion')
-          .send({ password: PASSWORD, declineExport: true })
+          .send({
+            organizationName: ALPHA,
+            password: PASSWORD,
+            declineExport: true,
+          })
           .expect(200);
 
       await ask();
@@ -322,6 +396,54 @@ describe('Organization deletion (e2e)', () => {
     });
   });
 
+  describe('the reminder', () => {
+    it('goes to every member once, 7 days before, and not after cancelling', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await addMember(app, alpha, 'member@alpha.example.com', 'Viewer');
+      await alpha.agent
+        .post('/v1/organization/deletion')
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          declineExport: true,
+        })
+        .expect(200);
+
+      // Not yet, 30 days ahead.
+      expect(await service().remindDue()).toBe(0);
+
+      const inAWeek = todayUtc(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+      await setDay(alpha.organizationId, inAWeek);
+      mail.reset();
+      expect(await service().remindDue()).toBe(1);
+      expect(await service().remindDue()).toBe(0);
+
+      const subject = `Reminder: alpha Co will be deleted after ${longDay(inAWeek)}`;
+      expect(mail.lastTo(alpha.email)?.subject).toBe(subject);
+      expect(mail.lastTo(alpha.email)?.text).toContain(
+        'Download everything again now',
+      );
+      expect(mail.lastTo('member@alpha.example.com')?.subject).toBe(subject);
+      expect(mail.lastTo('member@alpha.example.com')?.text).not.toContain(
+        'Download everything',
+      );
+
+      await alpha.agent.delete('/v1/organization/deletion').expect(204);
+      const [cleared] = await db
+        .select({ remindedAt: organizations.deletionRemindedAt })
+        .from(organizations)
+        .where(eq(organizations.id, alpha.organizationId));
+      expect(cleared.remindedAt).toBeNull();
+    });
+
+    it('is not sent once the day has ended everywhere', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await setDay(alpha.organizationId, LONG_AGO);
+
+      expect(await service().remindDue()).toBe(0);
+    });
+  });
+
   describe('cancelling', () => {
     it('is any Owner’s, and every member is told', async () => {
       const alpha = await registerOrganization(app, 'alpha');
@@ -333,7 +455,11 @@ describe('Organization deletion (e2e)', () => {
       );
       await alpha.agent
         .post('/v1/organization/deletion')
-        .send({ password: PASSWORD, declineExport: true })
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          declineExport: true,
+        })
         .expect(200);
 
       await second.delete('/v1/organization/deletion').expect(204);
@@ -415,7 +541,11 @@ describe('Organization deletion (e2e)', () => {
       const alpha = await registerOrganization(app, 'alpha');
       await alpha.agent
         .post('/v1/organization/deletion')
-        .send({ password: PASSWORD, declineExport: true })
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          declineExport: true,
+        })
         .expect(200);
 
       expect(await service().completeDue()).toEqual({
@@ -450,7 +580,12 @@ describe('Organization deletion (e2e)', () => {
     async function both(org: Org): Promise<string> {
       const res = await org.agent
         .post('/v1/organization/deletion')
-        .send({ password: PASSWORD, declineExport: true, deleteAccount: true })
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          declineExport: true,
+          deleteAccount: true,
+        })
         .expect(200);
       return body<{ deletionScheduledAt: string }>(res).deletionScheduledAt;
     }
@@ -499,13 +634,42 @@ describe('Organization deletion (e2e)', () => {
       expect(deleted.email).toBe(`deleted-${alpha.userId}@invalid`);
     });
 
+    it('signs out every other device, once the request has committed', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const phone = authedAgent(app);
+      await phone
+        .post('/v1/auth/login')
+        .send({ email: alpha.email, password: PASSWORD })
+        .expect(200);
+
+      // A refused request signs no one out.
+      await alpha.agent
+        .post('/v1/organization/deletion')
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          deleteAccount: true,
+        })
+        .expect(409);
+      await phone.get('/v1/auth/me').expect(200);
+
+      await both(alpha);
+      await phone.get('/v1/auth/me').expect(401);
+      await alpha.agent.get('/v1/auth/me').expect(200);
+    });
+
     it('is refused with others in the organization', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await addMember(app, alpha, 'member@alpha.example.com', 'Viewer');
 
       await alpha.agent
         .post('/v1/organization/deletion')
-        .send({ password: PASSWORD, declineExport: true, deleteAccount: true })
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          declineExport: true,
+          deleteAccount: true,
+        })
         .expect(409);
     });
 
@@ -544,7 +708,11 @@ describe('Organization deletion (e2e)', () => {
       const alpha = await registerOrganization(app, 'alpha');
       await alpha.agent
         .post('/v1/organization/deletion')
-        .send({ password: PASSWORD, declineExport: true })
+        .send({
+          organizationName: ALPHA,
+          password: PASSWORD,
+          declineExport: true,
+        })
         .expect(200);
 
       await alpha.agent

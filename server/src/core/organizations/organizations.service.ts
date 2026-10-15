@@ -5,22 +5,29 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 
+import type { Transaction } from '../../database/database.module';
 import {
   addresses,
+  auditLog,
   organizations,
   stockValuations,
+  users,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { assertListAssignable } from '../../modules/price-lists/list-price';
+import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { recordPrevious } from '../audit/audit-context';
 import { FilesService } from '../files/files.service';
 import { normalizeHex, safeAccent } from './accent';
 import { assertLanguagePair } from './document-languages';
 import type { OrganizationAddressDto } from './dto/organization-address.dto';
-import type { OrganizationProfile } from './dto/organization-response.dto';
+import type {
+  OrganizationLastExport,
+  OrganizationProfile,
+} from './dto/organization-response.dto';
 import type { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { registeredAddress } from './registered-address';
 
@@ -42,7 +49,13 @@ export class OrganizationsService {
     private readonly files: FilesService,
   ) {}
 
-  async get(): Promise<OrganizationProfile> {
+  /**
+   * With the last full export only for those who can take one (ADR-070,
+   * amended): who downloaded everything is no one else's business.
+   */
+  async get(
+    options: { withLastExport?: boolean } = {},
+  ): Promise<OrganizationProfile> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [organization] = await tx
         .select({
@@ -79,6 +92,9 @@ export class OrganizationsService {
         );
 
       const address = await registeredAddress(tx, organizationId);
+      const lastExport = options.withLastExport
+        ? await lastExportOf(tx, organizationId)
+        : null;
 
       // The address's printed fields (ADR-068), not its row, which would
       // also send its owner and the flags the partners' addresses use.
@@ -94,6 +110,7 @@ export class OrganizationsService {
               country: address.country,
             }
           : null,
+        lastExport,
       };
     });
   }
@@ -353,4 +370,27 @@ export class OrganizationsService {
       this.logger.log(`Registered address set for ${organizationId}`);
     });
   }
+}
+
+/**
+ * The organization's last full export, from the audit entry each one
+ * writes (ADR-070): the deletion's 24 hours are counted from it.
+ */
+async function lastExportOf(
+  tx: Transaction,
+  organizationId: string,
+): Promise<OrganizationLastExport | null> {
+  const [entry] = await tx
+    .select({ exportedAt: auditLog.createdAt, exportedBy: users.name })
+    .from(auditLog)
+    .innerJoin(users, eq(users.id, auditLog.actorId))
+    .where(
+      and(
+        eq(auditLog.organizationId, organizationId),
+        eq(auditLog.action, AUDIT_ACTIONS.ORGANIZATION_EXPORTED),
+      ),
+    )
+    .orderBy(desc(auditLog.createdAt))
+    .limit(1);
+  return entry ?? null;
 }

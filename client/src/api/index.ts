@@ -434,6 +434,7 @@ export {
   type OrganizationDeletionControllerRequestDeletionV1Responses,
   type OrganizationDeletionScheduled,
   type OrganizationEnvelope,
+  type OrganizationLastExport,
   type OrganizationProfile,
   type OutputEnvelope,
   type OutputLotDto,
