@@ -17,13 +17,9 @@ export const EXPORT_PATH = '/organization/export';
 const FRESH_MS = 24 * 60 * 60 * 1000;
 
 /** Whether the last export is recent enough to delete on. */
-export function isFresh(
-  last: OrganizationLastExport | null,
-  now: Date = new Date(),
-): boolean {
+export function isFresh(last: OrganizationLastExport | null): boolean {
   return (
-    last !== null &&
-    now.getTime() - new Date(last.exportedAt).getTime() < FRESH_MS
+    last !== null && Date.now() - new Date(last.exportedAt).getTime() < FRESH_MS
   );
 }
 

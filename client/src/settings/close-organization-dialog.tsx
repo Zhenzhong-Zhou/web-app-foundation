@@ -81,24 +81,31 @@ export function CloseOrganizationDialog({
   useEffect(() => {
     if (!open) return;
     let ignore = false;
+    let polling: number | undefined;
+    let stopping: number | undefined;
+    const stopPolling = () => window.clearInterval(polling);
     const read = () =>
       void api<{ organization: OrganizationProfile }>('/organization').then(
         (response) => {
-          if (!ignore) setOrganization(response.organization);
+          if (ignore) return;
+          setOrganization(response.organization);
+          // The download it followed is recorded: nothing left to wait for.
+          if (isFresh(response.organization.lastExport)) stopPolling();
         },
         () => undefined,
       );
 
     read();
     window.addEventListener('focus', read);
-    const polling =
-      downloadedAt !== null && Date.now() - downloadedAt < POLL_FOR_MS
-        ? window.setInterval(read, POLL_MS)
-        : undefined;
+    if (downloadedAt !== null) {
+      polling = window.setInterval(read, POLL_MS);
+      stopping = window.setTimeout(stopPolling, POLL_FOR_MS);
+    }
     return () => {
       ignore = true;
       window.removeEventListener('focus', read);
       window.clearInterval(polling);
+      window.clearTimeout(stopping);
     };
   }, [open, downloadedAt]);
 
