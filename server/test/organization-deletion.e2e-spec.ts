@@ -1,4 +1,5 @@
-import { access, rm } from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
+import { access, readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { INestApplication } from '@nestjs/common';
@@ -729,7 +730,7 @@ describe('Organization deletion (e2e)', () => {
       });
     });
 
-    it('refuses an upload once the run has marked its start', async () => {
+    it('refuses an upload once the run has marked its start, and keeps no bytes', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await setDay(alpha.organizationId, LONG_AGO);
       await db
@@ -747,6 +748,15 @@ describe('Organization deletion (e2e)', () => {
         .from(files)
         .where(eq(files.organizationId, alpha.organizationId));
       expect(stored).toEqual([]);
+
+      // The bytes went first, under their id, and went again when the row
+      // was refused: no purge would find them otherwise.
+      const folder = path.resolve('storage', alpha.organizationId);
+      const entries = await readdir(folder, {
+        recursive: true,
+        withFileTypes: true,
+      }).catch((): Dirent[] => []);
+      expect(entries.filter((entry) => entry.isFile())).toEqual([]);
     });
 
     it('moves a session working in it to the member’s next organization', async () => {
