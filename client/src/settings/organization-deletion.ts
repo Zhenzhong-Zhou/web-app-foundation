@@ -1,5 +1,6 @@
 import type { IntlShape } from 'react-intl';
 
+import type { OrganizationLastExport } from '../api/types.gen';
 import { daysUntil } from '../lib/expiry';
 import { formatDay } from '../lib/format';
 
@@ -37,4 +38,22 @@ export function deletionDayFrom(now: Date): string {
   return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
     .toISOString()
     .slice(0, 10);
+}
+
+/**
+ * Who took an export: "you", by id rather than by name, since two members
+ * can share one; anyone else by their name. The dialog and the Profile
+ * section say it the same way.
+ */
+export function exportedBy(
+  intl: IntlShape,
+  exported: OrganizationLastExport,
+  userId: string | undefined,
+): string {
+  return exported.exportedById === userId
+    ? intl.formatMessage({
+        id: 'settings.deletion.byYou',
+        defaultMessage: 'you',
+      })
+    : exported.exportedBy;
 }

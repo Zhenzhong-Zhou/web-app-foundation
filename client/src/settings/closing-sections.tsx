@@ -13,7 +13,11 @@ import { openDialog } from '../lib/open-dialog';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { CloseOrganizationDialog } from './close-organization-dialog';
-import { dayWithDaysLeft, EXPORT_PATH } from './organization-deletion';
+import {
+  dayWithDaysLeft,
+  EXPORT_PATH,
+  exportedBy,
+} from './organization-deletion';
 
 /**
  * The end of the Profile tab, for Owners (ADR-070): everything the
@@ -55,6 +59,7 @@ function DownloadEverything({
   organization: OrganizationProfile;
 }) {
   const intl = useIntl();
+  const { session } = useAuth();
   const last = organization.lastExport;
 
   return (
@@ -97,7 +102,10 @@ function DownloadEverything({
                     id: 'settings.export.last',
                     defaultMessage: 'Last downloaded {when} by {who}',
                   },
-                  { when: formatWhen(last.exportedAt), who: last.exportedBy },
+                  {
+                    when: formatWhen(last.exportedAt),
+                    who: exportedBy(intl, last, session?.user.id),
+                  },
                 )
               : intl.formatMessage({
                   id: 'settings.export.never',

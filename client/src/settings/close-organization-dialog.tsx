@@ -32,6 +32,7 @@ import {
   dayWithDaysLeft,
   deletionDayFrom,
   EXPORT_PATH,
+  exportedBy,
 } from './organization-deletion';
 
 /** How often the dialog asks whether a download it started has finished. */
@@ -160,12 +161,7 @@ export function CloseOrganizationDialog({
   const organizationName = organization?.name ?? session?.organization?.name;
   const day = dayWithDaysLeft(intl, deletionDayFrom(new Date()));
   const byWhom = (exported: OrganizationLastExport) =>
-    exported.exportedById === session?.user.id
-      ? intl.formatMessage({
-          id: 'settings.deletion.byYou',
-          defaultMessage: 'you',
-        })
-      : exported.exportedBy;
+    exportedBy(intl, exported, session?.user.id);
   const confirmLabel = alone
     ? intl.formatMessage({
         id: 'settings.deletion.confirmBoth',
