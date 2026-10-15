@@ -60,7 +60,10 @@ export default tseslint.config(
   },
 
   {
-    files: ['src/core/**/*.ts', 'src/shared/**/*.ts'],
+    // Every folder that holds services: core/, shared/ and modules/. A module
+    // reading across organizations is the same mistake as a core service
+    // doing it, and modules/ is where most new services land.
+    files: ['src/core/**/*.ts', 'src/shared/**/*.ts', 'src/modules/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -75,8 +78,9 @@ export default tseslint.config(
               message:
                 'Services must use TenantDb — it applies organization_id (ADR-003/ADR-009). ' +
                 'Global queries are allowed in core/auth, ' +
-                'core/authorization, core/notifications and the files ' +
-                'purge; anywhere else, this is a scoping mistake.',
+                'core/authorization, core/notifications, the files purge ' +
+                'and the licence reminders; anywhere else, this is a ' +
+                'scoping mistake.',
             },
           ],
         },
@@ -85,7 +89,7 @@ export default tseslint.config(
   },
 
   {
-    // UNSAFE_GLOBAL_DB is allowed in exactly four places, none of which has a
+    // UNSAFE_GLOBAL_DB is allowed in exactly five places, none of which has a
     // tenant to scope to. core/auth resolves a user by email before any
     // organization is known. core/authorization joins the permission
     // catalogue, which has no organization_id by design. core/notifications is
