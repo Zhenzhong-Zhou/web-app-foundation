@@ -8211,6 +8211,23 @@ they exist so the reasoning is not rediscovered from scratch.
   period, or work routed to a role instead of a person. Staff leave as a
   record (holiday balances) is an HR system's job, not this one's.
   Trigger: the first approval that waits on someone on holiday.
+- **What the organization export gives a bookkeeper (#118).** ADR-070's
+  ZIP is the data as stored: CSVs with the database's column names
+  (`bill_to_name`, `tax_total`), Postgres's own timestamps, and audit
+  actions such as `user.created`. In the walkthrough in Chinese, the
+  novice bookkeeper gave up on them. Two questions. First, a glossary of
+  the main tables' columns in the export's `README.txt`, in the Owner's
+  language like the rest of it; or the CSVs' headers themselves
+  translated, which reads better but no longer matches the database that
+  a later import would map back to. Second, PDFs of the invoices and
+  credit notes as issued, which a bookkeeper expects to keep. Documents
+  print through the browser (ADR-041), so the server has no renderer:
+  adding PDFs means a headless browser on the print pages, or a PDF
+  library drawing them a second time, either one a dependency and a
+  layout to keep in step. Reprinting from the snapshots already matches
+  what was issued, seller, customer and languages (ADR-046, ADR-054),
+  except the logo, which prints as it is today. Trigger: before the first
+  customer, or the first Owner closing an organization with real records.
 
 ---
 

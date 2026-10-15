@@ -12,6 +12,8 @@ below, and this file says where.
   relevant ones before changing anything structural.
 - `docs/conventions.md`: naming, code organisation and the API contract.
 - `docs/principles.md`: what the product aims for.
+- `docs/manual-checks.md`: what a person checks by hand, and the rules
+  for keeping it current.
 
 ## How to work
 
@@ -70,6 +72,9 @@ Karpathy's observations on LLM coding pitfalls
   (ADR-054).
 - **Audit.** Writes are `@Audited`, or listed in `NOT_AUDITED` with a
   reason; free text stays out of the payload (ADR-018).
+- **Manual checks.** A commit that changes what a person sees, or a rule
+  they work under, updates `docs/manual-checks.md` in the same commit
+  (`docs/conventions.md`, Tests).
 - **Lint autofixes** under `client/e2e/` or `src/` are committed as a
   fixup, never restored.
 
