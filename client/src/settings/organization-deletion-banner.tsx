@@ -80,9 +80,12 @@ export function OrganizationDeletionBanner() {
   const together = session.user.deletionScheduledAt === day;
   const isOwner = can('organizations.delete');
   const hideable = daysUntil(day) > LAST_DAYS;
+  const hideLabel = intl.formatMessage({
+    id: 'settings.banner.hide',
+    defaultMessage: 'Hide for today',
+  });
 
-  function hide() {
-    if (!organization || !day) return;
+  const hide = () => {
     const next = { organizationId: organization.id, day, on: today };
     try {
       localStorage.setItem(HIDDEN_DELETION_BANNER, JSON.stringify(next));
@@ -90,7 +93,7 @@ export function OrganizationDeletionBanner() {
       // Storage refused: hidden for this page view only.
     }
     setHidden(next);
-  }
+  };
 
   const text = together
     ? intl.formatMessage(
@@ -163,14 +166,8 @@ export function OrganizationDeletionBanner() {
           {hideable && (
             <IconButton
               size="small"
-              aria-label={intl.formatMessage({
-                id: 'settings.banner.hide',
-                defaultMessage: 'Hide for today',
-              })}
-              title={intl.formatMessage({
-                id: 'settings.banner.hide',
-                defaultMessage: 'Hide for today',
-              })}
+              aria-label={hideLabel}
+              title={hideLabel}
               onClick={hide}
             >
               <CloseIcon fontSize="small" />

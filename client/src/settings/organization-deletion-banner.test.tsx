@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { localToday } from '../lib/expiry';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { OrganizationDeletionBanner } from './organization-deletion-banner';
@@ -11,9 +12,7 @@ import { OrganizationDeletionBanner } from './organization-deletion-banner';
 function inDays(days: number): string {
   const day = new Date();
   day.setDate(day.getDate() + days);
-  const month = String(day.getMonth() + 1).padStart(2, '0');
-  const date = String(day.getDate()).padStart(2, '0');
-  return `${day.getFullYear()}-${month}-${date}`;
+  return localToday(day);
 }
 
 const OWNER = ['organizations.delete', 'organizations.export'];
