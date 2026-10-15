@@ -22,9 +22,11 @@ with this one, this one is current.
   0057 to 0061 are ADR-070's (#116): the deletion day, the reminder, and
   whose account goes with it (0059 put it on the organization, 0060 moved
   it to the account, 0061 added its check and the trigger that clears it
-  when a membership ends). Next is **0062**. Render holds one row per
-  file in `drizzle.__drizzle_migrations` once `main` is deployed there:
-  62. After any new migration: `npm run migrate:all`.
+  when a membership ends). **0062** is #117's, on `deletion-started`: the
+  mark a run takes before it erases an organization's files. Next is
+  **0063**. Render holds one row per file in
+  `drizzle.__drizzle_migrations` once `main` is deployed there: 62, then
+  63. After any new migration: `npm run migrate:all`.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
   for typescript-eslint and the Nest CLI (ADR-067, *Deferred*); still so
@@ -142,7 +144,25 @@ with this one, this one is current.
   v0.6.0 and v0.5.0's notes are the GitHub releases and `docs/releases/`.
   Release notes are release notes only: they say nothing of manual checks
   or the walkthrough.
-- **`after-adr-070`** (PR to open): this handoff after #116;
+- **`deletion-started`** (PR to open): #117, an ADR-070 amendment, then
+  migration 0062. Completing a deletion marks its start under the
+  organization's lock before erasing anything; a cancel or an upload after
+  the mark is refused, and an upload writes its bytes before its row
+  commits. Also, agreed after #120's review: Reset your password beside a
+  refused password, one press to the reset page with the email filled in
+  (MC-R11 rewritten).
+- **Next, ADR-071** (#118), decided so far: six documents as PDFs drawn on
+  the server (pdfmake, embedded Noto fonts), the invoice, credit note and
+  packing slip in their ADR-055 look, and the RMA, purchase order and pro
+  forma invoice designed on the canvas first; Print opens the PDF, so the
+  browser print pages retire and each document has one design; Download
+  PDF on each; the export adds the invoices' and credit notes' PDFs, a
+  column glossary in its README (headers stay as stored) and `?locale=`
+  on its link. The pro forma carries its order's number and the date made,
+  and declared values for free samples wait for customs details. Still to
+  confirm: the pro forma made on demand from any sale order not cancelled,
+  every line priced, and audited when made. Then tag v0.7.0.
+- **`after-adr-070`** (merged, #123): this handoff after #116;
   `UNSAFE_GLOBAL_DB` refused in `modules/` too; in-range dependency
   updates and jsdom 30.1.3; the account button named from the initials it
   shows, which axe-core 4.14's Label in Name rule asked for. Then the four
@@ -195,12 +215,12 @@ with this one, this one is current.
   superseded), #18 (site licences), #25 (what the customer kept), #33 (one
   hook for Load more keyset paging) and #41 (an organization's time zone
   for today). From ADR-070's review and its walkthrough in Chinese: #117
-  (two one-second windows while a deletion completes) and #118 (the
-  export's column glossary and invoice PDFs, also under *Open decisions*
-  in `decisions.md`); #119 to #122 are fixed on `after-adr-070`, above.
-  `gh issue list` to review.
-- **Branches:** prune the merged ones, `adr-070-organization-deletion`
-  among them (`scripts/prune-branches.sh`).
+  (two one-second windows while a deletion completes), fixed on
+  `deletion-started`, and #118 (the export's column glossary and invoice
+  PDFs, also under *Open decisions* in `decisions.md`), which ADR-071
+  takes up; #119 to #122 were fixed in #123. `gh issue list` to review.
+- **Branches:** prune the merged ones, `after-adr-070` among them
+  (`scripts/prune-branches.sh`).
 
 ### Still to do, in code
 
@@ -217,7 +237,8 @@ with this one, this one is current.
 - **ADR-070, small and waiting:** what needs a decision or a fix is
   filed as #117 to #122 (*Open issues* above). Not filed, each small:
   - The export's README follows the browser's language, since a plain
-    link cannot send the app's; a `?locale=` on the link if anyone minds.
+    link cannot send the app's; ADR-071 adds a `?locale=` on the link, now
+    that the README holds the glossary.
   - About 20 foreign keys under an organization have no index, so the
     cascade that deletes one may scan whole tables. It runs in the timer,
     not a request; `EXPLAIN ANALYZE` a deletion on `seed:volume` before
