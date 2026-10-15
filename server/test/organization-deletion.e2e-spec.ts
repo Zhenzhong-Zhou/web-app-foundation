@@ -384,9 +384,25 @@ describe('Organization deletion (e2e)', () => {
       for (const to of [alpha.email, 'member@alpha.example.com']) {
         expect(mail.lastTo(to)?.subject).toMatch(/^alpha Co will be deleted/);
       }
-      expect(mail.lastTo(alpha.email)?.text).toContain('Download the export');
+      expect(mail.lastTo(alpha.email)?.text).toContain(
+        'Download everything again',
+      );
+      // The person who asked reads "You asked", everyone else their name;
+      // an Owner's link leads to Settings, a member's to the app.
+      expect(mail.lastTo(alpha.email)?.text).toContain(
+        'You asked for alpha Co',
+      );
+      expect(mail.lastTo(alpha.email)?.text).toContain(
+        '/settings/organization',
+      );
+      expect(mail.lastTo('member@alpha.example.com')?.text).toContain(
+        'Owner asked for alpha Co',
+      );
       expect(mail.lastTo('member@alpha.example.com')?.text).not.toContain(
-        'Download the export',
+        '/settings/organization',
+      );
+      expect(mail.lastTo('member@alpha.example.com')?.text).not.toContain(
+        'Download everything again',
       );
       // Everyone keeps working; only an Owner can cancel.
       expect(mail.lastTo('member@alpha.example.com')?.text).toContain(
@@ -713,7 +729,7 @@ describe('Organization deletion (e2e)', () => {
         (sent) => sent.to === alpha.email && sent.subject.includes('deleted'),
       );
       expect(about.map((sent) => sent.subject)).toEqual([
-        `alpha Co will be deleted after ${longDay(day)}`,
+        `Your account and alpha Co will be deleted after ${longDay(day)}`,
       ]);
       expect(mail.lastTo(alpha.email)?.text).toContain(
         'Your account will be deleted straight after it',

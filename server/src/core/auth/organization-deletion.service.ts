@@ -160,7 +160,7 @@ export class OrganizationDeletionService {
               t({
                 id: 'organization.deletion.exportRequired',
                 defaultMessage:
-                  'Download the export first, or say you do not want it. Once the organization is deleted, nothing can make one.',
+                  'Download everything first, or say you do not need a copy. Once the organization is deleted, nothing can make one.',
               }),
               ERROR_CODES.organizationExportRequired,
             ),
@@ -540,15 +540,15 @@ export class OrganizationDeletionService {
     // has already committed.
     for (let at = 0; at < members.length; at += MAIL_AT_ONCE) {
       await Promise.all(
-        members
-          .slice(at, at + MAIL_AT_ONCE)
-          .map((member) =>
-            this.accountDeletion.sendTo(
-              member,
-              (mail) => build(mail, member),
-              actor && member.id === actor.userId ? actor.language : undefined,
-            ),
+        members.slice(at, at + MAIL_AT_ONCE).map((member) =>
+          this.accountDeletion.sendTo(
+            member,
+            // The person who acted is told "you", not their own name.
+            (mail) =>
+              build(mail, { ...member, isActor: member.id === actor?.userId }),
+            actor && member.id === actor.userId ? actor.language : undefined,
           ),
+        ),
       );
     }
   }

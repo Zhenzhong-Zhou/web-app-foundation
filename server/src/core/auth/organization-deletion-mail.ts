@@ -14,16 +14,31 @@ export interface MemberSide {
   isOwner: boolean;
   /** The only member, whose account was scheduled with it. */
   withAccount: boolean;
+  /** The person who asked or cancelled: told "you", not their own name. */
+  isActor?: boolean;
 }
 
-/** Every member's banner names the day, so the link is the app itself. */
-const APP = '/';
+/**
+ * Where the email leads: an Owner to Settings → Organization, where the
+ * download and the cancel are; everyone else to the app, whose banner
+ * names the day.
+ */
+function linkFor(side: MemberSide): string {
+  return side.isOwner ? '/settings/organization' : '/';
+}
 
 /** Who can cancel, and until when: said when scheduled, and a week before. */
 const UNTIL = t({
   id: 'mail.organizationDeletion.scheduled.until',
   defaultMessage:
     'Until then everyone can keep working as usual. Only an Owner can cancel the deletion, until that day is over.',
+});
+
+/** To the only member, who has no one to keep working with, and keeps both. */
+const UNTIL_BOTH = t({
+  id: 'mail.organizationDeletion.scheduled.untilBoth',
+  defaultMessage:
+    'Until then you can keep working as usual. To keep both, press Keep both in the banner at the top of every page, until that day is over.',
 });
 
 /** For every member but an only one whose account goes too. */
@@ -59,11 +74,11 @@ function notice(
     wording.subject,
     [
       wording.when,
-      UNTIL,
+      side.withAccount ? UNTIL_BOTH : UNTIL,
       ...(side.isOwner ? [wording.exportAgain] : []),
       side.withAccount ? wording.withAccount : accountStays(organization),
     ],
-    APP,
+    linkFor(side),
   );
 }
 
@@ -77,25 +92,43 @@ export function organizationDeletionScheduledMail(
   const { organization, actor } = details;
 
   return notice(context, side, organization, {
-    subject: t(
-      {
-        id: 'mail.organizationDeletion.scheduled.subject',
-        defaultMessage: '{organization} will be deleted after {date}',
-      },
-      { organization, date },
-    ),
-    when: t(
-      {
-        id: 'mail.organizationDeletion.scheduled.when',
-        defaultMessage:
-          '{actor} asked for {organization} to be deleted. Its records, files and audit log will be deleted after {date}.',
-      },
-      { actor, organization, date },
-    ),
+    subject: side.withAccount
+      ? t(
+          {
+            id: 'mail.organizationDeletion.scheduled.subjectBoth',
+            defaultMessage:
+              'Your account and {organization} will be deleted after {date}',
+          },
+          { organization, date },
+        )
+      : t(
+          {
+            id: 'mail.organizationDeletion.scheduled.subject',
+            defaultMessage: '{organization} will be deleted after {date}',
+          },
+          { organization, date },
+        ),
+    when: side.isActor
+      ? t(
+          {
+            id: 'mail.organizationDeletion.scheduled.whenYou',
+            defaultMessage:
+              'You asked for {organization} to be deleted. Its records, files and audit log will be deleted after {date}.',
+          },
+          { organization, date },
+        )
+      : t(
+          {
+            id: 'mail.organizationDeletion.scheduled.when',
+            defaultMessage:
+              '{actor} asked for {organization} to be deleted. Its records, files and audit log will be deleted after {date}.',
+          },
+          { actor, organization, date },
+        ),
     exportAgain: t({
       id: 'mail.organizationDeletion.scheduled.export',
       defaultMessage:
-        'Download the export again shortly before then, from Settings: once the organization is deleted, nothing can make one.',
+        'Download everything again shortly before then, from Settings → Organization: once the organization is deleted, nothing can make a copy.',
     }),
     withAccount: t({
       id: 'mail.organizationDeletion.scheduled.withAccount',
@@ -113,14 +146,23 @@ export function organizationDeletionCancelledMail(
 ): Mail {
   const { organization, actor } = details;
   const paragraphs: Translatable[] = [
-    t(
-      {
-        id: 'mail.organizationDeletion.cancelled.body',
-        defaultMessage:
-          '{actor} cancelled the deletion of {organization}. It stays as it is.',
-      },
-      { actor, organization },
-    ),
+    side.isActor
+      ? t(
+          {
+            id: 'mail.organizationDeletion.cancelled.bodyYou',
+            defaultMessage:
+              'You cancelled the deletion of {organization}. It stays as it is.',
+          },
+          { organization },
+        )
+      : t(
+          {
+            id: 'mail.organizationDeletion.cancelled.body',
+            defaultMessage:
+              '{actor} cancelled the deletion of {organization}. It stays as it is.',
+          },
+          { actor, organization },
+        ),
   ];
   if (side.withAccount) {
     paragraphs.push(
@@ -141,7 +183,7 @@ export function organizationDeletionCancelledMail(
       { organization },
     ),
     paragraphs,
-    APP,
+    linkFor(side),
   );
 }
 
@@ -184,7 +226,8 @@ export function organizationDeletedMail(
               'Your account stays. Sign in to work in another organization you belong to, or to download your own data.',
           }),
     ],
-    APP,
+    // The organization is gone: the app, where the account still is.
+    '/',
   );
 }
 
@@ -203,13 +246,23 @@ export function organizationDeletionReminderMail(
   const { organization } = details;
 
   return notice(context, side, organization, {
-    subject: t(
-      {
-        id: 'mail.organizationDeletion.reminder.subject',
-        defaultMessage: 'Reminder: {organization} will be deleted after {date}',
-      },
-      { organization, date },
-    ),
+    subject: side.withAccount
+      ? t(
+          {
+            id: 'mail.organizationDeletion.reminder.subjectBoth',
+            defaultMessage:
+              'Reminder: your account and {organization} will be deleted after {date}',
+          },
+          { organization, date },
+        )
+      : t(
+          {
+            id: 'mail.organizationDeletion.reminder.subject',
+            defaultMessage:
+              'Reminder: {organization} will be deleted after {date}',
+          },
+          { organization, date },
+        ),
     when: t(
       {
         id: 'mail.organizationDeletion.reminder.when',
@@ -221,7 +274,7 @@ export function organizationDeletionReminderMail(
     exportAgain: t({
       id: 'mail.organizationDeletion.reminder.export',
       defaultMessage:
-        'Download everything again now, from Settings, so your copy holds the last week too: once the organization is deleted, nothing can make one.',
+        'Download everything again now, from Settings → Organization, so your copy holds the last week too: once the organization is deleted, nothing can make one.',
     }),
     withAccount: t({
       id: 'mail.organizationDeletion.reminder.withAccount',
