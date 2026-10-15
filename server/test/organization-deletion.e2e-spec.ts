@@ -1,4 +1,4 @@
-import { access } from 'node:fs/promises';
+import { access, rm } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { INestApplication } from '@nestjs/common';
@@ -23,6 +23,7 @@ import {
 } from '../src/database/database.module';
 import {
   auditLog,
+  files,
   organizations,
   sessions,
   users,
@@ -191,6 +192,47 @@ describe('Organization deletion (e2e)', () => {
       const kept = [...zip.keys()].filter((name) => name.startsWith('files/'));
       expect(kept).toEqual([`files/${logo.id}-${logo.original_name}`]);
       expect(zip.get(kept[0])!.length).toBeGreaterThan(0);
+    });
+
+    it('fails one download, not the server, on a file it cannot read', async () => {
+      const alpha = await busy('alpha');
+      const [logo] = await db
+        .select({ id: files.id })
+        .from(files)
+        .where(eq(files.organizationId, alpha.organizationId));
+      // The bytes gone from storage, the row still there: as when the
+      // deletion's run erases files under an export still streaming.
+      await rm(path.resolve('storage', alpha.organizationId, logo.id), {
+        recursive: true,
+        force: true,
+      });
+
+      await alpha.agent
+        .get('/v1/organization/export')
+        .responseType('blob')
+        .then(
+          () => undefined,
+          () => undefined,
+        );
+
+      await alpha.agent.get('/v1/auth/me').expect(200);
+      const recorded = await db
+        .select({ id: auditLog.id })
+        .from(auditLog)
+        .where(eq(auditLog.action, 'organization.exported'));
+      expect(recorded).toEqual([]);
+    });
+
+    it('writes its README in the Owner’s own language', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await db
+        .update(users)
+        .set({ locale: 'zh-Hans' })
+        .where(eq(users.id, alpha.userId));
+
+      const zip = await exportOf(alpha.agent);
+
+      expect(zip.get('README.txt')!.toString()).toContain('全部内容');
     });
 
     it('is recorded in the audit log before the download ends', async () => {

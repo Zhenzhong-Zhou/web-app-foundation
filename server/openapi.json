@@ -2208,16 +2208,7 @@
     "/v1/organization/export": {
       "get": {
         "operationId": "OrganizationController_exportAll_v1",
-        "parameters": [
-          {
-            "name": "accept-language",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "",

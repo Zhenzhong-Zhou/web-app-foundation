@@ -3793,9 +3793,6 @@ export type OrganizationControllerUpdateV1Response =
 
 export type OrganizationControllerExportAllV1Data = {
   body?: never;
-  headers: {
-    'accept-language': string;
-  };
   path?: never;
   query?: never;
   url: '/v1/organization/export';

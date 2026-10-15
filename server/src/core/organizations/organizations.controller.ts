@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Patch,
@@ -12,7 +11,6 @@ import {
 import { ApiOkResponse, ApiProduces } from '@nestjs/swagger';
 import type { Response } from 'express';
 
-import { localeOf } from '../../i18n/translate';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { Audited } from '../audit/audited.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -72,9 +70,8 @@ export class OrganizationController {
   async exportAll(
     @CurrentUser() context: RequestContext,
     @Res() res: Response,
-    @Headers('accept-language') acceptLanguage?: string,
   ): Promise<void> {
-    await this.exports.writeTo(res, context, localeOf(acceptLanguage));
+    await this.exports.writeTo(res, context);
   }
 
   @Patch()

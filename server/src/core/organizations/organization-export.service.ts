@@ -18,7 +18,7 @@ import {
 } from '../../database/schema';
 import { runInTenantContext } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
-import { t, translate } from '../../i18n/translate';
+import { recipientLocale, t, translate } from '../../i18n/translate';
 import { AuditService } from '../audit/audit.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import type { RequestContext } from '../auth/request-context';
@@ -58,12 +58,12 @@ export class OrganizationExportService {
    * response ends, so a deletion asked for straight after the download
    * finds it (ADR-070).
    */
-  async writeTo(
-    res: Response,
-    context: RequestContext,
-    locale: Locale,
-  ): Promise<void> {
+  async writeTo(res: Response, context: RequestContext): Promise<void> {
     const counts: Counts = { tables: 0, rows: 0, files: 0 };
+    // Cleared when the transaction ends, however it ends: a table still
+    // being read must not send another fetch down a connection the pool has
+    // already handed to someone else's request.
+    const reading = { open: true };
 
     try {
       const { streaming } = await this.tenantDb.transaction(
@@ -78,6 +78,13 @@ export class OrganizationExportService {
             .select({ name: organizations.name, slug: organizations.slug })
             .from(organizations)
             .where(eq(organizations.id, organizationId));
+          // The README in the Owner's own language (ADR-070), the browser's
+          // only when they have not chosen one: a plain link cannot send
+          // the app's Accept-Language.
+          const { rows: chosen } = await tx.execute<{ locale: string | null }>(
+            sql`select locale from users where id = ${context.userId}`,
+          );
+          const locale = recipientLocale(chosen[0]?.locale, context.language);
 
           const today = todayUtc(new Date());
           const zip = new ZipFile();
@@ -85,6 +92,15 @@ export class OrganizationExportService {
           const archive = zip.outputStream as Readable;
           // yazl reports a failed entry on the ZipFile, not on its output.
           zip.on('error', (error: Error) => archive.destroy(error));
+          // Nor does it listen to an entry's own errors: one unanswered
+          // 'error' on a source stream is an uncaught exception, and takes
+          // the whole server down. Every entry's failure ends the archive,
+          // and with it the download.
+          const entry = (source: Readable, name: string, compress = true) => {
+            source.once('error', (error: Error) => archive.destroy(error));
+            zip.addReadStream(source, name, { compress });
+            return source;
+          };
 
           zip.addBuffer(
             Buffer.from(readme(organization.name, today, locale), 'utf8'),
@@ -98,10 +114,10 @@ export class OrganizationExportService {
           const csv = (name: string, query: SQL) => {
             counts.tables += 1;
             const rows = Readable.from(
-              csvOf(tx, `export_${counts.tables}`, query, counts),
+              csvOf(tx, `export_${counts.tables}`, query, counts, reading),
             );
             tables.push(finished(rows));
-            zip.addReadStream(rows, `${name}.csv`);
+            entry(rows, `${name}.csv`);
           };
 
           csv(
@@ -161,10 +177,10 @@ export class OrganizationExportService {
             if (!size) continue;
             counts.files += 1;
             // Stored as they are: WebP and PNG are compressed already.
-            zip.addReadStream(
+            entry(
               Readable.from(this.bytesOf(keyOf(organizationId, file.id, size))),
               `files/${file.id}-${file.originalName}`,
-              { compress: false },
+              false,
             );
           }
           zip.end();
@@ -191,7 +207,11 @@ export class OrganizationExportService {
           const streaming = pipeline(archive, auditedAtTheEnd(record), res);
           // The connection is held only while a table is read; a download that
           // stops first ends it as well.
-          await Promise.race([Promise.all(tables), streaming]);
+          try {
+            await Promise.race([Promise.all(tables), streaming]);
+          } finally {
+            reading.open = false;
+          }
           return { streaming };
         },
       );
@@ -203,6 +223,9 @@ export class OrganizationExportService {
         this.logger.warn(
           `Export of ${context.organizationId} stopped: ${String(error)}`,
         );
+        // Closed, so the browser sees a failed download rather than waiting
+        // for bytes that will not come.
+        res.destroy();
         return;
       }
       throw error;
@@ -231,12 +254,18 @@ async function* csvOf(
   cursor: string,
   query: SQL,
   counts: Counts,
+  reading: { open: boolean },
 ): AsyncGenerator<string> {
+  // Nothing sent once the transaction has ended: its connection is back in
+  // the pool, perhaps inside another request's transaction.
+  const execute = (statement: SQL) => {
+    if (!reading.open) throw new Error('The export’s transaction has ended');
+    return tx.execute(statement);
+  };
   const name = sql.identifier(cursor);
-  await tx.execute(sql`declare ${name} no scroll cursor for ${query}`);
+  await execute(sql`declare ${name} no scroll cursor for ${query}`);
 
-  const next = () =>
-    tx.execute(sql`fetch ${sql.raw(String(BATCH))} from ${name}`);
+  const next = () => execute(sql`fetch ${sql.raw(String(BATCH))} from ${name}`);
 
   yield BOM;
   let result = await next();
@@ -248,7 +277,7 @@ async function* csvOf(
       .join('');
     result = await next();
   }
-  await tx.execute(sql`close ${name}`);
+  await execute(sql`close ${name}`);
 }
 
 /** A value for csvRow: JSON as JSON, a moment as ISO 8601, the rest as is. */
