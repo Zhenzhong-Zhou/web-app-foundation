@@ -361,24 +361,48 @@ export class AuthService implements OnModuleInit {
    * next page load rather than at session expiry.
    */
   async me(context: RequestContext): Promise<CurrentSession> {
-    const [user] = await this.db
-      .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        emailVerifiedAt: users.emailVerifiedAt,
-        locale: users.locale,
-        photoFileId: users.photoFileId,
-        deletionScheduledAt: users.deletionScheduledAt,
-        deletionWithOrganizationId: users.deletionWithOrganizationId,
-        deletionWithOrganizationName: organizations.name,
-      })
-      .from(users)
-      .leftJoin(
-        organizations,
-        eq(organizations.id, users.deletionWithOrganizationId),
-      )
-      .where(eq(users.id, context.userId));
+    // Independent reads, and this runs on every page load: the person,
+    // their organization and their permissions together, one round trip
+    // rather than two.
+    const organizationId = context.organizationId;
+    const roleId = context.roleId;
+    const [[user], organizationRows, permissions] = await Promise.all([
+      this.db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          emailVerifiedAt: users.emailVerifiedAt,
+          locale: users.locale,
+          photoFileId: users.photoFileId,
+          deletionScheduledAt: users.deletionScheduledAt,
+          deletionWithOrganizationId: users.deletionWithOrganizationId,
+          deletionWithOrganizationName: organizations.name,
+        })
+        .from(users)
+        .leftJoin(
+          organizations,
+          eq(organizations.id, users.deletionWithOrganizationId),
+        )
+        .where(eq(users.id, context.userId)),
+      organizationId
+        ? this.db
+            .select({
+              id: organizations.id,
+              name: organizations.name,
+              logoFileId: organizations.logoFileId,
+              accentColor: organizations.accentColor,
+              rail: organizations.rail,
+              logoOnDocuments: organizations.logoOnDocuments,
+              expiryWarningDays: organizations.expiryWarningDays,
+              expiryCriticalDays: organizations.expiryCriticalDays,
+              deletionScheduledAt: organizations.deletionScheduledAt,
+            })
+            .from(organizations)
+            .where(eq(organizations.id, organizationId))
+        : Promise.resolve([]),
+      roleId ? this.permissions.listForRole(roleId) : Promise.resolve([]),
+    ]);
 
     // A valid session pointing at no user should be impossible — sessions
     // cascade on delete, and ADR-012 tombstones rather than removing rows. If
@@ -408,36 +432,17 @@ export class AuthService implements OnModuleInit {
 
     // Both are null together: roleId comes from the membership that produced
     // organizationId, so there is no state where one exists without the other.
-    if (!context.organizationId || !context.roleId) {
+    const [organization] = organizationRows;
+    if (!organizationId || !roleId || !organization) {
       return { ...base, organization: null, permissions: [] };
     }
-
-    // Independent reads, and this runs on every page load. Sequential await
-    // here costs a round trip for nothing.
-    const [[organization], permissions] = await Promise.all([
-      this.db
-        .select({
-          id: organizations.id,
-          name: organizations.name,
-          logoFileId: organizations.logoFileId,
-          accentColor: organizations.accentColor,
-          rail: organizations.rail,
-          logoOnDocuments: organizations.logoOnDocuments,
-          expiryWarningDays: organizations.expiryWarningDays,
-          expiryCriticalDays: organizations.expiryCriticalDays,
-          deletionScheduledAt: organizations.deletionScheduledAt,
-        })
-        .from(organizations)
-        .where(eq(organizations.id, context.organizationId)),
-      this.permissions.listForRole(context.roleId),
-    ]);
 
     return {
       ...base,
       organization: {
         id: organization.id,
         name: organization.name,
-        roleId: context.roleId,
+        roleId,
         branding: {
           logoFileId: organization.logoFileId,
           accentColor: organization.accentColor,
