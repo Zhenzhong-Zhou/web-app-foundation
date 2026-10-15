@@ -19,11 +19,12 @@ with this one, this one is current.
   "Error codes"). PRs through #87.
 - **Migrations:** through **0056** on `main`, 57 files in
   `server/src/database/migrations/` (0055 and 0056 are ADR-069's, merged
-  with #114). **0057 to 0060** are ADR-070's, on its branch: the deletion
+  with #114). **0057 to 0061** are ADR-070's, on its branch: the deletion
   day, the reminder, and whose account goes with it (0059 put it on the
-  organization, 0060 moved it to the account). Next is **0061**. Render
-  holds one row per file in `drizzle.__drizzle_migrations` once `main` is
-  deployed there: 57, then 61. After any new migration:
+  organization, 0060 moved it to the account, 0061 added its check and
+  the trigger that clears it when a membership ends). Next is **0062**.
+  Render holds one row per file in `drizzle.__drizzle_migrations` once
+  `main` is deployed there: 57, then 62. After any new migration:
   `npm run migrate:all`.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
@@ -114,7 +115,8 @@ with this one, this one is current.
   the audit log and the organization, every table it owns following by
   cascade. The only member deletes both in one step, recorded on the
   account (`users.deletion_with_organization_id`, cleared with the
-  account's day), the organization first. The session says where a
+  account's day, and by a trigger when the membership ends), the
+  organization first. The session says where a
   deletion stands, `deletionStage`, on the server's UTC day.
   Backups keep it until they age out and never bring it back (ADR-069
   says the same). The service lives in `core/auth` beside account

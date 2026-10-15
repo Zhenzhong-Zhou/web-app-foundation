@@ -7663,13 +7663,18 @@ the reviews of the build:
   first build read it from matching days, which a member deleting their
   own account the same day matched too, and then from a column on the
   organization, which outlived an only member who left. It is now
-  `users.deletion_with_organization_id` (migrations 0059 and 0060, neither
+  `users.deletion_with_organization_id` (migrations 0059 to 0061, none
   released): set with the account's day when the only member deletes
-  both, cleared in the same statement as that day by every cancel and by
-  completion, cleared when the person leaves, and set to null by the
-  database when the organization is deleted. Cancelling the
-  organization's deletion clears the linked account's day in the same
-  transaction, so both stay or neither does.
+  both, and cleared in the same statement as that day by every cancel and
+  by completion. The database holds the rest: a check refuses the link on
+  an account with no deletion day, a trigger on memberships clears it
+  whenever the membership ends, by leaving, by an Owner's removal or any
+  later path, and its foreign key clears it when the organization is
+  deleted. Cancelling the organization's deletion clears the linked
+  account's day in the same transaction, so both stay or neither does.
+  The session carries it on the account, the organization's id and name,
+  so the account's own banner can say both wherever the person is
+  working.
 - **One deletion stage, decided by the server.** The session says where a
   pending deletion stands: `scheduled`, `lastWeek` or `underWay`, from one
   function, on the server's UTC day, so the banner's ×, the reminder and
