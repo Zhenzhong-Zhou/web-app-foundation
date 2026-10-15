@@ -26,7 +26,6 @@ async function bootstrap() {
   for (const timer of [
     FilesPurgeTimer,
     LicenceRemindersTimer,
-    // Organizations first: an only member's account waits for theirs.
     OrganizationDeletionTimer,
     AccountDeletionTimer,
   ]) {

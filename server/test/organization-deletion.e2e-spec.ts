@@ -3,7 +3,6 @@ import path from 'node:path';
 
 import type { INestApplication } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
-import type { Response } from 'superagent';
 import type TestAgent from 'supertest/lib/agent';
 
 import {
@@ -12,6 +11,7 @@ import {
 } from '../src/core/auth/account-deletion.service';
 import { OrganizationDeletionService } from '../src/core/auth/organization-deletion.service';
 import {
+  exportedTables,
   NOT_EXPORTED,
   organizationTables,
 } from '../src/core/organizations/organization-tables';
@@ -29,6 +29,7 @@ import {
   addMember,
   body,
   createE2eApp,
+  longDay,
   PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
@@ -55,24 +56,6 @@ interface Me {
 const SVG = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><rect width="200" height="100" fill="#2a6"/></svg>',
 );
-
-/** The response as bytes, whatever its type. */
-function binary(
-  res: Response,
-  done: (error: Error | null, body: Buffer) => void,
-) {
-  const chunks: Buffer[] = [];
-  res.on('data', (chunk: Buffer) => chunks.push(chunk));
-  res.on('end', () => done(null, Buffer.concat(chunks)));
-}
-
-/** A YYYY-MM-DD day as the English email names it, unconverted. */
-function longDay(day: string): string {
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(`${day}T00:00:00Z`));
-}
 
 /** A day long over everywhere: the deletion is due, and under way. */
 const LONG_AGO = '2026-01-01';
@@ -104,8 +87,7 @@ describe('Organization deletion (e2e)', () => {
   async function exportOf(agent: TestAgent): Promise<Map<string, Buffer>> {
     const res = await agent
       .get('/v1/organization/export')
-      .buffer(true)
-      .parse(binary)
+      .responseType('blob')
       .expect(200);
     expect(res.headers['content-type']).toBe('application/zip');
     return readZip(res.body as Buffer);
@@ -160,9 +142,7 @@ describe('Organization deletion (e2e)', () => {
 
       expect(zip.has('README.txt')).toBe(true);
       expect(zip.get('README.txt')!.toString()).toContain('alpha Co');
-      const expected = organizationTables().filter(
-        (table) => !NOT_EXPORTED.has(table),
-      );
+      const expected = exportedTables();
       for (const table of [...expected, 'organization', 'members']) {
         expect(zip.has(`${table}.csv`), table).toBe(true);
       }

@@ -38,17 +38,17 @@ export function compose(
   const greeting = say(
     t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name: context.name }),
   );
-  const account = `${context.clientUrl}${path}`;
+  const link = `${context.clientUrl}${path}`;
   const lines = paragraphs.map(say);
 
-  const text = [greeting, '', ...lines.flatMap((line) => [line, '']), account]
+  const text = [greeting, '', ...lines.flatMap((line) => [line, '']), link]
     .join('\n')
     .trimEnd();
 
   const html = [
     `<p>${escapeHtml(greeting)}</p>`,
     ...lines.map((line) => `<p>${escapeHtml(line)}</p>`),
-    `<p><a href="${account}">${escapeHtml(account)}</a></p>`,
+    `<p><a href="${link}">${escapeHtml(link)}</a></p>`,
   ].join('\n');
 
   return { to: context.to, subject: say(subject), text, html };

@@ -6,7 +6,7 @@ import { and, eq, isNull, type SQL, sql } from 'drizzle-orm';
 import type { Response } from 'express';
 import { ZipFile } from 'yazl';
 
-import { csvField } from '../../common/csv';
+import { BOM, csvRow, type CsvValue } from '../../common/csv';
 import type { Locale } from '../../common/locales';
 import { todayUtc } from '../../common/today';
 import type { Transaction } from '../../database/database.module';
@@ -27,9 +27,6 @@ import { exportedTables } from './organization-tables';
 
 /** Rows fetched from a cursor at a time: the export never holds a table. */
 const BATCH = 500;
-
-/** UTF-8's byte-order mark, so Excel reads Chinese and French (ADR-057). */
-const BOM = '\uFEFF';
 
 /** What the export held, for its audit entry. */
 interface Counts {
@@ -145,9 +142,11 @@ export class OrganizationExportService {
         const size = largest(file.sizes);
         if (!size) continue;
         counts.files += 1;
+        // Stored as they are: WebP and PNG are compressed already.
         zip.addReadStream(
           Readable.from(this.bytesOf(keyOf(organizationId, file.id, size))),
           `files/${file.id}-${file.originalName}`,
+          { compress: false },
         );
       }
       zip.end();
@@ -220,30 +219,26 @@ async function* csvOf(
       sql`fetch ${sql.raw(String(BATCH))} from ${name}`,
     );
     if (header) {
-      yield line(result.fields.map((field) => field.name));
+      yield csvRow(result.fields.map((field) => field.name));
       header = false;
     }
     if (result.rows.length === 0) break;
     counts.rows += result.rows.length;
-    yield result.rows.map((row) => line(Object.values(row).map(cell))).join('');
+    yield result.rows
+      .map((row) => csvRow(Object.values(row).map(cell)))
+      .join('');
   }
   await tx.execute(sql`close ${name}`);
 }
 
-function line(fields: string[]): string {
-  return `${fields.map(csvField).join(',')}\r\n`;
-}
-
-/** A value as text: JSON as JSON, a moment as ISO 8601, the rest as is. */
-function cell(value: unknown): string {
-  if (value === null || value === undefined) return '';
+/** A value for csvRow: JSON as JSON, a moment as ISO 8601, the rest as is. */
+function cell(value: unknown): CsvValue {
   if (value instanceof Date) return value.toISOString();
   if (Buffer.isBuffer(value)) return value.toString('base64');
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
+  if (typeof value === 'object' && value !== null) {
+    return JSON.stringify(value);
   }
-  return JSON.stringify(value);
+  return value as CsvValue;
 }
 
 /**

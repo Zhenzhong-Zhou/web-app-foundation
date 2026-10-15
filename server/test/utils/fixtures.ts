@@ -27,6 +27,14 @@ export function body<T>(res: { body: unknown }): T {
   return res.body as T;
 }
 
+/** A YYYY-MM-DD day as an English email names it, unconverted. */
+export function longDay(day: string): string {
+  return new Intl.DateTimeFormat('en', {
+    dateStyle: 'long',
+    timeZone: 'UTC',
+  }).format(new Date(`${day}T00:00:00Z`));
+}
+
 /**
  * The app a feature spec runs against, with permissions seeded.
  *

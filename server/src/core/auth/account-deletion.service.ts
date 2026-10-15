@@ -20,6 +20,7 @@ import {
 } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
+import type { Locale } from '../../common/locales';
 import { todayUtc } from '../../common/today';
 import type { Env } from '../../config/env';
 import type { Database, Transaction } from '../../database/database.module';
@@ -81,8 +82,8 @@ export function todayWhereDaysEndLast(now: Date): string {
 }
 
 /** Whether a deletion day has ended in every time zone (ADR-069, ADR-070). */
-export function endedEverywhere(day: string, now = new Date()): boolean {
-  return day < todayWhereDaysEndLast(now);
+export function endedEverywhere(day: string): boolean {
+  return day < todayWhereDaysEndLast(new Date());
 }
 
 /**
@@ -604,24 +605,39 @@ export class AccountDeletionService {
     language?: string,
   ): Promise<void> {
     const [user] = await this.db
-      .select({ email: users.email, name: users.name, locale: users.locale })
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        locale: users.locale,
+      })
       .from(users)
       .where(and(eq(users.id, userId), isNull(users.deletedAt)));
-    if (!user) return;
+    if (user) await this.sendTo(user, build, language);
+  }
 
+  /**
+   * An email to someone already looked up: here, or each member of an
+   * organization being deleted (ADR-070).
+   */
+  async sendTo(
+    person: { id: string; email: string; name: string; locale: Locale | null },
+    build: (context: DeletionMailContext) => Mail,
+    language?: string,
+  ): Promise<void> {
     try {
       await this.mail.send(
         build({
-          locale: recipientLocale(user.locale, language),
-          to: user.email,
-          name: user.name,
+          locale: recipientLocale(person.locale, language),
+          to: person.email,
+          name: person.name,
           clientUrl: this.config.get('CLIENT_URL', { infer: true }),
         }),
       );
     } catch (error) {
       // The deletion itself stands; a lost email is logged, not thrown, as
       // the security emails are (ADR-037).
-      this.logger.error(`Could not email ${userId}: ${String(error)}`);
+      this.logger.error(`Could not email ${person.id}: ${String(error)}`);
     }
   }
 }

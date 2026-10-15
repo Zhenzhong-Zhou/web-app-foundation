@@ -5,12 +5,10 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { and, count, eq, gt, isNotNull, lt, sql } from 'drizzle-orm';
+import { and, count, eq, gt, lt, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
 import type { Locale } from '../../common/locales';
-import type { Env } from '../../config/env';
 import type { Database, Transaction } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import {
@@ -23,8 +21,8 @@ import {
   sessions,
   users,
 } from '../../database/schema';
-import { recipientLocale, t } from '../../i18n/translate';
-import { type Mail, MailService } from '../../shared/mail/mail.service';
+import { t } from '../../i18n/translate';
+import type { Mail } from '../../shared/mail/mail.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { recordContext } from '../audit/audit-context';
 import { SYSTEM_ROLES } from '../authorization/permissions';
@@ -38,6 +36,7 @@ import {
   todayWhereDaysEndLast,
 } from './account-deletion.service';
 import type { DeletionMailContext } from './deletion-mail';
+import type { DeleteOrganizationDto } from './dto/delete-organization.dto';
 import type { OrganizationDeletionScheduled } from './dto/organization-deletion-response.dto';
 import {
   type MemberSide,
@@ -47,20 +46,15 @@ import {
 } from './organization-deletion-mail';
 import type { RequestContext } from './request-context';
 
-const DAY = 24 * 60 * 60 * 1000;
-
 /** How recent the export a deletion relies on must be (ADR-070). */
-const EXPORT_WITHIN_MS = DAY;
+const EXPORT_WITHIN_MS = 24 * 60 * 60 * 1000;
 
-/** One member as the emails need them. */
-interface Member {
+/** One member as the emails need them, and what they are to it. */
+interface Member extends MemberSide {
   id: string;
   email: string;
   name: string;
   locale: Locale | null;
-  isOwner: boolean;
-  /** The member's own deletion day, if their account is going too. */
-  accountDay: string | null;
 }
 
 /**
@@ -81,8 +75,6 @@ export class OrganizationDeletionService {
     @Inject(FILE_STORAGE) private readonly storage: FileStorage,
     private readonly account: AccountService,
     private readonly accountDeletion: AccountDeletionService,
-    private readonly mail: MailService,
-    private readonly config: ConfigService<Env, true>,
   ) {}
 
   /**
@@ -93,23 +85,22 @@ export class OrganizationDeletionService {
    */
   async request(
     context: RequestContext,
-    options: {
-      password: string;
-      declineExport?: boolean;
-      deleteAccount?: boolean;
-    },
+    dto: DeleteOrganizationDto,
   ): Promise<OrganizationDeletionScheduled> {
     const organizationId = this.organizationOf(context);
-    await this.account.confirmPassword(context.userId, options.password);
+    await this.account.confirmPassword(context.userId, dto.password);
 
     const now = new Date();
     const outcome = await this.db.transaction(async (tx) => {
       const organization = await lockOrganization(tx, organizationId);
       if (organization.deletionScheduledAt) {
-        return { day: organization.deletionScheduledAt, scheduled: false };
+        return {
+          day: organization.deletionScheduledAt,
+          scheduled: false,
+        } as const;
       }
 
-      if (!options.declineExport) {
+      if (!dto.declineExport) {
         const [exported] = await tx
           .select({ id: auditLog.id })
           .from(auditLog)
@@ -139,7 +130,7 @@ export class OrganizationDeletionService {
       }
 
       const day = deletionDayFor(now);
-      if (options.deleteAccount) {
+      if (dto.deleteAccount) {
         if ((await memberCount(tx, organizationId)) > 1) {
           throw new ConflictException(
             t({
@@ -156,25 +147,28 @@ export class OrganizationDeletionService {
         .update(organizations)
         .set({ deletionScheduledAt: day })
         .where(eq(organizations.id, organizationId));
-      return { day, scheduled: true, name: organization.name };
+      return { day, scheduled: true, name: organization.name } as const;
     });
 
     if (outcome.scheduled) {
       recordContext({
         deletionScheduledAt: outcome.day,
-        export: options.declineExport ? 'declined' : 'downloaded',
-        withAccount: options.deleteAccount === true,
+        export: dto.declineExport ? 'declined' : 'downloaded',
+        withAccount: dto.deleteAccount === true,
       });
-      await this.tellMembers(organizationId, context, (member, mail, all) =>
-        organizationDeletionScheduledMail(
-          mail,
-          {
-            organization: outcome.name!,
-            actor: context.name,
-            day: outcome.day,
-          },
-          sideOf(member, all, outcome.day),
-        ),
+      await this.tell(
+        await membersOf(this.db, organizationId, outcome.day),
+        context,
+        (mail, member) =>
+          organizationDeletionScheduledMail(
+            mail,
+            {
+              organization: outcome.name,
+              actor: context.name,
+              day: outcome.day,
+            },
+            member,
+          ),
       );
       this.logger.log(
         `Organization ${organizationId} scheduled for deletion after ${outcome.day}`,
@@ -279,7 +273,7 @@ export class OrganizationDeletionService {
       // since the erase above, and nothing comes after it.
       await this.eraseFiles(tx, organizationId, erased);
 
-      const members = await membersOf(tx, organizationId);
+      const members = await membersOf(tx, organizationId, organization.day);
 
       // Sessions cascade from the organization they work in, and would
       // sign every member out: each moves to the person's next
@@ -311,15 +305,13 @@ export class OrganizationDeletionService {
     if (!done) return false;
 
     this.logger.log(`Organization ${organizationId} deleted`);
-    for (const member of done.members) {
-      await this.send(member, undefined, (mail) =>
-        organizationDeletedMail(
-          mail,
-          { organization: done.name, day: done.day },
-          sideOf(member, done.members, done.day),
-        ),
-      );
-    }
+    await this.tell(done.members, undefined, (mail, member) =>
+      organizationDeletedMail(
+        mail,
+        { organization: done.name, day: done.day },
+        member,
+      ),
+    );
     return true;
   }
 
@@ -373,7 +365,7 @@ export class OrganizationDeletionService {
         );
       }
 
-      const members = await membersOf(tx, organizationId);
+      const members = await membersOf(tx, organizationId, day);
       await tx
         .update(organizations)
         .set({ deletionScheduledAt: null })
@@ -385,73 +377,47 @@ export class OrganizationDeletionService {
           action: AUDIT_ACTIONS.ORGANIZATION_DELETION_CANCELLED,
           resourceType: 'organization',
           resourceId: organizationId,
+          resourceLabel: organization.name,
           ip: context.ip,
           userAgent: context.userAgent,
         });
       }
-      return { name: organization.name, day, members };
+      return { name: organization.name, members };
     });
     if (!outcome) return;
 
-    const together = outcome.members.find(
-      (member) => sideOf(member, outcome.members, outcome.day).withAccount,
-    );
+    const together = outcome.members.find((member) => member.withAccount);
     if (together?.id === context.userId) {
       // One email says both stay: the account's own is not sent.
       await this.accountDeletion.cancel(context, { email: false });
     }
 
-    for (const member of outcome.members) {
-      await this.send(
+    await this.tell(outcome.members, context, (mail, member) =>
+      organizationDeletionCancelledMail(
+        mail,
+        { organization: outcome.name, actor: context.name },
         member,
-        member.id === context.userId ? context.language : undefined,
-        (mail) =>
-          organizationDeletionCancelledMail(
-            mail,
-            { organization: outcome.name, actor: context.name },
-            sideOf(member, outcome.members, outcome.day),
-          ),
-      );
-    }
+      ),
+    );
     this.logger.log(`Deletion of organization ${organizationId} cancelled`);
   }
 
-  /** Every member emailed, in their language, or the request's for the actor. */
-  private async tellMembers(
-    organizationId: string,
-    context: RequestContext,
-    build: (member: Member, mail: DeletionMailContext, all: Member[]) => Mail,
-  ): Promise<void> {
-    const members = await membersOf(this.db, organizationId);
-    for (const member of members) {
-      await this.send(
-        member,
-        member.id === context.userId ? context.language : undefined,
-        (mail) => build(member, mail, members),
-      );
-    }
-  }
-
   /**
-   * One email, logged rather than thrown when it fails: the deletion
-   * stands either way, as ADR-069's emails do.
+   * Every member emailed, in their language, or the request's for the
+   * person who made it. A failed email is logged: the deletion stands
+   * either way, as ADR-069's emails do.
    */
-  private async send(
-    member: Member,
-    language: string | undefined,
-    build: (mail: DeletionMailContext) => Mail,
+  private async tell(
+    members: Member[],
+    actor: RequestContext | undefined,
+    build: (mail: DeletionMailContext, member: Member) => Mail,
   ): Promise<void> {
-    try {
-      await this.mail.send(
-        build({
-          locale: recipientLocale(member.locale, language),
-          to: member.email,
-          name: member.name,
-          clientUrl: this.config.get('CLIENT_URL', { infer: true }),
-        }),
+    for (const member of members) {
+      await this.accountDeletion.sendTo(
+        member,
+        (mail) => build(mail, member),
+        actor && member.id === actor.userId ? actor.language : undefined,
       );
-    } catch (error) {
-      this.logger.error(`Could not email ${member.id}: ${String(error)}`);
     }
   }
 
@@ -466,10 +432,7 @@ export class OrganizationDeletionService {
 
 /** Due: the deletion day has ended in every time zone. */
 function dueBy(now: Date) {
-  return and(
-    isNotNull(organizations.deletionScheduledAt),
-    lt(organizations.deletionScheduledAt, todayWhereDaysEndLast(now)),
-  );
+  return lt(organizations.deletionScheduledAt, todayWhereDaysEndLast(now));
 }
 
 /**
@@ -499,11 +462,16 @@ async function memberCount(
   return row.members;
 }
 
+/**
+ * Every member, and what each is to the organization: an Owner, and the
+ * only member whose account goes with it, the same day.
+ */
 async function membersOf(
   executor: Executor,
   organizationId: string,
+  day: string,
 ): Promise<Member[]> {
-  return executor
+  const rows = await executor
     .select({
       id: users.id,
       email: users.email,
@@ -517,15 +485,8 @@ async function membersOf(
     .innerJoin(roles, eq(roles.id, memberships.roleId))
     .where(eq(memberships.organizationId, organizationId))
     .orderBy(memberships.id);
-}
-
-/**
- * What the reader is to the organization: an Owner, and the only member
- * whose account goes with it, the same day.
- */
-function sideOf(member: Member, members: Member[], day: string): MemberSide {
-  return {
-    isOwner: member.isOwner,
-    withAccount: members.length === 1 && member.accountDay === day,
-  };
+  return rows.map(({ accountDay, ...member }) => ({
+    ...member,
+    withAccount: rows.length === 1 && accountDay === day,
+  }));
 }
