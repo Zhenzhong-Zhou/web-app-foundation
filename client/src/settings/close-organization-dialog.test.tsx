@@ -248,7 +248,7 @@ describe('CloseOrganizationDialog', () => {
       'That password is not correct. Check it and try again.',
     );
     expect(
-      within(dialog).getByRole('button', { name: 'Reset your password' }),
+      within(dialog).getByRole('button', { name: 'Email me a reset link' }),
     ).toBeInTheDocument();
   });
 

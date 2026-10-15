@@ -4,7 +4,6 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { api, ApiError } from '../lib/api';
-import { RESET_PASSWORD_EMAIL } from '../lib/session-keys';
 import { EMAIL_MAX_LENGTH } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
 
@@ -15,17 +14,7 @@ import { AuthLayout } from './auth-layout';
  */
 export function ForgotPasswordPage() {
   const intl = useIntl();
-  // Filled in when Reset your password, beside a refused password, sent
-  // this tab here signed out (#120): taken once, then forgotten.
-  const [email, setEmail] = useState(() => {
-    try {
-      const kept = window.sessionStorage.getItem(RESET_PASSWORD_EMAIL) ?? '';
-      window.sessionStorage.removeItem(RESET_PASSWORD_EMAIL);
-      return kept;
-    } catch {
-      return '';
-    }
-  });
+  const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

@@ -81,7 +81,7 @@ describe('LeaveOrDelete', () => {
     );
     // The way on for one forgotten, beside the refusal, not in it.
     expect(
-      screen.getByRole('button', { name: 'Reset your password' }),
+      screen.getByRole('button', { name: 'Email me a reset link' }),
     ).toBeInTheDocument();
   });
 
