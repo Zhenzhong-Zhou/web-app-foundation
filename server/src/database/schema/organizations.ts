@@ -198,6 +198,14 @@ export const organizations = pgTable(
     deletionRemindedAt: timestamp('deletion_reminded_at', {
       withTimezone: true,
     }),
+    /**
+     * When the timer began completing the deletion (ADR-070, amended):
+     * set under this row's lock before any file is erased, and never
+     * cleared, so no cancel or upload can come after it.
+     */
+    deletionStartedAt: timestamp('deletion_started_at', {
+      withTimezone: true,
+    }),
 
     ...timestamps,
   },

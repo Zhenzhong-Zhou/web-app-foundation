@@ -95,6 +95,7 @@
   "files.logo.tooSmall": "Un logo doit faire au moins {min} pixels de large",
   "files.logo.type": "Un logo doit être une image PNG, JPEG, WebP ou SVG",
   "files.notFound": "Fichier introuvable",
+  "files.organizationDeleting": "Cette organisation est en cours de suppression : on ne peut plus rien y ajouter.",
   "files.photo.type": "Une photo doit être une image PNG, JPEG ou WebP",
   "files.quota.full": "Cela dépasserait les {limit} Mo de fichiers de votre organisation. Supprimez-en avant d’en ajouter d’autres.",
   "files.upload.missing": "Choisissez un fichier à téléverser",

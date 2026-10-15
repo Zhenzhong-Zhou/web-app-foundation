@@ -11,6 +11,7 @@ import {
   deletionDayFor,
 } from '../src/core/auth/account-deletion.service';
 import { OrganizationDeletionService } from '../src/core/auth/organization-deletion.service';
+import { FILE_STORAGE, type FileStorage } from '../src/core/files/file-storage';
 import {
   exportedTables,
   NOT_EXPORTED,
@@ -681,6 +682,62 @@ describe('Organization deletion (e2e)', () => {
         failed: 0,
       });
       expect((await me(alpha.agent)).organization).not.toBeNull();
+    });
+
+    it('marks its start before erasing, and no cancel comes after the mark', async () => {
+      const alpha = await busy('alpha');
+      await setDay(alpha.organizationId, LONG_AGO);
+      const erase = vi
+        .spyOn(app.get<FileStorage>(FILE_STORAGE), 'delete')
+        .mockRejectedValueOnce(new Error('Storage unavailable'));
+
+      expect(await service().completeDue()).toEqual({
+        completed: 0,
+        failed: 1,
+      });
+      erase.mockRestore();
+      const [marked] = await db
+        .select({ startedAt: organizations.deletionStartedAt })
+        .from(organizations)
+        .where(eq(organizations.id, alpha.organizationId));
+      expect(marked.startedAt).not.toBeNull();
+
+      // The mark refuses it, not the clock: even with the day moved back
+      // into the future, as a cancel racing the cutoff would see it.
+      await setDay(alpha.organizationId, '2099-12-31');
+      const refused = await alpha.agent
+        .delete('/v1/organization/deletion')
+        .expect(409);
+      expect(body<Refusal>(refused).code).toBe(
+        'organization_deletion_under_way',
+      );
+
+      // The next run finishes what the first began.
+      await setDay(alpha.organizationId, LONG_AGO);
+      expect(await service().completeDue()).toEqual({
+        completed: 1,
+        failed: 0,
+      });
+    });
+
+    it('refuses an upload once the run has marked its start', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await setDay(alpha.organizationId, LONG_AGO);
+      await db
+        .update(organizations)
+        .set({ deletionStartedAt: new Date() })
+        .where(eq(organizations.id, alpha.organizationId));
+
+      await alpha.agent
+        .post('/v1/files/logo')
+        .attach('file', SVG, 'logo.svg')
+        .expect(409);
+
+      const stored = await db
+        .select({ id: files.id })
+        .from(files)
+        .where(eq(files.organizationId, alpha.organizationId));
+      expect(stored).toEqual([]);
     });
 
     it('moves a session working in it to the member’s next organization', async () => {

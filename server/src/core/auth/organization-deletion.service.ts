@@ -374,9 +374,34 @@ export class OrganizationDeletionService {
    * False when it is no longer due.
    */
   private async complete(organizationId: string, now: Date): Promise<boolean> {
-    // Bytes first: no transaction can roll back storage, and past the
-    // cutoff nothing can cancel, so a run that fails after this one is
-    // finished by the next. Erasing what is gone succeeds.
+    // The start marked first, under the lock, before any file is erased
+    // (ADR-070, amended): a cancel either committed before this, and the
+    // deletion is no longer due, or waits for it and is refused, as an
+    // upload is. A run that fails after the mark leaves it for the next.
+    const started = await this.db.transaction(async (tx) => {
+      const [organization] = await tx
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(and(eq(organizations.id, organizationId), dueBy(now)))
+        .for('update');
+      if (!organization) return false;
+
+      await tx
+        .update(organizations)
+        .set({ deletionStartedAt: now })
+        .where(
+          and(
+            eq(organizations.id, organizationId),
+            isNull(organizations.deletionStartedAt),
+          ),
+        );
+      return true;
+    });
+    if (!started) return false;
+
+    // Bytes next: no transaction can roll back storage, and nothing can
+    // cancel now, so a run that fails after this one is finished by the
+    // next. Erasing what is gone succeeds.
     const erased = new Set<string>();
     await this.eraseFiles(this.db, organizationId, erased);
 
@@ -387,12 +412,18 @@ export class OrganizationDeletionService {
           day: organizations.deletionScheduledAt,
         })
         .from(organizations)
-        .where(and(eq(organizations.id, organizationId), dueBy(now)))
+        .where(
+          and(
+            eq(organizations.id, organizationId),
+            isNotNull(organizations.deletionStartedAt),
+          ),
+        )
         .for('update');
       if (!organization?.day) return null;
 
-      // A new file's row waits for the lock, so this finds every upload
-      // since the erase above, and nothing comes after it.
+      // An upload begun before the mark has its row and its bytes by now,
+      // and none can begin after it: this finds every file since the
+      // erase above.
       await this.eraseFiles(tx, organizationId, erased);
 
       const members = await membersOf(tx, organizationId);
@@ -474,7 +505,12 @@ export class OrganizationDeletionService {
       const organization = await lockOrganization(tx, organizationId);
       const day = organization.deletionScheduledAt;
       if (!day) return null;
-      if (deletionStageOf(day) === 'underWay') {
+      // Once a run has marked its start, whatever the clock now says
+      // (ADR-070, amended); before that, once the day has ended.
+      if (
+        organization.deletionStartedAt !== null ||
+        deletionStageOf(day) === 'underWay'
+      ) {
         throw new ConflictException(
           withCode(
             t({
@@ -602,6 +638,7 @@ async function lockOrganization(tx: Transaction, organizationId: string) {
     .select({
       name: organizations.name,
       deletionScheduledAt: organizations.deletionScheduledAt,
+      deletionStartedAt: organizations.deletionStartedAt,
     })
     .from(organizations)
     .where(eq(organizations.id, organizationId))

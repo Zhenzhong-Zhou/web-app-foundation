@@ -20,6 +20,7 @@ import {
   files,
   type FileSize,
   type OrganizationFileKind,
+  organizations,
   type StoredSize,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -115,6 +116,25 @@ export class FilesService {
       await tx.execute(
         sql`select pg_advisory_xact_lock(hashtextextended(${`files:${organizationId}`}, 0))`,
       );
+
+      // Not once its deletion has begun (ADR-070, amended). The run marks
+      // that under the organization's lock, which this key-share lock
+      // waits for, before it erases any file.
+      const [organization] = await tx
+        .select({ deletionStartedAt: organizations.deletionStartedAt })
+        .from(organizations)
+        .where(eq(organizations.id, organizationId))
+        .for('key share');
+      if (organization?.deletionStartedAt) {
+        throw new ConflictException(
+          t({
+            id: 'files.organizationDeleting',
+            defaultMessage:
+              'This organization is being deleted, so nothing more can be added to it.',
+          }),
+        );
+      }
+
       const [{ used }] = await tx
         .select({ used: sql<string>`coalesce(sum(${files.bytes}), 0)` })
         .from(files)
@@ -157,30 +177,22 @@ export class FilesService {
           createdBy: userId,
         })
         .returning();
-      return inserted;
-    });
 
-    try {
+      // The bytes before the row commits (ADR-070, amended): a deletion
+      // run's mark waits for this transaction, so its erase finds them.
+      // A write that fails rolls the row back with it, since without its
+      // bytes the row would be a lie.
       await Promise.all(
         rendered.map((size) =>
           this.storage.put(
-            keyOf(ownerOf(row), row.id, size.size),
+            keyOf(ownerOf(inserted), inserted.id, size.size),
             size.data,
             contentType,
           ),
         ),
       );
-    } catch (error) {
-      // Without its bytes the row is a lie: take it back, and say why.
-      await this.tenantDb.transaction((tx, organizationId) =>
-        tx
-          .delete(files)
-          .where(
-            and(eq(files.id, row.id), eq(files.organizationId, organizationId)),
-          ),
-      );
-      throw error;
-    }
+      return inserted;
+    });
 
     return viewOf(row);
   }
