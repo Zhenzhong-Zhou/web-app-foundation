@@ -39,7 +39,7 @@ export function organizationDeletionScheduledMail(
     t({
       id: 'mail.organizationDeletion.scheduled.until',
       defaultMessage:
-        'Until then everyone can work as usual, and any Owner can cancel the deletion until that day is over.',
+        'Until then everyone can keep working as usual. Only an Owner can cancel the deletion, until that day is over.',
     }),
   ];
 

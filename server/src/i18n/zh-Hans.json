@@ -167,7 +167,7 @@
   "mail.organizationDeletion.scheduled.account": "您的账户仍然保留，只是您在 {organization} 的成员身份将结束。",
   "mail.organizationDeletion.scheduled.export": "请在此之前不久，从“设置”中再次下载导出文件：组织删除后，将无法再生成导出。",
   "mail.organizationDeletion.scheduled.subject": "{organization} 将在 {date} 之后删除",
-  "mail.organizationDeletion.scheduled.until": "在此之前，大家可以照常工作；在当天结束之前，任何所有者都可以取消删除。",
+  "mail.organizationDeletion.scheduled.until": "在此之前，大家可以照常工作。只有所有者可以取消删除，截止到当天结束。",
   "mail.organizationDeletion.scheduled.when": "{actor} 申请删除 {organization}。其记录、文件和审计日志将在 {date} 之后删除。",
   "mail.organizationDeletion.scheduled.withAccount": "您的账户将紧随其后删除，您的其他所有设备均已退出登录。",
   "mail.reset.action": "重置您的密码",

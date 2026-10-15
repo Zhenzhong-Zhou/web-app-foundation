@@ -287,6 +287,10 @@ describe('Organization deletion (e2e)', () => {
       expect(mail.lastTo('member@alpha.example.com')?.text).not.toContain(
         'Download the export',
       );
+      // Everyone keeps working; only an Owner can cancel.
+      expect(mail.lastTo('member@alpha.example.com')?.text).toContain(
+        'Only an Owner can cancel the deletion',
+      );
       const [entry] = await db
         .select({ payload: auditLog.payload })
         .from(auditLog)

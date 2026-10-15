@@ -167,7 +167,7 @@
   "mail.organizationDeletion.scheduled.account": "Your account stays: only your membership of {organization} ends.",
   "mail.organizationDeletion.scheduled.export": "Download the export again shortly before then, from Settings: once the organization is deleted, nothing can make one.",
   "mail.organizationDeletion.scheduled.subject": "{organization} will be deleted after {date}",
-  "mail.organizationDeletion.scheduled.until": "Until then everyone can work as usual, and any Owner can cancel the deletion until that day is over.",
+  "mail.organizationDeletion.scheduled.until": "Until then everyone can keep working as usual. Only an Owner can cancel the deletion, until that day is over.",
   "mail.organizationDeletion.scheduled.when": "{actor} asked for {organization} to be deleted. Its records, files and audit log will be deleted after {date}.",
   "mail.organizationDeletion.scheduled.withAccount": "Your account will be deleted straight after it, and every other device has been signed out.",
   "mail.reset.action": "Reset your password",

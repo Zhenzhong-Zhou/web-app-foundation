@@ -167,7 +167,7 @@
   "mail.organizationDeletion.scheduled.account": "Votre compte demeure : seule votre adhésion à {organization} prend fin.",
   "mail.organizationDeletion.scheduled.export": "Téléchargez de nouveau l’exportation peu avant cette date, depuis les Paramètres : une fois l’organisation supprimée, plus rien ne permet d’en produire une.",
   "mail.organizationDeletion.scheduled.subject": "{organization} sera supprimée après le {date}",
-  "mail.organizationDeletion.scheduled.until": "D’ici là, chacun peut travailler comme d’habitude, et tout propriétaire peut annuler la suppression jusqu’à la fin de ce jour.",
+  "mail.organizationDeletion.scheduled.until": "D’ici là, chacun peut continuer à travailler comme d’habitude. Seul un propriétaire peut annuler la suppression, jusqu’à la fin de ce jour.",
   "mail.organizationDeletion.scheduled.when": "{actor} a demandé la suppression de {organization}. Ses dossiers, ses fichiers et son journal d’audit seront supprimés après le {date}.",
   "mail.organizationDeletion.scheduled.withAccount": "Votre compte sera supprimé juste après, et tous vos autres appareils ont été déconnectés.",
   "mail.reset.action": "Réinitialisez votre mot de passe",
