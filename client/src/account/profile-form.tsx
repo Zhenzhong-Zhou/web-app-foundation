@@ -15,6 +15,7 @@ export function ProfileForm() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const languageNotChosen = !session?.user.locale;
 
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -90,7 +91,9 @@ export function ProfileForm() {
       />
 
       {/* The same picker as the account menu's (ADR-054): it saves itself
-          the moment it changes, so it sits outside what Save submits. */}
+          the moment it changes, so it sits outside what Save submits. Here
+          it shows the account's own choice, and says what none means
+          (#119). */}
       <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
         <Typography variant="body2" color="text.secondary">
           {intl.formatMessage({
@@ -98,7 +101,23 @@ export function ProfileForm() {
             defaultMessage: 'Language',
           })}
         </Typography>
-        <LanguageSelect />
+        <LanguageSelect
+          account
+          describedBy={languageNotChosen ? 'language-not-chosen' : undefined}
+        />
+        {languageNotChosen && (
+          <Typography
+            id="language-not-chosen"
+            variant="body2"
+            color="text.secondary"
+          >
+            {intl.formatMessage({
+              id: 'account.profile.languageNotChosen',
+              defaultMessage:
+                'Not chosen yet: the screens follow this device. Choose one so emails reach you in it too.',
+            })}
+          </Typography>
+        )}
       </Stack>
 
       <Button

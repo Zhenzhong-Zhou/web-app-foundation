@@ -9,34 +9,62 @@ import { isLocale, pickerName, SUPPORTED_LOCALES } from '../lib/locales';
 
 /**
  * The language the app speaks to you (ADR-054): in the account menu beside
- * the colour mode, and on the signed-out pages.
+ * the colour mode, on the signed-out pages, and on the Account page.
  *
  * The screens switch at once and this device remembers the choice. Signed
- * in, it is saved to the account too, so it follows you to another device;
- * if that save fails, this device has still switched, and the next choice
- * saves again — a preference, not a record worth a dialog.
+ * in, it is saved to the account too, so it follows you to another device,
+ * and the session is read again, so every picker shows what the account now
+ * holds. If that save fails, this device has still switched, and the next
+ * choice saves again — a preference, not a record worth a dialog.
+ *
+ * `account` shows the account's own choice instead of this device's (#119).
+ * An account with none chosen gets its emails in English when a colleague's
+ * action sends them, while its screens follow the device; showing the
+ * device's language there read as chosen, and picking it changed nothing,
+ * so it could never be saved. There, none reads Not chosen, and any choice,
+ * the one already on screen included, saves.
  *
  * Each language is listed in its own name and marked with its own lang, so
  * a screen reader says 简体中文 in Chinese, whatever the screen is in.
  */
-export function LanguageSelect() {
+export function LanguageSelect({
+  account = false,
+  describedBy,
+}: {
+  account?: boolean;
+  /** The id of a line that says more about the choice. */
+  describedBy?: string;
+}) {
   const intl = useIntl();
   const { locale, setLocale } = useLanguage();
-  const { session } = useAuth();
+  const { session, refresh } = useAuth();
+  // '' is none chosen, which only the account can be.
+  const chosen: string = account ? (session?.user.locale ?? '') : locale;
+  const notChosen = intl.formatMessage({
+    id: 'language.notChosen',
+    defaultMessage: 'Not chosen',
+  });
 
   return (
     <Select
       size="small"
-      value={locale}
+      value={chosen}
+      displayEmpty={account}
+      renderValue={
+        account
+          ? (value: string) => (isLocale(value) ? pickerName(value) : notChosen)
+          : undefined
+      }
       inputProps={{
         'aria-label': intl.formatMessage({
           id: 'language.label',
           defaultMessage: 'Language',
         }),
+        'aria-describedby': describedBy,
       }}
       onChange={(event) => {
         const next = event.target.value;
-        if (!isLocale(next) || next === locale) return;
+        if (!isLocale(next) || next === chosen) return;
 
         setLocale(next);
 
@@ -44,7 +72,9 @@ export function LanguageSelect() {
           void api('/account/profile', {
             method: 'PATCH',
             body: JSON.stringify({ locale: next }),
-          }).catch(() => undefined);
+          })
+            .then(refresh)
+            .catch(() => undefined);
         }
       }}
     >

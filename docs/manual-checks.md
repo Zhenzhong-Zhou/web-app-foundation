@@ -949,6 +949,14 @@ await fetch(`${api}/v1/files/product-image`, {
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R09** *(#119)* As a member whose account has no language chosen
+  (`update users set locale = null`), with the browser in 简体中文, open
+  Account: Language reads 未选择, with a line saying emails follow it once
+  chosen, though the screens are Chinese. Choose 简体中文: the line goes,
+  and a reload still shows it. As the Owner, schedule the organization's
+  closing and cancel it (MC-2401): this member's two emails are Chinese.
+  A language chosen from the account menu instead shows on Account at
+  once.
 - **MC-R08** *(#121)* On any signed-in page, press Tab once: "Skip to
   content" appears at the top left. Press Enter: the next Tab reaches the
   page's own first control, not the rail or the bar. A screen reader's
@@ -1101,3 +1109,5 @@ first.
   shows (WCAG 2.5.3): MC-R07.
 - 2026-10-15: a skip link and a main landmark on signed-in pages (#121):
   MC-R08.
+- 2026-10-15: the Account page shows and saves the account's own language
+  (#119): MC-R09.
