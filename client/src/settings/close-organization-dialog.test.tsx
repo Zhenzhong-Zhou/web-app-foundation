@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
@@ -202,6 +202,44 @@ describe('CloseOrganizationDialog', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('marks a refused password on its field, with the way on (#120)', async () => {
+    organizationWith(null);
+    server.use(
+      http.post('/api/v1/organization/deletion', () =>
+        HttpResponse.json(
+          {
+            statusCode: 401,
+            code: 'password_incorrect',
+            message: 'That password is not correct. Check it and try again.',
+          },
+          { status: 401 },
+        ),
+      ),
+    );
+    const dialog = await open();
+
+    await userEvent.click(screen.getByLabelText(/I don’t need a copy/));
+    await userEvent.type(
+      screen.getByLabelText('Organization name'),
+      'Alpha Co',
+    );
+    const field = screen.getByLabelText(/Your password/);
+    await userEvent.type(field, 'not-it');
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Close organization' }),
+    );
+
+    await waitFor(() => expect(field).toHaveAttribute('aria-invalid', 'true'));
+    expect(field).toHaveAccessibleDescription(
+      'That password is not correct. Check it and try again.',
+    );
+    expect(
+      within(dialog).getByText(
+        'Forgotten it? Sign out, then choose “Forgot your password?” on the sign-in page.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('offers the download again when the server finds the export too old', async () => {

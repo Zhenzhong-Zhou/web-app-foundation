@@ -49,6 +49,7 @@
   "account.password.changing": "Changing…",
   "account.password.confirm": "Confirm new password",
   "account.password.current": "Current password",
+  "account.password.forgotten": "Forgotten it? Sign out, then choose “{link}” on the sign-in page.",
   "account.password.mismatch": "These do not match.",
   "account.password.title": "Change password",
   "account.photo.add": "Add a photo",

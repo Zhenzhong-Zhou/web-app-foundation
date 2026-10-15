@@ -19,6 +19,7 @@ import { useIntl } from 'react-intl';
 import type { OrganizationProfile } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
 import { DialogFooter } from '../components/dialog-footer';
+import { ForgottenPasswordHint } from '../components/forgotten-password-hint';
 import { FormError } from '../components/form-error';
 import { PasswordField } from '../components/password-field';
 import { api, ApiError, apiUrl, hasCode } from '../lib/api';
@@ -431,6 +432,7 @@ export function CloseOrganizationDialog({
                 id="close-organization-error"
                 message={scheduling.error}
               >
+                {wrongPassword && <ForgottenPasswordHint />}
                 {hasCode(
                   scheduling.errorCode,
                   'organization_export_required',

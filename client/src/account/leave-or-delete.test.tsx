@@ -79,6 +79,8 @@ describe('LeaveOrDelete', () => {
     expect(field).toHaveAccessibleDescription(
       'That password is not correct. Check it and try again.',
     );
+    // The way on for one forgotten, beside the refusal, not in it.
+    expect(screen.getByText(/^Forgotten it\? Sign out/)).toBeInTheDocument();
   });
 
   it('deletes the account alone once the organization is going alone', async () => {

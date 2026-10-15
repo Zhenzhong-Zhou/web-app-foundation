@@ -1,7 +1,8 @@
-import { Alert, Button, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
+import { ForgottenPasswordHint } from '../components/forgotten-password-hint';
 import { PasswordField } from '../components/password-field';
 import { api, hasCode } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
@@ -78,6 +79,11 @@ export function ChangePasswordForm() {
       {error && (
         <Alert id="change-password-error" severity="error">
           {error}
+          {wrongPassword && (
+            <Box sx={{ mt: 0.5 }}>
+              <ForgottenPasswordHint />
+            </Box>
+          )}
         </Alert>
       )}
       {result && <Alert severity="success">{result}</Alert>}

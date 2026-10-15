@@ -1,5 +1,5 @@
 import { Alert, Box } from '@mui/material';
-import type { ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 import { useIntl } from 'react-intl';
 
 /**
@@ -38,7 +38,11 @@ export function FormError({
       })}
     >
       <span id={id}>{message}</span>
-      {children && <Box sx={{ mt: 0.5 }}>{children}</Box>}
+      {/* Only when something is there: several conditional children are an
+          array, truthy even when every one is false. */}
+      {Children.toArray(children).length > 0 && (
+        <Box sx={{ mt: 0.5 }}>{children}</Box>
+      )}
     </Alert>
   );
 }

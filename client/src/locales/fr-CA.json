@@ -49,6 +49,7 @@
   "account.password.changing": "Modification…",
   "account.password.confirm": "Confirmer le nouveau mot de passe",
   "account.password.current": "Mot de passe actuel",
+  "account.password.forgotten": "Vous l’avez oublié? Déconnectez-vous, puis choisissez « {link} » sur la page de connexion.",
   "account.password.mismatch": "Les mots de passe ne correspondent pas.",
   "account.password.title": "Changer le mot de passe",
   "account.photo.add": "Ajouter une photo",

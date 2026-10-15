@@ -17,6 +17,7 @@ import type { Member } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { DialogFooter } from '../components/dialog-footer';
+import { ForgottenPasswordHint } from '../components/forgotten-password-hint';
 import { FormError } from '../components/form-error';
 import { PasswordField } from '../components/password-field';
 import { api, download, hasCode, messageFor } from '../lib/api';
@@ -49,6 +50,7 @@ function Refusal({
 
   return (
     <FormError id={id} message={error}>
+      {hasCode(code, 'password_incorrect') && <ForgottenPasswordHint />}
       {settledOnMembers && (
         <Link component={RouterLink} to="/members">
           {intl.formatMessage({
