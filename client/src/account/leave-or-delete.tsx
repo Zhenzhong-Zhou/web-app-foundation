@@ -194,7 +194,11 @@ export function LeaveOrDelete() {
             {
               organization: organization.name,
               link: (chunks) => (
-                <Link component={RouterLink} to="/settings/organization">
+                <Link
+                  underline="always"
+                  component={RouterLink}
+                  to="/settings/organization"
+                >
                   {chunks}
                 </Link>
               ),
