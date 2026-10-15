@@ -900,7 +900,7 @@ await fetch(`${api}/v1/files/product-image`, {
   with the browser left in English, the README reads in Chinese.
 - **MC-2402** Close this organization…: Close organization is off, and
   the line under it says what is still needed. It stays off until the
-  export is fresh or "I don't want the export" is ticked, the name is
+  export is fresh or "I don't need a copy" is ticked, the name is
   typed exactly, and the password is typed. With the last export moved
   two days back (`update audit_log set created_at = now() - interval
   '2 days' where action = 'organization.exported'`), the dialog names it
@@ -1086,3 +1086,5 @@ first.
   MC-2406.
 - 2026-10-15: MC-2401 says "by you" and checks the README's language;
   MC-2405 adds an only member who leaves, is removed or is demoted.
+- 2026-10-15: section 24 reads "I don't need a copy", after the
+  walkthrough in Chinese.

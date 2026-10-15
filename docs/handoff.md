@@ -196,6 +196,21 @@ with this one, this one is current.
   `server/src/modules/invoices` at any quiet moment; `server/src/core/auth`
   after ADR-070 lands.
 - **ADR-070, small and waiting:**
+  - From the walkthrough in Chinese, two decisions for before the first
+    customer: the export's CSVs carry English database names
+    (`bill_to_name`, `tax_total`), Postgres's own timestamps and audit
+    actions such as `user.created`, which a novice gives up on, so a
+    column glossary for the main tables in the README; and the ZIP has no
+    PDFs of the invoices and credit notes as issued, which a bookkeeper
+    expects to keep, so whether the export adds them.
+  - Older than ADR-070, found by the same walkthrough: the Account
+    page shows 简体中文 as chosen when no language is set, and Save stays
+    off, so it cannot be saved (a colleague's emails then go out in
+    English); the wrong-password message says nothing of what to do next,
+    and its field is not marked invalid; the app shell has no main
+    landmark and no skip link, so a keyboard user presses Tab 24 times to
+    reach the page (WCAG 2.4.1); and the Account page's recent activity
+    stays stale until a reload.
   - Two narrow windows during completion: a cancel committing in the
     second of the cutoff, after the run erased the files but before it
     took the lock, keeps an organization whose files are gone; and an

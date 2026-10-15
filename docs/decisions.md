@@ -7409,7 +7409,7 @@ audit coverage test does for routes.
 Each export is audited (`organization.exported`), the entry written
 before the last byte is sent. Scheduling the deletion needs such an entry
 from the last 24 hours, by any Owner, or an explicit decline: "I don't
-want the export". The decline is recorded in the scheduling's audit
+need a copy" (first worded "I don't want the export"). The decline is recorded in the scheduling's audit
 entry. The 24 hours keep the export close to what is deleted. The
 organization keeps working during the 30 days, so an Owner can download
 again near the end, and the emails say to. The last export is the Owners'
