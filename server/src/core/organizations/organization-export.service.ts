@@ -235,21 +235,18 @@ async function* csvOf(
   const name = sql.identifier(cursor);
   await tx.execute(sql`declare ${name} no scroll cursor for ${query}`);
 
+  const next = () =>
+    tx.execute(sql`fetch ${sql.raw(String(BATCH))} from ${name}`);
+
   yield BOM;
-  let header = true;
-  for (;;) {
-    const result = await tx.execute(
-      sql`fetch ${sql.raw(String(BATCH))} from ${name}`,
-    );
-    if (header) {
-      yield csvRow(result.fields.map((field) => field.name));
-      header = false;
-    }
-    if (result.rows.length === 0) break;
+  let result = await next();
+  yield csvRow(result.fields.map((field) => field.name));
+  while (result.rows.length > 0) {
     counts.rows += result.rows.length;
     yield result.rows
       .map((row) => csvRow(Object.values(row).map(cell)))
       .join('');
+    result = await next();
   }
   await tx.execute(sql`close ${name}`);
 }

@@ -528,6 +528,8 @@ function dueBy(now: Date) {
 /**
  * The organization held until the transaction ends: two Owners asking or
  * cancelling at once take turns, and the second sees the first's answer.
+ * No key update, as account deletion's lock: writes that merely refer to
+ * the organization do not wait for it.
  */
 async function lockOrganization(tx: Transaction, organizationId: string) {
   const [organization] = await tx
@@ -537,7 +539,7 @@ async function lockOrganization(tx: Transaction, organizationId: string) {
     })
     .from(organizations)
     .where(eq(organizations.id, organizationId))
-    .for('update');
+    .for('no key update');
   return organization;
 }
 

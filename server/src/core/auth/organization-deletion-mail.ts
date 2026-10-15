@@ -38,6 +38,35 @@ function accountStays(organization: string): Translatable {
   );
 }
 
+/**
+ * The notice of a deletion to come, when scheduled and a week before: when,
+ * who can cancel, the export for an Owner, and what becomes of the
+ * reader's account. Only the wording differs between the two.
+ */
+function notice(
+  context: DeletionMailContext,
+  side: MemberSide,
+  organization: string,
+  wording: {
+    subject: Translatable;
+    when: Translatable;
+    exportAgain: Translatable;
+    withAccount: Translatable;
+  },
+): Mail {
+  return compose(
+    context,
+    wording.subject,
+    [
+      wording.when,
+      UNTIL,
+      ...(side.isOwner ? [wording.exportAgain] : []),
+      side.withAccount ? wording.withAccount : accountStays(organization),
+    ],
+    APP,
+  );
+}
+
 /** The deletion is scheduled: by whom, after which day, and what follows. */
 export function organizationDeletionScheduledMail(
   context: DeletionMailContext,
@@ -46,8 +75,16 @@ export function organizationDeletionScheduledMail(
 ): Mail {
   const date = dayOf(details.day, context.locale);
   const { organization, actor } = details;
-  const paragraphs: Translatable[] = [
-    t(
+
+  return notice(context, side, organization, {
+    subject: t(
+      {
+        id: 'mail.organizationDeletion.scheduled.subject',
+        defaultMessage: '{organization} will be deleted after {date}',
+      },
+      { organization, date },
+    ),
+    when: t(
       {
         id: 'mail.organizationDeletion.scheduled.when',
         defaultMessage:
@@ -55,40 +92,17 @@ export function organizationDeletionScheduledMail(
       },
       { actor, organization, date },
     ),
-    UNTIL,
-  ];
-
-  if (side.isOwner) {
-    paragraphs.push(
-      t({
-        id: 'mail.organizationDeletion.scheduled.export',
-        defaultMessage:
-          'Download the export again shortly before then, from Settings: once the organization is deleted, nothing can make one.',
-      }),
-    );
-  }
-  paragraphs.push(
-    side.withAccount
-      ? t({
-          id: 'mail.organizationDeletion.scheduled.withAccount',
-          defaultMessage:
-            'Your account will be deleted straight after it, and every other device has been signed out.',
-        })
-      : accountStays(organization),
-  );
-
-  return compose(
-    context,
-    t(
-      {
-        id: 'mail.organizationDeletion.scheduled.subject',
-        defaultMessage: '{organization} will be deleted after {date}',
-      },
-      { organization, date },
-    ),
-    paragraphs,
-    APP,
-  );
+    exportAgain: t({
+      id: 'mail.organizationDeletion.scheduled.export',
+      defaultMessage:
+        'Download the export again shortly before then, from Settings: once the organization is deleted, nothing can make one.',
+    }),
+    withAccount: t({
+      id: 'mail.organizationDeletion.scheduled.withAccount',
+      defaultMessage:
+        'Your account will be deleted straight after it, and every other device has been signed out.',
+    }),
+  });
 }
 
 /** The deletion was cancelled, and by whom. */
@@ -187,8 +201,16 @@ export function organizationDeletionReminderMail(
 ): Mail {
   const date = dayOf(details.day, context.locale);
   const { organization } = details;
-  const paragraphs: Translatable[] = [
-    t(
+
+  return notice(context, side, organization, {
+    subject: t(
+      {
+        id: 'mail.organizationDeletion.reminder.subject',
+        defaultMessage: 'Reminder: {organization} will be deleted after {date}',
+      },
+      { organization, date },
+    ),
+    when: t(
       {
         id: 'mail.organizationDeletion.reminder.when',
         defaultMessage:
@@ -196,36 +218,14 @@ export function organizationDeletionReminderMail(
       },
       { organization, date },
     ),
-    UNTIL,
-  ];
-  if (side.isOwner) {
-    paragraphs.push(
-      t({
-        id: 'mail.organizationDeletion.reminder.export',
-        defaultMessage:
-          'Download everything again now, from Settings, so your copy holds the last week too: once the organization is deleted, nothing can make one.',
-      }),
-    );
-  }
-  paragraphs.push(
-    side.withAccount
-      ? t({
-          id: 'mail.organizationDeletion.reminder.withAccount',
-          defaultMessage: 'Your account will be deleted straight after it.',
-        })
-      : accountStays(organization),
-  );
-
-  return compose(
-    context,
-    t(
-      {
-        id: 'mail.organizationDeletion.reminder.subject',
-        defaultMessage: 'Reminder: {organization} will be deleted after {date}',
-      },
-      { organization, date },
-    ),
-    paragraphs,
-    APP,
-  );
+    exportAgain: t({
+      id: 'mail.organizationDeletion.reminder.export',
+      defaultMessage:
+        'Download everything again now, from Settings, so your copy holds the last week too: once the organization is deleted, nothing can make one.',
+    }),
+    withAccount: t({
+      id: 'mail.organizationDeletion.reminder.withAccount',
+      defaultMessage: 'Your account will be deleted straight after it.',
+    }),
+  });
 }
