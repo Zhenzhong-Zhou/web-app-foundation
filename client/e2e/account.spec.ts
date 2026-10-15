@@ -104,7 +104,9 @@ test('refuses a wrong current password and changes nothing', async ({
   // Marked on its field, and tied to the refusal's way on (#120).
   const current = dialog.getByLabel('Current password');
   await expect(current).toHaveAttribute('aria-invalid', 'true');
-  await expect(current).toHaveAccessibleDescription(/Check it and try again/);
+  await expect(current).toHaveAccessibleDescription(
+    'That password is not correct. Check it and try again.',
+  );
 
   // A 401 that wrote the new hash anyway would be invisible from the screen,
   // so this checks both directions rather than the message.

@@ -1,8 +1,9 @@
-import { Alert, Box, Button, Stack, Typography } from '@mui/material';
+import { Alert, Button, Stack, Typography } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import { ForgottenPasswordHint } from '../components/forgotten-password-hint';
+import { FormError } from '../components/form-error';
 import { PasswordField } from '../components/password-field';
 import { api, hasCode } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
@@ -76,15 +77,13 @@ export function ChangePasswordForm() {
         {changePassword}
       </Typography>
 
+      {/* FormError, as the two deletion dialogs: the field points at the
+          refusal's words alone, and the way on goes on its own line under
+          them (conventions.md, "Error codes"). */}
       {error && (
-        <Alert id="change-password-error" severity="error">
-          {error}
-          {wrongPassword && (
-            <Box sx={{ mt: 0.5 }}>
-              <ForgottenPasswordHint />
-            </Box>
-          )}
-        </Alert>
+        <FormError id="change-password-error" message={error}>
+          {wrongPassword && <ForgottenPasswordHint />}
+        </FormError>
       )}
       {result && <Alert severity="success">{result}</Alert>}
 
