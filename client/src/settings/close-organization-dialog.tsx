@@ -32,7 +32,6 @@ import {
   dayWithDaysLeft,
   deletionDayFrom,
   EXPORT_PATH,
-  isFresh,
 } from './organization-deletion';
 
 /** How often the dialog asks whether a download it started has finished. */
@@ -90,7 +89,7 @@ export function CloseOrganizationDialog({
           if (ignore) return;
           setOrganization(response.organization);
           // The download it followed is recorded: nothing left to wait for.
-          if (isFresh(response.organization.lastExport)) stopPolling();
+          if (response.organization.lastExport?.fresh) stopPolling();
         },
         () => undefined,
       );
@@ -119,7 +118,8 @@ export function CloseOrganizationDialog({
   }
 
   const last = organization?.lastExport ?? null;
-  const fresh = isFresh(last);
+  // The server's answer, by its clock: the deletion relies on the same.
+  const fresh = last?.fresh ?? false;
   const exportDone = fresh || declined;
   const nameMatches =
     organization !== null && name.trim() === organization.name.trim();
@@ -160,7 +160,7 @@ export function CloseOrganizationDialog({
   const organizationName = organization?.name ?? session?.organization?.name;
   const day = dayWithDaysLeft(intl, deletionDayFrom(new Date()));
   const byWhom = (exported: OrganizationLastExport) =>
-    exported.exportedBy === session?.user.name
+    exported.exportedById === session?.user.id
       ? intl.formatMessage({
           id: 'settings.deletion.byYou',
           defaultMessage: 'you',

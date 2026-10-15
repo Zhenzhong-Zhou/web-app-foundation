@@ -56,7 +56,8 @@ describe('OrganizationDeletionBanner', () => {
   it('cannot be hidden in the last 7 days', () => {
     renderWithAuth(<OrganizationDeletionBanner />, {
       permissions: OWNER,
-      organization: { deletionScheduledAt: inDays(7) },
+      // The server's word that the last week has begun, by its UTC day.
+      organization: { deletionScheduledAt: inDays(7), deletionLastWeek: true },
     });
 
     expect(screen.getByText(/in 7 days/)).toBeInTheDocument();
@@ -89,6 +90,19 @@ describe('OrganizationDeletionBanner', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
+  it('is not the only member’s banner for a member deleting their own account the same day', () => {
+    const day = inDays(30);
+    renderWithAuth(<OrganizationDeletionBanner />, {
+      user: { deletionScheduledAt: day },
+      organization: { deletionScheduledAt: day },
+    });
+
+    expect(screen.getByText(/as an Owner asked/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Keep both' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('keeps both for the only member, through the account', async () => {
     const day = inDays(30);
     const cancelled: string[] = [];
@@ -101,7 +115,7 @@ describe('OrganizationDeletionBanner', () => {
     renderWithAuth(<OrganizationDeletionBanner />, {
       permissions: OWNER,
       user: { deletionScheduledAt: day },
-      organization: { deletionScheduledAt: day },
+      organization: { deletionScheduledAt: day, deletionWithAccount: true },
     });
 
     expect(

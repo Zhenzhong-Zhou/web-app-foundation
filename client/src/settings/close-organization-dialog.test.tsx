@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { OrganizationLastExport } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
@@ -73,9 +73,10 @@ describe('CloseOrganizationDialog', () => {
     ]);
   });
 
-  it('counts a download from the last day, and names who took it', async () => {
+  it('counts a fresh download, and knows it was yours by id', async () => {
     const sent = organizationWith({
       exportedAt: new Date(Date.now() - 60_000).toISOString(),
+      // Another member's name, the same as yours: the id decides.
       exportedBy: 'Owner',
       exportedById: 'user-1',
       fresh: true,
@@ -137,5 +138,64 @@ describe('CloseOrganizationDialog', () => {
     );
 
     expect(sent).toEqual([expect.objectContaining({ deleteAccount: true })]);
+  });
+
+  it('names someone else of the same name, not you', async () => {
+    organizationWith({
+      exportedAt: new Date(Date.now() - 60_000).toISOString(),
+      exportedBy: 'Owner',
+      exportedById: 'user-2',
+      fresh: true,
+    });
+    const dialog = await open();
+
+    expect(await within(dialog).findByText(/by Owner$/)).toBeInTheDocument();
+  });
+
+  it('stops asking once the download is fresh', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      let reads = 0;
+      let fresh = false;
+      server.use(
+        http.get('/api/v1/organization', () => {
+          reads += 1;
+          return HttpResponse.json({
+            organization: {
+              name: 'Alpha Co',
+              lastExport: fresh
+                ? {
+                    exportedAt: new Date().toISOString(),
+                    exportedBy: 'Owner',
+                    exportedById: 'user-1',
+                    fresh: true,
+                  }
+                : null,
+            },
+          });
+        }),
+      );
+      const dialog = await open();
+      const user = userEvent.setup({
+        advanceTimers: (ms) => vi.advanceTimersByTime(ms),
+      });
+      const link = within(dialog).getByRole('link', {
+        name: 'Download everything (ZIP)',
+      });
+      // A plain link to a file: jsdom would try to navigate.
+      link.addEventListener('click', (event) => event.preventDefault());
+      await user.click(link);
+
+      await vi.advanceTimersByTimeAsync(3_000);
+      fresh = true;
+      await vi.advanceTimersByTimeAsync(3_000);
+      expect(await within(dialog).findByText(/by you$/)).toBeInTheDocument();
+      const afterFresh = reads;
+
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(reads).toBe(afterFresh);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

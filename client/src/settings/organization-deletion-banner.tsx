@@ -6,14 +6,10 @@ import { useIntl } from 'react-intl';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { api, apiUrl } from '../lib/api';
-import { daysUntil, localToday } from '../lib/expiry';
+import { localToday } from '../lib/expiry';
 import { HIDDEN_DELETION_BANNER } from '../lib/session-keys';
 import { useSubmit } from '../lib/use-submit';
-import {
-  dayWithDaysLeft,
-  EXPORT_PATH,
-  LAST_DAYS,
-} from './organization-deletion';
+import { dayWithDaysLeft, EXPORT_PATH } from './organization-deletion';
 
 /** What this browser hid: whose banner, for which day, until when. */
 interface Hidden {
@@ -77,9 +73,9 @@ export function OrganizationDeletionBanner() {
   }
 
   const when = dayWithDaysLeft(intl, day);
-  const together = session.user.deletionScheduledAt === day;
+  const together = organization.deletionWithAccount;
   const isOwner = can('organizations.delete');
-  const hideable = daysUntil(day) > LAST_DAYS;
+  const hideable = !organization.deletionLastWeek;
   const hideLabel = intl.formatMessage({
     id: 'settings.banner.hide',
     defaultMessage: 'Hide for today',

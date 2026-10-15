@@ -21,7 +21,7 @@ export function DeletionBanner() {
   if (!due) return null;
   // Deleted with the organization, as its only member: the organization's
   // banner says both, and keeps both (ADR-070).
-  if (session.organization?.deletionScheduledAt === due) return null;
+  if (session.organization?.deletionWithAccount) return null;
 
   return (
     <Alert
