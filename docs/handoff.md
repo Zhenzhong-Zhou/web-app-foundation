@@ -1,9 +1,9 @@
-# web-app-foundation — handoff, 12 October 2026
+# web-app-foundation — handoff, 14 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 12 October 2026: read this first
+## Now, 14 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
@@ -17,9 +17,10 @@ with this one, this one is current.
   Organization → Profile and to the customer (`invoice-refusal-link`,
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
   "Error codes"). PRs through #87.
-- **Migrations:** through **0056** on `main` once #114 merges (0055 and
-  0056 are ADR-069's); Render holds **55** rows in
-  `drizzle.__drizzle_migrations` until it deploys. Next is **0057**.
+- **Migrations:** through **0056** on `main`, 57 files in
+  `server/src/database/migrations/` (0055 and 0056 are ADR-069's, merged
+  with #114). Next is **0057**. Render holds one row per file in
+  `drizzle.__drizzle_migrations` once `main` is deployed there: 57.
   After any new migration: `npm run migrate:all`.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
@@ -75,30 +76,44 @@ with this one, this one is current.
   the server answering anyone. It now reads the prolog one item at a
   time. `ci.yml` and `perf.yml` declare `contents: read`.
   `@scarf/scarf`'s install script, from `swagger-ui-dist`, is denied in
-  `allowScripts`, and `scarfSettings` turns its reporting off. The four
-  Dependabot alerts are dismissed, not fixed: js-yaml, pinned upstream by
-  the type generator, is dev-only and reads only our own spec; esbuild's
-  flaw is in a dev server drizzle-kit never starts. Neither has a fixed
-  parent release, and ADR-019 rules out overrides.
-- **ADR-069** (`adr-069-account-deletion`): leaving an organization,
-  deleting your account after 30 days, and exporting your own data.
+  `allowScripts`, and `scarfSettings` turns its reporting off. Dependabot's
+  alerts and `npm audit`'s findings are left open on purpose: all
+  dev-only, and none fixed in a release of the package that brings it in.
+  js-yaml sits under the type generator, which reads only our own spec;
+  esbuild under drizzle-kit, in a dev server it never starts; braces under
+  eslint-plugin-check-file, given patterns only from our own lint config
+  (Dependabot dismissed that alert itself). They close when those
+  packages ship fixed dependencies. `npm audit fix --force` would
+  downgrade drizzle-kit and the generator instead, and ADR-019 rules out
+  overrides.
+- **ADR-069** (`adr-069-account-deletion`, merged in #114): leaving an
+  organization, deleting your account after 30 days, and exporting your
+  own data.
   Only the person deletes their account; an Owner removes a member. The
   only member of an organization, and its only Owner while others
   remain, can do neither (`only_member`, `last_owner_with_members`).
   The deletion day is a calendar day, completed once it has ended in
   every time zone; `AccountDeletionTimer` runs at startup and hourly,
   cancelling a deletion a block now applies to. Migrations 0055 and
-  0056. A block in another organization waits for invitations (ADR-069,
-  *Deferred*).
-- **Next:** organization deletion, ADR-069's deferral. Its trigger, the
-  first paying customer, is near, and until it exists a person alone in
-  their organization, which is everyone who registers, cannot delete
-  their account.
-- **Release:** **v0.7.0-rc.1** is tagged on `main` after #93 (Nest 12),
-  a GitHub pre-release; its tag ran the Performance workflow's full
-  budgets. v0.7.0 follows once those pass and the release candidate has
-  run in production for a few days, with its notes in `docs/releases/`.
-  Those notes list the SVG upload fix from #113, which rc.1 lacks.
+  0056. Waiting on their triggers (ADR-069, *Deferred*): invitations
+  (ADR-006), and with them switching between organizations, which a
+  block in another organization needs; and accounts an organization owns,
+  through single sign-on.
+- **Next:** ADR-070, deleting an organization (ADR-069's deferral), on
+  `adr-070-organization-deletion`; the ADR is not written yet. Its
+  trigger, the first paying customer, is near, and until it exists a
+  person alone in their organization, which is everyone who registers,
+  cannot delete their account. The branch's chores are done: read-only
+  commands allowed for Claude Code in `.claude/settings.json`, the review
+  skill's findings labelled and capped, one `HourlyTimer` for the three
+  hourly jobs (each runs at startup, then hourly; ADR-059 amended), and
+  in-range dependency updates.
+- **Release:** **v0.7.0-rc.2** is tagged on `main` at #114's merge, a
+  GitHub pre-release whose notes list the SVG upload fix from #113, which
+  rc.1 (after #93, Nest 12) lacks. The Performance workflow its tag
+  started passed on 14 October 2026. Next: let it run in production for
+  a few days, then tag v0.7.0, with its notes in
+  `docs/releases/v0.7.0.txt`, listing the SVG fix too.
   v0.6.0 and v0.5.0's notes are the GitHub releases and `docs/releases/`.
   Release notes are release notes only: they say nothing of manual checks
   or the walkthrough.
@@ -114,7 +129,12 @@ with this one, this one is current.
 
 ### Still to do, by hand
 
-- **Render:** done on 13 October 2026. The free database was deleted and
+- **Render's free database expires on 12 November 2026.** Move to a paid
+  database, or create a free one again, empty, by the steps in
+  `docs/runbooks/render.md`. Before any real customer: a paid database and
+  web service, backups to the Canadian bucket, and every development
+  secret replaced (the runbook's "Before real customers' data"). Done on
+  13 October 2026: the free database was deleted and
   created again, which retired the password pasted in a chat and left no
   older rows for the pinyin backfill; 55 migrations applied; the
   environment's keys checked, with `MAIL_USER` and `MAIL_PASSWORD` removed
@@ -123,20 +143,35 @@ with this one, this one is current.
   file under a `waf-files/` folder inside the bucket. Corrected to the
   account's address alone, the stray folder deleted, the logo uploaded
   again to `<organization id>/…`, and GitHub's `BACKUP_S3_ENDPOINT` set
-  again the same way. The server now refuses such an endpoint at boot. The
-  new free database **expires on 12 November 2026**; replacing it, and what
-  changes before real data, are in `docs/runbooks/render.md`.
+  again the same way. The server now refuses such an endpoint at boot.
+- **Before v0.7.0:** walk section 23 of `docs/manual-checks.md`
+  (MC-2301 to MC-2303, leaving and deleting); have the French and Chinese
+  wording checked by someone fluent (MC-1405); edit `docs/principles.md`
+  until it reads as Bob's.
 - **Manual checks due:** MC-1601 and MC-1602 (an upload in R2, the
   nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
   MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
   photos and 同事 on a phone.
-- **Issues:** #17, #26 and #28 are closed.
+- **Try `/usability-walkthrough`** on the deletion flow (ADR-069), as the
+  novice bookkeeper reading Chinese.
+- **Open issues:** #16 (licence status for suspended, cancelled and
+  superseded), #18 (site licences), #25 (what the customer kept), #33 (one
+  hook for Load more keyset paging) and #41 (an organization's time zone
+  for today). `gh issue list` to review.
 - **Branches:** prune the merged ones (`scripts/prune-branches.sh`).
 
 ### Still to do, in code
 
 - **The typo lookup** sits at 270 ms of its 300 ms budget; one query per
   pass if it ever fails.
+- **An MUI warning,** logged twice by the Playwright run: "children must
+  be passed when using the TextField component with select". Harmless;
+  most likely the link-return dialog's select, which has no items while
+  its returns load (`client/src/rmas/link-return-dialog.tsx`). Fix it
+  when that screen is next touched.
+- **Targeted reviews, report only:** `server/src/core/files` and
+  `server/src/modules/invoices` at any quiet moment; `server/src/core/auth`
+  after ADR-070 lands.
 
 ### Deferred, each waiting for its trigger (in the ADRs)
 
@@ -149,7 +184,6 @@ with this one, this one is current.
 - Sessions: lock screen and switch user with a PIN, for a native app or
   shared scanners, handhelds or kiosks; a maximum session length
   (ADR-065).
-- Open decisions: leaving or deleting an organization.
 
 ## Where things stand
 
@@ -811,24 +845,9 @@ display-name test, or wait a minute between runs.
 
 ## Open GitHub issues
 
-- #16 licence status for suspended, cancelled, superseded
-- #17 licence expiry notification — done (ADR-064), closed by PR #81
-- #18 site licences on the organization or a partner. ADR-050's amendment
-  sketches where it is heading: one register of credentials with a type
-  and what it applies to — site licences gating making at a site,
-  wholesale licences gating shipment, business licences only reminded.
-- #19 generated client types from OpenAPI (would also replace the client's
-  copied permission list)
-- #20 `date` column for calendar days — done (ADR-052), closed by PR #40
-- #25 show what the customer kept (shipped − returned)
-- #26 cancel check and update are not one transaction — fixed on
-  `fixes-orders-runs`: an order's header change runs in one transaction on
-  the order row, locked by `loadOrder`, which every line and stock change
-  to an order already goes through
-- #28 run-close top-up ignores holds and the lots picked at release —
-  fixed on `fixes-orders-runs`: the top-up is checked against holds like
-  release (ADR-045), and continues the lots release issued before opening
-  the next to expire (ADR-039 amended)
+Listed in the Now section, under "Still to do, by hand"; `gh issue list`
+for the current state. Where #18, site licences, is heading is sketched
+in ADR-050's amendment.
 
 ## Left over, small
 
