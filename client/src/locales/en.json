@@ -707,6 +707,7 @@
   "layout.openNavigation": "Open navigation",
   "layout.signOut": "Sign out",
   "layout.signedInAsWithInitials": "{initials}, signed in as {email}",
+  "layout.skipToContent": "Skip to content",
   "layout.unknownUser": "unknown",
   "layout.unverified.message": "Confirm your email address to secure your account.",
   "layout.unverified.resend": "Resend",

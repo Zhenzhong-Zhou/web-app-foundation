@@ -707,6 +707,7 @@
   "layout.openNavigation": "打开导航",
   "layout.signOut": "退出登录",
   "layout.signedInAsWithInitials": "{initials}，当前登录：{email}",
+  "layout.skipToContent": "跳到主要内容",
   "layout.unknownUser": "未知",
   "layout.unverified.message": "请确认您的电子邮箱地址，以保护您的账户。",
   "layout.unverified.resend": "重新发送",

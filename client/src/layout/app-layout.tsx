@@ -41,6 +41,7 @@ import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
 import { OrganizationMark } from './organization-mark';
 import { RAIL_FOLDED_WIDTH, RAIL_WIDTH, SideNav } from './side-nav';
+import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
 
 /**
  * Where the rail appears (ADR-055). Below it the same groups open in a
@@ -114,6 +115,9 @@ export function AppLayout() {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100dvh' }}>
+      {/* First, so it is the first Tab stop (#121). */}
+      <SkipLink />
+
       {/* The rail: beside the page from `lg`. The outer box runs the page's
           full height so its colour does too; the inner one stays in view,
           with its own scroll, while the page scrolls. Not on paper. */}
@@ -391,7 +395,16 @@ export function AppLayout() {
           <SideNav onNavigate={() => setDrawer(false)} />
         </Drawer>
 
-        <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
+        {/* The page's main landmark (#121), and where the skip link puts
+            focus: -1 takes it by script without adding a Tab stop, and its
+            outline is left off because nothing in it is pressed. */}
+        <Container
+          component="main"
+          id={MAIN_CONTENT_ID}
+          tabIndex={-1}
+          maxWidth="lg"
+          sx={{ py: { xs: 2, sm: 4 }, '&:focus': { outline: 'none' } }}
+        >
           <Stack spacing={3}>
             <UnverifiedBanner />
             <DeletionBanner />
