@@ -230,13 +230,15 @@ describe('Account deletion (e2e)', () => {
   });
 
   describe('requesting deletion', () => {
-    it('refuses a wrong password', async () => {
+    it('refuses a wrong password, with the code the screen marks it by', async () => {
       const { member } = await team();
 
-      await member
+      const res = await member
         .post('/v1/account/deletion')
         .send({ password: 'not-the-password' })
         .expect(401);
+
+      expect(body<Refusal>(res).code).toBe('password_incorrect');
     });
 
     it('refuses the only member of an organization', async () => {

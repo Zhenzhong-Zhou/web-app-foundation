@@ -135,10 +135,11 @@ describe('Account (e2e)', () => {
       const agent = await register();
       const [before] = await db.select().from(users);
 
-      await agent
+      const res = await agent
         .post('/v1/account/password')
         .send({ currentPassword: 'not-it', newPassword: NEW_PASSWORD })
         .expect(401);
+      expect(body<{ code?: string }>(res).code).toBe('password_incorrect');
 
       // A 401 that still wrote the hash would be invisible from outside.
       const [after] = await db.select().from(users);

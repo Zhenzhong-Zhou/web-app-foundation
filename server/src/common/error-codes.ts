@@ -41,6 +41,11 @@ export const ERROR_CODES = {
    * be cancelled (ADR-070).
    */
   organizationDeletionUnderWay: 'organization_deletion_under_way',
+  /**
+   * The password typed to confirm a change is not the account's (ADR-069,
+   * ADR-070): the screen marks the field that holds it (#120).
+   */
+  passwordIncorrect: 'password_incorrect',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

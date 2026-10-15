@@ -2531,6 +2531,7 @@ export const ErrorCode = {
   ONLY_MEMBER: 'only_member',
   ORGANIZATION_EXPORT_REQUIRED: 'organization_export_required',
   ORGANIZATION_DELETION_UNDER_WAY: 'organization_deletion_under_way',
+  PASSWORD_INCORRECT: 'password_incorrect',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

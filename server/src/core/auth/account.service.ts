@@ -8,6 +8,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { UAParser } from 'ua-parser-js';
 
+import { ERROR_CODES, withCode } from '../../common/error-codes';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { users } from '../../database/schema';
@@ -110,12 +111,19 @@ export class AccountService {
       );
     }
 
+    // The way on is in the message, since a person who has forgotten it
+    // cannot reach Forgot your password? while signed in (#120). The code
+    // lets the screen mark the field the password was typed in.
     if (!(await this.passwords.verify(user.passwordHash, password))) {
       throw new UnauthorizedException(
-        t({
-          id: 'account.password.wrong',
-          defaultMessage: 'That password is not correct',
-        }),
+        withCode(
+          t({
+            id: 'account.password.wrong',
+            defaultMessage:
+              'That password is not correct. Check it and try again; if you have forgotten it, sign out and choose “Forgot your password?” on the sign-in page.',
+          }),
+          ERROR_CODES.passwordIncorrect,
+        ),
       );
     }
   }
