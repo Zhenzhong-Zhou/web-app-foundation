@@ -49,7 +49,7 @@
   "account.password.changing": "Changing…",
   "account.password.confirm": "Confirm new password",
   "account.password.current": "Current password",
-  "account.password.forgottenQuestion": "Forgotten it?",
+  "account.password.forgotten": "Forgotten it? {link}",
   "account.password.mismatch": "These do not match.",
   "account.password.title": "Change password",
   "account.photo.add": "Add a photo",

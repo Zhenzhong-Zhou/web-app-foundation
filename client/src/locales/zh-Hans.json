@@ -49,7 +49,7 @@
   "account.password.changing": "正在修改…",
   "account.password.confirm": "确认新密码",
   "account.password.current": "当前密码",
-  "account.password.forgottenQuestion": "忘记了？",
+  "account.password.forgotten": "忘记了？{link}",
   "account.password.mismatch": "两次输入的密码不一致。",
   "account.password.title": "修改密码",
   "account.photo.add": "添加照片",

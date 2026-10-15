@@ -76,13 +76,18 @@ function lastWeekCutoff(now: Date): string {
 }
 
 /**
- * Where a deletion stands (ADR-070, amended): under way once its day has
- * ended everywhere, in its last week from the reminder on, scheduled
- * before. One function, so the session and the cancel cannot draw the
- * lines differently; the reminder's query uses the same two cutoffs.
+ * Where a deletion stands (ADR-070, amended): under way once a run has
+ * marked its start, whatever the clock says, or once its day has ended
+ * everywhere; in its last week from the reminder on; scheduled before. One
+ * function, so the session and the cancel cannot draw the lines
+ * differently; the reminder's query uses the same two cutoffs.
  */
-export function deletionStageOf(day: string | null): DeletionStage | null {
+export function deletionStageOf(
+  day: string | null,
+  startedAt: Date | null,
+): DeletionStage | null {
   if (!day) return null;
+  if (startedAt) return 'underWay';
   const now = new Date();
   if (day < todayWhereDaysEndLast(now)) return 'underWay';
   return day <= lastWeekCutoff(now) ? 'lastWeek' : 'scheduled';
@@ -505,12 +510,7 @@ export class OrganizationDeletionService {
       const organization = await lockOrganization(tx, organizationId);
       const day = organization.deletionScheduledAt;
       if (!day) return null;
-      // Once a run has marked its start, whatever the clock now says
-      // (ADR-070, amended); before that, once the day has ended.
-      if (
-        organization.deletionStartedAt !== null ||
-        deletionStageOf(day) === 'underWay'
-      ) {
+      if (deletionStageOf(day, organization.deletionStartedAt) === 'underWay') {
         throw new ConflictException(
           withCode(
             t({

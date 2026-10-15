@@ -685,7 +685,12 @@ describe('Organization deletion (e2e)', () => {
     });
 
     it('marks its start before erasing, and no cancel comes after the mark', async () => {
-      const alpha = await busy('alpha');
+      // One file, so the run has something to erase.
+      const alpha = await registerOrganization(app, 'alpha');
+      await alpha.agent
+        .post('/v1/files/logo')
+        .attach('file', SVG, 'logo.svg')
+        .expect(201);
       await setDay(alpha.organizationId, LONG_AGO);
       const erase = vi
         .spyOn(app.get<FileStorage>(FILE_STORAGE), 'delete')
@@ -703,8 +708,12 @@ describe('Organization deletion (e2e)', () => {
       expect(marked.startedAt).not.toBeNull();
 
       // The mark refuses it, not the clock: even with the day moved back
-      // into the future, as a cancel racing the cutoff would see it.
+      // into the future, as a cancel racing the cutoff would see it. The
+      // session says so too, so no screen offers the cancel.
       await setDay(alpha.organizationId, '2099-12-31');
+      expect((await me(alpha.agent)).organization?.deletionStage).toBe(
+        'underWay',
+      );
       const refused = await alpha.agent
         .delete('/v1/organization/deletion')
         .expect(409);

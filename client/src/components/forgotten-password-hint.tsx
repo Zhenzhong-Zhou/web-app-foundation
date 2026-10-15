@@ -12,10 +12,9 @@ import { RESET_PASSWORD_EMAIL } from '../lib/session-keys';
  * password_incorrect; the server's message says what is wrong.
  *
  * A whole-page load rather than the router: signed out, the app's guard
- * would send this tab to the sign-in page at the same moment, and loading
- * the page leaves nothing of the signed-in app behind. The email waits in
- * this tab's session storage, not the address, so it is in no history or
- * server log, and the reset page takes it once.
+ * would send this tab to the sign-in page at the same moment. The email
+ * waits in this tab's session storage, not the address, so it is in no
+ * history or server log, and the reset page takes it once.
  *
  * The link is named by the reset page's own title, so renaming the page
  * renames it here too.
@@ -36,23 +35,25 @@ export function ForgottenPasswordHint() {
     window.location.assign('/forgot-password');
   }
 
-  return (
-    <>
-      {intl.formatMessage({
-        id: 'account.password.forgottenQuestion',
-        defaultMessage: 'Forgotten it?',
-      })}{' '}
-      <Link
-        component="button"
-        type="button"
-        onClick={() => void reset()}
-        sx={{ verticalAlign: 'baseline' }}
-      >
-        {intl.formatMessage({
-          id: 'auth.forgot.title',
-          defaultMessage: 'Reset your password',
-        })}
-      </Link>
-    </>
+  return intl.formatMessage(
+    {
+      id: 'account.password.forgotten',
+      defaultMessage: 'Forgotten it? {link}',
+    },
+    {
+      link: (
+        <Link
+          component="button"
+          type="button"
+          onClick={() => void reset()}
+          sx={{ verticalAlign: 'baseline' }}
+        >
+          {intl.formatMessage({
+            id: 'auth.forgot.title',
+            defaultMessage: 'Reset your password',
+          })}
+        </Link>
+      ),
+    },
   );
 }

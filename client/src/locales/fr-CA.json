@@ -49,7 +49,7 @@
   "account.password.changing": "Modification…",
   "account.password.confirm": "Confirmer le nouveau mot de passe",
   "account.password.current": "Mot de passe actuel",
-  "account.password.forgottenQuestion": "Vous l’avez oublié?",
+  "account.password.forgotten": "Vous l’avez oublié? {link}",
   "account.password.mismatch": "Les mots de passe ne correspondent pas.",
   "account.password.title": "Changer le mot de passe",
   "account.photo.add": "Ajouter une photo",

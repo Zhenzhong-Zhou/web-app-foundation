@@ -5843,6 +5843,7 @@ plan had not chosen.
 
 > **Amended by [ADR-070](#adr-070--deleting-an-organization-amends-adr-012-adr-059-and-adr-069).**
 > A deleted organization's files are erased when its deletion completes, not released to wait 30 days: the 30 days came before it, and their rows go with the organization.
+> Its October 2026 amendment (#117) changes how every upload writes: the bytes go to storage inside the transaction that inserts the row, so a deletion run's mark waits for an upload under way, and a failed write rolls the row back rather than deleting it after.
 
 **Context.** Nothing stores a file yet, and several things are waiting to.
 Branding needs the organization's logo (*Open decisions*, ADR-055's brand
@@ -7725,7 +7726,8 @@ Completing now marks its start before it touches storage, in
 1. In one transaction: lock the organization, check that it is due, and
    set the mark. A cancel either commits before this, and the run finds
    nothing due, or waits for it and is refused, as is every later cancel,
-   whatever either clock says.
+   whatever either clock says. The stage the session reports reads the
+   mark too, so no screen offers a cancel the server would refuse.
 2. Erase the bytes of every file, as before.
 3. In one transaction: lock the organization, which now needs the mark
    rather than the day, erase any file since step 2, and delete it, as
