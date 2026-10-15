@@ -706,7 +706,7 @@
   "layout.notifications.unread": "Notifications, {count, plural, one {# non lue} other {# non lues}}",
   "layout.openNavigation": "Ouvrir la navigation",
   "layout.signOut": "Se déconnecter",
-  "layout.signedInAs": "Connecté en tant que {email}",
+  "layout.signedInAsWithInitials": "{initials}, connecté en tant que {email}",
   "layout.unknownUser": "inconnu",
   "layout.unverified.message": "Confirmez votre adresse courriel pour sécuriser votre compte.",
   "layout.unverified.resend": "Renvoyer",

@@ -30,7 +30,7 @@ test('sets details and a photo, and finds them on People', async ({
   });
   // The face in the top bar becomes the photo.
   await expect(
-    page.getByRole('button', { name: /^Signed in as/ }).locator('img'),
+    page.getByRole('button', { name: /signed in as/ }).locator('img'),
   ).toBeVisible();
 
   await page.goto('/people');

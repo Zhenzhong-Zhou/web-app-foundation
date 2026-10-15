@@ -33,6 +33,7 @@ import { LanguageSelect } from '../components/language-select';
 import { PersonAvatar } from '../components/person-avatar';
 import { NameAndEmail } from '../components/who-and-when';
 import { api } from '../lib/api';
+import { initialsOf } from '../lib/person-initials';
 import { LookupBox } from '../search/lookup-box';
 import { OrganizationDeletionBanner } from '../settings/organization-deletion-banner';
 import { IdleGuard } from './idle-guard';
@@ -234,7 +235,9 @@ export function AppLayout() {
 
             {/* The face alone (ADR-063): on a shared computer it says whose
                 account this is at a glance; the name and email are on hover
-                and at the top of the menu. */}
+                and at the top of the menu. Its name starts with the initials
+                the circle shows, so a voice user can say what they see
+                (WCAG 2.5.3, Label in Name). */}
             <Tooltip
               title={[session?.user.name, session?.user.email]
                 .filter(Boolean)
@@ -244,10 +247,14 @@ export function AppLayout() {
                 edge="end"
                 aria-label={intl.formatMessage(
                   {
-                    id: 'layout.signedInAs',
-                    defaultMessage: 'Signed in as {email}',
+                    id: 'layout.signedInAsWithInitials',
+                    defaultMessage: '{initials}, signed in as {email}',
                   },
                   {
+                    initials: initialsOf(
+                      session?.user.name ?? null,
+                      session?.user.email,
+                    ),
                     email:
                       session?.user.email ??
                       intl.formatMessage({

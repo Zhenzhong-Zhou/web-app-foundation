@@ -949,6 +949,11 @@ await fetch(`${api}/v1/files/product-image`, {
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R07** *(axe-core 4.14)* With VoiceOver on, Tab to your circle at the
+  right of the top bar: it reads your initials first, then "signed in as"
+  and your email, in English, French and Chinese. With Voice Control on,
+  saying "Click" and the initials the circle shows opens the menu. With a
+  photo instead of initials, it reads the same.
 - **MC-R05** *(found building ADR-052)* Duplicating an order keeps the
   reference and expected date typed in its dialog; they were silently
   dropped. See MC-403.
@@ -1088,3 +1093,5 @@ first.
   MC-2405 adds an only member who leaves, is removed or is demoted.
 - 2026-10-15: section 24 reads "I don't need a copy", after the
   walkthrough in Chinese.
+- 2026-10-15: the top bar's account button is named from the initials it
+  shows (WCAG 2.5.3): MC-R07.
