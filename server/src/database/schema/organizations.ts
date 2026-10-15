@@ -4,6 +4,7 @@ import {
   boolean,
   char,
   check,
+  date,
   integer,
   pgTable,
   text,
@@ -183,6 +184,13 @@ export const organizations = pgTable(
      */
     expiryWarningDays: integer('expiry_warning_days').notNull().default(90),
     expiryCriticalDays: integer('expiry_critical_days').notNull().default(30),
+
+    /**
+     * The deletion day while one is pending (ADR-070): a calendar day
+     * (ADR-052), cancellable until it has ended in every time zone, and
+     * completed after.
+     */
+    deletionScheduledAt: date('deletion_scheduled_at', { mode: 'string' }),
 
     ...timestamps,
   },

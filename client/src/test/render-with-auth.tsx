@@ -50,6 +50,8 @@ export function renderWithAuth(
           expiryWarningDays: 90,
           expiryCriticalDays: 30,
         },
+        deletionScheduledAt: null,
+        deletionUnderWay: false,
       },
       // Specs list permissions as plain strings; the session holds them
       // as the server's names (ADR-068).

@@ -2,20 +2,30 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Patch,
   Put,
+  Res,
 } from '@nestjs/common';
+import { ApiOkResponse, ApiProduces } from '@nestjs/swagger';
+import type { Response } from 'express';
 
+import { localeOf } from '../../i18n/translate';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { Audited } from '../audit/audited.decorator';
-import { getRequestContext } from '../auth/request-context';
+import { CurrentUser } from '../auth/current-user.decorator';
+import {
+  getRequestContext,
+  type RequestContext,
+} from '../auth/request-context';
 import { PERMISSIONS } from '../authorization/permissions';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
 import { OrganizationAddressDto } from './dto/organization-address.dto';
 import type { OrganizationEnvelope } from './dto/organization-response.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { OrganizationExportService } from './organization-export.service';
 import { OrganizationsService } from './organizations.service';
 
 /**
@@ -27,12 +37,33 @@ import { OrganizationsService } from './organizations.service';
  */
 @Controller({ path: 'organization', version: '1' })
 export class OrganizationController {
-  constructor(private readonly organization: OrganizationsService) {}
+  constructor(
+    private readonly organization: OrganizationsService,
+    private readonly exports: OrganizationExportService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.ORGANIZATIONS_VIEW)
   async get(): Promise<OrganizationEnvelope> {
     return { organization: await this.organization.get() };
+  }
+
+  /**
+   * Everything the organization holds, as one ZIP (ADR-070). Audited by
+   * the export itself, before the response ends, rather than by @Audited,
+   * which would write after it: a deletion asked for straight after the
+   * download must find the entry.
+   */
+  @Get('export')
+  @RequirePermissions(PERMISSIONS.ORGANIZATIONS_EXPORT)
+  @ApiProduces('application/zip')
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  async exportAll(
+    @CurrentUser() context: RequestContext,
+    @Res() res: Response,
+    @Headers('accept-language') acceptLanguage?: string,
+  ): Promise<void> {
+    await this.exports.writeTo(res, context, localeOf(acceptLanguage));
   }
 
   @Patch()

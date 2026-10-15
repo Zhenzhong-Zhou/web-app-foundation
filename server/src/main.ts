@@ -6,6 +6,7 @@ import { AppModule } from './app.module';
 import { configureApp } from './bootstrap';
 import type { Env } from './config/env';
 import { AccountDeletionTimer } from './core/auth/account-deletion.timer';
+import { OrganizationDeletionTimer } from './core/auth/organization-deletion.timer';
 import { FilesPurgeTimer } from './core/files/files-purge.timer';
 import { LicenceRemindersTimer } from './modules/product-licences/licence-reminders.timer';
 
@@ -25,6 +26,8 @@ async function bootstrap() {
   for (const timer of [
     FilesPurgeTimer,
     LicenceRemindersTimer,
+    // Organizations first: an only member's account waits for theirs.
+    OrganizationDeletionTimer,
     AccountDeletionTimer,
   ]) {
     app.get(timer).start();

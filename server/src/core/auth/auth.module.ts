@@ -13,6 +13,9 @@ import { AccountPhotoService } from './account-photo.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthTokenService } from './auth-token.service';
+import { OrganizationDeletionController } from './organization-deletion.controller';
+import { OrganizationDeletionService } from './organization-deletion.service';
+import { OrganizationDeletionTimer } from './organization-deletion.timer';
 import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
 import { SessionContextMiddleware } from './session-context.middleware';
@@ -20,7 +23,11 @@ import { SessionContextMiddleware } from './session-context.middleware';
 @Module({
   // FilesModule for the storage a person's photo goes to (ADR-063).
   imports: [AuthorizationModule, FilesModule, MailModule, NotificationsModule],
-  controllers: [AuthController, AccountController],
+  controllers: [
+    AuthController,
+    AccountController,
+    OrganizationDeletionController,
+  ],
   providers: [
     AuthService,
     AuthTokenService,
@@ -32,6 +39,10 @@ import { SessionContextMiddleware } from './session-context.middleware';
     AccountPhotoService,
     AccountDeletionService,
     AccountDeletionTimer,
+    // Deleting an organization (ADR-070) lives beside deleting an account:
+    // they share the deletion day, the emails and the only member's account.
+    OrganizationDeletionService,
+    OrganizationDeletionTimer,
   ],
   // Exported for the guard, and for password-change flows that must revoke
   // other sessions (ADR-011). AuthTokenService is exported so admin-created

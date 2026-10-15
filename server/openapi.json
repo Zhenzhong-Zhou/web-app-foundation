@@ -460,6 +460,49 @@
         ]
       }
     },
+    "/v1/organization/deletion": {
+      "post": {
+        "operationId": "OrganizationDeletionController_requestDeletion_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteOrganizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationDeletionScheduled"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OrganizationDeletion"
+        ]
+      },
+      "delete": {
+        "operationId": "OrganizationDeletionController_cancelDeletion_v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "OrganizationDeletion"
+        ]
+      }
+    },
     "/v1/roles": {
       "get": {
         "operationId": "RolesController_list_v1",
@@ -741,6 +784,9 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.exported",
+                "organization.deletion_scheduled",
+                "organization.deletion_cancelled",
                 "tax_code.created",
                 "tax_code.updated",
                 "invoice.created",
@@ -899,6 +945,9 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.exported",
+                "organization.deletion_scheduled",
+                "organization.deletion_cancelled",
                 "tax_code.created",
                 "tax_code.updated",
                 "invoice.created",
@@ -1230,6 +1279,9 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.exported",
+                "organization.deletion_scheduled",
+                "organization.deletion_cancelled",
                 "tax_code.created",
                 "tax_code.updated",
                 "invoice.created",
@@ -1388,6 +1440,9 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.exported",
+                "organization.deletion_scheduled",
+                "organization.deletion_cancelled",
                 "tax_code.created",
                 "tax_code.updated",
                 "invoice.created",
@@ -2143,6 +2198,37 @@
         "responses": {
           "204": {
             "description": ""
+          }
+        },
+        "tags": [
+          "Organization"
+        ]
+      }
+    },
+    "/v1/organization/export": {
+      "get": {
+        "operationId": "OrganizationController_exportAll_v1",
+        "parameters": [
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -7115,13 +7201,24 @@
           },
           "branding": {
             "$ref": "#/components/schemas/OrganizationBranding"
+          },
+          "deletionScheduledAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "deletionUnderWay": {
+            "type": "boolean"
           }
         },
         "required": [
           "id",
           "name",
           "roleId",
-          "branding"
+          "branding",
+          "deletionScheduledAt",
+          "deletionUnderWay"
         ]
       },
       "CurrentSession": {
@@ -7153,6 +7250,8 @@
                 "roles.assign",
                 "organizations.view",
                 "organizations.update",
+                "organizations.export",
+                "organizations.delete",
                 "audit.view",
                 "products.view",
                 "products.create",
@@ -7798,6 +7897,35 @@
           "accountHistory",
           "notifications",
           "recentlyOpened"
+        ]
+      },
+      "DeleteOrganizationDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "declineExport": {
+            "type": "boolean"
+          },
+          "deleteAccount": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "OrganizationDeletionScheduled": {
+        "type": "object",
+        "properties": {
+          "deletionScheduledAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "deletionScheduledAt"
         ]
       },
       "Role": {
@@ -16687,6 +16815,8 @@
           "roles.assign",
           "organizations.view",
           "organizations.update",
+          "organizations.export",
+          "organizations.delete",
           "audit.view",
           "products.view",
           "products.create",
@@ -16797,6 +16927,9 @@
           "production_order.cancelled",
           "organization.updated",
           "organization.address_updated",
+          "organization.exported",
+          "organization.deletion_scheduled",
+          "organization.deletion_cancelled",
           "tax_code.created",
           "tax_code.updated",
           "invoice.created",
@@ -16825,7 +16958,9 @@
           "customer_billing_address_missing",
           "organization_tax_number_missing",
           "last_owner_with_members",
-          "only_member"
+          "only_member",
+          "organization_export_required",
+          "organization_deletion_under_way"
         ]
       },
       "ApiVocabulary": {

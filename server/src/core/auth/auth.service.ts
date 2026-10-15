@@ -29,6 +29,7 @@ import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { provisionOrganization } from '../organizations/provision-organization';
 import { uniqueSlug } from '../organizations/slug';
+import { endedEverywhere } from './account-deletion.service';
 import { AccountEventService } from './account-event.service';
 import { AuthTokenService } from './auth-token.service';
 import type { LoginDto } from './dto/login.dto';
@@ -78,6 +79,9 @@ export interface CurrentSession {
       expiryWarningDays: number;
       expiryCriticalDays: number;
     };
+    /** The deletion day while one is pending, and whether it is under way (ADR-070). */
+    deletionScheduledAt: string | null;
+    deletionUnderWay: boolean;
   } | null;
   /** Empty when there is no organization: permissions come from a role. */
   permissions: Permission[];
@@ -405,6 +409,7 @@ export class AuthService implements OnModuleInit {
           logoOnDocuments: organizations.logoOnDocuments,
           expiryWarningDays: organizations.expiryWarningDays,
           expiryCriticalDays: organizations.expiryCriticalDays,
+          deletionScheduledAt: organizations.deletionScheduledAt,
         })
         .from(organizations)
         .where(eq(organizations.id, context.organizationId)),
@@ -425,6 +430,10 @@ export class AuthService implements OnModuleInit {
           expiryWarningDays: organization.expiryWarningDays,
           expiryCriticalDays: organization.expiryCriticalDays,
         },
+        deletionScheduledAt: organization.deletionScheduledAt,
+        deletionUnderWay:
+          organization.deletionScheduledAt !== null &&
+          endedEverywhere(organization.deletionScheduledAt),
       },
       permissions,
     };

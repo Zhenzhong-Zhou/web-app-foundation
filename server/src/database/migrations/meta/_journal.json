@@ -400,6 +400,13 @@
       "when": 1792002174099,
       "tag": "0056_deletion_day",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1792030346755,
+      "tag": "0057_organization_deletion",
+      "breakpoints": true
     }
   ]
 }

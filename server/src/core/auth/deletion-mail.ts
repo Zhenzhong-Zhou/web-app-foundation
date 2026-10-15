@@ -16,7 +16,7 @@ export interface DeletionMailContext {
  * (ADR-052): read and shown in UTC, it comes back the same day, as the
  * banner shows it (ADR-069).
  */
-function dayOf(day: string, locale: Locale): string {
+export function dayOf(day: string, locale: Locale): string {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'long',
     timeZone: 'UTC',
@@ -25,19 +25,20 @@ function dayOf(day: string, locale: Locale): string {
 
 /**
  * One email from paragraphs. Each paragraph is plain text in the text part
- * and escaped in the HTML part; a link is the account page, written out in
- * the text and linked in the HTML.
+ * and escaped in the HTML part; the link, the account page unless another
+ * is given, is written out in the text and linked in the HTML.
  */
-function compose(
+export function compose(
   context: DeletionMailContext,
   subject: Translatable,
   paragraphs: Translatable[],
+  path = '/account',
 ): Mail {
   const say = (message: Translatable) => translate(message, context.locale);
   const greeting = say(
     t({ id: 'mail.hi', defaultMessage: 'Hi {name},' }, { name: context.name }),
   );
-  const account = `${context.clientUrl}/account`;
+  const account = `${context.clientUrl}${path}`;
   const lines = paragraphs.map(say);
 
   const text = [greeting, '', ...lines.flatMap((line) => [line, '']), account]

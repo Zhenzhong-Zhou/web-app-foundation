@@ -87,6 +87,14 @@ export const AUDIT_ACTIONS = {
   ORGANIZATION_UPDATED: 'organization.updated',
   /** The registered address every invoice prints (ADR-046). */
   ORGANIZATION_ADDRESS_UPDATED: 'organization.address_updated',
+  /**
+   * Everything the organization holds, downloaded as one ZIP (ADR-070).
+   * Deleting it needs one from the last 24 hours, or a decline.
+   */
+  ORGANIZATION_EXPORTED: 'organization.exported',
+  /** Carries the day, and whether the export was taken or declined. */
+  ORGANIZATION_DELETION_SCHEDULED: 'organization.deletion_scheduled',
+  ORGANIZATION_DELETION_CANCELLED: 'organization.deletion_cancelled',
 
   TAX_CODE_CREATED: 'tax_code.created',
   TAX_CODE_UPDATED: 'tax_code.updated',

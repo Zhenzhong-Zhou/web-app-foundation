@@ -141,6 +141,18 @@ export const AUDIT_ACTION_NAMES = defineMessages<AuditAction>({
     id: 'audit.action.organizationAddressUpdated',
     defaultMessage: 'Registered address updated',
   },
+  'organization.deletion_cancelled': {
+    id: 'audit.action.organizationDeletionCancelled',
+    defaultMessage: 'Organization deletion cancelled',
+  },
+  'organization.deletion_scheduled': {
+    id: 'audit.action.organizationDeletionScheduled',
+    defaultMessage: 'Organization deletion scheduled',
+  },
+  'organization.exported': {
+    id: 'audit.action.organizationExported',
+    defaultMessage: 'Everything exported',
+  },
   'organization.updated': {
     id: 'audit.action.organizationUpdated',
     defaultMessage: 'Organization updated',

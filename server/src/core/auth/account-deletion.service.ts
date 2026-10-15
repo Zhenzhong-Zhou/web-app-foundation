@@ -73,10 +73,16 @@ export function deletionDayFor(now: Date): string {
 
 /**
  * Today where a day ends last, at UTC−12, twelve hours behind UTC. A
- * deletion day before it has ended in every time zone (ADR-069).
+ * deletion day before it has ended in every time zone (ADR-069), and an
+ * organization's deletion can no longer be cancelled (ADR-070).
  */
-function todayWhereDaysEndLast(now: Date): string {
+export function todayWhereDaysEndLast(now: Date): string {
   return todayUtc(new Date(now.getTime() - 12 * HOUR));
+}
+
+/** Whether a deletion day has ended in every time zone (ADR-069, ADR-070). */
+export function endedEverywhere(day: string, now = new Date()): boolean {
+  return day < todayWhereDaysEndLast(now);
 }
 
 /**
@@ -93,13 +99,18 @@ function dueBy(now: Date) {
 /** What stands in for the person once the deletion completes (ADR-012). */
 const DELETED_NAME = 'Deleted User';
 
-type Executor = Database | Transaction;
+export type Executor = Database | Transaction;
 
 /** Why a person cannot leave an organization, or delete their account. */
 interface Block {
   code: typeof ERROR_CODES.onlyMember | typeof ERROR_CODES.lastOwnerWithMembers;
   organizationId: string;
   organizationName: string;
+  /**
+   * The organization is itself scheduled for deletion (ADR-070): it blocks
+   * leaving, but not asking to delete the account, which waits for it.
+   */
+  goingToo: boolean;
 }
 
 /** What became of one deletion the run picked out. */
@@ -202,21 +213,13 @@ export class AccountDeletionService {
       return { deletionScheduledAt: user.deletionScheduledAt };
     }
 
-    const [block] = await this.blocksFor(this.db, context.userId);
+    const block = (await this.blocksFor(this.db, context.userId)).find(
+      (each) => !each.goingToo,
+    );
     if (block) throw refusalFor(block);
 
     const deletionScheduledAt = deletionDayFor(new Date());
-    await this.db
-      .update(users)
-      .set({ deletionScheduledAt })
-      .where(eq(users.id, context.userId));
-
-    await this.sessions.revokeAllForUser(context.userId, context.sessionId);
-
-    await this.events.record(context.userId, 'account.deletion_requested', {
-      ip: context.ip,
-      userAgent: context.userAgent,
-    });
+    await this.schedule(this.db, context, deletionScheduledAt);
 
     await this.send(
       context.userId,
@@ -230,11 +233,40 @@ export class AccountDeletionService {
     return { deletionScheduledAt };
   }
 
-  /** Keep the account. Nothing to cancel is not an error. */
-  async cancel(context: RequestContext): Promise<void> {
+  /**
+   * The deletion day set, every other device signed out, and the request
+   * recorded: asked for here, or with the organization by its only member
+   * (ADR-070), in that request's transaction. The email is the caller's.
+   */
+  async schedule(
+    executor: Executor,
+    context: RequestContext,
+    day: string,
+  ): Promise<void> {
+    await executor
+      .update(users)
+      .set({ deletionScheduledAt: day })
+      .where(eq(users.id, context.userId));
+
+    await this.sessions.revokeAllForUser(context.userId, context.sessionId);
+
+    await this.events.record(context.userId, 'account.deletion_requested', {
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
+  }
+
+  /**
+   * Keep the account. Nothing to cancel is not an error. Without the email
+   * when the organization's cancellation, sent with it, says so (ADR-070).
+   */
+  async cancel(
+    context: RequestContext,
+    options: { email?: boolean } = {},
+  ): Promise<void> {
     const cancelled = await this.unschedule(
       context.userId,
-      deletionCancelledMail,
+      options.email === false ? undefined : deletionCancelledMail,
       {
         ip: context.ip,
         userAgent: context.userAgent,
@@ -397,8 +429,12 @@ export class AccountDeletionService {
         held.map(({ organizationId }) => organizationId),
       );
 
-      const [block] = await this.blocksFor(tx, userId);
+      const blocks = await this.blocksFor(tx, userId);
+      const block = blocks.find((each) => !each.goingToo);
       if (block) return { kind: 'blocked', block } as const;
+      // Only organizations being deleted stand in the way: the account
+      // goes once they have, in their run or the next of this one (ADR-070).
+      if (blocks.length > 0) return { kind: 'skipped' } as const;
 
       if (held.length > 0) {
         await tx.insert(auditLog).values(
@@ -499,6 +535,7 @@ export class AccountDeletionService {
       .select({
         organizationId: memberships.organizationId,
         organizationName: organizations.name,
+        goingToo: sql<boolean>`${organizations.deletionScheduledAt} is not null`,
         isOwner: sql<boolean>`${roles.name} = ${SYSTEM_ROLES.OWNER}`,
         others: sql<number>`(
           select count(*) from ${memberships} as other
@@ -525,6 +562,7 @@ export class AccountDeletionService {
       const base = {
         organizationId: row.organizationId,
         organizationName: row.organizationName,
+        goingToo: row.goingToo,
       };
       if (row.others === 0) return [{ ...base, code: ERROR_CODES.onlyMember }];
       if (row.isOwner && row.otherOwners === 0) {
@@ -541,7 +579,7 @@ export class AccountDeletionService {
    */
   private async unschedule(
     userId: string,
-    build: (context: DeletionMailContext) => Mail,
+    build: ((context: DeletionMailContext) => Mail) | undefined,
     meta?: EventMeta,
   ): Promise<boolean> {
     const cancelled = await this.db
@@ -552,7 +590,7 @@ export class AccountDeletionService {
     if (cancelled.length === 0) return false;
 
     await this.events.record(userId, 'account.deletion_cancelled', meta);
-    await this.send(userId, build, meta?.language);
+    if (build) await this.send(userId, build, meta?.language);
     return true;
   }
 
@@ -616,7 +654,7 @@ function refusalMessage(block: Block): Translatable {
         {
           id: 'account.blocks.onlyMember',
           defaultMessage:
-            'You are the only member of {organization}, so it would be left with no one. Add another member and make them an Owner first.',
+            'You are the only member of {organization}, so it would be left with no one. Add another member and make them an Owner first, or delete the organization, with your account if you like.',
         },
         { organization: block.organizationName },
       )

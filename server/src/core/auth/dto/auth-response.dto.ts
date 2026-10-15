@@ -42,6 +42,16 @@ export class SessionOrganization {
   name!: string;
   roleId!: string;
   branding!: OrganizationBranding;
+  /**
+   * The deletion day, YYYY-MM-DD, while one is pending (ADR-070): every
+   * member's banner names it.
+   */
+  deletionScheduledAt!: string | null;
+  /**
+   * The day has ended everywhere: the organization is being deleted, and
+   * the deletion can no longer be cancelled.
+   */
+  deletionUnderWay!: boolean;
 }
 
 /** GET /auth/me: everything the app needs to start. */

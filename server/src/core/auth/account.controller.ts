@@ -40,6 +40,7 @@ import type {
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { OrganizationDeletionService } from './organization-deletion.service';
 import { getRequestContext, type RequestContext } from './request-context';
 
 /**
@@ -57,6 +58,7 @@ export class AccountController {
     private readonly account: AccountService,
     private readonly photo: AccountPhotoService,
     private readonly deletion: AccountDeletionService,
+    private readonly organizationDeletion: OrganizationDeletionService,
   ) {}
 
   @Patch('profile')
@@ -185,10 +187,14 @@ export class AccountController {
     return this.deletion.request(context, dto.password);
   }
 
-  /** Keep the account: the pending deletion is cancelled. */
+  /**
+   * Keep the account: the pending deletion is cancelled. Scheduled with
+   * the organization by its only member, both are kept (ADR-070).
+   */
   @Delete('deletion')
   @HttpCode(HttpStatus.NO_CONTENT)
   async cancelDeletion(@CurrentUser() context: RequestContext): Promise<void> {
+    if (await this.organizationDeletion.cancelTogether(context)) return;
     await this.deletion.cancel(context);
   }
 
