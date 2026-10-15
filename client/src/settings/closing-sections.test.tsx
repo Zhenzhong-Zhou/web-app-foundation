@@ -109,4 +109,24 @@ describe('ClosingSections', () => {
       screen.queryByRole('button', { name: 'Cancel deletion' }),
     ).not.toBeInTheDocument();
   });
+
+  it('says it is downloading until the export is recorded', async () => {
+    renderWithAuth(
+      <ClosingSections
+        organization={organizationWith(null)}
+        onChanged={() => undefined}
+      />,
+      { permissions: ['organizations.export'] },
+    );
+    const link = screen.getByRole('link', {
+      name: 'Download everything (ZIP)',
+    });
+    // A plain link to a file: jsdom would try to navigate.
+    link.addEventListener('click', (event) => event.preventDefault());
+
+    await userEvent.click(link);
+
+    expect(screen.getByText(/^Downloading…/)).toBeInTheDocument();
+    expect(screen.queryByText('Not downloaded yet')).not.toBeInTheDocument();
+  });
 });

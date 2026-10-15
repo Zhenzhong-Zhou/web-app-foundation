@@ -132,6 +132,10 @@ describe('OrganizationDeletionBanner', () => {
     ).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Keep both' }));
     expect(cancelled).toEqual(['account']);
+    // It says what it kept, and takes the focus there.
+    const kept = screen.getByText('Your account and Alpha Co are kept.');
+    expect(kept).toBeInTheDocument();
+    expect(kept.closest('[role="status"]')).toHaveFocus();
   });
 
   it('cancels for an Owner, through the organization', async () => {

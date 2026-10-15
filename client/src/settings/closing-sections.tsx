@@ -18,6 +18,12 @@ import {
   exportedBy,
 } from './organization-deletion';
 
+/** How often, and for how long, a started download is checked on. */
+const POLL_MS = 3000;
+const POLL_FOR_MS = 10 * 60 * 1000;
+/** The server's clock may run a little behind the browser's. */
+const CLOCK_SLACK_MS = 60_000;
+
 /**
  * The end of the Profile tab, for Owners (ADR-070): everything the
  * organization holds as one download, and closing it, last, apart, and
@@ -46,7 +52,9 @@ export function ClosingSections({
 
   return (
     <>
-      {canExport && <DownloadEverything organization={organization} />}
+      {canExport && (
+        <DownloadEverything organization={organization} onChanged={onChanged} />
+      )}
       {canDelete && <CloseOrganization onChanged={onChanged} />}
     </>
   );
@@ -54,12 +62,36 @@ export function ClosingSections({
 
 function DownloadEverything({
   organization,
+  onChanged,
 }: {
   organization: OrganizationProfile;
+  onChanged: () => void | Promise<void>;
 }) {
   const intl = useIntl();
   const { session } = useAuth();
   const last = organization.lastExport;
+  // A download ends outside the page, so the section asks every few
+  // seconds until the export it started is recorded, as the dialog does,
+  // rather than saying "Not downloaded yet" until the window regains focus.
+  const [downloadedAt, setDownloadedAt] = useState<number | null>(null);
+  const recorded =
+    downloadedAt !== null &&
+    last !== null &&
+    new Date(last.exportedAt).getTime() >= downloadedAt - CLOCK_SLACK_MS;
+  const downloading = downloadedAt !== null && !recorded;
+
+  useEffect(() => {
+    if (!downloading) return;
+    const polling = window.setInterval(() => void onChanged(), POLL_MS);
+    const stopping = window.setTimeout(
+      () => setDownloadedAt(null),
+      POLL_FOR_MS,
+    );
+    return () => {
+      window.clearInterval(polling);
+      window.clearTimeout(stopping);
+    };
+  }, [downloading, onChanged]);
 
   return (
     <Paper
@@ -94,28 +126,35 @@ function DownloadEverything({
           spacing={1}
           sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' } }}
         >
-          <Typography variant="body2">
-            {last
-              ? intl.formatMessage(
-                  {
-                    id: 'settings.export.last',
-                    defaultMessage: 'Last downloaded {when} by {who}',
-                  },
-                  {
-                    when: formatWhen(last.exportedAt),
-                    who: exportedBy(intl, last, session?.user.id),
-                  },
-                )
-              : intl.formatMessage({
-                  id: 'settings.export.never',
-                  defaultMessage: 'Not downloaded yet',
-                })}
+          <Typography variant="body2" role="status">
+            {downloading
+              ? intl.formatMessage({
+                  id: 'settings.deletion.downloading',
+                  defaultMessage:
+                    'Downloading… The time of the download appears here once it has finished.',
+                })
+              : last
+                ? intl.formatMessage(
+                    {
+                      id: 'settings.export.last',
+                      defaultMessage: 'Last downloaded {when} by {who}',
+                    },
+                    {
+                      when: formatWhen(last.exportedAt),
+                      who: exportedBy(intl, last, session?.user.id),
+                    },
+                  )
+                : intl.formatMessage({
+                    id: 'settings.export.never',
+                    defaultMessage: 'Not downloaded yet',
+                  })}
           </Typography>
           <Button
             variant="outlined"
             startIcon={<DownloadIcon />}
             href={apiUrl(EXPORT_PATH)}
             download
+            onClick={() => setDownloadedAt(Date.now())}
           >
             {intl.formatMessage({
               id: 'settings.deletion.download',

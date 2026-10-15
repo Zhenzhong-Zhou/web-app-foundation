@@ -181,6 +181,28 @@ export function LeaveOrDelete() {
         </Alert>
       )}
 
+      {organization && can('organizations.export') && (
+        // Your data here; the company's records are elsewhere, and an
+        // Owner looking for them here should be told where (ADR-070).
+        <Typography variant="body2">
+          {intl.formatMessage(
+            {
+              id: 'account.export.organization',
+              defaultMessage:
+                'This is your own data. Everything {organization} holds is downloaded from <link>Settings → Organization</link>.',
+            },
+            {
+              organization: organization.name,
+              link: (chunks) => (
+                <Link component={RouterLink} to="/settings/organization">
+                  {chunks}
+                </Link>
+              ),
+            },
+          )}
+        </Typography>
+      )}
+
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
         <Button variant="outlined" onClick={() => void exportData()}>
           {intl.formatMessage({

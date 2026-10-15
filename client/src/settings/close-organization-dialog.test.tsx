@@ -50,13 +50,18 @@ describe('CloseOrganizationDialog', () => {
     expect(close).toBeDisabled();
     expect(
       screen.getByText(
-        'Still needed: the export or “I don’t want the export”, the name, and your password.',
+        'Still needed: the download, or “I don’t need a copy”, the name, and your password.',
       ),
     ).toBeInTheDocument();
 
-    await userEvent.click(screen.getByLabelText(/I don’t want the export/));
+    await userEvent.click(screen.getByLabelText(/I don’t need a copy/));
     await userEvent.type(screen.getByLabelText('Organization name'), 'Alpha');
     expect(close).toBeDisabled();
+    expect(
+      screen.getByText(
+        'Not the same as the name. Capital and small letters count.',
+      ),
+    ).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('Organization name'), ' Co');
     await userEvent.type(screen.getByLabelText(/Your password/), 'secret');
     expect(close).toBeEnabled();
@@ -85,7 +90,7 @@ describe('CloseOrganizationDialog', () => {
 
     expect(await within(dialog).findByText(/by you$/)).toBeInTheDocument();
     expect(
-      within(dialog).queryByLabelText(/I don’t want the export/),
+      within(dialog).queryByLabelText(/I don’t need a copy/),
     ).not.toBeInTheDocument();
 
     await userEvent.type(
@@ -127,7 +132,7 @@ describe('CloseOrganizationDialog', () => {
         name: 'Delete your account and Alpha Co?',
       }),
     ).toBeInTheDocument();
-    await userEvent.click(screen.getByLabelText(/I don’t want the export/));
+    await userEvent.click(screen.getByLabelText(/I don’t need a copy/));
     await userEvent.type(
       screen.getByLabelText('Organization name'),
       'Alpha Co',
@@ -247,7 +252,7 @@ describe('CloseOrganizationDialog', () => {
       }),
     ).toBeInTheDocument();
     expect(
-      within(dialog).getByLabelText(/I don’t want the export/),
+      within(dialog).getByLabelText(/I don’t need a copy/),
     ).toBeInTheDocument();
   });
 });

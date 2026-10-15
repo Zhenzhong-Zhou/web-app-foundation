@@ -151,7 +151,7 @@ export const AUDIT_ACTION_NAMES = defineMessages<AuditAction>({
   },
   'organization.exported': {
     id: 'audit.action.organizationExported',
-    defaultMessage: 'Everything exported',
+    defaultMessage: 'Everything downloaded',
   },
   'organization.updated': {
     id: 'audit.action.organizationUpdated',

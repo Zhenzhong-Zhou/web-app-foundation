@@ -1,6 +1,6 @@
 import CloseIcon from '@mui/icons-material/Close';
 import { Alert, Box, Button, IconButton, Stack } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import { useCan } from '../auth/permissions';
@@ -42,10 +42,41 @@ export function OrganizationDeletionBanner() {
   const can = useCan();
   const { session, refresh } = useAuth();
   const [hidden, setHidden] = useState(readHidden);
+  // What a cancel kept, said once it is done rather than the banner just
+  // vanishing (ADR-070, from the walkthrough).
+  const [kept, setKept] = useState<string | null>(null);
   const action = useSubmit(refresh);
+  const banner = useRef<HTMLDivElement>(null);
 
   const organization = session?.organization;
   const day = organization?.deletionScheduledAt;
+
+  // Focus follows what changed: to the banner when a deletion has just
+  // been scheduled from this page, or to what a cancel kept. Not on a page
+  // that merely opens with a deletion pending (WCAG 2.4.3).
+  const seen = useRef(day);
+  useEffect(() => {
+    if (day && !seen.current) banner.current?.focus();
+    seen.current = day;
+  }, [day]);
+  useEffect(() => {
+    if (kept) banner.current?.focus();
+  }, [kept]);
+
+  if (kept) {
+    return (
+      <Alert
+        ref={banner}
+        tabIndex={-1}
+        severity="success"
+        role="status"
+        className="no-print"
+        onClose={() => setKept(null)}
+      >
+        {kept}
+      </Alert>
+    );
+  }
   if (!organization || !day) return null;
 
   const today = localToday();
@@ -59,7 +90,7 @@ export function OrganizationDeletionBanner() {
 
   if (organization.deletionStage === 'underWay') {
     return (
-      <Alert severity="error" className="no-print">
+      <Alert ref={banner} tabIndex={-1} severity="error" className="no-print">
         {intl.formatMessage(
           {
             id: 'settings.banner.underWay',
@@ -121,8 +152,26 @@ export function OrganizationDeletionBanner() {
           { organization: organization.name, when },
         );
 
+  const keptMessage = together
+    ? intl.formatMessage(
+        {
+          id: 'settings.banner.keptBoth',
+          defaultMessage: 'Your account and {organization} are kept.',
+        },
+        { organization: organization.name },
+      )
+    : intl.formatMessage(
+        {
+          id: 'settings.banner.kept',
+          defaultMessage: '{organization} will not be deleted.',
+        },
+        { organization: organization.name },
+      );
+
   return (
     <Alert
+      ref={banner}
+      tabIndex={-1}
       severity="warning"
       className="no-print"
       action={
@@ -140,15 +189,14 @@ export function OrganizationDeletionBanner() {
               size="small"
               disabled={action.submitting}
               onClick={() =>
-                void action.submit(() =>
+                void action.submit(async () => {
                   // The account's cancel keeps both when they went together.
-                  api(
+                  await api(
                     together ? '/account/deletion' : '/organization/deletion',
-                    {
-                      method: 'DELETE',
-                    },
-                  ),
-                )
+                    { method: 'DELETE' },
+                  );
+                  setKept(keptMessage);
+                })
               }
             >
               {together

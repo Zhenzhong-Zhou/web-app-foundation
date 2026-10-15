@@ -129,7 +129,7 @@ export function CloseOrganizationDialog({
     !exportDone &&
       intl.formatMessage({
         id: 'settings.deletion.missing.export',
-        defaultMessage: 'the export or “I don’t want the export”',
+        defaultMessage: 'the download, or “I don’t need a copy”',
       }),
     !nameMatches &&
       intl.formatMessage({
@@ -229,7 +229,7 @@ export function CloseOrganizationDialog({
                   {intl.formatMessage({
                     id: 'settings.deletion.both.until',
                     defaultMessage:
-                      'Until then you can sign in and work as usual, and keep both from the banner on every page. Every other device is signed out now, and you’ll get an email with the date, and another 7 days before.',
+                      'Until then you can sign in and work as usual. Once you confirm, every other device is signed out, and you’ll get an email with the date, and another 7 days before. To keep both, press Keep both in the banner at the top of every page.',
                   })}
                 </Typography>
               </>
@@ -295,7 +295,7 @@ export function CloseOrganizationDialog({
                       {intl.formatMessage({
                         id: 'settings.deletion.downloading',
                         defaultMessage:
-                          'Downloading… This step turns green once the download has finished.',
+                          'Downloading… The time of the download appears here once it has finished.',
                       })}
                     </Typography>
                   )}
@@ -339,7 +339,7 @@ export function CloseOrganizationDialog({
                       <>
                         {intl.formatMessage({
                           id: 'settings.deletion.decline',
-                          defaultMessage: 'I don’t want the export',
+                          defaultMessage: 'I don’t need a copy',
                         })}
                         <Typography
                           variant="body2"
@@ -380,6 +380,18 @@ export function CloseOrganizationDialog({
                 fullWidth
                 value={name}
                 onChange={(event) => setName(event.target.value)}
+                // Typed but not the same: say so, rather than listing the
+                // name as still needed as though nothing were typed.
+                error={name.trim() !== '' && !nameMatches}
+                helperText={
+                  name.trim() !== '' && !nameMatches
+                    ? intl.formatMessage({
+                        id: 'settings.deletion.nameMismatch',
+                        defaultMessage:
+                          'Not the same as the name. Capital and small letters count.',
+                      })
+                    : undefined
+                }
               />
             </Step>
 
