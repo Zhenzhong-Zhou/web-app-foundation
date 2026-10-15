@@ -17,6 +17,7 @@ import type { Member } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { DialogFooter } from '../components/dialog-footer';
+import { ForgottenPasswordHint } from '../components/forgotten-password-hint';
 import { FormError } from '../components/form-error';
 import { PasswordField } from '../components/password-field';
 import { api, download, hasCode, messageFor } from '../lib/api';
@@ -30,7 +31,16 @@ import { CloseOrganizationDialog } from '../settings/close-organization-dialog';
  * The refusal, and the way past it (ADR-069): both blocks are settled on
  * the Members page, by making another member Owner.
  */
-function Refusal({ error, code }: { error: string; code: string | null }) {
+function Refusal({
+  error,
+  code,
+  id,
+}: {
+  error: string;
+  code: string | null;
+  /** For the password field to point at, when it was refused (#120). */
+  id?: string;
+}) {
   const intl = useIntl();
   const can = useCan();
   const settledOnMembers =
@@ -39,7 +49,8 @@ function Refusal({ error, code }: { error: string; code: string | null }) {
   const canClose = hasCode(code, 'only_member') && can('organizations.delete');
 
   return (
-    <FormError message={error}>
+    <FormError id={id} message={error}>
+      {hasCode(code, 'password_incorrect') && <ForgottenPasswordHint />}
       {settledOnMembers && (
         <Link component={RouterLink} to="/members">
           {intl.formatMessage({
@@ -67,8 +78,16 @@ function Refusal({ error, code }: { error: string; code: string | null }) {
  * Your data and your account (ADR-069): a copy of what is yours, leaving
  * the organization you are working in, and deleting the account, which
  * waits 30 days before it happens.
+ *
+ * `onChanged` is called when closing the organization from here ends, done
+ * or not, since the download and the scheduling are both recorded in the
+ * recent work above (#122). Its other dialogs record nothing shown there.
  */
-export function LeaveOrDelete() {
+export function LeaveOrDelete({
+  onChanged,
+}: {
+  onChanged?: () => void | Promise<void>;
+}) {
   const intl = useIntl();
   const navigate = useNavigate();
   const { session, refresh } = useAuth();
@@ -91,6 +110,8 @@ export function LeaveOrDelete() {
   if (!session) return null;
   const organization = session.organization;
   const due = session.user.deletionScheduledAt;
+  // The password was refused (#120): marked on its field.
+  const wrongPassword = hasCode(deleting.errorCode, 'password_incorrect');
 
   /**
    * The only member of an organization deletes it with their account, in
@@ -294,7 +315,10 @@ export function LeaveOrDelete() {
       <CloseOrganizationDialog
         open={dialog === 'both'}
         alone
-        onClose={() => setDialog(null)}
+        onClose={() => {
+          setDialog(null);
+          void onChanged?.();
+        }}
         onScheduled={() => undefined}
       />
 
@@ -335,7 +359,11 @@ export function LeaveOrDelete() {
                 })}
               </Typography>
               {deleting.error && (
-                <Refusal error={deleting.error} code={deleting.errorCode} />
+                <Refusal
+                  id="account-deletion-error"
+                  error={deleting.error}
+                  code={deleting.errorCode}
+                />
               )}
               <PasswordField
                 id="deletionPassword"
@@ -348,7 +376,15 @@ export function LeaveOrDelete() {
                 fullWidth
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
+                error={wrongPassword}
+                slotProps={{
+                  htmlInput: {
+                    maxLength: PASSWORD_MAX_LENGTH,
+                    'aria-describedby': wrongPassword
+                      ? 'account-deletion-error'
+                      : undefined,
+                  },
+                }}
               />
             </Stack>
           </DialogContent>

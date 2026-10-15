@@ -5,18 +5,17 @@ import { Link as RouterLink } from 'react-router-dom';
 import { type AuditRecord, describe } from '../audit/audit-format';
 import { useAuth } from '../auth/use-auth';
 import { relativeTime, SEPARATOR } from '../lib/format';
-import { useResource } from '../lib/use-resource';
 
 /**
  * Your recent work here (ADR-063): the last 20 things you did, titled
  * apart from your sign-ins, with the way to all of it.
+ *
+ * `entries` is read by the page, which reads it again after a write in
+ * another section (#122); until the first read answers, it is undefined.
  */
-export function RecentWork() {
+export function RecentWork({ entries }: { entries?: AuditRecord[] }) {
   const intl = useIntl();
   const { session } = useAuth();
-  const { data } = useResource<{ entries: AuditRecord[] }>(
-    '/account/activity?limit=20',
-  );
 
   if (!session?.organization) return null;
 
@@ -38,7 +37,7 @@ export function RecentWork() {
             'The last 20 things you did here. Your sign-ins and password changes are on Your devices.',
         })}
       </Typography>
-      {data && data.entries.length === 0 && (
+      {entries?.length === 0 && (
         <Typography color="text.secondary">
           {intl.formatMessage({
             id: 'people.noActivity',
@@ -46,9 +45,9 @@ export function RecentWork() {
           })}
         </Typography>
       )}
-      {data && data.entries.length > 0 && (
+      {entries && entries.length > 0 && (
         <List dense>
-          {data.entries.map((entry) => (
+          {entries.map((entry) => (
             <ListItem key={entry.id} disableGutters divider>
               <Typography variant="body2" sx={{ flexGrow: 1, minWidth: 0 }}>
                 {[describe(entry.action), entry.resourceLabel]

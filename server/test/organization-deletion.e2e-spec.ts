@@ -449,7 +449,7 @@ describe('Organization deletion (e2e)', () => {
         'Admin',
       );
 
-      await alpha.agent
+      const wrong = await alpha.agent
         .post('/v1/organization/deletion')
         .send({
           organizationName: ALPHA,
@@ -457,6 +457,8 @@ describe('Organization deletion (e2e)', () => {
           declineExport: true,
         })
         .expect(401);
+      // The code the dialog marks the password field by (#120).
+      expect(body<Refusal>(wrong).code).toBe('password_incorrect');
       await admin
         .post('/v1/organization/deletion')
         .send({

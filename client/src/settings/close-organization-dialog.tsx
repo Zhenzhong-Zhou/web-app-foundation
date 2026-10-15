@@ -19,6 +19,7 @@ import { useIntl } from 'react-intl';
 import type { OrganizationProfile } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
 import { DialogFooter } from '../components/dialog-footer';
+import { ForgottenPasswordHint } from '../components/forgotten-password-hint';
 import { FormError } from '../components/form-error';
 import { PasswordField } from '../components/password-field';
 import { api, ApiError, apiUrl, hasCode } from '../lib/api';
@@ -171,6 +172,9 @@ export function CloseOrganizationDialog({
     });
   }
 
+  // The password was refused (#120): marked on its field, and tied to the
+  // refusal that says what to do.
+  const wrongPassword = hasCode(scheduling.errorCode, 'password_incorrect');
   const organizationName = organization?.name ?? session?.organization?.name;
   // Thirty days ahead by definition: counted from the browser's own day, an
   // evening west of UTC would read "in 31 days" (ADR-069's day is UTC).
@@ -411,12 +415,24 @@ export function CloseOrganizationDialog({
                 fullWidth
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
+                error={wrongPassword}
+                slotProps={{
+                  htmlInput: {
+                    maxLength: PASSWORD_MAX_LENGTH,
+                    'aria-describedby': wrongPassword
+                      ? 'close-organization-error'
+                      : undefined,
+                  },
+                }}
               />
             </Step>
 
             {scheduling.error && (
-              <FormError message={scheduling.error}>
+              <FormError
+                id="close-organization-error"
+                message={scheduling.error}
+              >
+                {wrongPassword && <ForgottenPasswordHint />}
                 {hasCode(
                   scheduling.errorCode,
                   'organization_export_required',

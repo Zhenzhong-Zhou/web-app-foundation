@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
@@ -54,15 +54,23 @@ describe('CloseOrganizationDialog', () => {
       ),
     ).toBeInTheDocument();
 
-    await userEvent.click(screen.getByLabelText(/I don’t need a copy/));
-    await userEvent.type(screen.getByLabelText('Organization name'), 'Alpha');
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: /I don’t need a copy/ }),
+    );
+    await userEvent.type(
+      screen.getByRole('textbox', { name: 'Organization name' }),
+      'Alpha',
+    );
     expect(close).toBeDisabled();
     expect(
       screen.getByText(
         'Not the same as the name. Capital and small letters count.',
       ),
     ).toBeInTheDocument();
-    await userEvent.type(screen.getByLabelText('Organization name'), ' Co');
+    await userEvent.type(
+      screen.getByRole('textbox', { name: 'Organization name' }),
+      ' Co',
+    );
     await userEvent.type(screen.getByLabelText(/Your password/), 'secret');
     expect(close).toBeEnabled();
     expect(screen.queryByText(/Still needed/)).not.toBeInTheDocument();
@@ -94,7 +102,7 @@ describe('CloseOrganizationDialog', () => {
     ).not.toBeInTheDocument();
 
     await userEvent.type(
-      screen.getByLabelText('Organization name'),
+      screen.getByRole('textbox', { name: 'Organization name' }),
       'Alpha Co',
     );
     await userEvent.type(screen.getByLabelText(/Your password/), 'secret');
@@ -132,9 +140,11 @@ describe('CloseOrganizationDialog', () => {
         name: 'Delete your account and Alpha Co?',
       }),
     ).toBeInTheDocument();
-    await userEvent.click(screen.getByLabelText(/I don’t need a copy/));
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: /I don’t need a copy/ }),
+    );
     await userEvent.type(
-      screen.getByLabelText('Organization name'),
+      screen.getByRole('textbox', { name: 'Organization name' }),
       'Alpha Co',
     );
     await userEvent.type(screen.getByLabelText(/Your password/), 'secret');
@@ -204,6 +214,46 @@ describe('CloseOrganizationDialog', () => {
     }
   });
 
+  it('marks a refused password on its field, with the way on (#120)', async () => {
+    organizationWith(null);
+    server.use(
+      http.post('/api/v1/organization/deletion', () =>
+        HttpResponse.json(
+          {
+            statusCode: 401,
+            code: 'password_incorrect',
+            message: 'That password is not correct. Check it and try again.',
+          },
+          { status: 401 },
+        ),
+      ),
+    );
+    const dialog = await open();
+
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: /I don’t need a copy/ }),
+    );
+    await userEvent.type(
+      screen.getByRole('textbox', { name: 'Organization name' }),
+      'Alpha Co',
+    );
+    const field = screen.getByLabelText(/Your password/);
+    await userEvent.type(field, 'not-it');
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'Close organization' }),
+    );
+
+    await waitFor(() => expect(field).toHaveAttribute('aria-invalid', 'true'));
+    expect(field).toHaveAccessibleDescription(
+      'That password is not correct. Check it and try again.',
+    );
+    expect(
+      within(dialog).getByText(
+        'Forgotten it? Sign out, then choose “Forgot your password?” on the sign-in page.',
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('offers the download again when the server finds the export too old', async () => {
     let reads = 0;
     server.use(
@@ -238,7 +288,7 @@ describe('CloseOrganizationDialog', () => {
     expect(within(dialog).getByText(/\(in 30 days\)/)).toBeInTheDocument();
 
     await userEvent.type(
-      screen.getByLabelText('Organization name'),
+      screen.getByRole('textbox', { name: 'Organization name' }),
       'Alpha Co',
     );
     await userEvent.type(screen.getByLabelText(/Your password/), 'secret');
@@ -252,7 +302,7 @@ describe('CloseOrganizationDialog', () => {
       }),
     ).toBeInTheDocument();
     expect(
-      within(dialog).getByLabelText(/I don’t need a copy/),
+      within(dialog).getByRole('checkbox', { name: /I don’t need a copy/ }),
     ).toBeInTheDocument();
   });
 });

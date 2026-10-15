@@ -12,7 +12,7 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { PasswordField } from '../components/password-field';
-import { api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { KEEP_SIGNED_IN, SIGNED_OUT_REASON } from '../lib/session-keys';
 import { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
@@ -28,6 +28,10 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // A 401 here is only ever the one refusal, wrong email or password
+  // (ADR-011), so it marks both fields: which of the two is wrong is
+  // exactly what it must not say (#120).
+  const [refused, setRefused] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   // Remembered by this browser: unticked once on a shared computer, it
   // starts unticked there next time (ADR-065).
@@ -45,6 +49,7 @@ export function LoginPage() {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+    setRefused(false);
 
     try {
       await api('/auth/login', {
@@ -63,6 +68,7 @@ export function LoginPage() {
       // No setSubmitting(false): this component unmounts on navigate.
     } catch (caught) {
       setError(authMessageFor(caught));
+      setRefused(caught instanceof ApiError && caught.status === 401);
       setSubmitting(false);
     }
   }
@@ -77,7 +83,11 @@ export function LoginPage() {
     >
       {/* Alert renders role="alert", so a screen reader announces the failure
           without the user tabbing back to find it. */}
-      {error && <Alert severity="error">{error}</Alert>}
+      {error && (
+        <Alert id="sign-in-error" severity="error">
+          {error}
+        </Alert>
+      )}
       {idleMinutes !== null && !error && (
         <Alert severity="info">
           {intl.formatMessage(
@@ -107,7 +117,13 @@ export function LoginPage() {
         // normalising in two places means fixing it in two places.
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        slotProps={{ htmlInput: { maxLength: EMAIL_MAX_LENGTH } }}
+        error={refused}
+        slotProps={{
+          htmlInput: {
+            maxLength: EMAIL_MAX_LENGTH,
+            'aria-describedby': refused ? 'sign-in-error' : undefined,
+          },
+        }}
       />
 
       <PasswordField
@@ -121,7 +137,13 @@ export function LoginPage() {
         fullWidth
         value={password}
         onChange={(event) => setPassword(event.target.value)}
-        slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
+        error={refused}
+        slotProps={{
+          htmlInput: {
+            maxLength: PASSWORD_MAX_LENGTH,
+            'aria-describedby': refused ? 'sign-in-error' : undefined,
+          },
+        }}
       />
 
       {/* Disabled in flight: a double submit revokes the session the first

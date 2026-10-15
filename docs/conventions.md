@@ -85,8 +85,9 @@ an arrow class property doesn't live on the prototype.
 - **`common/` must never import from `core/`.** The dependency runs one way. Reversing
   it is how a "shared" folder becomes a second copy of the application.
 - **Services must never import `db` directly** (ADR-009). All queries go through
-  `TenantDb`, which applies `organization_id`. `UNSAFE_GLOBAL_DB` is restricted to
-  `core/auth/` by lint rule — direct use elsewhere is a review-blocking defect.
+  `TenantDb`, which applies `organization_id`. `UNSAFE_GLOBAL_DB` is refused by a
+  lint rule except in the files `server/eslint.config.mjs` lists, each with its
+  reason — direct use elsewhere is a review-blocking defect.
 
 ### What a complete module looks like
 
@@ -278,6 +279,15 @@ message, and the screen keys on the code, never on the words.
   the fix: `organization_address_missing`.
 - **Never renamed or removed once released:** a browser still running the
   previous client may be keying on it.
+- **A code may also mark the field a refusal is about,** as
+  `password_incorrect` does (#120). The field takes `error`, and its
+  `aria-describedby` points at the refusal's words through `FormError`'s
+  `id`, which sits on the words rather than the alert, whose own label,
+  "Error", would be read instead.
+- **With a code, the message still says what to do next, but names no
+  control on the screen.** The screen, keyed on the code, adds the link or
+  the words naming its own control, from the client's catalogue, so
+  renaming the control renames them too (#120).
 
 ## Tests
 
@@ -309,9 +319,11 @@ message, and the screen keys on the code, never on the words.
 - Nothing is mocked in a Playwright spec. A mocked API there only proves the UI
   agrees with our assumptions about the server, which is the class of bug that
   layer exists to catch.
-- `getByRole`, never `getByLabelText`, in a component test: MUI renders a
-  `TextField` label as a div linked by `aria-labelledby` rather than a real
-  `label`, so the label query finds nothing.
+- `getByRole`, never `getByLabelText`, in a component test: it finds a
+  control as assistive technology does, by its role and accessible name,
+  so a test also fails when the role is wrong, which a label match alone
+  would miss. The one exception is a password field, which has no ARIA role
+  for `getByRole` to find: there, `getByLabelText`.
 
 ---
 

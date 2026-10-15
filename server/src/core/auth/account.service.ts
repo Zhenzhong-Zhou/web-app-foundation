@@ -8,6 +8,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { UAParser } from 'ua-parser-js';
 
+import { ERROR_CODES, withCode } from '../../common/error-codes';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { users } from '../../database/schema';
@@ -110,12 +111,19 @@ export class AccountService {
       );
     }
 
+    // Says what is wrong and to try again. The code lets the screen mark
+    // the field the password was typed in, and offer the way on for one
+    // forgotten, in its own words for its own links (#120).
     if (!(await this.passwords.verify(user.passwordHash, password))) {
       throw new UnauthorizedException(
-        t({
-          id: 'account.password.wrong',
-          defaultMessage: 'That password is not correct',
-        }),
+        withCode(
+          t({
+            id: 'account.password.wrong',
+            defaultMessage:
+              'That password is not correct. Check it and try again.',
+          }),
+          ERROR_CODES.passwordIncorrect,
+        ),
       );
     }
   }

@@ -1,5 +1,5 @@
 import { Alert, Box } from '@mui/material';
-import type { ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 import { useIntl } from 'react-intl';
 
 /**
@@ -13,13 +13,19 @@ import { useIntl } from 'react-intl';
  *
  * `children`, when given, goes on its own line under the message: the way
  * out of a refusal, such as a link to the setting that is missing (ADR-061).
+ *
+ * `id` goes on the message itself, not the alert, for a field to point at
+ * with aria-describedby (#120): the alert's own label, "Error", would be
+ * read as the description instead of the words.
  */
 export function FormError({
   message,
   children,
+  id,
 }: {
   message: string;
   children?: ReactNode;
+  id?: string;
 }) {
   const intl = useIntl();
 
@@ -31,8 +37,12 @@ export function FormError({
         defaultMessage: 'Error',
       })}
     >
-      {message}
-      {children && <Box sx={{ mt: 0.5 }}>{children}</Box>}
+      <span id={id}>{message}</span>
+      {/* Only when something is there: several conditional children are an
+          array, truthy even when every one is false. */}
+      {Children.toArray(children).length > 0 && (
+        <Box sx={{ mt: 0.5 }}>{children}</Box>
+      )}
     </Alert>
   );
 }

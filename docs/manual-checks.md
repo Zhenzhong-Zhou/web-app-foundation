@@ -394,16 +394,16 @@ folder by folder; these check what is already in place.
   prints Chinese only, glyphs Chinese rather than Japanese forms. Paper
   shows no Back link or Print button, in any language.
 - **MC-1413** Signed out, in 简体中文, sign in with a wrong password: the
-  banner reads 邮箱或密码错误, not English; in Français, Courriel ou mot de
-  passe invalide. Signed in, in Français, try to remove yourself from
-  Members: the refusal is French. In 简体中文, ship more than an order
-  has outstanding, cancel an order goods have moved against, and release
-  a run under an expired licence: each refusal is Chinese, the statuses
-  in it too (已确认, not "confirmed"). A request with a field the server
-  refuses, such as a quantity of -1 sent with curl and
-  `Accept-Language: fr-CA`, names the field as the API does
-  (lines.0.quantity) in a French sentence. The same requests with no
-  Accept-Language answer in English word for word.
+  banner reads 邮箱或密码错误。请检查后重试。, not English; in Français,
+  Courriel ou mot de passe invalide. Vérifiez les deux et réessayez. Signed
+  in, in Français, try to remove yourself from Members: the refusal is
+  French. In 简体中文, ship more than an order has outstanding, cancel an
+  order goods have moved against, and release a run under an expired
+  licence: each refusal is Chinese, the statuses in it too (已确认, not
+  "confirmed"). A request with a field the server refuses, such as a
+  quantity of -1 sent with curl and `Accept-Language: fr-CA`, names the
+  field as the API does (lines.0.quantity) in a French sentence. The same
+  requests with no Accept-Language answer in English word for word.
 - **MC-1414** With the account's language set to Français, request a
   password reset: the email (Mailpit) is French, subject included. Sign
   out, switch the page to 简体中文, and request one for an account with
@@ -949,6 +949,36 @@ await fetch(`${api}/v1/files/product-image`, {
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R11** *(#120)* On Account, Change password with a wrong current
+  password: the refusal says to check it and try again, with a line under it
+  on reaching Forgot your password? when it is forgotten, and the Current
+  password field turns red; with VoiceOver, Tab back to it: it reads as
+  invalid, followed by the refusal. The same in Delete my account and in
+  closing an organization, in 简体中文 too (密码不正确。请检查后重试。, then
+  忘记了？…). Signed out, a wrong password marks both Email and Password,
+  never just one.
+- **MC-R10** *(#122)* As the only member of an organization, on Account,
+  choose Delete my account: the dialog closes the organization too.
+  Download everything, then cancel: "Your recent work" lists Everything
+  downloaded at once. Open it again and confirm: Organization deletion
+  scheduled is listed too, with no reload.
+- **MC-R09** *(#119)* As a member whose account has no language chosen
+  (`update users set locale = null`), with the browser in 简体中文, open
+  Account: Language reads 未选择, with a line saying emails follow it once
+  chosen, though the screens are Chinese. Choose 简体中文: the line goes,
+  and a reload still shows it. As the Owner, schedule the organization's
+  closing and cancel it (MC-2401): this member's two emails are Chinese.
+  A language chosen from the account menu instead shows on Account at
+  once.
+- **MC-R08** *(#121)* On any signed-in page, press Tab once: "Skip to
+  content" appears at the top left. Press Enter: the next Tab reaches the
+  page's own first control, not the rail or the bar. A screen reader's
+  landmarks list a main region. The link never shows on paper.
+- **MC-R07** *(axe-core 4.14)* With VoiceOver on, Tab to your circle at the
+  right of the top bar: it reads your initials first, then "signed in as"
+  and your email, in English, French and Chinese. With Voice Control on,
+  saying "Click" and the initials the circle shows opens the menu. With a
+  photo instead of initials, it reads the same.
 - **MC-R05** *(found building ADR-052)* Duplicating an order keeps the
   reference and expected date typed in its dialog; they were silently
   dropped. See MC-403.
@@ -1088,3 +1118,18 @@ first.
   MC-2405 adds an only member who leaves, is removed or is demoted.
 - 2026-10-15: section 24 reads "I don't need a copy", after the
   walkthrough in Chinese.
+- 2026-10-15: the top bar's account button is named from the initials it
+  shows (WCAG 2.5.3): MC-R07.
+- 2026-10-15: a skip link and a main landmark on signed-in pages (#121):
+  MC-R08.
+- 2026-10-15: the Account page shows and saves the account's own language
+  (#119): MC-R09.
+- 2026-10-15: the Account page's recent work reads again after its
+  dialogs close (#122): MC-R10.
+- 2026-10-15: the password refusals say what to do next (#120): MC-1413
+  updated.
+- 2026-10-15: a refused password is marked on its field (#120): MC-R11.
+- 2026-10-15: the password refusals leave the way on to the screen
+  (#120): MC-1413 updated.
+- 2026-10-15: the way on from a refused password is on the screen, beside
+  the refusal (#120): MC-R11 rewritten.

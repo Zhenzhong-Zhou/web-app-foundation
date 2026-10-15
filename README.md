@@ -60,13 +60,12 @@ server/src/
 ```
 
 Every query in `core/` goes through `TenantDb`, which applies `organization_id`
-automatically (ADR-003). The unscoped handle is exported as `UNSAFE_GLOBAL_DB`
-and restricted by lint rule to `core/auth/` and `core/authorization/` — the two
-places that run outside tenant scope by nature: auth resolves a user by email
-before any organization is known, and authorization reads a permission catalogue
-that has no `organization_id`. The list is closed (ADR-016); anything else
-needing a transaction across a global and a scoped table uses
-`TenantDb.transaction()`.
+automatically (ADR-003). The unscoped handle is exported as `UNSAFE_GLOBAL_DB`,
+and a lint rule refuses it everywhere under `server/src/` except the few files
+with no tenant to scope to, such as `core/auth/`, which resolves a user by email
+before any organization is known. `server/eslint.config.mjs` lists each one with
+its reason (ADR-016); anything else needing a transaction across a global and a
+scoped table uses `TenantDb.transaction()`.
 
 `core/` and `modules/` both hold one folder per feature, each with its own
 `*.module.ts`, controller, service, and DTOs. Nothing in `common/` may import from

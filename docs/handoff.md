@@ -16,19 +16,20 @@ with this one, this one is current.
   lookup, the gallery's zooming viewer, and the invoice refusals' links to
   Organization → Profile and to the customer (`invoice-refusal-link`,
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
-  "Error codes"). Since then, through #114: ADR-067 to ADR-069 below.
-- **Migrations:** through **0056** on `main`, 57 files in
-  `server/src/database/migrations/` (0055 and 0056 are ADR-069's, merged
-  with #114). **0057 to 0061** are ADR-070's, on its branch: the deletion
-  day, the reminder, and whose account goes with it (0059 put it on the
-  organization, 0060 moved it to the account, 0061 added its check and
-  the trigger that clears it when a membership ends). Next is **0062**.
-  Render holds one row per file in `drizzle.__drizzle_migrations` once
-  `main` is deployed there: 57, then 62. After any new migration:
-  `npm run migrate:all`.
+  "Error codes"). Since then, through #116: ADR-067 to ADR-070 below.
+- **Migrations:** through **0061** on `main`, 62 files in
+  `server/src/database/migrations/`. 0055 and 0056 are ADR-069's (#114);
+  0057 to 0061 are ADR-070's (#116): the deletion day, the reminder, and
+  whose account goes with it (0059 put it on the organization, 0060 moved
+  it to the account, 0061 added its check and the trigger that clears it
+  when a membership ends). Next is **0062**. Render holds one row per
+  file in `drizzle.__drizzle_migrations` once `main` is deployed there:
+  62. After any new migration: `npm run migrate:all`.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
-  for typescript-eslint and the Nest CLI (ADR-067, *Deferred*).
+  for typescript-eslint and the Nest CLI (ADR-067, *Deferred*); still so
+  on 15 October 2026, with typescript-eslint 8.71.2 accepting `<6.1.0`
+  and the Nest CLI 12.0.8 depending on TypeScript `~6.0.2`.
 - **ADR-046 amended:** a taxed invoice needs the seller's tax number,
   refused with `organization_tax_number_missing` and linked to Profile
   (`invoice-tax-number`, MC-711). Tax profiles by country are deferred in
@@ -103,7 +104,7 @@ with this one, this one is current.
   (ADR-006), and with them switching between organizations, which a
   block in another organization needs; and accounts an organization owns,
   through single sign-on.
-- **ADR-070** (`adr-070-organization-deletion`, built, PR to open):
+- **ADR-070** (`adr-070-organization-deletion`, merged in #116):
   closing an organization. Any Owner, with the password and the
   organization's name typed, after a full export (a ZIP: a CSV per table
   it owns, `members.csv`, `role_permissions.csv`, the files) taken in the
@@ -121,23 +122,36 @@ with this one, this one is current.
   Backups keep it until they age out and never bring it back (ADR-069
   says the same). The service lives in `core/auth` beside account
   deletion; the export in `core/organizations`, through `TenantDb`, its
-  transaction ending once the last table is read. The branch also holds
+  transaction ending once the last table is read. #116 also carried
   its chores: read-only commands for Claude Code, the review skill's
   labelled findings, one `HourlyTimer` (ADR-059 amended), in-range
   dependency updates, the refusal-code rule in CLAUDE.md and the review
   skill brought to `error-codes.ts`'s (inside the manual-checks commit),
   and the session's three reads together. Manual checks MC-2401 to
   MC-2406. Three ADR-070 amendments were committed after the code they
-  describe; the PR description says which.
+  describe; #116's description says which. What it left waiting is filed
+  as #117 to #122, under *Open issues* below.
 - **Release:** **v0.7.0-rc.2** is tagged on `main` at #114's merge, a
   GitHub pre-release whose notes list the SVG upload fix from #113, which
   rc.1 (after #93, Nest 12) lacks. The Performance workflow its tag
-  started passed on 14 October 2026. Next: let it run in production for
-  a few days, then tag v0.7.0, with its notes in
-  `docs/releases/v0.7.0.txt`, listing the SVG fix too.
+  started passed on 14 October 2026. #116 (ADR-070) merged after rc.2,
+  so v0.7.0 carries closing an organization as well. Next: let it run in
+  production for a few days, then tag v0.7.0, with its notes in
+  `docs/releases/v0.7.0.txt`, listing the SVG fix and closing an
+  organization too.
   v0.6.0 and v0.5.0's notes are the GitHub releases and `docs/releases/`.
   Release notes are release notes only: they say nothing of manual checks
   or the walkthrough.
+- **`after-adr-070`** (PR to open): this handoff after #116;
+  `UNSAFE_GLOBAL_DB` refused in `modules/` too; in-range dependency
+  updates and jsdom 30.1.3; the account button named from the initials it
+  shows, which axe-core 4.14's Label in Name rule asked for. Then the four
+  fixes from ADR-070's walkthrough, each with its test and a check under
+  *Regressions*: a skip link and a main landmark (#121, MC-R08); the
+  Account page showing and saving the account's own language (#119,
+  MC-R09); its recent work read again after its dialogs (#122, MC-R10);
+  and a refused password marked on its field, with a way on, under the
+  new code `password_incorrect` (#120, MC-R11).
 - **Working agreements** are below, unchanged: one PR per feature, ADR
   first; chores ride along; commits authored Zhenzhong Zhou
   <bob0823.zhou@gmail.com>; a file roadmap in every answer that changes
@@ -180,8 +194,13 @@ with this one, this one is current.
 - **Open issues:** #16 (licence status for suspended, cancelled and
   superseded), #18 (site licences), #25 (what the customer kept), #33 (one
   hook for Load more keyset paging) and #41 (an organization's time zone
-  for today). `gh issue list` to review.
-- **Branches:** prune the merged ones (`scripts/prune-branches.sh`).
+  for today). From ADR-070's review and its walkthrough in Chinese: #117
+  (two one-second windows while a deletion completes) and #118 (the
+  export's column glossary and invoice PDFs, also under *Open decisions*
+  in `decisions.md`); #119 to #122 are fixed on `after-adr-070`, above.
+  `gh issue list` to review.
+- **Branches:** prune the merged ones, `adr-070-organization-deletion`
+  among them (`scripts/prune-branches.sh`).
 
 ### Still to do, in code
 
@@ -194,33 +213,9 @@ with this one, this one is current.
   when that screen is next touched.
 - **Targeted reviews, report only:** `server/src/core/files` and
   `server/src/modules/invoices` at any quiet moment; `server/src/core/auth`
-  after ADR-070 lands.
-- **ADR-070, small and waiting:**
-  - From the walkthrough in Chinese, two decisions for before the first
-    customer: the export's CSVs carry English database names
-    (`bill_to_name`, `tax_total`), Postgres's own timestamps and audit
-    actions such as `user.created`, which a novice gives up on, so a
-    column glossary for the main tables in the README; and the ZIP has no
-    PDFs of the invoices and credit notes as issued, which a bookkeeper
-    expects to keep, so whether the export adds them.
-  - Older than ADR-070, found by the same walkthrough: the Account
-    page shows 简体中文 as chosen when no language is set, and Save stays
-    off, so it cannot be saved (a colleague's emails then go out in
-    English); the wrong-password message says nothing of what to do next,
-    and its field is not marked invalid; the app shell has no main
-    landmark and no skip link, so a keyboard user presses Tab 24 times to
-    reach the page (WCAG 2.4.1); and the Account page's recent activity
-    stays stale until a reload.
-  - Two narrow windows during completion: a cancel committing in the
-    second of the cutoff, after the run erased the files but before it
-    took the lock, keeps an organization whose files are gone; and an
-    upload between its row and its bytes can leave bytes no purge finds.
-    Closing both means a "deletion started" mark taken under the lock
-    before the files are erased. Each window is about a second wide.
-  - CLAUDE.md's reading list leaves out `docs/manual-checks.md`, and its
-    rules leave out the same-commit rule for manual checks; README.md's
-    note on `UNSAFE_GLOBAL_DB` calls the list closed, though eslint on
-    `main` allows more. One small docs chore.
+  now that ADR-070 has landed.
+- **ADR-070, small and waiting:** what needs a decision or a fix is
+  filed as #117 to #122 (*Open issues* above). Not filed, each small:
   - The export's README follows the browser's language, since a plain
     link cannot send the app's; a `?locale=` on the link if anyone minds.
   - About 20 foreign keys under an organization have no index, so the

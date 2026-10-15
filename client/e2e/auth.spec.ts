@@ -74,6 +74,15 @@ test('rejects a wrong password without revealing whether the account exists', as
 
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page).toHaveURL(/\/login/);
+  // Both fields marked, since which one is wrong must not be said (#120).
+  await expect(page.getByLabel(/email/i)).toHaveAttribute(
+    'aria-invalid',
+    'true',
+  );
+  await expect(page.getByLabel(/^password/i)).toHaveAttribute(
+    'aria-invalid',
+    'true',
+  );
 
   /**
    * The server returns an identical response for a wrong password and an

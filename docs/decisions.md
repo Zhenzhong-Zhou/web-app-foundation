@@ -664,6 +664,25 @@ conflict hid it in every organization that had only one. All three now have cove
 The general form — a role hierarchy that would let *any* role be compared against another
 — is still open, and arrives with role editing rather than with assignment.
 
+**Amendment (October 2026) — the exemption list is not closed; it lives in the lint
+config.** The list above grew three times without this ADR saying so:
+`core/notifications`, scoped by recipient, since an account notification may belong to
+someone in no organization (ADR-036); the files purge (ADR-059); and the licence
+reminders (ADR-064), the last two each going through every organization in one hourly
+pass with no request behind it. The lint rule also covered only the folders it named,
+so `modules/`, and later `common/`, went unchecked by default.
+
+The rule now refuses `UNSAFE_GLOBAL_DB` and `PG_POOL` across `server/src/`, and its
+exceptions are listed once, in `server/eslint.config.mjs`, each with its reason. Two
+joined only because the wider rule reached them: `src/database/`, where the handle and
+`TenantDb` are defined and the seeds run, and the health check's ping of the pool.
+
+A new exception is acceptable only where there is no tenant to scope to: work that runs
+before any organization is known, reads data that has no `organization_id`, or goes
+through every organization with no request behind it. Anything with a tenant uses
+`TenantDb`, and `TenantDb.transaction()` for a global and a scoped table together. A new
+exception adds its line and its reason to that file, and nothing else lists them.
+
 ---
 
 ## ADR-017 — Email verification and password reset
@@ -8192,6 +8211,23 @@ they exist so the reasoning is not rediscovered from scratch.
   period, or work routed to a role instead of a person. Staff leave as a
   record (holiday balances) is an HR system's job, not this one's.
   Trigger: the first approval that waits on someone on holiday.
+- **What the organization export gives a bookkeeper (#118).** ADR-070's
+  ZIP is the data as stored: CSVs with the database's column names
+  (`bill_to_name`, `tax_total`), Postgres's own timestamps, and audit
+  actions such as `user.created`. In the walkthrough in Chinese, the
+  novice bookkeeper gave up on them. Two questions. First, a glossary of
+  the main tables' columns in the export's `README.txt`, in the Owner's
+  language like the rest of it; or the CSVs' headers themselves
+  translated, which reads better but no longer matches the database that
+  a later import would map back to. Second, PDFs of the invoices and
+  credit notes as issued, which a bookkeeper expects to keep. Documents
+  print through the browser (ADR-041), so the server has no renderer:
+  adding PDFs means a headless browser on the print pages, or a PDF
+  library drawing them a second time, either one a dependency and a
+  layout to keep in step. Reprinting from the snapshots already matches
+  what was issued, seller, customer and languages (ADR-046, ADR-054),
+  except the logo, which prints as it is today. Trigger: before the first
+  customer, or the first Owner closing an organization with real records.
 
 ---
 
