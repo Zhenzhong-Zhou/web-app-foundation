@@ -664,6 +664,25 @@ conflict hid it in every organization that had only one. All three now have cove
 The general form — a role hierarchy that would let *any* role be compared against another
 — is still open, and arrives with role editing rather than with assignment.
 
+**Amendment (October 2026) — the exemption list is not closed; it lives in the lint
+config.** The list above grew three times without this ADR saying so:
+`core/notifications`, scoped by recipient, since an account notification may belong to
+someone in no organization (ADR-036); the files purge (ADR-059); and the licence
+reminders (ADR-064), the last two each going through every organization in one hourly
+pass with no request behind it. The lint rule also covered only the folders it named,
+so `modules/`, and later `common/`, went unchecked by default.
+
+The rule now refuses `UNSAFE_GLOBAL_DB` and `PG_POOL` across `server/src/`, and its
+exceptions are listed once, in `server/eslint.config.mjs`, each with its reason. Two
+joined only because the wider rule reached them: `src/database/`, where the handle and
+`TenantDb` are defined and the seeds run, and the health check's ping of the pool.
+
+A new exception is acceptable only where there is no tenant to scope to: work that runs
+before any organization is known, reads data that has no `organization_id`, or goes
+through every organization with no request behind it. Anything with a tenant uses
+`TenantDb`, and `TenantDb.transaction()` for a global and a scoped table together. A new
+exception adds its line and its reason to that file, and nothing else lists them.
+
 ---
 
 ## ADR-017 — Email verification and password reset
