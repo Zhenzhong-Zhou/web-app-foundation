@@ -60,10 +60,29 @@ export default tseslint.config(
   },
 
   {
-    // Every folder that holds services: core/, shared/ and modules/. A module
-    // reading across organizations is the same mistake as a core service
-    // doing it, and modules/ is where most new services land.
-    files: ['src/core/**/*.ts', 'src/shared/**/*.ts', 'src/modules/**/*.ts'],
+    // Refused across src/, so a new folder is covered from its first file,
+    // except where there is no tenant to scope to. Each exception says why
+    // (ADR-016); a new one adds its line here, and nothing else lists them.
+    files: ['src/**/*.ts'],
+    ignores: [
+      // The handle's own definition, TenantDb built on it, and the seeds,
+      // which run outside any request.
+      'src/database/**',
+      // A ping of the pool.
+      'src/health/health.controller.ts',
+      // Resolves a user by email before any organization is known.
+      'src/core/auth/**',
+      // Joins the permission catalogue, which has no organization_id.
+      'src/core/authorization/**',
+      // Scoped by recipient: an account notification, "somebody signed in to
+      // your account", may belong to a person in no organization (ADR-036).
+      'src/core/notifications/**',
+      // Every organization's expired files, in one hourly pass with no
+      // request (ADR-059); the rest of core/files goes through TenantDb.
+      'src/core/files/files-purge.service.ts',
+      // Every organization's licences, hourly, the same way (ADR-064).
+      'src/modules/product-licences/licence-reminders.service.ts',
+    ],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -77,37 +96,14 @@ export default tseslint.config(
               importNames: ['UNSAFE_GLOBAL_DB', 'PG_POOL'],
               message:
                 'Services must use TenantDb — it applies organization_id (ADR-003/ADR-009). ' +
-                'Global queries are allowed in core/auth, ' +
-                'core/authorization, core/notifications, the files purge ' +
-                'and the licence reminders; anywhere else, this is a ' +
-                'scoping mistake.',
+                'The files with no tenant to scope to are exempted in ' +
+                'eslint.config.mjs, each with its reason; anywhere else, ' +
+                'this is a scoping mistake.',
             },
           ],
         },
       ],
     },
-  },
-
-  {
-    // UNSAFE_GLOBAL_DB is allowed in exactly five places, none of which has a
-    // tenant to scope to. core/auth resolves a user by email before any
-    // organization is known. core/authorization joins the permission
-    // catalogue, which has no organization_id by design. core/notifications is
-    // scoped by recipient instead: an account notification — "somebody signed
-    // in to your account" — belongs to a person who may belong to no
-    // organization at all (ADR-036). The files purge releases and deletes
-    // every organization's expired files in one pass, with no request and so
-    // no tenant (ADR-059); the rest of core/files goes through TenantDb.
-    // The licence reminders read every organization's licences hourly, for
-    // the same reason (ADR-064).
-    files: [
-      'src/core/auth/**/*.ts',
-      'src/core/authorization/**/*.ts',
-      'src/core/notifications/**/*.ts',
-      'src/core/files/files-purge.service.ts',
-      'src/modules/product-licences/licence-reminders.service.ts',
-    ],
-    rules: { 'no-restricted-imports': 'off' },
   },
 
   {

@@ -85,8 +85,9 @@ an arrow class property doesn't live on the prototype.
 - **`common/` must never import from `core/`.** The dependency runs one way. Reversing
   it is how a "shared" folder becomes a second copy of the application.
 - **Services must never import `db` directly** (ADR-009). All queries go through
-  `TenantDb`, which applies `organization_id`. `UNSAFE_GLOBAL_DB` is restricted to
-  `core/auth/` by lint rule — direct use elsewhere is a review-blocking defect.
+  `TenantDb`, which applies `organization_id`. `UNSAFE_GLOBAL_DB` is refused by a
+  lint rule except in the files `server/eslint.config.mjs` lists, each with its
+  reason — direct use elsewhere is a review-blocking defect.
 
 ### What a complete module looks like
 
