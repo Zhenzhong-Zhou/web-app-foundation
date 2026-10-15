@@ -102,8 +102,7 @@ export interface CurrentSession {
  */
 const INVALID_CREDENTIALS = t({
   id: 'auth.invalidCredentials',
-  defaultMessage:
-    'Invalid email or password. Check both and try again, or choose “Forgot your password?” below.',
+  defaultMessage: 'Invalid email or password. Check both and try again.',
 });
 
 /**

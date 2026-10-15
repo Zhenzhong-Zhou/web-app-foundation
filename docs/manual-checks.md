@@ -394,16 +394,16 @@ folder by folder; these check what is already in place.
   prints Chinese only, glyphs Chinese rather than Japanese forms. Paper
   shows no Back link or Print button, in any language.
 - **MC-1413** Signed out, in 简体中文, sign in with a wrong password: the
-  banner begins 邮箱或密码错误, not English, and points to 忘记密码？; in
-  Français, Courriel ou mot de passe invalide. Signed in, in Français, try
-  to remove yourself from Members: the refusal is French. In 简体中文, ship
-  more than an order has outstanding, cancel an order goods have moved
-  against, and release a run under an expired licence: each refusal is
-  Chinese, the statuses in it too (已确认, not "confirmed"). A request with
-  a field the server refuses, such as a quantity of -1 sent with curl and
-  `Accept-Language: fr-CA`, names the field as the API does
-  (lines.0.quantity) in a French sentence. The same requests with no
-  Accept-Language answer in English word for word.
+  banner reads 邮箱或密码错误。请检查后重试。, not English; in Français,
+  Courriel ou mot de passe invalide. Vérifiez les deux et réessayez. Signed
+  in, in Français, try to remove yourself from Members: the refusal is
+  French. In 简体中文, ship more than an order has outstanding, cancel an
+  order goods have moved against, and release a run under an expired
+  licence: each refusal is Chinese, the statuses in it too (已确认, not
+  "confirmed"). A request with a field the server refuses, such as a
+  quantity of -1 sent with curl and `Accept-Language: fr-CA`, names the
+  field as the API does (lines.0.quantity) in a French sentence. The same
+  requests with no Accept-Language answer in English word for word.
 - **MC-1414** With the account's language set to Français, request a
   password reset: the email (Mailpit) is French, subject included. Sign
   out, switch the page to 简体中文, and request one for an account with
@@ -1128,3 +1128,5 @@ first.
 - 2026-10-15: the password refusals say what to do next (#120): MC-1413
   updated.
 - 2026-10-15: a refused password is marked on its field (#120): MC-R11.
+- 2026-10-15: the password refusals leave the way on to the screen
+  (#120): MC-1413 updated.

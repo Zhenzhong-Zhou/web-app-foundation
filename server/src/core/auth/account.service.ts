@@ -111,16 +111,16 @@ export class AccountService {
       );
     }
 
-    // The way on is in the message, since a person who has forgotten it
-    // cannot reach Forgot your password? while signed in (#120). The code
-    // lets the screen mark the field the password was typed in.
+    // Says what is wrong and to try again. The code lets the screen mark
+    // the field the password was typed in, and offer the way on for one
+    // forgotten, in its own words for its own links (#120).
     if (!(await this.passwords.verify(user.passwordHash, password))) {
       throw new UnauthorizedException(
         withCode(
           t({
             id: 'account.password.wrong',
             defaultMessage:
-              'That password is not correct. Check it and try again; if you have forgotten it, sign out and choose “Forgot your password?” on the sign-in page.',
+              'That password is not correct. Check it and try again.',
           }),
           ERROR_CODES.passwordIncorrect,
         ),
