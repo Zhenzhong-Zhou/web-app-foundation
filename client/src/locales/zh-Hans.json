@@ -18,6 +18,7 @@
   "account.activity.what": "事件",
   "account.activity.when": "时间",
   "account.deletion.banner": "您的账户将在 {date} 之后删除。在此之前，您可以保留它。",
+  "account.deletion.bannerWith": "您的账户和 {organization} 将在 {date} 之后删除。在此之前，您可以保留两者。",
   "account.deletion.confirming": "正在确认…",
   "account.deletion.delete": "删除我的账户",
   "account.deletion.explain.copy": "想先留一份副本？请在离开前下载您的数据。",

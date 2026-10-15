@@ -187,4 +187,26 @@ describe('DeletionBanner', () => {
       screen.getByRole('button', { name: 'Keep my account' }),
     ).toBeEnabled();
   });
+
+  it('says both, and keeps both, while working elsewhere', async () => {
+    const cancelled: string[] = [];
+    server.use(
+      http.delete('/api/v1/account/deletion', () => {
+        cancelled.push('account');
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderWithAuth(<DeletionBanner />, {
+      user: {
+        deletionScheduledAt: '2026-11-14',
+        deletionWithOrganization: { id: 'org-2', name: 'Beta Co' },
+      },
+    });
+
+    expect(
+      screen.getByText(/Your account and Beta Co will be deleted after/),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Keep both' }));
+    expect(cancelled).toEqual(['account']);
+  });
 });
