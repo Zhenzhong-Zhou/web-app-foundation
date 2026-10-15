@@ -7656,6 +7656,34 @@ canvas settled before the client was built:
   reminder goes out, it has no ×, so nobody misses the final week; nor
   once the deletion is under way, when nothing can be done.
 
+**Amendment (October 2026) — settled while building.** Three more, from
+the reviews of the build:
+
+- **"Deleted together" is recorded on the account, not guessed.** The
+  first build read it from matching days, which a member deleting their
+  own account the same day matched too, and then from a column on the
+  organization, which outlived an only member who left. It is now
+  `users.deletion_with_organization_id` (migrations 0059 and 0060, neither
+  released): set with the account's day when the only member deletes
+  both, cleared in the same statement as that day by every cancel and by
+  completion, cleared when the person leaves, and set to null by the
+  database when the organization is deleted. Cancelling the
+  organization's deletion clears the linked account's day in the same
+  transaction, so both stay or neither does.
+- **One deletion stage, decided by the server.** The session says where a
+  pending deletion stands: `scheduled`, `lastWeek` or `underWay`, from one
+  function, on the server's UTC day, so the banner's ×, the reminder and
+  the cancel's cutoff draw the same lines, and no browser near midnight
+  disagrees. Likewise the last export says whether it is fresh, and who
+  took it by id, so "by you" never matches two people of one name.
+- **The emails do not hold the answer.** Those sent when a deletion is
+  scheduled or cancelled start without being awaited, once the change has
+  committed, each failure logged; the reminder and the done email, sent
+  by the timer, are awaited. The export's coverage test also follows the
+  cascading foreign keys out from the organization, so a table it owns
+  through a parent, as `role_permissions` is, cannot be left out
+  unnoticed.
+
 ---
 
 ## Open decisions
