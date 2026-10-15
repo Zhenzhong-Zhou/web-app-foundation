@@ -7710,6 +7710,37 @@ the reviews of the build:
   through a parent, as `role_permissions` is, cannot be left out
   unnoticed.
 
+**Amendment (October 2026) — completing marks its start first (#117).**
+Completing as written above left two windows, each about a second wide.
+A cancel committing in the second of the cutoff, after a run had erased
+the files but before it took the lock, kept an organization whose files
+were gone: the cancel and the timer each read the clock for themselves.
+And an upload whose row committed before the run's lock, but whose bytes
+landed after its erase, left bytes that no purge finds, since the purge
+works from rows.
+
+Completing now marks its start before it touches storage, in
+`organizations.deletion_started_at` (migration 0062):
+
+1. In one transaction: lock the organization, check that it is due, and
+   set the mark. A cancel either commits before this, and the run finds
+   nothing due, or waits for it and is refused, as is every later cancel,
+   whatever either clock says.
+2. Erase the bytes of every file, as before.
+3. In one transaction: lock the organization, which now needs the mark
+   rather than the day, erase any file since step 2, and delete it, as
+   before.
+
+An upload reads the mark in its own transaction, under a key-share lock
+on the organization, and is refused once it is set. Its bytes are now
+written inside that transaction, before its row commits, so a run's mark
+waits for an upload already under way, and the erase finds its bytes. A
+failed write rolls the row back with it, replacing the delete that
+followed one before. The cost is an upload holding its transaction while
+storage writes its sizes; uploads in one organization already queue on
+one lock (ADR-059). The mark is never cleared: a run that fails after it
+leaves it, and the next run finishes the deletion.
+
 ---
 
 ## Open decisions
