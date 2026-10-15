@@ -133,6 +133,15 @@ export async function download(path: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * The address of an API route, for a plain link the browser follows
+ * itself: a large file it should save straight to disk rather than hold
+ * in the page, as download() does (ADR-070's export).
+ */
+export function apiUrl(path: string): string {
+  return `${BASE}${path}`;
+}
+
 /** The request every call makes, and the error every failure throws. */
 async function send(path: string, init: ApiInit): Promise<Response> {
   const response = await fetch(`${BASE}${path}`, {

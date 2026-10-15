@@ -29,6 +29,7 @@ import { useSubmit } from '../lib/use-submit';
 import { useTab } from '../lib/use-tab';
 import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
 import { BrandingForm } from './branding-form';
+import { ClosingSections } from './closing-sections';
 import {
   OrganizationDocumentLanguages,
   RequiredNameLanguages,
@@ -179,6 +180,9 @@ export function OrganizationPage() {
                 readOnly={!canUpdate}
                 onSaved={reload}
               />
+              {/* Last, and Owners' only: the organization's records and its
+                  end (ADR-070). */}
+              <ClosingSections organization={organization} onChanged={reload} />
             </>,
           )}
           {panel(

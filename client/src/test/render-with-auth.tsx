@@ -25,6 +25,7 @@ export function renderWithAuth(
   {
     permissions = [] as string[],
     user = {} as Partial<CurrentSession['user']>,
+    organization = {} as Partial<NonNullable<CurrentSession['organization']>>,
     refresh = () => Promise.resolve(),
   } = {},
 ) {
@@ -52,6 +53,7 @@ export function renderWithAuth(
         },
         deletionScheduledAt: null,
         deletionUnderWay: false,
+        ...organization,
       },
       // Specs list permissions as plain strings; the session holds them
       // as the server's names (ADR-068).

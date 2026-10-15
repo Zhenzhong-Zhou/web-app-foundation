@@ -44,6 +44,33 @@ describe('LeaveOrDelete', () => {
     expect(refresh).toHaveBeenCalled();
   });
 
+  it('deletes the organization with the account, for its only member', async () => {
+    server.use(
+      http.get('/api/v1/users', () => HttpResponse.json([{ id: 'user-1' }])),
+      http.get('/api/v1/organization', () =>
+        HttpResponse.json({
+          organization: { name: 'Alpha Co', lastExport: null },
+        }),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter>
+        <LeaveOrDelete />
+      </MemoryRouter>,
+      { permissions: ['users.view'] },
+    );
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Delete my account' }),
+    );
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Delete your account and Alpha Co?',
+      }),
+    ).toBeInTheDocument();
+  });
+
   it('shows the refusal with the way past it, on Members', async () => {
     server.use(
       http.delete('/api/v1/account/membership', () =>

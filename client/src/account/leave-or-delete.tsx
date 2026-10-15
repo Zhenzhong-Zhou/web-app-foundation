@@ -13,6 +13,8 @@ import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
+import type { Member } from '../api/types.gen';
+import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -22,6 +24,7 @@ import { formatDay } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useSubmit } from '../lib/use-submit';
 import { PASSWORD_MAX_LENGTH } from '../lib/validation';
+import { CloseOrganizationDialog } from '../settings/close-organization-dialog';
 
 /**
  * The refusal, and the way past it (ADR-069): both blocks are settled on
@@ -55,7 +58,10 @@ export function LeaveOrDelete() {
   const intl = useIntl();
   const navigate = useNavigate();
   const { session, refresh } = useAuth();
-  const [dialog, setDialog] = useState<'leave' | 'delete' | null>(null);
+  const can = useCan();
+  const [dialog, setDialog] = useState<'leave' | 'delete' | 'both' | null>(
+    null,
+  );
   const [password, setPassword] = useState('');
   const [exportError, setExportError] = useState<string | null>(null);
   const leaving = useSubmit(async () => {
@@ -71,6 +77,26 @@ export function LeaveOrDelete() {
   if (!session) return null;
   const organization = session.organization;
   const due = session.user.deletionScheduledAt;
+
+  /**
+   * The only member of an organization deletes it with their account, in
+   * one step (ADR-070); anyone else deletes the account alone. Only an
+   * Owner can be alone in one, and an Owner can list the members.
+   */
+  async function askToDelete() {
+    if (organization && can('users.view')) {
+      try {
+        const members = await api<Member[]>('/users');
+        if (members.length === 1) {
+          setDialog('both');
+          return;
+        }
+      } catch {
+        // Unknown: the account's own dialog, whose refusal says what to do.
+      }
+    }
+    setDialog('delete');
+  }
 
   function close() {
     setDialog(null);
@@ -160,7 +186,7 @@ export function LeaveOrDelete() {
           <Button
             variant="outlined"
             color="error"
-            onClick={openDialog(() => setDialog('delete'))}
+            onClick={openDialog(() => void askToDelete())}
           >
             {deleteAccount}
           </Button>
@@ -218,6 +244,13 @@ export function LeaveOrDelete() {
           }
         />
       </Dialog>
+
+      <CloseOrganizationDialog
+        open={dialog === 'both'}
+        alone
+        onClose={() => setDialog(null)}
+        onScheduled={() => undefined}
+      />
 
       <Dialog
         open={dialog === 'delete'}
