@@ -3,7 +3,8 @@ import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import { PasswordField } from '../components/password-field';
-import { api, ApiError, hasCode, messageFor } from '../lib/api';
+import { api, hasCode } from '../lib/api';
+import { useSubmit } from '../lib/use-submit';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../lib/validation';
 
 const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
@@ -14,10 +15,12 @@ const RESERVED_LINE = ' ';
 export function ChangePasswordForm() {
   const intl = useIntl();
   const [form, setForm] = useState(EMPTY);
-  const [error, setError] = useState<string | null>(null);
-  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  // Cleared on success only. A failed attempt should not make the user
+  // retype the two they got right.
+  const { submitting, error, errorCode, submit } = useSubmit(() =>
+    setForm(EMPTY),
+  );
 
   function update(field: keyof typeof form) {
     return (event: { target: { value: string } }) =>
@@ -28,14 +31,11 @@ export function ChangePasswordForm() {
     form.confirmPassword.length > 0 &&
     form.newPassword !== form.confirmPassword;
 
-  async function handleSubmit(event: SubmitEvent) {
+  function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
-    setSubmitting(true);
-    setError(null);
-    setErrorCode(null);
     setResult(null);
 
-    try {
+    void submit(async () => {
       const { otherSessionsRevoked } = await api<{
         otherSessionsRevoked: number;
       }>('/account/password', {
@@ -58,16 +58,7 @@ export function ChangePasswordForm() {
           { count: otherSessionsRevoked },
         ),
       );
-
-      // Cleared on success only. A failed attempt should not make the user
-      // retype the two they got right.
-      setForm(EMPTY);
-    } catch (caught) {
-      setError(messageFor(caught));
-      setErrorCode(caught instanceof ApiError ? (caught.code ?? null) : null);
-    } finally {
-      setSubmitting(false);
-    }
+    });
   }
 
   // The current password was refused (#120): marked on its field.
@@ -107,8 +98,14 @@ export function ChangePasswordForm() {
         value={form.currentPassword}
         onChange={update('currentPassword')}
         error={wrongPassword}
-        describedBy={wrongPassword ? 'change-password-error' : undefined}
-        slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
+        slotProps={{
+          htmlInput: {
+            maxLength: PASSWORD_MAX_LENGTH,
+            'aria-describedby': wrongPassword
+              ? 'change-password-error'
+              : undefined,
+          },
+        }}
       />
 
       <PasswordField

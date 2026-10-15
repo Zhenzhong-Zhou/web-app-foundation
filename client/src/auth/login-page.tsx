@@ -83,7 +83,11 @@ export function LoginPage() {
     >
       {/* Alert renders role="alert", so a screen reader announces the failure
           without the user tabbing back to find it. */}
-      {error && <Alert id="sign-in-error" severity="error">{error}</Alert>}
+      {error && (
+        <Alert id="sign-in-error" severity="error">
+          {error}
+        </Alert>
+      )}
       {idleMinutes !== null && !error && (
         <Alert severity="info">
           {intl.formatMessage(
@@ -134,8 +138,12 @@ export function LoginPage() {
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         error={refused}
-        describedBy={refused ? 'sign-in-error' : undefined}
-        slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
+        slotProps={{
+          htmlInput: {
+            maxLength: PASSWORD_MAX_LENGTH,
+            'aria-describedby': refused ? 'sign-in-error' : undefined,
+          },
+        }}
       />
 
       {/* Disabled in flight: a double submit revokes the session the first

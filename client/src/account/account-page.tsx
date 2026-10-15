@@ -8,11 +8,13 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { AuditRecord } from '../audit/audit-format';
 import { PageHeader } from '../components/page-header';
+import { useResource } from '../lib/use-resource';
 import { AccountPhoto } from './account-photo';
 import { ChangePasswordForm } from './change-password-form';
 import { LeaveOrDelete } from './leave-or-delete';
@@ -29,10 +31,11 @@ import { WorkDetailsForm } from './work-details-form';
 export function AccountPage() {
   const intl = useIntl();
   const [changingPassword, setChangingPassword] = useState(false);
-  // Bumped whenever the last section closes a dialog, so the recent work
-  // above it reads again (#122).
-  const [changes, setChanges] = useState(0);
-  const changed = useCallback(() => setChanges((count) => count + 1), []);
+  // Read here, so the last section can have it read again once closing the
+  // organization from there has written to it (#122).
+  const work = useResource<{ entries: AuditRecord[] }>(
+    '/account/activity?limit=20',
+  );
 
   return (
     <Stack spacing={3}>
@@ -132,12 +135,12 @@ export function AccountPage() {
       </Dialog>
 
       <Paper variant="outlined" sx={{ p: 3 }}>
-        <RecentWork readAgain={changes} />
+        <RecentWork entries={work.data?.entries} />
       </Paper>
 
       {/* Last, as the actions that end things are (ADR-069). */}
       <Paper variant="outlined" sx={{ p: 3 }}>
-        <LeaveOrDelete onChanged={changed} />
+        <LeaveOrDelete onChanged={work.reload} />
       </Paper>
     </Stack>
   );

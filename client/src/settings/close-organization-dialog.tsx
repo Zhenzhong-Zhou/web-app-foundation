@@ -415,10 +415,14 @@ export function CloseOrganizationDialog({
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 error={wrongPassword}
-                describedBy={
-                  wrongPassword ? 'close-organization-error' : undefined
-                }
-                slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
+                slotProps={{
+                  htmlInput: {
+                    maxLength: PASSWORD_MAX_LENGTH,
+                    'aria-describedby': wrongPassword
+                      ? 'close-organization-error'
+                      : undefined,
+                  },
+                }}
               />
             </Step>
 

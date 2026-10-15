@@ -39,7 +39,7 @@ export function LanguageSelect({
   const { locale, setLocale } = useLanguage();
   const { session, refresh } = useAuth();
   // '' is none chosen, which only the account can be.
-  const chosen: string = account ? (session?.user.locale ?? '') : locale;
+  const chosen = account ? (session?.user.locale ?? '') : locale;
   const notChosen = intl.formatMessage({
     id: 'language.notChosen',
     defaultMessage: 'Not chosen',
@@ -49,12 +49,8 @@ export function LanguageSelect({
     <Select
       size="small"
       value={chosen}
-      displayEmpty={account}
-      renderValue={
-        account
-          ? (value: string) => (isLocale(value) ? pickerName(value) : notChosen)
-          : undefined
-      }
+      displayEmpty
+      renderValue={(value) => (isLocale(value) ? pickerName(value) : notChosen)}
       inputProps={{
         'aria-label': intl.formatMessage({
           id: 'language.label',

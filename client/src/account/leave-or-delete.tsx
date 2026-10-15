@@ -77,10 +77,15 @@ function Refusal({
  * the organization you are working in, and deleting the account, which
  * waits 30 days before it happens.
  *
- * `onChanged` is called whenever one of its dialogs closes, done or not,
- * so the page can read again what they may have written (#122).
+ * `onChanged` is called when closing the organization from here ends, done
+ * or not, since the download and the scheduling are both recorded in the
+ * recent work above (#122). Its other dialogs record nothing shown there.
  */
-export function LeaveOrDelete({ onChanged }: { onChanged?: () => void }) {
+export function LeaveOrDelete({
+  onChanged,
+}: {
+  onChanged?: () => void | Promise<void>;
+}) {
   const intl = useIntl();
   const navigate = useNavigate();
   const { session, refresh } = useAuth();
@@ -137,7 +142,6 @@ export function LeaveOrDelete({ onChanged }: { onChanged?: () => void }) {
     setPassword('');
     leaving.reset();
     deleting.reset();
-    onChanged?.();
   }
 
   async function exportData() {
@@ -311,7 +315,7 @@ export function LeaveOrDelete({ onChanged }: { onChanged?: () => void }) {
         alone
         onClose={() => {
           setDialog(null);
-          onChanged?.();
+          void onChanged?.();
         }}
         onScheduled={() => undefined}
       />
@@ -371,10 +375,14 @@ export function LeaveOrDelete({ onChanged }: { onChanged?: () => void }) {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 error={wrongPassword}
-                describedBy={
-                  wrongPassword ? 'account-deletion-error' : undefined
-                }
-                slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
+                slotProps={{
+                  htmlInput: {
+                    maxLength: PASSWORD_MAX_LENGTH,
+                    'aria-describedby': wrongPassword
+                      ? 'account-deletion-error'
+                      : undefined,
+                  },
+                }}
               />
             </Stack>
           </DialogContent>
