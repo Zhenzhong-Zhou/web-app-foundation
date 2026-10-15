@@ -7388,8 +7388,10 @@ can download a full export of the organization at any time, as one ZIP:
 - **`members.csv`:** each member's name, email, role and work details, in
   place of the bare membership rows.
 - **The audit log,** which belongs to the organization (ADR-069).
-- **`files/`:** every file the organization uploaded (its logo, product
+- **`files/`:** every file the organization has in use (its logo, product
   images), at the largest size stored, named by its id and original name.
+  A file already released is in `files.csv`, its bytes on their way to
+  the purge (ADR-059).
 - **`README.txt`,** in the Owner's language: what each file holds, and how
   they join.
 
@@ -7490,7 +7492,7 @@ change their details, or delete their account.
 Owner is the organization's only member, one step does both: "Delete my
 account and my organization". One password and one request schedule both
 for the same day; every other device is signed out, as ADR-069 does; one
-email says both will go. The banner is the same as any member's. On the
+email says both will go. Their banner says both, with Keep both. On the
 day the organization goes first and the account straight after, in the
 same run, so there is never an organization with no one in it.
 

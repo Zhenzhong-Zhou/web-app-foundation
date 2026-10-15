@@ -16,7 +16,7 @@ with this one, this one is current.
   lookup, the gallery's zooming viewer, and the invoice refusals' links to
   Organization → Profile and to the customer (`invoice-refusal-link`,
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
-  "Error codes"). PRs through #87.
+  "Error codes"). Since then, through #114: ADR-067 to ADR-069 below.
 - **Migrations:** through **0056** on `main`, 57 files in
   `server/src/database/migrations/` (0055 and 0056 are ADR-069's, merged
   with #114). **0057 to 0061** are ADR-070's, on its branch: the deletion
@@ -34,7 +34,7 @@ with this one, this one is current.
   (`invoice-tax-number`, MC-711). Tax profiles by country are deferred in
   the same amendment, until the first customer or legal entity outside
   Canada.
-- **ADR-068** (#19): phase 1 on `adr-068-openapi`. The server writes
+- **ADR-068** (#19): merged; phase 1 was built on `adr-068-openapi`. The server writes
   `server/openapi.json`, the client's types are generated from it into
   `client/src/api/`, the four shared lists come from them, and one contract
   check in CI and `scripts/verify.sh` replaces the four copy checks. After
@@ -123,8 +123,12 @@ with this one, this one is current.
   deletion; the export in `core/organizations`, through `TenantDb`, its
   transaction ending once the last table is read. The branch also holds
   its chores: read-only commands for Claude Code, the review skill's
-  labelled findings, one `HourlyTimer` (ADR-059 amended), and in-range
-  dependency updates. Manual checks MC-2401 to MC-2406.
+  labelled findings, one `HourlyTimer` (ADR-059 amended), in-range
+  dependency updates, the refusal-code rule in CLAUDE.md and the review
+  skill brought to `error-codes.ts`'s (inside the manual-checks commit),
+  and the session's three reads together. Manual checks MC-2401 to
+  MC-2406. Three ADR-070 amendments were committed after the code they
+  describe; the PR description says which.
 - **Release:** **v0.7.0-rc.2** is tagged on `main` at #114's merge, a
   GitHub pre-release whose notes list the SVG upload fix from #113, which
   rc.1 (after #93, Nest 12) lacks. The Performance workflow its tag
@@ -192,6 +196,16 @@ with this one, this one is current.
   `server/src/modules/invoices` at any quiet moment; `server/src/core/auth`
   after ADR-070 lands.
 - **ADR-070, small and waiting:**
+  - Two narrow windows during completion: a cancel committing in the
+    second of the cutoff, after the run erased the files but before it
+    took the lock, keeps an organization whose files are gone; and an
+    upload between its row and its bytes can leave bytes no purge finds.
+    Closing both means a "deletion started" mark taken under the lock
+    before the files are erased. Each window is about a second wide.
+  - CLAUDE.md's reading list leaves out `docs/manual-checks.md`, and its
+    rules leave out the same-commit rule for manual checks; README.md's
+    note on `UNSAFE_GLOBAL_DB` calls the list closed, though eslint on
+    `main` allows more. One small docs chore.
   - The export's README follows the browser's language, since a plain
     link cannot send the app's; a `?locale=` on the link if anyone minds.
   - About 20 foreign keys under an organization have no index, so the

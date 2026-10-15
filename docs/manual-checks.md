@@ -895,7 +895,9 @@ await fetch(`${api}/v1/files/product-image`, {
   Excel or Numbers with Chinese and French names readable; invoices and
   credit notes with their lines and tax; `files/` with the logo and
   product images. Back on the page, the section says "Last downloaded …
-  by" your name, and History shows "Everything exported".
+  by you", and History shows "Everything exported". Have a colleague with
+  your name download it too: the section names them, not "you". In 中文,
+  with the browser left in English, the README reads in Chinese.
 - **MC-2402** Close this organization…: Close organization is off, and
   the line under it says what is still needed. It stays off until the
   export is fresh or "I don't want the export" is ticked, the name is
@@ -932,7 +934,11 @@ await fetch(`${api}/v1/files/product-image`, {
   both once more, move both days two days back (`update organizations set
   deletion_scheduled_at = current_date - 2` and the same on `users`), and
   restart: the organization goes, then your account; signing in fails,
-  and the email can register again.
+  and the email can register again. Then the unlinking: Delete both, add a
+  colleague as Owner, and leave the organization (or have them remove
+  you, or make you a Viewer and then press Keep my account). Your
+  account's own deletion stands on its day, the organization's deletion
+  stands too, and nobody else's cancel touches your account.
 - **MC-2406** In 中文, on a phone: the Profile sections, the dialog with
   its three steps, the banner and every email read in Chinese, and the
   dialog fits the screen with its buttons reachable. Show it to someone
@@ -1078,3 +1084,5 @@ first.
   extended.
 - 2026-10-15: ADR-070, closing an organization: section 24, MC-2401 to
   MC-2406.
+- 2026-10-15: MC-2401 says "by you" and checks the README's language;
+  MC-2405 adds an only member who leaves, is removed or is demoted.

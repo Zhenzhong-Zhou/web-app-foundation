@@ -69,6 +69,16 @@ an arrow class property doesn't live on the prototype.
 
 ---
 
+## A new table and the organization's export
+
+- **A table with an `organization_id` is in the organization's export**
+  (ADR-070), every column, with nothing to add: unless it belongs to each
+  member rather than the organization, and is listed in `NOT_EXPORTED`
+  (`core/organizations/organization-tables.ts`) with its reason. A table
+  owned through a parent, with no `organization_id` of its own, goes in
+  `OWNED_THROUGH_PARENT` beside it, exported by hand or with its reason.
+  The export's coverage tests fail on a table that is neither.
+
 ## Module boundaries
 
 - One folder per module under `core/`, each with its own `*.module.ts`.
