@@ -5843,7 +5843,7 @@ plan had not chosen.
 
 > **Amended by [ADR-070](#adr-070--deleting-an-organization-amends-adr-012-adr-059-and-adr-069).**
 > A deleted organization's files are erased when its deletion completes, not released to wait 30 days: the 30 days came before it, and their rows go with the organization.
-> Its October 2026 amendment (#117) changes how every upload writes: the bytes go to storage inside the transaction that inserts the row, so a deletion run's mark waits for an upload under way, and a failed write rolls the row back rather than deleting it after.
+> Its October 2026 amendment (#117) changes how every upload writes: the bytes go to storage first, under an id taken beforehand, then a short transaction saves the row, and an upload that is refused or fails deletes its bytes. A deletion run's mark then refuses any upload after it.
 
 **Context.** Nothing stores a file yet, and several things are waiting to.
 Branding needs the organization's logo (*Open decisions*, ADR-055's brand
@@ -7733,15 +7733,29 @@ Completing now marks its start before it touches storage, in
    rather than the day, erase any file since step 2, and delete it, as
    before.
 
-An upload reads the mark in its own transaction, under a key-share lock
-on the organization, and is refused once it is set. Its bytes are now
-written inside that transaction, before its row commits, so a run's mark
-waits for an upload already under way, and the erase finds its bytes. A
-failed write rolls the row back with it, replacing the delete that
-followed one before. The cost is an upload holding its transaction while
-storage writes its sizes; uploads in one organization already queue on
-one lock (ADR-059). The mark is never cleared: a run that fails after it
-leaves it, and the next run finishes the deletion.
+An upload takes its file's id first and writes its bytes under it, and
+only then opens a short transaction: the organization's upload lock
+(ADR-059), the mark, read under a key-share lock on the organization, the
+quota, and the row. It is refused once the mark is set, or once the
+organization is gone. Refused, or with a write that failed, it deletes
+every one of its keys once every write has settled, since no row would
+lead a purge to them, and a delete that ran ahead of a write still in
+flight would be undone by it. So the
+run misses nothing: a row saved before the mark already has its bytes,
+and an upload after it is refused and cleans up. A server that dies
+between the write and the row leaves bytes behind, as a failed write
+could before.
+
+Writing inside the transaction would have closed the window too, and was
+the first build. The review of it found the cost: a database connection,
+and the upload lock, held for as long as the bucket took, so a gallery's
+worth of photos at once could hold most of the pool. The storage client
+now also gives up after 5 seconds connecting and 30 waiting, the second
+set to throw rather than only warn, so a stalled bucket fails an upload
+rather than holding it.
+
+The mark is never cleared: a run that fails after it leaves it, and the
+next run finishes the deletion.
 
 ---
 
