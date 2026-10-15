@@ -1,9 +1,9 @@
-# web-app-foundation — handoff, 14 October 2026
+# web-app-foundation — handoff, 15 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 14 October 2026: read this first
+## Now, 15 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
@@ -19,9 +19,11 @@ with this one, this one is current.
   "Error codes"). PRs through #87.
 - **Migrations:** through **0056** on `main`, 57 files in
   `server/src/database/migrations/` (0055 and 0056 are ADR-069's, merged
-  with #114). Next is **0057**. Render holds one row per file in
-  `drizzle.__drizzle_migrations` once `main` is deployed there: 57.
-  After any new migration: `npm run migrate:all`.
+  with #114). **0057 to 0059** are ADR-070's, on its branch: the deletion
+  day, the reminder, and whose account goes with it. Next is **0060**.
+  Render holds one row per file in `drizzle.__drizzle_migrations` once
+  `main` is deployed there: 57, then 60. After any new migration:
+  `npm run migrate:all`.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
   for typescript-eslint and the Nest CLI (ADR-067, *Deferred*).
@@ -99,15 +101,25 @@ with this one, this one is current.
   (ADR-006), and with them switching between organizations, which a
   block in another organization needs; and accounts an organization owns,
   through single sign-on.
-- **Next:** ADR-070, deleting an organization (ADR-069's deferral), on
-  `adr-070-organization-deletion`; the ADR is not written yet. Its
-  trigger, the first paying customer, is near, and until it exists a
-  person alone in their organization, which is everyone who registers,
-  cannot delete their account. The branch's chores are done: read-only
-  commands allowed for Claude Code in `.claude/settings.json`, the review
-  skill's findings labelled and capped, one `HourlyTimer` for the three
-  hourly jobs (each runs at startup, then hourly; ADR-059 amended), and
-  in-range dependency updates.
+- **ADR-070** (`adr-070-organization-deletion`, built, PR to open):
+  closing an organization. Any Owner, with the password and the
+  organization's name typed, after a full export (a ZIP: a CSV per table
+  it owns, `members.csv`, `role_permissions.csv`, the files) taken in the
+  last 24 hours, or a decline. Thirty days, cancellable by any Owner
+  until the day has ended everywhere; a banner for every member (hidden
+  for today, never in the last week or once under way); every member
+  emailed when it is scheduled, 7 days before, cancelled and done. Then
+  the timer erases the files, moves the members' sessions, and deletes
+  the audit log and the organization, every table it owns following by
+  cascade. The only member deletes both in one step, recorded on the
+  organization (`deletion_with_account_of`), the organization first.
+  Backups keep it until they age out and never bring it back (ADR-069
+  says the same). The service lives in `core/auth` beside account
+  deletion; the export in `core/organizations`, through `TenantDb`, its
+  transaction ending once the last table is read. The branch also holds
+  its chores: read-only commands for Claude Code, the review skill's
+  labelled findings, one `HourlyTimer` (ADR-059 amended), and in-range
+  dependency updates. Manual checks MC-2401 to MC-2406.
 - **Release:** **v0.7.0-rc.2** is tagged on `main` at #114's merge, a
   GitHub pre-release whose notes list the SVG upload fix from #113, which
   rc.1 (after #93, Nest 12) lacks. The Performance workflow its tag
@@ -144,16 +156,18 @@ with this one, this one is current.
   account's address alone, the stray folder deleted, the logo uploaded
   again to `<organization id>/…`, and GitHub's `BACKUP_S3_ENDPOINT` set
   again the same way. The server now refuses such an endpoint at boot.
-- **Before v0.7.0:** walk section 23 of `docs/manual-checks.md`
-  (MC-2301 to MC-2303, leaving and deleting); have the French and Chinese
+- **Before v0.7.0:** walk sections 23 and 24 of `docs/manual-checks.md`
+  (MC-2301 to MC-2303, leaving and deleting; MC-2401 to MC-2406, closing
+  an organization); have the French and Chinese
   wording checked by someone fluent (MC-1405); edit `docs/principles.md`
   until it reads as Bob's.
 - **Manual checks due:** MC-1601 and MC-1602 (an upload in R2, the
   nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
   MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
   photos and 同事 on a phone.
-- **Try `/usability-walkthrough`** on the deletion flow (ADR-069), as the
-  novice bookkeeper reading Chinese.
+- **Try `/usability-walkthrough`** on the deletion flows (ADR-069 and
+  ADR-070), as the novice bookkeeper reading Chinese, and show the
+  close dialog to someone who reads only Chinese (MC-2406).
 - **Open issues:** #16 (licence status for suspended, cancelled and
   superseded), #18 (site licences), #25 (what the customer kept), #33 (one
   hook for Load more keyset paging) and #41 (an organization's time zone
@@ -172,6 +186,18 @@ with this one, this one is current.
 - **Targeted reviews, report only:** `server/src/core/files` and
   `server/src/modules/invoices` at any quiet moment; `server/src/core/auth`
   after ADR-070 lands.
+- **ADR-070, small and waiting:**
+  - The export's README follows the browser's language, since a plain
+    link cannot send the app's; a `?locale=` on the link if anyone minds.
+  - About 20 foreign keys under an organization have no index, so the
+    cascade that deletes one may scan whole tables. It runs in the timer,
+    not a request; `EXPLAIN ANALYZE` a deletion on `seed:volume` before
+    the first large customer.
+  - Playwright in CI could run against `vite build` and `vite preview`
+    rather than the dev server: the shipped files, and no page reload
+    when the dev server meets a new dependency mid-run, as it did once
+    locally with a stale server. A chore of its own, since it lengthens
+    CI.
 
 ### Deferred, each waiting for its trigger (in the ADRs)
 

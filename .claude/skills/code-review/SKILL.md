@@ -72,8 +72,9 @@ amends in `docs/decisions.md`.
 
 ### Behaviour
 
-- A refusal carries a snake_case code that is never renamed, and a
-  message that says what to do next.
+- A refusal's message says what to do next. One whose screen offers a
+  way out also carries a snake_case code that is never renamed; most
+  carry none (`error-codes.ts`).
 - Every new message id exists in `en`, `fr-CA` and `zh-Hans`; no text
   hard-coded in a component.
 - Controls labelled and keyboard-reachable (WCAG 2.2 AA, ADR-055).
