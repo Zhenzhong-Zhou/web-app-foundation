@@ -142,6 +142,16 @@ with this one, this one is current.
   v0.6.0 and v0.5.0's notes are the GitHub releases and `docs/releases/`.
   Release notes are release notes only: they say nothing of manual checks
   or the walkthrough.
+- **`after-adr-070`** (PR to open): this handoff after #116;
+  `UNSAFE_GLOBAL_DB` refused in `modules/` too; in-range dependency
+  updates and jsdom 30.1.3; the account button named from the initials it
+  shows, which axe-core 4.14's Label in Name rule asked for. Then the four
+  fixes from ADR-070's walkthrough, each with its test and a check under
+  *Regressions*: a skip link and a main landmark (#121, MC-R08); the
+  Account page showing and saving the account's own language (#119,
+  MC-R09); its recent work read again after its dialogs (#122, MC-R10);
+  and a refused password marked on its field, with a way on, under the
+  new code `password_incorrect` (#120, MC-R11).
 - **Working agreements** are below, unchanged: one PR per feature, ADR
   first; chores ride along; commits authored Zhenzhong Zhou
   <bob0823.zhou@gmail.com>; a file roadmap in every answer that changes
@@ -185,13 +195,10 @@ with this one, this one is current.
   superseded), #18 (site licences), #25 (what the customer kept), #33 (one
   hook for Load more keyset paging) and #41 (an organization's time zone
   for today). From ADR-070's review and its walkthrough in Chinese: #117
-  (two one-second windows while a deletion completes), #118 (the export's
-  column glossary and invoice PDFs, also under *Open decisions* in
-  `decisions.md`), #119 (the Account page's language cannot be saved when
-  none is set), #120 (the wrong-password message has no next step), #121
-  (no main landmark or skip link, WCAG 2.4.1) and #122 (the Account
-  page's recent activity stays stale until a reload). `gh issue list` to
-  review.
+  (two one-second windows while a deletion completes) and #118 (the
+  export's column glossary and invoice PDFs, also under *Open decisions*
+  in `decisions.md`); #119 to #122 are fixed on `after-adr-070`, above.
+  `gh issue list` to review.
 - **Branches:** prune the merged ones, `adr-070-organization-deletion`
   among them (`scripts/prune-branches.sh`).
 
