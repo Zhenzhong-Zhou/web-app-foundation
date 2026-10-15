@@ -1,9 +1,10 @@
 import { Alert, Button, Link, TextField, Typography } from '@mui/material';
-import { type SubmitEvent, useState } from 'react';
+import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import { api, ApiError } from '../lib/api';
+import { RESET_PASSWORD_EMAIL } from '../lib/session-keys';
 import { EMAIL_MAX_LENGTH } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
 
@@ -14,7 +15,23 @@ import { AuthLayout } from './auth-layout';
  */
 export function ForgotPasswordPage() {
   const intl = useIntl();
-  const [email, setEmail] = useState('');
+  // Filled in when Reset your password, beside a refused password, sent
+  // this tab here signed out (#120).
+  const [email, setEmail] = useState(() => {
+    try {
+      return window.sessionStorage.getItem(RESET_PASSWORD_EMAIL) ?? '';
+    } catch {
+      return '';
+    }
+  });
+  // Taken once, in an effect rather than above: React may run that twice.
+  useEffect(() => {
+    try {
+      window.sessionStorage.removeItem(RESET_PASSWORD_EMAIL);
+    } catch {
+      // Storage refused: there was nothing to take.
+    }
+  }, []);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

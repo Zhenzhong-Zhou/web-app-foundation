@@ -950,13 +950,14 @@ Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
 - **MC-R11** *(#120)* On Account, Change password with a wrong current
-  password: the refusal says to check it and try again, with a line under it
-  on reaching Forgot your password? when it is forgotten, and the Current
+  password: the refusal says to check it and try again, and the Current
   password field turns red; with VoiceOver, Tab back to it: it reads as
-  invalid, followed by the refusal. The same in Delete my account and in
-  closing an organization, in 简体中文 too (密码不正确。请检查后重试。, then
-  忘记了？…). Signed out, a wrong password marks both Email and Password,
-  never just one.
+  invalid, followed by the refusal. Under it, Forgotten it? Reset your
+  password: press it, and you are signed out, on the reset page, with your
+  email filled in; reload, and the field is empty. The same in Delete my
+  account and in closing an organization, in 简体中文 too
+  (密码不正确。请检查后重试。, then 忘记了？重置密码). Signed out, a wrong
+  password marks both Email and Password, never just one.
 - **MC-R10** *(#122)* As the only member of an organization, on Account,
   choose Delete my account: the dialog closes the organization too.
   Download everything, then cancel: "Your recent work" lists Everything
@@ -1133,3 +1134,5 @@ first.
   (#120): MC-1413 updated.
 - 2026-10-15: the way on from a refused password is on the screen, beside
   the refusal (#120): MC-R11 rewritten.
+- 2026-10-15: Reset your password beside a refused password, one press
+  to the reset page (#120): MC-R11 rewritten.

@@ -80,7 +80,9 @@ describe('LeaveOrDelete', () => {
       'That password is not correct. Check it and try again.',
     );
     // The way on for one forgotten, beside the refusal, not in it.
-    expect(screen.getByText(/^Forgotten it\? Sign out/)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Reset your password' }),
+    ).toBeInTheDocument();
   });
 
   it('deletes the account alone once the organization is going alone', async () => {

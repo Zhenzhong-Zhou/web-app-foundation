@@ -10,3 +10,9 @@ export const KEEP_SIGNED_IN = 'waf.keepSignedIn';
  * and until when (ADR-070, amended): hidden for today only.
  */
 export const HIDDEN_DELETION_BANNER = 'waf.hiddenDeletionBanner';
+
+/**
+ * The email the reset page opens with, after Reset your password beside a
+ * refused password signs this tab out: taken once, then removed.
+ */
+export const RESET_PASSWORD_EMAIL = 'waf.resetPasswordEmail';
