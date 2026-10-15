@@ -171,6 +171,9 @@ export function CloseOrganizationDialog({
     });
   }
 
+  // The password was refused (#120): marked on its field, and tied to the
+  // refusal that says what to do.
+  const wrongPassword = hasCode(scheduling.errorCode, 'password_incorrect');
   const organizationName = organization?.name ?? session?.organization?.name;
   // Thirty days ahead by definition: counted from the browser's own day, an
   // evening west of UTC would read "in 31 days" (ADR-069's day is UTC).
@@ -411,12 +414,19 @@ export function CloseOrganizationDialog({
                 fullWidth
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                error={wrongPassword}
+                describedBy={
+                  wrongPassword ? 'close-organization-error' : undefined
+                }
                 slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
               />
             </Step>
 
             {scheduling.error && (
-              <FormError message={scheduling.error}>
+              <FormError
+                id="close-organization-error"
+                message={scheduling.error}
+              >
                 {hasCode(
                   scheduling.errorCode,
                   'organization_export_required',

@@ -30,7 +30,16 @@ import { CloseOrganizationDialog } from '../settings/close-organization-dialog';
  * The refusal, and the way past it (ADR-069): both blocks are settled on
  * the Members page, by making another member Owner.
  */
-function Refusal({ error, code }: { error: string; code: string | null }) {
+function Refusal({
+  error,
+  code,
+  id,
+}: {
+  error: string;
+  code: string | null;
+  /** For the password field to point at, when it was refused (#120). */
+  id?: string;
+}) {
   const intl = useIntl();
   const can = useCan();
   const settledOnMembers =
@@ -39,7 +48,7 @@ function Refusal({ error, code }: { error: string; code: string | null }) {
   const canClose = hasCode(code, 'only_member') && can('organizations.delete');
 
   return (
-    <FormError message={error}>
+    <FormError id={id} message={error}>
       {settledOnMembers && (
         <Link component={RouterLink} to="/members">
           {intl.formatMessage({
@@ -94,6 +103,8 @@ export function LeaveOrDelete({ onChanged }: { onChanged?: () => void }) {
   if (!session) return null;
   const organization = session.organization;
   const due = session.user.deletionScheduledAt;
+  // The password was refused (#120): marked on its field.
+  const wrongPassword = hasCode(deleting.errorCode, 'password_incorrect');
 
   /**
    * The only member of an organization deletes it with their account, in
@@ -342,7 +353,11 @@ export function LeaveOrDelete({ onChanged }: { onChanged?: () => void }) {
                 })}
               </Typography>
               {deleting.error && (
-                <Refusal error={deleting.error} code={deleting.errorCode} />
+                <Refusal
+                  id="account-deletion-error"
+                  error={deleting.error}
+                  code={deleting.errorCode}
+                />
               )}
               <PasswordField
                 id="deletionPassword"
@@ -355,6 +370,10 @@ export function LeaveOrDelete({ onChanged }: { onChanged?: () => void }) {
                 fullWidth
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                error={wrongPassword}
+                describedBy={
+                  wrongPassword ? 'account-deletion-error' : undefined
+                }
                 slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
               />
             </Stack>

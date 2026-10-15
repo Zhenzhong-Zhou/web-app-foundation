@@ -26,11 +26,17 @@ import { useIntl } from 'react-intl';
  * Submitting the form hides it again. A sign-in that fails, or a change
  * the server refuses, leaves the person on the page, and a password left
  * showing while they read the error is one anybody nearby can read too.
+ *
+ * `describedBy` ties the field to a message about what was typed in it,
+ * such as a refusal of the password, with `error` marking it invalid
+ * (#120). It takes the place of a helper text's description, so a field
+ * given one has no helper text.
  */
 export function PasswordField({
   slotProps,
+  describedBy,
   ...props
-}: Omit<TextFieldProps, 'type' | 'inputRef'>) {
+}: Omit<TextFieldProps, 'type' | 'inputRef'> & { describedBy?: string }) {
   const intl = useIntl();
   const [shown, setShown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +68,10 @@ export function PasswordField({
       type={shown ? 'text' : 'password'}
       slotProps={{
         ...slotProps,
+        htmlInput: {
+          ...(slotProps?.htmlInput as object | undefined),
+          ...(describedBy ? { 'aria-describedby': describedBy } : {}),
+        },
         input: {
           ...(slotProps?.input as object | undefined),
           endAdornment: (

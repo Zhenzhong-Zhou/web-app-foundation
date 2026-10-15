@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
@@ -42,6 +42,43 @@ describe('LeaveOrDelete', () => {
 
     expect(sent).toEqual([{ password: 'secret' }]);
     expect(refresh).toHaveBeenCalled();
+  });
+
+  it('marks a refused password on its field, tied to what to do (#120)', async () => {
+    server.use(
+      http.post('/api/v1/account/deletion', () =>
+        HttpResponse.json(
+          {
+            statusCode: 401,
+            code: 'password_incorrect',
+            message: 'That password is not correct. Check it and try again.',
+          },
+          { status: 401 },
+        ),
+      ),
+    );
+    renderWithAuth(
+      <MemoryRouter>
+        <LeaveOrDelete />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Delete my account' }),
+    );
+    const field = screen.getByLabelText(/Your password/);
+    expect(field).not.toHaveAttribute('aria-invalid', 'true');
+    await userEvent.type(field, 'not-it');
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Delete my account',
+      }),
+    );
+
+    await waitFor(() => expect(field).toHaveAttribute('aria-invalid', 'true'));
+    expect(field).toHaveAccessibleDescription(
+      'That password is not correct. Check it and try again.',
+    );
   });
 
   it('deletes the account alone once the organization is going alone', async () => {

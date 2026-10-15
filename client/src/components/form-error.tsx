@@ -13,13 +13,19 @@ import { useIntl } from 'react-intl';
  *
  * `children`, when given, goes on its own line under the message: the way
  * out of a refusal, such as a link to the setting that is missing (ADR-061).
+ *
+ * `id` goes on the message itself, not the alert, for a field to point at
+ * with aria-describedby (#120): the alert's own label, "Error", would be
+ * read as the description instead of the words.
  */
 export function FormError({
   message,
   children,
+  id,
 }: {
   message: string;
   children?: ReactNode;
+  id?: string;
 }) {
   const intl = useIntl();
 
@@ -31,7 +37,7 @@ export function FormError({
         defaultMessage: 'Error',
       })}
     >
-      {message}
+      <span id={id}>{message}</span>
       {children && <Box sx={{ mt: 0.5 }}>{children}</Box>}
     </Alert>
   );

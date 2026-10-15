@@ -3,7 +3,7 @@ import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import { PasswordField } from '../components/password-field';
-import { api, messageFor } from '../lib/api';
+import { api, ApiError, hasCode, messageFor } from '../lib/api';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../lib/validation';
 
 const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
@@ -15,6 +15,7 @@ export function ChangePasswordForm() {
   const intl = useIntl();
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -31,6 +32,7 @@ export function ChangePasswordForm() {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+    setErrorCode(null);
     setResult(null);
 
     try {
@@ -62,10 +64,14 @@ export function ChangePasswordForm() {
       setForm(EMPTY);
     } catch (caught) {
       setError(messageFor(caught));
+      setErrorCode(caught instanceof ApiError ? (caught.code ?? null) : null);
     } finally {
       setSubmitting(false);
     }
   }
+
+  // The current password was refused (#120): marked on its field.
+  const wrongPassword = hasCode(errorCode, 'password_incorrect');
 
   const changePassword = intl.formatMessage({
     id: 'account.password.title',
@@ -78,7 +84,11 @@ export function ChangePasswordForm() {
         {changePassword}
       </Typography>
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {error && (
+        <Alert id="change-password-error" severity="error">
+          {error}
+        </Alert>
+      )}
       {result && <Alert severity="success">{result}</Alert>}
 
       {/* Required even though the caller is signed in: without it a stolen
@@ -96,6 +106,8 @@ export function ChangePasswordForm() {
         fullWidth
         value={form.currentPassword}
         onChange={update('currentPassword')}
+        error={wrongPassword}
+        describedBy={wrongPassword ? 'change-password-error' : undefined}
         slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_LENGTH } }}
       />
 
