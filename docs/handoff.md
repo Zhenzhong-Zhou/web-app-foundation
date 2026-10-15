@@ -147,10 +147,11 @@ with this one, this one is current.
 - **`deletion-started`** (PR to open): #117, an ADR-070 amendment, then
   migration 0062. Completing a deletion marks its start under the
   organization's lock before erasing anything; a cancel or an upload after
-  the mark is refused, and an upload writes its bytes before its row
-  commits. Also, agreed after #120's review: Reset your password beside a
-  refused password, one press to the reset page with the email filled in
-  (MC-R11 rewritten).
+  the mark is refused. An upload writes its bytes first, then saves its
+  row in a short transaction, and deletes its bytes if refused; the
+  storage client has timeouts. Also, after #120's review: Email me a reset
+  link beside a refused password, sending the reset email to the person's
+  own address while they stay signed in (MC-R11 rewritten).
 - **Next, ADR-071** (#118), decided so far: six documents as PDFs drawn on
   the server (pdfmake, embedded Noto fonts), the invoice, credit note and
   packing slip in their ADR-055 look, and the RMA, purchase order and pro
