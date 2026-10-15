@@ -284,11 +284,10 @@ message, and the screen keys on the code, never on the words.
   `aria-describedby` points at the refusal's words through `FormError`'s
   `id`, which sits on the words rather than the alert, whose own label,
   "Error", would be read instead.
-- **With a code, the way out is the screen's to say.** The message says
-  what is wrong; the screen, keyed on the code, adds the link or the words
-  for what to press, from the client's catalogue beside the control they
-  name, so renaming the control renames them too (#120). A refusal with no
-  code still says what to do next in its own message, as most do.
+- **With a code, the message still says what to do next, but names no
+  control on the screen.** The screen, keyed on the code, adds the link or
+  the words naming its own control, from the client's catalogue, so
+  renaming the control renames them too (#120).
 
 ## Tests
 
@@ -320,11 +319,11 @@ message, and the screen keys on the code, never on the words.
 - Nothing is mocked in a Playwright spec. A mocked API there only proves the UI
   agrees with our assumptions about the server, which is the class of bug that
   layer exists to catch.
-- `getByRole`, never `getByLabelText`, in a component test: MUI renders a
-  `TextField` label as a div linked by `aria-labelledby` rather than a real
-  `label`, so the label query finds nothing. The one exception is a password
-  field, which has no ARIA role for `getByRole` to find: there,
-  `getByLabelText`.
+- `getByRole`, never `getByLabelText`, in a component test: it finds a
+  control as assistive technology does, by its role and accessible name,
+  so a test also fails when the role is wrong, which a label match alone
+  would miss. The one exception is a password field, which has no ARIA role
+  for `getByRole` to find: there, `getByLabelText`.
 
 ---
 
