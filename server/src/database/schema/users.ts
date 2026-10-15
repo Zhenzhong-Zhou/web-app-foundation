@@ -80,8 +80,8 @@ export const users = pgTable(
     // anonymises the address to deleted-<uuid>@invalid, which frees the
     // original for re-registration.
     uniqueIndex('users_email_lower_key').on(sql`lower(${t.email})`),
-    // For the cascade that clears it when an organization is deleted, and
-    // for the Account page's cancel, which finds the organization by it.
+    // For the foreign key that clears it when an organization is deleted,
+    // and for the organization's cancel, which keeps the accounts by it.
     index('users_deletion_with_organization_id_idx')
       .on(t.deletionWithOrganizationId)
       .where(sql`${t.deletionWithOrganizationId} is not null`),

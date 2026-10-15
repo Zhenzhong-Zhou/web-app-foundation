@@ -292,9 +292,26 @@ export class AccountDeletionService {
   }
 
   /**
-   * An account kept with its organization, whose cancel cleared its day in
-   * the organization's transaction (ADR-070): recorded in its history,
-   * without an email of its own, since the organization's says both stay.
+   * The accounts going with an organization, kept with it in the
+   * transaction that cancels its deletion (ADR-070): both stay, or neither
+   * does. Their ids, for recordKept() once it commits.
+   */
+  async keepWith(
+    executor: Executor,
+    organizationId: string,
+  ): Promise<string[]> {
+    const kept = await executor
+      .update(users)
+      .set({ deletionScheduledAt: null, deletionWithOrganizationId: null })
+      .where(eq(users.deletionWithOrganizationId, organizationId))
+      .returning({ id: users.id });
+    return kept.map(({ id }) => id);
+  }
+
+  /**
+   * An account kept with its organization, by keepWith() in the
+   * organization's transaction (ADR-070): recorded in its history, without
+   * an email of its own, since the organization's says both stay.
    */
   async recordKept(userId: string, context: RequestContext): Promise<void> {
     await this.events.record(userId, 'account.deletion_cancelled', {
@@ -606,7 +623,7 @@ export class AccountDeletionService {
    */
   private async unschedule(
     userId: string,
-    build: ((context: DeletionMailContext) => Mail) | undefined,
+    build: (context: DeletionMailContext) => Mail,
     meta?: EventMeta,
   ): Promise<boolean> {
     const cancelled = await this.db
@@ -617,7 +634,7 @@ export class AccountDeletionService {
     if (cancelled.length === 0) return false;
 
     await this.events.record(userId, 'account.deletion_cancelled', meta);
-    if (build) await this.send(userId, build, meta?.language);
+    await this.send(userId, build, meta?.language);
     return true;
   }
 

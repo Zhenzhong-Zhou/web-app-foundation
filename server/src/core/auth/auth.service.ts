@@ -80,7 +80,7 @@ export interface CurrentSession {
       expiryWarningDays: number;
       expiryCriticalDays: number;
     };
-    /** The deletion day while one is pending, and whether it is under way (ADR-070). */
+    /** The deletion day while one is pending, and where it stands (ADR-070). */
     deletionScheduledAt: string | null;
     deletionStage: DeletionStage | null;
     deletionWithAccount: boolean;

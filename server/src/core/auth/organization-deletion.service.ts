@@ -79,14 +79,12 @@ function lastWeekCutoff(now: Date): string {
 /**
  * Where a deletion stands (ADR-070, amended): under way once its day has
  * ended everywhere, in its last week from the reminder on, scheduled
- * before. One function, so the session, the reminder and the cancel
- * cannot draw the lines differently.
+ * before. One function, so the session and the cancel cannot draw the
+ * lines differently; the reminder's query uses the same two cutoffs.
  */
-export function deletionStageOf(
-  day: string | null,
-  now: Date = new Date(),
-): DeletionStage | null {
+export function deletionStageOf(day: string | null): DeletionStage | null {
   if (!day) return null;
+  const now = new Date();
   if (day < todayWhereDaysEndLast(now)) return 'underWay';
   return day <= lastWeekCutoff(now) ? 'lastWeek' : 'scheduled';
 }
@@ -467,13 +465,8 @@ export class OrganizationDeletionService {
         .update(organizations)
         .set({ deletionScheduledAt: null, deletionRemindedAt: null })
         .where(eq(organizations.id, organizationId));
-      // Scheduled together, cancelled together, whoever cancels, and in
-      // this transaction: both stay, or neither does.
-      const kept = await tx
-        .update(users)
-        .set({ deletionScheduledAt: null, deletionWithOrganizationId: null })
-        .where(eq(users.deletionWithOrganizationId, organizationId))
-        .returning({ id: users.id });
+      // Scheduled together, cancelled together, whoever cancels.
+      const kept = await this.accountDeletion.keepWith(tx, organizationId);
       if (audit) {
         await tx.insert(auditLog).values({
           organizationId,
@@ -492,7 +485,7 @@ export class OrganizationDeletionService {
 
     // Recorded in each kept account's history; no email of the account's
     // own, since the organization's says both stay.
-    for (const { id } of outcome.kept) {
+    for (const id of outcome.kept) {
       await this.accountDeletion.recordKept(id, context);
     }
 
