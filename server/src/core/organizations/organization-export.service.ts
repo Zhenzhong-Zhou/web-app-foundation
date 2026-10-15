@@ -1,5 +1,5 @@
 import { Readable, Transform } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { finished, pipeline } from 'node:stream/promises';
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, eq, isNull, type SQL, sql } from 'drizzle-orm';
@@ -64,67 +64,53 @@ export class OrganizationExportService {
     locale: Locale,
   ): Promise<void> {
     const counts: Counts = { tables: 0, rows: 0, files: 0 };
-    // Resolved once the last table is read: then the transaction ends, and
-    // the files after it, most of the download, stream with no connection
-    // held.
-    let tablesRead!: () => void;
-    const allTablesRead = new Promise<void>((resolve) => {
-      tablesRead = resolve;
-    });
-    let reading = 0;
-    let streaming: Promise<void> | undefined;
-    let exporting = '';
 
     try {
-      await this.tenantDb.transaction(async (tx, organizationId) => {
-        exporting = organizationId;
-        await tx.execute(
-          sql`set transaction isolation level repeatable read, read only`,
-        );
-        // Moments in UTC whatever the server's setting, as the README says.
-        await tx.execute(sql`set local time zone 'UTC'`);
-
-        const [organization] = await tx
-          .select({ name: organizations.name, slug: organizations.slug })
-          .from(organizations)
-          .where(eq(organizations.id, organizationId));
-
-        const today = todayUtc(new Date());
-        const zip = new ZipFile();
-        // A Readable at run time, typed as the older stream interface.
-        const archive = zip.outputStream as Readable;
-        // yazl reports a failed entry on the ZipFile, not on its output.
-        zip.on('error', (error: Error) => archive.destroy(error));
-
-        zip.addBuffer(
-          Buffer.from(readme(organization.name, today, locale), 'utf8'),
-          'README.txt',
-        );
-
-        const csv = (name: string, query: SQL) => {
-          counts.tables += 1;
-          reading += 1;
-          zip.addReadStream(
-            Readable.from(
-              whenDone(
-                csvOf(tx, `export_${counts.tables}`, query, counts),
-                () => {
-                  reading -= 1;
-                  if (reading === 0) tablesRead();
-                },
-              ),
-            ),
-            `${name}.csv`,
+      const { streaming } = await this.tenantDb.transaction(
+        async (tx, organizationId) => {
+          await tx.execute(
+            sql`set transaction isolation level repeatable read, read only`,
           );
-        };
+          // Moments in UTC whatever the server's setting, as the README says.
+          await tx.execute(sql`set local time zone 'UTC'`);
 
-        csv(
-          'organization',
-          sql`select * from organizations where id = ${organizationId}`,
-        );
-        csv(
-          'members',
-          sql`select u.id as user_id, u.name, u.email, r.name as role,
+          const [organization] = await tx
+            .select({ name: organizations.name, slug: organizations.slug })
+            .from(organizations)
+            .where(eq(organizations.id, organizationId));
+
+          const today = todayUtc(new Date());
+          const zip = new ZipFile();
+          // A Readable at run time, typed as the older stream interface.
+          const archive = zip.outputStream as Readable;
+          // yazl reports a failed entry on the ZipFile, not on its output.
+          zip.on('error', (error: Error) => archive.destroy(error));
+
+          zip.addBuffer(
+            Buffer.from(readme(organization.name, today, locale), 'utf8'),
+            'README.txt',
+          );
+
+          // Each table's read, finished: then the transaction ends, and the
+          // files after them, most of the download, stream with no connection
+          // held.
+          const tables: Promise<void>[] = [];
+          const csv = (name: string, query: SQL) => {
+            counts.tables += 1;
+            const rows = Readable.from(
+              csvOf(tx, `export_${counts.tables}`, query, counts),
+            );
+            tables.push(finished(rows));
+            zip.addReadStream(rows, `${name}.csv`);
+          };
+
+          csv(
+            'organization',
+            sql`select * from organizations where id = ${organizationId}`,
+          );
+          csv(
+            'members',
+            sql`select u.id as user_id, u.name, u.email, r.name as role,
                    m.job_title, m.department, m.location, m.work_phone,
                    m.extension, m.created_at as joined_at
             from memberships m
@@ -132,87 +118,91 @@ export class OrganizationExportService {
             join roles r on r.id = m.role_id
             where m.organization_id = ${organizationId}
             order by m.created_at, m.id`,
-        );
-        // What each role may do: role_permissions has no organization_id of
-        // its own, so the tables below cannot find it.
-        csv(
-          'role_permissions',
-          sql`select r.id as role_id, r.name as role, p.key as permission
+          );
+          // What each role may do: role_permissions has no organization_id of
+          // its own, so the tables below cannot find it.
+          csv(
+            'role_permissions',
+            sql`select r.id as role_id, r.name as role, p.key as permission
             from role_permissions rp
             join roles r on r.id = rp.role_id
             join permissions p on p.id = rp.permission_id
             where r.organization_id = ${organizationId}
             order by r.name, p.key`,
-        );
-        for (const table of exportedTables()) {
-          csv(
-            table,
-            sql`select * from ${sql.identifier(table)}
+          );
+          for (const table of exportedTables()) {
+            csv(
+              table,
+              sql`select * from ${sql.identifier(table)}
               where organization_id = ${organizationId}
               order by 1`,
-          );
-        }
+            );
+          }
 
-        // The files in use, at the largest size kept. A released file is
-        // in files.csv, its bytes on their way to the purge (ADR-059).
-        const uploaded = await tx
-          .select({
-            id: files.id,
-            sizes: files.sizes,
-            originalName: files.originalName,
-          })
-          .from(files)
-          .where(
-            and(
-              eq(files.organizationId, organizationId),
-              isNull(files.releasedAt),
-            ),
-          )
-          .orderBy(files.id);
+          // The files in use, at the largest size kept. A released file is
+          // in files.csv, its bytes on their way to the purge (ADR-059).
+          const uploaded = await tx
+            .select({
+              id: files.id,
+              sizes: files.sizes,
+              originalName: files.originalName,
+            })
+            .from(files)
+            .where(
+              and(
+                eq(files.organizationId, organizationId),
+                isNull(files.releasedAt),
+              ),
+            )
+            .orderBy(files.id);
 
-        for (const file of uploaded) {
-          const size = largest(file.sizes);
-          if (!size) continue;
-          counts.files += 1;
-          // Stored as they are: WebP and PNG are compressed already.
-          zip.addReadStream(
-            Readable.from(this.bytesOf(keyOf(organizationId, file.id, size))),
-            `files/${file.id}-${file.originalName}`,
-            { compress: false },
-          );
-        }
-        zip.end();
+          for (const file of uploaded) {
+            const size = largest(file.sizes);
+            if (!size) continue;
+            counts.files += 1;
+            // Stored as they are: WebP and PNG are compressed already.
+            zip.addReadStream(
+              Readable.from(this.bytesOf(keyOf(organizationId, file.id, size))),
+              `files/${file.id}-${file.originalName}`,
+              { compress: false },
+            );
+          }
+          zip.end();
 
-        res.setHeader('Content-Type', 'application/zip');
-        res.setHeader(
-          'Content-Disposition',
-          `attachment; filename="${organization.slug}-export-${today}.zip"`,
-        );
-
-        const record = () =>
-          runInTenantContext({ userId: context.userId, organizationId }, () =>
-            this.audit.record({
-              actorId: context.userId,
-              action: AUDIT_ACTIONS.ORGANIZATION_EXPORTED,
-              resourceType: 'organization',
-              resourceId: organizationId,
-              payload: { ...counts },
-              ip: context.ip,
-              userAgent: context.userAgent,
-            }),
+          res.setHeader('Content-Type', 'application/zip');
+          res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="${organization.slug}-export-${today}.zip"`,
           );
 
-        streaming = pipeline(archive, auditedAtTheEnd(record), res);
-        // The connection is held only while a table is read; a download that
-        // stops first ends it as well.
-        await Promise.race([allTablesRead, streaming]);
-      });
+          const record = () =>
+            runInTenantContext({ userId: context.userId, organizationId }, () =>
+              this.audit.record({
+                actorId: context.userId,
+                action: AUDIT_ACTIONS.ORGANIZATION_EXPORTED,
+                resourceType: 'organization',
+                resourceId: organizationId,
+                payload: { ...counts },
+                ip: context.ip,
+                userAgent: context.userAgent,
+              }),
+            );
+
+          const streaming = pipeline(archive, auditedAtTheEnd(record), res);
+          // The connection is held only while a table is read; a download that
+          // stops first ends it as well.
+          await Promise.race([Promise.all(tables), streaming]);
+          return { streaming };
+        },
+      );
       await streaming;
     } catch (error) {
       // Nothing to answer with once the download has begun: the browser
       // sees it cut short. Logged; a transaction still open rolls back.
       if (res.headersSent) {
-        this.logger.warn(`Export of ${exporting} stopped: ${String(error)}`);
+        this.logger.warn(
+          `Export of ${context.organizationId} stopped: ${String(error)}`,
+        );
         return;
       }
       throw error;
@@ -223,18 +213,6 @@ export class OrganizationExportService {
   private async *bytesOf(key: string): AsyncGenerator<Buffer> {
     const stream = await this.storage.get(key);
     for await (const chunk of stream) yield chunk as Buffer;
-  }
-}
-
-/** The generator's values, then done() however it ends. */
-async function* whenDone<T>(
-  values: AsyncGenerator<T>,
-  done: () => void,
-): AsyncGenerator<T> {
-  try {
-    yield* values;
-  } finally {
-    done();
   }
 }
 

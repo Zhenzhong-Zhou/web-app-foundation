@@ -3,7 +3,7 @@ import type { Mail } from '../../shared/mail/mail.service';
 import { compose, dayOf, type DeletionMailContext } from './deletion-mail';
 
 /**
- * The three emails every member of an organization gets about its deletion
+ * The emails every member of an organization gets about its deletion
  * (ADR-070), each in the member's language. What a member reads depends on
  * who they are in it: an Owner is told about the export, and the only
  * member whose account goes with the organization is told so.
@@ -18,6 +18,25 @@ export interface MemberSide {
 
 /** Every member's banner names the day, so the link is the app itself. */
 const APP = '/';
+
+/** Who can cancel, and until when: said when scheduled, and a week before. */
+const UNTIL = t({
+  id: 'mail.organizationDeletion.scheduled.until',
+  defaultMessage:
+    'Until then everyone can keep working as usual. Only an Owner can cancel the deletion, until that day is over.',
+});
+
+/** For every member but an only one whose account goes too. */
+function accountStays(organization: string): Translatable {
+  return t(
+    {
+      id: 'mail.organizationDeletion.scheduled.account',
+      defaultMessage:
+        'Your account stays: only your membership of {organization} ends.',
+    },
+    { organization },
+  );
+}
 
 /** The deletion is scheduled: by whom, after which day, and what follows. */
 export function organizationDeletionScheduledMail(
@@ -36,11 +55,7 @@ export function organizationDeletionScheduledMail(
       },
       { actor, organization, date },
     ),
-    t({
-      id: 'mail.organizationDeletion.scheduled.until',
-      defaultMessage:
-        'Until then everyone can keep working as usual. Only an Owner can cancel the deletion, until that day is over.',
-    }),
+    UNTIL,
   ];
 
   if (side.isOwner) {
@@ -59,14 +74,7 @@ export function organizationDeletionScheduledMail(
           defaultMessage:
             'Your account will be deleted straight after it, and every other device has been signed out.',
         })
-      : t(
-          {
-            id: 'mail.organizationDeletion.scheduled.account',
-            defaultMessage:
-              'Your account stays: only your membership of {organization} ends.',
-          },
-          { organization },
-        ),
+      : accountStays(organization),
   );
 
   return compose(
@@ -188,11 +196,7 @@ export function organizationDeletionReminderMail(
       },
       { organization, date },
     ),
-    t({
-      id: 'mail.organizationDeletion.scheduled.until',
-      defaultMessage:
-        'Until then everyone can keep working as usual. Only an Owner can cancel the deletion, until that day is over.',
-    }),
+    UNTIL,
   ];
   if (side.isOwner) {
     paragraphs.push(
@@ -209,14 +213,7 @@ export function organizationDeletionReminderMail(
           id: 'mail.organizationDeletion.reminder.withAccount',
           defaultMessage: 'Your account will be deleted straight after it.',
         })
-      : t(
-          {
-            id: 'mail.organizationDeletion.scheduled.account',
-            defaultMessage:
-              'Your account stays: only your membership of {organization} ends.',
-          },
-          { organization },
-        ),
+      : accountStays(organization),
   );
 
   return compose(

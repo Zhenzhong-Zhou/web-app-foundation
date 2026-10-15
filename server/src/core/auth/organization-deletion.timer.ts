@@ -4,9 +4,10 @@ import { HourlyTimer } from '../../common/hourly-timer';
 import { OrganizationDeletionService } from './organization-deletion.service';
 
 /**
- * Completes the organization deletions whose day has ended everywhere
- * (ADR-070), then the accounts that went with them. Two instances running
- * at once find nothing left to do the second time.
+ * Reminds the members of the deletions 7 days away, then completes those
+ * whose day has ended everywhere (ADR-070), and the accounts that went
+ * with them. Two instances running at once find nothing left to do the
+ * second time.
  */
 @Injectable()
 export class OrganizationDeletionTimer extends HourlyTimer {
@@ -15,10 +16,11 @@ export class OrganizationDeletionTimer extends HourlyTimer {
   }
 
   protected async run(): Promise<void> {
+    const reminded = await this.deletion.remindDue();
     const { completed, failed } = await this.deletion.completeDue();
-    if (completed || failed) {
+    if (reminded || completed || failed) {
       this.logger.log(
-        `Organization deletions: ${completed} completed, ${failed} failed`,
+        `Organization deletions: ${reminded} reminded, ${completed} completed, ${failed} failed`,
       );
     }
   }

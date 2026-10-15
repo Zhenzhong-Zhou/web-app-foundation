@@ -5,7 +5,7 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { and, count, eq, gt, gte, isNull, lt, lte, sql } from 'drizzle-orm';
+import { and, count, eq, isNull, lt, lte, not, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
 import type { Locale } from '../../common/locales';
@@ -28,6 +28,7 @@ import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { recordContext } from '../audit/audit-context';
 import { SYSTEM_ROLES } from '../authorization/permissions';
 import { FILE_STORAGE, type FileStorage, keyOf } from '../files/file-storage';
+import { lastExportOf } from '../organizations/last-export';
 import { AccountService } from './account.service';
 import {
   AccountDeletionService,
@@ -112,21 +113,11 @@ export class OrganizationDeletionService {
       }
 
       if (!dto.declineExport) {
-        const [exported] = await tx
-          .select({ id: auditLog.id })
-          .from(auditLog)
-          .where(
-            and(
-              eq(auditLog.organizationId, organizationId),
-              eq(auditLog.action, AUDIT_ACTIONS.ORGANIZATION_EXPORTED),
-              gt(
-                auditLog.createdAt,
-                new Date(now.getTime() - EXPORT_WITHIN_MS),
-              ),
-            ),
-          )
-          .limit(1);
-        if (!exported) {
+        const exported = await lastExportOf(tx, organizationId);
+        if (
+          !exported ||
+          exported.exportedAt.getTime() <= now.getTime() - EXPORT_WITHIN_MS
+        ) {
           throw new ConflictException(
             withCode(
               t({
@@ -161,10 +152,10 @@ export class OrganizationDeletionService {
       return { day, scheduled: true, name: organization.name } as const;
     });
 
-    if (outcome.scheduled && dto.deleteAccount) {
-      await this.accountDeletion.signOutForDeletion(context);
-    }
     if (outcome.scheduled) {
+      if (dto.deleteAccount) {
+        await this.accountDeletion.signOutForDeletion(context);
+      }
       recordContext({
         deletionScheduledAt: outcome.day,
         export: dto.declineExport ? 'declined' : 'downloaded',
@@ -235,8 +226,6 @@ export class OrganizationDeletionService {
   async completeDue(
     now = new Date(),
   ): Promise<{ completed: number; failed: number }> {
-    await this.remindDue(now);
-
     const due = await this.db
       .select({ id: organizations.id })
       .from(organizations)
@@ -279,7 +268,7 @@ export class OrganizationDeletionService {
             organizations.deletionScheduledAt,
             todayUtc(new Date(now.getTime() + REMIND_DAYS_BEFORE * DAY)),
           ),
-          gte(organizations.deletionScheduledAt, todayWhereDaysEndLast(now)),
+          not(dueBy(now)),
         ),
       )
       .returning({
@@ -499,9 +488,9 @@ export class OrganizationDeletionService {
   }
 
   /**
-   * The organization's name, typed to confirm (ADR-070, amended): space
-   * around it forgiven, nothing else, so a wrong organization is never
-   * deleted by a reflex.
+   * The organization's name, typed to confirm (ADR-070, amended): trimmed
+   * by the DTO, as the name was when stored, and nothing else forgiven,
+   * so a wrong organization is never deleted by a reflex.
    */
   private async confirmName(
     organizationId: string,
@@ -511,7 +500,7 @@ export class OrganizationDeletionService {
       .select({ name: organizations.name })
       .from(organizations)
       .where(eq(organizations.id, organizationId));
-    if (typed.trim() !== organization?.name.trim()) {
+    if (typed !== organization?.name) {
       throw new BadRequestException(
         t({
           id: 'organization.deletion.nameMismatch',

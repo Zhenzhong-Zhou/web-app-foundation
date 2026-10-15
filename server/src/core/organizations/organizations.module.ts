@@ -9,7 +9,8 @@ import { OrganizationsService } from './organizations.service';
 
 @Module({
   // FilesService attaches and releases the logo (ADR-060); the storage and
-  // AuditService for the export (ADR-070).
+  // AuditService for the export, and PermissionsService for who sees the
+  // last one (ADR-070).
   imports: [AuditModule, AuthorizationModule, FilesModule],
   controllers: [OrganizationController],
   providers: [OrganizationsService, OrganizationExportService],
