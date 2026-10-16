@@ -624,6 +624,7 @@ export type OrganizationProfile = {
   accentColor: string | null;
   rail: 'dark' | 'light';
   logoOnDocuments: boolean;
+  paperSize: 'letter' | 'a4' | null;
   expiryWarningDays: number;
   expiryCriticalDays: number;
   idleSignOutMinutes: number | null;
@@ -650,6 +651,7 @@ export type UpdateOrganizationDto = {
   rail?: 'dark' | 'light';
   logoFileId?: string | null;
   logoOnDocuments?: boolean;
+  paperSize?: 'letter' | 'a4' | null;
   expiryWarningDays?: number;
   expiryCriticalDays?: number;
   idleSignOutMinutes?: 15 | 30 | 60 | 240 | null;

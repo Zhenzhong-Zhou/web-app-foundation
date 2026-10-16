@@ -9671,6 +9671,17 @@
           "logoOnDocuments": {
             "type": "boolean"
           },
+          "paperSize": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "letter",
+              "a4",
+              null
+            ]
+          },
           "expiryWarningDays": {
             "type": "number"
           },
@@ -9719,6 +9730,7 @@
           "accentColor",
           "rail",
           "logoOnDocuments",
+          "paperSize",
           "expiryWarningDays",
           "expiryCriticalDays",
           "idleSignOutMinutes",
@@ -9836,6 +9848,17 @@
           },
           "logoOnDocuments": {
             "type": "boolean"
+          },
+          "paperSize": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "letter",
+              "a4",
+              null
+            ]
           },
           "expiryWarningDays": {
             "type": "number",

@@ -7,13 +7,11 @@ import { Injectable, type OnModuleInit } from '@nestjs/common';
 import pdfmake from 'pdfmake';
 import type { TDocumentDefinitions } from 'pdfmake/interfaces';
 
+import type { PaperSize } from '../../database/schema';
 import { CHINESE, LATIN } from './fonts';
 
 /** The committed fonts, the same three levels up from src/ and dist/. */
 const FONTS = resolve(__dirname, '..', '..', '..', 'assets', 'fonts');
-
-/** The paper an organization prints on (ADR-071). */
-export type PaperSize = 'letter' | 'a4';
 
 /** 16 mm, the margin the print pages had, in points. */
 const MARGIN = (16 / 25.4) * 72;

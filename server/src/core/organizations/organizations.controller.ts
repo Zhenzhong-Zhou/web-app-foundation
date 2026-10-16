@@ -103,6 +103,8 @@ export class OrganizationController {
       'documentLanguage',
       'documentSecondLanguage',
       'requiredNameLanguages',
+      // What every document is drawn on (ADR-071).
+      'paperSize',
       // Branding and the expiry days (ADR-060). The accent is logged as
       // sent; the row holds the shade that passed.
       'logoFileId',

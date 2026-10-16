@@ -564,6 +564,41 @@ describe('Invoices (e2e)', () => {
       );
     });
 
+    it('draws on the paper the organization chose, else its country’s (ADR-071)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+      const mediaBox = async () =>
+        (
+          (
+            await org.agent
+              .get(`/v1/invoices/${r.invoice.id}/pdf`)
+              .responseType('blob')
+              .expect(200)
+          ).body as Buffer
+        )
+          .toString('latin1')
+          .match(/\/MediaBox \[[^\]]*\]/)?.[0];
+
+      // Chosen, it wins over the Canadian seller's Letter.
+      await org.agent
+        .patch('/v1/organization')
+        .send({ paperSize: 'a4' })
+        .expect(204);
+      expect(await mediaBox()).toBe('/MediaBox [0 0 595.28 841.89]');
+
+      // Only Letter or A4; null goes back to automatic.
+      await org.agent
+        .patch('/v1/organization')
+        .send({ paperSize: 'legal' })
+        .expect(400);
+      await org.agent
+        .patch('/v1/organization')
+        .send({ paperSize: null })
+        .expect(204);
+      expect(await mediaBox()).toBe('/MediaBox [0 0 612 792]');
+    });
+
     it('packs every issued invoice into the export, as its PDF (ADR-071)', async () => {
       const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);

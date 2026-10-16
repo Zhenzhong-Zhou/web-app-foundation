@@ -6,14 +6,14 @@ import type { Response } from 'express';
 import type { TDocumentDefinitions } from 'pdfmake/interfaces';
 
 import type { Locale } from '../../common/locales';
-import { organizations } from '../../database/schema';
+import { organizations, type PaperSize } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { Permission } from '../authorization/permissions';
 import { dispositionOf } from '../files/content-disposition';
 import { FilesService } from '../files/files.service';
 import { registeredAddress } from '../organizations/registered-address';
 import { type DocumentText, documentText } from './document-text';
-import { type PaperSize, PdfRenderer } from './pdf-renderer.service';
+import { PdfRenderer } from './pdf-renderer.service';
 
 /** A document as its module reads it, ready to draw (ADR-071). */
 export interface Printable {
@@ -37,6 +37,8 @@ export interface Letterhead {
   logo: string | null;
   /** The registered address's country, for the paper and the formatting. */
   country: string | null;
+  /** The paper the organization chose; null takes it from the country. */
+  paper: PaperSize | null;
 }
 
 /** Letter where it is the paper sold, A4 everywhere else (ADR-071). */
@@ -93,7 +95,8 @@ export class DocumentsService {
         documentText(document.language, document.secondLanguage, country),
         letterhead.logo,
       ),
-      paperFor(country),
+      // The organization's choice for every document, or the country's.
+      letterhead.paper ?? paperFor(country),
     );
   }
 
@@ -103,12 +106,13 @@ export class DocumentsService {
    * once by a caller drawing many.
    */
   async letterhead(): Promise<Letterhead> {
-    const { logoFileId, country } = await this.tenantDb.transaction(
+    const { logoFileId, country, paper } = await this.tenantDb.transaction(
       async (tx, organizationId) => {
         const [organization] = await tx
           .select({
             logoFileId: organizations.logoFileId,
             logoOnDocuments: organizations.logoOnDocuments,
+            paperSize: organizations.paperSize,
           })
           .from(organizations)
           .where(eq(organizations.id, organizationId));
@@ -118,11 +122,12 @@ export class DocumentsService {
             ? organization.logoFileId
             : null,
           country: address?.country ?? null,
+          paper: organization?.paperSize ?? null,
         };
       },
     );
 
-    if (!logoFileId) return { logo: null, country };
+    if (!logoFileId) return { logo: null, country, paper };
     // A logo is shown to anyone in the organization: it asks no permission.
     const file = await this.files.find(
       logoFileId,
@@ -133,6 +138,7 @@ export class DocumentsService {
     return {
       logo: `data:${file.contentType};base64,${bytes.toString('base64')}`,
       country,
+      paper,
     };
   }
 }

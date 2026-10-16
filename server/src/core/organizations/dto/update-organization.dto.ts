@@ -27,6 +27,8 @@ import {
   type LicencePolicy,
   ORGANIZATION_RAILS,
   type OrganizationRail,
+  PAPER_SIZES,
+  type PaperSize,
 } from '../../../database/schema';
 
 /**
@@ -143,6 +145,14 @@ export class UpdateOrganizationDto {
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsBoolean()
   logoOnDocuments?: boolean;
+
+  /**
+   * The paper every document is drawn on (ADR-071): Letter or A4, or null
+   * for automatic, from the registered address's country.
+   */
+  @IsOptional()
+  @IsIn(PAPER_SIZES)
+  paperSize?: PaperSize | null;
 
   /**
    * When a lot counts as expiring (ADR-060), each 1 to 365 days; critical
