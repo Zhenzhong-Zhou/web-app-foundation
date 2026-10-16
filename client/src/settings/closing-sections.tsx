@@ -7,15 +7,15 @@ import type { OrganizationProfile } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { FormError } from '../components/form-error';
-import { api, apiUrl } from '../lib/api';
+import { api } from '../lib/api';
 import { formatWhen } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useSubmit } from '../lib/use-submit';
 import { CloseOrganizationDialog } from './close-organization-dialog';
 import {
   dayWithDaysLeft,
-  EXPORT_PATH,
   exportedBy,
+  useExportUrl,
 } from './organization-deletion';
 
 /** How often, and for how long, a started download is checked on. */
@@ -69,6 +69,7 @@ function DownloadEverything({
 }) {
   const intl = useIntl();
   const { session } = useAuth();
+  const exportUrl = useExportUrl();
   const last = organization.lastExport;
   // A download ends outside the page, so the section asks every few
   // seconds until the export it started is recorded, as the dialog does,
@@ -152,7 +153,7 @@ function DownloadEverything({
           <Button
             variant="outlined"
             startIcon={<DownloadIcon />}
-            href={apiUrl(EXPORT_PATH)}
+            href={exportUrl}
             download
             onClick={() => setDownloadedAt(Date.now())}
           >

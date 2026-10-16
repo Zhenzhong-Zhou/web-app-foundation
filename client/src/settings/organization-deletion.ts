@@ -1,6 +1,8 @@
 import type { IntlShape } from 'react-intl';
 
 import type { OrganizationLastExport } from '../api/types.gen';
+import { useLanguage } from '../i18n/use-language';
+import { apiUrl } from '../lib/api';
 import { daysUntil } from '../lib/expiry';
 import { formatDay } from '../lib/format';
 
@@ -13,6 +15,16 @@ import { formatDay } from '../lib/format';
 
 /** The export route, followed as a plain link: the ZIP goes to disk. */
 export const EXPORT_PATH = '/organization/export';
+
+/**
+ * The export's address, saying the language the app shows (ADR-071): the
+ * README's glossary is written in it. A plain link cannot send the app's
+ * Accept-Language, and the browser's may be another.
+ */
+export function useExportUrl(): string {
+  const { locale } = useLanguage();
+  return apiUrl(`${EXPORT_PATH}?locale=${encodeURIComponent(locale)}`);
+}
 
 /**
  * "14 Nov 2026 (in 30 days)": the day as the email names it, unconverted

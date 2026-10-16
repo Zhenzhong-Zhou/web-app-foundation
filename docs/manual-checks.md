@@ -959,7 +959,9 @@ await fetch(`${api}/v1/files/product-image`, {
   Profile). The ZIP has `documents/invoices/` with both issued invoices
   and `documents/credit-notes/` with the credit note, each named by its
   number and the same as Download PDF gives it; the draft is not there.
-  README.txt ends with a glossary, a line per column. Open
+  README.txt ends with a glossary, a line per column, in the language
+  the app shows, even on an English browser: switch the app to 简体中文 and
+  download again, and the README is Chinese. Open
   `organization.csv` in Excel or Numbers: `created_at` reads like
   `2026-10-16 03:31:59` and is taken as a date.
 
@@ -1162,3 +1164,5 @@ first.
   (ADR-071): MC-2501.
 - 2026-10-16: the export's documents, glossary and plainer times (#118,
   ADR-071): MC-2502.
+- 2026-10-16: the export's README follows the app's language (#118):
+  MC-2502 extended.
