@@ -12,6 +12,7 @@ import { useResource } from '../lib/use-resource';
 import { CreateLocationDialog } from './create-location-dialog';
 import { EditLocationDialog } from './edit-location-dialog';
 import { LocationNode } from './location-node';
+import { SiteAddressDialog } from './site-address-dialog';
 import { childrenOf } from './tree';
 
 /**
@@ -35,6 +36,7 @@ export function LocationsPage() {
   const [creatingUnder, setCreatingUnder] = useState<Location | null>(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Location | null>(null);
+  const [addressing, setAddressing] = useState<Location | null>(null);
 
   const canEdit = can('locations.update');
   const canCreate = can('locations.create');
@@ -96,6 +98,7 @@ export function LocationsPage() {
                 depth={0}
                 canEdit={canEdit}
                 onEdit={setEditing}
+                onAddress={setAddressing}
                 onAddChild={(parent) => {
                   setCreatingUnder(parent);
                   setCreating(true);
@@ -132,6 +135,14 @@ export function LocationsPage() {
         location={editing}
         locations={items ?? []}
         onClose={() => setEditing(null)}
+        onSaved={reload}
+      />
+
+      {/* Keyed for the same reason as the edit dialog above. */}
+      <SiteAddressDialog
+        key={addressing?.id}
+        site={addressing}
+        onClose={() => setAddressing(null)}
         onSaved={reload}
       />
     </Stack>

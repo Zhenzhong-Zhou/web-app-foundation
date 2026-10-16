@@ -983,6 +983,12 @@ await fetch(`${api}/v1/files/product-image`, {
   order, as `SO-000001 · Northside Pharmacy`; and the invoices CSV, whose
   Order column holds the number, the reference beside it. A packing
   slip's PDF says `Order SO-…` and, when they gave one, `Your order …`.
+- **MC-2506** *(ADR-071)* Locations: a site has an Address button, a zone
+  or a bin has none. Give the site an address: it shows on one line under
+  the site's name, and the audit log has the change. Open it again, clear
+  the city and save: the city is gone, as the dialog says it is sent
+  whole. Remove the address: the line goes. In 中文 the dialog reads
+  naturally.
 - **MC-2504** *(ADR-071)* Settings → Organization → Documents has Paper
   size, set to Automatic. With a Canadian registered address, an invoice's
   PDF is Letter. Choose A4 and save: the invoice, a credit note, a packing
@@ -1199,3 +1205,5 @@ first.
   (ADR-057, amended): MC-1558 extended.
 - 2026-10-16: an order named by its number wherever it appears (ADR-071):
   MC-2505.
+- 2026-10-16: a site's address, for deliveries and returns (ADR-071):
+  MC-2506.

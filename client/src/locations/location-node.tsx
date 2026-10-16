@@ -5,6 +5,7 @@ import type { Location } from '../api/types.gen';
 import { StatusChip } from '../components/status-chip';
 import { SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { addressLine } from './address-line';
 import { locationTypeLabel } from './location-types';
 import { childrenOf } from './tree';
 
@@ -25,6 +26,7 @@ export function LocationNode({
   canEdit,
   onEdit,
   onAddChild,
+  onAddress,
 }: {
   location: Location;
   all: Location[];
@@ -32,7 +34,10 @@ export function LocationNode({
   canEdit: boolean;
   onEdit: (location: Location) => void;
   onAddChild: (location: Location) => void;
+  /** A site's address (ADR-071); only a site is offered one. */
+  onAddress: (site: Location) => void;
 }) {
+  const isSite = location.type === 'site';
   const intl = useIntl();
   const children = childrenOf(all, location.id);
 
@@ -50,12 +55,26 @@ export function LocationNode({
           borderColor: 'divider',
         }}
       >
+        {/* The name's element is the row's child, as the e2e reads it, so the
+            address goes inside it on a line of its own rather than in a box
+            around it. */}
         <Typography sx={{ flexGrow: 1 }}>
           {location.name}
           {location.code && (
             <Typography component="span" color="text.secondary">
               {SEPARATOR}
               {location.code}
+            </Typography>
+          )}
+          {/* Where goods are delivered and sent back (ADR-071). */}
+          {isSite && location.address && (
+            <Typography
+              component="span"
+              variant="body2"
+              color="text.secondary"
+              sx={{ display: 'block' }}
+            >
+              {addressLine(location.address)}
             </Typography>
           )}
         </Typography>
@@ -117,6 +136,18 @@ export function LocationNode({
                 defaultMessage: 'Add inside',
               })}
             </Button>
+            {isSite && (
+              <Button
+                variant="text"
+                size="small"
+                onClick={openDialog(() => onAddress(location))}
+              >
+                {intl.formatMessage({
+                  id: 'locations.address',
+                  defaultMessage: 'Address',
+                })}
+              </Button>
+            )}
             <Button
               variant="text"
               size="small"
@@ -140,6 +171,7 @@ export function LocationNode({
           canEdit={canEdit}
           onEdit={onEdit}
           onAddChild={onAddChild}
+          onAddress={onAddress}
         />
       ))}
     </>
