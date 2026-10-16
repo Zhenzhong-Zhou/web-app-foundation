@@ -1488,7 +1488,7 @@
   "settings.org.name.title": "名称",
   "settings.org.paper.a4": "A4（210 × 297 毫米）",
   "settings.org.paper.automatic": "自动：加拿大和美国用 Letter，其他地区用 A4",
-  "settings.org.paper.help": "所有单据都按此纸张生成：发票、贷项通知单、装箱单，以及导出中的 PDF。“自动”按注册地址所在国家决定。",
+  "settings.org.paper.help": "所有单据都按此纸张生成：发票、贷项通知单、装箱单、采购订单、形式发票和退货授权，以及导出中的 PDF。“自动”按注册地址所在国家决定。",
   "settings.org.paper.letter": "Letter（8.5 × 11 英寸）",
   "settings.org.paper.save": "保存纸张大小",
   "settings.org.paper.saved": "纸张大小已保存",

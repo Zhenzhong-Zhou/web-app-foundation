@@ -620,7 +620,7 @@ function PaperSizeForm({
         {intl.formatMessage({
           id: 'settings.org.paper.help',
           defaultMessage:
-            'Every document is drawn on it: invoices, credit notes, packing slips, and the PDFs in the export. Automatic goes by the country of the registered address.',
+            'Every document is drawn on it: invoices, credit notes, packing slips, purchase orders, pro forma invoices and return authorizations, and the PDFs in the export. Automatic goes by the country of the registered address.',
         })}
       </Typography>
     </SettingsSection>

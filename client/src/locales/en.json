@@ -1488,7 +1488,7 @@
   "settings.org.name.title": "Name",
   "settings.org.paper.a4": "A4 (210 × 297 mm)",
   "settings.org.paper.automatic": "Automatic: Letter in Canada and the United States, A4 elsewhere",
-  "settings.org.paper.help": "Every document is drawn on it: invoices, credit notes, packing slips, and the PDFs in the export. Automatic goes by the country of the registered address.",
+  "settings.org.paper.help": "Every document is drawn on it: invoices, credit notes, packing slips, purchase orders, pro forma invoices and return authorizations, and the PDFs in the export. Automatic goes by the country of the registered address.",
   "settings.org.paper.letter": "Letter (8.5 × 11 in)",
   "settings.org.paper.save": "Save paper size",
   "settings.org.paper.saved": "Paper size saved",
