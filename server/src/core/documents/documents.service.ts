@@ -106,7 +106,7 @@ export class DocumentsService {
    * once by a caller drawing many.
    */
   async letterhead(): Promise<Letterhead> {
-    const { logoFileId, country, paper } = await this.tenantDb.transaction(
+    const { logoFileId, ...rest } = await this.tenantDb.transaction(
       async (tx, organizationId) => {
         const [organization] = await tx
           .select({
@@ -127,7 +127,7 @@ export class DocumentsService {
       },
     );
 
-    if (!logoFileId) return { logo: null, country, paper };
+    if (!logoFileId) return { ...rest, logo: null };
     // A logo is shown to anyone in the organization: it asks no permission.
     const file = await this.files.find(
       logoFileId,
@@ -136,9 +136,8 @@ export class DocumentsService {
     );
     const bytes = await buffer(await this.files.stream(file));
     return {
+      ...rest,
       logo: `data:${file.contentType};base64,${bytes.toString('base64')}`,
-      country,
-      paper,
     };
   }
 }

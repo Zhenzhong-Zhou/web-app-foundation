@@ -4,6 +4,7 @@ import { and, eq, isNotNull } from 'drizzle-orm';
 import {
   DocumentsService,
   type Letterhead,
+  type Printable,
 } from '../../core/documents/documents.service';
 import {
   ExportContributions,
@@ -54,29 +55,25 @@ export class InvoiceDocumentsExport implements ExportContributor, OnModuleInit {
       .where(eq(creditNotes.organizationId, organizationId))
       .orderBy(creditNotes.number);
 
-    // The logo read once, by the first PDF drawn, not once a document.
+    // The logo read once, by the first PDF drawn, not once a document;
+    // beside the document, as Download PDF reads the two.
     let letterhead: Promise<Letterhead> | undefined;
-    const head = () => {
+    const drawn = (printable: () => Promise<Printable>) => async () => {
       letterhead ??= this.documents.letterhead();
-      return letterhead;
+      const [document, head] = await Promise.all([printable(), letterhead]);
+      return this.documents.pdf(document, head);
     };
 
     return [
       ...issued.map(({ id, number }) => ({
         name: `documents/invoices/${number}.pdf`,
-        bytes: async () =>
-          this.documents.pdf(
-            printableInvoice(await this.invoices.findById(id)),
-            await head(),
-          ),
+        bytes: drawn(() => this.invoices.findById(id).then(printableInvoice)),
       })),
       ...notes.map(({ id, number }) => ({
         name: `documents/credit-notes/${number}.pdf`,
-        bytes: async () =>
-          this.documents.pdf(
-            printableCreditNote(await this.invoices.findCreditNote(id)),
-            await head(),
-          ),
+        bytes: drawn(() =>
+          this.invoices.findCreditNote(id).then(printableCreditNote),
+        ),
       })),
     ];
   }

@@ -12,8 +12,11 @@ export const CHINESE = 'NotoSansSC';
  */
 const CJK = /[\u2E80-\u9FFF\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFFEF]/u;
 
+/** A space, which stays with the piece before it. */
+const SPACE = /\s/u;
+
 /** A piece of a line, in the one family that has all its characters. */
-export interface Piece {
+interface Piece {
   text: string;
   font: string;
 }
@@ -26,12 +29,14 @@ export interface Piece {
  * with the piece before it, so a line is cut no more often than it must.
  */
 export function piecesOf(text: string): Piece[] {
+  // Most lines hold no Chinese: one piece, with no look at each character.
+  if (!CJK.test(text)) return [{ text, font: LATIN }];
   const pieces: Piece[] = [];
   for (const character of text) {
     const last = pieces.at(-1);
     const font = CJK.test(character)
       ? CHINESE
-      : last && /\s/u.test(character)
+      : last && SPACE.test(character)
         ? last.font
         : LATIN;
     if (last?.font === font) last.text += character;

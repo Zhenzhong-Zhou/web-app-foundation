@@ -14,7 +14,7 @@ import { formatDay } from '../lib/format';
  */
 
 /** The export route, followed as a plain link: the ZIP goes to disk. */
-export const EXPORT_PATH = '/organization/export';
+const EXPORT_PATH = '/organization/export';
 
 /**
  * The export's address, saying the language the app shows (ADR-071): the

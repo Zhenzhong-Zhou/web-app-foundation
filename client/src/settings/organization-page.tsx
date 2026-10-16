@@ -24,7 +24,7 @@ import { CurrencyField } from '../components/currency-field';
 import { PageHeader } from '../components/page-header';
 import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
-import type { LicencePolicy } from '../lib/api-names';
+import type { LicencePolicy, PaperSize } from '../lib/api-names';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
@@ -532,6 +532,23 @@ function LogoOnDocumentsForm({
   );
 }
 
+const PAPER_LABEL = defineMessages({
+  automatic: {
+    id: 'settings.org.paper.automatic',
+    defaultMessage:
+      'Automatic: Letter in Canada and the United States, A4 elsewhere',
+  },
+  letter: {
+    id: 'settings.org.paper.letter',
+    defaultMessage: 'Letter (8.5 × 11 in)',
+  },
+  a4: { id: 'settings.org.paper.a4', defaultMessage: 'A4 (210 × 297 mm)' },
+});
+
+type PaperChoice = PaperSize | 'automatic';
+
+const PAPERS: PaperChoice[] = ['automatic', 'letter', 'a4'];
+
 /**
  * The paper every document is drawn on (ADR-071): automatic, from the
  * registered address's country, or Letter or A4 for every document.
@@ -546,7 +563,7 @@ function PaperSizeForm({
   onSaved: () => Promise<void>;
 }) {
   const intl = useIntl();
-  const [paper, setPaper] = useState<string>(value ?? 'automatic');
+  const [paper, setPaper] = useState<PaperChoice>(value ?? 'automatic');
   const { submitting, error, submit } = useSubmit(onSaved, {
     success: intl.formatMessage({
       id: 'settings.org.paper.saved',
@@ -585,36 +602,17 @@ function PaperSizeForm({
       <RadioGroup
         aria-label={title}
         value={paper}
-        onChange={(event) => setPaper(event.target.value)}
+        onChange={(event) => setPaper(event.target.value as PaperChoice)}
       >
-        <FormControlLabel
-          value="automatic"
-          control={<Radio />}
-          disabled={readOnly}
-          label={intl.formatMessage({
-            id: 'settings.org.paper.automatic',
-            defaultMessage:
-              'Automatic: Letter in Canada and the United States, A4 elsewhere',
-          })}
-        />
-        <FormControlLabel
-          value="letter"
-          control={<Radio />}
-          disabled={readOnly}
-          label={intl.formatMessage({
-            id: 'settings.org.paper.letter',
-            defaultMessage: 'Letter (8.5 × 11 in)',
-          })}
-        />
-        <FormControlLabel
-          value="a4"
-          control={<Radio />}
-          disabled={readOnly}
-          label={intl.formatMessage({
-            id: 'settings.org.paper.a4',
-            defaultMessage: 'A4 (210 × 297 mm)',
-          })}
-        />
+        {PAPERS.map((each) => (
+          <FormControlLabel
+            key={each}
+            value={each}
+            control={<Radio />}
+            disabled={readOnly}
+            label={intl.formatMessage(PAPER_LABEL[each])}
+          />
+        ))}
       </RadioGroup>
       <Typography variant="body2" color="text.secondary">
         {intl.formatMessage({

@@ -568,17 +568,15 @@ describe('Invoices (e2e)', () => {
       const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
       await issue(org, r.invoice.id).expect(200);
-      const mediaBox = async () =>
-        (
-          (
-            await org.agent
-              .get(`/v1/invoices/${r.invoice.id}/pdf`)
-              .responseType('blob')
-              .expect(200)
-          ).body as Buffer
-        )
+      const mediaBox = async () => {
+        const res = await org.agent
+          .get(`/v1/invoices/${r.invoice.id}/pdf`)
+          .responseType('blob')
+          .expect(200);
+        return (res.body as Buffer)
           .toString('latin1')
           .match(/\/MediaBox \[[^\]]*\]/)?.[0];
+      };
 
       // Chosen, it wins over the Canadian seller's Letter.
       await org.agent

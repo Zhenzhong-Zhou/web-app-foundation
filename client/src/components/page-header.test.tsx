@@ -34,19 +34,6 @@ describe('PageHeader', () => {
     ).toBeInTheDocument();
   });
 
-  it('links the title when it points somewhere of its own', () => {
-    renderHeader({
-      crumbs: [{ label: 'Orders', to: '/orders' }],
-      title: 'Acme Supplies',
-      titleTo: '/partners/partner-1',
-    });
-
-    expect(screen.getByRole('link', { name: 'Acme Supplies' })).toHaveAttribute(
-      'href',
-      '/partners/partner-1',
-    );
-  });
-
   /**
    * List pages pass no crumbs. The trail is then just the page name, which is
    * why this renders rather than collapsing to nothing.

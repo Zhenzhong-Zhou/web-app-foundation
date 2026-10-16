@@ -202,21 +202,20 @@ export class OrganizationExportService {
 
           // What modules add (ADR-071): listed here, in this snapshot, and
           // made last, each only when the archive reaches it, so one PDF is
-          // drawn at a time and none is held. Stored as they are: a PDF is
-          // compressed already. Made outside this transaction, and so in
-          // the request's tenant again, which a stream does not carry.
+          // drawn at a time and none is held, nor a stream for it waiting.
+          // Stored as they are: a PDF is compressed already. Made outside
+          // this transaction, and so in the request's tenant again, which a
+          // stream does not carry.
           const tenant = { userId: context.userId, organizationId };
           for (const contributor of this.contributions.all()) {
             const added = await contributor.entries(tx, organizationId);
             for (const each of added) {
               counts.documents += 1;
-              entry(
-                Readable.from(
-                  madeLater(() => runInTenantContext(tenant, each.bytes)),
-                ),
-                each.name,
-                false,
-              );
+              zip.addReadStreamLazy(each.name, { compress: false }, (made) => {
+                runInTenantContext(tenant, each.bytes)
+                  .then((bytes) => made(null, Readable.from(bytes)))
+                  .catch((error: Error) => archive.destroy(error));
+              });
             }
           }
           zip.end();
@@ -228,7 +227,7 @@ export class OrganizationExportService {
           );
 
           const record = () =>
-            runInTenantContext({ userId: context.userId, organizationId }, () =>
+            runInTenantContext(tenant, () =>
               this.audit.record({
                 actorId: context.userId,
                 action: AUDIT_ACTIONS.ORGANIZATION_EXPORTED,
@@ -273,11 +272,6 @@ export class OrganizationExportService {
     const stream = await this.storage.get(key);
     for await (const chunk of stream) yield chunk as Buffer;
   }
-}
-
-/** An entry's bytes, made when the archive first asks for them. */
-async function* madeLater(make: () => Promise<Buffer>): AsyncGenerator<Buffer> {
-  yield await make();
 }
 
 /** The largest size a file is kept in. */
@@ -398,26 +392,22 @@ function readme(organization: string, date: string, locale: Locale): string {
   ];
 
   const said = (each: Translatable) => translate(each, locale);
-  return [
-    ...paragraphs.map(said),
-    [GLOSSARY_TITLE, ...GLOSSARY].map(said).join('\r\n'),
-  ]
+  return [...paragraphs.map(said), GLOSSARY.map(said).join('\r\n')]
     .join('\r\n\r\n')
     .concat('\r\n');
 }
 
-const GLOSSARY_TITLE = t({
-  id: 'organization.export.glossary.title',
-  defaultMessage: 'Glossary: what the columns mean',
-});
-
 /**
- * The README's glossary (#118, ADR-071): the columns the main tables
- * share, each line naming a column, or a family of them, and what it
- * holds. The CSV headers stay as stored, so a later import maps them back;
- * the glossary is what makes them readable to a bookkeeper.
+ * The README's glossary (#118, ADR-071), under its title: the columns the
+ * main tables share, each line naming a column, or a family of them, and
+ * what it holds. The CSV headers stay as stored, so a later import maps
+ * them back; the glossary is what makes them readable to a bookkeeper.
  */
 const GLOSSARY = [
+  t({
+    id: 'organization.export.glossary.title',
+    defaultMessage: 'Glossary: what the columns mean',
+  }),
   t({
     id: 'organization.export.glossary.intro',
     defaultMessage:
