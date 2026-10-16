@@ -280,6 +280,7 @@
   "components.documentLanguages.oneLanguage": "Nothing else",
   "components.documentLanguages.second": "Then also in",
   "components.documentLanguages.second.help": "For a bilingual sheet: each label in both.",
+  "components.errorBoundary.goBack": "Go back",
   "components.errorBoundary.newVersion": "A new version is available",
   "components.errorBoundary.reference": "Reference: {requestId}",
   "components.errorBoundary.reload": "Reload",

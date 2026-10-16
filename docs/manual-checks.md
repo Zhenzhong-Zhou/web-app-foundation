@@ -1055,6 +1055,11 @@ first.
   organization, in 简体中文 too (密码不正确。请检查后重试。, then
   忘记了？给我发送重置链接). Signed out, a wrong password marks both Email
   and Password, never just one.
+- **MC-R12** *(error page)* Make a page crash while you are on it (for
+  a developer: throw in a page's render), so it shows Something went
+  wrong. Press Go back: the page before shows. Crash it again, then choose
+  another page from the menu: that page shows, not the message. Go home
+  the same. Reload on the broken page still shows the message.
 - **MC-R10** *(#122)* As the only member of an organization, on Account,
   choose Delete my account: the dialog closes the organization too.
   Download everything, then cancel: "Your recent work" lists Everything
@@ -1257,3 +1262,5 @@ first.
   on every document's pages (ADR-071): MC-2509 to MC-2512.
 - 2026-10-16: the print pages retire, so printing is always the PDF
   (ADR-071): MC-703, MC-1412, MC-1501, MC-1539 and MC-R06 rewritten.
+- 2026-10-16: a broken page can be left by the menu, Back or Go home,
+  and its message offers Go back: MC-R12.

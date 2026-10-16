@@ -280,6 +280,7 @@
   "components.documentLanguages.oneLanguage": "无",
   "components.documentLanguages.second": "同时打印语言",
   "components.documentLanguages.second.help": "用于双语单据：每个标签都以两种语言显示。",
+  "components.errorBoundary.goBack": "返回上一页",
   "components.errorBoundary.newVersion": "有新版本可用",
   "components.errorBoundary.reference": "参考编号：{requestId}",
   "components.errorBoundary.reload": "重新加载",

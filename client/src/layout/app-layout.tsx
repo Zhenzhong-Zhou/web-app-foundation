@@ -23,7 +23,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { Link as RouterLink, Outlet } from 'react-router-dom';
+import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 
 import { DeletionBanner } from '../account/deletion-banner';
 import { useAuth } from '../auth/use-auth';
@@ -87,6 +87,7 @@ function rememberFolded(folded: boolean): void {
  */
 export function AppLayout() {
   const intl = useIntl();
+  const location = useLocation();
   const { session, refresh } = useAuth();
   const theme = useTheme();
   const [menu, setMenu] = useState<HTMLElement | null>(null);
@@ -409,11 +410,11 @@ export function AppLayout() {
             <UnverifiedBanner />
             <DeletionBanner />
             <OrganizationDeletionBanner />
-            {/* Inside the page so the rail and the bar survive: a person
-                whose page broke should be able to click away from it. */}
             {/* Signs out after inactivity, warning a minute before (ADR-065). */}
             <IdleGuard />
-            <ErrorBoundary>
+            {/* Inside the page so the rail and the bar survive, and reset by
+                the address, so a person whose page broke can click away. */}
+            <ErrorBoundary resetKey={location.pathname}>
               <Outlet />
             </ErrorBoundary>
           </Stack>

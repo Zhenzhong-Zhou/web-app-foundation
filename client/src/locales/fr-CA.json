@@ -280,6 +280,7 @@
   "components.documentLanguages.oneLanguage": "Aucune autre",
   "components.documentLanguages.second": "Puis aussi en",
   "components.documentLanguages.second.help": "Pour un document bilingue : chaque libellé dans les deux langues.",
+  "components.errorBoundary.goBack": "Revenir en arrière",
   "components.errorBoundary.newVersion": "Une nouvelle version est disponible",
   "components.errorBoundary.reference": "Référence : {requestId}",
   "components.errorBoundary.reload": "Recharger",
