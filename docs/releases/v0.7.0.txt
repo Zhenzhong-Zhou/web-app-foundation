@@ -1,0 +1,122 @@
+v0.7.0 — leaving, closing, and every document a PDF
+
+Leaving an organization and deleting one's own account, closing an
+organization after downloading everything in it, every document a PDF
+drawn by the server, with three new ones, and orders with numbers of
+their own.
+
+Leaving and deleting an account (ADR-069)
+- Account → Your data and your account: download your own data, leave
+  the organization, or delete your account, confirmed with your
+  password.
+- The account goes 30 days later. Until then a banner on every page
+  names the day, with Keep my account. A deletion that can no longer go
+  ahead is cancelled, and the person is told why.
+- The last Owner of an organization with other members makes someone
+  else Owner first.
+- Once deleted, the person is anonymized; the records they made and the
+  audit log stay.
+
+Closing an organization (ADR-070, #117)
+- Download everything, at the end of Organization → Profile: one ZIP
+  with a CSV per kind of record, the members, the files in use and a
+  README.
+- Close this organization: after downloading or declining to, with its
+  name typed and the password. It closes 30 days later; any Owner can
+  cancel until then.
+- Every member sees a banner and is emailed when it is scheduled, a week
+  before, if it is cancelled, and when it is done, in their own language.
+- The only member can delete the organization and their account in one
+  step.
+- Once a deletion has begun erasing files, a cancel or an upload is
+  refused rather than half done (#117).
+
+Documents as PDF (ADR-071, #118)
+- Every document is a PDF drawn by the server: one design, the same on
+  every browser. Print opens it in the browser's own viewer; Download
+  PDF saves it. The print pages are gone.
+- A purchase order: Deliver by, the supplier's reference and where to
+  deliver; an unpriced line prints blank with a request for its price,
+  and the total counts priced lines, before tax.
+- A pro forma invoice, from any priced sale not cancelled: taxed by the
+  code chosen, as its invoice would be, marked Not a tax invoice, and
+  recorded in the order's history with its total.
+- A return authorization: the number to write on every box, what happens
+  to each item, and a label to cut out while goods are expected.
+- Every page names its document, its number and "Page 1 of 2". A
+  purchase order and an RMA say who raised them: name, job title and
+  work phone, never an email.
+- Unit prices print to four places. Every character is drawn in a font
+  that has it, so a line mixing Chinese with other letters prints whole.
+- Paper per organization, on Organization → Documents: Letter, A4, or
+  automatic from the country.
+
+Orders and sites (ADR-071)
+- Orders are numbered SO- and PO- when created, existing ones included.
+  The number heads the order and names it everywhere: the list, the
+  lookup, Home, invoices, RMAs and the lot trace.
+- A site has an address of its own (Locations → Address). A purchase
+  chooses Deliver to and an RMA Send back to, each one of the sites; the
+  registered address prints when none is chosen or the site has none.
+
+The export (ADR-071, ADR-057)
+- Download everything adds a documents folder: every invoice and credit
+  note as a PDF.
+- Its README explains the columns, in the language the app shows.
+- Every CSV writes a time as 2026-10-15 18:54:11, in UTC, which a
+  spreadsheet opens as a date.
+
+Invoicing (ADR-046)
+- An invoice that charges tax is not issued until the organization has
+  its tax number; the refusal links to Organization → Profile.
+
+Under the hood (ADR-067, ADR-068)
+- The server describes its API in OpenAPI, every response a declared
+  shape that the tests check, and the client's types are generated from
+  it.
+- The server's tests on Vitest, and Nest 12.
+
+Fixes
+- An SVG upload could stop the server answering anyone; its check now
+  takes linear time (#113).
+- A skip link and a main landmark on every signed-in page (#121).
+- The Account page shows and saves the account's own language (#119),
+  and shows a download or a closing without a reload (#122).
+- A refused password says what is wrong and marks its field, with Email
+  me a reset link beside it (#120).
+- A page that crashes can be left by the menu, Back or Go home, and
+  offers Go back.
+- The search shortcut no longer breaks when Chrome fills in a form.
+- Dependencies updated.
+
+Known limitations
+- French and Chinese are still unreviewed drafts, marked beta in the
+  language picker. Some of their refusals still name a language in
+  English (#129).
+- A packing slip's dates are in UTC until organizations have a time
+  zone (#41): a shipment made in the evening in Vancouver shows the next
+  day.
+- A refused PDF opens as the server's bare message in a new tab (#128).
+- An order's page shows its totals unrounded, where its purchase order
+  rounds each line (#125).
+- Documents are not emailed from the app; no payment details on
+  invoices; no customs values, so a sample has no pro forma; an
+  organization cannot yet set its own number prefixes.
+- Licence reminders are in the app only, not by email, on fixed days.
+- One gallery per product: no image of a variant's own, none on order
+  lines or the shipping screen.
+- No lock screen or switching user with a PIN, and no limit on a kept
+  session beyond thirty days.
+
+Upgrade
+- Migrations 0055 to 0065 and the permission seed, which gives every
+  existing Owner Download everything and Close this organization. Render
+  runs both on deploy; elsewhere run `npm run migrate`, then `npm run
+  seed`, in server.
+- 0063 numbers every existing order, oldest first; 0065 sets Deliver to
+  and Send back to on existing purchases and RMAs where the sites make
+  it clear.
+- `FILES_S3_ENDPOINT` must be the account's address alone, with the
+  bucket in `FILES_BUCKET`; the server will not start otherwise (#92).
+- The PDFs' fonts, about 20 MB, ship in server/assets/fonts; nothing is
+  fetched.
