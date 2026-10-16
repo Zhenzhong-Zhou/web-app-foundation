@@ -44,6 +44,7 @@ export const LOCATIONS = [
     parentId: null,
     isAvailable: true,
     isActive: true,
+    address: null,
   },
 ];
 

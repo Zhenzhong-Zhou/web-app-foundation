@@ -184,6 +184,7 @@
   "licences.licenceExpireBeforeWas": "Une licence ne peut pas expirer avant d’avoir été délivrée",
   "licences.numberRecordedAuthority": "Ce numéro est déjà enregistré pour cet organisme",
   "licences.suchProductLicence": "Licence de produit introuvable",
+  "locations.addressOnSite": "Seul un site a une adresse ; les emplacements qui s’y trouvent partagent la sienne",
   "locations.codeCodeUsedLocation": "Le code {code} est déjà utilisé dans cet emplacement",
   "locations.locationHoldsStockMove": "Cet emplacement contient du stock. Déplacez-le d’abord vers un emplacement enfant.",
   "locations.locationMovedInsideItself": "Un emplacement ne peut pas être déplacé à l’intérieur de lui-même",

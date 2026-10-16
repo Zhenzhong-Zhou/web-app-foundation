@@ -35,6 +35,7 @@ const SHELF: Location = {
   parentId: null,
   isAvailable: true,
   isActive: true,
+  address: null,
 };
 
 describe('ShipOrderDialog', () => {

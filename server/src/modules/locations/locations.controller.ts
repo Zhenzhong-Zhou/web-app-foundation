@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -8,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
 } from '@nestjs/common';
 
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
@@ -16,6 +18,7 @@ import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { CreateLocationDto } from './dto/create-location.dto';
 import type { CreatedLocation, Location } from './dto/location-response.dto';
+import { SiteAddressDto } from './dto/site-address.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { LocationsService } from './locations.service';
 
@@ -61,5 +64,40 @@ export class LocationsController {
     @Body() dto: UpdateLocationDto,
   ): Promise<void> {
     await this.locations.update(id, dto);
+  }
+
+  /**
+   * A site's address (ADR-071), where a purchase order is delivered and an
+   * RMA's goods come back: sent whole, created or replaced. Audited as a
+   * change to the site, with what it now says; a site's address is a
+   * business's, not a person's.
+   */
+  @Put(':id/address')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.LOCATIONS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.LOCATION_UPDATED,
+    resourceType: 'location',
+    resourceId: (_response, request) => request.params.id,
+    fields: ['line1', 'line2', 'city', 'region', 'postalCode', 'country'],
+  })
+  async setAddress(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SiteAddressDto,
+  ): Promise<void> {
+    await this.locations.setAddress(id, dto);
+  }
+
+  /** The site's address removed: its documents print the registered one. */
+  @Delete(':id/address')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.LOCATIONS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.LOCATION_UPDATED,
+    resourceType: 'location',
+    resourceId: (_response, request) => request.params.id,
+  })
+  async removeAddress(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    await this.locations.removeAddress(id);
   }
 }

@@ -184,6 +184,7 @@
   "licences.licenceExpireBeforeWas": "许可证的过期日期不能早于签发日期",
   "licences.numberRecordedAuthority": "该编号已在此签发机构下登记",
   "licences.suchProductLicence": "未找到该产品许可证",
+  "locations.addressOnSite": "只有站点才有地址；站点内的位置共用它的地址",
   "locations.codeCodeUsedLocation": "编码 {code} 已在此库位中使用",
   "locations.locationHoldsStockMove": "此库位存有库存。请先将其移至下级库位。",
   "locations.locationMovedInsideItself": "库位不能移入自身内部",

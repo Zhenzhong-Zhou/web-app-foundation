@@ -2147,6 +2147,15 @@ export type RecordOpenedDto = {
   id: string;
 };
 
+export type SiteAddress = {
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string;
+};
+
 export type Location = {
   id: string;
   type: string;
@@ -2155,6 +2164,7 @@ export type Location = {
   parentId: string | null;
   isAvailable: boolean;
   isActive: boolean;
+  address: SiteAddress | null;
 };
 
 export type CreateLocationDto = {
@@ -2174,6 +2184,15 @@ export type UpdateLocationDto = {
   parentId?: string | null;
   isAvailable?: boolean;
   isActive?: boolean;
+};
+
+export type SiteAddressDto = {
+  line1: string;
+  line2?: string;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  country: string;
 };
 
 export type ValuationPool = {
@@ -5612,6 +5631,38 @@ export type LocationsControllerUpdateV1Responses = {
 
 export type LocationsControllerUpdateV1Response =
   LocationsControllerUpdateV1Responses[keyof LocationsControllerUpdateV1Responses];
+
+export type LocationsControllerRemoveAddressV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/locations/{id}/address';
+};
+
+export type LocationsControllerRemoveAddressV1Responses = {
+  204: void;
+};
+
+export type LocationsControllerRemoveAddressV1Response =
+  LocationsControllerRemoveAddressV1Responses[keyof LocationsControllerRemoveAddressV1Responses];
+
+export type LocationsControllerSetAddressV1Data = {
+  body: SiteAddressDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/locations/{id}/address';
+};
+
+export type LocationsControllerSetAddressV1Responses = {
+  204: void;
+};
+
+export type LocationsControllerSetAddressV1Response =
+  LocationsControllerSetAddressV1Responses[keyof LocationsControllerSetAddressV1Responses];
 
 export type CostsControllerStockValuationV1Data = {
   body?: never;

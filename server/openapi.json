@@ -6694,6 +6694,60 @@
         ]
       }
     },
+    "/v1/locations/{id}/address": {
+      "put": {
+        "operationId": "LocationsController_setAddress_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Locations"
+        ]
+      },
+      "delete": {
+        "operationId": "LocationsController_removeAddress_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Locations"
+        ]
+      }
+    },
     "/v1/costs/valuation": {
       "get": {
         "operationId": "CostsController_stockValuation_v1",
@@ -16145,6 +16199,49 @@
           "id"
         ]
       },
+      "SiteAddress": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "region": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "line1",
+          "line2",
+          "city",
+          "region",
+          "postalCode",
+          "country"
+        ]
+      },
       "Location": {
         "type": "object",
         "properties": {
@@ -16174,6 +16271,16 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -16183,7 +16290,8 @@
           "code",
           "parentId",
           "isAvailable",
-          "isActive"
+          "isActive",
+          "address"
         ]
       },
       "CreateLocationDto": {
@@ -16255,6 +16363,40 @@
             "type": "boolean"
           }
         }
+      },
+      "SiteAddressDto": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "line2": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "region": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          }
+        },
+        "required": [
+          "line1",
+          "country"
+        ]
       },
       "ValuationPool": {
         "type": "object",

@@ -184,6 +184,7 @@
   "licences.licenceExpireBeforeWas": "A licence cannot expire before it was issued",
   "licences.numberRecordedAuthority": "That number is already recorded for that authority",
   "licences.suchProductLicence": "No such product licence",
+  "locations.addressOnSite": "Only a site has an address; the places inside it share it",
   "locations.codeCodeUsedLocation": "Code {code} is already used in this location",
   "locations.locationHoldsStockMove": "This location holds stock. Move it to a child location first.",
   "locations.locationMovedInsideItself": "A location cannot be moved inside itself",
