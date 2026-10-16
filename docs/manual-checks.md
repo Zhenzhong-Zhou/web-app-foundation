@@ -1054,6 +1054,10 @@ await fetch(`${api}/v1/files/product-image`, {
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R13** *(address log)* On Organization → Profile, change the
+  registered address's first line and save. The audit log's entry shows
+  the line it had before and the new one, not only the new one. Save again
+  without changing anything: no new entry appears.
 - **MC-R12** *(error page)* Make a page crash while you are on it (for
   a developer: throw in a page's render), so it shows Something went
   wrong. Press Go back: the page before shows. Crash it again, then choose
@@ -1276,3 +1280,5 @@ first.
 - 2026-10-16: after ADR-071's review: MC-2501, MC-2507, MC-2509, MC-2510
   and MC-2511 extended; MC-2401, MC-1406 and MC-R08 rewritten, and MC-R12
   moved to its place, newest first.
+- 2026-10-16: a registered address change keeps what it replaced in the
+  audit log: MC-R13.

@@ -346,6 +346,21 @@ export class OrganizationsService {
 
       const existing = await registeredAddress(tx, organizationId);
 
+      /**
+       * The log keeps what the address replaced, as every other setting on
+       * the organization does: issued invoices keep their own copy, but only
+       * the log can say what the address was before a given day. Null for
+       * each line when there was none yet.
+       */
+      recordPrevious({
+        line1: existing?.line1 ?? null,
+        line2: existing?.line2 ?? null,
+        city: existing?.city ?? null,
+        region: existing?.region ?? null,
+        postalCode: existing?.postalCode ?? null,
+        country: existing?.country ?? null,
+      });
+
       if (existing) {
         await tx
           .update(addresses)

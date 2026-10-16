@@ -134,6 +134,43 @@ describe('Organization (e2e)', () => {
     expect(rows[0].isDefault).toBe(true);
   });
 
+  it('records an address change with what it replaced', async () => {
+    const org = await registerOrganization(app, 'alpha');
+    const office = { ...HEAD_OFFICE, country: 'CA' };
+    const changes = () =>
+      db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'organization.address_updated'))
+        .orderBy(auditLog.id);
+
+    await org.agent.put('/v1/organization/address').send(office).expect(204);
+    await org.agent
+      .put('/v1/organization/address')
+      .send({ ...office, line1: '200 Main St' })
+      .expect(204);
+    // Saved again unchanged: nothing to record.
+    await org.agent
+      .put('/v1/organization/address')
+      .send({ ...office, line1: '200 Main St' })
+      .expect(204);
+
+    const [first, second, ...rest] = await changes();
+    expect(rest).toHaveLength(0);
+    // The first address replaced none.
+    expect(first.payload).toMatchObject({
+      line1: { from: null, to: '100 Main St' },
+      country: { from: null, to: 'CA' },
+    });
+    expect(second.payload).toEqual({
+      line1: { from: '100 Main St', to: '200 Main St' },
+      city: { from: 'Vancouver', to: 'Vancouver' },
+      region: { from: 'BC', to: 'BC' },
+      postalCode: { from: 'V6B 1A1', to: 'V6B 1A1' },
+      country: { from: 'CA', to: 'CA' },
+    });
+  });
+
   it('records a tax number change with what it replaced', async () => {
     const org = await registerOrganization(app, 'alpha');
 
