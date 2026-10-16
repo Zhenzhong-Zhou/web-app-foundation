@@ -4234,6 +4234,8 @@ format. Each is a rule or a setting on top, and each waits for its trigger.
   function above. A receipt day the person enters, as an invoice date is
   entered, is the alternative. Trigger: users in two time zones, or the
   first day decided wrongly near midnight.
+  *Built by ADR-072 (October 2026):* each organization has a time zone,
+  and the one function asks it.
 - **Expiry inclusive or exclusive.** The printed day is the last usable day
   ("use by"), for lots and licences alike. Some regimes read it as the
   first day the product may not be used. Trigger: a customer or a regulator
@@ -7936,8 +7938,8 @@ results, Home's recent records and the orders CSV, and is searched
 beside the reference, which stays as theirs.
 
 Deferred: **numbering settings**, what each organization may change of
-its numbers: its prefixes, digits and next number. Trigger: the next pull
-request, ADR-072.
+its numbers: its prefixes, digits and next number. Trigger: ADR-073,
+after the organization's time zone that its periods need (ADR-072).
 
 **Amendment (October 2026) — where goods go, and what every page says.**
 The designs approved on the canvas settle what the three new documents
@@ -7979,6 +7981,106 @@ copy nothing, and take the registered address's country when they are
 printed. An organization that moves keeps its issued invoices on the
 paper they were issued on, as everything else they print stays as
 issued; a size the organization chose still wins for every document.
+
+---
+
+## ADR-072 — Each organization's time zone (amends ADR-052 and ADR-071)
+
+**Context.** Every calendar day the server decides is the UTC day
+(`todayUtc`, ADR-052), and the documents that date themselves by a
+moment read it in UTC (ADR-071, amended). From 4 pm in Vancouver in
+winter, 5 pm in summer, the server is already in tomorrow: a receipt is
+costed at tomorrow's rate if one was entered early, a licence that
+expires today blocks a release this afternoon, and a packing slip prints
+tomorrow's date. ADR-052 deferred an organization's time zone until a
+day was decided wrongly near midnight (#41). ADR-073 needs it too: the
+year in a document's number is a calendar fact, and an order made on the
+evening of 31 December in Vancouver is already 1 January in UTC.
+
+**Decision — the zone is the organization's, stored by name.**
+
+- `organizations.time_zone`, an IANA name such as `America/Vancouver` or
+  `Asia/Shanghai`, never an offset: a name carries daylight saving and
+  any change a government makes, where an offset is wrong half the year.
+  Checked against the zones the server knows, and stored under its
+  canonical name.
+- One per organization, not per member: whether a licence has expired,
+  which rate a receipt takes and which year a number belongs to must be
+  one answer for everyone in it.
+- A new organization takes the registering person's browser zone, which
+  is almost always where the business is. Existing ones get `UTC` from
+  migration 0066, the zone they use today, so nothing changes until an
+  Owner sets theirs.
+- Changed on Settings → Organization → Profile, beside the registered
+  address, under `organizations.update`, and audited as
+  `organization.updated` with the old and new zone. A change applies
+  from then on: nothing already dated or printed moves.
+
+**Decision — moments stay UTC; the zone answers calendar questions.**
+Every `timestamptz` is stored as it is now. The zone is read only to say
+which day a moment falls on, and what today is: `(moment AT TIME ZONE
+zone)::date` in SQL, `Intl.DateTimeFormat` with the zone in TypeScript.
+Both read the IANA tz database.
+
+**Decision — today is the organization's.** `todayUtc()` becomes
+`todayIn(zone)`, still the one place, called with the organization's
+zone by:
+
+- licence status at release (ADR-050), and licence reminders (ADR-064),
+  each organization's on its own day;
+- the rate a receipt is costed at (ADR-048);
+- Inventory's expiring-within filter, which read the database session's
+  `current_date`, the last place that did;
+- Home's cards (ADR-058), and the export's file name.
+
+The session carries the zone, so the client counts days left, Home's
+today and the date-range presets in the organization's day rather than
+the browser's: a member travelling sees the warehouse's day.
+
+**Decision — a moment's day is the organization's.** What dates itself
+by a moment prints that day in the organization's zone: the packing slip
+and its file name, the purchase order, the RMA and the pro forma, and
+the arrival day a cost correction looks its rate up on (ADR-048).
+Invoices and credit notes are unchanged: their dates are calendar days
+already (ADR-046, ADR-052).
+
+**Unchanged, on purpose.**
+
+- Screens show a moment's time in the viewer's own zone, as now: the
+  clock a person reads is the one on their wall.
+- CSV exports keep times in UTC and say so (ADR-057, amended): a file is
+  read by other systems.
+- Deletion days still end "in every time zone" (ADR-069, ADR-070): a
+  cutoff that must hold for every member, wherever they are.
+
+**Considered and not done.**
+
+- Guessing the zone from the registered address: the province is typed
+  by hand, and Canada alone has six zones. The browser at registration
+  reports its computer's zone, which is right far more often, and an
+  Owner corrects it once.
+- Each member's own zone deciding the business's day: at 5 pm in
+  Vancouver it is already the next morning in Shanghai, so one member
+  would see a licence as valid and another as expired, at the same
+  moment.
+
+**Consequences.**
+
+- Migration 0066. The session's and the organization profile's responses
+  gain `timeZone` (`npm run api`).
+- Tests pin the clock either side of midnight in Vancouver and in
+  Shanghai, and across a daylight-saving change.
+- Manual checks: a receipt, a release and a packing slip made after 5 pm
+  in Vancouver carry today's date.
+
+**Deferred.**
+
+- A setting on the Account page for a member to see times in a zone
+  other than their device's, such as someone in China reading the
+  Vancouver warehouse's times. Trigger: the first member who asks.
+- A time zone per site, for warehouses in different zones. Trigger: the
+  first organization with sites in two zones, likely together with
+  ADR-073's series per site.
 
 ---
 
