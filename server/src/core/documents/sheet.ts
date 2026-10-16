@@ -9,7 +9,7 @@ import type {
 import type { Locale } from '../../common/locales';
 import { t, type Translatable, translate } from '../../i18n/translate';
 import type { DocumentText } from './document-text';
-import { fontFor } from './fonts';
+import { piecesOf } from './fonts';
 import { formatMoney, formatQuantity, NO_VALUE } from './format';
 
 /**
@@ -37,9 +37,16 @@ function present(parts: (string | null | false | undefined)[]): string[] {
   return parts.filter((part): part is string => Boolean(part));
 }
 
-/** A run of text, in the family that has its characters. */
+/**
+ * A run of text in the families that have its characters: one piece, or a
+ * line cut where its script changes, Chinese in Noto Sans SC and the rest
+ * in Noto Sans (piecesOf).
+ */
 export function run(text: string, style: Style = {}): ContentText {
-  return { text, font: fontFor(text), ...style };
+  const pieces = piecesOf(text);
+  return pieces.length === 1
+    ? { text, font: pieces[0].font, ...style }
+    : { text: pieces, ...style };
 }
 
 /** The organization's logo, at most 60 mm wide and 18 mm tall (ADR-060). */
