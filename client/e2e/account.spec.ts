@@ -114,6 +114,36 @@ test('refuses a wrong current password and changes nothing', async ({
   expect(await canSignIn(freshOrg.email, 'e2e-other-password-1')).toBe(false);
 });
 
+test('emails a reset link after a refused password, still signed in', async ({
+  page,
+  freshOrg,
+}) => {
+  await signInAs(page, freshOrg.api);
+
+  await page.goto('/account');
+  await page.getByRole('button', { name: 'Change password' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Current password').fill('not-the-right-one');
+  await dialog.locator('#newPassword').fill('e2e-other-password-1');
+  await dialog.getByLabel('Confirm new password').fill('e2e-other-password-1');
+  await dialog.getByRole('button', { name: 'Change password' }).click();
+
+  const sent = page.waitForResponse(
+    (res) =>
+      res.url().includes('/auth/forgot-password') &&
+      res.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Email me a reset link' }).click();
+  expect((await sent).status()).toBe(202);
+  await expect(
+    dialog.getByText(`A reset link is on its way to ${freshOrg.email}.`),
+  ).toBeVisible();
+
+  // Still signed in: finishing the reset is what signs every device out.
+  await page.reload();
+  await expect(page).toHaveURL(/\/account$/);
+});
+
 test('lists the current device and will not sign it out', async ({
   page,
   freshOrg,

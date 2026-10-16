@@ -20,6 +20,7 @@ import {
   files,
   type FileSize,
   type OrganizationFileKind,
+  organizations,
   type StoredSize,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -108,80 +109,124 @@ export class FilesService {
     const rendered = await this.render(rule.render, file.buffer, type);
     const contentType = rule.render === 'logo' ? 'image/png' : 'image/webp';
     const bytes = rendered.reduce((sum, size) => sum + size.data.length, 0);
+    // Before the transaction, not inside it: hashing up to 20 MB would
+    // hold the organization's upload lock for as long.
+    const sha256 = createHash('sha256').update(file.buffer).digest('hex');
 
-    const row = await this.tenantDb.transaction(async (tx, organizationId) => {
-      // One upload at a time per organization, so two cannot both fit
-      // under the limit that only one of them fits under.
-      await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtextextended(${`files:${organizationId}`}, 0))`,
-      );
-      const [{ used }] = await tx
-        .select({ used: sql<string>`coalesce(sum(${files.bytes}), 0)` })
-        .from(files)
-        .where(eq(files.organizationId, organizationId));
-      if (Number(used) + bytes > this.limitBytes) {
-        throw new ConflictException(
-          t(
-            {
-              id: 'files.quota.full',
-              defaultMessage:
-                'This would take your organization past its {limit} MB of files. Remove some before adding more.',
-            },
-            { limit: Math.round(this.limitBytes / (1024 * 1024)) },
-          ),
+    // The bytes first, under an id taken beforehand, then a short
+    // transaction for the row (ADR-070, amended): a transaction held
+    // across storage writes would hold a database connection for as long
+    // as the bucket takes, and a gallery's worth of uploads at once could
+    // hold the pool.
+    const { id, organizationId } = await this.tenantDb.transaction(
+      async (tx, organizationId) => {
+        const { rows } = await tx.execute<{ id: string }>(
+          sql`select uuidv7() as id`,
         );
-      }
+        return { id: rows[0].id, organizationId };
+      },
+    );
+    const keys = rendered.map((size) => keyOf(organizationId, id, size.size));
 
-      const [inserted] = await tx
-        .insert(files)
-        .values({
-          organizationId,
-          kind,
-          contentType,
-          sizes: Object.fromEntries(
-            rendered.map((size) => [
-              size.size,
-              {
-                width: size.width,
-                height: size.height,
-                bytes: size.data.length,
-              },
-            ]),
-          ),
-          bytes,
-          sha256: createHash('sha256').update(file.buffer).digest('hex'),
-          originalName: downloadName(
-            file.originalname,
-            rule.render === 'logo' ? 'png' : 'webp',
-          ),
-          createdBy: userId,
-        })
-        .returning();
-      return inserted;
-    });
-
+    let row: typeof files.$inferSelect;
     try {
-      await Promise.all(
-        rendered.map((size) =>
-          this.storage.put(
-            keyOf(ownerOf(row), row.id, size.size),
-            size.data,
-            contentType,
-          ),
+      // Every write settled before any is judged: a delete below must never
+      // run ahead of a write still in flight, which would land after it and
+      // leave bytes with no row.
+      const written = await Promise.allSettled(
+        rendered.map((size, index) =>
+          this.storage.put(keys[index], size.data, contentType),
         ),
       );
+      const failed = written.find(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected',
+      );
+      if (failed) throw failed.reason;
+
+      row = await this.tenantDb.transaction(async (tx) => {
+        // One upload at a time per organization, so two cannot both fit
+        // under the limit that only one of them fits under.
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtextextended(${`files:${organizationId}`}, 0))`,
+        );
+
+        // Not once its deletion has begun, nor once it is gone (ADR-070,
+        // amended). The run marks its start under the organization's
+        // lock, which this key-share lock waits for, before it erases any
+        // file: a row saved before the mark has its bytes already.
+        const [organization] = await tx
+          .select({ deletionStartedAt: organizations.deletionStartedAt })
+          .from(organizations)
+          .where(eq(organizations.id, organizationId))
+          .for('key share');
+        if (!organization || organization.deletionStartedAt) {
+          throw new ConflictException(
+            t({
+              id: 'files.organizationDeleting',
+              defaultMessage:
+                'This organization is being deleted, so nothing more can be added to it.',
+            }),
+          );
+        }
+
+        const [{ used }] = await tx
+          .select({ used: sql<string>`coalesce(sum(${files.bytes}), 0)` })
+          .from(files)
+          .where(eq(files.organizationId, organizationId));
+        if (Number(used) + bytes > this.limitBytes) {
+          throw new ConflictException(
+            t(
+              {
+                id: 'files.quota.full',
+                defaultMessage:
+                  'This would take your organization past its {limit} MB of files. Remove some before adding more.',
+              },
+              { limit: Math.round(this.limitBytes / (1024 * 1024)) },
+            ),
+          );
+        }
+
+        const [inserted] = await tx
+          .insert(files)
+          .values({
+            id,
+            organizationId,
+            kind,
+            contentType,
+            sizes: Object.fromEntries(
+              rendered.map((size) => [
+                size.size,
+                {
+                  width: size.width,
+                  height: size.height,
+                  bytes: size.data.length,
+                },
+              ]),
+            ),
+            bytes,
+            sha256,
+            originalName: downloadName(
+              file.originalname,
+              rule.render === 'logo' ? 'png' : 'webp',
+            ),
+            createdBy: userId,
+          })
+          .returning();
+        return inserted;
+      });
     } catch (error) {
-      // Without its bytes the row is a lie: take it back, and say why.
-      await this.tenantDb.transaction((tx, organizationId) =>
-        tx
-          .delete(files)
-          .where(
-            and(eq(files.id, row.id), eq(files.organizationId, organizationId)),
-          ),
+      // Refused, or a write that failed: no row will lead a purge to these
+      // bytes, so none of them may stay. Deleting what was never written
+      // succeeds.
+      await Promise.all(
+        keys.map((key) => this.storage.delete(key).catch(() => undefined)),
       );
       throw error;
     }
 
+    // Outside the try: nothing after the commit may delete the bytes of a
+    // row already saved.
     return viewOf(row);
   }
 

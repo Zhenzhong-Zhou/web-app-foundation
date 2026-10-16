@@ -397,6 +397,7 @@ export class AuthService implements OnModuleInit {
               expiryWarningDays: organizations.expiryWarningDays,
               expiryCriticalDays: organizations.expiryCriticalDays,
               deletionScheduledAt: organizations.deletionScheduledAt,
+              deletionStartedAt: organizations.deletionStartedAt,
             })
             .from(organizations)
             .where(eq(organizations.id, organizationId))
@@ -452,7 +453,10 @@ export class AuthService implements OnModuleInit {
           expiryCriticalDays: organization.expiryCriticalDays,
         },
         deletionScheduledAt: organization.deletionScheduledAt,
-        deletionStage: deletionStageOf(organization.deletionScheduledAt),
+        deletionStage: deletionStageOf(
+          organization.deletionScheduledAt,
+          organization.deletionStartedAt,
+        ),
       },
       permissions,
     };

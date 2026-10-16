@@ -35,6 +35,15 @@ export class S3FileStorage implements FileStorage {
         secretAccessKey: options.secretAccessKey,
       },
       forcePathStyle: true,
+      // Bounded, so a stalled bucket fails an upload rather than holding
+      // it, and the request behind it, without end (ADR-070, amended).
+      // Without throwOnRequestTimeout the request timeout only logs a
+      // warning, and the request carries on waiting.
+      requestHandler: {
+        connectionTimeout: 5_000,
+        requestTimeout: 30_000,
+        throwOnRequestTimeout: true,
+      },
     });
   }
 

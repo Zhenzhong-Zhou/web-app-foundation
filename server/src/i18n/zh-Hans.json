@@ -95,6 +95,7 @@
   "files.logo.tooSmall": "标志宽度至少需要 {min} 像素",
   "files.logo.type": "标志必须是 PNG、JPEG、WebP 或 SVG 图片",
   "files.notFound": "找不到该文件",
+  "files.organizationDeleting": "该组织正在删除中，无法再添加任何内容。",
   "files.photo.type": "照片必须是 PNG、JPEG 或 WebP 图片",
   "files.quota.full": "这将超出贵组织 {limit} MB 的文件空间。请先删除一些文件再添加。",
   "files.upload.missing": "请选择要上传的文件",
