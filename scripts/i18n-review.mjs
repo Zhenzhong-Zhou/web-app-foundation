@@ -6,8 +6,8 @@
  *     node scripts/i18n-review.mjs import review/fr-CA.xlsx
  *
  * Export writes one workbook per language, covering everything a person
- * reads: the screens and printed documents (client/src/locales) and the
- * server's refusals, emails and notifications (server/src/i18n). One row
+ * reads: the screens (client/src/locales) and the server's refusals,
+ * emails, notifications and printed documents (server/src/i18n). One row
  * per message: where it is, the English, the translation as it stands, and
  * an empty Correction column for the reviewer. The placeholders a message
  * must keep are listed beside it, since a translation that drops {sku}

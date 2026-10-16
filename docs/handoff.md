@@ -804,8 +804,11 @@ code had been formatted by hand.
   `api.ts`; `useResource` (one GET with reload); `useKeysetList` (paged
   lists); `formatDay` in `format.ts`; the `CalendarDay` type in `types.ts`.
 - Client `components/`: `DialogFooter`, `LabelledValue`, `CurrencyField`,
-  `SettingsSection`, `LoadMoreButton`, and `print-sheet.tsx` (`PrintSheet`,
-  `PrintBanner`, `PrintParty`, `PrintLines`, `PrintTotals`).
+  `SettingsSection`, `LoadMoreButton`, `AddressFields`, `PdfActions`.
+- Server `core/documents/`: `sheet.ts` (`masthead`, `party`, `linesTable`,
+  `totals`, `banner`, `notice`) for every document's parts, `parties.ts`
+  for who and where it names, and `DocumentsService.send` with a
+  `Printable` for its route.
 - Client, per feature: `boms/use-recipe.ts`, `boms/recipe-lines-table.tsx`,
   `inventory/lot-fields.tsx`, `auth/auth-message.ts`,
   `orders/status.ts`, `orders/order-lines-section.tsx`,

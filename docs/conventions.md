@@ -210,7 +210,8 @@ three:
   included. Written by whoever adds the English, reviewed by someone
   fluent before a release (MC-1405, `scripts/i18n-review.mjs`).
 - **A printed document** speaks its customer's languages, not the
-  reader's: its words go through `useDocumentText`, its figures through
+  reader's: the server draws it, its words through `doc.label` and
+  `doc.lines` (`core/documents/document-text.ts`), its figures through
   the document's locale.
 
 ## The API contract
