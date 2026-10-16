@@ -989,6 +989,22 @@ await fetch(`${api}/v1/files/product-image`, {
   the city and save: the city is gone, as the dialog says it is sent
   whole. Remove the address: the line goes. In 中文 the dialog reads
   naturally.
+- **MC-2507** *(ADR-071)* Deliver to. With one site, raise a purchase:
+  Deliver to shows that site, with its address underneath, and the order's
+  summary says it. Add a second site and raise another: Deliver to starts
+  at Not chosen and the summary says Registered address; choose a site and
+  its address shows, or that it has none and the document prints the
+  registered address. Edit order changes it on a draft or a confirmed
+  purchase, and the order's history shows the change; once the purchase
+  is received or cancelled, Edit order no longer offers it. A sale has
+  no Deliver to.
+- **MC-2508** *(ADR-071)* Send back to. Ship a sale from a bin inside a
+  site, then Authorize a return: Send back to starts at Where the goods
+  shipped from, and the new RMA says that site. Change it on the RMA:
+  the page and its history show the new site; choose Not chosen and it
+  says Registered address. Raise one with The customer is sending the
+  goods back unticked: there is no Send back to, on the dialog or the RMA.
+  Once the RMA is closed, Change is gone. In 中文 both read naturally.
 - **MC-2504** *(ADR-071)* Settings → Organization → Documents has Paper
   size, set to Automatic. With a Canadian registered address, an invoice's
   PDF is Letter. Choose A4 and save: the invoice, a credit note, a packing
@@ -1207,3 +1223,5 @@ first.
   MC-2505.
 - 2026-10-16: a site's address, for deliveries and returns (ADR-071):
   MC-2506.
+- 2026-10-16: a purchase order's Deliver to and an RMA's Send back to,
+  each a site (ADR-071): MC-2507, MC-2508.

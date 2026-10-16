@@ -9,14 +9,19 @@ import {
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-import type { OrderDetail } from '../api/types.gen';
+import type { Location, OrderDetail } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
+import { SiteSelect } from '../locations/site-select';
 
 /**
- * The three header fields that can change after an order exists.
+ * The header fields that can change after an order exists.
+ *
+ * Deliver to (ADR-071, amended) only on a purchase still to come in: a
+ * received order's goods have arrived and a cancelled one's never will, so
+ * the server refuses it there and the field is not offered.
  *
  * `partnerId` and `direction` are absent because both are settled at creation:
  * changing either once lines exist reinterprets every line and every movement
@@ -35,15 +40,22 @@ import { useSubmit } from '../lib/use-submit';
 export function EditOrderDialog({
   open,
   order,
+  locations,
   onClose,
   onSaved,
 }: {
   open: boolean;
   order: OrderDetail;
+  /** The organization's locations, for Deliver to; only sites are offered. */
+  locations: Location[];
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
   const [reference, setReference] = useState(order.reference ?? '');
+  const [deliverTo, setDeliverTo] = useState(order.deliverTo?.id ?? '');
+  const choosesSite =
+    order.direction === 'purchase' &&
+    (order.status === 'draft' || order.status === 'confirmed');
   const [note, setNote] = useState(order.note ?? '');
 
   // YYYY-MM-DD both ways, as the date input wants it (ADR-052).
@@ -83,6 +95,11 @@ export function EditOrderDialog({
           reference: reference.trim(),
           note: note.trim(),
           expectedAt: expectedAt || undefined,
+          // Only when changed, and null for none (ADR-071, amended).
+          deliverToId:
+            choosesSite && deliverTo !== (order.deliverTo?.id ?? '')
+              ? deliverTo || null
+              : undefined,
         }),
       }),
     );
@@ -136,6 +153,29 @@ export function EditOrderDialog({
               onChange={(event) => setExpectedAt(event.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
             />
+
+            {choosesSite && (
+              <SiteSelect
+                id="order-deliver-to"
+                label={intl.formatMessage({
+                  id: 'orders.deliverTo',
+                  defaultMessage: 'Deliver to',
+                })}
+                value={deliverTo}
+                onChange={setDeliverTo}
+                locations={locations}
+                current={order.deliverTo}
+                emptyLabel={intl.formatMessage({
+                  id: 'orders.deliverTo.none',
+                  defaultMessage: 'Not chosen',
+                })}
+                emptyHelp={intl.formatMessage({
+                  id: 'orders.deliverTo.noneHelp',
+                  defaultMessage:
+                    'The purchase order prints the registered address.',
+                })}
+              />
+            )}
 
             <TextField
               id="order-note"

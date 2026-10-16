@@ -615,9 +615,10 @@ export function OrderDetailPage() {
       {/* Keyed on the line, so the form is seeded at mount and never needs an
           effect to resync. */}
       <EditOrderDialog
-        key={`${order.id}-${order.reference ?? ''}-${order.expectedAt ?? ''}`}
+        key={`${order.id}-${order.reference ?? ''}-${order.expectedAt ?? ''}-${order.deliverTo?.id ?? ''}`}
         open={editing}
         order={order}
+        locations={locations}
         onClose={() => setEditing(false)}
         onSaved={load}
       />
@@ -704,6 +705,7 @@ export function OrderDetailPage() {
         orderId={order.id}
         isSample={order.isSample}
         lines={order.lines}
+        locations={locations}
         canViewInvoices={canViewInvoices}
         onClose={() => setAuthorizing(false)}
       />

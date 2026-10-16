@@ -46,6 +46,7 @@ import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { LinkReturnDialog } from './link-return-dialog';
 import { resolutionLabel, rmaStatus } from './rma-labels';
+import { SendBackToDialog } from './send-back-to-dialog';
 
 /** A numeric(18,4) of nothing always reads '0.0000' (ADR-025). */
 const NOTHING = '0.0000';
@@ -76,6 +77,7 @@ export function RmaDetailPage() {
   useRecordOpened('return', id, rma !== null);
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [linking, setLinking] = useState(false);
+  const [choosingSite, setChoosingSite] = useState(false);
 
   /**
    * The invoices a credit for this RMA can go against: the one it names, or
@@ -271,6 +273,41 @@ export function RmaDetailPage() {
         </Typography>
       )}
 
+      {/* Where the goods come back to (ADR-071, amended). */}
+      {rma.expectsGoods && (
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ alignItems: 'baseline', flexWrap: 'wrap' }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            {intl.formatMessage({
+              id: 'rmas.sendBackTo',
+              defaultMessage: 'Send back to',
+            })}
+          </Typography>
+          <Typography variant="body2">
+            {rma.sendBackTo?.name ??
+              intl.formatMessage({
+                id: 'rmas.sendBackTo.registered',
+                defaultMessage: 'Registered address',
+              })}
+          </Typography>
+          {open && canUpdate && (
+            <Button
+              variant="text"
+              size="small"
+              onClick={openDialog(() => setChoosingSite(true))}
+            >
+              {intl.formatMessage({
+                id: 'rmas.sendBackTo.change',
+                defaultMessage: 'Change',
+              })}
+            </Button>
+          )}
+        </Stack>
+      )}
+
       <Paper variant="outlined">
         <TableContainer>
           <Table size="small">
@@ -399,6 +436,14 @@ export function RmaDetailPage() {
           )}
         </Typography>
       )}
+
+      <SendBackToDialog
+        key={`${choosingSite ? 'choosing' : 'closed'}-${rma.sendBackTo?.id ?? ''}`}
+        open={choosingSite}
+        rma={rma}
+        onClose={() => setChoosingSite(false)}
+        onSaved={reload}
+      />
 
       <LinkReturnDialog
         key={linking ? 'linking' : 'closed'}

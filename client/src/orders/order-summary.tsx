@@ -144,6 +144,22 @@ export function OrderSummary({
 
       <Divider />
 
+      {/* Where a purchase is delivered (ADR-071, amended). */}
+      {!sale && (
+        <Fact
+          label={intl.formatMessage({
+            id: 'orders.deliverTo',
+            defaultMessage: 'Deliver to',
+          })}
+        >
+          {order.deliverTo?.name ??
+            intl.formatMessage({
+              id: 'orders.deliverTo.registered',
+              defaultMessage: 'Registered address',
+            })}
+        </Fact>
+      )}
+
       {quantities ? (
         <>
           <Heading>
