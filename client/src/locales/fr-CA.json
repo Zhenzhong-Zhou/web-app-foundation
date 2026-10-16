@@ -348,6 +348,7 @@
   "documents.creditNote": "Note de crédit",
   "documents.creditNote.against": "{kind, select, void {Annule} other {Crédite}} la facture {number}{date, select, none {} other { du {date}}}",
   "documents.dateOn": "Date {date}",
+  "documents.downloadPdf": "Télécharger le PDF",
   "documents.draft": "BROUILLON — pas une facture",
   "documents.draft.detail": "Pas encore émise : elle n’a pas de numéro et rien n’est dû.",
   "documents.dueOn": "Échéance le {date}",

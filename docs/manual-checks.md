@@ -944,6 +944,17 @@ await fetch(`${api}/v1/files/product-image`, {
   dialog fits the screen with its buttons reachable. Show it to someone
   who reads only Chinese, and ask them to find how to cancel.
 
+## 25. Documents as PDF (ADR-071)
+
+- **MC-2501** Open an issued invoice and press Print: a new tab opens the
+  PDF in the browser's own viewer, and printing it from there gives the
+  same page on Chrome, Safari and Firefox. Back on the invoice, Download
+  PDF saves `INV-000001.pdf`. A credit note does the same, saving
+  `CN-000001.pdf`. On an order, a shipment's Packing slip opens its PDF in
+  a new tab, and Download PDF beside it saves
+  `packing-slip-<the day it shipped>-<id>.pdf`. A draft invoice's PDF says
+  DRAFT across every page, and its file is named `DRAFT …`.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -1139,3 +1150,5 @@ first.
   to the reset page (#120): MC-R11 rewritten.
 - 2026-10-15: Email me a reset link replaces the sign-out and reset page
   beside a refused password (#120): MC-R11 rewritten.
+- 2026-10-16: section 25, documents as PDF: Print and Download PDF
+  (ADR-071): MC-2501.

@@ -348,6 +348,7 @@
   "documents.creditNote": "贷项通知单",
   "documents.creditNote.against": "{kind, select, void {作废} other {冲减}}{date, select, none {} other {{date} 的}}发票 {number}",
   "documents.dateOn": "日期 {date}",
+  "documents.downloadPdf": "下载 PDF",
   "documents.draft": "草稿——不是发票",
   "documents.draft.detail": "尚未开具：没有编号，也不欠任何款项。",
   "documents.dueOn": "到期日 {date}",

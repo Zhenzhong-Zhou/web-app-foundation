@@ -252,6 +252,32 @@ test('refuses to issue until every line is taxed, and deletes a draft', async ({
   await expect(page.getByText(/No invoices yet/)).toBeVisible();
 });
 
+test('prints and downloads an invoice as its PDF (ADR-071)', async ({
+  page,
+  freshOrg,
+}) => {
+  const api = freshOrg.api;
+  const invoiceId = await seedDraft(api);
+  await signInAs(page, api);
+  await page.goto(`/invoices/${invoiceId}`);
+
+  // Print opens the PDF in a new tab, in the browser's own viewer.
+  const print = page.getByRole('link', { name: 'Print' });
+  await expect(print).toHaveAttribute(
+    'href',
+    `/api/v1/invoices/${invoiceId}/pdf`,
+  );
+  await expect(print).toHaveAttribute('target', '_blank');
+
+  // Download PDF saves the same file, named by the document: a draft's
+  // says DRAFT, since it has no number yet.
+  const download = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Download PDF' }).click();
+  expect((await download).suggestedFilename()).toMatch(
+    /^DRAFT [0-9a-f]{8}\.pdf$/,
+  );
+});
+
 test('prints a draft as DRAFT, and a voided invoice and its credit note', async ({
   page,
   freshOrg,

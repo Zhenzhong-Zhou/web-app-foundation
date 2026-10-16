@@ -348,6 +348,7 @@
   "documents.creditNote": "Credit note",
   "documents.creditNote.against": "{kind, select, void {Voids} other {Credits}} invoice {number}{date, select, none {} other { of {date}}}",
   "documents.dateOn": "Date {date}",
+  "documents.downloadPdf": "Download PDF",
   "documents.draft": "DRAFT — not an invoice",
   "documents.draft.detail": "Not yet issued: it has no number and nothing is owed on it.",
   "documents.dueOn": "Due {date}",
