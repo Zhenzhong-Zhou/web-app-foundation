@@ -173,7 +173,7 @@ export function OrganizationPage() {
                 onSaved={reloadAll}
               />
               <TaxNumberForm
-                key={organization.taxRegistrationNumber ?? ''}
+                key={`tax-${organization.taxRegistrationNumber ?? ''}`}
                 value={organization.taxRegistrationNumber}
                 readOnly={!canUpdate}
                 onSaved={reload}
@@ -193,14 +193,16 @@ export function OrganizationPage() {
             'money',
             <>
               <BaseCurrencyForm
-                key={organization.baseCurrency ?? ''}
+                // Named apart, so two settings not yet set are not both ''
+                // (#127).
+                key={`currency-${organization.baseCurrency ?? ''}`}
                 value={organization.baseCurrency}
                 readOnly={!canUpdate}
                 onSaved={reload}
               />
               {can('price_lists.view') && (
                 <DefaultSaleListForm
-                  key={organization.defaultSalePriceListId ?? ''}
+                  key={`price-list-${organization.defaultSalePriceListId ?? ''}`}
                   value={organization.defaultSalePriceListId}
                   readOnly={!canUpdate}
                   onSaved={reload}
@@ -222,7 +224,7 @@ export function OrganizationPage() {
                 onSaved={reload}
               />
               <RequiredNameLanguages
-                key={organization.requiredNameLanguages.join()}
+                key={`names-${organization.requiredNameLanguages.join()}`}
                 value={organization.requiredNameLanguages}
                 readOnly={!canUpdate}
                 onSaved={reload}

@@ -586,7 +586,8 @@ export function InvoiceDetailPage() {
       />
 
       <IssueInvoiceDialog
-        key={issuing ? 'issuing' : 'closed'}
+        // Each dialog keyed apart from its sibling even while closed (#127).
+        key={issuing ? 'issuing' : 'issue-closed'}
         invoice={invoice}
         open={issuing}
         onClose={() => setIssuing(false)}
@@ -594,7 +595,7 @@ export function InvoiceDetailPage() {
       />
 
       <VoidInvoiceDialog
-        key={voiding ? 'voiding' : 'closed'}
+        key={voiding ? 'voiding' : 'void-closed'}
         invoice={invoice}
         open={voiding}
         onClose={() => setVoiding(false)}
