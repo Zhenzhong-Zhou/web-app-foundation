@@ -212,11 +212,7 @@ export function RmasPage() {
                         component={RouterLink}
                         to={`/orders/${row.orderId}`}
                       >
-                        {row.orderReference ??
-                          intl.formatMessage({
-                            id: 'inventory.trace.order',
-                            defaultMessage: 'Order',
-                          })}
+                        {row.orderNumber}
                       </Link>
                     </TableCell>
                     <TableCell>{row.reason}</TableCell>

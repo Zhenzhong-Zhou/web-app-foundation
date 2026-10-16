@@ -650,7 +650,7 @@
   "invoices.note": "发票备注",
   "invoices.note.help": "为客户打印：如采购单号、致谢语。",
   "invoices.number": "编号",
-  "invoices.orderReference": "订单 {reference}",
+  "invoices.orderNumber": "订单 {number}",
   "invoices.previewNote": "开具时将保存的数据，计算方式相同。",
   "invoices.print": "打印",
   "invoices.saveDetails": "保存详情",

@@ -650,7 +650,7 @@
   "invoices.note": "Note sur la facture",
   "invoices.note.help": "Imprimée pour le client : un numéro de bon de commande, un remerciement.",
   "invoices.number": "Numéro",
-  "invoices.orderReference": "Commande {reference}",
+  "invoices.orderNumber": "Commande {number}",
   "invoices.previewNote": "Ce que l’émission enregistrera, calculé de la même façon.",
   "invoices.print": "Imprimer",
   "invoices.saveDetails": "Enregistrer les détails",

@@ -15,7 +15,7 @@ const DRAFT: InvoiceDetail = {
   status: 'draft',
   orderId: 'order-1',
   orderNumber: 'SO-000001',
-  orderReference: 'SO-1',
+  orderReference: 'PO-ACME-1',
   shipmentId: 'ship-1',
   partnerId: 'partner-1',
   partnerName: 'Northside Pharmacy',

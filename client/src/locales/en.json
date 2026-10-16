@@ -650,7 +650,7 @@
   "invoices.note": "Note on the invoice",
   "invoices.note.help": "Printed for the customer: a PO number, a thank-you.",
   "invoices.number": "Number",
-  "invoices.orderReference": "Order {reference}",
+  "invoices.orderNumber": "Order {number}",
   "invoices.previewNote": "What issuing will store, calculated the same way.",
   "invoices.print": "Print",
   "invoices.saveDetails": "Save details",

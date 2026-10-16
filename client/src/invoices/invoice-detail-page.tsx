@@ -214,19 +214,15 @@ export function InvoiceDetailPage() {
           <>
             {invoice.partnerName}
             {SEPARATOR}
+            {/* The order by our number, which every order has (ADR-071). */}
             <Link component={RouterLink} to={`/orders/${invoice.orderId}`}>
-              {invoice.orderReference
-                ? intl.formatMessage(
-                    {
-                      id: 'invoices.orderReference',
-                      defaultMessage: 'Order {reference}',
-                    },
-                    { reference: invoice.orderReference },
-                  )
-                : intl.formatMessage({
-                    id: 'inventory.trace.order',
-                    defaultMessage: 'Order',
-                  })}
+              {intl.formatMessage(
+                {
+                  id: 'invoices.orderNumber',
+                  defaultMessage: 'Order {number}',
+                },
+                { number: invoice.orderNumber },
+              )}
             </Link>
             {invoice.invoiceDate && (
               <>
