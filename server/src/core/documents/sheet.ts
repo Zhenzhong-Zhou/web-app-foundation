@@ -544,15 +544,21 @@ export function raisedByLine(
   person: RaisedBy | null,
 ): Content[] {
   if (!person) return [];
-  const who =
-    present([person.name, person.jobTitle]).join(', ') +
-    (person.workPhone ? `${DOT}${person.workPhone}` : '');
+  // The parts as values, so each language punctuates them its own way.
   return [
     paragraph(
       doc.label(
         t(
-          { id: 'documents.raisedBy', defaultMessage: 'Raised by {who}' },
-          { who },
+          {
+            id: 'documents.raisedBy',
+            defaultMessage:
+              'Raised by {name}{jobTitle, select, none {} other {, {jobTitle}}}{phone, select, none {} other { · {phone}}}',
+          },
+          {
+            name: person.name,
+            jobTitle: person.jobTitle || 'none',
+            phone: person.workPhone || 'none',
+          },
         ),
       ),
     ),

@@ -62,7 +62,11 @@ export async function assertSite(
   if (!site.isActive) {
     throw new ConflictException(
       t(
-        { id: 'locations.site.retired', defaultMessage: '{name} is retired' },
+        {
+          id: 'locations.site.retired',
+          defaultMessage:
+            '{name} is retired. Choose a site still in use, or put it back in use in Locations.',
+        },
         { name: site.name },
       ),
     );

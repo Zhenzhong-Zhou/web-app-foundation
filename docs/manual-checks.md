@@ -1012,9 +1012,10 @@ await fetch(`${api}/v1/files/product-image`, {
   address (or the registered address when the site has none). The unpriced
   line is blank, a line asks for its price, and Total of priced lines says
   Before tax. The box asks the supplier to quote the PO number, and Raised
-  by shows your name, job title and work phone, never your email. Download
-  PDF saves `PO-….pdf`. Cancel the order and print again: CANCELLED
-  heads it.
+  by shows your name, job title and work phone, never your email; for a
+  supplier whose documents are in 中文, it reads 经办人：your name，job
+  title · phone, punctuated in Chinese. Download PDF saves `PO-….pdf`.
+  Cancel the order and print again: CANCELLED heads it.
 - **MC-2510** *(ADR-071)* The pro forma. On a priced sale, press Pro forma
   invoice and choose a tax code: the PDF says Not a tax invoice where a
   number would be, the order's number and Made today, its lines and tax as

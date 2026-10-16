@@ -804,7 +804,11 @@ describe('Orders (e2e)', () => {
       );
       await send({ deliverToId: bin }).expect(400);
       await send({ deliverToId: beta.locationId }).expect(400);
-      await send({ deliverToId: retired }).expect(409);
+      // Retired, with what to do about it.
+      const refused = await send({ deliverToId: retired }).expect(409);
+      expect(body<{ message: string }>(refused).message).toBe(
+        'Old depot is retired. Choose a site still in use, or put it back in use in Locations.',
+      );
 
       expect(await db.select().from(orders)).toHaveLength(0);
     });

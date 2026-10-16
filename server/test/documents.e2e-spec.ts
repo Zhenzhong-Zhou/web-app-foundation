@@ -281,6 +281,48 @@ describe('Documents as PDF (e2e)', () => {
       );
     });
 
+    it('punctuates who raised it as each language does', () => {
+      const rma: ReturnAuthorizationPrint = {
+        number: 'RMA-000001',
+        status: 'open',
+        createdAt: new Date('2026-10-16T10:00:00Z'),
+        orderNumber: 'SO-000001',
+        invoiceNumber: null,
+        reason: 'Arrived cracked',
+        expectsGoods: false,
+        note: null,
+        language: 'en',
+        secondLanguage: null,
+        seller: { name: 'Acme', taxNumber: null, address: null },
+        customerName: 'Northside Pharmacy',
+        customerAddress: null,
+        sendBackTo: null,
+        lines: [],
+        raisedBy: {
+          name: 'Bob Zhou',
+          jobTitle: 'Purchasing',
+          workPhone: '604 555 0142',
+        },
+      };
+      const words = (
+        doc: ReturnType<typeof documentText>,
+        over: Partial<ReturnAuthorizationPrint> = {},
+      ) => wordsOf(returnAuthorizationDocument({ ...rma, ...over }, doc));
+
+      expect(words(documentText('en', null, 'CA'))).toContain(
+        'Raised by Bob Zhou, Purchasing · 604 555 0142',
+      );
+      expect(words(documentText('zh-Hans', null, 'CN'))).toContain(
+        '经办人：Bob Zhou，Purchasing · 604 555 0142',
+      );
+      // Only the parts there are.
+      expect(
+        words(documentText('en', null, 'CA'), {
+          raisedBy: { name: 'Ann Lee', jobTitle: null, workPhone: null },
+        }),
+      ).toContain('Raised by Ann Lee ');
+    });
+
     it('names only its own lines, so one not returned refuses nothing', async () => {
       const org = await registerOrganization(app, 'alpha');
       const s = await shippedSale(org.agent);
