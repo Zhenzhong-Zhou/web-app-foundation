@@ -992,7 +992,8 @@ await fetch(`${api}/v1/files/product-image`, {
   naturally.
 - **MC-2507** *(ADR-071)* Deliver to. With one site, raise a purchase:
   Deliver to shows that site, with its address underneath, and the order's
-  summary says it. Add a second site and raise another: Deliver to starts
+  summary says it. Raise another with Not chosen picked: its summary says
+  Registered address, not the site. Add a second site and raise another: Deliver to starts
   at Not chosen and the summary says Registered address; choose a site and
   its address shows, or that it has none and the document prints the
   registered address. Edit order changes it on a draft or a confirmed

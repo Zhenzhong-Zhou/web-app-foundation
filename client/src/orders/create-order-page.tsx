@@ -245,8 +245,14 @@ export function CreateOrderPage() {
           // As typed, YYYY-MM-DD (ADR-052).
           expectedAt: expectedAt || undefined,
           note: note || undefined,
+          // Not chosen, picked, is none even beside the one site; left
+          // alone, the site shown, or the server's own choice.
           deliverToId:
-            direction === 'purchase' && deliverToId ? deliverToId : undefined,
+            direction !== 'purchase'
+              ? undefined
+              : deliverTo === ''
+                ? null
+                : deliverToId || undefined,
           /**
            * Quantities and prices stay strings from the input to the column. A
            * JSON number has already been through a double before any validator
