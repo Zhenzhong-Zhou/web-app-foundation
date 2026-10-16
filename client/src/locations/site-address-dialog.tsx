@@ -5,13 +5,14 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Location } from '../api/types.gen';
+import { AddressFields } from '../components/address-fields';
+import { addressBody, addressValues } from '../components/address-values';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
@@ -33,14 +34,7 @@ export function SiteAddressDialog({
 }) {
   const intl = useIntl();
   const address = site?.address ?? null;
-  const [form, setForm] = useState({
-    line1: address?.line1 ?? '',
-    line2: address?.line2 ?? '',
-    city: address?.city ?? '',
-    region: address?.region ?? '',
-    postalCode: address?.postalCode ?? '',
-    country: address?.country ?? '',
-  });
+  const [form, setForm] = useState(addressValues(address));
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
@@ -60,11 +54,6 @@ export function SiteAddressDialog({
     onClose();
   }
 
-  function update(field: keyof typeof form) {
-    return (event: { target: { value: string } }) =>
-      setForm((current) => ({ ...current, [field]: event.target.value }));
-  }
-
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!site) return;
@@ -73,14 +62,7 @@ export function SiteAddressDialog({
     void submit(() =>
       api(`/locations/${site.id}/address`, {
         method: 'PUT',
-        body: JSON.stringify({
-          line1: form.line1,
-          line2: form.line2 || undefined,
-          city: form.city || undefined,
-          region: form.region || undefined,
-          postalCode: form.postalCode || undefined,
-          country: form.country,
-        }),
+        body: JSON.stringify(addressBody(form)),
       }),
     );
   }
@@ -122,82 +104,11 @@ export function SiteAddressDialog({
               })}
             </Typography>
 
-            <TextField
-              id="site-address-line1"
-              label={intl.formatMessage({
-                id: 'settings.org.address.line1',
-                defaultMessage: 'Address line 1',
-              })}
-              required
-              fullWidth
-              value={form.line1}
-              onChange={update('line1')}
-              slotProps={{ htmlInput: { maxLength: 200 } }}
+            <AddressFields
+              idPrefix="site-address"
+              value={form}
+              onChange={setForm}
             />
-            <TextField
-              id="site-address-line2"
-              label={intl.formatMessage({
-                id: 'partners.address.line2',
-                defaultMessage: 'Address line 2',
-              })}
-              fullWidth
-              value={form.line2}
-              onChange={update('line2')}
-              slotProps={{ htmlInput: { maxLength: 200 } }}
-            />
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField
-                id="site-address-city"
-                label={intl.formatMessage({
-                  id: 'partners.address.city',
-                  defaultMessage: 'City',
-                })}
-                fullWidth
-                value={form.city}
-                onChange={update('city')}
-                slotProps={{ htmlInput: { maxLength: 100 } }}
-              />
-              <TextField
-                id="site-address-region"
-                label={intl.formatMessage({
-                  id: 'partners.address.region',
-                  defaultMessage: 'Province or state',
-                })}
-                fullWidth
-                value={form.region}
-                onChange={update('region')}
-                slotProps={{ htmlInput: { maxLength: 100 } }}
-              />
-            </Stack>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField
-                id="site-address-postal-code"
-                label={intl.formatMessage({
-                  id: 'partners.address.postalCode',
-                  defaultMessage: 'Postal code',
-                })}
-                fullWidth
-                value={form.postalCode}
-                onChange={update('postalCode')}
-                slotProps={{ htmlInput: { maxLength: 32 } }}
-              />
-              <TextField
-                id="site-address-country"
-                label={intl.formatMessage({
-                  id: 'partners.address.country',
-                  defaultMessage: 'Country',
-                })}
-                required
-                fullWidth
-                value={form.country}
-                onChange={update('country')}
-                helperText={intl.formatMessage({
-                  id: 'settings.org.country.help',
-                  defaultMessage: 'Two letters: CA, US.',
-                })}
-                slotProps={{ htmlInput: { maxLength: 2 } }}
-              />
-            </Stack>
 
             {address && (
               <Box>

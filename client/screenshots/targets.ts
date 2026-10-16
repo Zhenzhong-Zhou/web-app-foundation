@@ -17,8 +17,6 @@ export interface Targets {
   issuedInvoiceId: string | null;
   /** SO-DEMO-5's invoice, still in draft. */
   draftInvoiceId: string | null;
-  /** SO-DEMO-QC's invoice, which prints in French and English. */
-  bilingualInvoiceId: string | null;
   /** CALM-RUN-01, released and not yet made. */
   runInProgressId: string | null;
   /** FOC-2609-01, the batch the recall drill traces. */

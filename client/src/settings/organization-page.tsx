@@ -20,6 +20,8 @@ import type { OrganizationProfile } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
+import { AddressFields } from '../components/address-fields';
+import { addressBody, addressValues } from '../components/address-values';
 import { CurrencyField } from '../components/currency-field';
 import { PageHeader } from '../components/page-header';
 import { SettingsSection } from '../components/settings-section';
@@ -691,15 +693,6 @@ function TaxNumberForm({
   );
 }
 
-const EMPTY_ADDRESS = {
-  line1: '',
-  line2: '',
-  city: '',
-  region: '',
-  postalCode: '',
-  country: '',
-};
-
 function AddressForm({
   address,
   readOnly,
@@ -710,18 +703,7 @@ function AddressForm({
   onSaved: () => Promise<void>;
 }) {
   const intl = useIntl();
-  const [form, setForm] = useState(
-    address
-      ? {
-          line1: address.line1,
-          line2: address.line2 ?? '',
-          city: address.city ?? '',
-          region: address.region ?? '',
-          postalCode: address.postalCode ?? '',
-          country: address.country,
-        }
-      : EMPTY_ADDRESS,
-  );
+  const [form, setForm] = useState(addressValues(address));
 
   const { submitting, error, submit } = useSubmit(onSaved, {
     success: intl.formatMessage({
@@ -730,11 +712,6 @@ function AddressForm({
     }),
   });
 
-  function update(field: keyof typeof form) {
-    return (event: { target: { value: string } }) =>
-      setForm((current) => ({ ...current, [field]: event.target.value }));
-  }
-
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
@@ -742,14 +719,7 @@ function AddressForm({
     void submit(() =>
       api('/organization/address', {
         method: 'PUT',
-        body: JSON.stringify({
-          line1: form.line1,
-          line2: form.line2 || undefined,
-          city: form.city || undefined,
-          region: form.region || undefined,
-          postalCode: form.postalCode || undefined,
-          country: form.country,
-        }),
+        body: JSON.stringify(addressBody(form)),
       }),
     );
   }
@@ -781,90 +751,12 @@ function AddressForm({
         )
       }
     >
-      <TextField
-        id="organization-line1"
-        label={intl.formatMessage({
-          id: 'settings.org.address.line1',
-          defaultMessage: 'Address line 1',
-        })}
-        required
-        fullWidth
-        value={form.line1}
-        onChange={update('line1')}
+      <AddressFields
+        idPrefix="organization"
+        value={form}
+        onChange={setForm}
         disabled={readOnly}
-        slotProps={{ htmlInput: { maxLength: 200 } }}
       />
-      <TextField
-        id="organization-line2"
-        label={intl.formatMessage({
-          id: 'partners.address.line2',
-          defaultMessage: 'Address line 2',
-        })}
-        fullWidth
-        value={form.line2}
-        onChange={update('line2')}
-        disabled={readOnly}
-        slotProps={{ htmlInput: { maxLength: 200 } }}
-      />
-
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-        <TextField
-          id="organization-city"
-          label={intl.formatMessage({
-            id: 'partners.address.city',
-            defaultMessage: 'City',
-          })}
-          fullWidth
-          value={form.city}
-          onChange={update('city')}
-          disabled={readOnly}
-          slotProps={{ htmlInput: { maxLength: 100 } }}
-        />
-        <TextField
-          id="organization-region"
-          label={intl.formatMessage({
-            id: 'partners.address.region',
-            defaultMessage: 'Province or state',
-          })}
-          fullWidth
-          value={form.region}
-          onChange={update('region')}
-          disabled={readOnly}
-          slotProps={{ htmlInput: { maxLength: 100 } }}
-        />
-      </Stack>
-
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-        <TextField
-          id="organization-postal-code"
-          label={intl.formatMessage({
-            id: 'partners.address.postalCode',
-            defaultMessage: 'Postal code',
-          })}
-          fullWidth
-          value={form.postalCode}
-          onChange={update('postalCode')}
-          disabled={readOnly}
-          slotProps={{ htmlInput: { maxLength: 32 } }}
-        />
-        <TextField
-          id="organization-country"
-          label={intl.formatMessage({
-            id: 'partners.address.country',
-            defaultMessage: 'Country',
-          })}
-          required
-          fullWidth
-          value={form.country}
-          onChange={update('country')}
-          disabled={readOnly}
-          helperText={intl.formatMessage({
-            id: 'settings.org.country.help',
-            defaultMessage: 'Two letters: CA, US.',
-          })}
-          slotProps={{ htmlInput: { maxLength: 2 } }}
-        />
-      </Stack>
     </SettingsSection>
   );
 }

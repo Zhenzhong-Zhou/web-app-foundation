@@ -1,5 +1,3 @@
-import type { IntlShape } from 'react-intl';
-
 import type { TaxCode } from '../api/types.gen';
 import { intl as readerIntl } from '../i18n/intl';
 import { formatQuantity } from '../lib/format';
@@ -9,20 +7,19 @@ import { formatQuantity } from '../lib/format';
  * trailing zeros are stripped as text rather than through a number, which
  * could not tell 9.975 from 9.97499999.
  */
-export function formatRate(rate: string, intl?: IntlShape): string {
-  // "9.975%" in English, "9,975 %" in French (ADR-054). The reader's
-  // language unless a printed document passes its own.
-  const words = intl ?? readerIntl();
-  return words.formatMessage(
+export function formatRate(rate: string): string {
+  // "9.975%" in English, "9,975 %" in French (ADR-054), in the reader's
+  // language.
+  return readerIntl().formatMessage(
     { id: 'settings.tax.rate', defaultMessage: '{value}%' },
-    { value: rateNumber(rate, intl?.locale) },
+    { value: rateNumber(rate) },
   );
 }
 
 /** "5.0000" as "5", "9.9750" as "9,975" in French: the number alone. */
-export function rateNumber(rate: string, locale?: string): string {
+export function rateNumber(rate: string): string {
   const trimmed = rate.includes('.') ? rate.replace(/\.?0+$/, '') : rate;
-  return formatQuantity(trimmed, locale);
+  return formatQuantity(trimmed);
 }
 
 /** "GST 5% + PST 7%", or "Nothing" for an exempt code. */

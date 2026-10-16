@@ -120,7 +120,6 @@ async function globalSetup(config: FullConfig): Promise<void> {
       saleOrderId: orderId('SO-DEMO-1') ?? null,
       issuedInvoiceId: invoiceOf('SO-DEMO-1', 'issued'),
       draftInvoiceId: invoiceOf('SO-DEMO-5', 'draft'),
-      bilingualInvoiceId: invoiceOf('SO-DEMO-QC', 'issued'),
       runInProgressId: run?.id ?? null,
       batchLotId: batch?.id ?? null,
       recipeProductId: calm?.id ?? null,

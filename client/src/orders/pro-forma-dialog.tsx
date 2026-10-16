@@ -15,7 +15,7 @@ import { useIntl } from 'react-intl';
 
 import type { OrderDetail, TaxCode } from '../api/types.gen';
 import { PdfActions } from '../components/pdf-actions';
-import { api } from '../lib/api';
+import { api, withQuery } from '../lib/api';
 
 /**
  * A pro forma invoice for a sale (ADR-071): the order as it stands, valued
@@ -64,9 +64,9 @@ export function ProFormaDialog({
     };
   }, [open]);
 
-  const path = `/orders/${order.id}/pro-forma${
-    taxCodeId ? `?taxCodeId=${taxCodeId}` : ''
-  }`;
+  const path = withQuery(`/orders/${order.id}/pro-forma`, {
+    taxCodeId: taxCodeId || undefined,
+  });
 
   // The server's refusals, said here first, with what to do (ADR-071).
   const unpriced = order.lines
@@ -83,7 +83,13 @@ export function ProFormaDialog({
             defaultMessage:
               'Every item needs a price first. {skus} {count, plural, one {has} other {have}} none: price {count, plural, one {it} other {them}} on the Items tab.',
           },
-          { skus: unpriced.join(', '), count: unpriced.length },
+          {
+            skus: intl.formatList(unpriced, {
+              type: 'conjunction',
+              style: 'narrow',
+            }),
+            count: unpriced.length,
+          },
         )
       : currencies.length > 1
         ? intl.formatMessage(
@@ -92,7 +98,12 @@ export function ProFormaDialog({
               defaultMessage:
                 'A pro forma is in one currency, and this order has {currencies}. Price every item in one of them.',
             },
-            { currencies: currencies.join(', ') },
+            {
+              currencies: intl.formatList(currencies, {
+                type: 'conjunction',
+                style: 'narrow',
+              }),
+            },
           )
         : null;
 

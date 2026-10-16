@@ -64,10 +64,6 @@ for (const language of LANGUAGES) {
             !(shot.widths ?? DEFAULT_WIDTHS).includes(width),
             'Not taken at this width',
           );
-          test.skip(
-            !!shot.languages && !shot.languages.includes(language.app),
-            'Not taken in this language',
-          );
 
           const path = shot.path(readTargets());
           test.skip(path === null, 'Not in this demo: seed a fresh one');
@@ -103,8 +99,6 @@ for (const language of LANGUAGES) {
             await shot.prepare(page, wordsIn(language.app));
             await settle(page);
           }
-
-          if (shot.print) await page.emulateMedia({ media: 'print' });
 
           await page.screenshot({
             path: `screenshots/out/${shot.name}.${language.app}.${mode}.${width}.png`,

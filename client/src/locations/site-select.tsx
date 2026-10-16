@@ -1,14 +1,8 @@
 import { MenuItem, TextField } from '@mui/material';
 import { useIntl } from 'react-intl';
 
-import type { Location } from '../api/types.gen';
+import type { ChosenSite, Location } from '../api/types.gen';
 import { addressLine } from './address-line';
-
-/** A site a document already names, as the order and the RMA return it. */
-interface ChosenSite {
-  id: string;
-  name: string;
-}
 
 /**
  * One of the organization's sites, chosen for a document (ADR-071,

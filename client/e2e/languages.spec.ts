@@ -17,20 +17,13 @@ async function ok(
 }
 
 /**
- * A Quebec customer whose documents print in French then English, a
- * product named in French, and that product shipped to them, ready to
- * invoice. GST only, so the figures stay simple.
+ * A Quebec customer whose documents print in French then English, and a
+ * product shipped to them, ready to invoice.
  */
 async function seedQuebecSale(api: APIRequestContext) {
   await ok(
     await api.put('/v1/organization/address', {
       data: { line1: '100 Main St', city: 'Vancouver', country: 'CA' },
-    }),
-  );
-  // A taxed invoice needs the seller's tax number (ADR-046, amended).
-  await ok(
-    await api.patch('/v1/organization', {
-      data: { taxRegistrationNumber: '123456789 RT0001' },
     }),
   );
 
@@ -58,18 +51,13 @@ async function seedQuebecSale(api: APIRequestContext) {
   );
 
   const { product } = await created<{
-    product: { id: string; variants: { id: string }[] };
+    product: { variants: { id: string }[] };
   }>(
     await api.post('/v1/products', {
       data: { type: 'good', name: 'Focus', variant: { sku: 'FOCUS-60CT' } },
     }),
   );
   const variantId = product.variants[0].id;
-  await ok(
-    await api.put(`/v1/products/${product.id}/translations`, {
-      data: { translations: [{ locale: 'fr-CA', name: 'Capsules Focus' }] },
-    }),
-  );
 
   const { location } = await created<{ location: { id: string } }>(
     await api.post('/v1/locations', { data: { type: 'site', name: 'Shelf' } }),
@@ -82,12 +70,6 @@ async function seedQuebecSale(api: APIRequestContext) {
         quantity: '100',
         reason: 'receipt',
       },
-    }),
-  );
-
-  const { taxCode } = await created<{ taxCode: { id: string } }>(
-    await api.post('/v1/tax-codes', {
-      data: { name: 'GST', components: [{ name: 'GST', rate: '5' }] },
     }),
   );
 
@@ -124,7 +106,7 @@ async function seedQuebecSale(api: APIRequestContext) {
     }),
   );
 
-  return { shipmentId: shipment.id, taxCodeId: taxCode.id };
+  return { shipmentId: shipment.id };
 }
 
 test('switches the screens to French, and the server answers in French', async ({

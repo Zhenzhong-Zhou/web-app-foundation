@@ -1,7 +1,7 @@
 import { Button } from '@mui/material';
 import { useIntl } from 'react-intl';
 
-import { apiUrl } from '../lib/api';
+import { apiUrl, withQuery } from '../lib/api';
 
 /**
  * Print and Download PDF for a document (ADR-071): one PDF, drawn by the
@@ -15,7 +15,7 @@ import { apiUrl } from '../lib/api';
 export function PdfActions({ path }: { path: string }) {
   const intl = useIntl();
   // A path may ask its own question already: the pro forma's tax code.
-  const download = `${path}${path.includes('?') ? '&' : '?'}download=1`;
+  const download = withQuery(path, { download: '1' });
 
   return (
     <>

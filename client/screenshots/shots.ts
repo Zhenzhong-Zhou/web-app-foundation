@@ -14,14 +14,10 @@ export interface Shot {
   path: (targets: Targets) => string | null;
   /** Desktop and phone unless listed. */
   widths?: Width[];
-  /** Every language unless listed. */
-  languages?: string[];
   /** Before the picture: open a dialog, choose a filter. */
   prepare?: (page: Page, words: Words) => Promise<void>;
   /** The window only, not the whole page: a dialog, the top bar. */
   windowOnly?: boolean;
-  /** As a printer sees it: the print styles on, the app's chrome hidden. */
-  print?: boolean;
   /** Signed out, for the sign-in page. */
   signedOut?: boolean;
 }
@@ -109,23 +105,4 @@ export const SHOTS: Shot[] = [
   },
   { name: '13-stock-value', path: () => '/costs' },
   { name: '14-sign-in', path: () => '/login', signedOut: true },
-  {
-    // Paper is the customer's language, not the reader's, so one reader
-    // language is enough; both modes, to show the screen's dark mode never
-    // reaches the printer.
-    name: '15-printed-invoice',
-    path: (targets) =>
-      at(targets.issuedInvoiceId, (id) => `/invoices/${id}/print`),
-    widths: ['desktop'],
-    languages: ['en'],
-    print: true,
-  },
-  {
-    name: '16-printed-bilingual',
-    path: (targets) =>
-      at(targets.bilingualInvoiceId, (id) => `/invoices/${id}/print`),
-    widths: ['desktop'],
-    languages: ['en'],
-    print: true,
-  },
 ];

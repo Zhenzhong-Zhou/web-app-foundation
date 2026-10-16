@@ -1,3 +1,5 @@
+import { withQuery } from './api';
+
 /**
  * Date ranges on lists (ADR-057): the reader picks days; the list asks for
  * them as calendar days (`from`, `to`, both included) or, for a list of
@@ -59,18 +61,9 @@ export function presetRange(preset: RangePreset, today = new Date()): DayRange {
   }
 }
 
-function add(path: string, params: Record<string, string | undefined>): string {
-  const given = Object.entries(params).filter(
-    (entry): entry is [string, string] => Boolean(entry[1]),
-  );
-  if (given.length === 0) return path;
-  const query = new URLSearchParams(given).toString();
-  return `${path}${path.includes('?') ? '&' : '?'}${query}`;
-}
-
 /** A list of calendar days: the days as they are. */
 export function withDays(path: string, range: DayRange): string {
-  return add(path, { from: range.from, to: range.to });
+  return withQuery(path, { from: range.from, to: range.to });
 }
 
 /**
@@ -85,7 +78,7 @@ export function withInstants(path: string, range: DayRange): string {
   const until = range.to ? start(range.to) : undefined;
   until?.setDate(until.getDate() + 1);
 
-  return add(path, {
+  return withQuery(path, {
     from: range.from ? start(range.from).toISOString() : undefined,
     until: until?.toISOString(),
   });
