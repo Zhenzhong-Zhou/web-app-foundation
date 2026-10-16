@@ -6,9 +6,7 @@ import type { TDocumentDefinitions } from 'pdfmake/interfaces';
 
 import type { PaperSize } from '../../database/schema';
 import { CHINESE, FAMILIES, fonts, LATIN } from './fonts';
-
-/** 16 mm, the margin the print pages had, in points. */
-const MARGIN = (16 / 25.4) * 72;
+import { MARGIN } from './sheet';
 
 /**
  * pdfmake's in-memory file system, which its types leave out. On the server

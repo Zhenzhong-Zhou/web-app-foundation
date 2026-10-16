@@ -107,6 +107,7 @@
   "audit.action.orderLineRemoved": "Order line removed",
   "audit.action.orderLineReopened": "Order line reopened",
   "audit.action.orderLineUpdated": "Order line updated",
+  "audit.action.orderProFormaMade": "Pro forma invoice made",
   "audit.action.orderReturnReceived": "Return received",
   "audit.action.orderShipmentVoided": "Shipment voided",
   "audit.action.orderShipped": "Order shipped",

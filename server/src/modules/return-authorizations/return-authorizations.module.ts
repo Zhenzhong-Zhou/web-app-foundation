@@ -1,14 +1,22 @@
 import { Module } from '@nestjs/common';
 
+import { DocumentsModule } from '../../core/documents/documents.module';
+import { ReturnAuthorizationDocumentsController } from './return-authorization-documents.controller';
+import { ReturnAuthorizationPrintService } from './return-authorization-print.service';
 import { ReturnAuthorizationReceiptsService } from './return-authorization-receipts.service';
 import { ReturnAuthorizationReplacementsService } from './return-authorization-replacements.service';
 import { ReturnAuthorizationsController } from './return-authorizations.controller';
 import { ReturnAuthorizationsService } from './return-authorizations.service';
 
 @Module({
-  controllers: [ReturnAuthorizationsController],
+  imports: [DocumentsModule],
+  controllers: [
+    ReturnAuthorizationsController,
+    ReturnAuthorizationDocumentsController,
+  ],
   providers: [
     ReturnAuthorizationsService,
+    ReturnAuthorizationPrintService,
     ReturnAuthorizationReceiptsService,
     ReturnAuthorizationReplacementsService,
   ],

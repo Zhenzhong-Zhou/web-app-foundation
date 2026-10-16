@@ -2552,6 +2552,7 @@ export const AuditAction = {
   INVOICE_ISSUED: 'invoice.issued',
   INVOICE_VOIDED: 'invoice.voided',
   CREDIT_NOTE_ISSUED: 'credit_note.issued',
+  ORDER_PRO_FORMA_MADE: 'order.pro_forma_made',
   RETURN_AUTHORIZATION_CREATED: 'return_authorization.created',
   RETURN_AUTHORIZATION_CANCELLED: 'return_authorization.cancelled',
   RETURN_AUTHORIZATION_CLOSED: 'return_authorization.closed',
@@ -3091,6 +3092,7 @@ export type AuditControllerListV1Data = {
       | 'invoice.issued'
       | 'invoice.voided'
       | 'credit_note.issued'
+      | 'order.pro_forma_made'
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
@@ -3191,6 +3193,7 @@ export type AuditControllerExportAuditV1Data = {
       | 'invoice.issued'
       | 'invoice.voided'
       | 'credit_note.issued'
+      | 'order.pro_forma_made'
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
@@ -3376,6 +3379,7 @@ export type WorkControllerActivityV1Data = {
       | 'invoice.issued'
       | 'invoice.voided'
       | 'credit_note.issued'
+      | 'order.pro_forma_made'
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
@@ -3476,6 +3480,7 @@ export type WorkControllerExportActivityV1Data = {
       | 'invoice.issued'
       | 'invoice.voided'
       | 'credit_note.issued'
+      | 'order.pro_forma_made'
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
@@ -4939,6 +4944,24 @@ export type ReturnsControllerReturnableV1Responses = {
 export type ReturnsControllerReturnableV1Response =
   ReturnsControllerReturnableV1Responses[keyof ReturnsControllerReturnableV1Responses];
 
+export type OrderDocumentsControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    download?: '1';
+  };
+  url: '/v1/orders/{id}/pdf';
+};
+
+export type OrderDocumentsControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type OrderDocumentsControllerPdfV1Response =
+  OrderDocumentsControllerPdfV1Responses[keyof OrderDocumentsControllerPdfV1Responses];
+
 export type PartnersControllerListV1Data = {
   body?: never;
   path?: never;
@@ -5280,6 +5303,24 @@ export type ReturnAuthorizationsControllerRaiseReplacementV1Responses = {
 export type ReturnAuthorizationsControllerRaiseReplacementV1Response =
   ReturnAuthorizationsControllerRaiseReplacementV1Responses[keyof ReturnAuthorizationsControllerRaiseReplacementV1Responses];
 
+export type ReturnAuthorizationDocumentsControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    download?: '1';
+  };
+  url: '/v1/return-authorizations/{id}/pdf';
+};
+
+export type ReturnAuthorizationDocumentsControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type ReturnAuthorizationDocumentsControllerPdfV1Response =
+  ReturnAuthorizationDocumentsControllerPdfV1Responses[keyof ReturnAuthorizationDocumentsControllerPdfV1Responses];
+
 export type InvoicesControllerListV1Data = {
   body?: never;
   path?: never;
@@ -5578,6 +5619,25 @@ export type CreditNotesControllerPdfV1Responses = {
 
 export type CreditNotesControllerPdfV1Response =
   CreditNotesControllerPdfV1Responses[keyof CreditNotesControllerPdfV1Responses];
+
+export type ProFormaControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    taxCodeId?: string;
+    download?: '1';
+  };
+  url: '/v1/orders/{id}/pro-forma';
+};
+
+export type ProFormaControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type ProFormaControllerPdfV1Response =
+  ProFormaControllerPdfV1Responses[keyof ProFormaControllerPdfV1Responses];
 
 export type RecentControllerClearV1Data = {
   body?: never;

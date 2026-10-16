@@ -6,6 +6,7 @@ import { fontFor } from '../../core/documents/fonts';
 import { formatDay } from '../../core/documents/format';
 import {
   banner,
+  kindAndNumber,
   linesTable,
   logo,
   masthead,
@@ -248,6 +249,12 @@ export function printableInvoice(invoice: InvoiceDetail): Printable {
     name: invoice.number
       ? `${invoice.number}.pdf`
       : `DRAFT ${invoice.id.slice(0, 8)}.pdf`,
+    which: (doc) =>
+      kindAndNumber(
+        doc.label(t({ id: 'documents.invoice', defaultMessage: 'Invoice' })),
+        invoice.number ??
+          doc.label(t({ id: 'documents.draftMark', defaultMessage: 'DRAFT' })),
+      ),
     draw: (doc, logo) => invoiceDocument(invoice, doc, logo),
   };
 }

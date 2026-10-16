@@ -133,6 +133,10 @@ export const AUDIT_ACTION_NAMES = defineMessages<AuditAction>({
     id: 'audit.action.orderShipped',
     defaultMessage: 'Order shipped',
   },
+  'order.pro_forma_made': {
+    id: 'audit.action.orderProFormaMade',
+    defaultMessage: 'Pro forma invoice made',
+  },
   'order.updated': {
     id: 'audit.action.orderUpdated',
     defaultMessage: 'Order updated',

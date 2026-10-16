@@ -111,6 +111,8 @@ export const AUDIT_ACTIONS = {
   /** Part of an invoice credited — goods back, a correction, a write-off. */
   CREDIT_NOTE_ISSUED: 'credit_note.issued',
 
+  /** A pro forma drawn for a sale, with its total (ADR-071). */
+  ORDER_PRO_FORMA_MADE: 'order.pro_forma_made',
   RETURN_AUTHORIZATION_CREATED: 'return_authorization.created',
   RETURN_AUTHORIZATION_CANCELLED: 'return_authorization.cancelled',
   RETURN_AUTHORIZATION_CLOSED: 'return_authorization.closed',

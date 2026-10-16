@@ -5,11 +5,13 @@ import { NotificationsModule } from '../../core/notifications/notifications.modu
 import { PartnersModule } from '../partners/partners.module';
 import { ReturnAuthorizationsModule } from '../return-authorizations/return-authorizations.module';
 import { StockModule } from '../stock/stock.module';
+import { OrderDocumentsController } from './order-documents.controller';
 import { OrderLifecycleService } from './order-lifecycle.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderReceiptsService } from './order-receipts.service';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { PurchaseOrderPrintService } from './purchase-order-print.service';
 import { ReturnsController } from './returns.controller';
 import { ReturnsService } from './returns.service';
 import { ShipmentVoidsService } from './shipment-voids.service';
@@ -35,12 +37,18 @@ import { ShippingService } from './shipping.service';
     ReturnAuthorizationsModule,
     DocumentsModule,
   ],
-  controllers: [OrdersController, ShipmentsController, ReturnsController],
+  controllers: [
+    OrdersController,
+    ShipmentsController,
+    ReturnsController,
+    OrderDocumentsController,
+  ],
   providers: [
     OrdersService,
     OrderLifecycleService,
     OrderLinesService,
     OrderReceiptsService,
+    PurchaseOrderPrintService,
     ShipmentsService,
     ShippingService,
     ShipmentVoidsService,

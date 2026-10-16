@@ -6,37 +6,23 @@ import type {
 
 import type { DocumentText } from '../../core/documents/document-text';
 import type { Printable } from '../../core/documents/documents.service';
-import {
-  formatDay,
-  formatQuantity,
-  NO_VALUE,
-} from '../../core/documents/format';
+import { formatDay, NO_VALUE } from '../../core/documents/format';
 import {
   addressLines,
   banner,
   block,
   cell,
   head,
+  kindAndNumber,
   linesOf,
   logo,
   masthead,
+  quantityWithUnit,
   run,
   sideBySide,
 } from '../../core/documents/sheet';
-import { t, type Translatable } from '../../i18n/translate';
+import { t } from '../../i18n/translate';
 import type { PackingSlip } from './dto/shipment-response.dto';
-
-/** A unit of measure by name, in each language; any other as stored. */
-const UNITS: Record<string, Translatable> = {
-  each: t({ id: 'products.unit.each', defaultMessage: 'each' }),
-  kg: t({ id: 'products.unit.kg', defaultMessage: 'kg' }),
-  g: t({ id: 'products.unit.g', defaultMessage: 'g' }),
-  litre: t({ id: 'products.unit.litre', defaultMessage: 'litre' }),
-  ml: t({ id: 'products.unit.ml', defaultMessage: 'ml' }),
-  case: t({ id: 'products.unit.case', defaultMessage: 'case' }),
-  box: t({ id: 'products.unit.box', defaultMessage: 'box' }),
-  pallet: t({ id: 'products.unit.pallet', defaultMessage: 'pallet' }),
-};
 
 /**
  * One shipment as a PDF (ADR-071), as its packing slip page had it
@@ -177,21 +163,13 @@ export function packingSlipDocument(
       'right',
     ),
   ];
-  const rows: TableCell[][] = slip.items.map((item) => {
-    const unit = UNITS[item.unitOfMeasure];
-    // The figure once, the unit in each language.
-    const quantity = [
-      formatQuantity(item.quantity, doc.locale),
-      unit ? doc.label(unit) : item.unitOfMeasure,
-    ].join(' ');
-    return [
-      cell(item.sku),
-      cell(item.description),
-      cell(item.lotCode ?? NO_VALUE),
-      cell(item.expiresAt ? day(item.expiresAt) : NO_VALUE),
-      cell(quantity, 'right'),
-    ];
-  });
+  const rows: TableCell[][] = slip.items.map((item) => [
+    cell(item.sku),
+    cell(item.description),
+    cell(item.lotCode ?? NO_VALUE),
+    cell(item.expiresAt ? day(item.expiresAt) : NO_VALUE),
+    cell(quantityWithUnit(doc, item.quantity, item.unitOfMeasure), 'right'),
+  ]);
 
   content.push(linesOf(['auto', '*', 'auto', 'auto', 'auto'], header, rows));
 
@@ -231,6 +209,14 @@ export function printablePackingSlip(slip: PackingSlip): Printable {
     secondLanguage: slip.secondLanguage,
     sellerCountry: null,
     name: `packing-slip-${shipped}-${slip.id.slice(0, 8)}.pdf`,
+    // A slip has no number of its own: the order's names it.
+    which: (doc) =>
+      kindAndNumber(
+        doc.label(
+          t({ id: 'documents.packingSlip', defaultMessage: 'Packing slip' }),
+        ),
+        slip.order.number,
+      ),
     draw: (doc, logo) => packingSlipDocument(slip, doc, logo),
   };
 }

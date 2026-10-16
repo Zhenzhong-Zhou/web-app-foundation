@@ -107,6 +107,7 @@
   "audit.action.orderLineRemoved": "订单行已移除",
   "audit.action.orderLineReopened": "订单行已重新开启",
   "audit.action.orderLineUpdated": "订单行已更新",
+  "audit.action.orderProFormaMade": "已出具形式发票",
   "audit.action.orderReturnReceived": "退货已收货",
   "audit.action.orderShipmentVoided": "发货已作废",
   "audit.action.orderShipped": "订单已发货",

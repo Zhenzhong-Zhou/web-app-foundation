@@ -5,6 +5,7 @@ import type { Printable } from '../../core/documents/documents.service';
 import { formatDay } from '../../core/documents/format';
 import {
   GAP,
+  kindAndNumber,
   linesTable,
   logo,
   masthead,
@@ -142,6 +143,13 @@ export function printableCreditNote(note: CreditNoteDetail): Printable {
     // Copied at issue, as the invoice's was.
     sellerCountry: note.sellerCountry,
     name: `${note.number}.pdf`,
+    which: (doc) =>
+      kindAndNumber(
+        doc.label(
+          t({ id: 'documents.creditNote', defaultMessage: 'Credit note' }),
+        ),
+        note.number,
+      ),
     draw: (doc, logo) => creditNoteDocument(note, doc, logo),
   };
 }

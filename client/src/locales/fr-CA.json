@@ -107,6 +107,7 @@
   "audit.action.orderLineRemoved": "Ligne de commande retirée",
   "audit.action.orderLineReopened": "Ligne de commande rouverte",
   "audit.action.orderLineUpdated": "Ligne de commande modifiée",
+  "audit.action.orderProFormaMade": "Facture proforma établie",
   "audit.action.orderReturnReceived": "Retour reçu",
   "audit.action.orderShipmentVoided": "Expédition annulée",
   "audit.action.orderShipped": "Commande expédiée",

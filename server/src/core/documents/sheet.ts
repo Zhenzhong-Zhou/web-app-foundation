@@ -1,6 +1,7 @@
 import type {
   Content,
   ContentText,
+  DynamicContent,
   Size,
   Style,
   TableCell,
@@ -11,6 +12,7 @@ import { t, type Translatable, translate } from '../../i18n/translate';
 import type { DocumentText } from './document-text';
 import { piecesOf } from './fonts';
 import { formatMoney, formatQuantity, NO_VALUE } from './format';
+import type { RaisedBy } from './parties';
 
 /**
  * The parts every document shares, as the print pages drew them (ADR-055),
@@ -27,10 +29,18 @@ import { formatMoney, formatQuantity, NO_VALUE } from './format';
 const WARNING = '#d32f2f';
 /** The rule under each line of a table. */
 const RULE = '#e0e0e0';
+/** A box's border, and the words at a page's foot. */
+const QUIET = '#757575';
 /** Space between a sheet's parts: the print pages' 24 px. */
 export const GAP = 18;
 
 const millimetres = (mm: number) => (mm / 25.4) * 72;
+
+/** 16 mm, the margin the print pages had, in points. */
+export const MARGIN = millimetres(16);
+
+/** Between a document's kind and its number, at its foot. */
+const DOT = ' \u00b7 ';
 
 /** The parts that are there: no null, no empty string. */
 function present(parts: (string | null | false | undefined)[]): string[] {
@@ -374,4 +384,126 @@ export function totals(
     ],
     margin: [0, 0, 0, GAP],
   };
+}
+
+/**
+ * Every page's foot, on all six documents (ADR-071, amended): the
+ * document's kind and number, and "Page 1 of 2", so a second page found
+ * loose says what it belongs to.
+ */
+export function pageFooter(doc: DocumentText, which: string): DynamicContent {
+  return (page: number, count: number) => ({
+    columns: [
+      run(which, { fontSize: 8.5, color: QUIET }),
+      run(
+        doc.label(
+          t(
+            {
+              id: 'documents.pageOf',
+              defaultMessage: 'Page {page} of {count}',
+            },
+            { page, count },
+          ),
+        ),
+        { fontSize: 8.5, color: QUIET, alignment: 'right' },
+      ),
+    ],
+    margin: [MARGIN, MARGIN / 2, MARGIN, 0],
+  });
+}
+
+/** "Purchase order · PO-000045": the kind in each language, the number once. */
+export function kindAndNumber(kind: string, number: string): string {
+  return `${kind}${DOT}${number}`;
+}
+
+/**
+ * A boxed note a reader must not miss: the pro forma's "nothing is owed",
+ * the purchase order's number to quote, the RMA's number on every box.
+ * Each line one language's, or one per sentence.
+ */
+export function notice(lines: string[], emphasis = false): Content {
+  const thin = () => 0.75;
+  const quiet = () => QUIET;
+  const padded = () => 10;
+  return {
+    table: {
+      widths: ['*'],
+      body: [
+        [
+          {
+            stack: lines.map((line, index) =>
+              run(line, {
+                fontSize: 10.5,
+                bold: emphasis && index === 0,
+                margin: [0, index === 0 ? 0 : 3, 0, 0],
+              }),
+            ),
+          },
+        ],
+      ],
+    },
+    layout: {
+      hLineWidth: thin,
+      vLineWidth: thin,
+      hLineColor: quiet,
+      vLineColor: quiet,
+      paddingLeft: padded,
+      paddingRight: padded,
+      paddingTop: padded,
+      paddingBottom: padded,
+    },
+    margin: [0, 0, 0, GAP],
+  };
+}
+
+/** A unit of measure by name, in each language; any other as stored. */
+const UNITS: Record<string, Translatable> = {
+  each: t({ id: 'products.unit.each', defaultMessage: 'each' }),
+  kg: t({ id: 'products.unit.kg', defaultMessage: 'kg' }),
+  g: t({ id: 'products.unit.g', defaultMessage: 'g' }),
+  litre: t({ id: 'products.unit.litre', defaultMessage: 'litre' }),
+  ml: t({ id: 'products.unit.ml', defaultMessage: 'ml' }),
+  case: t({ id: 'products.unit.case', defaultMessage: 'case' }),
+  box: t({ id: 'products.unit.box', defaultMessage: 'box' }),
+  pallet: t({ id: 'products.unit.pallet', defaultMessage: 'pallet' }),
+};
+
+/** "20 box": the figure once, the unit in each language. */
+export function quantityWithUnit(
+  doc: DocumentText,
+  quantity: string,
+  unitOfMeasure: string,
+): string {
+  const unit = UNITS[unitOfMeasure];
+  return [
+    formatQuantity(quantity, doc.locale),
+    unit ? doc.label(unit) : unitOfMeasure,
+  ].join(' ');
+}
+
+/**
+ * "Raised by Bob Zhou, Purchasing · 604 555 0142": who to call about a
+ * purchase order or an RMA, as typed in their membership. Nothing when
+ * nobody is left to name.
+ */
+export function raisedByLine(
+  doc: DocumentText,
+  person: RaisedBy | null,
+): Content[] {
+  if (!person) return [];
+  const who =
+    [person.name, person.jobTitle].filter(Boolean).join(', ') +
+    (person.workPhone ? `${DOT}${person.workPhone}` : '');
+  return [
+    run(
+      doc.label(
+        t(
+          { id: 'documents.raisedBy', defaultMessage: 'Raised by {who}' },
+          { who },
+        ),
+      ),
+      { fontSize: 10.5, margin: [0, 0, 0, GAP] },
+    ),
+  ];
 }

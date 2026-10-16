@@ -796,6 +796,7 @@
                 "invoice.issued",
                 "invoice.voided",
                 "credit_note.issued",
+                "order.pro_forma_made",
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
@@ -958,6 +959,7 @@
                 "invoice.issued",
                 "invoice.voided",
                 "credit_note.issued",
+                "order.pro_forma_made",
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
@@ -1293,6 +1295,7 @@
                 "invoice.issued",
                 "invoice.voided",
                 "credit_note.issued",
+                "order.pro_forma_made",
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
@@ -1455,6 +1458,7 @@
                 "invoice.issued",
                 "invoice.voided",
                 "credit_note.issued",
+                "order.pro_forma_made",
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
@@ -4964,6 +4968,48 @@
         ]
       }
     },
+    "/v1/orders/{id}/pdf": {
+      "get": {
+        "operationId": "OrderDocumentsController_pdf_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "download",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OrderDocuments"
+        ]
+      }
+    },
     "/v1/partners": {
       "get": {
         "operationId": "PartnersController_list_v1",
@@ -5674,6 +5720,48 @@
         },
         "tags": [
           "ReturnAuthorizations"
+        ]
+      }
+    },
+    "/v1/return-authorizations/{id}/pdf": {
+      "get": {
+        "operationId": "ReturnAuthorizationDocumentsController_pdf_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "download",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReturnAuthorizationDocuments"
         ]
       }
     },
@@ -6574,6 +6662,56 @@
         },
         "tags": [
           "CreditNotes"
+        ]
+      }
+    },
+    "/v1/orders/{id}/pro-forma": {
+      "get": {
+        "operationId": "ProFormaController_pdf_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "taxCodeId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "download",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProForma"
         ]
       }
     },
@@ -17458,6 +17596,7 @@
           "invoice.issued",
           "invoice.voided",
           "credit_note.issued",
+          "order.pro_forma_made",
           "return_authorization.created",
           "return_authorization.cancelled",
           "return_authorization.closed",

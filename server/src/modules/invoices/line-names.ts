@@ -53,7 +53,15 @@ export async function namedLines(
   organizationId: string,
   invoiceId: string,
   languages: DocumentLanguages,
+  /**
+   * Whose lines: an invoice's, or an order's, which the pro forma, the
+   * purchase order and the RMA print (ADR-071). By the id given either way.
+   */
+  of: 'invoice' | 'order' = 'invoice',
 ): Promise<Map<string, LineNames>> {
+  const lines = sql.raw(of === 'order' ? 'order_lines' : 'invoice_lines');
+  const parent = sql.raw(of === 'order' ? 'order_id' : 'invoice_id');
+
   const rows = (
     await tx.execute<NameRow>(sql`
       select
@@ -65,7 +73,7 @@ export async function namedLines(
         vt1.name as first_variant,
         pt2.name as second_product,
         vt2.name as second_variant
-      from invoice_lines l
+      from ${lines} l
       join product_variants v on v.id = l.variant_id
       join products p on p.id = v.product_id
       left join product_translations pt1
@@ -77,7 +85,7 @@ export async function namedLines(
       left join variant_translations vt2
         on vt2.variant_id = v.id and vt2.locale = ${languages.secondLanguage}
       where l.organization_id = ${organizationId}::uuid
-        and l.invoice_id = ${invoiceId}::uuid
+        and l.${parent} = ${invoiceId}::uuid
       order by l.sku
     `)
   ).rows;

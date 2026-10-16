@@ -14,6 +14,7 @@ import { FilesService } from '../files/files.service';
 import { registeredAddress } from '../organizations/registered-address';
 import { type DocumentText, documentText } from './document-text';
 import { PdfRenderer } from './pdf-renderer.service';
+import { pageFooter } from './sheet';
 
 /** A document as its module reads it, ready to draw (ADR-071). */
 export interface Printable {
@@ -27,6 +28,11 @@ export interface Printable {
   sellerCountry: string | null;
   /** The file's name. */
   name: string;
+  /**
+   * Its kind and number, "Invoice · INV-000042", in its words: what every
+   * page's foot says beside the page's number (ADR-071, amended).
+   */
+  which: (doc: DocumentText) => string;
   /** The drawing, given the document's words and the logo it prints. */
   draw: (doc: DocumentText, logo: string | null) => TDocumentDefinitions;
 }
@@ -63,17 +69,24 @@ export class DocumentsService {
    * browser's own viewer, or an attachment for Download PDF, named either
    * way by the document. The document is read beside the letterhead, since
    * neither needs the other.
+   *
+   * `drawn` runs once the PDF exists and before any of it is sent: the pro
+   * forma records itself there (ADR-071), so a refusal records nothing, a
+   * failed record sends nothing, and whoever has the file can find its
+   * entry the moment they do.
    */
   async send(
     res: Response,
     download: boolean,
     printable: Promise<Printable>,
+    drawn?: () => Promise<void>,
   ): Promise<void> {
     const [document, letterhead] = await Promise.all([
       printable,
       this.letterhead(),
     ]);
     const pdf = await this.pdf(document, letterhead);
+    await drawn?.();
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
@@ -90,11 +103,17 @@ export class DocumentsService {
    */
   pdf(document: Printable, letterhead: Letterhead): Promise<Buffer> {
     const country = document.sellerCountry ?? letterhead.country;
+    const doc = documentText(
+      document.language,
+      document.secondLanguage,
+      country,
+    );
     return this.renderer.render(
-      document.draw(
-        documentText(document.language, document.secondLanguage, country),
-        letterhead.logo,
-      ),
+      {
+        ...document.draw(doc, letterhead.logo),
+        // Every page's foot, the same on all six documents.
+        footer: pageFooter(doc, document.which(doc)),
+      },
       // The organization's choice for every document, or the country's.
       letterhead.paper ?? paperFor(country),
     );
