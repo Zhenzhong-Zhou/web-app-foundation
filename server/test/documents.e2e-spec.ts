@@ -1,11 +1,15 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
+import { documentText } from '../src/core/documents/document-text';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { auditLog, productVariants } from '../src/database/schema';
+import { returnAuthorizationDocument } from '../src/modules/return-authorizations/return-authorization-document';
+import type { ReturnAuthorizationPrint } from '../src/modules/return-authorizations/return-authorization-print.service';
+import { wordsOf } from './utils/document-words';
 import {
   body,
   createE2eApp,
@@ -232,6 +236,49 @@ describe('Documents as PDF (e2e)', () => {
       await beta.agent
         .get(`/v1/return-authorizations/${rma.id}/pdf`)
         .expect(404);
+    });
+
+    it('says to send the goods to the label only while it is open', () => {
+      const rma: ReturnAuthorizationPrint = {
+        number: 'RMA-000001',
+        status: 'open',
+        createdAt: new Date('2026-10-16T10:00:00Z'),
+        orderNumber: 'SO-000001',
+        invoiceNumber: null,
+        reason: 'Arrived cracked',
+        expectsGoods: true,
+        note: null,
+        language: 'en',
+        secondLanguage: null,
+        seller: { name: 'Acme', taxNumber: null, address: null },
+        customerName: 'Northside Pharmacy',
+        customerAddress: null,
+        sendBackTo: null,
+        lines: [
+          {
+            sku: 'FOCUS-60CT',
+            description: 'Focus capsules',
+            secondDescription: null,
+            quantity: '2',
+            resolution: 'credit',
+          },
+        ],
+        raisedBy: null,
+      };
+      const english = documentText('en', null, 'CA');
+      const words = (over: Partial<ReturnAuthorizationPrint>) =>
+        wordsOf(returnAuthorizationDocument({ ...rma, ...over }, english));
+
+      expect(words({})).toContain('the address on the label below');
+      expect(words({})).toContain('Cut out and tape to the box');
+      // Closed or cancelled, there is no label to point at.
+      for (const status of ['closed', 'cancelled'] as const) {
+        expect(words({ status })).not.toContain('label below');
+        expect(words({ status })).not.toContain('Cut out and tape to the box');
+      }
+      expect(words({ expectsGoods: false })).toContain(
+        'Nothing needs to be sent back.',
+      );
     });
 
     it('names only its own lines, so one not returned refuses nothing', async () => {

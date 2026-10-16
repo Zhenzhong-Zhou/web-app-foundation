@@ -1028,7 +1028,8 @@ await fetch(`${api}/v1/files/product-image`, {
   the dashed label at the end shows Return to, the site and its address,
   the number large, and From the customer. Print one where the customer
   keeps the goods: the box says nothing needs to be sent back, and there
-  is no label.
+  is no label. Close or cancel one whose goods were coming back and print
+  it again: no box points to a label, and there is none.
 - **MC-2512** *(ADR-071)* Every page's foot. On each of the six documents,
   the foot of every page says what it is and its number, as Purchase
   order · PO-000045, and Page 1 of 2. Add lines to an order until its

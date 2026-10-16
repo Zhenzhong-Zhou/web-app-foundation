@@ -112,48 +112,55 @@ export function returnAuthorizationDocument(
   );
 
   // The box: the one thing the customer must do, or that they need do
-  // nothing.
+  // nothing. Sending to the label is said only while the label is drawn,
+  // on an RMA still open; a closed or cancelled one expects nothing more.
+  if (rma.expectsGoods && rma.status === 'open') {
+    content.push(
+      notice(
+        [
+          ...doc.lines(
+            t(
+              {
+                id: 'documents.returnAuthorization.writeNumber',
+                defaultMessage: 'Write {number} on the outside of every box.',
+              },
+              { number: rma.number },
+            ),
+          ),
+          ...doc.lines(
+            t({
+              id: 'documents.returnAuthorization.sendTo',
+              defaultMessage:
+                'Send the goods to the address on the label below; a box without the number may be refused.',
+            }),
+          ),
+        ],
+        true,
+      ),
+    );
+  } else if (!rma.expectsGoods) {
+    content.push(
+      notice(
+        [
+          ...doc.lines(
+            t({
+              id: 'documents.returnAuthorization.nothingBack',
+              defaultMessage: 'Nothing needs to be sent back.',
+            }),
+          ),
+          ...doc.lines(
+            t({
+              id: 'documents.returnAuthorization.keep',
+              defaultMessage:
+                'Please dispose of the goods below. Keep this authorization: it is the record of what was agreed.',
+            }),
+          ),
+        ],
+        true,
+      ),
+    );
+  }
   content.push(
-    rma.expectsGoods
-      ? notice(
-          [
-            ...doc.lines(
-              t(
-                {
-                  id: 'documents.returnAuthorization.writeNumber',
-                  defaultMessage: 'Write {number} on the outside of every box.',
-                },
-                { number: rma.number },
-              ),
-            ),
-            ...doc.lines(
-              t({
-                id: 'documents.returnAuthorization.sendTo',
-                defaultMessage:
-                  'Send the goods to the address on the label below; a box without the number may be refused.',
-              }),
-            ),
-          ],
-          true,
-        )
-      : notice(
-          [
-            ...doc.lines(
-              t({
-                id: 'documents.returnAuthorization.nothingBack',
-                defaultMessage: 'Nothing needs to be sent back.',
-              }),
-            ),
-            ...doc.lines(
-              t({
-                id: 'documents.returnAuthorization.keep',
-                defaultMessage:
-                  'Please dispose of the goods below. Keep this authorization: it is the record of what was agreed.',
-              }),
-            ),
-          ],
-          true,
-        ),
     paragraph(
       doc.label(
         t(
