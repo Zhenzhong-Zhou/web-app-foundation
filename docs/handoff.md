@@ -1,9 +1,9 @@
-# web-app-foundation — handoff, 15 October 2026
+# web-app-foundation — handoff, 16 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 15 October 2026: read this first
+## Now, 16 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
@@ -16,17 +16,21 @@ with this one, this one is current.
   lookup, the gallery's zooming viewer, and the invoice refusals' links to
   Organization → Profile and to the customer (`invoice-refusal-link`,
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
-  "Error codes"). Since then, through #116: ADR-067 to ADR-070 below.
-- **Migrations:** through **0061** on `main`, 62 files in
+  "Error codes"). Since then, through #124: ADR-067 to ADR-070 below,
+  and `deletion-started` (#117).
+- **Migrations:** through **0062** on `main`, 63 files in
   `server/src/database/migrations/`. 0055 and 0056 are ADR-069's (#114);
   0057 to 0061 are ADR-070's (#116): the deletion day, the reminder, and
   whose account goes with it (0059 put it on the organization, 0060 moved
   it to the account, 0061 added its check and the trigger that clears it
-  when a membership ends). **0062** is #117's, on `deletion-started`: the
-  mark a run takes before it erases an organization's files. Next is
-  **0063**. Render holds one row per file in
-  `drizzle.__drizzle_migrations` once `main` is deployed there: 62, then
-  63. After any new migration: `npm run migrate:all`.
+  when a membership ends). 0062 is #117's, merged in #124: the mark a run
+  takes before it erases an organization's files. `adr-071-documents`
+  adds **0063** (order numbers, every existing order numbered), **0064**
+  (each organization's paper size) and **0065** (Deliver to and Send back
+  to, filled in for existing orders and RMAs); next is **0066**. Render
+  holds one row per file in `drizzle.__drizzle_migrations` once `main` is
+  deployed there: 63, then 66. After any new migration: `npm run
+  migrate:all`.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
   for typescript-eslint and the Nest CLI (ADR-067, *Deferred*); still so
@@ -144,25 +148,31 @@ with this one, this one is current.
   v0.6.0 and v0.5.0's notes are the GitHub releases and `docs/releases/`.
   Release notes are release notes only: they say nothing of manual checks
   or the walkthrough.
-- **`deletion-started`** (PR to open): #117, an ADR-070 amendment, then
-  migration 0062. Completing a deletion marks its start under the
-  organization's lock before erasing anything; a cancel or an upload after
-  the mark is refused. An upload writes its bytes first, then saves its
-  row in a short transaction, and deletes its bytes if refused; the
-  storage client has timeouts. Also, after #120's review: Email me a reset
-  link beside a refused password, sending the reset email to the person's
-  own address while they stay signed in (MC-R11 rewritten).
-- **Next, ADR-071** (#118), decided so far: six documents as PDFs drawn on
-  the server (pdfmake, embedded Noto fonts), the invoice, credit note and
-  packing slip in their ADR-055 look, and the RMA, purchase order and pro
-  forma invoice designed on the canvas first; Print opens the PDF, so the
-  browser print pages retire and each document has one design; Download
-  PDF on each; the export adds the invoices' and credit notes' PDFs, a
-  column glossary in its README (headers stay as stored) and `?locale=`
-  on its link. The pro forma carries its order's number and the date made,
-  and declared values for free samples wait for customs details. Still to
-  confirm: the pro forma made on demand from any sale order not cancelled,
-  every line priced, and audited when made. Then tag v0.7.0.
+- **ADR-071** (#118): built on `adr-071-documents`, its PR to open.
+  - **Built:** six documents as PDFs drawn on the server with pdfmake, in
+    Noto Sans and Noto Sans SC, each character in a font that has it: the
+    invoice, credit note and packing slip in their ADR-055 look, and the
+    purchase order, pro forma invoice and RMA as designed on the canvas.
+    Print opens the PDF and Download PDF saves it; the print pages and
+    `PrintSheet` are gone. Every page's foot names the document and the
+    page; the logo, and the paper, Letter or A4 per organization or
+    automatic from the country, are the letterhead's. The two amendments:
+    orders numbered SO- and PO- when created, and a site's own address for
+    a purchase order's Deliver to and an RMA's Send back to, with who
+    raised the document. The export adds `documents/`, every invoice's
+    and credit note's PDF, a column glossary in its README in the language
+    its link names (`?locale=`), and times as a spreadsheet opens them,
+    which every CSV export now writes (ADR-057 amended).
+  - **The PR:** migrations 0063 to 0065 (above), so its description says
+    to run `npm run migrate:all`, and "Fixes #118". It also names the
+    ADR-057 amendment that rides in 5615e94, the manual checks 07e5fe8,
+    60597a3 and 5541010 updated only later, and c48ca07, the crash page's
+    Go back, a fix from outside ADR-071.
+  - **Remaining:** walk MC-2501 to MC-2512 and MC-R12 before merging. The
+    PDF routes' and the export's performance budgets are deferred under
+    ADR-071, until the first `npm run perf` on the volume seed after the
+    merge (ADR-051). Numbering settings, an organization's prefixes,
+    digits and next number, are ADR-072, the next PR. Then tag v0.7.0.
 - **`after-adr-070`** (merged, #123): this handoff after #116;
   `UNSAFE_GLOBAL_DB` refused in `modules/` too; in-range dependency
   updates and jsdom 30.1.3; the account button named from the initials it
@@ -205,7 +215,8 @@ with this one, this one is current.
   an organization); have the French and Chinese
   wording checked by someone fluent (MC-1405); edit `docs/principles.md`
   until it reads as Bob's.
-- **Manual checks due:** MC-1601 and MC-1602 (an upload in R2, the
+- **Manual checks due:** MC-2501 to MC-2512 and MC-R12 (ADR-071, before
+  its merge); MC-1601 and MC-1602 (an upload in R2, the
   nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
   MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
   photos and 同事 on a phone.
@@ -237,9 +248,6 @@ with this one, this one is current.
   now that ADR-070 has landed.
 - **ADR-070, small and waiting:** what needs a decision or a fix is
   filed as #117 to #122 (*Open issues* above). Not filed, each small:
-  - The export's README follows the browser's language, since a plain
-    link cannot send the app's; ADR-071 adds a `?locale=` on the link, now
-    that the README holds the glossary.
   - About 20 foreign keys under an organization have no index, so the
     cascade that deletes one may scan whole tables. It runs in the timer,
     not a request; `EXPLAIN ANALYZE` a deletion on `seed:volume` before
