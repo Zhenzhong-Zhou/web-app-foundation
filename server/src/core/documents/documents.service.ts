@@ -32,7 +32,7 @@ export interface Printable {
 }
 
 /** What every document of an organization draws on, beside its own data. */
-interface Letterhead {
+export interface Letterhead {
   /** The logo as a data URL, or null when it has none or prints none. */
   logo: string | null;
   /** The registered address's country, for the paper and the formatting. */
@@ -71,14 +71,7 @@ export class DocumentsService {
       printable,
       this.letterhead(),
     ]);
-    const country = document.sellerCountry ?? letterhead.country;
-    const pdf = await this.renderer.render(
-      document.draw(
-        documentText(document.language, document.secondLanguage, country),
-        letterhead.logo,
-      ),
-      paperFor(country),
-    );
+    const pdf = await this.pdf(document, letterhead);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
@@ -90,10 +83,26 @@ export class DocumentsService {
   }
 
   /**
-   * The organization's logo and country, as they are now: a document
-   * already issued is not reprinted with the logo it had (ADR-060).
+   * The document as a PDF, on the letterhead: what Print and Download PDF
+   * send, and what the export packs, one at a time.
    */
-  private async letterhead(): Promise<Letterhead> {
+  pdf(document: Printable, letterhead: Letterhead): Promise<Buffer> {
+    const country = document.sellerCountry ?? letterhead.country;
+    return this.renderer.render(
+      document.draw(
+        documentText(document.language, document.secondLanguage, country),
+        letterhead.logo,
+      ),
+      paperFor(country),
+    );
+  }
+
+  /**
+   * The organization's logo and country, as they are now: a document
+   * already issued is not reprinted with the logo it had (ADR-060). Read
+   * once by a caller drawing many.
+   */
+  async letterhead(): Promise<Letterhead> {
     const { logoFileId, country } = await this.tenantDb.transaction(
       async (tx, organizationId) => {
         const [organization] = await tx

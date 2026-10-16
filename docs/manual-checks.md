@@ -954,6 +954,14 @@ await fetch(`${api}/v1/files/product-image`, {
   a new tab, and Download PDF beside it saves
   `packing-slip-<the day it shipped>-<id>.pdf`. A draft invoice's PDF says
   DRAFT across every page, and its file is named `DRAFT …`.
+- **MC-2502** *(#118)* With an invoice issued, another voided, a credit
+  note and a draft, use Download everything (Settings → Organization →
+  Profile). The ZIP has `documents/invoices/` with both issued invoices
+  and `documents/credit-notes/` with the credit note, each named by its
+  number and the same as Download PDF gives it; the draft is not there.
+  README.txt ends with a glossary, a line per column. Open
+  `organization.csv` in Excel or Numbers: `created_at` reads like
+  `2026-10-16 03:31:59` and is taken as a date.
 
 ## Regressions
 
@@ -1152,3 +1160,5 @@ first.
   beside a refused password (#120): MC-R11 rewritten.
 - 2026-10-16: section 25, documents as PDF: Print and Download PDF
   (ADR-071): MC-2501.
+- 2026-10-16: the export's documents, glossary and plainer times (#118,
+  ADR-071): MC-2502.

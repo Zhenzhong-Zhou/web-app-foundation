@@ -2208,7 +2208,21 @@
     "/v1/organization/export": {
       "get": {
         "operationId": "OrganizationController_exportAll_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "en",
+                "fr-CA",
+                "zh-Hans"
+              ],
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",

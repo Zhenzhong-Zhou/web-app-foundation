@@ -19,6 +19,7 @@ import {
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 import { shippedSale } from './utils/sales';
+import { readZip } from './utils/zip';
 
 interface InvoiceResponse {
   id: string;
@@ -561,6 +562,21 @@ describe('Invoices (e2e)', () => {
       expect(saved.headers['content-disposition']).toMatch(
         /^attachment; filename="INV-000001\.pdf"/,
       );
+    });
+
+    it('packs every issued invoice into the export, as its PDF (ADR-071)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+
+      const res = await org.agent
+        .get('/v1/organization/export')
+        .responseType('blob')
+        .expect(200);
+      const zip = readZip(res.body as Buffer);
+
+      const pdf = zip.get('documents/invoices/INV-000001.pdf');
+      expect(pdf?.toString('latin1').startsWith('%PDF-')).toBe(true);
     });
 
     it('draws a draft marked DRAFT, and another organization’s not at all', async () => {

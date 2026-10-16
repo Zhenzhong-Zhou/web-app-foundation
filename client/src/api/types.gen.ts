@@ -3795,7 +3795,9 @@ export type OrganizationControllerUpdateV1Response =
 export type OrganizationControllerExportAllV1Data = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
+  };
   url: '/v1/organization/export';
 };
 
