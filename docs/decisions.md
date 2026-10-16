@@ -7931,6 +7931,32 @@ results, Home's recent records and the orders CSV, and is searched
 beside the reference, which stays as theirs. What each organization may
 change, its prefixes, digits and next number, is ADR-072's.
 
+**Amendment (October 2026) — where goods go, and what every page says.**
+The designs approved on the canvas settle what the three new documents
+print where the decisions above left it open.
+
+Where to deliver and where to send back is a *site*'s address, not the
+registered one, which is often a head office the goods never see. A site
+(ADR-024) holds an address of its own, set on it in Locations; the
+deferral of per-site addresses in ADR-024's open items ends here, since
+these documents force them. A purchase order chooses Deliver to, a site,
+set for it when the organization has one; an RMA chooses Send back to,
+from the site its goods shipped from unless changed. Each prints the
+site's name and address, and the registered address only when the site
+has none yet.
+
+Every document, the six of them, carries its kind, its number and the
+page, "Page 1 of 2", at the foot of each page, so a second page cannot
+pass for a loose sheet. An RMA whose goods are expected ends with a
+label to cut out and tape to the box: the RMA's number, large, and where
+it goes. A purchase order and an RMA say who raised them, by name, job
+title and work phone from the membership; not by email, which may be
+personal, on a document that leaves the organization.
+
+Deferred: **payment details** on invoices and pro formas, a free text
+saying how to pay, which a pro forma sent for payment in advance needs.
+Trigger: the first customer who pays from one.
+
 ---
 
 ## Open decisions
