@@ -86,4 +86,24 @@ describe('SiteSelect (ADR-071)', () => {
       screen.getByText('The purchase order prints the registered address.'),
     ).toBeInTheDocument();
   });
+
+  it('says nothing of an address before the sites have loaded', () => {
+    render(
+      <SiteSelect
+        id="send-back-to"
+        label="Send back to"
+        value="annex"
+        onChange={() => undefined}
+        locations={[]}
+        current={{ id: 'annex', name: 'Annex' }}
+        emptyLabel="Not chosen"
+        emptyHelp="The RMA prints the registered address."
+      />,
+    );
+
+    expect(
+      screen.getByRole('combobox', { name: 'Send back to' }),
+    ).toHaveTextContent('Annex');
+    expect(screen.queryByText(/No address yet/)).not.toBeInTheDocument();
+  });
 });

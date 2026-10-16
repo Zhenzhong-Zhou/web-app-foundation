@@ -51,9 +51,12 @@ export function SiteSelect({
 
   const chosen = locations.find((location) => location.id === value);
 
-  function help(): string {
+  function help(): string | undefined {
     if (!value) return emptyHelp;
-    if (chosen?.address) return addressLine(chosen.address);
+    // Not among the sites yet: still loading, or they could not be read.
+    // Saying it has no address would be a guess.
+    if (!chosen) return undefined;
+    if (chosen.address) return addressLine(chosen.address);
     return intl.formatMessage({
       id: 'locations.site.noAddress',
       defaultMessage:

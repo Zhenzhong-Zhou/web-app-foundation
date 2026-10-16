@@ -14,8 +14,9 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { OrderDetail, TaxCode } from '../api/types.gen';
+import { FormError } from '../components/form-error';
 import { PdfActions } from '../components/pdf-actions';
-import { api, withQuery } from '../lib/api';
+import { api, messageFor, withQuery } from '../lib/api';
 
 /**
  * A pro forma invoice for a sale (ADR-071): the order as it stands, valued
@@ -43,6 +44,7 @@ export function ProFormaDialog({
   const intl = useIntl();
   const [taxCodes, setTaxCodes] = useState<TaxCode[]>([]);
   const [taxCodeId, setTaxCodeId] = useState('');
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -55,8 +57,10 @@ export function ProFormaDialog({
           setTaxCodes(response.taxCodes.filter((code) => code.isActive));
         }
       })
-      .catch(() => {
-        // The picker stays empty: an untaxed pro forma can still be made.
+      .catch((caught: unknown) => {
+        // Said, not swallowed: without the codes only No tax is offered,
+        // and an untaxed pro forma should not go out by accident.
+        if (!ignore) setLoadError(messageFor(caught));
       });
 
     return () => {
@@ -130,6 +134,7 @@ export function ProFormaDialog({
           </Typography>
 
           {blocked && <Alert severity="info">{blocked}</Alert>}
+          {!blocked && loadError && <FormError message={loadError} />}
 
           {!blocked && (
             <TextField

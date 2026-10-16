@@ -1023,7 +1023,9 @@ await fetch(`${api}/v1/files/product-image`, {
   the invoice would charge them, and the boxed note that nothing is owed.
   The order's History shows Pro forma invoice made, with its total. Add a
   line without a price: the dialog says which item to price and offers no
-  Print. A sample and a cancelled sale have no Pro forma invoice button.
+  Print. As someone who cannot see tax codes, open it: it says so, rather
+  than quietly offering only No tax. A sample and a cancelled sale have no
+  Pro forma invoice button.
   For a customer whose documents are in 中文 and English, every label and
   item name is in both.
 - **MC-2511** *(ADR-071)* The RMA. Print an open RMA whose goods are
