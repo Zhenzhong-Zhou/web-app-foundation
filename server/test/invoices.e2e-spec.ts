@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
+import { documentText } from '../src/core/documents/document-text';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -11,6 +12,11 @@ import {
   invoiceLineTaxes,
   invoices,
 } from '../src/database/schema';
+import { creditNoteDocument } from '../src/modules/invoices/credit-note-document';
+import type { CreditNoteDetail } from '../src/modules/invoices/dto/credit-note-response.dto';
+import type { InvoiceDetail } from '../src/modules/invoices/dto/invoice-response.dto';
+import { invoiceDocument } from '../src/modules/invoices/invoice-document';
+import { wordsOf } from './utils/document-words';
 import {
   addMember,
   body,
@@ -626,6 +632,71 @@ describe('Invoices (e2e)', () => {
       );
 
       await other.agent.get(`/v1/invoices/${r.invoice.id}/pdf`).expect(404);
+    });
+
+    /**
+     * Moved from the client's e2e, which read these on its print pages
+     * (ADR-071): a draft, a voided invoice and its credit note each say
+     * what they are, so none passes for another found in a drawer later.
+     */
+    it('words a draft, a voided invoice and its credit note so none passes for another', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      const english = documentText('en', null, 'CA');
+      const invoice = async () =>
+        body<{ invoice: InvoiceDetail }>(
+          await org.agent.get(`/v1/invoices/${r.invoice.id}`).expect(200),
+        ).invoice;
+
+      expect(
+        wordsOf(invoiceDocument(await invoice(), english, null)),
+      ).toContain('DRAFT — not an invoice');
+
+      await issue(org, r.invoice.id).expect(200);
+      const { creditNote } = body<{ creditNote: { id: string } }>(
+        await org.agent
+          .post(`/v1/invoices/${r.invoice.id}/void`)
+          .send({ reason: 'Billed twice', creditDate: TODAY })
+          .expect(200),
+      );
+
+      const voided = wordsOf(invoiceDocument(await invoice(), english, null));
+      expect(voided).toContain('INV-000001');
+      expect(voided).toContain('VOID — nothing is owed on this invoice');
+      expect(voided).toContain('reversed by CN-000001');
+
+      const note = body<{ creditNote: CreditNoteDetail }>(
+        await org.agent.get(`/v1/credit-notes/${creditNote.id}`).expect(200),
+      ).creditNote;
+      const credited = wordsOf(creditNoteDocument(note, english, null));
+      expect(credited).toContain('Credit note');
+      expect(credited).toContain('CN-000001');
+      expect(credited).toContain('Voids invoice INV-000001');
+      expect(credited).toContain('Reason: Billed twice');
+    });
+
+    /**
+     * Also moved from the client: a customer's two languages label the
+     * document, the first first and the same weight, and figures are
+     * written once, the first language's way (ADR-054).
+     */
+    it('labels a bilingual invoice in both languages, its figures once', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+      const invoice = body<{ invoice: InvoiceDetail }>(
+        await org.agent.get(`/v1/invoices/${r.invoice.id}`).expect(200),
+      ).invoice;
+
+      const words = wordsOf(
+        invoiceDocument(invoice, documentText('fr-CA', 'en', 'CA'), null),
+      );
+      expect(words).toContain('Facture / Invoice');
+      // A party's heading is drawn in capitals, as the print page showed it.
+      expect(words).toContain('FACTURER À / BILL TO');
+      // 137.50 + 6.88 GST, in French: a decimal comma, once.
+      expect(words).toMatch(/144,38/);
+      expect(words).not.toMatch(/144\.38/);
     });
 
     it('numbers the invoice, stores its amounts and copies both parties', async () => {
