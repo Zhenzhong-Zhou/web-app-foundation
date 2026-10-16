@@ -7759,6 +7759,154 @@ next run finishes the deletion.
 
 ---
 
+## ADR-071 — Documents as PDF, drawn on the server (amends ADR-046, ADR-054, ADR-055 and ADR-070)
+
+**Context.** Three documents print today: the packing slip (ADR-041),
+the invoice (ADR-046) and the credit note (ADR-047). Each is a page the
+browser prints, in the look ADR-055 settled and the customer's languages
+(ADR-054). There is no PDF. A person who needs one chooses Save as PDF in
+the print dialog, one document at a time, and what lands on paper varies
+with the browser: its margins, its headers and footers, where it breaks a
+page. The server cannot make a PDF at all, so ADR-070's export carries an
+organization's data but not its documents as issued, which a bookkeeper
+expects to keep (#118, from the walkthrough in Chinese).
+
+Three more documents have no printed form. A return authorization
+(ADR-047) is something a customer is sent and quotes back. A purchase
+order is something a supplier is sent. A pro forma invoice was deferred
+by ADR-046: a valued document that creates no debt, sent before goods
+ship, for prepayment, an import permit or a customer's own approval.
+
+**Decision — one design per document: the PDF, drawn on the server.**
+The server draws every document as a PDF with pdfmake (MIT, built on
+pdfkit), from the same data its page reads, the snapshots of an issued
+document included. Print opens that PDF in a new tab and the browser's
+PDF viewer prints it; Download PDF saves the same file; the export puts
+the same files in its ZIP. The print pages and `PrintSheet` retire, so
+each document has one design, and paper looks the same from every
+browser.
+
+Each PDF is served beside its document's read route, under the same
+permission, `inline` for Print and `attachment` for Download PDF, named by
+the document's number. A draft invoice's PDF is marked Draft on every page
+and in its file name; a voided invoice keeps the mark it prints with now.
+
+**Decision — six documents.** The packing slip, the invoice and the credit
+note keep the look approved in ADR-055, carried over to the PDF and
+checked against screenshots of the print pages. The other three are
+designed on the canvas and approved before they are built:
+
+- **Return authorization:** its number, to quote on the parcel; the
+  customer; the lines authorized and their quantities; where to send them.
+- **Purchase order:** the order's number; the supplier; the lines and
+  quantities, each price where one is set and blank where not, since a
+  purchase is sometimes raised before its price is known (ADR-046); the
+  expected date; where to deliver.
+- **Pro forma invoice:** below.
+
+**Decision — the pro forma invoice (amends ADR-046's deferral).** Made on
+demand, from any sale order that is not cancelled, draft or confirmed, as
+long as every line has a price; an unpriced line is refused with what to
+do, as confirming is. It is titled Pro forma invoice and says Not a tax
+invoice; it carries the order's number and the date it was made, for
+SO-1234, 15 October 2026, and no number series of its own; it is stored
+nowhere, so making it again shows the order as it is then. Its tax is
+what the invoice would charge, worked out by the invoice's own code, and
+it prints in the customer's document languages. Each one made is an audit
+entry, `order.pro_forma_made`, with its total: the trail of what was sent.
+
+ADR-046's deferral gave it its own type and number series. Neither is
+needed for a document that is never owed and never in the books, and
+business software of this size makes it the same way, from the order:
+Odoo offers it on any quotation or sales order. A sample order (ADR-042)
+has no prices, so it gets no pro forma until declared values come with
+customs details (deferred).
+
+**Decision — the words, the rules and the paper.** The words a document
+prints move to the server's catalogues in all three languages, under the
+ids they have now, and the server applies ADR-054's rules: each label in
+the first language, then the second, the same size and weight; dates and
+money once, in the first; data as typed; a product's name by its own
+rule. The logo is ADR-060's: the organization's own when the PDF is made,
+if it prints logos. A page left the paper size to the printer, and a PDF
+has to choose, so each organization gets one, Letter or A4, set where its
+branding is and defaulting from its registered address: Letter in Canada
+and the United States, A4 elsewhere.
+
+**Decision — fonts in the repository.** Noto Sans, for English and
+French, and Noto Sans SC, for Simplified Chinese, in Regular and Bold,
+under the SIL Open Font License, are committed to `server/assets/fonts`
+with their licence: about 20 MB. They load once, when the server starts,
+and each PDF embeds only the characters it uses. Nothing is fetched at
+build or at run time, so documents render offline, on any host, and in
+mainland China.
+
+**Decision — the export (#118, amends ADR-070).** The ZIP adds a
+`documents/` folder: every invoice and credit note as a PDF, named by its
+number, exactly as Download PDF gives it. A time in the CSVs is written
+`2026-10-15 18:54:11`, in UTC, rather than as Postgres writes it with
+fractions and an offset, so a spreadsheet opens it as a date. The README
+gains a glossary in the Owner's language: what the main tables' columns
+hold, that times are UTC, and how an audit action is named (the thing,
+then what happened to it, as `user.created`), the Audit log showing each
+in words. The CSV headers stay as stored, so a later import maps them back
+to the database. The download link carries `?locale=` with the app's
+language, which the README follows, since a plain link cannot otherwise
+say which language the Owner reads.
+
+**Decision — performance.** Drawing a PDF is work for the processor, not
+the database. The export draws its documents one at a time as it streams,
+so an organization with thousands of invoices takes longer but never holds
+them all in memory. Each PDF route and the export are budgeted as every
+route is under ADR-051, the figures set from their first measurement on
+the volume seed, with a probe for one invoice and one for the export.
+
+**Rejected.**
+
+- **A headless browser on the print pages,** which would keep one layout
+  in the browser's hands: Chromium is hundreds of megabytes and needs a
+  lot of memory per page, against a 512 MB server; it would need a second
+  way to sign in to those pages; and it ties the deploy to one platform's
+  setup.
+- **The print pages kept beside the PDFs:** two designs of every document,
+  kept in step forever.
+- **Storing each PDF when its document is issued:** the snapshots already
+  freeze everything a document prints but the logo, which ADR-060 already
+  takes from the day it is printed. Storage and a migration for nothing.
+- **@react-pdf/renderer:** React on the server, and more dependencies than
+  pdfmake for the same tables.
+- **pdfkit alone:** tables, repeated headers and page breaks by hand,
+  which pdfmake already does on top of it.
+
+**Deferred.**
+
+- **Emailing a document** to its customer from the app. Trigger: the first
+  customer who asks.
+- **Declared values and customs details:** a sample's value, HS codes,
+  country of origin. Trigger: the first shipment that needs them.
+- **An organization's own typeface** on its documents, uploaded and
+  checked to cover its languages, since a font that lacks a character
+  prints an empty box. Until then every document uses Noto Sans and Noto
+  Sans SC. Trigger: the first customer who asks.
+- **Traditional Chinese**, which has no locale yet (ADR-054).
+- **An electronic invoice format** that some countries require, such as
+  China's fapiao. Trigger: the first customer who must issue one.
+- **A PDF kept exactly as sent.** Trigger: a customer, or a law, that
+  needs the file itself rather than the document drawn again.
+
+**Consequences.**
+
+- pdfmake is a new dependency, with pdfkit and fontkit under it, its
+  peers resolving without an override (ADR-019).
+- The server grows by its fonts, about 20 MB.
+- The client loses `PrintSheet` and three print pages; the printed words
+  leave its catalogues for the server's.
+- A migration adds each organization's paper size.
+- The manual checks for printing are rewritten for the PDFs, and gain the
+  three new documents and the export's.
+
+---
+
 ## Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -8258,23 +8406,6 @@ they exist so the reasoning is not rediscovered from scratch.
   period, or work routed to a role instead of a person. Staff leave as a
   record (holiday balances) is an HR system's job, not this one's.
   Trigger: the first approval that waits on someone on holiday.
-- **What the organization export gives a bookkeeper (#118).** ADR-070's
-  ZIP is the data as stored: CSVs with the database's column names
-  (`bill_to_name`, `tax_total`), Postgres's own timestamps, and audit
-  actions such as `user.created`. In the walkthrough in Chinese, the
-  novice bookkeeper gave up on them. Two questions. First, a glossary of
-  the main tables' columns in the export's `README.txt`, in the Owner's
-  language like the rest of it; or the CSVs' headers themselves
-  translated, which reads better but no longer matches the database that
-  a later import would map back to. Second, PDFs of the invoices and
-  credit notes as issued, which a bookkeeper expects to keep. Documents
-  print through the browser (ADR-041), so the server has no renderer:
-  adding PDFs means a headless browser on the print pages, or a PDF
-  library drawing them a second time, either one a dependency and a
-  layout to keep in step. Reprinting from the snapshots already matches
-  what was issued, seller, customer and languages (ADR-046, ADR-054),
-  except the logo, which prints as it is today. Trigger: before the first
-  customer, or the first Owner closing an organization with real records.
 
 ---
 
