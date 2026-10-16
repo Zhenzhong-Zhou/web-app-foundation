@@ -7905,6 +7905,24 @@ the volume seed, with a probe for one invoice and one for the export.
 - The manual checks for printing are rewritten for the PDFs, and gain the
   three new documents and the export's.
 
+**Amendment (October 2026) — orders get numbers of their own.** This ADR
+assumed an order had a number to print. It has only its partner's
+reference, which an order placed by phone lacks and two suppliers may
+share. A purchase order sent to a supplier needs ours, and a pro forma
+names its order by it.
+
+Each order now takes a number when it is created, a draft included, from
+the organization's series beside the invoice's (ADR-046): SO-000001 for a
+sale, PO-000001 for a purchase. A deleted draft leaves a gap, which an
+order may have; an invoice may not, and takes its number at issue as
+before. Existing orders are numbered by the migration, oldest first, per
+organization and direction, and each series carries on after them.
+
+The number heads the order's page, leads the orders list, the lookup's
+results, Home's recent records and the orders CSV, and is searched
+beside the reference, which stays as theirs. What each organization may
+change, its prefixes, digits and next number, is ADR-072's.
+
 ---
 
 ## Open decisions
