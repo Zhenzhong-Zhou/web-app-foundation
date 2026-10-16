@@ -5,7 +5,11 @@ import type {
   Drawing,
   Printable,
 } from '../../core/documents/documents.service';
-import { formatDay, formatMoney } from '../../core/documents/format';
+import {
+  formatDay,
+  formatMoney,
+  formatUnitPrice,
+} from '../../core/documents/format';
 import { addressParts } from '../../core/documents/parties';
 import {
   addressLines,
@@ -143,7 +147,12 @@ export function purchaseOrderDocument(
     cell(line.sku),
     itemNames(line),
     cell(quantityWithUnit(doc, line.quantity, line.unitOfMeasure), 'right'),
-    cell(money(line.unitPrice, line.currency), 'right'),
+    cell(
+      line.unitPrice === null || line.currency === null
+        ? ''
+        : formatUnitPrice(line.unitPrice, line.currency, doc.locale),
+      'right',
+    ),
     cell(money(line.amount, line.currency), 'right'),
   ]);
   content.push(linesOf(['auto', '*', 'auto', 'auto', 'auto'], header, rows));

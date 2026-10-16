@@ -954,7 +954,9 @@ await fetch(`${api}/v1/files/product-image`, {
   `CN-000001.pdf`. On an order, a shipment's Packing slip opens its PDF in
   a new tab, and Download PDF beside it saves
   `packing-slip-<the day it shipped>-<id>.pdf`. A draft invoice's PDF says
-  DRAFT across every page, and its file is named `DRAFT …`.
+  DRAFT across every page, and its file is named `DRAFT …`. A line priced
+  at 0.0125 prints its unit price as $0.0125, not $0.01, on the invoice,
+  the credit note, the pro forma and the purchase order alike.
 - **MC-2502** *(#118)* With an invoice issued, another voided, a credit
   note and a draft, use Download everything (Settings → Organization →
   Profile). The ZIP has `documents/invoices/` with both issued invoices

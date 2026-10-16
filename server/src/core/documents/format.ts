@@ -17,6 +17,11 @@ function cached<T>(key: string, build: () => T): T {
   return cache.get(key) as T;
 }
 
+/**
+ * An amount in its currency's minor units. Formatted from the string
+ * itself, never a Number(), which would round a figure past fifteen digits
+ * (ADR-025).
+ */
 export function formatMoney(
   amount: string | null,
   currency: string,
@@ -26,7 +31,29 @@ export function formatMoney(
   return cached(
     `money\u0000${tag}\u0000${currency}`,
     () => new Intl.NumberFormat(tag, { style: 'currency', currency }),
-  ).format(Number(amount));
+  ).format(amount as Intl.StringNumericLiteral);
+}
+
+/**
+ * A unit price, with the places a currency's minor units would hide: a
+ * capsule at 0.0123 is not 0.01. Up to four, never fewer than the
+ * currency's own, as the client's formatUnitCost writes it.
+ */
+export function formatUnitPrice(
+  amount: string | null,
+  currency: string,
+  tag: string,
+): string {
+  if (amount === null) return NO_VALUE;
+  return cached(
+    `unit\u0000${tag}\u0000${currency}`,
+    () =>
+      new Intl.NumberFormat(tag, {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 4,
+      }),
+  ).format(amount as Intl.StringNumericLiteral);
 }
 
 /** A calendar day, read in UTC, so a stored date never moves a day. */

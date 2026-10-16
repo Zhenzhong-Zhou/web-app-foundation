@@ -12,7 +12,12 @@ import type { Locale } from '../../common/locales';
 import { t, type Translatable, translate } from '../../i18n/translate';
 import type { DocumentText } from './document-text';
 import { piecesOf } from './fonts';
-import { formatMoney, formatQuantity, NO_VALUE } from './format';
+import {
+  formatMoney,
+  formatQuantity,
+  formatUnitPrice,
+  NO_VALUE,
+} from './format';
 import type { RaisedBy } from './parties';
 
 /**
@@ -330,7 +335,7 @@ export function linesTable(
     cell(line.sku),
     itemNames(line),
     cell(formatQuantity(line.quantity, doc.locale), 'right'),
-    cell(money(line.unitPrice), 'right'),
+    cell(formatUnitPrice(line.unitPrice, currency, doc.locale), 'right'),
     cell(line.taxCodeName ?? NO_VALUE),
     cell(money(line.netAmount), 'right'),
   ]);
