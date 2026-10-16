@@ -461,8 +461,9 @@ and the tokens lack becomes a token first.
   Never remove an outline.
 - **Contrast.** `tokens.test.ts` checks WCAG AA for every pair a reader reads,
   in both modes; a new token adds its pair there.
-- **Paper** renders in `PrintSheet`'s own theme (`theme/paper.ts`) and never
-  uses the screen's tokens. A printed document changes only on purpose.
+- **Paper** is a PDF the server draws (ADR-071), from its own sheet in
+  `core/documents/sheet.ts`, and never the screen's theme or tokens. A
+  printed document changes only on purpose.
 
 ### Shared pieces for screens (ADR-055)
 

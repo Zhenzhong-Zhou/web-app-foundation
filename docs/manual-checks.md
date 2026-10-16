@@ -218,7 +218,7 @@ second organization.
   says to add one; under it, "Open {customer} to add one" opens the
   customer's page. Add a billing address there, go Back and issue: it goes
   through.
-- **MC-703** The printed invoice: amounts rounded to the currency, tax per
+- **MC-703** The invoice's PDF: amounts rounded to the currency, tax per
   component, the registered address and tax number.
 - **MC-704** Void an issued invoice: a full credit note is issued, and the
   shipment can be invoiced again.
@@ -381,18 +381,18 @@ folder by folder; these check what is already in place.
   invoices: checking and unchecking back leaves Save off; checking 简体中文
   and saving survives a reload. A role without organizations.update sees
   both sections but cannot save them.
-- **MC-1412** Printed documents follow the customer, not the reader.
-  With the screens in English, a partner set to Français then English:
-  ship, print the packing slip — every heading reads "French / English"
-  at the same size, figures once with a decimal comma, the unit named in
-  both. Invoice it: the draft's printout is already French and English,
-  with no item names in French yet; issue it with a French name on one
-  product, and the printed line shows the French name and the English
+- **MC-1412** Documents follow the customer, not the reader. With the
+  screens in English, a partner set to Français then English: ship, open
+  the shipment's Packing slip — every heading in the PDF reads "French /
+  English" at the same size, figures once with a decimal comma, the unit
+  named in both. Invoice it: the draft's PDF is already French and
+  English, with no item names in French yet; issue it with a French name
+  on one product, and its line shows the French name and the English
   under it at the same weight, the other product's name once. Credit it,
   change the partner to 简体中文 alone, and print the credit note: still
   French and English, as its invoice was. A partner in 简体中文 alone
-  prints Chinese only, glyphs Chinese rather than Japanese forms. Paper
-  shows no Back link or Print button, in any language.
+  prints Chinese only, glyphs Chinese rather than Japanese forms. A PDF
+  holds the document only, nothing of the app, in any language.
 - **MC-1413** Signed out, in 简体中文, sign in with a wrong password: the
   banner reads 邮箱或密码错误。请检查后重试。, not English; in Français,
   Courriel ou mot de passe invalide. Vérifiez les deux et réessayez. Signed
@@ -495,11 +495,10 @@ folder by folder; these check what is already in place.
 The screens are being redesigned in steps; these check what is in place.
 Paper is checked first because it must not change at all.
 
-- **MC-1501** Open the demo's INV-000001 and choose Print, in light mode
-  and again in dark. On screen the document is a white sheet, padded, with
-  the app around it; the print preview is black on white with nothing of
-  the app, and reads exactly as it did before ADR-055. The packing slip
-  and the credit note the same.
+- **MC-1501** Open the demo's INV-000001 and press Print, in light mode
+  and again in dark: the PDF opens in a new tab, black on white with
+  nothing of the app, the same in both modes, with the layout ADR-055
+  approved (ADR-071). The packing slip and the credit note the same.
 - **MC-1502** In light and in dark, walk Inventory, SO-DEMO-1 and INV-000001.
   Every word is readable; the page is tinted and its panels white (dark grey in
   dark), with borders rather than shadows; table heads are tinted and quieter
@@ -633,8 +632,8 @@ Paper is checked first because it must not change at all.
   expiry chip and quick filter is readable, no panel shows a white edge, and
   the rail and top bar stay distinct from the page. accessibility.spec checks
   contrast in both modes; this is for what it cannot see.
-- **MC-1539** Dark mode, then print INV-000001: the printout is black on
-  white, as in light mode.
+- **MC-1539** Dark mode, then Print INV-000001: the PDF is black on white,
+  as in light mode; the app's theme never reaches a document.
 - **MC-1540** At 375px wide (a phone, or the browser's device toolbar): ☰
   opens the navigation, and choosing a page closes it. Inventory's filter row
   wraps onto two lines without scrolling sideways; its table scrolls inside
@@ -1097,9 +1096,9 @@ first.
   answers late never shows the previous variant's recipe.
 - **MC-R03** *(v0.5 round 2)* The credit calculation was moved into
   `credit-amounts.ts`: MC-709 and MC-710 are its check.
-- **MC-R06** *(ADR-055)* Signed in with an unconfirmed email, print
-  an invoice: the "Confirm your email address" banner is on screen and not
-  on the paper or in the print preview.
+- **MC-R06** *(ADR-055)* Signed in with an unconfirmed email, Print an
+  invoice: the "Confirm your email address" banner is on screen and not in
+  the PDF, which the server draws from the invoice alone (ADR-071).
 
 ---
 
@@ -1256,3 +1255,5 @@ first.
   each a site (ADR-071): MC-2507, MC-2508.
 - 2026-10-16: the purchase order, pro forma and RMA as PDFs, and a foot
   on every document's pages (ADR-071): MC-2509 to MC-2512.
+- 2026-10-16: the print pages retire, so printing is always the PDF
+  (ADR-071): MC-703, MC-1412, MC-1501, MC-1539 and MC-R06 rewritten.

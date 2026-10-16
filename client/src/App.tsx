@@ -23,13 +23,11 @@ import {
   AuditPage,
   CreateOrderPage,
   CreditNoteDetailPage,
-  CreditNotePrintPage,
   CreditNotesPage,
   ExchangeRatesPage,
   HomePage,
   InventoryPage,
   InvoiceDetailPage,
-  InvoicePrintPage,
   InvoicesPage,
   LicencesPage,
   LocationsPage,
@@ -40,7 +38,6 @@ import {
   OrderDetailPage,
   OrdersPage,
   OrganizationPage,
-  PackingSlipPage,
   PartnerDetailPage,
   PartnersPage,
   PeoplePage,
@@ -246,19 +243,10 @@ export default function App() {
         <Route path="/orders" element={split(OrdersPage)} />
         <Route path="/orders/new" element={split(CreateOrderPage)} />
         <Route path="/orders/:id" element={split(OrderDetailPage)} />
-        <Route
-          path="/orders/:id/shipments/:shipmentId/slip"
-          element={split(PackingSlipPage)}
-        />
         <Route path="/invoices" element={split(InvoicesPage)} />
         <Route path="/invoices/:id" element={split(InvoiceDetailPage)} />
         <Route path="/credit-notes" element={split(CreditNotesPage)} />
         <Route path="/credit-notes/:id" element={split(CreditNoteDetailPage)} />
-        <Route path="/invoices/:id/print" element={split(InvoicePrintPage)} />
-        <Route
-          path="/credit-notes/:id/print"
-          element={split(CreditNotePrintPage)}
-        />
         <Route path="/return-authorizations" element={split(RmasPage)} />
         <Route
           path="/return-authorizations/:id"

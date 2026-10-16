@@ -139,11 +139,6 @@ export const OrderDetailPage = lazyNamed(
   'OrderDetailPage',
 );
 
-export const PackingSlipPage = lazyNamed(
-  () => import('./orders/packing-slip-page'),
-  'PackingSlipPage',
-);
-
 export const InvoicesPage = lazyNamed(
   () => import('./invoices/invoices-page'),
   'InvoicesPage',
@@ -164,16 +159,6 @@ export const CreditNotesPage = lazyNamed(
 export const CreditNoteDetailPage = lazyNamed(
   () => import('./invoices/credit-note-detail-page'),
   'CreditNoteDetailPage',
-);
-
-export const InvoicePrintPage = lazyNamed(
-  () => import('./invoices/invoice-print-page'),
-  'InvoicePrintPage',
-);
-
-export const CreditNotePrintPage = lazyNamed(
-  () => import('./invoices/credit-note-print-page'),
-  'CreditNotePrintPage',
 );
 
 export const RmasPage = lazyNamed(() => import('./rmas/rmas-page'), 'RmasPage');

@@ -4,9 +4,10 @@ import { expect, test } from './fixtures';
 import { created, signInAs } from './support/api';
 
 /**
- * Languages end to end (ADR-054): the screens in the reader's language, a
- * printed invoice in its customer's, and the server answering in the
- * language of the screen that asked.
+ * Languages end to end (ADR-054): the screens in the reader's language, and
+ * the server answering in the language of the screen that asked. A
+ * document in its customer's languages is a PDF the server draws, so its
+ * words are checked there (invoices.e2e, ADR-071).
  */
 
 async function ok(
@@ -125,41 +126,6 @@ async function seedQuebecSale(api: APIRequestContext) {
 
   return { shipmentId: shipment.id, taxCodeId: taxCode.id };
 }
-
-test('prints an invoice in its customer’s two languages while the screens stay English', async ({
-  page,
-  freshOrg,
-}) => {
-  const api = freshOrg.api;
-  const { shipmentId, taxCodeId } = await seedQuebecSale(api);
-
-  const { invoice } = await created<{ invoice: { id: string } }>(
-    await api.post('/v1/invoices', { data: { shipmentId, taxCodeId } }),
-  );
-  await created(
-    await api.post(`/v1/invoices/${invoice.id}/issue`, {
-      data: { invoiceDate: '2026-09-25' },
-    }),
-  );
-
-  await signInAs(page, api);
-  await page.goto(`/invoices/${invoice.id}/print`);
-
-  // The document is the customer's: French first, English beside it, the
-  // same weight.
-  await expect(
-    page.getByRole('heading', { name: 'Facture / Invoice' }),
-  ).toBeVisible();
-  await expect(page.getByText('Facturer à / Bill to')).toBeVisible();
-  // The item in both languages, copied when it was issued.
-  await expect(page.getByText('Capsules Focus')).toBeVisible();
-  await expect(page.getByText('Focus', { exact: true })).toBeVisible();
-  // Figures once, the first language's way: 6 × 12.50 + 5% GST = 78.75.
-  await expect(page.getByText(/78,75/).first()).toBeVisible();
-
-  // The page around it is the reader's.
-  await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
-});
 
 test('switches the screens to French, and the server answers in French', async ({
   page,
