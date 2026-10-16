@@ -3,6 +3,8 @@ import {
   Box,
   FormControlLabel,
   MenuItem,
+  Radio,
+  RadioGroup,
   Skeleton,
   Stack,
   Switch,
@@ -228,6 +230,12 @@ export function OrganizationPage() {
                 value={organization.logoOnDocuments}
                 readOnly={!canUpdate}
                 onSaved={reloadAll}
+              />
+              <PaperSizeForm
+                key={String(organization.paperSize)}
+                value={organization.paperSize}
+                readOnly={!canUpdate}
+                onSaved={reload}
               />
             </>,
           )}
@@ -518,6 +526,101 @@ function LogoOnDocumentsForm({
           id: 'settings.org.printLogo.help',
           defaultMessage:
             'At the top left, at most 18 mm tall, once the organization has a logo. Turn off if your printed stationery already carries it.',
+        })}
+      </Typography>
+    </SettingsSection>
+  );
+}
+
+/**
+ * The paper every document is drawn on (ADR-071): automatic, from the
+ * registered address's country, or Letter or A4 for every document.
+ */
+function PaperSizeForm({
+  value,
+  readOnly,
+  onSaved,
+}: {
+  value: OrganizationProfile['paperSize'];
+  readOnly: boolean;
+  onSaved: () => Promise<void>;
+}) {
+  const intl = useIntl();
+  const [paper, setPaper] = useState<string>(value ?? 'automatic');
+  const { submitting, error, submit } = useSubmit(onSaved, {
+    success: intl.formatMessage({
+      id: 'settings.org.paper.saved',
+      defaultMessage: 'Paper size saved',
+    }),
+  });
+  const title = intl.formatMessage({
+    id: 'settings.org.paper.title',
+    defaultMessage: 'Paper size',
+  });
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    void submit(() =>
+      api('/organization', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          paperSize: paper === 'automatic' ? null : paper,
+        }),
+      }),
+    );
+  }
+
+  return (
+    <SettingsSection
+      title={title}
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel={intl.formatMessage({
+        id: 'settings.org.paper.save',
+        defaultMessage: 'Save paper size',
+      })}
+    >
+      <RadioGroup
+        aria-label={title}
+        value={paper}
+        onChange={(event) => setPaper(event.target.value)}
+      >
+        <FormControlLabel
+          value="automatic"
+          control={<Radio />}
+          disabled={readOnly}
+          label={intl.formatMessage({
+            id: 'settings.org.paper.automatic',
+            defaultMessage:
+              'Automatic: Letter in Canada and the United States, A4 elsewhere',
+          })}
+        />
+        <FormControlLabel
+          value="letter"
+          control={<Radio />}
+          disabled={readOnly}
+          label={intl.formatMessage({
+            id: 'settings.org.paper.letter',
+            defaultMessage: 'Letter (8.5 × 11 in)',
+          })}
+        />
+        <FormControlLabel
+          value="a4"
+          control={<Radio />}
+          disabled={readOnly}
+          label={intl.formatMessage({
+            id: 'settings.org.paper.a4',
+            defaultMessage: 'A4 (210 × 297 mm)',
+          })}
+        />
+      </RadioGroup>
+      <Typography variant="body2" color="text.secondary">
+        {intl.formatMessage({
+          id: 'settings.org.paper.help',
+          defaultMessage:
+            'Every document is drawn on it: invoices, credit notes, packing slips, and the PDFs in the export. Automatic goes by the country of the registered address.',
         })}
       </Typography>
     </SettingsSection>

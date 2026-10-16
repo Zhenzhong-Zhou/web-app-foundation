@@ -973,6 +973,12 @@ await fetch(`${api}/v1/files/product-image`, {
   order by its number, and the orders CSV starts with a Number column.
   Orders lists the number first, as the link; an order's page is headed
   by it, with the partner, linked, and their reference beneath.
+- **MC-2504** *(ADR-071)* Settings → Organization → Documents has Paper
+  size, set to Automatic. With a Canadian registered address, an invoice's
+  PDF is Letter. Choose A4 and save: the invoice, a credit note, a packing
+  slip and the export's PDFs are all A4, an invoice issued before the
+  change included. Back to Automatic: Letter again. The audit log shows
+  each change. A member without organizations.update sees it read only.
 
 ## Regressions
 
@@ -1178,3 +1184,4 @@ first.
 - 2026-10-16: orders numbered SO- and PO- (ADR-071, amended): MC-2503.
 - 2026-10-16: the order's number heads its page and leads the list
   (ADR-071): MC-2503 extended.
+- 2026-10-16: each organization's paper size (ADR-071): MC-2504.
