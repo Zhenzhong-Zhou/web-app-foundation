@@ -282,7 +282,8 @@ function largest(sizes: Partial<Record<FileSize, unknown>>): FileSize | null {
 /**
  * A CSV of a query, read through a cursor a batch at a time, in the
  * export's transaction: the header from the columns, then a row per record,
- * every value as Postgres wrote it (ADR-057's rules for the fields).
+ * every value as Postgres wrote it but a moment (ADR-057's rules for the
+ * fields).
  */
 async function* csvOf(
   tx: Transaction,
@@ -305,24 +306,36 @@ async function* csvOf(
   yield BOM;
   let result = await next();
   yield csvRow(result.fields.map((field) => field.name));
+  const types = result.fields.map((field) => field.dataTypeID);
   while (result.rows.length > 0) {
     counts.rows += result.rows.length;
     yield result.rows
-      .map((row) => csvRow(Object.values(row).map(cell)))
+      .map((row) =>
+        csvRow(Object.values(row).map((value, i) => cell(value, types[i]))),
+      )
       .join('');
     result = await next();
   }
   await execute(sql`close ${name}`);
 }
 
+/** Postgres's types for a moment, timestamptz and timestamp. */
+const TIMESTAMPTZ = 1184;
+const TIMESTAMP = 1114;
+
 /**
  * A value for csvRow: JSON as JSON, the rest as is, and a moment as
  * 2026-10-15 18:54:11, in UTC, which a spreadsheet opens as a date
- * (ADR-071), rather than ISO 8601's T, Z and fractions, which it does not.
+ * (ADR-071), rather than as Postgres writes it, with fractions and an
+ * offset. Known by its column's type, since a raw query hands every moment
+ * over as text, and a note that looks like a time is not one.
  */
-function cell(value: unknown): CsvValue {
-  if (value instanceof Date) {
-    return csvMoment(value);
+function cell(value: unknown, type: number): CsvValue {
+  if (typeof value === 'string') {
+    // The session is in UTC, so a timestamptz arrives at +00. A timestamp
+    // has no zone: it is written as stored, which reading it as UTC keeps.
+    if (type === TIMESTAMPTZ) return csvMoment(value);
+    if (type === TIMESTAMP) return csvMoment(`${value}+00`);
   }
   if (Buffer.isBuffer(value)) return value.toString('base64');
   if (typeof value === 'object' && value !== null) {

@@ -258,10 +258,13 @@ describe('Organization deletion (e2e)', () => {
       expect(readme).toContain('全部内容');
       expect(readme).toContain('术语表：各列的含义');
       expect(readme).toContain('bill_to_…');
-      // Times as a spreadsheet opens them: no T, no Z, no fractions.
+      // Times as a spreadsheet opens them: no T, no Z, no fractions, and
+      // no offset, which is how Postgres writes them.
       const organization = zip.get('organization.csv')!.toString('utf8');
       expect(organization).toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
       expect(organization).not.toMatch(/T\d{2}:\d{2}:\d{2}/);
+      expect(organization).not.toMatch(/\d{2}:\d{2}:\d{2}\.\d/);
+      expect(organization).not.toMatch(/\d{2}:\d{2}:\d{2}(\.\d+)?[+-]\d{2}/);
       // A draft invoice was never sent: no document of it.
       expect(
         [...zip.keys()].some((name) => name.startsWith('documents/')),
