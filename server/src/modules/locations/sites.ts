@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
 import { locations } from '../../database/schema';
@@ -156,4 +160,42 @@ export async function siteShippedFrom(
 
   const [site] = result.rows;
   return site?.is_active ? site.id : null;
+}
+
+/**
+ * A location of this organization that may have an address: a site. Not
+ * found is a 404, so another organization's id reads as no such location;
+ * a zone, an aisle, a shelf or a bin is a 400, being at its site's.
+ */
+export async function assertAddressable(
+  tx: Tx,
+  organizationId: string,
+  locationId: string,
+): Promise<void> {
+  const [site] = await tx
+    .select({ type: locations.type })
+    .from(locations)
+    .where(
+      and(
+        eq(locations.organizationId, organizationId),
+        eq(locations.id, locationId),
+      ),
+    );
+  if (!site) {
+    throw new NotFoundException(
+      t({
+        id: 'locations.suchLocation',
+        defaultMessage: 'No such location',
+      }),
+    );
+  }
+  if (site.type !== 'site') {
+    throw new BadRequestException(
+      t({
+        id: 'locations.addressOnSite',
+        defaultMessage:
+          'Only a site has an address; the places inside it share it',
+      }),
+    );
+  }
 }

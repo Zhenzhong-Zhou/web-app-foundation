@@ -15,6 +15,7 @@ import type { CreateLocationDto } from './dto/create-location.dto';
 import type { Location, SiteAddress } from './dto/location-response.dto';
 import type { SiteAddressDto } from './dto/site-address.dto';
 import type { UpdateLocationDto } from './dto/update-location.dto';
+import { assertAddressable } from './sites';
 
 /** A tree this deep is a data-entry mistake, not a warehouse. */
 const MAX_DEPTH = 10;
@@ -55,32 +56,7 @@ export class LocationsService {
    */
   async setAddress(locationId: string, input: SiteAddressDto): Promise<void> {
     await this.tenantDb.transaction(async (tx, organizationId) => {
-      const [site] = await tx
-        .select({ type: locations.type })
-        .from(locations)
-        .where(
-          and(
-            eq(locations.organizationId, organizationId),
-            eq(locations.id, locationId),
-          ),
-        );
-      if (!site) {
-        throw new NotFoundException(
-          t({
-            id: 'locations.suchLocation',
-            defaultMessage: 'No such location',
-          }),
-        );
-      }
-      if (site.type !== 'site') {
-        throw new BadRequestException(
-          t({
-            id: 'locations.addressOnSite',
-            defaultMessage:
-              'Only a site has an address; the places inside it share it',
-          }),
-        );
-      }
+      await assertAddressable(tx, organizationId, locationId);
 
       const fields = {
         line1: input.line1,
@@ -125,9 +101,23 @@ export class LocationsService {
     this.logger.log(`Location ${locationId} address set`);
   }
 
-  /** A site's address removed: its documents fall back to the registered. */
+  /**
+   * A site's address removed: its documents fall back to the registered.
+   * Refused as setting one is, so an id from elsewhere is a 404, not a
+   * removal of nothing recorded against it.
+   */
   async removeAddress(locationId: string): Promise<void> {
-    await this.tenantDb.delete(addresses, eq(addresses.locationId, locationId));
+    await this.tenantDb.transaction(async (tx, organizationId) => {
+      await assertAddressable(tx, organizationId, locationId);
+      await tx
+        .delete(addresses)
+        .where(
+          and(
+            eq(addresses.organizationId, organizationId),
+            eq(addresses.locationId, locationId),
+          ),
+        );
+    });
     this.logger.log(`Location ${locationId} address removed`);
   }
 

@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
@@ -5,7 +7,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { locations } from '../src/database/schema';
+import { auditLog, locations } from '../src/database/schema';
 import {
   addViewer,
   body,
@@ -446,6 +448,28 @@ describe('Locations (e2e)', () => {
         .put(`/v1/locations/${site.id}/address`)
         .send(ADDRESS)
         .expect(404);
+
+      // Removing asks the same: a site of this organization, or nothing
+      // is removed and nothing recorded.
+      await alpha.agent
+        .put(`/v1/locations/${site.id}/address`)
+        .send(ADDRESS)
+        .expect(204);
+      await beta.agent.delete(`/v1/locations/${site.id}/address`).expect(404);
+      await alpha.agent.delete(`/v1/locations/${bin.id}/address`).expect(400);
+      await alpha.agent
+        .delete(`/v1/locations/${randomUUID()}/address`)
+        .expect(404);
+      const [kept] = body<LocationResponse[]>(
+        await alpha.agent.get('/v1/locations').expect(200),
+      ).filter((each) => each.id === site.id);
+      expect(kept.address).toMatchObject({ line1: '42 Production Way' });
+      expect(
+        await db
+          .select({ id: auditLog.id })
+          .from(auditLog)
+          .where(eq(auditLog.action, 'location.updated')),
+      ).toHaveLength(1);
     });
   });
 
