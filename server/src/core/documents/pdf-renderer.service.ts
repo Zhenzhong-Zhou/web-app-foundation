@@ -7,28 +7,10 @@ import { Injectable, type OnModuleInit } from '@nestjs/common';
 import pdfmake from 'pdfmake';
 import type { TDocumentDefinitions } from 'pdfmake/interfaces';
 
+import { CHINESE, LATIN } from './fonts';
+
 /** The committed fonts, the same three levels up from src/ and dist/. */
 const FONTS = resolve(__dirname, '..', '..', '..', 'assets', 'fonts');
-
-/** The family for English and French (ADR-071). */
-export const LATIN = 'NotoSans';
-/** The family for Simplified Chinese, which carries Latin too. */
-export const CHINESE = 'NotoSansSC';
-
-/**
- * Characters Noto Sans lacks and Noto Sans SC has: the CJK scripts, their
- * punctuation, and full-width forms such as （ and ：.
- */
-const CJK = /[\u2E80-\u9FFF\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFFEF]/u;
-
-/**
- * The family to draw a run of text in. pdfmake draws a run in one font, with
- * no fallback for a missing character, so a run holding any Chinese is drawn
- * entirely in Noto Sans SC, whose Latin covers the rest of it.
- */
-export function fontFor(text: string): string {
-  return CJK.test(text) ? CHINESE : LATIN;
-}
 
 /** The paper an organization prints on (ADR-071). */
 export type PaperSize = 'letter' | 'a4';
@@ -59,26 +41,16 @@ interface VirtualFiles {
 export class PdfRenderer implements OnModuleInit {
   onModuleInit(): void {
     const { virtualfs } = pdfmake as unknown as { virtualfs: VirtualFiles };
-    const font = (file: string) => {
-      virtualfs.writeFileSync(file, readFileSync(resolve(FONTS, file)));
-      return file;
-    };
-    const latin = {
-      normal: font('NotoSans-Regular.ttf'),
-      bold: font('NotoSans-Bold.ttf'),
-    };
-    const chinese = {
-      normal: font('NotoSansSC-Regular.otf'),
-      bold: font('NotoSansSC-Bold.otf'),
-    };
     // No italics are designed; asked for, they fall back to upright.
+    const family = (normal: string, bold: string) => {
+      for (const file of [normal, bold]) {
+        virtualfs.writeFileSync(file, readFileSync(resolve(FONTS, file)));
+      }
+      return { normal, bold, italics: normal, bolditalics: bold };
+    };
     pdfmake.setFonts({
-      [LATIN]: { ...latin, italics: latin.normal, bolditalics: latin.bold },
-      [CHINESE]: {
-        ...chinese,
-        italics: chinese.normal,
-        bolditalics: chinese.bold,
-      },
+      [LATIN]: family('NotoSans-Regular.ttf', 'NotoSans-Bold.ttf'),
+      [CHINESE]: family('NotoSansSC-Regular.otf', 'NotoSansSC-Bold.otf'),
     });
     pdfmake.setUrlAccessPolicy(() => false);
     pdfmake.setLocalAccessPolicy(() => false);

@@ -1,15 +1,17 @@
 import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 
 import type { DocumentText } from '../../core/documents/document-text';
+import type { Printable } from '../../core/documents/documents.service';
+import { fontFor } from '../../core/documents/fonts';
 import { formatDay } from '../../core/documents/format';
-import { fontFor } from '../../core/documents/pdf-renderer.service';
 import {
   banner,
-  GAP,
   linesTable,
   logo,
+  masthead,
   party,
   run,
+  sideBySide,
   totals,
 } from '../../core/documents/sheet';
 import { t } from '../../i18n/translate';
@@ -33,8 +35,6 @@ export function invoiceDocument(
 ): TDocumentDefinitions {
   const isDraft = invoice.status === 'draft';
   const day = (value: string | Date) => formatDay(value, doc.locale);
-  const smallRight = (text: string) =>
-    run(text, { fontSize: 10.5, alignment: 'right' });
 
   const content: Content[] = [];
   if (logoDataUrl) content.push(logo(logoDataUrl));
@@ -89,67 +89,38 @@ export function invoiceDocument(
     );
   }
 
-  const dates: Content[] = [];
-  if (invoice.invoiceDate) {
-    dates.push(
-      smallRight(
-        doc.label(
-          t(
-            { id: 'documents.dateOn', defaultMessage: 'Date {date}' },
-            { date: day(invoice.invoiceDate) },
-          ),
-        ),
-      ),
-    );
-  }
-  if (invoice.dueDate) {
-    dates.push(
-      smallRight(
-        doc.label(
-          t(
-            { id: 'documents.dueOn', defaultMessage: 'Due {date}' },
-            { date: day(invoice.dueDate) },
-          ),
-        ),
-      ),
-    );
-  }
-  if (invoice.orderReference) {
-    dates.push(
-      smallRight(
-        doc.label(
-          t(
-            {
-              id: 'documents.yourOrder',
-              defaultMessage: 'Your order {reference}',
-            },
-            { reference: invoice.orderReference },
-          ),
-        ),
-      ),
-    );
-  }
-
-  content.push({
-    columns: [
-      {
-        width: '*',
-        stack: [
-          run(
-            doc.label(
-              t({ id: 'documents.invoice', defaultMessage: 'Invoice' }),
+  content.push(
+    masthead(
+      doc.label(t({ id: 'documents.invoice', defaultMessage: 'Invoice' })),
+      invoice.number ? run(invoice.number, { fontSize: 15, bold: true }) : null,
+      [
+        invoice.invoiceDate &&
+          doc.label(
+            t(
+              { id: 'documents.dateOn', defaultMessage: 'Date {date}' },
+              { date: day(invoice.invoiceDate) },
             ),
-            { fontSize: 18 },
           ),
-          ...(invoice.number
-            ? [run(invoice.number, { fontSize: 15, bold: true })]
-            : []),
-        ],
-      },
-      { width: 'auto', stack: dates },
-    ],
-    margin: [0, 0, 0, GAP],
-  });
+        invoice.dueDate &&
+          doc.label(
+            t(
+              { id: 'documents.dueOn', defaultMessage: 'Due {date}' },
+              { date: day(invoice.dueDate) },
+            ),
+          ),
+        invoice.orderReference &&
+          doc.label(
+            t(
+              {
+                id: 'documents.yourOrder',
+                defaultMessage: 'Your order {reference}',
+              },
+              { reference: invoice.orderReference },
+            ),
+          ),
+      ],
+    ),
+  );
 
   const parties: Content[] = [
     party(
@@ -211,9 +182,10 @@ export function invoiceDocument(
       ),
     );
   }
-  content.push({ columns: parties, columnGap: 36, margin: [0, 0, 0, GAP] });
+  content.push(sideBySide(parties));
 
   // A draft's amounts are its preview: nothing is stored until issue.
+  const amounts = isDraft ? invoice.preview : invoice;
   const netOf = (lineId: string, stored: string | null) =>
     isDraft
       ? (invoice.preview?.lines.find((row) => row.id === lineId)?.netAmount ??
@@ -225,21 +197,16 @@ export function invoiceDocument(
       doc,
       invoice.currency,
       invoice.lines.map((line) => ({
-        sku: line.sku,
-        description: line.description,
-        secondDescription: line.secondDescription,
-        quantity: line.quantity,
-        unitPrice: line.unitPrice,
-        taxCodeName: line.taxCodeName,
-        amount: netOf(line.id, line.netAmount),
+        ...line,
+        netAmount: netOf(line.id, line.netAmount),
       })),
     ),
     totals(
       doc,
       invoice.currency,
-      isDraft ? (invoice.preview?.subtotal ?? null) : invoice.subtotal,
-      (isDraft ? invoice.preview?.taxes : invoice.taxes) ?? [],
-      isDraft ? (invoice.preview?.total ?? null) : invoice.total,
+      amounts?.subtotal ?? null,
+      amounts?.taxes ?? [],
+      amounts?.total ?? null,
       t({ id: 'documents.total', defaultMessage: 'Total' }),
     ),
   );
@@ -267,9 +234,20 @@ export function invoiceDocument(
   };
 }
 
-/** The file's name: the invoice's number, or DRAFT and the start of its id. */
-export function invoiceFileName(invoice: InvoiceDetail): string {
-  return invoice.number
-    ? `${invoice.number}.pdf`
-    : `DRAFT ${invoice.id.slice(0, 8)}.pdf`;
+/**
+ * The invoice for its PDF route, named by its number, or DRAFT and the
+ * start of its id.
+ */
+export function printableInvoice(invoice: InvoiceDetail): Printable {
+  return {
+    language: invoice.language,
+    secondLanguage: invoice.secondLanguage,
+    // Copied at issue; a draft has copied none yet, so it takes the
+    // organization's as it is now.
+    sellerCountry: invoice.sellerCountry,
+    name: invoice.number
+      ? `${invoice.number}.pdf`
+      : `DRAFT ${invoice.id.slice(0, 8)}.pdf`,
+    draw: (doc, logo) => invoiceDocument(invoice, doc, logo),
+  };
 }

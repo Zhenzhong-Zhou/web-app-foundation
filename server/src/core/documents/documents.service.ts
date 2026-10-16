@@ -1,19 +1,38 @@
-import type { Readable } from 'node:stream';
+import { buffer } from 'node:stream/consumers';
 
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import type { Response } from 'express';
 import type { TDocumentDefinitions } from 'pdfmake/interfaces';
 
+import type { Locale } from '../../common/locales';
 import { organizations } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { Permission } from '../authorization/permissions';
+import { dispositionOf } from '../files/content-disposition';
 import { FilesService } from '../files/files.service';
 import { registeredAddress } from '../organizations/registered-address';
+import { type DocumentText, documentText } from './document-text';
 import { type PaperSize, PdfRenderer } from './pdf-renderer.service';
 
+/** A document as its module reads it, ready to draw (ADR-071). */
+export interface Printable {
+  /** The customer's languages, which the document is worded in (ADR-054). */
+  language: Locale;
+  secondLanguage: Locale | null;
+  /**
+   * The seller's country as copied at issue, for the paper and the
+   * formatting; null takes the organization's as it is now.
+   */
+  sellerCountry: string | null;
+  /** The file's name. */
+  name: string;
+  /** The drawing, given the document's words and the logo it prints. */
+  draw: (doc: DocumentText, logo: string | null) => TDocumentDefinitions;
+}
+
 /** What every document of an organization draws on, beside its own data. */
-export interface Letterhead {
+interface Letterhead {
   /** The logo as a data URL, or null when it has none or prints none. */
   logo: string | null;
   /** The registered address's country, for the paper and the formatting. */
@@ -21,7 +40,7 @@ export interface Letterhead {
 }
 
 /** Letter where it is the paper sold, A4 everywhere else (ADR-071). */
-export function paperFor(country: string | null): PaperSize {
+function paperFor(country: string | null): PaperSize {
   return country === 'CA' || country === 'US' ? 'letter' : 'a4';
 }
 
@@ -38,10 +57,43 @@ export class DocumentsService {
   ) {}
 
   /**
+   * The PDF as the response: inline for Print, which opens it in the
+   * browser's own viewer, or an attachment for Download PDF, named either
+   * way by the document. The document is read beside the letterhead, since
+   * neither needs the other.
+   */
+  async send(
+    res: Response,
+    download: boolean,
+    printable: Promise<Printable>,
+  ): Promise<void> {
+    const [document, letterhead] = await Promise.all([
+      printable,
+      this.letterhead(),
+    ]);
+    const country = document.sellerCountry ?? letterhead.country;
+    const pdf = await this.renderer.render(
+      document.draw(
+        documentText(document.language, document.secondLanguage, country),
+        letterhead.logo,
+      ),
+      paperFor(country),
+    );
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      dispositionOf(download ? 'attachment' : 'inline', document.name),
+    );
+    // A document is the organization's, for the person who asked.
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.end(pdf);
+  }
+
+  /**
    * The organization's logo and country, as they are now: a document
    * already issued is not reprinted with the logo it had (ADR-060).
    */
-  async letterhead(): Promise<Letterhead> {
+  private async letterhead(): Promise<Letterhead> {
     const { logoFileId, country } = await this.tenantDb.transaction(
       async (tx, organizationId) => {
         const [organization] = await tx
@@ -68,42 +120,10 @@ export class DocumentsService {
       'full',
       new Set<Permission>(),
     );
-    const bytes = await bytesOf(await this.files.stream(file));
+    const bytes = await buffer(await this.files.stream(file));
     return {
       logo: `data:${file.contentType};base64,${bytes.toString('base64')}`,
       country,
     };
   }
-
-  /**
-   * The PDF as the response: inline for Print, which opens it in the
-   * browser's own viewer, or an attachment for Download PDF, named either
-   * way by the document.
-   */
-  async send(
-    res: Response,
-    definition: TDocumentDefinitions,
-    paper: PaperSize,
-    name: string,
-    download: boolean,
-  ): Promise<void> {
-    const pdf = await this.renderer.render(definition, paper);
-    const ascii = name.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, "'");
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `${download ? 'attachment' : 'inline'}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`,
-    );
-    // A document is the organization's, for the person who asked.
-    res.setHeader('Cache-Control', 'private, no-store');
-    res.end(pdf);
-  }
-}
-
-async function bytesOf(stream: Readable): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  return Buffer.concat(chunks);
 }

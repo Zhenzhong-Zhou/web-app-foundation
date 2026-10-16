@@ -6,7 +6,6 @@ import { CreditNotesController } from './credit-notes.controller';
 import { CreditNotesService } from './credit-notes.service';
 import { InvoiceDraftsService } from './invoice-drafts.service';
 import { InvoiceIssuingService } from './invoice-issuing.service';
-import { InvoicePdfService } from './invoice-pdf.service';
 import { InvoicesController } from './invoices.controller';
 import { InvoicesService } from './invoices.service';
 
@@ -18,7 +17,6 @@ import { InvoicesService } from './invoices.service';
     InvoicesService,
     InvoiceDraftsService,
     InvoiceIssuingService,
-    InvoicePdfService,
     CreditNotesService,
   ],
 })

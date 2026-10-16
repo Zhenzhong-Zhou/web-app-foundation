@@ -7,7 +7,6 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiProduces, ApiQuery } from '@nestjs/swagger';
 import type { Response } from 'express';
 
 import { csvFile, everyRow, exportFilters } from '../../common/export';
@@ -16,14 +15,16 @@ import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { DocumentsService } from '../../core/documents/documents.service';
+import { PdfResponse } from '../../core/documents/pdf-response.decorator';
 import { localeOf } from '../../i18n/translate';
+import { printableCreditNote } from './credit-note-document';
 import type {
   CreditNoteEnvelope,
   CreditNotePage,
 } from './dto/credit-note-response.dto';
 import { ListCreditNotesDto } from './dto/list-credit-notes.dto';
 import { CREDIT_NOTE_COLUMNS } from './invoice-exports';
-import { InvoicePdfService } from './invoice-pdf.service';
 import { InvoicesService } from './invoices.service';
 
 /**
@@ -36,7 +37,7 @@ import { InvoicesService } from './invoices.service';
 export class CreditNotesController {
   constructor(
     private readonly invoices: InvoicesService,
-    private readonly pdfs: InvoicePdfService,
+    private readonly documents: DocumentsService,
   ) {}
 
   /** Every credit note, newest first, with its date range and search. */
@@ -89,14 +90,16 @@ export class CreditNotesController {
    */
   @Get(':id/pdf')
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
-  @ApiProduces('application/pdf')
-  @ApiQuery({ name: 'download', required: false, enum: ['1'] })
-  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @PdfResponse()
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,
     @Query('download') download: string | undefined,
     @Res() res: Response,
   ): Promise<void> {
-    await this.pdfs.creditNote(id, res, download === '1');
+    await this.documents.send(
+      res,
+      download === '1',
+      this.invoices.findCreditNote(id).then(printableCreditNote),
+    );
   }
 }

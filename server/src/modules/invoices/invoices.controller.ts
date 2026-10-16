@@ -13,7 +13,6 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiProduces, ApiQuery } from '@nestjs/swagger';
 import type { Response } from 'express';
 
 import { csvFile, everyRow, exportFilters } from '../../common/export';
@@ -24,6 +23,8 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { DocumentsService } from '../../core/documents/documents.service';
+import { PdfResponse } from '../../core/documents/pdf-response.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CreditNotesService } from './credit-notes.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -39,10 +40,10 @@ import { ListInvoicesDto } from './dto/list-invoices.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { UpdateInvoiceLineDto } from './dto/update-invoice-line.dto';
 import { VoidInvoiceDto } from './dto/void-invoice.dto';
+import { printableInvoice } from './invoice-document';
 import { InvoiceDraftsService } from './invoice-drafts.service';
 import { INVOICE_COLUMNS } from './invoice-exports';
 import { InvoiceIssuingService } from './invoice-issuing.service';
-import { InvoicePdfService } from './invoice-pdf.service';
 import { InvoicesService } from './invoices.service';
 
 /**
@@ -56,7 +57,7 @@ export class InvoicesController {
     private readonly creditNotes: CreditNotesService,
     private readonly drafts: InvoiceDraftsService,
     private readonly issuing: InvoiceIssuingService,
-    private readonly pdfs: InvoicePdfService,
+    private readonly documents: DocumentsService,
   ) {}
 
   @Get()
@@ -104,15 +105,17 @@ export class InvoicesController {
    */
   @Get(':id/pdf')
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
-  @ApiProduces('application/pdf')
-  @ApiQuery({ name: 'download', required: false, enum: ['1'] })
-  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @PdfResponse()
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,
     @Query('download') download: string | undefined,
     @Res() res: Response,
   ): Promise<void> {
-    await this.pdfs.send(id, res, download === '1');
+    await this.documents.send(
+      res,
+      download === '1',
+      this.invoices.findById(id).then(printableInvoice),
+    );
   }
 
   @Post()

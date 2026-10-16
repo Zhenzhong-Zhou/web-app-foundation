@@ -10,7 +10,6 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiProduces, ApiQuery } from '@nestjs/swagger';
 import type { Response } from 'express';
 
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
@@ -19,6 +18,8 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { DocumentsService } from '../../core/documents/documents.service';
+import { PdfResponse } from '../../core/documents/pdf-response.decorator';
 import { PreviewShipmentDto, ShipOrderDto } from './dto/ship-order.dto';
 import type {
   PackingSlip,
@@ -27,7 +28,7 @@ import type {
   ShipmentPlan,
 } from './dto/shipment-response.dto';
 import { VoidShipmentDto } from './dto/void-shipment.dto';
-import { PackingSlipPdfService } from './packing-slip-pdf.service';
+import { printablePackingSlip } from './packing-slip-document';
 import { ShipmentVoidsService } from './shipment-voids.service';
 import { ShipmentsService } from './shipments.service';
 import { ShippingService } from './shipping.service';
@@ -43,7 +44,7 @@ export class ShipmentsController {
     private readonly shipments: ShipmentsService,
     private readonly shipping: ShippingService,
     private readonly voids: ShipmentVoidsService,
-    private readonly pdfs: PackingSlipPdfService,
+    private readonly documents: DocumentsService,
   ) {}
 
   @Get()
@@ -71,16 +72,18 @@ export class ShipmentsController {
    */
   @Get(':shipmentId/pdf')
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
-  @ApiProduces('application/pdf')
-  @ApiQuery({ name: 'download', required: false, enum: ['1'] })
-  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @PdfResponse()
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('shipmentId', ParseUUIDPipe) shipmentId: string,
     @Query('download') download: string | undefined,
     @Res() res: Response,
   ): Promise<void> {
-    await this.pdfs.send(id, shipmentId, res, download === '1');
+    await this.documents.send(
+      res,
+      download === '1',
+      this.shipments.slip(id, shipmentId).then(printablePackingSlip),
+    );
   }
 
   /**

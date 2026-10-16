@@ -21,8 +21,6 @@ const BETWEEN = ' / ';
 export interface DocumentText {
   /** The tag the first language formats numbers, dates and money in. */
   locale: string;
-  /** The document's languages: the first, and perhaps a second. */
-  languages: Locale[];
   /** A message in each language, kept apart, for lines that stack. */
   lines: (wording: Wording) => string[];
   /** The same, joined "First / Second". */
@@ -53,7 +51,6 @@ export function documentText(
 
   return {
     locale: tags[0],
-    languages,
     lines,
     label: (wording) => lines(wording).join(BETWEEN),
   };

@@ -5,12 +5,24 @@ import type {
 } from 'pdfmake/interfaces';
 
 import type { DocumentText } from '../../core/documents/document-text';
+import type { Printable } from '../../core/documents/documents.service';
 import {
   formatDay,
   formatQuantity,
   NO_VALUE,
 } from '../../core/documents/format';
-import { banner, GAP, logo, run } from '../../core/documents/sheet';
+import {
+  addressLines,
+  banner,
+  block,
+  cell,
+  head,
+  linesOf,
+  logo,
+  masthead,
+  run,
+  sideBySide,
+} from '../../core/documents/sheet';
 import { t, type Translatable } from '../../i18n/translate';
 import type { PackingSlip } from './dto/shipment-response.dto';
 
@@ -24,17 +36,6 @@ const UNITS: Record<string, Translatable> = {
   case: t({ id: 'products.unit.case', defaultMessage: 'case' }),
   box: t({ id: 'products.unit.box', defaultMessage: 'box' }),
   pallet: t({ id: 'products.unit.pallet', defaultMessage: 'pallet' }),
-};
-
-/** The rules of the items table, as the invoice's lines have them. */
-const ITEMS_LAYOUT = {
-  hLineWidth: (index: number) => (index === 0 ? 0 : 0.75),
-  vLineWidth: () => 0,
-  hLineColor: () => '#e0e0e0',
-  paddingLeft: () => 6,
-  paddingRight: () => 6,
-  paddingTop: () => 4,
-  paddingBottom: () => 4,
 };
 
 /**
@@ -53,17 +54,10 @@ export function packingSlipDocument(
   logoDataUrl: string | null,
 ): TDocumentDefinitions {
   const day = (value: string | Date) => formatDay(value, doc.locale);
-  const heading = (text: string) =>
-    run(text.toUpperCase(), {
-      fontSize: 9,
-      characterSpacing: 0.75,
-      margin: [0, 0, 0, 2],
-    });
-  const line = (text: string) => run(text, { fontSize: 12 });
   const small = (text: string) => run(text, { fontSize: 10.5 });
-  const smallRight = (text: string) =>
-    run(text, { fontSize: 10.5, alignment: 'right' });
-  const voided = slip.voidedAt !== null;
+  const title = doc.label(
+    t({ id: 'documents.packingSlip', defaultMessage: 'Packing slip' }),
+  );
 
   const content: Content[] = [];
   if (logoDataUrl) content.push(logo(logoDataUrl));
@@ -92,124 +86,80 @@ export function packingSlipDocument(
     );
   }
 
-  content.push({
-    columns: [
-      {
-        width: '*',
-        stack: [
-          run(
-            doc.label(
-              t({
-                id: 'documents.packingSlip',
-                defaultMessage: 'Packing slip',
-              }),
-            ),
-            { fontSize: 18 },
+  content.push(
+    masthead(title, small(slip.organizationName), [
+      doc.label(
+        t(
+          { id: 'documents.shippedOn', defaultMessage: 'Shipped {date}' },
+          { date: day(slip.createdAt) },
+        ),
+      ),
+      slip.order.reference &&
+        doc.label(
+          t(
+            {
+              id: 'documents.orderReference',
+              defaultMessage: 'Order {reference}',
+            },
+            { reference: slip.order.reference },
           ),
-          small(slip.organizationName),
-        ],
-      },
-      {
-        width: 'auto',
-        stack: [
-          smallRight(
-            doc.label(
-              t(
-                { id: 'documents.shippedOn', defaultMessage: 'Shipped {date}' },
-                { date: day(slip.createdAt) },
-              ),
-            ),
-          ),
-          ...(slip.order.reference
-            ? [
-                smallRight(
-                  doc.label(
-                    t(
-                      {
-                        id: 'documents.orderReference',
-                        defaultMessage: 'Order {reference}',
-                      },
-                      { reference: slip.order.reference },
-                    ),
-                  ),
-                ),
-              ]
-            : []),
-        ],
-      },
-    ],
-    margin: [0, 0, 0, GAP],
-  });
+        ),
+    ]),
+  );
 
   const address = slip.shipTo;
-  const place = address
-    ? [address.city, address.region, address.postalCode]
-        .filter(Boolean)
-        .join(', ')
-    : '';
-  const shipTo = [
-    slip.order.partnerName,
-    address?.label,
-    address?.line1,
-    address?.line2,
-    place,
-    address?.country,
-  ].filter((text): text is string => Boolean(text));
-
-  const shipment = [
-    doc.label(
-      t(
-        { id: 'documents.fromLocation', defaultMessage: 'From {place}' },
-        { place: slip.fromLocationName },
-      ),
-    ),
-    slip.carrier &&
-      doc.label(
-        t(
-          { id: 'documents.carrier', defaultMessage: 'Carrier: {carrier}' },
-          { carrier: slip.carrier },
-        ),
-      ),
-    slip.trackingNumber &&
-      doc.label(
-        t(
-          { id: 'documents.tracking', defaultMessage: 'Tracking: {number}' },
-          { number: slip.trackingNumber },
-        ),
-      ),
-  ].filter((text): text is string => Boolean(text));
-
-  content.push({
-    columns: [
-      {
-        stack: [
-          heading(
-            doc.label(t({ id: 'documents.shipTo', defaultMessage: 'Ship to' })),
-          ),
-          ...shipTo.map(line),
+  content.push(
+    sideBySide([
+      block(
+        doc.label(t({ id: 'documents.shipTo', defaultMessage: 'Ship to' })),
+        [
+          slip.order.partnerName,
+          address?.label,
+          ...addressLines([
+            address?.line1,
+            address?.line2,
+            address?.city,
+            address?.region,
+            address?.postalCode,
+            address?.country,
+          ]),
         ],
-      },
-      {
-        stack: [
-          heading(
-            doc.label(
-              t({ id: 'documents.shipment', defaultMessage: 'Shipment' }),
+      ),
+      block(
+        doc.label(t({ id: 'documents.shipment', defaultMessage: 'Shipment' })),
+        [
+          doc.label(
+            t(
+              { id: 'documents.fromLocation', defaultMessage: 'From {place}' },
+              { place: slip.fromLocationName },
             ),
           ),
-          ...shipment.map(line),
+          slip.carrier &&
+            doc.label(
+              t(
+                {
+                  id: 'documents.carrier',
+                  defaultMessage: 'Carrier: {carrier}',
+                },
+                { carrier: slip.carrier },
+              ),
+            ),
+          slip.trackingNumber &&
+            doc.label(
+              t(
+                {
+                  id: 'documents.tracking',
+                  defaultMessage: 'Tracking: {number}',
+                },
+                { number: slip.trackingNumber },
+              ),
+            ),
         ],
-      },
-    ],
-    columnGap: 36,
-    margin: [0, 0, 0, GAP],
-  });
+      ),
+    ]),
+  );
 
   // On paper a lot is a code to read: no link, as the page had none.
-  const head = (text: string, alignment: 'left' | 'right' = 'left') =>
-    run(text, { fontSize: 10.5, bold: true, alignment });
-  const cell = (text: string, alignment: 'left' | 'right' = 'left') =>
-    run(text, { fontSize: 10.5, alignment, noWrap: alignment === 'right' });
-
   const header: TableCell[] = [
     head(doc.label(t({ id: 'documents.sku', defaultMessage: 'SKU' }))),
     head(doc.label(t({ id: 'documents.item', defaultMessage: 'Item' }))),
@@ -236,21 +186,13 @@ export function packingSlipDocument(
     ];
   });
 
-  content.push({
-    table: {
-      headerRows: 1,
-      widths: ['auto', '*', 'auto', 'auto', 'auto'],
-      body: [header, ...rows],
-    },
-    layout: ITEMS_LAYOUT,
-    margin: [0, 0, 0, GAP],
-  });
+  content.push(linesOf(['auto', '*', 'auto', 'auto', 'auto'], header, rows));
 
   if (slip.note) content.push(small(slip.note));
 
   // For the person unpacking: a paper slip is often signed and kept. Not
   // on a voided one: nothing arrived to sign for.
-  if (!voided) {
+  if (!slip.voidedAt) {
     content.push(
       run(
         doc.label(
@@ -267,18 +209,21 @@ export function packingSlipDocument(
     );
   }
 
-  return {
-    info: {
-      title: doc.label(
-        t({ id: 'documents.packingSlip', defaultMessage: 'Packing slip' }),
-      ),
-    },
-    content,
-  };
+  return { info: { title }, content };
 }
 
-/** The file's name: the day it shipped and the start of its id. */
-export function packingSlipFileName(slip: PackingSlip): string {
+/**
+ * The slip for its PDF route, named by the day it shipped and the start
+ * of its id. It has no seller copied: it formats in the organization's
+ * country as it is now.
+ */
+export function printablePackingSlip(slip: PackingSlip): Printable {
   const shipped = new Date(slip.createdAt).toISOString().slice(0, 10);
-  return `packing-slip-${shipped}-${slip.id.slice(0, 8)}.pdf`;
+  return {
+    language: slip.language,
+    secondLanguage: slip.secondLanguage,
+    sellerCountry: null,
+    name: `packing-slip-${shipped}-${slip.id.slice(0, 8)}.pdf`,
+    draw: (doc, logo) => packingSlipDocument(slip, doc, logo),
+  };
 }
