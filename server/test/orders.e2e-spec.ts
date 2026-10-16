@@ -17,6 +17,7 @@ import {
   addViewer,
   body,
   createE2eApp,
+  createLocation,
   createVariant,
   registerOrganization,
 } from './utils/fixtures';
@@ -716,6 +717,132 @@ describe('Orders (e2e)', () => {
         .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
         .send({ quantityOrdered: '5', unitPrice: '8', currency: 'CAD' })
         .expect(204);
+    });
+  });
+
+  describe('Deliver to (ADR-071, amended)', () => {
+    type Ctx = Awaited<ReturnType<typeof setup>>;
+
+    async function raise(ctx: Ctx, over: Record<string, unknown> = {}) {
+      return body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send({ ...purchase(ctx.partnerId, ctx.variant.id), ...over })
+          .expect(201),
+      ).order;
+    }
+
+    async function deliverTo(ctx: Ctx, orderId: string) {
+      return body<{ deliverTo: { id: string; name: string } | null }>(
+        await ctx.agent.get(`/v1/orders/${orderId}`).expect(200),
+      ).deliverTo;
+    }
+
+    it('is the only site when there is one, and chosen among several', async () => {
+      const ctx = await setup('alpha');
+
+      const first = await raise(ctx);
+      expect(await deliverTo(ctx, first.id)).toEqual({
+        id: ctx.locationId,
+        name: 'Main',
+      });
+
+      // With two, guessing would send goods to the wrong building.
+      const burnaby = await createLocation(ctx.agent, {
+        type: 'site',
+        name: 'Burnaby warehouse',
+      });
+      const unchosen = await raise(ctx);
+      expect(await deliverTo(ctx, unchosen.id)).toBeNull();
+
+      const chosen = await raise(ctx, { deliverToId: burnaby });
+      expect(await deliverTo(ctx, chosen.id)).toEqual({
+        id: burnaby,
+        name: 'Burnaby warehouse',
+      });
+
+      // A duplicate keeps the site while it is in use.
+      const copy = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post(`/v1/orders/${chosen.id}/duplicate`)
+          .send({})
+          .expect(201),
+      ).order;
+      expect(await deliverTo(ctx, copy.id)).toEqual({
+        id: burnaby,
+        name: 'Burnaby warehouse',
+      });
+    });
+
+    it('refuses a sale, a place inside a site, and another organization’s or a retired site', async () => {
+      const ctx = await setup('alpha');
+      const beta = await setup('beta');
+      const bin = await createLocation(ctx.agent, {
+        type: 'bin',
+        name: 'Bin 1',
+        parentId: ctx.locationId,
+      });
+      const retired = await createLocation(ctx.agent, {
+        type: 'site',
+        name: 'Old depot',
+      });
+      await ctx.agent
+        .patch(`/v1/locations/${retired}`)
+        .send({ isActive: false })
+        .expect(204);
+
+      const send = (over: Record<string, unknown>) =>
+        ctx.agent
+          .post('/v1/orders')
+          .send({ ...purchase(ctx.partnerId, ctx.variant.id), ...over });
+
+      await send({ direction: 'sale', deliverToId: ctx.locationId }).expect(
+        400,
+      );
+      await send({ deliverToId: bin }).expect(400);
+      await send({ deliverToId: beta.locationId }).expect(400);
+      await send({ deliverToId: retired }).expect(409);
+
+      expect(await db.select().from(orders)).toHaveLength(0);
+    });
+
+    it('changes until the goods are in, and the change is audited', async () => {
+      const ctx = await setup('alpha');
+      const burnaby = await createLocation(ctx.agent, {
+        type: 'site',
+        name: 'Burnaby warehouse',
+      });
+      const order = await raise(ctx, { deliverToId: ctx.locationId });
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ deliverToId: burnaby })
+        .expect(204);
+      expect(await deliverTo(ctx, order.id)).toMatchObject({ id: burnaby });
+
+      const [entry] = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'order.updated'));
+      expect(entry.payload).toEqual({
+        deliverToId: { from: ctx.locationId, to: burnaby },
+      });
+
+      // None: the purchase order prints the registered address.
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ deliverToId: null })
+        .expect(204);
+      expect(await deliverTo(ctx, order.id)).toBeNull();
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'cancelled' })
+        .expect(204);
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ deliverToId: burnaby })
+        .expect(409);
     });
   });
 

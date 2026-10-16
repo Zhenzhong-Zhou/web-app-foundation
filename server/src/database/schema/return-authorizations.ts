@@ -13,6 +13,7 @@ import {
 
 import { primaryKey, timestamps } from './columns';
 import { invoices } from './invoices';
+import { locations } from './locations';
 import { orders } from './orders';
 import { organizations } from './organizations';
 import { partners } from './partners';
@@ -94,6 +95,17 @@ export const returnAuthorizations = pgTable(
      */
     expectsGoods: boolean('expects_goods').notNull().default(true),
 
+    /**
+     * Where the goods come back to (ADR-071, amended): one of our sites,
+     * whose name and address the RMA and its cut-out label print, or the
+     * registered address while the site has none. Defaults to the site the
+     * goods shipped from. Null when nothing is to come back, which the check
+     * below holds. RESTRICT, as orders' Deliver to is.
+     */
+    sendBackToId: uuid('send_back_to_id').references(() => locations.id, {
+      onDelete: 'restrict',
+    }),
+
     note: text('note'),
 
     createdBy: uuid('created_by')
@@ -145,6 +157,12 @@ export const returnAuthorizations = pgTable(
           and (${t.cancelledAt} is null) = (${t.cancelledBy} is null)`,
     ),
 
+    // Somewhere to send goods back only when goods are coming back.
+    check(
+      'return_authorizations_send_back_to_needs_goods_check',
+      sql`${t.sendBackToId} is null or ${t.expectsGoods}`,
+    ),
+
     uniqueIndex('return_authorizations_org_number_key').on(
       t.organizationId,
       t.number,
@@ -167,5 +185,11 @@ export const returnAuthorizations = pgTable(
       t.organizationId,
       t.partnerId,
     ),
+
+    // The lookup the RESTRICT key runs for each site an organization's
+    // deletion removes. Partial: an RMA with nothing to send back has none.
+    index('return_authorizations_send_back_to_id_idx')
+      .on(t.sendBackToId)
+      .where(sql`${t.sendBackToId} is not null`),
   ],
 );

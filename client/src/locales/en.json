@@ -145,6 +145,7 @@
   "audit.action.returnAuthorizationCreated": "Return authorized",
   "audit.action.returnAuthorizationReplacementRaised": "Replacement order raised",
   "audit.action.returnAuthorizationReturnLinked": "Return linked to an authorization",
+  "audit.action.returnAuthorizationUpdated": "Return authorization updated",
   "audit.action.stockLotUpdated": "Lot updated",
   "audit.action.stockMovementRecorded": "Stock movement recorded",
   "audit.action.stockValuationCostSet": "Cost set",

@@ -16,6 +16,8 @@ import {
   addMember,
   body,
   createE2eApp,
+  createLocation,
+  createPartner,
   createVariant,
   registerOrganization,
 } from './utils/fixtures';
@@ -30,6 +32,7 @@ interface RmaResponse {
   invoiceId: string | null;
   invoiceNumber?: string | null;
   expectsGoods: boolean;
+  sendBackTo: { id: string; name: string } | null;
   lines: {
     id: string;
     sku: string;
@@ -326,6 +329,170 @@ describe('Return authorizations (e2e)', () => {
           { lineId: s.capsulesLine, quantity: '1', resolution: 'replace' },
         ],
       }).expect(201);
+    });
+  });
+
+  describe('Send back to (ADR-071, amended)', () => {
+    it('is the site the goods shipped from, and changes while open', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const s = await shipped(org);
+      // A second site, so the default cannot be the only one.
+      const burnaby = await createLocation(org.agent, {
+        type: 'site',
+        name: 'Burnaby warehouse',
+      });
+
+      const rma = await raised(org, s);
+      expect(rma.sendBackTo).toEqual({ id: s.shelf, name: 'Shelf' });
+
+      await org.agent
+        .patch(`/v1/return-authorizations/${rma.id}`)
+        .send({ sendBackToId: burnaby })
+        .expect(204);
+      expect((await read(org, rma.id)).sendBackTo).toEqual({
+        id: burnaby,
+        name: 'Burnaby warehouse',
+      });
+
+      const [entry] = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'return_authorization.updated'));
+      expect(entry.resourceId).toBe(rma.id);
+      expect(entry.payload).toEqual({
+        sendBackToId: { from: s.shelf, to: burnaby },
+      });
+
+      // None: the RMA prints the registered address.
+      await org.agent
+        .patch(`/v1/return-authorizations/${rma.id}`)
+        .send({ sendBackToId: null })
+        .expect(204);
+      expect((await read(org, rma.id)).sendBackTo).toBeNull();
+
+      await org.agent
+        .post(`/v1/return-authorizations/${rma.id}/close`)
+        .expect(204);
+      await org.agent
+        .patch(`/v1/return-authorizations/${rma.id}`)
+        .send({ sendBackToId: burnaby })
+        .expect(409);
+    });
+
+    it('walks up from the bin the goods left to its site', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const partnerId = await createPartner(org.agent, {
+        name: 'Northside Pharmacy',
+        code: 'NORTH',
+      });
+      await createLocation(org.agent, { type: 'site', name: 'Head office' });
+      const burnaby = await createLocation(org.agent, {
+        type: 'site',
+        name: 'Burnaby warehouse',
+      });
+      const bin = await createLocation(org.agent, {
+        type: 'bin',
+        name: 'Bin 4',
+        parentId: burnaby,
+      });
+      const capsules = await variant(org, 'FOCUS-60CT');
+      await org.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId: capsules,
+          toLocationId: bin,
+          quantity: '10',
+          reason: 'receipt',
+        })
+        .expect(201);
+
+      const order = body<{ order: { id: string; lines: { id: string }[] } }>(
+        await org.agent
+          .post('/v1/orders')
+          .send({
+            partnerId,
+            direction: 'sale',
+            lines: [
+              {
+                variantId: capsules,
+                quantityOrdered: '4',
+                unitPrice: '12.5',
+                currency: 'CAD',
+              },
+            ],
+          })
+          .expect(201),
+      ).order;
+      const lineId = order.lines[0].id;
+      await org.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+      await org.agent
+        .post(`/v1/orders/${order.id}/shipments`)
+        .send({ fromLocationId: bin, lines: [{ lineId, quantity: '4' }] })
+        .expect(201);
+
+      const rma = body<{ returnAuthorization: RmaResponse }>(
+        await org.agent
+          .post('/v1/return-authorizations')
+          .send({
+            orderId: order.id,
+            reason: REASON,
+            lines: [{ lineId, quantity: '1', resolution: 'credit' }],
+          })
+          .expect(201),
+      ).returnAuthorization;
+
+      expect(rma.sendBackTo).toEqual({
+        id: burnaby,
+        name: 'Burnaby warehouse',
+      });
+    });
+
+    it('refuses a site where nothing comes back, and one that is not a site in use', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const s = await shipped(org);
+      // Its own site: the shelf holds stock, so nothing goes inside it.
+      const annex = await createLocation(org.agent, {
+        type: 'site',
+        name: 'Annex',
+      });
+      const bin = await createLocation(org.agent, {
+        type: 'bin',
+        name: 'Bin 1',
+        parentId: annex,
+      });
+      const retired = await createLocation(org.agent, {
+        type: 'site',
+        name: 'Old depot',
+      });
+      await org.agent
+        .patch(`/v1/locations/${retired}`)
+        .send({ isActive: false })
+        .expect(204);
+      const theirs = await createLocation(beta.agent, {
+        type: 'site',
+        name: 'Theirs',
+      });
+
+      await raise(org, s, {
+        expectsGoods: false,
+        sendBackToId: s.shelf,
+      }).expect(400);
+      await raise(org, s, { sendBackToId: bin }).expect(400);
+      await raise(org, s, { sendBackToId: theirs }).expect(400);
+      await raise(org, s, { sendBackToId: retired }).expect(409);
+      expect(await db.select().from(returnAuthorizations)).toHaveLength(0);
+
+      // Nothing comes back, so nowhere to send it, now or later.
+      const kept = await raised(org, s, { expectsGoods: false });
+      expect(kept.sendBackTo).toBeNull();
+      await org.agent
+        .patch(`/v1/return-authorizations/${kept.id}`)
+        .send({ sendBackToId: s.shelf })
+        .expect(409);
     });
   });
 

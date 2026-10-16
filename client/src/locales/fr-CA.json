@@ -145,6 +145,7 @@
   "audit.action.returnAuthorizationCreated": "Retour autorisé",
   "audit.action.returnAuthorizationReplacementRaised": "Commande de remplacement créée",
   "audit.action.returnAuthorizationReturnLinked": "Retour lié à une autorisation",
+  "audit.action.returnAuthorizationUpdated": "Autorisation de retour modifiée",
   "audit.action.stockLotUpdated": "Lot modifié",
   "audit.action.stockMovementRecorded": "Mouvement de stock enregistré",
   "audit.action.stockValuationCostSet": "Coût fixé",

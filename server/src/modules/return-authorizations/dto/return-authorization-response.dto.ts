@@ -2,6 +2,7 @@ import type {
   ReturnAuthorizationStatus,
   ReturnResolution,
 } from '../../../database/schema';
+import type { ChosenSite } from '../../locations/dto/chosen-site.dto';
 
 /**
  * Return authorizations as the API returns them (ADR-068, ADR-047),
@@ -61,6 +62,12 @@ export class ReturnAuthorizationDetail {
   reason!: string;
   /** False when the customer was told to keep or destroy the goods. */
   expectsGoods!: boolean;
+  /**
+   * Where the goods come back to (ADR-071, amended). Null when nothing
+   * comes back, and when no site was chosen, which prints the registered
+   * address.
+   */
+  sendBackTo!: ChosenSite | null;
   note!: string | null;
   createdAt!: Date;
   closedAt!: Date | null;

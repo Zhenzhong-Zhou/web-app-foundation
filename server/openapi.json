@@ -799,6 +799,7 @@
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
+                "return_authorization.updated",
                 "return_authorization.return_linked",
                 "return_authorization.replacement_raised",
                 "price_list.created",
@@ -960,6 +961,7 @@
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
+                "return_authorization.updated",
                 "return_authorization.return_linked",
                 "return_authorization.replacement_raised",
                 "price_list.created",
@@ -1294,6 +1296,7 @@
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
+                "return_authorization.updated",
                 "return_authorization.return_linked",
                 "return_authorization.replacement_raised",
                 "price_list.created",
@@ -1455,6 +1458,7 @@
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
+                "return_authorization.updated",
                 "return_authorization.return_linked",
                 "return_authorization.replacement_raised",
                 "price_list.created",
@@ -5526,6 +5530,37 @@
                 }
               }
             }
+          }
+        },
+        "tags": [
+          "ReturnAuthorizations"
+        ]
+      },
+      "patch": {
+        "operationId": "ReturnAuthorizationsController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReturnAuthorizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
           }
         },
         "tags": [
@@ -12450,6 +12485,21 @@
           "nextCursor"
         ]
       },
+      "ChosenSite": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
       "OrderTotal": {
         "type": "object",
         "properties": {
@@ -12836,6 +12886,16 @@
               "null"
             ]
           },
+          "deliverTo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChosenSite"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "totals": {
             "type": "array",
             "items": {
@@ -12901,6 +12961,7 @@
           "reference",
           "expectedAt",
           "note",
+          "deliverTo",
           "totals",
           "totalsComplete",
           "money",
@@ -12961,6 +13022,10 @@
             "type": "string",
             "maxLength": 1000
           },
+          "deliverToId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "lines": {
             "minItems": 1,
             "type": "array",
@@ -13020,6 +13085,13 @@
           "note": {
             "type": "string",
             "maxLength": 1000
+          },
+          "deliverToId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -14727,6 +14799,16 @@
           "expectsGoods": {
             "type": "boolean"
           },
+          "sendBackTo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChosenSite"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "note": {
             "type": [
               "string",
@@ -14771,6 +14853,7 @@
           "invoiceNumber",
           "reason",
           "expectsGoods",
+          "sendBackTo",
           "note",
           "createdAt",
           "closedAt",
@@ -14833,6 +14916,10 @@
             "type": "string",
             "format": "uuid"
           },
+          "sendBackToId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "note": {
             "type": "string",
             "maxLength": 1000
@@ -14851,6 +14938,18 @@
           "reason",
           "lines"
         ]
+      },
+      "UpdateReturnAuthorizationDto": {
+        "type": "object",
+        "properties": {
+          "sendBackToId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
       },
       "LinkReturnDto": {
         "type": "object",
@@ -17362,6 +17461,7 @@
           "return_authorization.created",
           "return_authorization.cancelled",
           "return_authorization.closed",
+          "return_authorization.updated",
           "return_authorization.return_linked",
           "return_authorization.replacement_raised",
           "price_list.created",

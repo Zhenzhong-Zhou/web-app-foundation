@@ -273,6 +273,10 @@ export const AUDIT_ACTION_NAMES = defineMessages<AuditAction>({
     id: 'audit.action.returnAuthorizationReturnLinked',
     defaultMessage: 'Return linked to an authorization',
   },
+  'return_authorization.updated': {
+    id: 'audit.action.returnAuthorizationUpdated',
+    defaultMessage: 'Return authorization updated',
+  },
   'stock.lot_updated': {
     id: 'audit.action.stockLotUpdated',
     defaultMessage: 'Lot updated',

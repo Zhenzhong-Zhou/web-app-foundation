@@ -3,6 +3,7 @@ import type {
   OrderDirection,
   OrderStatus,
 } from '../../../database/schema';
+import type { ChosenSite } from '../../locations/dto/chosen-site.dto';
 
 /**
  * Orders as the API returns them (ADR-068): the fields the client reads,
@@ -146,6 +147,12 @@ export class OrderDetail {
   reference!: string | null;
   expectedAt!: string | null;
   note!: string | null;
+  /**
+   * Where a purchase is delivered (ADR-071, amended). Null on a sale, and
+   * on a purchase nobody chose a site for, which prints the registered
+   * address.
+   */
+  deliverTo!: ChosenSite | null;
   totals!: OrderTotal[];
   totalsComplete!: boolean;
   /** Null on a purchase or a sample: neither is invoiced here. */

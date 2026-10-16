@@ -63,6 +63,16 @@ export class CreateReturnAuthorizationDto {
   @IsUUID()
   invoiceId?: string;
 
+  /**
+   * Where the goods come back to: one of our sites (ADR-071, amended).
+   * Only when goods are expected. Left out, the site they shipped from,
+   * else the organization's one site, else none, and the RMA prints the
+   * registered address.
+   */
+  @IsOptional()
+  @IsUUID()
+  sendBackToId?: string;
+
   @IsOptional()
   @trim()
   @IsString()

@@ -15,6 +15,7 @@ import {
 
 import { addresses } from './addresses';
 import { primaryKey, timestamps } from './columns';
+import { locations } from './locations';
 import { organizations } from './organizations';
 import { partners } from './partners';
 import { returnAuthorizations } from './return-authorizations';
@@ -107,6 +108,22 @@ export const orders = pgTable(
     expectedAt: date('expected_at', { mode: 'string' }),
 
     note: text('note'),
+
+    /**
+     * Where a purchase is delivered (ADR-071, amended): one of our own
+     * sites, whose name and address the purchase order prints, or the
+     * registered address while the site has none. Set for the order when
+     * the organization has exactly one site. Null on a sale, whose goods go
+     * to the customer, and on a purchase nobody chose a site for.
+     *
+     * The site, not a copy of its address as ship_to below is: the site is
+     * ours, and the next printing of an open order should carry its address
+     * as it now is. RESTRICT, as a shipment's location is; sites are
+     * retired, never deleted.
+     */
+    deliverToId: uuid('deliver_to_id').references(() => locations.id, {
+      onDelete: 'restrict',
+    }),
 
     /**
      * Where this order went, copied at creation rather than joined at read.
@@ -204,6 +221,11 @@ export const orders = pgTable(
       'orders_sample_is_sale_check',
       sql`not ${t.isSample} or ${t.direction} = 'sale'`,
     ),
+    // Only a purchase comes to one of our sites; a sale goes to a customer.
+    check(
+      'orders_deliver_to_is_purchase_check',
+      sql`${t.deliverToId} is null or ${t.direction} = 'purchase'`,
+    ),
     check(
       'orders_status_check',
       sql`${t.status} in ('draft', 'confirmed', 'fulfilled', 'cancelled')`,
@@ -266,5 +288,11 @@ export const orders = pgTable(
     index('orders_return_authorization_id_idx')
       .on(t.returnAuthorizationId)
       .where(sql`${t.returnAuthorizationId} is not null`),
+
+    // The lookup the RESTRICT key runs for each site an organization's
+    // deletion removes. Partial: a sale never has one.
+    index('orders_deliver_to_id_idx')
+      .on(t.deliverToId)
+      .where(sql`${t.deliverToId} is not null`),
   ],
 );

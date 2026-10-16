@@ -1279,6 +1279,11 @@ export type OrderPage = {
   nextCursor: string | null;
 };
 
+export type ChosenSite = {
+  id: string;
+  name: string;
+};
+
 export type OrderTotal = {
   currency: string;
   amount: string;
@@ -1370,6 +1375,7 @@ export type OrderDetail = {
   reference: string | null;
   expectedAt: string | null;
   note: string | null;
+  deliverTo: ChosenSite | null;
   totals: Array<OrderTotal>;
   totalsComplete: boolean;
   money: OrderMoney | null;
@@ -1394,6 +1400,7 @@ export type CreateOrderDto = {
   reference?: string;
   expectedAt?: string;
   note?: string;
+  deliverToId?: string;
   lines: Array<CreateOrderLineDto>;
 };
 
@@ -1411,6 +1418,7 @@ export type UpdateOrderDto = {
   reference?: string;
   expectedAt?: string;
   note?: string;
+  deliverToId?: string | null;
 };
 
 export type AddOrderLineDto = {
@@ -1814,6 +1822,7 @@ export type ReturnAuthorizationDetail = {
   invoiceNumber: string | null;
   reason: string;
   expectsGoods: boolean;
+  sendBackTo: ChosenSite | null;
   note: string | null;
   createdAt: string;
   closedAt: string | null;
@@ -1836,8 +1845,13 @@ export type CreateReturnAuthorizationDto = {
   reason: string;
   expectsGoods?: boolean;
   invoiceId?: string;
+  sendBackToId?: string;
   note?: string;
   lines: Array<ReturnAuthorizationLineDto>;
+};
+
+export type UpdateReturnAuthorizationDto = {
+  sendBackToId?: string | null;
 };
 
 export type LinkReturnDto = {
@@ -2541,6 +2555,7 @@ export const AuditAction = {
   RETURN_AUTHORIZATION_CREATED: 'return_authorization.created',
   RETURN_AUTHORIZATION_CANCELLED: 'return_authorization.cancelled',
   RETURN_AUTHORIZATION_CLOSED: 'return_authorization.closed',
+  RETURN_AUTHORIZATION_UPDATED: 'return_authorization.updated',
   RETURN_AUTHORIZATION_RETURN_LINKED: 'return_authorization.return_linked',
   RETURN_AUTHORIZATION_REPLACEMENT_RAISED:
     'return_authorization.replacement_raised',
@@ -3079,6 +3094,7 @@ export type AuditControllerListV1Data = {
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
+      | 'return_authorization.updated'
       | 'return_authorization.return_linked'
       | 'return_authorization.replacement_raised'
       | 'price_list.created'
@@ -3178,6 +3194,7 @@ export type AuditControllerExportAuditV1Data = {
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
+      | 'return_authorization.updated'
       | 'return_authorization.return_linked'
       | 'return_authorization.replacement_raised'
       | 'price_list.created'
@@ -3362,6 +3379,7 @@ export type WorkControllerActivityV1Data = {
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
+      | 'return_authorization.updated'
       | 'return_authorization.return_linked'
       | 'return_authorization.replacement_raised'
       | 'price_list.created'
@@ -3461,6 +3479,7 @@ export type WorkControllerExportActivityV1Data = {
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
+      | 'return_authorization.updated'
       | 'return_authorization.return_linked'
       | 'return_authorization.replacement_raised'
       | 'price_list.created'
@@ -5180,6 +5199,22 @@ export type ReturnAuthorizationsControllerGetV1Responses = {
 
 export type ReturnAuthorizationsControllerGetV1Response =
   ReturnAuthorizationsControllerGetV1Responses[keyof ReturnAuthorizationsControllerGetV1Responses];
+
+export type ReturnAuthorizationsControllerUpdateV1Data = {
+  body: UpdateReturnAuthorizationDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/return-authorizations/{id}';
+};
+
+export type ReturnAuthorizationsControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type ReturnAuthorizationsControllerUpdateV1Response =
+  ReturnAuthorizationsControllerUpdateV1Responses[keyof ReturnAuthorizationsControllerUpdateV1Responses];
 
 export type ReturnAuthorizationsControllerCancelV1Data = {
   body?: never;

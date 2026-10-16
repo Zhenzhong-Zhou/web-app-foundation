@@ -114,6 +114,8 @@ export const AUDIT_ACTIONS = {
   RETURN_AUTHORIZATION_CREATED: 'return_authorization.created',
   RETURN_AUTHORIZATION_CANCELLED: 'return_authorization.cancelled',
   RETURN_AUTHORIZATION_CLOSED: 'return_authorization.closed',
+  /** Where its goods come back to, changed (ADR-071); the one edit. */
+  RETURN_AUTHORIZATION_UPDATED: 'return_authorization.updated',
   /** A return received without an RMA, counted against one afterwards. */
   RETURN_AUTHORIZATION_RETURN_LINKED: 'return_authorization.return_linked',
   /** A draft sale at zero for an RMA's replace lines; carries the order. */

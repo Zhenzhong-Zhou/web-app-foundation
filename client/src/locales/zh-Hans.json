@@ -145,6 +145,7 @@
   "audit.action.returnAuthorizationCreated": "退货已授权",
   "audit.action.returnAuthorizationReplacementRaised": "换货订单已创建",
   "audit.action.returnAuthorizationReturnLinked": "退货已关联到授权",
+  "audit.action.returnAuthorizationUpdated": "退货授权已更新",
   "audit.action.stockLotUpdated": "批次已更新",
   "audit.action.stockMovementRecorded": "库存变动已记录",
   "audit.action.stockValuationCostSet": "成本已设定",

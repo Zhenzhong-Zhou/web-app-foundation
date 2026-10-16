@@ -37,6 +37,7 @@ function order(over: Partial<OrderDetail> = {}): OrderDetail {
     expectedAt: null,
     note: null,
     duplicatedFromId: null,
+    deliverTo: null,
     fullyFulfilled: false,
     isSample: false,
     totals: [],
