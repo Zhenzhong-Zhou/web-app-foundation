@@ -2,7 +2,7 @@ import type {
   ReturnAuthorizationStatus,
   ReturnResolution,
 } from '../../../database/schema';
-import type { ChosenSite } from '../../locations/dto/chosen-site.dto';
+import type { ChosenSite } from '../../locations/dto/location-response.dto';
 
 /**
  * Return authorizations as the API returns them (ADR-068, ADR-047),

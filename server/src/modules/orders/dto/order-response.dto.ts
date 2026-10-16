@@ -3,7 +3,7 @@ import type {
   OrderDirection,
   OrderStatus,
 } from '../../../database/schema';
-import type { ChosenSite } from '../../locations/dto/chosen-site.dto';
+import type { ChosenSite } from '../../locations/dto/location-response.dto';
 
 /**
  * Orders as the API returns them (ADR-068): the fields the client reads,
