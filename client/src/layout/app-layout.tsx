@@ -121,10 +121,9 @@ export function AppLayout() {
 
       {/* The rail: beside the page from `lg`. The outer box runs the page's
           full height so its colour does too; the inner one stays in view,
-          with its own scroll, while the page scrolls. Not on paper. */}
+          with its own scroll, while the page scrolls. */}
       <Box
         component="aside"
-        className="no-print"
         sx={{
           display: { xs: 'none', [BAR]: 'block' },
           flexShrink: 0,
@@ -441,8 +440,6 @@ function UnverifiedBanner() {
   return (
     <Alert
       severity="warning"
-      // Screen only: on a printed invoice it read as part of the document.
-      className="no-print"
       action={
         // 202 whether or not a message went out, so there is nothing to
         // report but that we tried.

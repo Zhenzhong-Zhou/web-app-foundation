@@ -71,7 +71,6 @@ export function OrganizationDeletionBanner() {
         tabIndex={-1}
         severity="success"
         role="status"
-        className="no-print"
         onClose={() => setKept(null)}
       >
         {kept}
@@ -91,7 +90,7 @@ export function OrganizationDeletionBanner() {
 
   if (organization.deletionStage === 'underWay') {
     return (
-      <Alert ref={banner} tabIndex={-1} severity="error" className="no-print">
+      <Alert ref={banner} tabIndex={-1} severity="error">
         {intl.formatMessage(
           {
             id: 'settings.banner.underWay',
@@ -174,7 +173,6 @@ export function OrganizationDeletionBanner() {
       ref={banner}
       tabIndex={-1}
       severity="warning"
-      className="no-print"
       action={
         <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
           {can('organizations.export') && (
