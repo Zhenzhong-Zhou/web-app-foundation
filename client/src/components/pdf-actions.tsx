@@ -14,6 +14,8 @@ import { apiUrl } from '../lib/api';
  */
 export function PdfActions({ path }: { path: string }) {
   const intl = useIntl();
+  // A path may ask its own question already: the pro forma's tax code.
+  const download = `${path}${path.includes('?') ? '&' : '?'}download=1`;
 
   return (
     <>
@@ -25,7 +27,7 @@ export function PdfActions({ path }: { path: string }) {
       >
         {intl.formatMessage({ id: 'invoices.print', defaultMessage: 'Print' })}
       </Button>
-      <Button variant="text" href={apiUrl(`${path}?download=1`)}>
+      <Button variant="text" href={apiUrl(download)}>
         {intl.formatMessage({
           id: 'documents.downloadPdf',
           defaultMessage: 'Download PDF',

@@ -1005,6 +1005,35 @@ await fetch(`${api}/v1/files/product-image`, {
   says Registered address. Raise one with The customer is sending the
   goods back unticked: there is no Send back to, on the dialog or the RMA.
   Once the RMA is closed, Change is gone. In 中文 both read naturally.
+- **MC-2509** *(ADR-071)* The purchase order. On a purchase with one line
+  priced and one not, press Print: the PDF shows its number, Date, Deliver
+  by and Your reference, then From, To and Deliver to with the site's
+  address (or the registered address when the site has none). The unpriced
+  line is blank, a line asks for its price, and Total of priced lines says
+  Before tax. The box asks the supplier to quote the PO number, and Raised
+  by shows your name, job title and work phone, never your email. Download
+  PDF saves `PO-….pdf`. Cancel the order and print again: CANCELLED
+  heads it.
+- **MC-2510** *(ADR-071)* The pro forma. On a priced sale, press Pro forma
+  invoice and choose a tax code: the PDF says Not a tax invoice where a
+  number would be, the order's number and Made today, its lines and tax as
+  the invoice would charge them, and the boxed note that nothing is owed.
+  The order's History shows Pro forma invoice made, with its total. Add a
+  line without a price: the dialog says which item to price and offers no
+  Print. A sample and a cancelled sale have no Pro forma invoice button.
+  For a customer whose documents are in 中文 and English, every label and
+  item name is in both.
+- **MC-2511** *(ADR-071)* The RMA. Print an open RMA whose goods are
+  coming back: the box says to write its number on every box, the lines
+  say what happens to each with the key beneath, Raised by is there, and
+  the dashed label at the end shows Return to, the site and its address,
+  the number large, and From the customer. Print one where the customer
+  keeps the goods: the box says nothing needs to be sent back, and there
+  is no label.
+- **MC-2512** *(ADR-071)* Every page's foot. On each of the six documents,
+  the foot of every page says what it is and its number, as Purchase
+  order · PO-000045, and Page 1 of 2. Add lines to an order until its
+  purchase order runs to a second page: both pages say so.
 - **MC-2504** *(ADR-071)* Settings → Organization → Documents has Paper
   size, set to Automatic. With a Canadian registered address, an invoice's
   PDF is Letter. Choose A4 and save: the invoice, a credit note, a packing
@@ -1225,3 +1254,5 @@ first.
   MC-2506.
 - 2026-10-16: a purchase order's Deliver to and an RMA's Send back to,
   each a site (ADR-071): MC-2507, MC-2508.
+- 2026-10-16: the purchase order, pro forma and RMA as PDFs, and a foot
+  on every document's pages (ADR-071): MC-2509 to MC-2512.

@@ -31,6 +31,7 @@ import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
+import { PdfActions } from '../components/pdf-actions';
 import { LoadFailure } from '../errors/load-failure';
 import { api } from '../lib/api';
 import {
@@ -225,6 +226,9 @@ export function RmaDetailPage() {
         actions={
           <>
             <HistoryButton resourceId={rma.id} />
+
+            {/* Its PDF, to send the customer (ADR-071). */}
+            <PdfActions path={`/return-authorizations/${rma.id}/pdf`} />
 
             {open && canUpdate && untouched && (
               <Button
