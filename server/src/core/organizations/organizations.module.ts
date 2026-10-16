@@ -19,8 +19,7 @@ import { OrganizationsService } from './organizations.service';
     OrganizationExportService,
     ExportContributions,
   ],
-  // Exported for invoicing, which copies the seller onto an invoice at issue
-  // and adds its documents to the export (ADR-071).
-  exports: [OrganizationsService, ExportContributions],
+  // Exported for invoicing, which adds its documents to the export (ADR-071).
+  exports: [ExportContributions],
 })
 export class OrganizationsModule {}
