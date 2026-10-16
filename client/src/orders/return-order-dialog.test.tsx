@@ -51,6 +51,7 @@ const BIN: Location = {
   parentId: null,
   isAvailable: false,
   isActive: true,
+  address: null,
 };
 
 describe('ReturnOrderDialog', () => {

@@ -142,6 +142,22 @@ export function apiUrl(path: string): string {
   return `${BASE}${path}`;
 }
 
+/**
+ * The path with each parameter given added, after its own `?` when it
+ * already asks something; as it is when none is given.
+ */
+export function withQuery(
+  path: string,
+  params: Record<string, string | undefined>,
+): string {
+  const given = Object.entries(params).filter(
+    (entry): entry is [string, string] => Boolean(entry[1]),
+  );
+  if (given.length === 0) return path;
+  const query = new URLSearchParams(given).toString();
+  return `${path}${path.includes('?') ? '&' : '?'}${query}`;
+}
+
 /** The request every call makes, and the error every failure throws. */
 async function send(path: string, init: ApiInit): Promise<Response> {
   const response = await fetch(`${BASE}${path}`, {

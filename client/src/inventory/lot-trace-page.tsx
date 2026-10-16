@@ -480,9 +480,9 @@ export function LotTracePage() {
                           id: 'inventory.trace.sampleOrder',
                           defaultMessage: '{reference} (sample)',
                         },
-                        { reference: row.orderReference ?? orderWord },
+                        { reference: row.orderNumber ?? orderWord },
                       )
-                    : (row.orderReference ?? orderWord)}
+                    : (row.orderNumber ?? orderWord)}
                 </Link>
               ) : (
                 NO_VALUE
@@ -610,7 +610,7 @@ function SourceText({
         values={{
           supplier: source.supplierName,
           reference:
-            source.orderReference ??
+            source.orderNumber ??
             intl.formatMessage({
               id: 'inventory.trace.anOrder',
               defaultMessage: 'an order',

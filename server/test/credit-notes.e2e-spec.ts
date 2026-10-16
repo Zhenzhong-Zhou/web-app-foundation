@@ -183,6 +183,28 @@ describe('Credit notes (e2e)', () => {
       expect(row.status).toBe('issued');
     });
 
+    it('draws the credit note as a PDF, named by its number (ADR-071)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const inv = await invoiced(org);
+      const issued = body<{ creditNote: { id: string } }>(
+        await credit(org, inv, [
+          { invoiceLineId: inv.capsules, quantity: '2' },
+        ]).expect(201),
+      ).creditNote;
+
+      const res = await org.agent
+        .get(`/v1/credit-notes/${issued.id}/pdf`)
+        .responseType('blob')
+        .expect(200);
+      expect(res.headers['content-type']).toBe('application/pdf');
+      expect(res.headers['content-disposition']).toMatch(
+        /^inline; filename="CN-000001\.pdf"/,
+      );
+      expect((res.body as Buffer).toString('latin1').startsWith('%PDF-')).toBe(
+        true,
+      );
+    });
+
     it('lists credit notes, by number, partner and credit date (ADR-057)', async () => {
       const org = await registerOrganization(app, 'alpha');
       const inv = await invoiced(org);

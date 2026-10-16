@@ -26,10 +26,12 @@ export const INVOICE_COLUMNS: ExportColumn<InvoiceRow>[] = [
     value: (row) => row.dueDate,
   },
   { header: HEADERS.partner, value: (row) => row.partnerName },
+  // The order by our number (ADR-071), then the customer's reference.
   {
     header: t({ id: 'exports.column.order', defaultMessage: 'Order' }),
-    value: (row) => row.orderReference,
+    value: (row) => row.orderNumber,
   },
+  { header: HEADERS.reference, value: (row) => row.orderReference },
   { header: HEADERS.currency, value: (row) => row.currency },
   { header: HEADERS.subtotal, value: (row) => row.subtotal },
   { header: HEADERS.tax, value: (row) => row.taxTotal },

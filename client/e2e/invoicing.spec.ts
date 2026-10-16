@@ -252,52 +252,30 @@ test('refuses to issue until every line is taxed, and deletes a draft', async ({
   await expect(page.getByText(/No invoices yet/)).toBeVisible();
 });
 
-test('prints a draft as DRAFT, and a voided invoice and its credit note', async ({
+test('prints and downloads an invoice as its PDF (ADR-071)', async ({
   page,
   freshOrg,
 }) => {
   const api = freshOrg.api;
   const invoiceId = await seedDraft(api);
   await signInAs(page, api);
+  await page.goto(`/invoices/${invoiceId}`);
 
-  // A draft prints for checking, but cannot pass for a sent invoice.
-  await page.goto(`/invoices/${invoiceId}/print`);
-  await expect(page.getByText('DRAFT — not an invoice')).toBeVisible();
-
-  const { taxCodes } = await created<{
-    taxCodes: { id: string; name: string }[];
-  }>(await api.get('/v1/tax-codes'));
-  const gst = taxCodes.find((code) => code.name === 'GST')!;
-
-  await ok(
-    await api.patch(`/v1/invoices/${invoiceId}`, {
-      data: { taxCodeId: gst.id },
-    }),
+  // Print opens the PDF in a new tab, in the browser's own viewer.
+  const print = page.getByRole('link', { name: 'Print' });
+  await expect(print).toHaveAttribute(
+    'href',
+    `/api/v1/invoices/${invoiceId}/pdf`,
   );
-  await created(
-    await api.post(`/v1/invoices/${invoiceId}/issue`, {
-      data: { invoiceDate: '2026-09-25' },
-    }),
-  );
-  const { creditNote } = await created<{ creditNote: { id: string } }>(
-    await api.post(`/v1/invoices/${invoiceId}/void`, {
-      data: { reason: 'Billed twice', creditDate: '2026-09-25' },
-    }),
-  );
+  await expect(print).toHaveAttribute('target', '_blank');
 
-  // Found in a drawer later, it must not pass for one that is owed.
-  await page.goto(`/invoices/${invoiceId}/print`);
-  await expect(page.getByText('INV-000001')).toBeVisible();
-  await expect(page.getByText(/VOID — nothing is owed/)).toBeVisible();
-  await expect(page.getByText(/reversed by CN-000001/)).toBeVisible();
-
-  await page.goto(`/credit-notes/${creditNote.id}/print`);
-  await expect(
-    page.getByRole('heading', { name: 'Credit note' }),
-  ).toBeVisible();
-  await expect(page.getByText('CN-000001')).toBeVisible();
-  await expect(page.getByText(/Voids invoice INV-000001/)).toBeVisible();
-  await expect(page.getByText('Reason: Billed twice')).toBeVisible();
+  // Download PDF saves the same file, named by the document: a draft's
+  // says DRAFT, since it has no number yet.
+  const download = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Download PDF' }).click();
+  expect((await download).suggestedFilename()).toMatch(
+    /^DRAFT [0-9a-f]{8}\.pdf$/,
+  );
 });
 
 test('creates an invoice from a shipment on its order', async ({

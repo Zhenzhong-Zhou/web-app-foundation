@@ -3,6 +3,8 @@ import {
   Box,
   FormControlLabel,
   MenuItem,
+  Radio,
+  RadioGroup,
   Skeleton,
   Stack,
   Switch,
@@ -18,11 +20,13 @@ import type { OrganizationProfile } from '../api/types.gen';
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
+import { AddressFields } from '../components/address-fields';
+import { addressBody, addressValues } from '../components/address-values';
 import { CurrencyField } from '../components/currency-field';
 import { PageHeader } from '../components/page-header';
 import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
-import type { LicencePolicy } from '../lib/api-names';
+import type { LicencePolicy, PaperSize } from '../lib/api-names';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
@@ -228,6 +232,12 @@ export function OrganizationPage() {
                 value={organization.logoOnDocuments}
                 readOnly={!canUpdate}
                 onSaved={reloadAll}
+              />
+              <PaperSizeForm
+                key={String(organization.paperSize)}
+                value={organization.paperSize}
+                readOnly={!canUpdate}
+                onSaved={reload}
               />
             </>,
           )}
@@ -524,6 +534,99 @@ function LogoOnDocumentsForm({
   );
 }
 
+const PAPER_LABEL = defineMessages({
+  automatic: {
+    id: 'settings.org.paper.automatic',
+    defaultMessage:
+      'Automatic: Letter in Canada and the United States, A4 elsewhere',
+  },
+  letter: {
+    id: 'settings.org.paper.letter',
+    defaultMessage: 'Letter (8.5 × 11 in)',
+  },
+  a4: { id: 'settings.org.paper.a4', defaultMessage: 'A4 (210 × 297 mm)' },
+});
+
+type PaperChoice = PaperSize | 'automatic';
+
+const PAPERS: PaperChoice[] = ['automatic', 'letter', 'a4'];
+
+/**
+ * The paper every document is drawn on (ADR-071): automatic, from the
+ * registered address's country, or Letter or A4 for every document.
+ */
+function PaperSizeForm({
+  value,
+  readOnly,
+  onSaved,
+}: {
+  value: OrganizationProfile['paperSize'];
+  readOnly: boolean;
+  onSaved: () => Promise<void>;
+}) {
+  const intl = useIntl();
+  const [paper, setPaper] = useState<PaperChoice>(value ?? 'automatic');
+  const { submitting, error, submit } = useSubmit(onSaved, {
+    success: intl.formatMessage({
+      id: 'settings.org.paper.saved',
+      defaultMessage: 'Paper size saved',
+    }),
+  });
+  const title = intl.formatMessage({
+    id: 'settings.org.paper.title',
+    defaultMessage: 'Paper size',
+  });
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    void submit(() =>
+      api('/organization', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          paperSize: paper === 'automatic' ? null : paper,
+        }),
+      }),
+    );
+  }
+
+  return (
+    <SettingsSection
+      title={title}
+      onSubmit={handleSubmit}
+      error={error}
+      submitting={submitting}
+      readOnly={readOnly}
+      saveLabel={intl.formatMessage({
+        id: 'settings.org.paper.save',
+        defaultMessage: 'Save paper size',
+      })}
+    >
+      <RadioGroup
+        aria-label={title}
+        value={paper}
+        onChange={(event) => setPaper(event.target.value as PaperChoice)}
+      >
+        {PAPERS.map((each) => (
+          <FormControlLabel
+            key={each}
+            value={each}
+            control={<Radio />}
+            disabled={readOnly}
+            label={intl.formatMessage(PAPER_LABEL[each])}
+          />
+        ))}
+      </RadioGroup>
+      <Typography variant="body2" color="text.secondary">
+        {intl.formatMessage({
+          id: 'settings.org.paper.help',
+          defaultMessage:
+            'Every document is drawn on it: invoices, credit notes, packing slips, purchase orders, pro forma invoices and return authorizations, and the PDFs in the export. Automatic goes by the country of the registered address.',
+        })}
+      </Typography>
+    </SettingsSection>
+  );
+}
+
 function TaxNumberForm({
   value,
   readOnly,
@@ -590,15 +693,6 @@ function TaxNumberForm({
   );
 }
 
-const EMPTY_ADDRESS = {
-  line1: '',
-  line2: '',
-  city: '',
-  region: '',
-  postalCode: '',
-  country: '',
-};
-
 function AddressForm({
   address,
   readOnly,
@@ -609,18 +703,7 @@ function AddressForm({
   onSaved: () => Promise<void>;
 }) {
   const intl = useIntl();
-  const [form, setForm] = useState(
-    address
-      ? {
-          line1: address.line1,
-          line2: address.line2 ?? '',
-          city: address.city ?? '',
-          region: address.region ?? '',
-          postalCode: address.postalCode ?? '',
-          country: address.country,
-        }
-      : EMPTY_ADDRESS,
-  );
+  const [form, setForm] = useState(addressValues(address));
 
   const { submitting, error, submit } = useSubmit(onSaved, {
     success: intl.formatMessage({
@@ -629,11 +712,6 @@ function AddressForm({
     }),
   });
 
-  function update(field: keyof typeof form) {
-    return (event: { target: { value: string } }) =>
-      setForm((current) => ({ ...current, [field]: event.target.value }));
-  }
-
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
@@ -641,14 +719,7 @@ function AddressForm({
     void submit(() =>
       api('/organization/address', {
         method: 'PUT',
-        body: JSON.stringify({
-          line1: form.line1,
-          line2: form.line2 || undefined,
-          city: form.city || undefined,
-          region: form.region || undefined,
-          postalCode: form.postalCode || undefined,
-          country: form.country,
-        }),
+        body: JSON.stringify(addressBody(form)),
       }),
     );
   }
@@ -680,90 +751,12 @@ function AddressForm({
         )
       }
     >
-      <TextField
-        id="organization-line1"
-        label={intl.formatMessage({
-          id: 'settings.org.address.line1',
-          defaultMessage: 'Address line 1',
-        })}
-        required
-        fullWidth
-        value={form.line1}
-        onChange={update('line1')}
+      <AddressFields
+        idPrefix="organization"
+        value={form}
+        onChange={setForm}
         disabled={readOnly}
-        slotProps={{ htmlInput: { maxLength: 200 } }}
       />
-      <TextField
-        id="organization-line2"
-        label={intl.formatMessage({
-          id: 'partners.address.line2',
-          defaultMessage: 'Address line 2',
-        })}
-        fullWidth
-        value={form.line2}
-        onChange={update('line2')}
-        disabled={readOnly}
-        slotProps={{ htmlInput: { maxLength: 200 } }}
-      />
-
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-        <TextField
-          id="organization-city"
-          label={intl.formatMessage({
-            id: 'partners.address.city',
-            defaultMessage: 'City',
-          })}
-          fullWidth
-          value={form.city}
-          onChange={update('city')}
-          disabled={readOnly}
-          slotProps={{ htmlInput: { maxLength: 100 } }}
-        />
-        <TextField
-          id="organization-region"
-          label={intl.formatMessage({
-            id: 'partners.address.region',
-            defaultMessage: 'Province or state',
-          })}
-          fullWidth
-          value={form.region}
-          onChange={update('region')}
-          disabled={readOnly}
-          slotProps={{ htmlInput: { maxLength: 100 } }}
-        />
-      </Stack>
-
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-        <TextField
-          id="organization-postal-code"
-          label={intl.formatMessage({
-            id: 'partners.address.postalCode',
-            defaultMessage: 'Postal code',
-          })}
-          fullWidth
-          value={form.postalCode}
-          onChange={update('postalCode')}
-          disabled={readOnly}
-          slotProps={{ htmlInput: { maxLength: 32 } }}
-        />
-        <TextField
-          id="organization-country"
-          label={intl.formatMessage({
-            id: 'partners.address.country',
-            defaultMessage: 'Country',
-          })}
-          required
-          fullWidth
-          value={form.country}
-          onChange={update('country')}
-          disabled={readOnly}
-          helperText={intl.formatMessage({
-            id: 'settings.org.country.help',
-            defaultMessage: 'Two letters: CA, US.',
-          })}
-          slotProps={{ htmlInput: { maxLength: 2 } }}
-        />
-      </Stack>
     </SettingsSection>
   );
 }

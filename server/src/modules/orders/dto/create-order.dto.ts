@@ -60,6 +60,16 @@ export class CreateOrderDto {
   note?: string;
 
   /**
+   * Where a purchase is delivered: one of our sites (ADR-071, amended).
+   * Purchases only. Null for none, so the purchase order prints the
+   * registered address, as the update takes it. Left out, the
+   * organization's one site, when it has exactly one; with several, none.
+   */
+  @IsOptional()
+  @IsUUID()
+  deliverToId?: string | null;
+
+  /**
    * At least one, and created in the same transaction as the header
    * (ADR-027). An order with no lines is a document that orders nothing, and
    * a failure after the header insert would leave one behind — the same

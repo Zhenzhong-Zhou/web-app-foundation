@@ -11,6 +11,8 @@ import { isUniqueViolation } from '../../database/errors';
 import { addresses, orderLines, orders, partners } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { orderSeries, takeNumber } from '../invoices/document-numbers';
+import { assertSite, onlySite, siteStillInUse } from '../locations/sites';
 import { type Tx } from '../stock/stock.service';
 import type { CreateOrderDto } from './dto/create-order.dto';
 import type { DuplicateOrderDto } from './dto/duplicate-order.dto';
@@ -34,6 +36,14 @@ const ALLOWED_FROM: Record<string, readonly string[]> = {
   fulfilled: ['confirmed'],
   cancelled: ['draft', 'confirmed'],
 };
+
+/** Refused on a sale's create or update (ADR-071, amended). */
+const DELIVER_TO_PURCHASE = () =>
+  t({
+    id: 'orders.deliverToPurchase',
+    defaultMessage:
+      'Only a purchase is delivered to one of your sites. A sale goes to the customer.',
+  });
 
 /**
  * An order's own life: creating one, duplicating one (ADR-031), and changing
@@ -96,10 +106,38 @@ export class OrderLifecycleService {
           );
         }
 
+        if (input.deliverToId && input.direction !== 'purchase') {
+          throw new BadRequestException(DELIVER_TO_PURCHASE());
+        }
+
+        if (input.deliverToId) {
+          await assertSite(tx, organizationId, input.deliverToId);
+        }
+
+        /**
+         * Where a purchase is delivered (ADR-071, amended): the site chosen,
+         * none when that was the choice, or the organization's one site when
+         * nobody chose. With several, none: guessing would send goods to the
+         * wrong building, and the purchase order prints the registered
+         * address until someone picks.
+         */
+        const deliverToId =
+          input.direction !== 'purchase'
+            ? null
+            : input.deliverToId !== undefined
+              ? input.deliverToId
+              : await onlySite(tx, organizationId);
+
         const [order] = await tx
           .insert(orders)
           .values({
             organizationId,
+            // Taken now, so a draft has a number to quote (ADR-071).
+            number: await takeNumber(
+              tx,
+              organizationId,
+              orderSeries(input.direction),
+            ),
             partnerId: input.partnerId,
             direction: input.direction,
             isSample: input.isSample ?? false,
@@ -107,6 +145,7 @@ export class OrderLifecycleService {
             // A calendar day as it arrives, YYYY-MM-DD (ADR-052).
             expectedAt: input.expectedAt ?? null,
             note: input.note ?? null,
+            deliverToId,
             createdBy: actorId,
           })
           .returning();
@@ -208,16 +247,33 @@ export class OrderLifecycleService {
 
       const shipTo = await this.reResolveShipTo(tx, organizationId, source);
 
+      /**
+       * A choice rather than a snapshot (ADR-071, amended): the source's site
+       * while it is still in use, else chosen as a new order's is.
+       */
+      const deliverToId =
+        source.direction === 'purchase'
+          ? ((await siteStillInUse(tx, organizationId, source.deliverToId)) ??
+            (await onlySite(tx, organizationId)))
+          : null;
+
       const [order] = await tx
         .insert(orders)
         .values({
           organizationId,
+          // Its own, never the source's (ADR-071).
+          number: await takeNumber(
+            tx,
+            organizationId,
+            orderSeries(source.direction),
+          ),
           partnerId: source.partnerId,
           direction: source.direction,
           isSample: source.isSample,
           note: source.note,
           createdBy: actorId,
           duplicatedFromId: source.id,
+          deliverToId,
           ...shipTo,
 
           /**
@@ -281,6 +337,38 @@ export class OrderLifecycleService {
     const existing = await this.tenantDb.transaction(
       async (tx, organizationId) => {
         const order = await loadOrder(tx, organizationId, orderId);
+
+        /**
+         * Where a purchase is delivered changes until its goods are in
+         * (ADR-071, amended): a fulfilled order's arrived, and a cancelled
+         * one's never will. Null chooses none, and the purchase order prints
+         * the registered address.
+         */
+        if (
+          input.deliverToId !== undefined &&
+          input.deliverToId !== order.deliverToId
+        ) {
+          if (order.direction !== 'purchase') {
+            throw new BadRequestException(DELIVER_TO_PURCHASE());
+          }
+
+          if (input.deliverToId) {
+            await assertSite(tx, organizationId, input.deliverToId);
+          }
+
+          if (order.status === 'fulfilled' || order.status === 'cancelled') {
+            throw new ConflictException(
+              t(
+                {
+                  id: 'orders.deliverToStatusOrder',
+                  defaultMessage:
+                    'Where a {status} order is delivered no longer changes',
+                },
+                { status: order.status },
+              ),
+            );
+          }
+        }
 
         /**
          * A reference is matched against a supplier invoice once goods
@@ -384,6 +472,8 @@ export class OrderLifecycleService {
             note: input.note,
             // YYYY-MM-DD as it arrives (ADR-052); undefined leaves it alone.
             expectedAt: input.expectedAt,
+            // Null clears it; undefined leaves it alone.
+            deliverToId: input.deliverToId,
           })
           .where(
             and(
@@ -399,6 +489,7 @@ export class OrderLifecycleService {
     recordPrevious({
       reference: existing.reference,
       expectedAt: existing.expectedAt,
+      deliverToId: existing.deliverToId,
     });
 
     this.logger.log(`Order ${orderId} updated`);

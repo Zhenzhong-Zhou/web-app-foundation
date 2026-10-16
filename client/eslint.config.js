@@ -61,9 +61,7 @@ export default defineConfig([
      * cannot gain a hard-coded label by accident.
      */
     files: ['src/**/*.tsx'],
-    // Specs render with made-up labels on purpose. The printed documents
-    // are covered too: their words come from the catalogues, in the
-    // customer's languages (ADR-054, step 5).
+    // Specs render with made-up labels on purpose.
     ignores: ['**/*.test.tsx'],
     rules: {
       /**

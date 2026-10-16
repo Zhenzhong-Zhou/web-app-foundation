@@ -10,6 +10,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { takeNumber } from '../invoices/document-numbers';
 import { lockOpen } from './lock-open';
 
 /**
@@ -137,6 +138,8 @@ export class ReturnAuthorizationReplacementsService {
           .insert(orders)
           .values({
             organizationId,
+            // A new sale, so a number of its own (ADR-071).
+            number: await takeNumber(tx, organizationId, 'sale_order'),
             partnerId: source.partnerId,
             direction: 'sale',
             isSample: source.isSample,

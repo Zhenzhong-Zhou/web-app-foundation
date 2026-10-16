@@ -6,6 +6,16 @@ import { GoHome } from '../errors/status-actions';
 import { StatusPage } from '../errors/status-page';
 import { ApiError } from '../lib/api';
 
+interface Props {
+  children: ReactNode;
+  /**
+   * Where the person is: when it changes, a failure clears and the new page
+   * draws, so the menu, Back and Go home lead away from a broken page
+   * rather than back to the same message.
+   */
+  resetKey?: string;
+}
+
 interface State {
   error: Error | null;
   /** What a person quotes when reporting it: the server's request id when
@@ -16,11 +26,22 @@ interface State {
 /**
  * A page that throws while rendering shows "Something went wrong" as a
  * status page (conventions.md, "Status pages"), inside the layout, with a
- * reference to quote and Reload. A stale chunk after a deploy is not a
- * failure: it says a new version is available, and Reload is the fix.
+ * reference to quote, Reload, Go back and Go home. A stale chunk after a
+ * deploy is not a failure: it says a new version is available, and Reload
+ * is the fix.
+ *
+ * It clears when resetKey changes, as react-error-boundary's resetKeys and
+ * React Router's error pages do: without that, the failure outlived the
+ * page that caused it, and every way out led back to it until a reload.
  */
-export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
+export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null, reference: null };
+
+  componentDidUpdate(previous: Props) {
+    if (this.state.error && previous.resetKey !== this.props.resetKey) {
+      this.setState({ error: null, reference: null });
+    }
+  }
 
   static getDerivedStateFromError(error: Error): State {
     const reference =
@@ -104,6 +125,15 @@ function Failure({
       actions={
         <>
           {reload}
+          {/* Where they came from, when there is somewhere to go back to. */}
+          {window.history.length > 1 && (
+            <Button variant="outlined" onClick={() => window.history.back()}>
+              <FormattedMessage
+                id="components.errorBoundary.goBack"
+                defaultMessage="Go back"
+              />
+            </Button>
+          )}
           <GoHome />
         </>
       }

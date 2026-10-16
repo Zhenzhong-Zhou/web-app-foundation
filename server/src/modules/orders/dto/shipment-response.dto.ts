@@ -34,6 +34,8 @@ export class Shipment {
 
 export class SlipOrder {
   id!: string;
+  /** Ours, SO- (ADR-071); `reference` is the customer's. */
+  number!: string;
   reference!: string | null;
   partnerName!: string;
 }

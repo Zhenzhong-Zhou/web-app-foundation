@@ -28,6 +28,7 @@ const ALL = ['orders.view', 'orders.create', 'orders.update', 'orders.receive'];
 function order(over: Partial<OrderDetail> = {}): OrderDetail {
   return {
     id: 'order-1',
+    number: 'PO-000001',
     partnerId: 'partner-1',
     partnerName: 'Acme Supplies',
     direction: 'purchase',
@@ -36,6 +37,7 @@ function order(over: Partial<OrderDetail> = {}): OrderDetail {
     expectedAt: null,
     note: null,
     duplicatedFromId: null,
+    deliverTo: null,
     fullyFulfilled: false,
     isSample: false,
     totals: [],
@@ -622,5 +624,21 @@ describe('OrderDetailPage prices', () => {
     renderPage();
 
     expect(await actionsOf('WIDGET-1')).not.toContain('Use list price');
+  });
+});
+
+describe('OrderDetailPage header', () => {
+  it('heads the page with our number, the partner and their reference beneath (ADR-071)', async () => {
+    serve(order({ reference: 'ACME-77' }));
+    renderPage();
+
+    expect(
+      await screen.findByRole('heading', { name: 'PO-000001' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Acme Supplies' })).toHaveAttribute(
+      'href',
+      '/partners/partner-1',
+    );
+    expect(screen.getByText(/their reference ACME-77/)).toBeInTheDocument();
   });
 });

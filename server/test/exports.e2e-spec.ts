@@ -87,13 +87,15 @@ describe('Exports (e2e)', () => {
 
     const [header, first, second, ...rest] = linesOf(res.text);
     expect(header.split(',').slice(0, 4)).toEqual([
+      'Number',
       'Reference',
       'Direction',
       'Status',
-      'Partner',
     ]);
-    // Sorted as asked, every row, quantities as data.
-    expect(first).toMatch(/^PO-SEP,purchase,draft,Northside,2026-09-15,1,3/);
+    // Sorted as asked, every row, quantities as data; ours, then theirs.
+    expect(first).toMatch(
+      /^PO-\d{6},PO-SEP,purchase,draft,Northside,2026-09-15,1,3/,
+    );
     // A partner named like a formula stays text.
     expect(second).toContain(",'=1+2,");
     expect(rest).toEqual([]);
@@ -109,10 +111,10 @@ describe('Exports (e2e)', () => {
       .expect(200);
 
     expect(linesOf(res.text)[0].split(',').slice(0, 4)).toEqual([
+      '编号',
       '参考号',
       '方向',
       '状态',
-      '合作伙伴',
     ]);
   });
 
@@ -233,7 +235,7 @@ describe('Exports (e2e)', () => {
     ['/v1/credit-notes/export', 'Number'],
     ['/v1/stock/export', 'SKU'],
     ['/v1/stock/movements/export', 'When'],
-    ['/v1/orders/export', 'Reference'],
+    ['/v1/orders/export', 'Number'],
     ['/v1/products/export', 'SKU'],
     ['/v1/partners/export', 'Name'],
     ['/v1/costs/valuation/export', 'SKU'],

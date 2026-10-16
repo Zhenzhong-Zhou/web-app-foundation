@@ -18,6 +18,9 @@ export const DOCUMENT_TYPES = [
   'invoice',
   'credit_note',
   'return_authorization',
+  // An order's own number, taken when it is created (ADR-071, amended).
+  'sale_order',
+  'purchase_order',
 ] as const;
 
 export type DocumentType = (typeof DOCUMENT_TYPES)[number];
@@ -65,7 +68,7 @@ export const documentSequences = pgTable(
 
     check(
       'document_sequences_document_type_check',
-      sql`${t.documentType} in ('invoice', 'credit_note', 'return_authorization')`,
+      sql`${t.documentType} in ('invoice', 'credit_note', 'return_authorization', 'sale_order', 'purchase_order')`,
     ),
 
     check('document_sequences_next_value_check', sql`${t.nextValue} >= 1`),

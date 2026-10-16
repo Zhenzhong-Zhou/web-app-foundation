@@ -32,6 +32,7 @@ import type {
 import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { PageHeader } from '../components/page-header';
+import { PdfActions } from '../components/pdf-actions';
 import { StatusChip } from '../components/status-chip';
 import { LoadFailure } from '../errors/load-failure';
 import { api } from '../lib/api';
@@ -213,19 +214,15 @@ export function InvoiceDetailPage() {
           <>
             {invoice.partnerName}
             {SEPARATOR}
+            {/* The order by our number, which every order has (ADR-071). */}
             <Link component={RouterLink} to={`/orders/${invoice.orderId}`}>
-              {invoice.orderReference
-                ? intl.formatMessage(
-                    {
-                      id: 'invoices.orderReference',
-                      defaultMessage: 'Order {reference}',
-                    },
-                    { reference: invoice.orderReference },
-                  )
-                : intl.formatMessage({
-                    id: 'inventory.trace.order',
-                    defaultMessage: 'Order',
-                  })}
+              {intl.formatMessage(
+                {
+                  id: 'invoices.orderNumber',
+                  defaultMessage: 'Order {number}',
+                },
+                { number: invoice.orderNumber },
+              )}
             </Link>
             {invoice.invoiceDate && (
               <>
@@ -240,16 +237,7 @@ export function InvoiceDetailPage() {
           <>
             <HistoryButton resourceId={invoice.id} />
 
-            <Button
-              variant="outlined"
-              component={RouterLink}
-              to={`/invoices/${invoice.id}/print`}
-            >
-              {intl.formatMessage({
-                id: 'invoices.print',
-                defaultMessage: 'Print',
-              })}
-            </Button>
+            <PdfActions path={`/invoices/${invoice.id}/pdf`} />
 
             {isDraft && can('invoices.delete') && (
               <Button

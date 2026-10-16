@@ -207,6 +207,7 @@ export class LotTraceService {
           min(sm.created_at) as first_at,
           sum(sm.quantity)::text as quantity,
           o.id as order_id,
+          o.number as order_number,
           o.reference as order_reference,
           p.name as partner_name,
           po.id as run_id,
@@ -227,7 +228,7 @@ export class LotTraceService {
         where sm.organization_id = ${organizationId}::uuid
           and sm.lot_id = ${lotId}::uuid
           and sm.reason in ('receipt', 'production')
-        group by sm.reason, o.id, o.reference, p.name, po.id, po.reference,
+        group by sm.reason, o.id, o.number, o.reference, p.name, po.id, po.reference,
           po.licence_id, po.licence_number, po.licence_authority,
           po.licence_status_at_release, po.licence_override_reason, u.name
         order by first_at
@@ -237,6 +238,7 @@ export class LotTraceService {
       first_at: Date;
       quantity: string;
       order_id: string | null;
+      order_number: string | null;
       order_reference: string | null;
       partner_name: string | null;
       run_id: string | null;
@@ -254,6 +256,7 @@ export class LotTraceService {
       at: row.first_at,
       quantity: row.quantity,
       orderId: row.order_id,
+      orderNumber: row.order_number,
       orderReference: row.order_reference,
       supplierName: row.partner_name,
       runId: row.run_id,
@@ -371,6 +374,7 @@ export class LotTraceService {
           p.id as partner_id,
           p.name as partner_name,
           o.id as order_id,
+          o.number as order_number,
           o.reference as order_reference,
           o.is_sample,
           l.id as lot_id,
@@ -397,13 +401,14 @@ export class LotTraceService {
           -- receive anything. True for samples and returns, which have no
           -- shipment row to join.
           and s.voided_at is null
-        group by p.id, p.name, o.id, o.reference, o.is_sample, l.id, l.code, sm.sku
-        order by p.name nulls last, o.reference nulls last, l.code
+        group by p.id, p.name, o.id, o.number, o.reference, o.is_sample, l.id, l.code, sm.sku
+        order by p.name nulls last, o.number nulls last, l.code
       `)
     ).rows as {
       partner_id: string | null;
       partner_name: string | null;
       order_id: string | null;
+      order_number: string | null;
       order_reference: string | null;
       is_sample: boolean | null;
       lot_id: string;
@@ -418,6 +423,7 @@ export class LotTraceService {
       partnerId: row.partner_id,
       partnerName: row.partner_name,
       orderId: row.order_id,
+      orderNumber: row.order_number,
       orderReference: row.order_reference,
       isSampleOrder: row.is_sample ?? false,
       lotId: row.lot_id,

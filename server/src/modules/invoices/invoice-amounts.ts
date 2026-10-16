@@ -1,7 +1,6 @@
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { type SQL, sql } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
-import { invoiceLines, taxCodeComponents } from '../../database/schema';
 
 /**
  * Digits after the point in a currency's minor unit: 2 for CAD, 0 for JPY,
@@ -47,6 +46,9 @@ export interface InvoiceAmounts {
  *
  * A line with no tax code contributes to the subtotal and to no tax. Issue
  * refuses such a line; a draft's preview simply shows it untaxed.
+ *
+ * The pro forma (ADR-071) is worked out by the same code over its order's
+ * lines, so what it shows is what the invoice would charge.
  */
 export async function computeAmounts(
   tx: Transaction,
@@ -54,41 +56,105 @@ export async function computeAmounts(
   invoiceId: string,
   currency: string,
 ): Promise<InvoiceAmounts> {
+  return amountsOver(
+    tx,
+    organizationId,
+    currency,
+    sql`
+      select l.id, l.sku, l.tax_code_id, l.quantity, l.unit_price
+      from invoice_lines l
+      where l.organization_id = ${organizationId}::uuid
+        and l.invoice_id = ${invoiceId}::uuid
+    `,
+  );
+}
+
+/**
+ * A pro forma's amounts (ADR-071): its order's lines as the invoice would
+ * bill them, every one at the quantity ordered and taxed by the one code
+ * chosen for it, or by none.
+ */
+export async function proFormaAmounts(
+  tx: Transaction,
+  organizationId: string,
+  orderId: string,
+  currency: string,
+  taxCodeId: string | null,
+): Promise<InvoiceAmounts> {
+  return amountsOver(
+    tx,
+    organizationId,
+    currency,
+    sql`
+      select
+        l.id,
+        l.sku,
+        ${taxCodeId}::uuid as tax_code_id,
+        l.quantity_ordered as quantity,
+        l.unit_price
+      from order_lines l
+      where l.organization_id = ${organizationId}::uuid
+        and l.order_id = ${orderId}::uuid
+    `,
+  );
+}
+
+/**
+ * The calculation itself, over any lines given as rows of id, sku,
+ * tax_code_id, quantity and unit_price. Raw SQL with every table aliased,
+ * since the lines arrive as a subquery (handoff, Server).
+ */
+async function amountsOver(
+  tx: Transaction,
+  organizationId: string,
+  currency: string,
+  source: SQL,
+): Promise<InvoiceAmounts> {
   const places = minorUnits(currency);
 
-  const net = sql`round(${invoiceLines.quantity} * ${invoiceLines.unitPrice}, ${places}::int)`;
-  const ofThisInvoice = and(
-    eq(invoiceLines.organizationId, organizationId),
-    eq(invoiceLines.invoiceId, invoiceId),
-  );
+  const nets = sql`
+    select
+      s.id,
+      s.sku,
+      s.tax_code_id,
+      round(s.quantity * s.unit_price, ${places}::int) as net
+    from (${source}) s
+  `;
 
-  const lines = await tx
-    .select({
-      id: invoiceLines.id,
-      netAmount: sql<string>`${net}::numeric(18, 4)::text`,
-    })
-    .from(invoiceLines)
-    .where(ofThisInvoice)
-    .orderBy(asc(invoiceLines.sku));
+  const lines = (
+    await tx.execute<{ id: string; net_amount: string }>(sql`
+      select n.id, n.net::numeric(18, 4)::text as net_amount
+      from (${nets}) n
+      order by n.sku
+    `)
+  ).rows.map((row) => ({ id: row.id, netAmount: row.net_amount }));
 
-  const taxes = await tx
-    .select({
-      name: taxCodeComponents.name,
-      rate: sql<string>`${taxCodeComponents.rate}::text`,
-      taxableAmount: sql<string>`sum(${net})::numeric(18, 4)::text`,
-      amount: sql<string>`round(sum(${net}) * ${taxCodeComponents.rate} / 100, ${places}::int)::numeric(18, 4)::text`,
-    })
-    .from(invoiceLines)
-    .innerJoin(
-      taxCodeComponents,
-      and(
-        eq(taxCodeComponents.taxCodeId, invoiceLines.taxCodeId),
-        eq(taxCodeComponents.organizationId, organizationId),
-      ),
-    )
-    .where(ofThisInvoice)
-    .groupBy(taxCodeComponents.name, taxCodeComponents.rate)
-    .orderBy(asc(taxCodeComponents.name), asc(taxCodeComponents.rate));
+  const taxes = (
+    await tx.execute<{
+      name: string;
+      rate: string;
+      taxable_amount: string;
+      amount: string;
+    }>(sql`
+      select
+        c.name,
+        c.rate::text as rate,
+        sum(n.net)::numeric(18, 4)::text as taxable_amount,
+        round(sum(n.net) * c.rate / 100, ${places}::int)::numeric(18, 4)::text
+          as amount
+      from (${nets}) n
+      join tax_code_components c
+        on c.tax_code_id = n.tax_code_id
+        and c.organization_id = ${organizationId}::uuid
+      group by c.name, c.rate
+      order by c.name, c.rate
+    `)
+  ).rows.map((row) => ({
+    name: row.name,
+    rate: row.rate,
+    taxableAmount: row.taxable_amount,
+    amount: row.amount,
+  }));
 
   /**
    * The totals, summed in SQL over the same rounded figures. Kept as one
@@ -100,27 +166,24 @@ export async function computeAmounts(
     tax_total: string;
     total: string;
   }>(sql`
-    with nets as (
-      select ${invoiceLines.taxCodeId} as tax_code_id, ${net} as net
-      from ${invoiceLines}
-      where ${ofThisInvoice}
-    ),
+    with nets as (${nets}),
     taxes as (
       select round(sum(n.net) * c.rate / 100, ${places}::int) as amount
       from nets n
-      join ${taxCodeComponents} c
-        on c.tax_code_id = n.tax_code_id and c.organization_id = ${organizationId}
+      join tax_code_components c
+        on c.tax_code_id = n.tax_code_id
+        and c.organization_id = ${organizationId}::uuid
       group by c.name, c.rate
     ),
     sums as (
       select
-        (select coalesce(sum(net), 0) from nets) as subtotal,
-        (select coalesce(sum(amount), 0) from taxes) as tax_total
+        (select coalesce(sum(n.net), 0) from nets n) as subtotal,
+        (select coalesce(sum(x.amount), 0) from taxes x) as tax_total
     )
     select
-      subtotal::numeric(18, 4)::text as subtotal,
-      tax_total::numeric(18, 4)::text as tax_total,
-      (subtotal + tax_total)::numeric(18, 4)::text as total
+      sums.subtotal::numeric(18, 4)::text as subtotal,
+      sums.tax_total::numeric(18, 4)::text as tax_total,
+      (sums.subtotal + sums.tax_total)::numeric(18, 4)::text as total
     from sums
   `);
 

@@ -30,6 +30,7 @@ const LOCATIONS: Location[] = [
     parentId: null,
     isAvailable: true,
     isActive: true,
+    address: null,
   },
 ];
 

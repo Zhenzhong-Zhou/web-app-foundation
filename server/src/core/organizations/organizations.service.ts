@@ -69,6 +69,7 @@ export class OrganizationsService {
           accentColor: organizations.accentColor,
           rail: organizations.rail,
           logoOnDocuments: organizations.logoOnDocuments,
+          paperSize: organizations.paperSize,
           expiryWarningDays: organizations.expiryWarningDays,
           expiryCriticalDays: organizations.expiryCriticalDays,
           idleSignOutMinutes: organizations.idleSignOutMinutes,
@@ -127,6 +128,7 @@ export class OrganizationsService {
           accentColor: organizations.accentColor,
           rail: organizations.rail,
           logoOnDocuments: organizations.logoOnDocuments,
+          paperSize: organizations.paperSize,
           expiryWarningDays: organizations.expiryWarningDays,
           expiryCriticalDays: organizations.expiryCriticalDays,
           idleSignOutMinutes: organizations.idleSignOutMinutes,
@@ -172,6 +174,7 @@ export class OrganizationsService {
         accentColor: existing.accentColor,
         rail: existing.rail,
         logoOnDocuments: existing.logoOnDocuments,
+        paperSize: existing.paperSize,
         expiryWarningDays: existing.expiryWarningDays,
         expiryCriticalDays: existing.expiryCriticalDays,
         idleSignOutMinutes: existing.idleSignOutMinutes,
@@ -298,6 +301,9 @@ export class OrganizationsService {
         ...(input.rail !== undefined ? { rail: input.rail } : {}),
         ...(input.logoOnDocuments !== undefined
           ? { logoOnDocuments: input.logoOnDocuments }
+          : {}),
+        ...(input.paperSize !== undefined
+          ? { paperSize: input.paperSize }
           : {}),
         ...(input.expiryWarningDays !== undefined
           ? { expiryWarningDays: input.expiryWarningDays }

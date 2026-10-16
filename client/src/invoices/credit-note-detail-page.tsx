@@ -1,6 +1,5 @@
 import {
   Alert,
-  Button,
   Link,
   Paper,
   Skeleton,
@@ -19,6 +18,7 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 
 import type { CreditNoteDetail } from '../api/types.gen';
 import { PageHeader } from '../components/page-header';
+import { PdfActions } from '../components/pdf-actions';
 import {
   displayQuantity,
   formatDay,
@@ -99,18 +99,7 @@ export function CreditNoteDetailPage() {
               }),
           color: 'default',
         }}
-        actions={
-          <Button
-            variant="outlined"
-            component={RouterLink}
-            to={`/credit-notes/${note.id}/print`}
-          >
-            {intl.formatMessage({
-              id: 'invoices.print',
-              defaultMessage: 'Print',
-            })}
-          </Button>
-        }
+        actions={<PdfActions path={`/credit-notes/${note.id}/pdf`} />}
       />
 
       {/* Four whole sentences rather than one built from parts, so each

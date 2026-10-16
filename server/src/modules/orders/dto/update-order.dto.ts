@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 import { IsCalendarDay } from '../../../common/dto/calendar-day';
 import { trim } from '../../../common/dto/trim';
@@ -37,4 +37,13 @@ export class UpdateOrderDto {
   @IsString()
   @MaxLength(1000)
   note?: string;
+
+  /**
+   * Where a purchase is delivered, one of our sites (ADR-071, amended);
+   * null for none, so the purchase order prints the registered address.
+   * Left out, unchanged.
+   */
+  @IsOptional()
+  @IsUUID()
+  deliverToId?: string | null;
 }

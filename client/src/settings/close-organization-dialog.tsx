@@ -22,7 +22,7 @@ import { DialogFooter } from '../components/dialog-footer';
 import { ForgottenPasswordHint } from '../components/forgotten-password-hint';
 import { FormError } from '../components/form-error';
 import { PasswordField } from '../components/password-field';
-import { api, ApiError, apiUrl, hasCode } from '../lib/api';
+import { api, ApiError, hasCode } from '../lib/api';
 import { formatWhen } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { PASSWORD_MAX_LENGTH } from '../lib/validation';
@@ -30,8 +30,8 @@ import {
   dayWithDaysLeft,
   DELETION_DAYS,
   deletionDayFrom,
-  EXPORT_PATH,
   exportedBy,
+  useExportUrl,
 } from './organization-deletion';
 
 /** How often the dialog asks whether a download it started has finished. */
@@ -64,6 +64,7 @@ export function CloseOrganizationDialog({
 }) {
   const intl = useIntl();
   const { session, refresh } = useAuth();
+  const exportUrl = useExportUrl();
   const [organization, setOrganization] = useState<OrganizationProfile | null>(
     null,
   );
@@ -322,7 +323,7 @@ export function CloseOrganizationDialog({
                     <Button
                       variant="outlined"
                       startIcon={<DownloadIcon />}
-                      href={apiUrl(EXPORT_PATH)}
+                      href={exportUrl}
                       download
                       onClick={() => setDownloadedAt(Date.now())}
                     >

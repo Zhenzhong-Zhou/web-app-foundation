@@ -9,11 +9,13 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
 import { addresses } from './addresses';
 import { primaryKey, timestamps } from './columns';
+import { locations } from './locations';
 import { organizations } from './organizations';
 import { partners } from './partners';
 import { returnAuthorizations } from './return-authorizations';
@@ -74,6 +76,14 @@ export const orders = pgTable(
     status: text('status').$type<OrderStatus>().notNull().default('draft'),
 
     /**
+     * Ours, from the organization's series (ADR-071, amended): SO-000001
+     * for a sale, PO-000001 for a purchase, taken when the order is created,
+     * so a draft has one to quote. A deleted draft leaves a gap, which an
+     * order may have and an invoice may not.
+     */
+    number: text('number').notNull(),
+
+    /**
      * When the order was confirmed: its place in line when stock is short
      * (ADR-045). Earliest confirmed holds first. Null until confirmed.
      */
@@ -98,6 +108,22 @@ export const orders = pgTable(
     expectedAt: date('expected_at', { mode: 'string' }),
 
     note: text('note'),
+
+    /**
+     * Where a purchase is delivered (ADR-071, amended): one of our own
+     * sites, whose name and address the purchase order prints, or the
+     * registered address while the site has none. Set for the order when
+     * the organization has exactly one site. Null on a sale, whose goods go
+     * to the customer, and on a purchase nobody chose a site for.
+     *
+     * The site, not a copy of its address as ship_to below is: the site is
+     * ours, and the next printing of an open order should carry its address
+     * as it now is. RESTRICT, as a shipment's location is; sites are
+     * retired, never deleted.
+     */
+    deliverToId: uuid('deliver_to_id').references(() => locations.id, {
+      onDelete: 'restrict',
+    }),
 
     /**
      * Where this order went, copied at creation rather than joined at read.
@@ -184,6 +210,8 @@ export const orders = pgTable(
       'gin',
       sql`${t.reference} gin_trgm_ops`,
     ),
+    index('orders_number_trgm_idx').using('gin', sql`${t.number} gin_trgm_ops`),
+    uniqueIndex('orders_org_number_key').on(t.organizationId, t.number),
     check(
       'orders_direction_check',
       sql`${t.direction} in ('purchase', 'sale')`,
@@ -192,6 +220,11 @@ export const orders = pgTable(
     check(
       'orders_sample_is_sale_check',
       sql`not ${t.isSample} or ${t.direction} = 'sale'`,
+    ),
+    // Only a purchase comes to one of our sites; a sale goes to a customer.
+    check(
+      'orders_deliver_to_is_purchase_check',
+      sql`${t.deliverToId} is null or ${t.direction} = 'purchase'`,
     ),
     check(
       'orders_status_check',
@@ -255,5 +288,11 @@ export const orders = pgTable(
     index('orders_return_authorization_id_idx')
       .on(t.returnAuthorizationId)
       .where(sql`${t.returnAuthorizationId} is not null`),
+
+    // The lookup the RESTRICT key runs for each site an organization's
+    // deletion removes. Partial: a sale never has one.
+    index('orders_deliver_to_id_idx')
+      .on(t.deliverToId)
+      .where(sql`${t.deliverToId} is not null`),
   ],
 );

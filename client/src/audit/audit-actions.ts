@@ -133,6 +133,10 @@ export const AUDIT_ACTION_NAMES = defineMessages<AuditAction>({
     id: 'audit.action.orderShipped',
     defaultMessage: 'Order shipped',
   },
+  'order.pro_forma_made': {
+    id: 'audit.action.orderProFormaMade',
+    defaultMessage: 'Pro forma invoice made',
+  },
   'order.updated': {
     id: 'audit.action.orderUpdated',
     defaultMessage: 'Order updated',
@@ -272,6 +276,10 @@ export const AUDIT_ACTION_NAMES = defineMessages<AuditAction>({
   'return_authorization.return_linked': {
     id: 'audit.action.returnAuthorizationReturnLinked',
     defaultMessage: 'Return linked to an authorization',
+  },
+  'return_authorization.updated': {
+    id: 'audit.action.returnAuthorizationUpdated',
+    defaultMessage: 'Return authorization updated',
   },
   'stock.lot_updated': {
     id: 'audit.action.stockLotUpdated',

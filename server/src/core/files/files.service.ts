@@ -26,6 +26,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { Permission } from '../authorization/permissions';
+import { dispositionOf } from './content-disposition';
 import { KIND_RULES } from './file-kinds';
 import { FILE_STORAGE, type FileStorage, keyOf, ownerOf } from './file-storage';
 import {
@@ -404,10 +405,4 @@ export function downloadName(sent: string, extension: string): string {
     .trim()
     .slice(0, 120);
   return `${stem || 'file'}.${extension}`;
-}
-
-/** A plain ASCII name for old clients, the real one for everyone else. */
-function dispositionOf(type: 'inline' | 'attachment', name: string): string {
-  const ascii = name.replace(/[^\x20-\x7e]/g, '_');
-  return `${type}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }

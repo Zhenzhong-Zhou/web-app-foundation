@@ -78,6 +78,43 @@ an arrow class property doesn't live on the prototype.
   owned through a parent, with no `organization_id` of its own, goes in
   `OWNED_THROUGH_PARENT` beside it, exported by hand or with its reason.
   The export's coverage tests fail on a table that is neither.
+- **A file beyond the tables** comes from the module that owns it,
+  through `ExportContributions` (`core/organizations/export-contributions.ts`,
+  ADR-071): core may not import a module, so the module registers an
+  `ExportContributor` in its `onModuleInit`. It lists its entries in the
+  export's own transaction, so they are the records the CSVs hold, and
+  makes each one only when the archive reaches it, in the request's
+  tenant: `invoices/invoice-documents-export.ts`, the invoices' and credit
+  notes' PDFs, is the one there is.
+
+## A new printed document
+
+Every document is a PDF the server draws (ADR-071), in the same few pieces.
+
+- **A `Printable`** (`core/documents/documents.service.ts`) says what the
+  document is: its customer's languages, the seller's country it copied
+  at issue or null for the organization's as now, its file's name, its
+  `which` for every page's foot ("Purchase order · PO-000045") and its
+  `draw`, the pdfmake definition in the document's words. A
+  `printableThing(detail)` beside the builder, in `thing-document.ts`,
+  makes one from the data its own page reads.
+- **Its route** sits beside the document's read, under the same
+  permission, with `@PdfResponse()` for the API document and
+  `@DownloadAsked()` for `?download=1`, and is one call:
+  `documents.send(res, download, read.then(printableThing))`. `send` reads
+  the letterhead beside the document, puts the logo above the drawing and
+  the foot on every page, and answers inline for Print or as an attachment
+  for Download PDF. A builder draws neither the logo nor the foot.
+- **Its parts** come from `core/documents/sheet.ts`: `masthead`, `banner`,
+  `notice`, `party` and `sellerParty`, `linesTable` or `linesOf` with
+  `head`, `cell` and `itemNames`, `totals`, `paragraph`, and `run` for any
+  text, which gives each character a font that has it. Who and where it
+  names as they are today, the seller, a partner's address, a site, who
+  raised it, come from `core/documents/parties.ts`, read in the
+  document's own transaction.
+- **Its words** are server messages in all three catalogues, through
+  `doc.label` and `doc.lines`; its figures go through `format.ts`, money
+  and unit prices from their strings and days in UTC.
 
 ## Module boundaries
 
@@ -210,7 +247,8 @@ three:
   included. Written by whoever adds the English, reviewed by someone
   fluent before a release (MC-1405, `scripts/i18n-review.mjs`).
 - **A printed document** speaks its customer's languages, not the
-  reader's: its words go through `useDocumentText`, its figures through
+  reader's: the server draws it, its words through `doc.label` and
+  `doc.lines` (`core/documents/document-text.ts`), its figures through
   the document's locale.
 
 ## The API contract
@@ -388,8 +426,8 @@ product, a run, an RMA, a recipe) asks before it is thrown away (issue #54):
 When a page cannot show what was asked for, it says so in one shape, not a
 bare heading or the server's raw error. `client/src/errors/` holds it:
 `StatusPage` (an icon, a short title as the page's one heading, one sentence
-of what to do, one or two actions, a reference where a failure needs
-reporting) and the cases built on it.
+of what to do, one or two actions, three on a crash, a reference where a
+failure needs reporting) and the cases built on it.
 
 - **An unknown address:** "Page not found", Go home and Search everything.
   Signed in, inside the app with the rail and the lookup; signed out,
@@ -400,8 +438,11 @@ reporting) and the cases built on it.
   don't have access to this", naming who can change the role; no answer at
   all is "Can't reach the server" with Try again. Anything else keeps the
   server's own message, since it says something particular.
-- **A crash:** the error boundary's "Something went wrong", with Reload and
-  a reference to quote (the server's request id, or one made and logged).
+- **A crash:** the error boundary's "Something went wrong", with Reload, Go
+  back when there is a page to go back to, and Go home, and a reference to
+  quote (the server's request id, or one made and logged). Three, since a
+  broken page is left most often for the one before it, and it clears when
+  the address's path changes.
 - Tones: calm (info) for what is not there, amber for what is not yours,
   red only for a real failure.
 
@@ -461,8 +502,9 @@ and the tokens lack becomes a token first.
   Never remove an outline.
 - **Contrast.** `tokens.test.ts` checks WCAG AA for every pair a reader reads,
   in both modes; a new token adds its pair there.
-- **Paper** renders in `PrintSheet`'s own theme (`theme/paper.ts`) and never
-  uses the screen's tokens. A printed document changes only on purpose.
+- **Paper** is a PDF the server draws (ADR-071), from its own sheet in
+  `core/documents/sheet.ts`, and never the screen's theme or tokens. A
+  printed document changes only on purpose.
 
 ### Shared pieces for screens (ADR-055)
 

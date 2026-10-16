@@ -44,6 +44,14 @@ export type LicencePolicy = (typeof LICENCE_POLICIES)[number];
 export const ORGANIZATION_RAILS = ['dark', 'light'] as const;
 export type OrganizationRail = (typeof ORGANIZATION_RAILS)[number];
 
+/**
+ * The paper every document is drawn on (ADR-071). Null on the row is
+ * automatic: Letter in Canada and the United States, A4 elsewhere, from the
+ * registered address.
+ */
+export const PAPER_SIZES = ['letter', 'a4'] as const;
+export type PaperSize = (typeof PAPER_SIZES)[number];
+
 /** Whom an idle sign-out applies to (ADR-065). */
 export const IDLE_SIGN_OUT_SCOPES = ['unticked', 'everyone'] as const;
 export type IdleSignOutScope = (typeof IDLE_SIGN_OUT_SCOPES)[number];
@@ -165,6 +173,8 @@ export const organizations = pgTable(
     rail: text('rail').$type<OrganizationRail>().notNull().default('dark'),
     /** Whether invoices, credit notes and packing slips print the logo. */
     logoOnDocuments: boolean('logo_on_documents').notNull().default(true),
+    /** Letter or A4, or null for automatic from the country (ADR-071). */
+    paperSize: text('paper_size').$type<PaperSize>(),
 
     /**
      * Sign out after inactivity (ADR-065): null for Off, else minutes. It
@@ -231,6 +241,10 @@ export const organizations = pgTable(
     check(
       'organizations_licence_expired_policy_check',
       sql`${t.licenceExpiredPolicy} in ('block', 'override', 'allow')`,
+    ),
+    check(
+      'organizations_paper_size_check',
+      sql`${t.paperSize} is null or ${t.paperSize} in ('letter', 'a4')`,
     ),
     // No needs-first check: the first language is never null here.
     check(

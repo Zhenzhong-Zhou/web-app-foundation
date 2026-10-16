@@ -20,7 +20,7 @@ export const BLANK_LINE = ' ';
  *
  * A module value rather than a hook, because these are plain functions
  * called from render, from column definitions and from handlers alike. A
- * print page passes the document's language explicitly instead.
+ * caller may still pass a tag explicitly.
  */
 let current = import.meta.hot?.data?.locale as string | undefined;
 

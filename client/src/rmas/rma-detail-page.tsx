@@ -31,6 +31,7 @@ import { HistoryButton } from '../audit/history-button';
 import { useCan } from '../auth/permissions';
 import { FormError } from '../components/form-error';
 import { PageHeader } from '../components/page-header';
+import { PdfActions } from '../components/pdf-actions';
 import { LoadFailure } from '../errors/load-failure';
 import { api } from '../lib/api';
 import {
@@ -46,6 +47,7 @@ import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { LinkReturnDialog } from './link-return-dialog';
 import { resolutionLabel, rmaStatus } from './rma-labels';
+import { SendBackToDialog } from './send-back-to-dialog';
 
 /** A numeric(18,4) of nothing always reads '0.0000' (ADR-025). */
 const NOTHING = '0.0000';
@@ -76,6 +78,7 @@ export function RmaDetailPage() {
   useRecordOpened('return', id, rma !== null);
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [linking, setLinking] = useState(false);
+  const [choosingSite, setChoosingSite] = useState(false);
 
   /**
    * The invoices a credit for this RMA can go against: the one it names, or
@@ -194,19 +197,15 @@ export function RmaDetailPage() {
           <>
             {rma.partnerName}
             {SEPARATOR}
+            {/* The order by our number (ADR-071). */}
             <Link component={RouterLink} to={`/orders/${rma.orderId}`}>
-              {rma.orderReference
-                ? intl.formatMessage(
-                    {
-                      id: 'invoices.orderReference',
-                      defaultMessage: 'Order {reference}',
-                    },
-                    { reference: rma.orderReference },
-                  )
-                : intl.formatMessage({
-                    id: 'inventory.trace.order',
-                    defaultMessage: 'Order',
-                  })}
+              {intl.formatMessage(
+                {
+                  id: 'invoices.orderNumber',
+                  defaultMessage: 'Order {number}',
+                },
+                { number: rma.orderNumber },
+              )}
             </Link>
             {rma.invoiceId && (
               <>
@@ -227,6 +226,9 @@ export function RmaDetailPage() {
         actions={
           <>
             <HistoryButton resourceId={rma.id} />
+
+            {/* Its PDF, to send the customer (ADR-071). */}
+            <PdfActions path={`/return-authorizations/${rma.id}/pdf`} />
 
             {open && canUpdate && untouched && (
               <Button
@@ -273,6 +275,41 @@ export function RmaDetailPage() {
         <Typography variant="body2" color="text.secondary">
           {rma.note}
         </Typography>
+      )}
+
+      {/* Where the goods come back to (ADR-071, amended). */}
+      {rma.expectsGoods && (
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ alignItems: 'baseline', flexWrap: 'wrap' }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            {intl.formatMessage({
+              id: 'rmas.sendBackTo',
+              defaultMessage: 'Send back to',
+            })}
+          </Typography>
+          <Typography variant="body2">
+            {rma.sendBackTo?.name ??
+              intl.formatMessage({
+                id: 'rmas.sendBackTo.registered',
+                defaultMessage: 'Registered address',
+              })}
+          </Typography>
+          {open && canUpdate && (
+            <Button
+              variant="text"
+              size="small"
+              onClick={openDialog(() => setChoosingSite(true))}
+            >
+              {intl.formatMessage({
+                id: 'rmas.sendBackTo.change',
+                defaultMessage: 'Change',
+              })}
+            </Button>
+          )}
+        </Stack>
       )}
 
       <Paper variant="outlined">
@@ -403,6 +440,14 @@ export function RmaDetailPage() {
           )}
         </Typography>
       )}
+
+      <SendBackToDialog
+        key={`${choosingSite ? 'choosing' : 'closed'}-${rma.sendBackTo?.id ?? ''}`}
+        open={choosingSite}
+        rma={rma}
+        onClose={() => setChoosingSite(false)}
+        onSaved={reload}
+      />
 
       <LinkReturnDialog
         key={linking ? 'linking' : 'closed'}

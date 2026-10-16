@@ -796,9 +796,11 @@
                 "invoice.issued",
                 "invoice.voided",
                 "credit_note.issued",
+                "order.pro_forma_made",
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
+                "return_authorization.updated",
                 "return_authorization.return_linked",
                 "return_authorization.replacement_raised",
                 "price_list.created",
@@ -957,9 +959,11 @@
                 "invoice.issued",
                 "invoice.voided",
                 "credit_note.issued",
+                "order.pro_forma_made",
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
+                "return_authorization.updated",
                 "return_authorization.return_linked",
                 "return_authorization.replacement_raised",
                 "price_list.created",
@@ -1291,9 +1295,11 @@
                 "invoice.issued",
                 "invoice.voided",
                 "credit_note.issued",
+                "order.pro_forma_made",
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
+                "return_authorization.updated",
                 "return_authorization.return_linked",
                 "return_authorization.replacement_raised",
                 "price_list.created",
@@ -1452,9 +1458,11 @@
                 "invoice.issued",
                 "invoice.voided",
                 "credit_note.issued",
+                "order.pro_forma_made",
                 "return_authorization.created",
                 "return_authorization.cancelled",
                 "return_authorization.closed",
+                "return_authorization.updated",
                 "return_authorization.return_linked",
                 "return_authorization.replacement_raised",
                 "price_list.created",
@@ -2208,7 +2216,21 @@
     "/v1/organization/export": {
       "get": {
         "operationId": "OrganizationController_exportAll_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "locale",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "en",
+                "fr-CA",
+                "zh-Hans"
+              ],
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -4711,6 +4733,56 @@
         ]
       }
     },
+    "/v1/orders/{id}/shipments/{shipmentId}/pdf": {
+      "get": {
+        "operationId": "ShipmentsController_pdf_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "shipmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "download",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Shipments"
+        ]
+      }
+    },
     "/v1/orders/{id}/shipments/preview": {
       "post": {
         "operationId": "ShipmentsController_preview_v1",
@@ -4893,6 +4965,48 @@
         },
         "tags": [
           "Returns"
+        ]
+      }
+    },
+    "/v1/orders/{id}/pdf": {
+      "get": {
+        "operationId": "OrderDocumentsController_pdf_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "download",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OrderDocuments"
         ]
       }
     },
@@ -5467,6 +5581,37 @@
         "tags": [
           "ReturnAuthorizations"
         ]
+      },
+      "patch": {
+        "operationId": "ReturnAuthorizationsController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReturnAuthorizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReturnAuthorizations"
+        ]
       }
     },
     "/v1/return-authorizations/{id}/cancel": {
@@ -5575,6 +5720,48 @@
         },
         "tags": [
           "ReturnAuthorizations"
+        ]
+      }
+    },
+    "/v1/return-authorizations/{id}/pdf": {
+      "get": {
+        "operationId": "ReturnAuthorizationDocumentsController_pdf_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "download",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReturnAuthorizationDocuments"
         ]
       }
     },
@@ -5932,6 +6119,48 @@
         "responses": {
           "204": {
             "description": ""
+          }
+        },
+        "tags": [
+          "Invoices"
+        ]
+      }
+    },
+    "/v1/invoices/{id}/pdf": {
+      "get": {
+        "operationId": "InvoicesController_pdf_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "download",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -6394,6 +6623,98 @@
         ]
       }
     },
+    "/v1/credit-notes/{id}/pdf": {
+      "get": {
+        "operationId": "CreditNotesController_pdf_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "download",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CreditNotes"
+        ]
+      }
+    },
+    "/v1/orders/{id}/pro-forma": {
+      "get": {
+        "operationId": "ProFormaController_pdf_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "taxCodeId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "download",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ProForma"
+        ]
+      }
+    },
     "/v1/recent": {
       "get": {
         "operationId": "RecentController_list_v1",
@@ -6536,6 +6857,60 @@
             }
           }
         },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Locations"
+        ]
+      }
+    },
+    "/v1/locations/{id}/address": {
+      "put": {
+        "operationId": "LocationsController_setAddress_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Locations"
+        ]
+      },
+      "delete": {
+        "operationId": "LocationsController_removeAddress_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": ""
@@ -9523,6 +9898,17 @@
           "logoOnDocuments": {
             "type": "boolean"
           },
+          "paperSize": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "letter",
+              "a4",
+              null
+            ]
+          },
           "expiryWarningDays": {
             "type": "number"
           },
@@ -9571,6 +9957,7 @@
           "accentColor",
           "rail",
           "logoOnDocuments",
+          "paperSize",
           "expiryWarningDays",
           "expiryCriticalDays",
           "idleSignOutMinutes",
@@ -9688,6 +10075,17 @@
           },
           "logoOnDocuments": {
             "type": "boolean"
+          },
+          "paperSize": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "letter",
+              "a4",
+              null
+            ]
           },
           "expiryWarningDays": {
             "type": "number",
@@ -11587,6 +11985,12 @@
               "null"
             ]
           },
+          "orderNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "orderReference": {
             "type": [
               "string",
@@ -11660,6 +12064,7 @@
           "at",
           "quantity",
           "orderId",
+          "orderNumber",
           "orderReference",
           "supplierName",
           "runId",
@@ -11727,6 +12132,12 @@
               "null"
             ]
           },
+          "orderNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "orderReference": {
             "type": [
               "string",
@@ -11759,6 +12170,7 @@
           "partnerId",
           "partnerName",
           "orderId",
+          "orderNumber",
           "orderReference",
           "isSampleOrder",
           "lotId",
@@ -12120,6 +12532,9 @@
           "id": {
             "type": "string"
           },
+          "number": {
+            "type": "string"
+          },
           "partnerId": {
             "type": "string"
           },
@@ -12173,6 +12588,7 @@
         },
         "required": [
           "id",
+          "number",
           "partnerId",
           "partnerName",
           "direction",
@@ -12205,6 +12621,21 @@
         "required": [
           "entries",
           "nextCursor"
+        ]
+      },
+      "ChosenSite": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
         ]
       },
       "OrderTotal": {
@@ -12538,6 +12969,9 @@
           "id": {
             "type": "string"
           },
+          "number": {
+            "type": "string"
+          },
           "partnerId": {
             "type": "string"
           },
@@ -12588,6 +13022,16 @@
             "type": [
               "string",
               "null"
+            ]
+          },
+          "deliverTo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChosenSite"
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "totals": {
@@ -12644,6 +13088,7 @@
         },
         "required": [
           "id",
+          "number",
           "partnerId",
           "partnerName",
           "direction",
@@ -12654,6 +13099,7 @@
           "reference",
           "expectedAt",
           "note",
+          "deliverTo",
           "totals",
           "totalsComplete",
           "money",
@@ -12714,6 +13160,13 @@
             "type": "string",
             "maxLength": 1000
           },
+          "deliverToId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
           "lines": {
             "minItems": 1,
             "type": "array",
@@ -12773,6 +13226,13 @@
           "note": {
             "type": "string",
             "maxLength": 1000
+          },
+          "deliverToId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -13102,6 +13562,9 @@
           "id": {
             "type": "string"
           },
+          "number": {
+            "type": "string"
+          },
           "reference": {
             "type": [
               "string",
@@ -13114,6 +13577,7 @@
         },
         "required": [
           "id",
+          "number",
           "reference",
           "partnerName"
         ]
@@ -14318,6 +14782,9 @@
           "orderId": {
             "type": "string"
           },
+          "orderNumber": {
+            "type": "string"
+          },
           "orderReference": {
             "type": [
               "string",
@@ -14346,6 +14813,7 @@
           "number",
           "status",
           "orderId",
+          "orderNumber",
           "orderReference",
           "partnerId",
           "partnerName",
@@ -14439,6 +14907,9 @@
           "orderId": {
             "type": "string"
           },
+          "orderNumber": {
+            "type": "string"
+          },
           "orderReference": {
             "type": [
               "string",
@@ -14468,6 +14939,16 @@
           },
           "expectsGoods": {
             "type": "boolean"
+          },
+          "sendBackTo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChosenSite"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "note": {
             "type": [
@@ -14505,6 +14986,7 @@
           "number",
           "status",
           "orderId",
+          "orderNumber",
           "orderReference",
           "partnerId",
           "partnerName",
@@ -14512,6 +14994,7 @@
           "invoiceNumber",
           "reason",
           "expectsGoods",
+          "sendBackTo",
           "note",
           "createdAt",
           "closedAt",
@@ -14574,6 +15057,10 @@
             "type": "string",
             "format": "uuid"
           },
+          "sendBackToId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "note": {
             "type": "string",
             "maxLength": 1000
@@ -14592,6 +15079,18 @@
           "reason",
           "lines"
         ]
+      },
+      "UpdateReturnAuthorizationDto": {
+        "type": "object",
+        "properties": {
+          "sendBackToId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
       },
       "LinkReturnDto": {
         "type": "object",
@@ -14648,6 +15147,9 @@
             ]
           },
           "orderId": {
+            "type": "string"
+          },
+          "orderNumber": {
             "type": "string"
           },
           "orderReference": {
@@ -14717,6 +15219,7 @@
           "number",
           "status",
           "orderId",
+          "orderNumber",
           "orderReference",
           "shipmentId",
           "partnerId",
@@ -14939,6 +15442,9 @@
             ]
           },
           "orderId": {
+            "type": "string"
+          },
+          "orderNumber": {
             "type": "string"
           },
           "orderReference": {
@@ -15204,6 +15710,7 @@
           "number",
           "status",
           "orderId",
+          "orderNumber",
           "orderReference",
           "shipmentId",
           "partnerId",
@@ -15932,6 +16439,49 @@
           "id"
         ]
       },
+      "SiteAddress": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string"
+          },
+          "line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "region": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postalCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "line1",
+          "line2",
+          "city",
+          "region",
+          "postalCode",
+          "country"
+        ]
+      },
       "Location": {
         "type": "object",
         "properties": {
@@ -15961,6 +16511,16 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -15970,7 +16530,8 @@
           "code",
           "parentId",
           "isAvailable",
-          "isActive"
+          "isActive",
+          "address"
         ]
       },
       "CreateLocationDto": {
@@ -16042,6 +16603,40 @@
             "type": "boolean"
           }
         }
+      },
+      "SiteAddressDto": {
+        "type": "object",
+        "properties": {
+          "line1": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "line2": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "region": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "postalCode": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          }
+        },
+        "required": [
+          "line1",
+          "country"
+        ]
       },
       "ValuationPool": {
         "type": "object",
@@ -17004,9 +17599,11 @@
           "invoice.issued",
           "invoice.voided",
           "credit_note.issued",
+          "order.pro_forma_made",
           "return_authorization.created",
           "return_authorization.cancelled",
           "return_authorization.closed",
+          "return_authorization.updated",
           "return_authorization.return_linked",
           "return_authorization.replacement_raised",
           "price_list.created",

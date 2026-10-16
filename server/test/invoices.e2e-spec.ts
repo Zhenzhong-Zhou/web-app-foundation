@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
+import { documentText } from '../src/core/documents/document-text';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -11,6 +12,11 @@ import {
   invoiceLineTaxes,
   invoices,
 } from '../src/database/schema';
+import { creditNoteDocument } from '../src/modules/invoices/credit-note-document';
+import type { CreditNoteDetail } from '../src/modules/invoices/dto/credit-note-response.dto';
+import type { InvoiceDetail } from '../src/modules/invoices/dto/invoice-response.dto';
+import { invoiceDocument } from '../src/modules/invoices/invoice-document';
+import { wordsOf } from './utils/document-words';
 import {
   addMember,
   body,
@@ -19,6 +25,7 @@ import {
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 import { shippedSale } from './utils/sales';
+import { readZip } from './utils/zip';
 
 interface InvoiceResponse {
   id: string;
@@ -535,6 +542,173 @@ describe('Invoices (e2e)', () => {
         await org.agent.get(`/v1/invoices/${invoiceId}`).expect(200),
       ).invoice;
     }
+
+    it('draws the invoice as a PDF, to print or to download (ADR-071)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+
+      const shown = await org.agent
+        .get(`/v1/invoices/${r.invoice.id}/pdf`)
+        .responseType('blob')
+        .expect(200);
+      expect(shown.headers['content-type']).toBe('application/pdf');
+      expect(shown.headers['content-disposition']).toMatch(
+        /^inline; filename="INV-000001\.pdf"/,
+      );
+      const pdf = (shown.body as Buffer).toString('latin1');
+      expect(pdf.startsWith('%PDF-')).toBe(true);
+      // A Canadian seller prints on Letter (ADR-071).
+      expect(pdf).toContain('/MediaBox [0 0 612 792]');
+
+      const saved = await org.agent
+        .get(`/v1/invoices/${r.invoice.id}/pdf?download=1`)
+        .responseType('blob')
+        .expect(200);
+      expect(saved.headers['content-disposition']).toMatch(
+        /^attachment; filename="INV-000001\.pdf"/,
+      );
+    });
+
+    it('draws on the paper the organization chose, else its country’s (ADR-071)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+      const mediaBox = async () => {
+        const res = await org.agent
+          .get(`/v1/invoices/${r.invoice.id}/pdf`)
+          .responseType('blob')
+          .expect(200);
+        return (res.body as Buffer)
+          .toString('latin1')
+          .match(/\/MediaBox \[[^\]]*\]/)?.[0];
+      };
+
+      // Chosen, it wins over the Canadian seller's Letter.
+      await org.agent
+        .patch('/v1/organization')
+        .send({ paperSize: 'a4' })
+        .expect(204);
+      expect(await mediaBox()).toBe('/MediaBox [0 0 595.28 841.89]');
+
+      // Only Letter or A4; null goes back to automatic.
+      await org.agent
+        .patch('/v1/organization')
+        .send({ paperSize: 'legal' })
+        .expect(400);
+      await org.agent
+        .patch('/v1/organization')
+        .send({ paperSize: null })
+        .expect(204);
+      expect(await mediaBox()).toBe('/MediaBox [0 0 612 792]');
+    });
+
+    it('packs every issued invoice and credit note into the export, as its PDF (ADR-071)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+      // Voiding credits it in full: CN-000001.
+      await org.agent
+        .post(`/v1/invoices/${r.invoice.id}/void`)
+        .send({ reason: 'Billed twice', creditDate: TODAY })
+        .expect(200);
+
+      const res = await org.agent
+        .get('/v1/organization/export')
+        .responseType('blob')
+        .expect(200);
+      const zip = readZip(res.body as Buffer);
+
+      for (const name of [
+        'documents/invoices/INV-000001.pdf',
+        'documents/credit-notes/CN-000001.pdf',
+      ]) {
+        expect(zip.get(name)?.toString('latin1').startsWith('%PDF-')).toBe(
+          true,
+        );
+      }
+    });
+
+    it('draws a draft marked DRAFT, and another organization’s not at all', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      const other = await registerOrganization(app, 'beta');
+
+      const draft = await org.agent
+        .get(`/v1/invoices/${r.invoice.id}/pdf`)
+        .responseType('blob')
+        .expect(200);
+      expect(draft.headers['content-disposition']).toMatch(
+        /^inline; filename="DRAFT [0-9a-f]{8}\.pdf"/,
+      );
+
+      await other.agent.get(`/v1/invoices/${r.invoice.id}/pdf`).expect(404);
+    });
+
+    /**
+     * Moved from the client's e2e, which read these on its print pages
+     * (ADR-071): a draft, a voided invoice and its credit note each say
+     * what they are, so none passes for another found in a drawer later.
+     */
+    it('words a draft, a voided invoice and its credit note so none passes for another', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      const english = documentText('en', null, 'CA');
+      const invoice = async () =>
+        body<{ invoice: InvoiceDetail }>(
+          await org.agent.get(`/v1/invoices/${r.invoice.id}`).expect(200),
+        ).invoice;
+
+      expect(wordsOf(invoiceDocument(await invoice(), english))).toContain(
+        'DRAFT — not an invoice',
+      );
+
+      await issue(org, r.invoice.id).expect(200);
+      const { creditNote } = body<{ creditNote: { id: string } }>(
+        await org.agent
+          .post(`/v1/invoices/${r.invoice.id}/void`)
+          .send({ reason: 'Billed twice', creditDate: TODAY })
+          .expect(200),
+      );
+
+      const voided = wordsOf(invoiceDocument(await invoice(), english));
+      expect(voided).toContain('INV-000001');
+      expect(voided).toContain('VOID — nothing is owed on this invoice');
+      expect(voided).toContain('reversed by CN-000001');
+
+      const note = body<{ creditNote: CreditNoteDetail }>(
+        await org.agent.get(`/v1/credit-notes/${creditNote.id}`).expect(200),
+      ).creditNote;
+      const credited = wordsOf(creditNoteDocument(note, english));
+      expect(credited).toContain('Credit note');
+      expect(credited).toContain('CN-000001');
+      expect(credited).toContain('Voids invoice INV-000001');
+      expect(credited).toContain('Reason: Billed twice');
+    });
+
+    /**
+     * Also moved from the client: a customer's two languages label the
+     * document, the first first and the same weight, and figures are
+     * written once, the first language's way (ADR-054).
+     */
+    it('labels a bilingual invoice in both languages, its figures once', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+      const invoice = body<{ invoice: InvoiceDetail }>(
+        await org.agent.get(`/v1/invoices/${r.invoice.id}`).expect(200),
+      ).invoice;
+
+      const words = wordsOf(
+        invoiceDocument(invoice, documentText('fr-CA', 'en', 'CA')),
+      );
+      expect(words).toContain('Facture / Invoice');
+      // A party's heading is drawn in capitals, as the print page showed it.
+      expect(words).toContain('FACTURER À / BILL TO');
+      // 137.50 + 6.88 GST, in French: a decimal comma, once.
+      expect(words).toMatch(/144,38/);
+      expect(words).not.toMatch(/144\.38/);
+    });
 
     it('numbers the invoice, stores its amounts and copies both parties', async () => {
       const org = await registerOrganization(app, 'alpha');

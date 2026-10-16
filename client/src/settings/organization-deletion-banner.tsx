@@ -5,11 +5,11 @@ import { useIntl } from 'react-intl';
 
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
-import { api, apiUrl } from '../lib/api';
+import { api } from '../lib/api';
 import { localToday } from '../lib/expiry';
 import { HIDDEN_DELETION_BANNER } from '../lib/session-keys';
 import { useSubmit } from '../lib/use-submit';
-import { dayWithDaysLeft, EXPORT_PATH } from './organization-deletion';
+import { dayWithDaysLeft, useExportUrl } from './organization-deletion';
 
 /** What this browser hid: whose banner, for which day, until when. */
 interface Hidden {
@@ -41,6 +41,7 @@ export function OrganizationDeletionBanner() {
   const intl = useIntl();
   const can = useCan();
   const { session, refresh } = useAuth();
+  const exportUrl = useExportUrl();
   const [hidden, setHidden] = useState(readHidden);
   // What a cancel kept, said once it is done rather than the banner just
   // vanishing (ADR-070, from the walkthrough).
@@ -70,7 +71,6 @@ export function OrganizationDeletionBanner() {
         tabIndex={-1}
         severity="success"
         role="status"
-        className="no-print"
         onClose={() => setKept(null)}
       >
         {kept}
@@ -90,7 +90,7 @@ export function OrganizationDeletionBanner() {
 
   if (organization.deletionStage === 'underWay') {
     return (
-      <Alert ref={banner} tabIndex={-1} severity="error" className="no-print">
+      <Alert ref={banner} tabIndex={-1} severity="error">
         {intl.formatMessage(
           {
             id: 'settings.banner.underWay',
@@ -173,11 +173,10 @@ export function OrganizationDeletionBanner() {
       ref={banner}
       tabIndex={-1}
       severity="warning"
-      className="no-print"
       action={
         <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
           {can('organizations.export') && (
-            <Button size="small" href={apiUrl(EXPORT_PATH)} download>
+            <Button size="small" href={exportUrl} download>
               {intl.formatMessage({
                 id: 'settings.export.title',
                 defaultMessage: 'Download everything',

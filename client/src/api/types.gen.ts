@@ -624,6 +624,7 @@ export type OrganizationProfile = {
   accentColor: string | null;
   rail: 'dark' | 'light';
   logoOnDocuments: boolean;
+  paperSize: 'letter' | 'a4' | null;
   expiryWarningDays: number;
   expiryCriticalDays: number;
   idleSignOutMinutes: number | null;
@@ -650,6 +651,7 @@ export type UpdateOrganizationDto = {
   rail?: 'dark' | 'light';
   logoFileId?: string | null;
   logoOnDocuments?: boolean;
+  paperSize?: 'letter' | 'a4' | null;
   expiryWarningDays?: number;
   expiryCriticalDays?: number;
   idleSignOutMinutes?: 15 | 30 | 60 | 240 | null;
@@ -1119,6 +1121,7 @@ export type LotSource = {
   at: string;
   quantity: string;
   orderId: string | null;
+  orderNumber: string | null;
   orderReference: string | null;
   supplierName: string | null;
   runId: string | null;
@@ -1145,6 +1148,7 @@ export type LotRecipient = {
   partnerId: string | null;
   partnerName: string | null;
   orderId: string | null;
+  orderNumber: string | null;
   orderReference: string | null;
   isSampleOrder: boolean;
   lotId: string;
@@ -1256,6 +1260,7 @@ export type HomeResponse = {
 
 export type OrderSummary = {
   id: string;
+  number: string;
   partnerId: string;
   partnerName: string;
   direction: 'sale' | 'purchase';
@@ -1272,6 +1277,11 @@ export type OrderSummary = {
 export type OrderPage = {
   entries: Array<OrderSummary>;
   nextCursor: string | null;
+};
+
+export type ChosenSite = {
+  id: string;
+  name: string;
 };
 
 export type OrderTotal = {
@@ -1354,6 +1364,7 @@ export type OrderLine = {
 
 export type OrderDetail = {
   id: string;
+  number: string;
   partnerId: string;
   partnerName: string;
   direction: 'sale' | 'purchase';
@@ -1364,6 +1375,7 @@ export type OrderDetail = {
   reference: string | null;
   expectedAt: string | null;
   note: string | null;
+  deliverTo: ChosenSite | null;
   totals: Array<OrderTotal>;
   totalsComplete: boolean;
   money: OrderMoney | null;
@@ -1388,6 +1400,7 @@ export type CreateOrderDto = {
   reference?: string;
   expectedAt?: string;
   note?: string;
+  deliverToId?: string | null;
   lines: Array<CreateOrderLineDto>;
 };
 
@@ -1405,6 +1418,7 @@ export type UpdateOrderDto = {
   reference?: string;
   expectedAt?: string;
   note?: string;
+  deliverToId?: string | null;
 };
 
 export type AddOrderLineDto = {
@@ -1489,6 +1503,7 @@ export type Shipment = {
 
 export type SlipOrder = {
   id: string;
+  number: string;
   reference: string | null;
   partnerName: string;
 };
@@ -1769,6 +1784,7 @@ export type ReturnAuthorizationSummary = {
   number: string;
   status: 'open' | 'closed' | 'cancelled';
   orderId: string;
+  orderNumber: string;
   orderReference: string | null;
   partnerId: string;
   partnerName: string;
@@ -1798,6 +1814,7 @@ export type ReturnAuthorizationDetail = {
   number: string;
   status: 'open' | 'closed' | 'cancelled';
   orderId: string;
+  orderNumber: string;
   orderReference: string | null;
   partnerId: string;
   partnerName: string;
@@ -1805,6 +1822,7 @@ export type ReturnAuthorizationDetail = {
   invoiceNumber: string | null;
   reason: string;
   expectsGoods: boolean;
+  sendBackTo: ChosenSite | null;
   note: string | null;
   createdAt: string;
   closedAt: string | null;
@@ -1827,8 +1845,13 @@ export type CreateReturnAuthorizationDto = {
   reason: string;
   expectsGoods?: boolean;
   invoiceId?: string;
+  sendBackToId?: string;
   note?: string;
   lines: Array<ReturnAuthorizationLineDto>;
+};
+
+export type UpdateReturnAuthorizationDto = {
+  sendBackToId?: string | null;
 };
 
 export type LinkReturnDto = {
@@ -1848,6 +1871,7 @@ export type InvoiceSummary = {
   number: string | null;
   status: 'draft' | 'issued' | 'voided';
   orderId: string;
+  orderNumber: string;
   orderReference: string | null;
   shipmentId: string;
   partnerId: string;
@@ -1916,6 +1940,7 @@ export type InvoiceDetail = {
   number: string | null;
   status: 'draft' | 'issued' | 'voided';
   orderId: string;
+  orderNumber: string;
   orderReference: string | null;
   shipmentId: string;
   partnerId: string;
@@ -2136,6 +2161,15 @@ export type RecordOpenedDto = {
   id: string;
 };
 
+export type SiteAddress = {
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string;
+};
+
 export type Location = {
   id: string;
   type: string;
@@ -2144,6 +2178,7 @@ export type Location = {
   parentId: string | null;
   isAvailable: boolean;
   isActive: boolean;
+  address: SiteAddress | null;
 };
 
 export type CreateLocationDto = {
@@ -2163,6 +2198,15 @@ export type UpdateLocationDto = {
   parentId?: string | null;
   isAvailable?: boolean;
   isActive?: boolean;
+};
+
+export type SiteAddressDto = {
+  line1: string;
+  line2?: string;
+  city?: string;
+  region?: string;
+  postalCode?: string;
+  country: string;
 };
 
 export type ValuationPool = {
@@ -2508,9 +2552,11 @@ export const AuditAction = {
   INVOICE_ISSUED: 'invoice.issued',
   INVOICE_VOIDED: 'invoice.voided',
   CREDIT_NOTE_ISSUED: 'credit_note.issued',
+  ORDER_PRO_FORMA_MADE: 'order.pro_forma_made',
   RETURN_AUTHORIZATION_CREATED: 'return_authorization.created',
   RETURN_AUTHORIZATION_CANCELLED: 'return_authorization.cancelled',
   RETURN_AUTHORIZATION_CLOSED: 'return_authorization.closed',
+  RETURN_AUTHORIZATION_UPDATED: 'return_authorization.updated',
   RETURN_AUTHORIZATION_RETURN_LINKED: 'return_authorization.return_linked',
   RETURN_AUTHORIZATION_REPLACEMENT_RAISED:
     'return_authorization.replacement_raised',
@@ -3046,9 +3092,11 @@ export type AuditControllerListV1Data = {
       | 'invoice.issued'
       | 'invoice.voided'
       | 'credit_note.issued'
+      | 'order.pro_forma_made'
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
+      | 'return_authorization.updated'
       | 'return_authorization.return_linked'
       | 'return_authorization.replacement_raised'
       | 'price_list.created'
@@ -3145,9 +3193,11 @@ export type AuditControllerExportAuditV1Data = {
       | 'invoice.issued'
       | 'invoice.voided'
       | 'credit_note.issued'
+      | 'order.pro_forma_made'
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
+      | 'return_authorization.updated'
       | 'return_authorization.return_linked'
       | 'return_authorization.replacement_raised'
       | 'price_list.created'
@@ -3329,9 +3379,11 @@ export type WorkControllerActivityV1Data = {
       | 'invoice.issued'
       | 'invoice.voided'
       | 'credit_note.issued'
+      | 'order.pro_forma_made'
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
+      | 'return_authorization.updated'
       | 'return_authorization.return_linked'
       | 'return_authorization.replacement_raised'
       | 'price_list.created'
@@ -3428,9 +3480,11 @@ export type WorkControllerExportActivityV1Data = {
       | 'invoice.issued'
       | 'invoice.voided'
       | 'credit_note.issued'
+      | 'order.pro_forma_made'
       | 'return_authorization.created'
       | 'return_authorization.cancelled'
       | 'return_authorization.closed'
+      | 'return_authorization.updated'
       | 'return_authorization.return_linked'
       | 'return_authorization.replacement_raised'
       | 'price_list.created'
@@ -3795,7 +3849,9 @@ export type OrganizationControllerUpdateV1Response =
 export type OrganizationControllerExportAllV1Data = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    locale?: 'en' | 'fr-CA' | 'zh-Hans';
+  };
   url: '/v1/organization/export';
 };
 
@@ -4788,6 +4844,25 @@ export type ShipmentsControllerSlipV1Responses = {
 export type ShipmentsControllerSlipV1Response =
   ShipmentsControllerSlipV1Responses[keyof ShipmentsControllerSlipV1Responses];
 
+export type ShipmentsControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+    shipmentId: string;
+  };
+  query?: {
+    download?: '1';
+  };
+  url: '/v1/orders/{id}/shipments/{shipmentId}/pdf';
+};
+
+export type ShipmentsControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type ShipmentsControllerPdfV1Response =
+  ShipmentsControllerPdfV1Responses[keyof ShipmentsControllerPdfV1Responses];
+
 export type ShipmentsControllerPreviewV1Data = {
   body: PreviewShipmentDto;
   path: {
@@ -4868,6 +4943,24 @@ export type ReturnsControllerReturnableV1Responses = {
 
 export type ReturnsControllerReturnableV1Response =
   ReturnsControllerReturnableV1Responses[keyof ReturnsControllerReturnableV1Responses];
+
+export type OrderDocumentsControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    download?: '1';
+  };
+  url: '/v1/orders/{id}/pdf';
+};
+
+export type OrderDocumentsControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type OrderDocumentsControllerPdfV1Response =
+  OrderDocumentsControllerPdfV1Responses[keyof OrderDocumentsControllerPdfV1Responses];
 
 export type PartnersControllerListV1Data = {
   body?: never;
@@ -5130,6 +5223,22 @@ export type ReturnAuthorizationsControllerGetV1Responses = {
 export type ReturnAuthorizationsControllerGetV1Response =
   ReturnAuthorizationsControllerGetV1Responses[keyof ReturnAuthorizationsControllerGetV1Responses];
 
+export type ReturnAuthorizationsControllerUpdateV1Data = {
+  body: UpdateReturnAuthorizationDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/return-authorizations/{id}';
+};
+
+export type ReturnAuthorizationsControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type ReturnAuthorizationsControllerUpdateV1Response =
+  ReturnAuthorizationsControllerUpdateV1Responses[keyof ReturnAuthorizationsControllerUpdateV1Responses];
+
 export type ReturnAuthorizationsControllerCancelV1Data = {
   body?: never;
   path: {
@@ -5193,6 +5302,24 @@ export type ReturnAuthorizationsControllerRaiseReplacementV1Responses = {
 
 export type ReturnAuthorizationsControllerRaiseReplacementV1Response =
   ReturnAuthorizationsControllerRaiseReplacementV1Responses[keyof ReturnAuthorizationsControllerRaiseReplacementV1Responses];
+
+export type ReturnAuthorizationDocumentsControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    download?: '1';
+  };
+  url: '/v1/return-authorizations/{id}/pdf';
+};
+
+export type ReturnAuthorizationDocumentsControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type ReturnAuthorizationDocumentsControllerPdfV1Response =
+  ReturnAuthorizationDocumentsControllerPdfV1Responses[keyof ReturnAuthorizationDocumentsControllerPdfV1Responses];
 
 export type InvoicesControllerListV1Data = {
   body?: never;
@@ -5308,6 +5435,24 @@ export type InvoicesControllerUpdateV1Responses = {
 
 export type InvoicesControllerUpdateV1Response =
   InvoicesControllerUpdateV1Responses[keyof InvoicesControllerUpdateV1Responses];
+
+export type InvoicesControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    download?: '1';
+  };
+  url: '/v1/invoices/{id}/pdf';
+};
+
+export type InvoicesControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type InvoicesControllerPdfV1Response =
+  InvoicesControllerPdfV1Responses[keyof InvoicesControllerPdfV1Responses];
 
 export type InvoicesControllerUpdateLineV1Data = {
   body: UpdateInvoiceLineDto;
@@ -5457,6 +5602,43 @@ export type CreditNotesControllerGetV1Responses = {
 export type CreditNotesControllerGetV1Response =
   CreditNotesControllerGetV1Responses[keyof CreditNotesControllerGetV1Responses];
 
+export type CreditNotesControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    download?: '1';
+  };
+  url: '/v1/credit-notes/{id}/pdf';
+};
+
+export type CreditNotesControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type CreditNotesControllerPdfV1Response =
+  CreditNotesControllerPdfV1Responses[keyof CreditNotesControllerPdfV1Responses];
+
+export type ProFormaControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    taxCodeId?: string;
+    download?: '1';
+  };
+  url: '/v1/orders/{id}/pro-forma';
+};
+
+export type ProFormaControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type ProFormaControllerPdfV1Response =
+  ProFormaControllerPdfV1Responses[keyof ProFormaControllerPdfV1Responses];
+
 export type RecentControllerClearV1Data = {
   body?: never;
   path?: never;
@@ -5544,6 +5726,38 @@ export type LocationsControllerUpdateV1Responses = {
 
 export type LocationsControllerUpdateV1Response =
   LocationsControllerUpdateV1Responses[keyof LocationsControllerUpdateV1Responses];
+
+export type LocationsControllerRemoveAddressV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/locations/{id}/address';
+};
+
+export type LocationsControllerRemoveAddressV1Responses = {
+  204: void;
+};
+
+export type LocationsControllerRemoveAddressV1Response =
+  LocationsControllerRemoveAddressV1Responses[keyof LocationsControllerRemoveAddressV1Responses];
+
+export type LocationsControllerSetAddressV1Data = {
+  body: SiteAddressDto;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/locations/{id}/address';
+};
+
+export type LocationsControllerSetAddressV1Responses = {
+  204: void;
+};
+
+export type LocationsControllerSetAddressV1Response =
+  LocationsControllerSetAddressV1Responses[keyof LocationsControllerSetAddressV1Responses];
 
 export type CostsControllerStockValuationV1Data = {
   body?: never;

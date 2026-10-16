@@ -225,6 +225,12 @@ export function OrdersPage() {
                 <TableRow>
                   <TableCell>
                     {intl.formatMessage({
+                      id: 'orders.number',
+                      defaultMessage: 'Number',
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage({
                       id: 'orders.partner',
                       defaultMessage: 'Partner',
                     })}
@@ -265,11 +271,13 @@ export function OrdersPage() {
               <TableBody>
                 {items.map((order) => (
                   <TableRow key={order.id} hover>
+                    {/* Ours, which every order has (ADR-071): the link. */}
                     <TableCell>
                       <Link component={RouterLink} to={`/orders/${order.id}`}>
-                        {order.partnerName}
+                        {order.number}
                       </Link>
                     </TableCell>
+                    <TableCell>{order.partnerName}</TableCell>
 
                     {/* Which way the goods go, in a person's words — the first
                       thing anyone scanning this list wants to know. */}

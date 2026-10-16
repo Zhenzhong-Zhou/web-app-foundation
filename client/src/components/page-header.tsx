@@ -44,7 +44,6 @@ interface Crumb {
 export function PageHeader({
   crumbs,
   title,
-  titleTo,
   subtitle,
   status,
   actions,
@@ -52,8 +51,6 @@ export function PageHeader({
   /** Ancestors only, nearest last. The current page comes from `title`. */
   crumbs: Crumb[];
   title: string;
-  /** When the title itself points somewhere — an order's partner, say. */
-  titleTo?: string;
   subtitle?: ReactNode;
   status?: { label: string; color: ChipProps['color'] };
   actions?: ReactNode;
@@ -173,20 +170,7 @@ export function PageHeader({
             component="h1"
             sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
           >
-            {titleTo ? (
-              // underline="hover" and inherited colour: MUI underlines links
-              // always, which makes a heading read as body text.
-              <Link
-                component={RouterLink}
-                to={titleTo}
-                underline="hover"
-                color="inherit"
-              >
-                {title}
-              </Link>
-            ) : (
-              title
-            )}
+            {title}
           </Typography>
 
           {status && (

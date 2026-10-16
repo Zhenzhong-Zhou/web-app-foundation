@@ -182,7 +182,8 @@ export class RecentService {
         return tx
           .select({
             id: orders.id,
-            title: orders.reference,
+            // Ours, which every order has (ADR-071).
+            title: orders.number,
             detail: partners.name,
           })
           .from(orders)

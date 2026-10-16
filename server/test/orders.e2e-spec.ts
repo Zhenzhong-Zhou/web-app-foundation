@@ -17,6 +17,7 @@ import {
   addViewer,
   body,
   createE2eApp,
+  createLocation,
   createVariant,
   registerOrganization,
 } from './utils/fixtures';
@@ -161,6 +162,32 @@ describe('Orders (e2e)', () => {
       // Snapshotted, so a rename affects the catalogue and nothing historical
       // (ADR-023).
       expect(order.lines[0].sku).toBe('WIDGET-1');
+    });
+
+    it('numbers each order as it is created, a series per direction (ADR-071)', async () => {
+      const ctx = await setup('alpha');
+      const created = async (direction: 'sale' | 'purchase') =>
+        body<{ order: { id: string; number: string } }>(
+          await ctx.agent
+            .post('/v1/orders')
+            .send({ ...purchase(ctx.partnerId, ctx.variant.id), direction })
+            .expect(201),
+        ).order;
+
+      const first = await created('purchase');
+      const second = await created('purchase');
+      const sale = await created('sale');
+      expect([first.number, second.number, sale.number]).toEqual([
+        'PO-000001',
+        'PO-000002',
+        'SO-000001',
+      ]);
+
+      // Found by it, beside the reference and the partner's name.
+      const found = body<{ entries: { id: string }[] }>(
+        await ctx.agent.get('/v1/orders?search=PO-000002').expect(200),
+      ).entries;
+      expect(found.map((order) => order.id)).toEqual([second.id]);
     });
 
     it('rejects an order with no lines', async () => {
@@ -690,6 +717,139 @@ describe('Orders (e2e)', () => {
         .patch(`/v1/orders/${order.id}/lines/${order.lines[0].id}`)
         .send({ quantityOrdered: '5', unitPrice: '8', currency: 'CAD' })
         .expect(204);
+    });
+  });
+
+  describe('Deliver to (ADR-071, amended)', () => {
+    type Ctx = Awaited<ReturnType<typeof setup>>;
+
+    async function raise(ctx: Ctx, over: Record<string, unknown> = {}) {
+      return body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post('/v1/orders')
+          .send({ ...purchase(ctx.partnerId, ctx.variant.id), ...over })
+          .expect(201),
+      ).order;
+    }
+
+    async function deliverTo(ctx: Ctx, orderId: string) {
+      return body<{ deliverTo: { id: string; name: string } | null }>(
+        await ctx.agent.get(`/v1/orders/${orderId}`).expect(200),
+      ).deliverTo;
+    }
+
+    it('is the only site when there is one, and chosen among several', async () => {
+      const ctx = await setup('alpha');
+
+      const first = await raise(ctx);
+      expect(await deliverTo(ctx, first.id)).toEqual({
+        id: ctx.locationId,
+        name: 'Main',
+      });
+      // None, said so, is none even then: it prints the registered address.
+      const none = await raise(ctx, { deliverToId: null });
+      expect(await deliverTo(ctx, none.id)).toBeNull();
+
+      // With two, guessing would send goods to the wrong building.
+      const burnaby = await createLocation(ctx.agent, {
+        type: 'site',
+        name: 'Burnaby warehouse',
+      });
+      const unchosen = await raise(ctx);
+      expect(await deliverTo(ctx, unchosen.id)).toBeNull();
+
+      const chosen = await raise(ctx, { deliverToId: burnaby });
+      expect(await deliverTo(ctx, chosen.id)).toEqual({
+        id: burnaby,
+        name: 'Burnaby warehouse',
+      });
+
+      // A duplicate keeps the site while it is in use.
+      const copy = body<{ order: OrderResponse }>(
+        await ctx.agent
+          .post(`/v1/orders/${chosen.id}/duplicate`)
+          .send({})
+          .expect(201),
+      ).order;
+      expect(await deliverTo(ctx, copy.id)).toEqual({
+        id: burnaby,
+        name: 'Burnaby warehouse',
+      });
+    });
+
+    it('refuses a sale, a place inside a site, and another organization’s or a retired site', async () => {
+      const ctx = await setup('alpha');
+      const beta = await setup('beta');
+      const bin = await createLocation(ctx.agent, {
+        type: 'bin',
+        name: 'Bin 1',
+        parentId: ctx.locationId,
+      });
+      const retired = await createLocation(ctx.agent, {
+        type: 'site',
+        name: 'Old depot',
+      });
+      await ctx.agent
+        .patch(`/v1/locations/${retired}`)
+        .send({ isActive: false })
+        .expect(204);
+
+      const send = (over: Record<string, unknown>) =>
+        ctx.agent
+          .post('/v1/orders')
+          .send({ ...purchase(ctx.partnerId, ctx.variant.id), ...over });
+
+      await send({ direction: 'sale', deliverToId: ctx.locationId }).expect(
+        400,
+      );
+      await send({ deliverToId: bin }).expect(400);
+      await send({ deliverToId: beta.locationId }).expect(400);
+      // Retired, with what to do about it.
+      const refused = await send({ deliverToId: retired }).expect(409);
+      expect(body<{ message: string }>(refused).message).toBe(
+        'Old depot is retired. Choose a site still in use, or put it back in use in Locations.',
+      );
+
+      expect(await db.select().from(orders)).toHaveLength(0);
+    });
+
+    it('changes until the goods are in, and the change is audited', async () => {
+      const ctx = await setup('alpha');
+      const burnaby = await createLocation(ctx.agent, {
+        type: 'site',
+        name: 'Burnaby warehouse',
+      });
+      const order = await raise(ctx, { deliverToId: ctx.locationId });
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ deliverToId: burnaby })
+        .expect(204);
+      expect(await deliverTo(ctx, order.id)).toMatchObject({ id: burnaby });
+
+      const [entry] = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.action, 'order.updated'));
+      expect(entry.payload).toEqual({
+        deliverToId: { from: ctx.locationId, to: burnaby },
+      });
+
+      // None: the purchase order prints the registered address.
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ deliverToId: null })
+        .expect(204);
+      expect(await deliverTo(ctx, order.id)).toBeNull();
+
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'cancelled' })
+        .expect(204);
+      await ctx.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ deliverToId: burnaby })
+        .expect(409);
     });
   });
 

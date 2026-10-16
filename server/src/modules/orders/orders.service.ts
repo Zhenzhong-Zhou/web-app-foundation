@@ -10,6 +10,7 @@ import {
   creditNotes,
   invoiceLines,
   invoices,
+  locations,
   orderLines,
   orderReturns,
   orders,
@@ -110,10 +111,11 @@ export class OrdersService {
       if (query.direction) scope.push(eq(orders.direction, query.direction));
       // By expected date (ADR-057); an order without one is left out.
       scope.push(...calendarRange(orders.expectedAt, query));
-      // Its reference or its partner's name (ADR-056).
+      // Its number, its reference or its partner's name (ADR-056, ADR-071).
       if (query.search) {
         const terms = searchTerms(query.search);
         const match = or(
+          codeMatches(orders.number, terms),
           codeMatches(orders.reference, terms),
           partnerMatches(orders.partnerId, terms),
         );
@@ -129,6 +131,7 @@ export class OrdersService {
       const rows = await tx
         .select({
           id: orders.id,
+          number: orders.number,
           partnerId: orders.partnerId,
           partnerName: partners.name,
           direction: orders.direction,
@@ -181,6 +184,7 @@ export class OrdersService {
       const [order] = await tx
         .select({
           id: orders.id,
+          number: orders.number,
           partnerId: orders.partnerId,
           partnerName: partners.name,
           direction: orders.direction,
@@ -190,6 +194,8 @@ export class OrdersService {
           expectedAt: orders.expectedAt,
           note: orders.note,
           duplicatedFromId: orders.duplicatedFromId,
+          deliverToId: orders.deliverToId,
+          deliverToName: locations.name,
 
           /**
            * True when no line is short. `bool_and` over zero lines returns
@@ -365,6 +371,8 @@ export class OrdersService {
         })
         .from(orders)
         .innerJoin(partners, eq(partners.id, orders.partnerId))
+        // Left: a sale, and a purchase nobody chose a site for, have none.
+        .leftJoin(locations, eq(locations.id, orders.deliverToId))
         .where(
           and(
             eq(orders.id, orderId),
@@ -572,6 +580,8 @@ export class OrdersService {
         shipmentCount,
         voidedShipmentCount,
         returnCount,
+        deliverToId,
+        deliverToName,
         ...rest
       } = order;
       const sale = order.direction === 'sale' && !order.isSample;
@@ -580,6 +590,10 @@ export class OrdersService {
       // does: read by a person, not kept as a record.
       return {
         ...rest,
+        deliverTo:
+          deliverToId && deliverToName
+            ? { id: deliverToId, name: deliverToName }
+            : null,
         money: sale
           ? {
               // One currency per sale (ADR-046 amendment): the totals' one.

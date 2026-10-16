@@ -180,7 +180,8 @@ export class LookupService {
           tx
             .select({
               id: orders.id,
-              title: sql<string>`coalesce(${orders.reference}, ${partners.name})`,
+              // Ours, which every order has (ADR-071).
+              title: orders.number,
               detail: partners.name,
               status: orders.status,
               expiresAt: NONE.expiresAt,
@@ -197,10 +198,12 @@ export class LookupService {
                 // both halves stay on orders and indexed (partner-search).
                 close
                   ? or(
+                      closeMatches(orders.number, terms),
                       closeMatches(orders.reference, terms),
                       partnerMatches(orders.partnerId, terms, 'close'),
                     )
                   : or(
+                      codeMatches(orders.number, terms),
                       codeMatches(orders.reference, terms),
                       partnerMatches(orders.partnerId, terms),
                     ),
@@ -210,11 +213,11 @@ export class LookupService {
               ...(close
                 ? [
                     desc(
-                      sql`greatest(${closeness(orders.reference, terms)}, ${closeness(partners.name, terms, 'name')})`,
+                      sql`greatest(${closeness(orders.number, terms)}, ${closeness(orders.reference, terms)}, ${closeness(partners.name, terms, 'name')})`,
                     ),
                   ]
                 : [
-                    sql`least(${matchRank(orders.reference, terms)}, ${matchRank(partners.name, terms, 'name')})`,
+                    sql`least(${matchRank(orders.number, terms)}, ${matchRank(orders.reference, terms)}, ${matchRank(partners.name, terms, 'name')})`,
                   ]),
               desc(orders.id),
             )

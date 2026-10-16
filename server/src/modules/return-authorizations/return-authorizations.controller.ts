@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -24,6 +25,7 @@ import type {
   ReturnAuthorizationEnvelope,
   ReturnAuthorizationPage,
 } from './dto/return-authorization-response.dto';
+import { UpdateReturnAuthorizationDto } from './dto/update-return-authorization.dto';
 import { ReturnAuthorizationReceiptsService } from './return-authorization-receipts.service';
 import { ReturnAuthorizationReplacementsService } from './return-authorization-replacements.service';
 import { ReturnAuthorizationsService } from './return-authorizations.service';
@@ -69,7 +71,7 @@ export class ReturnAuthorizationsController {
     resourceId: (response: { returnAuthorization: { id: string } }) =>
       response.returnAuthorization.id,
     // Not the reason or note: free text stays on the document (ADR-018).
-    fields: ['orderId', 'invoiceId', 'expectsGoods', 'lines'],
+    fields: ['orderId', 'invoiceId', 'expectsGoods', 'sendBackToId', 'lines'],
   })
   async create(
     @Body() dto: CreateReturnAuthorizationDto,
@@ -77,6 +79,27 @@ export class ReturnAuthorizationsController {
   ): Promise<ReturnAuthorizationEnvelope> {
     const created = await this.rmas.create(dto, user.userId);
     return { returnAuthorization: await this.rmas.findById(created.id) };
+  }
+
+  /**
+   * Where the goods come back to (ADR-071, amended): the one thing on an
+   * RMA that changes after it is raised. A PATCH, unlike cancel and close:
+   * it edits a field rather than recording an event.
+   */
+  @Patch(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(PERMISSIONS.RETURN_AUTHORIZATIONS_UPDATE)
+  @Audited({
+    action: AUDIT_ACTIONS.RETURN_AUTHORIZATION_UPDATED,
+    resourceType: 'return_authorization',
+    resourceId: (_response, request) => request.params.id,
+    fields: ['sendBackToId'],
+  })
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateReturnAuthorizationDto,
+  ): Promise<void> {
+    await this.rmas.update(id, dto);
   }
 
   @Post(':id/cancel')

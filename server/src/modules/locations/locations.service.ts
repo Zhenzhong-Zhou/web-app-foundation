@@ -5,15 +5,17 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, asc, eq, gt } from 'drizzle-orm';
+import { and, asc, eq, gt, isNotNull } from 'drizzle-orm';
 
 import { isUniqueViolation } from '../../database/errors';
-import { locations, stockLevels } from '../../database/schema';
+import { addresses, locations, stockLevels } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { CreateLocationDto } from './dto/create-location.dto';
-import type { Location } from './dto/location-response.dto';
+import type { Location, SiteAddress } from './dto/location-response.dto';
+import type { SiteAddressDto } from './dto/site-address.dto';
 import type { UpdateLocationDto } from './dto/update-location.dto';
+import { assertAddressable } from './sites';
 
 /** A tree this deep is a data-entry mistake, not a warehouse. */
 const MAX_DEPTH = 10;
@@ -32,10 +34,91 @@ export class LocationsService {
    * picker on the create form.
    */
   async list(): Promise<Location[]> {
-    const rows = await this.tenantDb.select(locations, undefined, {
-      orderBy: asc(locations.name),
+    const [rows, siteAddresses] = await Promise.all([
+      this.tenantDb.select(locations, undefined, {
+        orderBy: asc(locations.name),
+      }),
+      this.tenantDb.select(
+        addresses,
+        and(isNotNull(addresses.locationId), eq(addresses.isDefault, true)),
+      ),
+    ]);
+    const addressOf = new Map(
+      siteAddresses.map((row) => [row.locationId, siteAddressOf(row)]),
+    );
+    return rows.map((row) => locationOf(row, addressOf.get(row.id) ?? null));
+  }
+
+  /**
+   * A site's address, created or replaced (ADR-071): one row per site,
+   * updated in place, sent whole as the registered address is. Only a site
+   * has one; a zone, an aisle, a shelf or a bin is at its site's.
+   */
+  async setAddress(locationId: string, input: SiteAddressDto): Promise<void> {
+    await this.tenantDb.transaction(async (tx, organizationId) => {
+      await assertAddressable(tx, organizationId, locationId);
+
+      const fields = {
+        line1: input.line1,
+        line2: input.line2 ?? null,
+        city: input.city ?? null,
+        region: input.region ?? null,
+        postalCode: input.postalCode ?? null,
+        country: input.country,
+      };
+      const [existing] = await tx
+        .select({ id: addresses.id })
+        .from(addresses)
+        .where(
+          and(
+            eq(addresses.organizationId, organizationId),
+            eq(addresses.locationId, locationId),
+            eq(addresses.isDefault, true),
+          ),
+        );
+
+      if (existing) {
+        await tx
+          .update(addresses)
+          .set(fields)
+          .where(
+            and(
+              eq(addresses.organizationId, organizationId),
+              eq(addresses.id, existing.id),
+            ),
+          );
+      } else {
+        await tx.insert(addresses).values({
+          ...fields,
+          organizationId,
+          locationId,
+          isShipping: true,
+          isDefault: true,
+        });
+      }
     });
-    return rows.map(locationOf);
+
+    this.logger.log(`Location ${locationId} address set`);
+  }
+
+  /**
+   * A site's address removed: its documents fall back to the registered.
+   * Refused as setting one is, so an id from elsewhere is a 404, not a
+   * removal of nothing recorded against it.
+   */
+  async removeAddress(locationId: string): Promise<void> {
+    await this.tenantDb.transaction(async (tx, organizationId) => {
+      await assertAddressable(tx, organizationId, locationId);
+      await tx
+        .delete(addresses)
+        .where(
+          and(
+            eq(addresses.organizationId, organizationId),
+            eq(addresses.locationId, locationId),
+          ),
+        );
+    });
+    this.logger.log(`Location ${locationId} address removed`);
   }
 
   async create(input: CreateLocationDto): Promise<Location> {
@@ -58,7 +141,8 @@ export class LocationsService {
         .returning();
 
       this.logger.log(`Location ${location.id} created`);
-      return locationOf(location);
+      // A new location has no address yet.
+      return locationOf(location, null);
     } catch (error) {
       if (isUniqueViolation(error)) {
         // Codes are unique within a parent, not globally: Bin 5 in two aisles
@@ -235,7 +319,10 @@ export class LocationsService {
  * A location as the API returns it (ADR-068): the tree's fields, not the
  * row, which would also send the organization it belongs to.
  */
-function locationOf(row: Location): Location {
+function locationOf(
+  row: Omit<Location, 'address'>,
+  address: SiteAddress | null,
+): Location {
   return {
     id: row.id,
     type: row.type,
@@ -244,5 +331,17 @@ function locationOf(row: Location): Location {
     parentId: row.parentId,
     isAvailable: row.isAvailable,
     isActive: row.isActive,
+    address,
+  };
+}
+
+function siteAddressOf(row: SiteAddress): SiteAddress {
+  return {
+    line1: row.line1,
+    line2: row.line2,
+    city: row.city,
+    region: row.region,
+    postalCode: row.postalCode,
+    country: row.country,
   };
 }

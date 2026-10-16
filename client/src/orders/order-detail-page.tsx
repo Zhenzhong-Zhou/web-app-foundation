@@ -22,6 +22,7 @@ import { HistoryEntries } from '../audit/history-entries';
 import { useCan } from '../auth/permissions';
 import { DetailLayout } from '../components/detail-layout';
 import { PageHeader } from '../components/page-header';
+import { PdfActions } from '../components/pdf-actions';
 import { LoadFailure } from '../errors/load-failure';
 import { api, messageFor } from '../lib/api';
 import type { OrderStatus } from '../lib/api-names';
@@ -43,6 +44,7 @@ import { OrderDocuments } from './order-documents';
 import { OrderLinesSection } from './order-lines-section';
 import { OrderStatusActions } from './order-status-actions';
 import { OrderSummary } from './order-summary';
+import { ProFormaDialog } from './pro-forma-dialog';
 import { ReceiveLineDialog } from './receive-line-dialog';
 import { ReturnOrderDialog } from './return-order-dialog';
 import { ReturnsList } from './returns-list';
@@ -78,6 +80,7 @@ export function OrderDetailPage() {
   const [working, setWorking] = useState(false);
   const [closing, setClosing] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
+  const [makingProForma, setMakingProForma] = useState(false);
   const [addingLine, setAddingLine] = useState(false);
   const [editingLine, setEditingLine] = useState<OrderLine | null>(null);
   const [closingLine, setClosingLine] = useState<OrderLine | null>(null);
@@ -362,6 +365,34 @@ export function OrderDetailPage() {
           </Button>
         )}
       </Box>
+      {/* The order's own document (ADR-071): a purchase order to send the
+          supplier, or a sale's pro forma. A sample has no prices and a
+          cancelled sale nothing to value, so neither is offered one. */}
+      {order.direction === 'purchase' ? (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(0, 1fr))',
+            gap: 1,
+          }}
+        >
+          <PdfActions path={`/orders/${order.id}/pdf`} />
+        </Box>
+      ) : (
+        !order.isSample &&
+        order.status !== 'cancelled' && (
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={openDialog(() => setMakingProForma(true))}
+          >
+            {intl.formatMessage({
+              id: 'orders.proForma.action',
+              defaultMessage: 'Pro forma invoice',
+            })}
+          </Button>
+        )
+      )}
       {canUpdate && (
         <OrderStatusActions
           order={order}
@@ -387,10 +418,8 @@ export function OrderDetailPage() {
             to: '/orders',
           },
         ]}
-        // The order's own number when it has one, which is what people
-        // quote; the partner's name for an order placed by phone without.
-        title={order.reference ?? order.partnerName}
-        titleTo={order.reference ? undefined : `/partners/${order.partnerId}`}
+        // Ours, which every order has and people quote (ADR-071).
+        title={order.number}
         status={{
           // What the order is, by name, rather than relying on CSS
           // capitalisation of the stored status; its tone from the one
@@ -426,17 +455,22 @@ export function OrderDetailPage() {
             ]
               .filter(Boolean)
               .join(SEPARATOR)}
-            {/* The partner, linked, when the reference is the title: the
-                one name on the page that leads to its other orders. */}
+            {/* The partner, linked: the one name on the page that leads to
+                its other orders. Then their reference, when they gave one. */}
+            {SEPARATOR}
+            <Link component={RouterLink} to={`/partners/${order.partnerId}`}>
+              {order.partnerName}
+            </Link>
             {order.reference && (
               <>
                 {SEPARATOR}
-                <Link
-                  component={RouterLink}
-                  to={`/partners/${order.partnerId}`}
-                >
-                  {order.partnerName}
-                </Link>
+                {intl.formatMessage(
+                  {
+                    id: 'orders.subtitle.reference',
+                    defaultMessage: 'their reference {reference}',
+                  },
+                  { reference: order.reference },
+                )}
               </>
             )}
             {order.duplicatedFromId && (
@@ -612,9 +646,10 @@ export function OrderDetailPage() {
       {/* Keyed on the line, so the form is seeded at mount and never needs an
           effect to resync. */}
       <EditOrderDialog
-        key={`${order.id}-${order.reference ?? ''}-${order.expectedAt ?? ''}`}
+        key={`${order.id}-${order.reference ?? ''}-${order.expectedAt ?? ''}-${order.deliverTo?.id ?? ''}`}
         open={editing}
         order={order}
+        locations={locations}
         onClose={() => setEditing(false)}
         onSaved={load}
       />
@@ -636,6 +671,13 @@ export function OrderDetailPage() {
           setClosing(false);
           void moveTo('fulfilled');
         }}
+      />
+
+      <ProFormaDialog
+        key={makingProForma ? `pro-forma-${order.id}` : 'pro-forma-closed'}
+        open={makingProForma}
+        order={order}
+        onClose={() => setMakingProForma(false)}
       />
 
       <DuplicateOrderDialog
@@ -701,6 +743,7 @@ export function OrderDetailPage() {
         orderId={order.id}
         isSample={order.isSample}
         lines={order.lines}
+        locations={locations}
         canViewInvoices={canViewInvoices}
         onClose={() => setAuthorizing(false)}
       />

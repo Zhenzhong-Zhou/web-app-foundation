@@ -20,7 +20,12 @@ import { type SubmitEvent, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
-import type { InvoicePage, InvoiceSummary, OrderLine } from '../api/types.gen';
+import type {
+  InvoicePage,
+  InvoiceSummary,
+  Location,
+  OrderLine,
+} from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
@@ -31,6 +36,7 @@ import {
   toApiDecimal,
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
+import { SiteSelect } from '../locations/site-select';
 import { resolutionLabel, RESOLUTIONS } from './rma-labels';
 
 /**
@@ -56,6 +62,7 @@ export function RaiseRmaDialog({
   orderId,
   isSample,
   lines,
+  locations,
   canViewInvoices,
   onClose,
 }: {
@@ -64,6 +71,8 @@ export function RaiseRmaDialog({
   isSample: boolean;
   /** The order's lines; only those that shipped are offered. */
   lines: OrderLine[];
+  /** The organization's locations, for Send back to; sites are offered. */
+  locations: Location[];
   canViewInvoices: boolean;
   onClose: () => void;
 }) {
@@ -76,6 +85,8 @@ export function RaiseRmaDialog({
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [expectsGoods, setExpectsGoods] = useState(true);
+  // Empty: where the goods shipped from, worked out by the server (ADR-071).
+  const [sendBackTo, setSendBackTo] = useState('');
   const [invoiceId, setInvoiceId] = useState('');
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
   const [quantities, setQuantities] = useState<Record<string, string>>({});
@@ -159,6 +170,8 @@ export function RaiseRmaDialog({
           orderId,
           reason,
           expectsGoods,
+          // Only where goods come back; the server refuses it otherwise.
+          sendBackToId: expectsGoods && sendBackTo ? sendBackTo : undefined,
           invoiceId: invoiceId || undefined,
           note: note.trim() || undefined,
           lines: sending,
@@ -355,6 +368,28 @@ export function RaiseRmaDialog({
                     'Told to keep or destroy them: credit then follows what is authorized here, since no box will arrive to be received.',
                 })}
               </Typography>
+            )}
+
+            {expectsGoods && (
+              <SiteSelect
+                id="rma-send-back-to"
+                label={intl.formatMessage({
+                  id: 'rmas.sendBackTo',
+                  defaultMessage: 'Send back to',
+                })}
+                value={sendBackTo}
+                onChange={setSendBackTo}
+                locations={locations}
+                emptyLabel={intl.formatMessage({
+                  id: 'rmas.sendBackTo.shippedFrom',
+                  defaultMessage: 'Where the goods shipped from',
+                })}
+                emptyHelp={intl.formatMessage({
+                  id: 'rmas.sendBackTo.shippedFromHelp',
+                  defaultMessage:
+                    'The site they left from, or your one site. It can be changed on the RMA.',
+                })}
+              />
             )}
 
             {!isSample && canViewInvoices && (

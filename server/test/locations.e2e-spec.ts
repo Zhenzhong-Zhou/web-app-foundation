@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
@@ -5,7 +7,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { locations } from '../src/database/schema';
+import { auditLog, locations } from '../src/database/schema';
 import {
   addViewer,
   body,
@@ -22,6 +24,14 @@ interface LocationResponse {
   parentId: string | null;
   isAvailable: boolean;
   isActive: boolean;
+  address: {
+    line1: string;
+    line2: string | null;
+    city: string | null;
+    region: string | null;
+    postalCode: string | null;
+    country: string;
+  } | null;
 }
 
 /**
@@ -369,6 +379,97 @@ describe('Locations (e2e)', () => {
         .patch(`/v1/locations/${theirs.id}`)
         .send({ name: 'Hijacked' })
         .expect(404);
+    });
+  });
+
+  describe('a site’s address (ADR-071)', () => {
+    const ADDRESS = {
+      line1: '42 Production Way',
+      city: 'Burnaby',
+      region: 'BC',
+      postalCode: 'V5J 4R1',
+      country: 'ca',
+    };
+
+    it('is set, read with the site, replaced whole, and removed', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const site = await create(alpha.agent, {
+        type: 'site',
+        name: 'Burnaby warehouse',
+      });
+      const addressOf = async () =>
+        body<LocationResponse[]>(
+          await alpha.agent.get('/v1/locations').expect(200),
+        ).find((each) => each.id === site.id)?.address;
+
+      expect(site.address).toBeNull();
+      await alpha.agent
+        .put(`/v1/locations/${site.id}/address`)
+        .send(ADDRESS)
+        .expect(204);
+      expect(await addressOf()).toEqual({
+        line1: '42 Production Way',
+        line2: null,
+        city: 'Burnaby',
+        region: 'BC',
+        postalCode: 'V5J 4R1',
+        country: 'CA',
+      });
+
+      // Sent whole, as the registered address is: what is left out goes.
+      await alpha.agent
+        .put(`/v1/locations/${site.id}/address`)
+        .send({ line1: '7 Dock Rd', country: 'CA' })
+        .expect(204);
+      expect(await addressOf()).toMatchObject({
+        line1: '7 Dock Rd',
+        city: null,
+      });
+
+      await alpha.agent.delete(`/v1/locations/${site.id}/address`).expect(204);
+      expect(await addressOf()).toBeNull();
+    });
+
+    it('belongs to a site alone, and to its own organization', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const beta = await registerOrganization(app, 'beta');
+      const site = await create(alpha.agent, { type: 'site', name: 'Main' });
+      const bin = await create(alpha.agent, {
+        type: 'bin',
+        name: 'Bin 1',
+        parentId: site.id,
+      });
+
+      await alpha.agent
+        .put(`/v1/locations/${bin.id}/address`)
+        .send(ADDRESS)
+        .expect(400);
+      await beta.agent
+        .put(`/v1/locations/${site.id}/address`)
+        .send(ADDRESS)
+        .expect(404);
+
+      // Removing asks the same: a site of this organization, or nothing
+      // is removed and nothing recorded.
+      await alpha.agent
+        .put(`/v1/locations/${site.id}/address`)
+        .send(ADDRESS)
+        .expect(204);
+      await beta.agent.delete(`/v1/locations/${site.id}/address`).expect(404);
+      await alpha.agent.delete(`/v1/locations/${bin.id}/address`).expect(400);
+      await alpha.agent
+        .delete(`/v1/locations/${randomUUID()}/address`)
+        .expect(404);
+      const [kept] = body<LocationResponse[]>(
+        await alpha.agent.get('/v1/locations').expect(200),
+      ).filter((each) => each.id === site.id);
+      expect(kept.address).toMatchObject({ line1: '42 Production Way' });
+      expect(
+        await db
+          .select({ id: auditLog.id })
+          .from(auditLog)
+          .where(eq(auditLog.action, 'location.updated')),
+      ).toHaveLength(1);
     });
   });
 

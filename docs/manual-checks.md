@@ -218,7 +218,7 @@ second organization.
   says to add one; under it, "Open {customer} to add one" opens the
   customer's page. Add a billing address there, go Back and issue: it goes
   through.
-- **MC-703** The printed invoice: amounts rounded to the currency, tax per
+- **MC-703** The invoice's PDF: amounts rounded to the currency, tax per
   component, the registered address and tax number.
 - **MC-704** Void an issued invoice: a full credit note is issued, and the
   shipment can be invoiced again.
@@ -381,18 +381,18 @@ folder by folder; these check what is already in place.
   invoices: checking and unchecking back leaves Save off; checking 简体中文
   and saving survives a reload. A role without organizations.update sees
   both sections but cannot save them.
-- **MC-1412** Printed documents follow the customer, not the reader.
-  With the screens in English, a partner set to Français then English:
-  ship, print the packing slip — every heading reads "French / English"
-  at the same size, figures once with a decimal comma, the unit named in
-  both. Invoice it: the draft's printout is already French and English,
-  with no item names in French yet; issue it with a French name on one
-  product, and the printed line shows the French name and the English
+- **MC-1412** Documents follow the customer, not the reader. With the
+  screens in English, a partner set to Français then English: ship, open
+  the shipment's Packing slip — every heading in the PDF reads "French /
+  English" at the same size, figures once with a decimal comma, the unit
+  named in both. Invoice it: the draft's PDF is already French and
+  English, with no item names in French yet; issue it with a French name
+  on one product, and its line shows the French name and the English
   under it at the same weight, the other product's name once. Credit it,
   change the partner to 简体中文 alone, and print the credit note: still
   French and English, as its invoice was. A partner in 简体中文 alone
-  prints Chinese only, glyphs Chinese rather than Japanese forms. Paper
-  shows no Back link or Print button, in any language.
+  prints Chinese only, glyphs Chinese rather than Japanese forms. A PDF
+  holds the document only, nothing of the app, in any language.
 - **MC-1413** Signed out, in 简体中文, sign in with a wrong password: the
   banner reads 邮箱或密码错误。请检查后重试。, not English; in Français,
   Courriel ou mot de passe invalide. Vérifiez les deux et réessayez. Signed
@@ -453,11 +453,13 @@ folder by folder; these check what is already in place.
       edit and close-short dialogs; receiving a line, shipping with its lot
       preview, the shipments and returns on an order, voiding a shipment,
       taking a return with its reasons, and linking a return to an RMA. The
-      packing slip stays English until printed documents (step 5);
+      packing slip is a PDF in the customer's languages, not the
+      reader's (MC-2501);
   - invoices: the list with its status tabs, an invoice with its lines,
       totals, parties and credit notes, the draft's details and tax code,
       the line, issue, void, credit and delete dialogs, and a credit note's
-      page. The printed invoice and credit note stay English until step 5;
+      page. The invoice's and the credit note's PDFs are in the customer's
+      languages instead (MC-2501);
   - returns: the RMA list with its status tabs, raising an RMA with each
       line's resolution by name, an RMA's page with closing, cancelling,
       linking a return and raising a replacement;
@@ -495,11 +497,10 @@ folder by folder; these check what is already in place.
 The screens are being redesigned in steps; these check what is in place.
 Paper is checked first because it must not change at all.
 
-- **MC-1501** Open the demo's INV-000001 and choose Print, in light mode
-  and again in dark. On screen the document is a white sheet, padded, with
-  the app around it; the print preview is black on white with nothing of
-  the app, and reads exactly as it did before ADR-055. The packing slip
-  and the credit note the same.
+- **MC-1501** Open the demo's INV-000001 and press Print, in light mode
+  and again in dark: the PDF opens in a new tab, black on white with
+  nothing of the app, the same in both modes, with the layout ADR-055
+  approved (ADR-071). The packing slip and the credit note the same.
 - **MC-1502** In light and in dark, walk Inventory, SO-DEMO-1 and INV-000001.
   Every word is readable; the page is tinted and its panels white (dark grey in
   dark), with borders rather than shadows; table heads are tinted and quieter
@@ -633,8 +634,8 @@ Paper is checked first because it must not change at all.
   expiry chip and quick filter is readable, no panel shows a white edge, and
   the rail and top bar stay distinct from the page. accessibility.spec checks
   contrast in both modes; this is for what it cannot see.
-- **MC-1539** Dark mode, then print INV-000001: the printout is black on
-  white, as in light mode.
+- **MC-1539** Dark mode, then Print INV-000001: the PDF is black on white,
+  as in light mode; the app's theme never reaches a document.
 - **MC-1540** At 375px wide (a phone, or the browser's device toolbar): ☰
   opens the navigation, and choosing a page closes it. Inventory's filter row
   wraps onto two lines without scrolling sideways; its table scrolls inside
@@ -723,6 +724,8 @@ Paper is checked first because it must not change at all.
   Expires lists the soonest first; Movements, Production and Returns narrow by
   their date range; Products, Partners, a price list, Stock value and the
   Audit log each export, and the Audit log shows the export as an entry.
+  Orders' Created, Movements' When and the Audit log's When read like
+  `2026-10-15 18:54:11`, in UTC, and open as dates.
 - **MC-1559** Sign in as the demo owner: Home opens, greeting by the time of
   day, the sentence's counts matching the cards, red only on late or expired.
   Each card's See all opens its list showing the same number of rows. Switch
@@ -890,7 +893,7 @@ await fetch(`${api}/v1/files/product-image`, {
   everything and Close this organization; as an Admin or a Viewer, the tab
   ends at the registered address. Download everything saves
   `<organization>-export-<day>.zip` straight to disk. Opened: a README in
-  the browser's language; `organization.csv`, `members.csv`,
+  the language the app shows; `organization.csv`, `members.csv`,
   `role_permissions.csv` and a CSV per kind of record, each opening in
   Excel or Numbers with Chinese and French names readable; invoices and
   credit notes with their lines and tax; `files/` with the logo and
@@ -944,11 +947,118 @@ await fetch(`${api}/v1/files/product-image`, {
   dialog fits the screen with its buttons reachable. Show it to someone
   who reads only Chinese, and ask them to find how to cancel.
 
+## 25. Documents as PDF (ADR-071)
+
+- **MC-2501** Open an issued invoice and press Print: a new tab opens the
+  PDF in the browser's own viewer, and printing it from there gives the
+  same page on Chrome, Safari and Firefox. Back on the invoice, Download
+  PDF saves `INV-000001.pdf`. A credit note does the same, saving
+  `CN-000001.pdf`. On an order, a shipment's Packing slip opens its PDF in
+  a new tab, and Download PDF beside it saves
+  `packing-slip-<the day it shipped>-<id>.pdf`. A draft invoice's PDF says
+  DRAFT across every page, and its file is named `DRAFT …`. A line priced
+  at 0.0125 prints its unit price as $0.0125, not $0.01, on the invoice,
+  the credit note, the pro forma and the purchase order alike.
+- **MC-2502** *(#118)* With an invoice issued, another voided, a credit
+  note and a draft, use Download everything (Settings → Organization →
+  Profile). The ZIP has `documents/invoices/` with both issued invoices
+  and `documents/credit-notes/` with the credit note, each named by its
+  number and the same as Download PDF gives it; the draft is not there.
+  README.txt ends with a glossary, a line per column, in the language
+  the app shows, even on an English browser: switch the app to 简体中文 and
+  download again, and the README is Chinese. Open
+  `organization.csv` in Excel or Numbers: `created_at` reads like
+  `2026-10-16 03:31:59` and is taken as a date.
+- **MC-2503** *(ADR-071)* On a database that already had orders, after
+  `npm run migrate:all`: every order has a number, SO- for sales and PO-
+  for purchases, counting up from 000001 in the order they were made. A
+  new order takes the next one, a draft included, and a duplicated
+  order, or an RMA's replacement, takes its own. Type an order's number
+  in the lookup: it is found, titled by it. Home's recent records name an
+  order by its number, and the orders CSV starts with a Number column.
+  Orders lists the number first, as the link; an order's page is headed
+  by it, with the partner, linked, and their reference beneath.
+- **MC-2505** *(ADR-071)* Every place that names an order names it by its
+  number: Home's To ship and To receive, titled SO-… and PO-…, the
+  partner and their reference beneath; Invoices to issue, by the order's
+  number; an invoice's and an RMA's link to its order; a lot's trace,
+  where it came in and where it went; the audit log's entries for an
+  order, as `SO-000001 · Northside Pharmacy`; and the invoices CSV, whose
+  Order column holds the number, the reference beside it. A packing
+  slip's PDF says `Order SO-…` and, when they gave one, `Your order …`.
+- **MC-2506** *(ADR-071)* Locations: a site has an Address button, a zone
+  or a bin has none. Give the site an address: it shows on one line under
+  the site's name, and the audit log has the change. Open it again, clear
+  the city and save: the city is gone, as the dialog says it is sent
+  whole. Remove the address: the line goes. In 中文 the dialog reads
+  naturally.
+- **MC-2507** *(ADR-071)* Deliver to. With one site, raise a purchase:
+  Deliver to shows that site, with its address underneath, and the order's
+  summary says it. Raise another with Not chosen picked: its summary says
+  Registered address, not the site. Add a second site and raise another: Deliver to starts
+  at Not chosen and the summary says Registered address; choose a site and
+  its address shows, or that it has none and the document prints the
+  registered address. Edit order changes it on a draft or a confirmed
+  purchase, and the order's history shows the change; once the purchase
+  is received or cancelled, Edit order no longer offers it. A sale has
+  no Deliver to.
+- **MC-2508** *(ADR-071)* Send back to. Ship a sale from a bin inside a
+  site, then Authorize a return: Send back to starts at Where the goods
+  shipped from, and the new RMA says that site. Change it on the RMA:
+  the page and its history show the new site; choose Not chosen and it
+  says Registered address. Raise one with The customer is sending the
+  goods back unticked: there is no Send back to, on the dialog or the RMA.
+  Once the RMA is closed, Change is gone. In 中文 both read naturally.
+- **MC-2509** *(ADR-071)* The purchase order. On a purchase with one line
+  priced and one not, press Print: the PDF shows its number, Date, Deliver
+  by and Your reference, then From, To and Deliver to with the site's
+  address (or the registered address when the site has none). The unpriced
+  line is blank, a line asks for its price, and Total of priced lines says
+  Before tax. The box asks the supplier to quote the PO number, and Raised
+  by shows your name, job title and work phone, never your email; for a
+  supplier whose documents are in 中文, it reads 经办人：your name，job
+  title · phone, punctuated in Chinese. Download PDF saves `PO-….pdf`.
+  Cancel the order and print again: CANCELLED heads it.
+- **MC-2510** *(ADR-071)* The pro forma. On a priced sale, press Pro forma
+  invoice and choose a tax code: the PDF says Not a tax invoice where a
+  number would be, the order's number and Made today, its lines and tax as
+  the invoice would charge them, and the boxed note that nothing is owed.
+  The order's History shows Pro forma invoice made, with its total. Add a
+  line without a price: the dialog says which item to price and offers no
+  Print. As someone who cannot see tax codes, open it: it says so, rather
+  than quietly offering only No tax. A sample and a cancelled sale have no
+  Pro forma invoice button.
+  For a customer whose documents are in 中文 and English, every label and
+  item name is in both.
+- **MC-2511** *(ADR-071)* The RMA. Print an open RMA whose goods are
+  coming back: the box says to write its number on every box, the lines
+  say what happens to each with the key beneath, Raised by is there, and
+  the dashed label at the end shows Return to, the site and its address,
+  the number large, and From the customer. Print one where the customer
+  keeps the goods: the box says nothing needs to be sent back, and there
+  is no label. Close or cancel one whose goods were coming back and print
+  it again: no box points to a label, and there is none.
+- **MC-2512** *(ADR-071)* Every page's foot. On each of the six documents,
+  the foot of every page says what it is and its number, as Purchase
+  order · PO-000045, and Page 1 of 2. Add lines to an order until its
+  purchase order runs to a second page: both pages say so.
+- **MC-2504** *(ADR-071)* Settings → Organization → Documents has Paper
+  size, set to Automatic. With a Canadian registered address, an invoice's
+  PDF is Letter. Choose A4 and save: the invoice, a credit note, a packing
+  slip and the export's PDFs are all A4, an invoice issued before the
+  change included. Back to Automatic: Letter again. The audit log shows
+  each change. A member without organizations.update sees it read only.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R12** *(error page)* Make a page crash while you are on it (for
+  a developer: throw in a page's render), so it shows Something went
+  wrong. Press Go back: the page before shows. Crash it again, then choose
+  another page from the menu: that page shows, not the message. Go home
+  the same. Reload on the broken page still shows the message.
 - **MC-R11** *(#120)* On Account, Change password with a wrong current
   password: the refusal says to check it and try again, and the Current
   password field turns red; with VoiceOver, Tab back to it: it reads as
@@ -975,7 +1085,7 @@ first.
 - **MC-R08** *(#121)* On any signed-in page, press Tab once: "Skip to
   content" appears at the top left. Press Enter: the next Tab reaches the
   page's own first control, not the rail or the bar. A screen reader's
-  landmarks list a main region. The link never shows on paper.
+  landmarks list a main region.
 - **MC-R07** *(axe-core 4.14)* With VoiceOver on, Tab to your circle at the
   right of the top bar: it reads your initials first, then "signed in as"
   and your email, in English, French and Chinese. With Voice Control on,
@@ -1000,9 +1110,9 @@ first.
   answers late never shows the previous variant's recipe.
 - **MC-R03** *(v0.5 round 2)* The credit calculation was moved into
   `credit-amounts.ts`: MC-709 and MC-710 are its check.
-- **MC-R06** *(ADR-055)* Signed in with an unconfirmed email, print
-  an invoice: the "Confirm your email address" banner is on screen and not
-  on the paper or in the print preview.
+- **MC-R06** *(ADR-055)* Signed in with an unconfirmed email, Print an
+  invoice: the "Confirm your email address" banner is on screen and not in
+  the PDF, which the server draws from the invoice alone (ADR-071).
 
 ---
 
@@ -1139,3 +1249,30 @@ first.
   to the reset page (#120): MC-R11 rewritten.
 - 2026-10-15: Email me a reset link replaces the sign-out and reset page
   beside a refused password (#120): MC-R11 rewritten.
+- 2026-10-16: section 25, documents as PDF: Print and Download PDF
+  (ADR-071): MC-2501.
+- 2026-10-16: the export's documents, glossary and plainer times (#118,
+  ADR-071): MC-2502.
+- 2026-10-16: the export's README follows the app's language (#118):
+  MC-2502 extended.
+- 2026-10-16: orders numbered SO- and PO- (ADR-071, amended): MC-2503.
+- 2026-10-16: the order's number heads its page and leads the list
+  (ADR-071): MC-2503 extended.
+- 2026-10-16: each organization's paper size (ADR-071): MC-2504.
+- 2026-10-16: every CSV writes its times as a spreadsheet opens them
+  (ADR-057, amended): MC-1558 extended.
+- 2026-10-16: an order named by its number wherever it appears (ADR-071):
+  MC-2505.
+- 2026-10-16: a site's address, for deliveries and returns (ADR-071):
+  MC-2506.
+- 2026-10-16: a purchase order's Deliver to and an RMA's Send back to,
+  each a site (ADR-071): MC-2507, MC-2508.
+- 2026-10-16: the purchase order, pro forma and RMA as PDFs, and a foot
+  on every document's pages (ADR-071): MC-2509 to MC-2512.
+- 2026-10-16: the print pages retire, so printing is always the PDF
+  (ADR-071): MC-703, MC-1412, MC-1501, MC-1539 and MC-R06 rewritten.
+- 2026-10-16: a broken page can be left by the menu, Back or Go home,
+  and its message offers Go back: MC-R12.
+- 2026-10-16: after ADR-071's review: MC-2501, MC-2507, MC-2509, MC-2510
+  and MC-2511 extended; MC-2401, MC-1406 and MC-R08 rewritten, and MC-R12
+  moved to its place, newest first.

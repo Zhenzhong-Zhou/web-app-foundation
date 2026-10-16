@@ -7,7 +7,9 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { Audited } from '../../core/audit/audited.decorator';
@@ -15,6 +17,11 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { DocumentsService } from '../../core/documents/documents.service';
+import {
+  DownloadAsked,
+  PdfResponse,
+} from '../../core/documents/pdf-response.decorator';
 import { PreviewShipmentDto, ShipOrderDto } from './dto/ship-order.dto';
 import type {
   PackingSlip,
@@ -23,6 +30,7 @@ import type {
   ShipmentPlan,
 } from './dto/shipment-response.dto';
 import { VoidShipmentDto } from './dto/void-shipment.dto';
+import { printablePackingSlip } from './packing-slip-document';
 import { ShipmentVoidsService } from './shipment-voids.service';
 import { ShipmentsService } from './shipments.service';
 import { ShippingService } from './shipping.service';
@@ -38,6 +46,7 @@ export class ShipmentsController {
     private readonly shipments: ShipmentsService,
     private readonly shipping: ShippingService,
     private readonly voids: ShipmentVoidsService,
+    private readonly documents: DocumentsService,
   ) {}
 
   @Get()
@@ -57,6 +66,26 @@ export class ShipmentsController {
     @Param('shipmentId', ParseUUIDPipe) shipmentId: string,
   ): Promise<PackingSlip> {
     return this.shipments.slip(id, shipmentId);
+  }
+
+  /**
+   * The packing slip as a PDF (ADR-071), under the permission that reads
+   * it: inline for Print, an attachment with ?download=1.
+   */
+  @Get(':shipmentId/pdf')
+  @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
+  @PdfResponse()
+  async pdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('shipmentId', ParseUUIDPipe) shipmentId: string,
+    @DownloadAsked() download: boolean,
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.documents.send(
+      res,
+      download,
+      this.shipments.slip(id, shipmentId).then(printablePackingSlip),
+    );
   }
 
   /**

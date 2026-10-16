@@ -291,8 +291,9 @@ export class HomeService {
         });
         return page.entries.map((row) => ({
           id: row.id,
-          title: row.reference ?? row.partnerName,
-          detail: row.partnerName,
+          // Ours (ADR-071), then who it is with and their reference.
+          title: row.number,
+          detail: [row.partnerName, row.reference].filter(Boolean).join(' · '),
           due: row.expectedAt,
           late: row.expectedAt !== null && row.expectedAt < today,
         }));
@@ -337,7 +338,7 @@ export class HomeService {
         return page.entries.map((row) => ({
           id: row.id,
           title: row.partnerName,
-          detail: row.orderReference,
+          detail: row.orderNumber,
           due: null,
           late: false,
         }));

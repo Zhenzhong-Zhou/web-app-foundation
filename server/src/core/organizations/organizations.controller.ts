@@ -6,11 +6,13 @@ import {
   HttpStatus,
   Patch,
   Put,
+  Query,
   Res,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiProduces } from '@nestjs/swagger';
+import { ApiOkResponse, ApiProduces, ApiQuery } from '@nestjs/swagger';
 import type { Response } from 'express';
 
+import { SUPPORTED_LOCALES } from '../../common/locales';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { Audited } from '../audit/audited.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -67,11 +69,16 @@ export class OrganizationController {
   @RequirePermissions(PERMISSIONS.ORGANIZATIONS_EXPORT)
   @ApiProduces('application/zip')
   @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  @ApiQuery({ name: 'locale', required: false, enum: SUPPORTED_LOCALES })
   async exportAll(
     @CurrentUser() context: RequestContext,
+    @Query('locale') locale: string | undefined,
     @Res() res: Response,
   ): Promise<void> {
-    await this.exports.writeTo(res, context);
+    // The language the app shows, which a plain link cannot otherwise say
+    // (ADR-071); anything else is ignored, as an absent one is.
+    const asked = SUPPORTED_LOCALES.find((each) => each === locale);
+    await this.exports.writeTo(res, context, asked);
   }
 
   @Patch()
@@ -96,6 +103,8 @@ export class OrganizationController {
       'documentLanguage',
       'documentSecondLanguage',
       'requiredNameLanguages',
+      // What every document is drawn on (ADR-071).
+      'paperSize',
       // Branding and the expiry days (ADR-060). The accent is logged as
       // sent; the row holds the shade that passed.
       'logoFileId',

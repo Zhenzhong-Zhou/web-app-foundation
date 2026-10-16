@@ -13,7 +13,7 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import type { InvoicePage, InvoiceSummary, Shipment } from '../api/types.gen';
-import { api, ApiError, messageFor } from '../lib/api';
+import { api, ApiError, apiUrl, messageFor } from '../lib/api';
 import { formatDate, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { LotItemsTable } from './lot-items-table';
@@ -243,11 +243,11 @@ export function ShipmentsList({
                 </Button>
               )}
 
-              {/* Its own page, opened in a new tab: printing is a detour from
-                  the order, not a step away from it. */}
+              {/* The slip as a PDF (ADR-071), opened in a new tab to print:
+                  printing is a detour from the order, not a step away from
+                  it. Download PDF saves the same file. */}
               <Link
-                component={RouterLink}
-                to={`/orders/${orderId}/shipments/${shipment.id}/slip`}
+                href={apiUrl(`/orders/${orderId}/shipments/${shipment.id}/pdf`)}
                 target="_blank"
                 rel="noopener"
                 variant="body2"
@@ -255,6 +255,17 @@ export function ShipmentsList({
                 {intl.formatMessage({
                   id: 'orders.shipments.packingSlip',
                   defaultMessage: 'Packing slip',
+                })}
+              </Link>
+              <Link
+                href={apiUrl(
+                  `/orders/${orderId}/shipments/${shipment.id}/pdf?download=1`,
+                )}
+                variant="body2"
+              >
+                {intl.formatMessage({
+                  id: 'documents.downloadPdf',
+                  defaultMessage: 'Download PDF',
                 })}
               </Link>
             </Stack>

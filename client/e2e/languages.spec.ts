@@ -4,9 +4,10 @@ import { expect, test } from './fixtures';
 import { created, signInAs } from './support/api';
 
 /**
- * Languages end to end (ADR-054): the screens in the reader's language, a
- * printed invoice in its customer's, and the server answering in the
- * language of the screen that asked.
+ * Languages end to end (ADR-054): the screens in the reader's language, and
+ * the server answering in the language of the screen that asked. A
+ * document in its customer's languages is a PDF the server draws, so its
+ * words are checked there (invoices.e2e, ADR-071).
  */
 
 async function ok(
@@ -16,20 +17,13 @@ async function ok(
 }
 
 /**
- * A Quebec customer whose documents print in French then English, a
- * product named in French, and that product shipped to them, ready to
- * invoice. GST only, so the figures stay simple.
+ * A Quebec customer whose documents print in French then English, and a
+ * product shipped to them, ready to invoice.
  */
 async function seedQuebecSale(api: APIRequestContext) {
   await ok(
     await api.put('/v1/organization/address', {
       data: { line1: '100 Main St', city: 'Vancouver', country: 'CA' },
-    }),
-  );
-  // A taxed invoice needs the seller's tax number (ADR-046, amended).
-  await ok(
-    await api.patch('/v1/organization', {
-      data: { taxRegistrationNumber: '123456789 RT0001' },
     }),
   );
 
@@ -57,18 +51,13 @@ async function seedQuebecSale(api: APIRequestContext) {
   );
 
   const { product } = await created<{
-    product: { id: string; variants: { id: string }[] };
+    product: { variants: { id: string }[] };
   }>(
     await api.post('/v1/products', {
       data: { type: 'good', name: 'Focus', variant: { sku: 'FOCUS-60CT' } },
     }),
   );
   const variantId = product.variants[0].id;
-  await ok(
-    await api.put(`/v1/products/${product.id}/translations`, {
-      data: { translations: [{ locale: 'fr-CA', name: 'Capsules Focus' }] },
-    }),
-  );
 
   const { location } = await created<{ location: { id: string } }>(
     await api.post('/v1/locations', { data: { type: 'site', name: 'Shelf' } }),
@@ -81,12 +70,6 @@ async function seedQuebecSale(api: APIRequestContext) {
         quantity: '100',
         reason: 'receipt',
       },
-    }),
-  );
-
-  const { taxCode } = await created<{ taxCode: { id: string } }>(
-    await api.post('/v1/tax-codes', {
-      data: { name: 'GST', components: [{ name: 'GST', rate: '5' }] },
     }),
   );
 
@@ -123,43 +106,8 @@ async function seedQuebecSale(api: APIRequestContext) {
     }),
   );
 
-  return { shipmentId: shipment.id, taxCodeId: taxCode.id };
+  return { shipmentId: shipment.id };
 }
-
-test('prints an invoice in its customer’s two languages while the screens stay English', async ({
-  page,
-  freshOrg,
-}) => {
-  const api = freshOrg.api;
-  const { shipmentId, taxCodeId } = await seedQuebecSale(api);
-
-  const { invoice } = await created<{ invoice: { id: string } }>(
-    await api.post('/v1/invoices', { data: { shipmentId, taxCodeId } }),
-  );
-  await created(
-    await api.post(`/v1/invoices/${invoice.id}/issue`, {
-      data: { invoiceDate: '2026-09-25' },
-    }),
-  );
-
-  await signInAs(page, api);
-  await page.goto(`/invoices/${invoice.id}/print`);
-
-  // The document is the customer's: French first, English beside it, the
-  // same weight.
-  await expect(
-    page.getByRole('heading', { name: 'Facture / Invoice' }),
-  ).toBeVisible();
-  await expect(page.getByText('Facturer à / Bill to')).toBeVisible();
-  // The item in both languages, copied when it was issued.
-  await expect(page.getByText('Capsules Focus')).toBeVisible();
-  await expect(page.getByText('Focus', { exact: true })).toBeVisible();
-  // Figures once, the first language's way: 6 × 12.50 + 5% GST = 78.75.
-  await expect(page.getByText(/78,75/).first()).toBeVisible();
-
-  // The page around it is the reader's.
-  await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
-});
 
 test('switches the screens to French, and the server answers in French', async ({
   page,

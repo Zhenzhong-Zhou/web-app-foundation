@@ -26,7 +26,6 @@ export function SkipLink() {
     <Link
       href={`#${MAIN_CONTENT_ID}`}
       onClick={skip}
-      className="no-print"
       sx={{
         position: 'fixed',
         top: 8,

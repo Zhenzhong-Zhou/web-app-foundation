@@ -6,7 +6,7 @@ import { and, eq, isNull, type SQL, sql } from 'drizzle-orm';
 import type { Response } from 'express';
 import { ZipFile } from 'yazl';
 
-import { BOM, csvRow, type CsvValue } from '../../common/csv';
+import { BOM, csvMoment, csvRow, type CsvValue } from '../../common/csv';
 import type { Locale } from '../../common/locales';
 import { todayUtc } from '../../common/today';
 import type { Transaction } from '../../database/database.module';
@@ -18,11 +18,17 @@ import {
 } from '../../database/schema';
 import { runInTenantContext } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
-import { recipientLocale, t, translate } from '../../i18n/translate';
+import {
+  recipientLocale,
+  t,
+  type Translatable,
+  translate,
+} from '../../i18n/translate';
 import { AuditService } from '../audit/audit.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import type { RequestContext } from '../auth/request-context';
 import { FILE_STORAGE, type FileStorage, keyOf } from '../files/file-storage';
+import { ExportContributions } from './export-contributions';
 import { exportedTables } from './organization-tables';
 
 /** Rows fetched from a cursor at a time: the export never holds a table. */
@@ -33,11 +39,14 @@ interface Counts {
   tables: number;
   rows: number;
   files: number;
+  /** The invoices and credit notes, as PDFs (ADR-071). */
+  documents: number;
 }
 
 /**
  * Everything the organization holds, as one ZIP (ADR-070): a CSV per table
- * it owns, members.csv, its own row, the files it uploaded, and a README.
+ * it owns, members.csv, its own row, the files it uploaded, its invoices
+ * and credit notes as PDFs (ADR-071), and a README with a glossary.
  *
  * Read in one repeatable-read transaction, so the files agree with each
  * other, and streamed as it is read, a cursor at a time: nothing is held
@@ -51,6 +60,7 @@ export class OrganizationExportService {
     private readonly tenantDb: TenantDb,
     private readonly audit: AuditService,
     @Inject(FILE_STORAGE) private readonly storage: FileStorage,
+    private readonly contributions: ExportContributions,
   ) {}
 
   /**
@@ -58,8 +68,13 @@ export class OrganizationExportService {
    * response ends, so a deletion asked for straight after the download
    * finds it (ADR-070).
    */
-  async writeTo(res: Response, context: RequestContext): Promise<void> {
-    const counts: Counts = { tables: 0, rows: 0, files: 0 };
+  async writeTo(
+    res: Response,
+    context: RequestContext,
+    /** The language the app shows, from the link (ADR-071). */
+    asked?: Locale,
+  ): Promise<void> {
+    const counts: Counts = { tables: 0, rows: 0, files: 0, documents: 0 };
     // Cleared when the transaction ends, however it ends: a table still
     // being read must not send another fetch down a connection the pool has
     // already handed to someone else's request.
@@ -78,13 +93,14 @@ export class OrganizationExportService {
             .select({ name: organizations.name, slug: organizations.slug })
             .from(organizations)
             .where(eq(organizations.id, organizationId));
-          // The README in the Owner's own language (ADR-070), the browser's
-          // only when they have not chosen one: a plain link cannot send
-          // the app's Accept-Language.
+          // The README in the language the app shows the Owner, which the
+          // link says (ADR-071), since a plain link cannot send the app's
+          // Accept-Language. Without it, theirs, else the browser's.
           const { rows: chosen } = await tx.execute<{ locale: string | null }>(
             sql`select locale from users where id = ${context.userId}`,
           );
-          const locale = recipientLocale(chosen[0]?.locale, context.language);
+          const locale =
+            asked ?? recipientLocale(chosen[0]?.locale, context.language);
 
           const today = todayUtc(new Date());
           const zip = new ZipFile();
@@ -183,6 +199,25 @@ export class OrganizationExportService {
               false,
             );
           }
+
+          // What modules add (ADR-071): listed here, in this snapshot, and
+          // made last, each only when the archive reaches it, so one PDF is
+          // drawn at a time and none is held, nor a stream for it waiting.
+          // Stored as they are: a PDF is compressed already. Made outside
+          // this transaction, and so in the request's tenant again, which a
+          // stream does not carry.
+          const tenant = { userId: context.userId, organizationId };
+          for (const contributor of this.contributions.all()) {
+            const added = await contributor.entries(tx, organizationId);
+            for (const each of added) {
+              counts.documents += 1;
+              zip.addReadStreamLazy(each.name, { compress: false }, (made) => {
+                runInTenantContext(tenant, each.bytes)
+                  .then((bytes) => made(null, Readable.from(bytes)))
+                  .catch((error: Error) => archive.destroy(error));
+              });
+            }
+          }
           zip.end();
 
           res.setHeader('Content-Type', 'application/zip');
@@ -192,7 +227,7 @@ export class OrganizationExportService {
           );
 
           const record = () =>
-            runInTenantContext({ userId: context.userId, organizationId }, () =>
+            runInTenantContext(tenant, () =>
               this.audit.record({
                 actorId: context.userId,
                 action: AUDIT_ACTIONS.ORGANIZATION_EXPORTED,
@@ -247,7 +282,8 @@ function largest(sizes: Partial<Record<FileSize, unknown>>): FileSize | null {
 /**
  * A CSV of a query, read through a cursor a batch at a time, in the
  * export's transaction: the header from the columns, then a row per record,
- * every value as Postgres wrote it (ADR-057's rules for the fields).
+ * every value as Postgres wrote it but a moment (ADR-057's rules for the
+ * fields).
  */
 async function* csvOf(
   tx: Transaction,
@@ -270,19 +306,37 @@ async function* csvOf(
   yield BOM;
   let result = await next();
   yield csvRow(result.fields.map((field) => field.name));
+  const types = result.fields.map((field) => field.dataTypeID);
   while (result.rows.length > 0) {
     counts.rows += result.rows.length;
     yield result.rows
-      .map((row) => csvRow(Object.values(row).map(cell)))
+      .map((row) =>
+        csvRow(Object.values(row).map((value, i) => cell(value, types[i]))),
+      )
       .join('');
     result = await next();
   }
   await execute(sql`close ${name}`);
 }
 
-/** A value for csvRow: JSON as JSON, a moment as ISO 8601, the rest as is. */
-function cell(value: unknown): CsvValue {
-  if (value instanceof Date) return value.toISOString();
+/** Postgres's types for a moment, timestamptz and timestamp. */
+const TIMESTAMPTZ = 1184;
+const TIMESTAMP = 1114;
+
+/**
+ * A value for csvRow: JSON as JSON, the rest as is, and a moment as
+ * 2026-10-15 18:54:11, in UTC, which a spreadsheet opens as a date
+ * (ADR-071), rather than as Postgres writes it, with fractions and an
+ * offset. Known by its column's type, since a raw query hands every moment
+ * over as text, and a note that looks like a time is not one.
+ */
+function cell(value: unknown, type: number): CsvValue {
+  if (typeof value === 'string') {
+    // The session is in UTC, so a timestamptz arrives at +00. A timestamp
+    // has no zone: it is written as stored, which reading it as UTC keeps.
+    if (type === TIMESTAMPTZ) return csvMoment(value);
+    if (type === TIMESTAMP) return csvMoment(`${value}+00`);
+  }
   if (Buffer.isBuffer(value)) return value.toString('base64');
   if (typeof value === 'object' && value !== null) {
     return JSON.stringify(value);
@@ -339,10 +393,135 @@ function readme(organization: string, date: string, locale: Locale): string {
         'The files folder holds every file in use, such as the logo and product images, named by its id in files.csv and its original name.',
     }),
     t({
+      id: 'organization.export.readme.documents',
+      defaultMessage:
+        'The documents folder holds every invoice ever issued, voided ones included, and every credit note, each as a PDF named by its number, exactly as Download PDF gives it. A draft is not there: it was never sent.',
+    }),
+    t({
       id: 'organization.export.readme.values',
       defaultMessage:
-        'Quantities and money are written as stored, with a full stop for the decimal point. Days are YYYY-MM-DD, and moments are in UTC.',
+        'Quantities and money are written as stored, with a full stop for the decimal point. Days are written YYYY-MM-DD, and moments YYYY-MM-DD HH:MM:SS, in UTC.',
     }),
   ];
-  return `${paragraphs.map((each) => translate(each, locale)).join('\r\n\r\n')}\r\n`;
+
+  const said = (each: Translatable) => translate(each, locale);
+  return [...paragraphs.map(said), GLOSSARY.map(said).join('\r\n')]
+    .join('\r\n\r\n')
+    .concat('\r\n');
 }
+
+/**
+ * The README's glossary (#118, ADR-071), under its title: the columns the
+ * main tables share, each line naming a column, or a family of them, and
+ * what it holds. The CSV headers stay as stored, so a later import maps
+ * them back; the glossary is what makes them readable to a bookkeeper.
+ */
+const GLOSSARY = [
+  t({
+    id: 'organization.export.glossary.title',
+    defaultMessage: 'Glossary: what the columns mean',
+  }),
+  t({
+    id: 'organization.export.glossary.intro',
+    defaultMessage:
+      'Each line names a column, or a family of columns, and says what it holds. A column in several files means the same in each.',
+  }),
+  t({
+    id: 'organization.export.glossary.id',
+    defaultMessage:
+      'id — the record’s own id. A column ending in _id elsewhere holds it: partner_id is an id in partners.csv.',
+  }),
+  t({
+    id: 'organization.export.glossary.organization',
+    defaultMessage:
+      'organization_id — the organization. The same in every row.',
+  }),
+  t({
+    id: 'organization.export.glossary.created',
+    defaultMessage:
+      'created_at, updated_at — when the record was made and last changed, in UTC.',
+  }),
+  t({
+    id: 'organization.export.glossary.who',
+    defaultMessage:
+      'created_by, issued_by, voided_by, actor_id — who did it: a user_id in members.csv.',
+  }),
+  t({
+    id: 'organization.export.glossary.status',
+    defaultMessage:
+      'status — where the record stands, such as draft, confirmed, issued or voided.',
+  }),
+  t({
+    id: 'organization.export.glossary.number',
+    defaultMessage:
+      'number — the number printed on the document, such as INV-000001 or CN-000001.',
+  }),
+  t({
+    id: 'organization.export.glossary.reference',
+    defaultMessage:
+      'reference — on an order, the customer’s or supplier’s own number for it.',
+  }),
+  t({
+    id: 'organization.export.glossary.direction',
+    defaultMessage: 'direction — on an order, sale or purchase.',
+  }),
+  t({
+    id: 'organization.export.glossary.sku',
+    defaultMessage: 'sku — the code of a product variant, as on its label.',
+  }),
+  t({
+    id: 'organization.export.glossary.quantity',
+    defaultMessage:
+      'quantity_ordered, quantity_fulfilled, quantity_returned — how many were ordered, shipped or received, and returned.',
+  }),
+  t({
+    id: 'organization.export.glossary.price',
+    defaultMessage:
+      'unit_price — the price of one unit, before tax. currency — its three-letter code, such as CAD or CNY.',
+  }),
+  t({
+    id: 'organization.export.glossary.amounts',
+    defaultMessage:
+      'net_amount, subtotal, tax_total, total — before tax, the tax, and the total owed or credited, tax included.',
+  }),
+  t({
+    id: 'organization.export.glossary.parties',
+    defaultMessage:
+      'seller_…, bill_to_…, ship_to_… — the seller, the customer billed and where the goods went: names and addresses as the document printed them that day.',
+  }),
+  t({
+    id: 'organization.export.glossary.dates',
+    defaultMessage:
+      'invoice_date, due_date, credit_date — the days the document carries.',
+  }),
+  t({
+    id: 'organization.export.glossary.issued',
+    defaultMessage:
+      'issued_at, voided_at, void_reason — when the document was issued, when it was voided, and why.',
+  }),
+  t({
+    id: 'organization.export.glossary.language',
+    defaultMessage:
+      'language, second_language — the languages the document prints in: en, fr-CA or zh-Hans.',
+  }),
+  t({
+    id: 'organization.export.glossary.lots',
+    defaultMessage:
+      'lot_id, code, expires_at — a lot of goods, the code printed on it, and the day it expires.',
+  }),
+  t({
+    id: 'organization.export.glossary.movements',
+    defaultMessage:
+      'from_location_id, to_location_id, reason — in stock_movements.csv, where stock left, where it arrived, and why.',
+  }),
+  t({
+    id: 'organization.export.glossary.audit',
+    defaultMessage:
+      'action, resource_type, resource_id, payload — in audit_log.csv, what happened, named for the thing and then the event (user.created, invoice.issued), what it happened to, and its details as JSON. The app’s Audit log shows each in words.',
+  }),
+  t({
+    id: 'organization.export.glossary.flags',
+    defaultMessage:
+      'A column starting is_ holds true or false, such as is_active.',
+  }),
+];

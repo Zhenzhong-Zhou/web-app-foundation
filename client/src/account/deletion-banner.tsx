@@ -27,8 +27,6 @@ export function DeletionBanner() {
   return (
     <Alert
       severity="warning"
-      // Screen only, as the unverified banner: not part of a printout.
-      className="no-print"
       action={
         <Button
           variant="text"

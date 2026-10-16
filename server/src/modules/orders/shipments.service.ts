@@ -79,6 +79,7 @@ export class ShipmentsService {
             s.void_reason,
             s.language,
             s.second_language,
+            o.number,
             o.reference,
             o.direction,
             o.ship_to_label,
@@ -110,6 +111,7 @@ export class ShipmentsService {
         void_reason: string | null;
         language: Locale;
         second_language: Locale | null;
+        number: string;
         reference: string | null;
         direction: string;
         ship_to_label: string | null;
@@ -155,6 +157,7 @@ export class ShipmentsService {
         organizationName: row.organization_name,
         order: {
           id: orderId,
+          number: row.number,
           reference: row.reference,
           partnerName: row.partner_name,
         },

@@ -3,6 +3,7 @@ import type {
   IdleSignOutScope,
   LicencePolicy,
   OrganizationRail,
+  PaperSize,
 } from '../../../database/schema';
 
 /**
@@ -58,6 +59,8 @@ export class OrganizationProfile {
   accentColor!: string | null;
   rail!: OrganizationRail;
   logoOnDocuments!: boolean;
+  /** Letter or A4, or null for automatic from the country (ADR-071). */
+  paperSize!: PaperSize | null;
   expiryWarningDays!: number;
   expiryCriticalDays!: number;
   /** Sign out after inactivity (ADR-065): minutes, or null for off. */

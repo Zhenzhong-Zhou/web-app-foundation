@@ -1,3 +1,4 @@
+import { csvMoment } from '../../common/csv';
 import type { ExportColumn } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import { t } from '../../i18n/translate';
@@ -10,6 +11,7 @@ type OrderRow = Awaited<ReturnType<OrdersService['list']>>['entries'][number];
  * own currency, so an order can hold two, and one total would be wrong.
  */
 export const ORDER_COLUMNS: ExportColumn<OrderRow>[] = [
+  { header: HEADERS.number, value: (row) => row.number },
   { header: HEADERS.reference, value: (row) => row.reference },
   {
     header: t({ id: 'exports.column.direction', defaultMessage: 'Direction' }),
@@ -42,9 +44,5 @@ export const ORDER_COLUMNS: ExportColumn<OrderRow>[] = [
     }),
     value: (row) => row.quantityFulfilled,
   },
-  { header: HEADERS.created, value: (row) => toIso(row.createdAt) },
+  { header: HEADERS.created, value: (row) => csvMoment(row.createdAt) },
 ];
-
-function toIso(value: Date | string): string {
-  return value instanceof Date ? value.toISOString() : value;
-}

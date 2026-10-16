@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -117,6 +117,28 @@ describe('LookupBox', () => {
     await user.type(box, 'bf');
     await user.click(await screen.findByText('Show all in Items'));
     expect(screen.getByTestId('where').textContent).toBe('/products?search=bf');
+  });
+
+  it('opens on ⌘K, and ignores a key event with no key', async () => {
+    renderBox();
+    await screen.findByRole('button', { name: 'Search everything' });
+
+    // Chrome's autofill sends a keydown with no key at all. A listener
+    // that throws is reported to the window, not to the dispatcher.
+    const thrown: unknown[] = [];
+    const onError = (event: ErrorEvent) => thrown.push(event.error);
+    window.addEventListener('error', onError);
+    window.dispatchEvent(new Event('keydown'));
+    window.removeEventListener('error', onError);
+    expect(thrown).toEqual([]);
+    expect(
+      screen.queryByRole('combobox', { name: 'Search everything' }),
+    ).toBeNull();
+
+    fireEvent.keyDown(window, { key: 'k', metaKey: true });
+    expect(
+      await screen.findByRole('combobox', { name: 'Search everything' }),
+    ).toBeInTheDocument();
   });
 
   it('says when nothing is found', async () => {

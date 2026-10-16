@@ -69,7 +69,9 @@ export function LookupBox() {
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName ?? '');
       const shortcut =
         (event.key === '/' && !typing) ||
-        (event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey));
+        // Chrome's autofill sends a keydown with no key at all.
+        ((event.key as string | undefined)?.toLowerCase() === 'k' &&
+          (event.metaKey || event.ctrlKey));
       if (!shortcut) return;
       event.preventDefault();
       if (inline) input.current?.focus();

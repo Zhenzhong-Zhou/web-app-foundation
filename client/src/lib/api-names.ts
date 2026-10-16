@@ -63,6 +63,9 @@ export type LookupKind = LookupResponse['groups'][number]['kind'];
 
 export type OrderDirection = OrderSummary['direction'];
 
+/** The paper every document is drawn on (ADR-071); null is automatic. */
+export type PaperSize = NonNullable<OrganizationProfile['paperSize']>;
+
 /**
  * One lifecycle for both directions (ADR-041): `fulfilled` reads as
  * "Received" on a purchase and "Shipped" on a sale.

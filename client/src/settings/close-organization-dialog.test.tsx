@@ -128,7 +128,7 @@ describe('CloseOrganizationDialog', () => {
     ).toBeInTheDocument();
     expect(
       within(dialog).getByRole('link', { name: 'Download everything (ZIP)' }),
-    ).toHaveAttribute('href', '/api/v1/organization/export');
+    ).toHaveAttribute('href', '/api/v1/organization/export?locale=en');
   });
 
   it('deletes the account too, for the only member', async () => {

@@ -239,6 +239,38 @@ describe('Organization deletion (e2e)', () => {
       expect(zip.get('README.txt')!.toString()).toContain('全部内容');
     });
 
+    it('writes its README in the language the app shows, with a glossary (ADR-071)', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      // The link's language wins over the account's: it is what the Owner
+      // is reading the app in now.
+      await db
+        .update(users)
+        .set({ locale: 'fr-CA' })
+        .where(eq(users.id, alpha.userId));
+
+      const res = await alpha.agent
+        .get('/v1/organization/export?locale=zh-Hans')
+        .responseType('blob')
+        .expect(200);
+      const zip = readZip(res.body as Buffer);
+
+      const readme = zip.get('README.txt')!.toString('utf8');
+      expect(readme).toContain('全部内容');
+      expect(readme).toContain('术语表：各列的含义');
+      expect(readme).toContain('bill_to_…');
+      // Times as a spreadsheet opens them: no T, no Z, no fractions, and
+      // no offset, which is how Postgres writes them.
+      const organization = zip.get('organization.csv')!.toString('utf8');
+      expect(organization).toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+      expect(organization).not.toMatch(/T\d{2}:\d{2}:\d{2}/);
+      expect(organization).not.toMatch(/\d{2}:\d{2}:\d{2}\.\d/);
+      expect(organization).not.toMatch(/\d{2}:\d{2}:\d{2}(\.\d+)?[+-]\d{2}/);
+      // A draft invoice was never sent: no document of it.
+      expect(
+        [...zip.keys()].some((name) => name.startsWith('documents/')),
+      ).toBe(false);
+    });
+
     it('is recorded in the audit log before the download ends', async () => {
       const alpha = await busy('alpha');
 

@@ -33,6 +33,8 @@ export class LotSource {
   at!: Date;
   quantity!: string;
   orderId!: string | null;
+  /** The order's own number (ADR-071); null with no order. */
+  orderNumber!: string | null;
   orderReference!: string | null;
   supplierName!: string | null;
   runId!: string | null;
@@ -62,6 +64,8 @@ export class LotRecipient {
   partnerId!: string | null;
   partnerName!: string | null;
   orderId!: string | null;
+  /** The order's own number (ADR-071); null with no order. */
+  orderNumber!: string | null;
   orderReference!: string | null;
   isSampleOrder!: boolean;
   lotId!: string;

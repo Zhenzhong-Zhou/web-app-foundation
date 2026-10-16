@@ -130,6 +130,7 @@ export class InvoicesService {
             select sum(${creditNotes.total}) from ${creditNotes}
             where ${creditNotes.invoiceId} = ${invoices.id}
           ), 0))::text`,
+          orderNumber: orders.number,
           orderReference: orders.reference,
           createdAt: invoices.createdAt,
         })
@@ -237,6 +238,7 @@ export class InvoicesService {
         .select({
           invoice: invoices,
           partnerName: partners.name,
+          orderNumber: orders.number,
           orderReference: orders.reference,
         })
         .from(invoices)
@@ -310,6 +312,7 @@ export class InvoicesService {
         number: row.number,
         status: row.status,
         orderId: row.orderId,
+        orderNumber: invoice.orderNumber,
         orderReference: invoice.orderReference,
         shipmentId: row.shipmentId,
         partnerId: row.partnerId,

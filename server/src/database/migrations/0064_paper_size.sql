@@ -1,0 +1,2 @@
+ALTER TABLE "organizations" ADD COLUMN "paper_size" text;--> statement-breakpoint
+ALTER TABLE "organizations" ADD CONSTRAINT "organizations_paper_size_check" CHECK ("organizations"."paper_size" is null or "organizations"."paper_size" in ('letter', 'a4'));

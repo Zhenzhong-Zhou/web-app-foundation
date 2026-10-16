@@ -18,7 +18,7 @@ import { type SubmitEvent, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
-import type { Partner, VariantOption } from '../api/types.gen';
+import type { Location, Partner, VariantOption } from '../api/types.gen';
 import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
@@ -32,6 +32,7 @@ import {
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
+import { SiteSelect } from '../locations/site-select';
 import { unitLabel } from '../products/units';
 
 interface LineDraft {
@@ -80,6 +81,19 @@ export function CreateOrderPage() {
   const [expectedAt, setExpectedAt] = useState('');
   const [note, setNote] = useState('');
   const [lines, setLines] = useState<LineDraft[]>([emptyLine()]);
+
+  /**
+   * Where a purchase is delivered (ADR-071, amended). Null until someone
+   * picks, when the organization's one site stands in, as the server would
+   * choose it; with several, nothing is guessed.
+   */
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [deliverTo, setDeliverTo] = useState<string | null>(null);
+  const activeSites = locations.filter(
+    (location) => location.type === 'site' && location.isActive,
+  );
+  const deliverToId =
+    deliverTo ?? (activeSites.length === 1 ? activeSites[0].id : '');
 
   /**
    * One field for the whole order, though the column is per line (ADR-035).
@@ -145,6 +159,22 @@ export function CreateOrderPage() {
     };
     // intl only words the error; a new language refetches, which is harmless.
   }, [intl]);
+
+  // Apart from the partners and products: without them the field is not
+  // offered, and the server still delivers to the one site there is.
+  useEffect(() => {
+    let ignore = false;
+
+    void api<Location[]>('/locations')
+      .then((rows) => {
+        if (!ignore) setLocations(rows);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   /**
    * Retired partners are filtered out here and nowhere else.
@@ -215,6 +245,14 @@ export function CreateOrderPage() {
           // As typed, YYYY-MM-DD (ADR-052).
           expectedAt: expectedAt || undefined,
           note: note || undefined,
+          // Not chosen, picked, is none even beside the one site; left
+          // alone, the site shown, or the server's own choice.
+          deliverToId:
+            direction !== 'purchase'
+              ? undefined
+              : deliverTo === ''
+                ? null
+                : deliverToId || undefined,
           /**
            * Quantities and prices stay strings from the input to the column. A
            * JSON number has already been through a double before any validator
@@ -323,6 +361,28 @@ export function CreateOrderPage() {
                 })}
               </MenuItem>
             </TextField>
+
+            {direction === 'purchase' && activeSites.length > 0 && (
+              <SiteSelect
+                id="order-deliver-to"
+                label={intl.formatMessage({
+                  id: 'orders.deliverTo',
+                  defaultMessage: 'Deliver to',
+                })}
+                value={deliverToId}
+                onChange={setDeliverTo}
+                locations={locations}
+                emptyLabel={intl.formatMessage({
+                  id: 'orders.deliverTo.none',
+                  defaultMessage: 'Not chosen',
+                })}
+                emptyHelp={intl.formatMessage({
+                  id: 'orders.deliverTo.noneHelp',
+                  defaultMessage:
+                    'The purchase order prints the registered address.',
+                })}
+              />
+            )}
 
             {/* A sample ships, prints and traces exactly like a sale — the
                 lots it takes are found by a recall the same way. The flag is

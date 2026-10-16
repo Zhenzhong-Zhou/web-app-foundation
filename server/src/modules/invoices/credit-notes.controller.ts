@@ -15,7 +15,13 @@ import { recordContext } from '../../core/audit/audit-context';
 import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { DocumentsService } from '../../core/documents/documents.service';
+import {
+  DownloadAsked,
+  PdfResponse,
+} from '../../core/documents/pdf-response.decorator';
 import { localeOf } from '../../i18n/translate';
+import { printableCreditNote } from './credit-note-document';
 import type {
   CreditNoteEnvelope,
   CreditNotePage,
@@ -32,7 +38,10 @@ import { InvoicesService } from './invoices.service';
  */
 @Controller({ path: 'credit-notes', version: '1' })
 export class CreditNotesController {
-  constructor(private readonly invoices: InvoicesService) {}
+  constructor(
+    private readonly invoices: InvoicesService,
+    private readonly documents: DocumentsService,
+  ) {}
 
   /** Every credit note, newest first, with its date range and search. */
   @Get()
@@ -76,5 +85,24 @@ export class CreditNotesController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<CreditNoteEnvelope> {
     return { creditNote: await this.invoices.findCreditNote(id) };
+  }
+
+  /**
+   * The credit note as a PDF (ADR-071), under the permission that reads
+   * it: inline for Print, an attachment with ?download=1.
+   */
+  @Get(':id/pdf')
+  @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
+  @PdfResponse()
+  async pdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @DownloadAsked() download: boolean,
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.documents.send(
+      res,
+      download,
+      this.invoices.findCreditNote(id).then(printableCreditNote),
+    );
   }
 }

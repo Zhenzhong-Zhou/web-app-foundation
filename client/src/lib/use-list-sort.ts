@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { withQuery } from './api';
+
 export type SortOrder = 'asc' | 'desc';
 
 /**
@@ -26,6 +28,5 @@ export function withSort<K extends string>(
   path: string,
   sort: { key: K; order: SortOrder } | null,
 ): string {
-  if (!sort) return path;
-  return `${path}${path.includes('?') ? '&' : '?'}sort=${sort.key}&order=${sort.order}`;
+  return sort ? withQuery(path, { sort: sort.key, order: sort.order }) : path;
 }

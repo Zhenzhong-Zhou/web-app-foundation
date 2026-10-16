@@ -154,7 +154,7 @@ export class OrdersController {
     resourceId: (_response, request) => request.params.id,
     // note is deliberately absent: free text is where people put things that
     // should not sit in a two-year table (ADR-018).
-    fields: ['status', 'reference', 'expectedAt'],
+    fields: ['status', 'reference', 'expectedAt', 'deliverToId'],
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,

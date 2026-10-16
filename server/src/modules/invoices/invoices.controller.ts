@@ -23,6 +23,11 @@ import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
+import { DocumentsService } from '../../core/documents/documents.service';
+import {
+  DownloadAsked,
+  PdfResponse,
+} from '../../core/documents/pdf-response.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CreditNotesService } from './credit-notes.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -38,6 +43,7 @@ import { ListInvoicesDto } from './dto/list-invoices.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { UpdateInvoiceLineDto } from './dto/update-invoice-line.dto';
 import { VoidInvoiceDto } from './dto/void-invoice.dto';
+import { printableInvoice } from './invoice-document';
 import { InvoiceDraftsService } from './invoice-drafts.service';
 import { INVOICE_COLUMNS } from './invoice-exports';
 import { InvoiceIssuingService } from './invoice-issuing.service';
@@ -54,6 +60,7 @@ export class InvoicesController {
     private readonly creditNotes: CreditNotesService,
     private readonly drafts: InvoiceDraftsService,
     private readonly issuing: InvoiceIssuingService,
+    private readonly documents: DocumentsService,
   ) {}
 
   @Get()
@@ -92,6 +99,26 @@ export class InvoicesController {
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
   async get(@Param('id', ParseUUIDPipe) id: string): Promise<InvoiceEnvelope> {
     return { invoice: await this.invoices.findById(id) };
+  }
+
+  /**
+   * The invoice as a PDF (ADR-071), under the permission that reads it:
+   * inline for Print, which opens it in the browser's own viewer, and an
+   * attachment with ?download=1 for Download PDF.
+   */
+  @Get(':id/pdf')
+  @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
+  @PdfResponse()
+  async pdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @DownloadAsked() download: boolean,
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.documents.send(
+      res,
+      download,
+      this.invoices.findById(id).then(printableInvoice),
+    );
   }
 
   @Post()

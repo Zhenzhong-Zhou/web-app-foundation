@@ -41,7 +41,7 @@ describe('OrganizationDeletionBanner', () => {
     expect(screen.getByText(/in 30 days/)).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Download everything' }),
-    ).toHaveAttribute('href', '/api/v1/organization/export');
+    ).toHaveAttribute('href', '/api/v1/organization/export?locale=en');
     expect(
       screen.getByRole('button', { name: 'Cancel deletion' }),
     ).toBeInTheDocument();

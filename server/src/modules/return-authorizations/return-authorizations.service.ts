@@ -10,10 +10,12 @@ import { and, desc, eq, lt, or, sql } from 'drizzle-orm';
 import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
+import { recordPrevious } from '../../core/audit/audit-context';
 import type { Transaction } from '../../database/database.module';
 import {
   creditNoteLines,
   invoices,
+  locations,
   orderReturns,
   orders,
   partners,
@@ -23,6 +25,7 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { takeNumber } from '../invoices/document-numbers';
+import { assertSite, onlySite, siteShippedFrom } from '../locations/sites';
 import { loadOrder } from '../orders/load-order';
 import { requestedLines } from '../orders/order-line-lookup';
 import { partnerMatches } from '../partners/partner-search';
@@ -32,10 +35,19 @@ import type {
   ReturnAuthorizationDetail,
   ReturnAuthorizationPage,
 } from './dto/return-authorization-response.dto';
+import type { UpdateReturnAuthorizationDto } from './dto/update-return-authorization.dto';
 import { linesWithProgress } from './lines-with-progress';
 import { lockOpen } from './lock-open';
 
 const DEFAULT_LIMIT = 50;
+
+/** Send back to, refused on an RMA that expects nothing (ADR-071). */
+const NOTHING_COMES_BACK = () =>
+  t({
+    id: 'rmas.sendBackTo.noGoods',
+    defaultMessage:
+      'Nothing is coming back on this RMA, so there is no site to send it to',
+  });
 
 /**
  * Return authorizations (ADR-047): the promise, made before anything moves,
@@ -85,6 +97,7 @@ export class ReturnAuthorizationsService {
           number: returnAuthorizations.number,
           status: returnAuthorizations.status,
           orderId: returnAuthorizations.orderId,
+          orderNumber: orders.number,
           orderReference: orders.reference,
           partnerId: returnAuthorizations.partnerId,
           partnerName: partners.name,
@@ -117,13 +130,19 @@ export class ReturnAuthorizationsService {
         .select({
           rma: returnAuthorizations,
           partnerName: partners.name,
+          orderNumber: orders.number,
           orderReference: orders.reference,
           invoiceNumber: invoices.number,
+          sendBackToName: locations.name,
         })
         .from(returnAuthorizations)
         .innerJoin(orders, eq(orders.id, returnAuthorizations.orderId))
         .innerJoin(partners, eq(partners.id, returnAuthorizations.partnerId))
         .leftJoin(invoices, eq(invoices.id, returnAuthorizations.invoiceId))
+        .leftJoin(
+          locations,
+          eq(locations.id, returnAuthorizations.sendBackToId),
+        )
         .where(
           and(
             eq(returnAuthorizations.organizationId, organizationId),
@@ -153,6 +172,7 @@ export class ReturnAuthorizationsService {
         number: rma.number,
         status: rma.status,
         orderId: rma.orderId,
+        orderNumber: row.orderNumber,
         orderReference: row.orderReference,
         partnerId: rma.partnerId,
         partnerName: row.partnerName,
@@ -160,6 +180,10 @@ export class ReturnAuthorizationsService {
         invoiceNumber: row.invoiceNumber,
         reason: rma.reason,
         expectsGoods: rma.expectsGoods,
+        sendBackTo:
+          rma.sendBackToId && row.sendBackToName
+            ? { id: rma.sendBackToId, name: row.sendBackToName }
+            : null,
         note: rma.note,
         createdAt: rma.createdAt,
         closedAt: rma.closedAt,
@@ -199,6 +223,12 @@ export class ReturnAuthorizationsService {
                 'Only a sale is returned against. Goods sent back to a supplier are an adjustment.',
             }),
           );
+        }
+
+        const expectsGoods = input.expectsGoods ?? true;
+
+        if (input.sendBackToId && !expectsGoods) {
+          throw new BadRequestException(NOTHING_COMES_BACK());
         }
 
         if (order.status !== 'confirmed' && order.status !== 'fulfilled') {
@@ -242,6 +272,22 @@ export class ReturnAuthorizationsService {
           );
         }
 
+        if (input.sendBackToId) {
+          await assertSite(tx, organizationId, input.sendBackToId);
+        }
+
+        /**
+         * Where the goods come back to (ADR-071, amended): the site chosen,
+         * or the one they left from, or the organization's one site. None
+         * when nothing comes back, or when no rule finds one, and the RMA
+         * prints the registered address until someone picks.
+         */
+        const sendBackToId = expectsGoods
+          ? (input.sendBackToId ??
+            (await siteShippedFrom(tx, organizationId, order.id)) ??
+            (await onlySite(tx, organizationId)))
+          : null;
+
         // After every refusal, so a refused RMA leaves no gap in the series.
         const number = await takeNumber(
           tx,
@@ -258,7 +304,8 @@ export class ReturnAuthorizationsService {
             partnerId: order.partnerId,
             invoiceId: input.invoiceId ?? null,
             reason: input.reason,
-            expectsGoods: input.expectsGoods ?? true,
+            expectsGoods,
+            sendBackToId,
             note: input.note || null,
             createdBy: actorId,
           })
@@ -290,6 +337,53 @@ export class ReturnAuthorizationsService {
       `Return authorization ${created.number} raised on order ${created.orderId}`,
     );
     return created;
+  }
+
+  /**
+   * Where the goods come back to, changed while the RMA is open and goods
+   * are expected (ADR-071, amended); null chooses none, so it prints the
+   * registered address. Nothing else on it changes: the lines and what
+   * happens to them are what the customer was told.
+   */
+  async update(
+    returnAuthorizationId: string,
+    input: UpdateReturnAuthorizationDto,
+  ): Promise<void> {
+    const previous = await this.tenantDb.transaction(
+      async (tx, organizationId) => {
+        const rma = await lockOpen(tx, organizationId, returnAuthorizationId);
+
+        if (
+          input.sendBackToId === undefined ||
+          input.sendBackToId === rma.sendBackToId
+        ) {
+          return rma;
+        }
+
+        if (input.sendBackToId) {
+          await assertSite(tx, organizationId, input.sendBackToId);
+        }
+
+        if (!rma.expectsGoods) {
+          throw new ConflictException(NOTHING_COMES_BACK());
+        }
+
+        await tx
+          .update(returnAuthorizations)
+          .set({ sendBackToId: input.sendBackToId })
+          .where(
+            and(
+              eq(returnAuthorizations.organizationId, organizationId),
+              eq(returnAuthorizations.id, rma.id),
+            ),
+          );
+
+        return rma;
+      },
+    );
+
+    recordPrevious({ sendBackToId: previous.sendBackToId });
+    this.logger.log(`Return authorization ${previous.number} updated`);
   }
 
   /**
