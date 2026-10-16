@@ -38,11 +38,11 @@ describe('SiteAddressDialog', () => {
     );
 
     await user.type(
-      screen.getByLabelText(/Address line 1/),
+      screen.getByRole('textbox', { name: /Address line 1/ }),
       '42 Production Way',
     );
-    await user.type(screen.getByLabelText(/City/), 'Burnaby');
-    await user.type(screen.getByLabelText(/Country/), 'CA');
+    await user.type(screen.getByRole('textbox', { name: /City/ }), 'Burnaby');
+    await user.type(screen.getByRole('textbox', { name: /Country/ }), 'CA');
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await expect.poll(() => sent.length).toBe(1);
@@ -72,7 +72,7 @@ describe('SiteAddressDialog', () => {
       />,
     );
 
-    expect(screen.getByLabelText(/Address line 1/)).toHaveValue(
+    expect(screen.getByRole('textbox', { name: /Address line 1/ })).toHaveValue(
       '42 Production Way',
     );
     expect(
