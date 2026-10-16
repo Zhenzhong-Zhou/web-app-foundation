@@ -7901,6 +7901,11 @@ the volume seed, with a probe for one invoice and one for the export.
   China's fapiao. Trigger: the first customer who must issue one.
 - **A PDF kept exactly as sent.** Trigger: a customer, or a law, that
   needs the file itself rather than the document drawn again.
+- **The budgets for the PDF routes and the export,** and their probes for
+  one invoice and one export (*Decision — performance*): nothing is
+  measured yet, so no figure is set. Trigger: the first `npm run perf` on
+  the volume seed after this ADR's pull request merges (ADR-051), or
+  sooner, a PDF or the export reported slow.
 
 **Consequences.**
 
@@ -7928,8 +7933,11 @@ organization and direction, and each series carries on after them.
 
 The number heads the order's page, leads the orders list, the lookup's
 results, Home's recent records and the orders CSV, and is searched
-beside the reference, which stays as theirs. What each organization may
-change, its prefixes, digits and next number, is ADR-072's.
+beside the reference, which stays as theirs.
+
+Deferred: **numbering settings**, what each organization may change of
+its numbers: its prefixes, digits and next number. Trigger: the next pull
+request, ADR-072.
 
 **Amendment (October 2026) — where goods go, and what every page says.**
 The designs approved on the canvas settle what the three new documents
@@ -7956,6 +7964,21 @@ personal, on a document that leaves the organization.
 Deferred: **payment details** on invoices and pro formas, a free text
 saying how to pay, which a pro forma sent for payment in advance needs.
 Trigger: the first customer who pays from one.
+
+**Amendment (October 2026) — two things the build settled.** A packing
+slip's times, the day it says the goods shipped and names its file by,
+are read in UTC. The print page read them in the browser's time zone,
+which a server does not have, and an organization keeps no time zone of
+its own yet, so a shipment made in the evening in Vancouver prints the
+next day's date. It follows the organization's time zone once there is
+one (#41).
+
+Automatic paper takes its country from what the document copied at
+issue: an invoice's or a credit note's seller country. The other four
+copy nothing, and take the registered address's country when they are
+printed. An organization that moves keeps its issued invoices on the
+paper they were issued on, as everything else they print stays as
+issued; a size the organization chose still wins for every document.
 
 ---
 
