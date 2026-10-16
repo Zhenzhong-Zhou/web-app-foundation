@@ -971,6 +971,8 @@ await fetch(`${api}/v1/files/product-image`, {
   order, or an RMA's replacement, takes its own. Type an order's number
   in the lookup: it is found, titled by it. Home's recent records name an
   order by its number, and the orders CSV starts with a Number column.
+  Orders lists the number first, as the link; an order's page is headed
+  by it, with the partner, linked, and their reference beneath.
 
 ## Regressions
 
@@ -1174,3 +1176,5 @@ first.
 - 2026-10-16: the export's README follows the app's language (#118):
   MC-2502 extended.
 - 2026-10-16: orders numbered SO- and PO- (ADR-071, amended): MC-2503.
+- 2026-10-16: the order's number heads its page and leads the list
+  (ADR-071): MC-2503 extended.

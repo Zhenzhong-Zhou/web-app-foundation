@@ -625,3 +625,19 @@ describe('OrderDetailPage prices', () => {
     expect(await actionsOf('WIDGET-1')).not.toContain('Use list price');
   });
 });
+
+describe('OrderDetailPage header', () => {
+  it('heads the page with our number, the partner and their reference beneath (ADR-071)', async () => {
+    serve(order({ reference: 'ACME-77' }));
+    renderPage();
+
+    expect(
+      await screen.findByRole('heading', { name: 'PO-000001' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Acme Supplies' })).toHaveAttribute(
+      'href',
+      '/partners/partner-1',
+    );
+    expect(screen.getByText(/their reference ACME-77/)).toBeInTheDocument();
+  });
+});

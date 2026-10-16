@@ -387,10 +387,8 @@ export function OrderDetailPage() {
             to: '/orders',
           },
         ]}
-        // The order's own number when it has one, which is what people
-        // quote; the partner's name for an order placed by phone without.
-        title={order.reference ?? order.partnerName}
-        titleTo={order.reference ? undefined : `/partners/${order.partnerId}`}
+        // Ours, which every order has and people quote (ADR-071).
+        title={order.number}
         status={{
           // What the order is, by name, rather than relying on CSS
           // capitalisation of the stored status; its tone from the one
@@ -426,17 +424,22 @@ export function OrderDetailPage() {
             ]
               .filter(Boolean)
               .join(SEPARATOR)}
-            {/* The partner, linked, when the reference is the title: the
-                one name on the page that leads to its other orders. */}
+            {/* The partner, linked: the one name on the page that leads to
+                its other orders. Then their reference, when they gave one. */}
+            {SEPARATOR}
+            <Link component={RouterLink} to={`/partners/${order.partnerId}`}>
+              {order.partnerName}
+            </Link>
             {order.reference && (
               <>
                 {SEPARATOR}
-                <Link
-                  component={RouterLink}
-                  to={`/partners/${order.partnerId}`}
-                >
-                  {order.partnerName}
-                </Link>
+                {intl.formatMessage(
+                  {
+                    id: 'orders.subtitle.reference',
+                    defaultMessage: 'their reference {reference}',
+                  },
+                  { reference: order.reference },
+                )}
               </>
             )}
             {order.duplicatedFromId && (
