@@ -8,8 +8,9 @@
  *   holds a comma, a quote, a line break or space at either end, quotes
  *   inside doubled.
  * - Values as data: callers pass decimals as their database strings
- *   ("1234.5000"), days as YYYY-MM-DD and instants as ISO 8601, so a
- *   spreadsheet reads a number as a number in any locale.
+ *   ("1234.5000"), days as YYYY-MM-DD and instants through csvMoment, so a
+ *   spreadsheet reads a number as a number and a time as a time, in any
+ *   locale.
  * - Formula injection neutralized (OWASP): a text field beginning with =,
  *   +, -, @, a tab or a carriage return gets a leading apostrophe, so a
  *   partner named =HYPERLINK(...) stays text. A plain number keeps its
@@ -21,6 +22,19 @@ export const BOM = '\uFEFF';
 const RISKY_START = /^[=+\-@\t\r]/;
 const PLAIN_NUMBER = /^-?\d+(\.\d+)?$/;
 const NEEDS_QUOTES = /[",\r\n]|^\s|\s$/;
+
+/**
+ * An instant as a spreadsheet opens it, 2026-10-15 18:54:11, in UTC
+ * (ADR-057, amended): ISO 8601's T, Z and fractions keep Excel and Numbers
+ * from reading a date. A string is read as the instant it names; one that
+ * names none is written as it is.
+ */
+export function csvMoment(value: Date | string): string {
+  const instant = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(instant.getTime())
+    ? String(value)
+    : instant.toISOString().slice(0, 19).replace('T', ' ');
+}
 
 /** One field, written and neutralized. */
 export function csvField(value: CsvValue): string {

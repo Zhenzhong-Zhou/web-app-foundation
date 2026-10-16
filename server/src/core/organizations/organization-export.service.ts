@@ -6,7 +6,7 @@ import { and, eq, isNull, type SQL, sql } from 'drizzle-orm';
 import type { Response } from 'express';
 import { ZipFile } from 'yazl';
 
-import { BOM, csvRow, type CsvValue } from '../../common/csv';
+import { BOM, csvMoment, csvRow, type CsvValue } from '../../common/csv';
 import type { Locale } from '../../common/locales';
 import { todayUtc } from '../../common/today';
 import type { Transaction } from '../../database/database.module';
@@ -322,7 +322,7 @@ async function* csvOf(
  */
 function cell(value: unknown): CsvValue {
   if (value instanceof Date) {
-    return value.toISOString().slice(0, 19).replace('T', ' ');
+    return csvMoment(value);
   }
   if (Buffer.isBuffer(value)) return value.toString('base64');
   if (typeof value === 'object' && value !== null) {

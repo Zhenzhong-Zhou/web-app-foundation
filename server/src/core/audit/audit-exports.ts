@@ -1,3 +1,4 @@
+import { csvMoment } from '../../common/csv';
 import type { ExportColumn } from '../../common/export';
 import { t } from '../../i18n/translate';
 import type { AuditRecord } from './audit.service';
@@ -9,10 +10,7 @@ import type { AuditRecord } from './audit.service';
 export const AUDIT_COLUMNS: ExportColumn<AuditRecord>[] = [
   {
     header: t({ id: 'exports.column.when', defaultMessage: 'When' }),
-    value: (row) =>
-      row.createdAt instanceof Date
-        ? row.createdAt.toISOString()
-        : String(row.createdAt),
+    value: (row) => csvMoment(row.createdAt),
   },
   {
     header: t({ id: 'exports.column.by', defaultMessage: 'By' }),

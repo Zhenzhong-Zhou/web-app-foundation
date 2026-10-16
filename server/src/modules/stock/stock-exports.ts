@@ -1,3 +1,4 @@
+import { csvMoment } from '../../common/csv';
 import type { ExportColumn } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import { t } from '../../i18n/translate';
@@ -32,7 +33,7 @@ export const STOCK_COLUMNS: ExportColumn<StockRow>[] = [
 export const MOVEMENT_COLUMNS: ExportColumn<MovementRow>[] = [
   {
     header: t({ id: 'exports.column.when', defaultMessage: 'When' }),
-    value: (row) => toIso(row.createdAt),
+    value: (row) => csvMoment(row.createdAt),
   },
   {
     header: t({ id: 'exports.column.reason', defaultMessage: 'Reason' }),
@@ -58,7 +59,3 @@ export const MOVEMENT_COLUMNS: ExportColumn<MovementRow>[] = [
     value: (row) => row.note,
   },
 ];
-
-function toIso(value: Date | string): string {
-  return value instanceof Date ? value.toISOString() : value;
-}

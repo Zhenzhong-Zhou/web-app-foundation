@@ -723,6 +723,8 @@ Paper is checked first because it must not change at all.
   Expires lists the soonest first; Movements, Production and Returns narrow by
   their date range; Products, Partners, a price list, Stock value and the
   Audit log each export, and the Audit log shows the export as an entry.
+  Orders' Created, Movements' When and the Audit log's When read like
+  `2026-10-15 18:54:11`, in UTC, and open as dates.
 - **MC-1559** Sign in as the demo owner: Home opens, greeting by the time of
   day, the sentence's counts matching the cards, red only on late or expired.
   Each card's See all opens its list showing the same number of rows. Switch
@@ -1185,3 +1187,5 @@ first.
 - 2026-10-16: the order's number heads its page and leads the list
   (ADR-071): MC-2503 extended.
 - 2026-10-16: each organization's paper size (ADR-071): MC-2504.
+- 2026-10-16: every CSV writes its times as a spreadsheet opens them
+  (ADR-057, amended): MC-1558 extended.

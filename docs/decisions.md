@@ -5567,6 +5567,14 @@ amount, voided, with the date range and search (ADR-056) like the rest.
 - **More sortable columns.** Trigger: asked for, one at a time, each with
   its index.
 
+**Amendment (October 2026) — an instant as a spreadsheet opens it.**
+Instants were written as ISO 8601, `2026-10-15T18:54:11.123Z`, which
+Excel and Numbers keep as text: the `T`, the `Z` and the fractions stop
+them reading a date. ADR-071 writes the organization's full export's
+times as `2026-10-15 18:54:11`, in UTC, which both open as a date; every
+CSV now does the same, through one helper, `csvMoment`, so the
+per-screen exports and the full one agree. Days stay `YYYY-MM-DD`.
+
 ---
 
 ## ADR-058 — Home: what needs attention, first

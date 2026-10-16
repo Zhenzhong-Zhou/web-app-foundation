@@ -1,4 +1,4 @@
-import { csvField, toCsv } from './csv';
+import { csvField, csvMoment, toCsv } from './csv';
 
 describe('csvField', () => {
   it('writes values as data', () => {
@@ -40,5 +40,20 @@ describe('toCsv', () => {
   it('starts with the byte-order mark and ends rows with CRLF', () => {
     const file = toCsv(['SKU', 'Quantity'], [['FOCUS-60', '12.0000']]);
     expect(file).toBe('\uFEFFSKU,Quantity\r\nFOCUS-60,12.0000\r\n');
+  });
+});
+
+describe('csvMoment', () => {
+  it('writes an instant as a spreadsheet opens it, in UTC (ADR-057)', () => {
+    expect(csvMoment(new Date('2026-10-15T18:54:11.123Z'))).toBe(
+      '2026-10-15 18:54:11',
+    );
+    expect(csvMoment('2026-10-15T18:54:11.123Z')).toBe('2026-10-15 18:54:11');
+    // Read as the instant it names, whatever offset it was written in.
+    expect(csvMoment('2026-10-15 20:54:11+02')).toBe('2026-10-15 18:54:11');
+  });
+
+  it('writes a string naming no instant as it is', () => {
+    expect(csvMoment('not a time')).toBe('not a time');
   });
 });

@@ -1,3 +1,4 @@
+import { csvMoment } from '../../common/csv';
 import type { ExportColumn } from '../../common/export';
 import { HEADERS } from '../../common/export-headers';
 import { t } from '../../i18n/translate';
@@ -43,9 +44,5 @@ export const ORDER_COLUMNS: ExportColumn<OrderRow>[] = [
     }),
     value: (row) => row.quantityFulfilled,
   },
-  { header: HEADERS.created, value: (row) => toIso(row.createdAt) },
+  { header: HEADERS.created, value: (row) => csvMoment(row.createdAt) },
 ];
-
-function toIso(value: Date | string): string {
-  return value instanceof Date ? value.toISOString() : value;
-}
