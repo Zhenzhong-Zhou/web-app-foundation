@@ -1,4 +1,3 @@
-import { todayUtc } from '../../common/today';
 import type {
   LicencePolicy,
   ReleaseLicenceStatus,
@@ -34,19 +33,15 @@ export interface LicencePolicySettings {
 /**
  * Withdrawn first, because it is a decision somebody made and outranks any
  * date. Then not yet in force, then expired, compared as calendar days
- * against the server's today, the UTC day (todayUtc, ADR-052). A licence
- * expiring today is still current today, as the client says "Expires today".
- *
- * `now` is a parameter so the unit test can pin the dates either side of
- * today; release passes nothing and gets the clock.
+ * against `today`: the organization's, in its own time zone (ADR-052,
+ * ADR-072), which the caller reads. A licence expiring today is still
+ * current today, as the client says "Expires today".
  */
 export function licenceStatus(
   licence: LicenceDates,
-  now: Date = new Date(),
+  today: string,
 ): LicenceStatus {
   if (!licence.isActive) return 'withdrawn';
-
-  const today = todayUtc(now);
 
   // YYYY-MM-DD strings compare as days.
   if (licence.issuedAt && licence.issuedAt > today) {

@@ -49,7 +49,7 @@ export function purchaseOrderDocument(
   po: PurchaseOrderPrint,
   doc: DocumentText,
 ): Drawing {
-  const day = (value: string | Date) => formatDay(value, doc.locale);
+  const day = (value: string) => formatDay(value, doc.locale);
   const content: Content[] = [];
 
   // A cancelled order printed again must not be supplied against.
@@ -72,7 +72,8 @@ export function purchaseOrderDocument(
       doc.label(
         t(
           { id: 'documents.dateOn', defaultMessage: 'Date {date}' },
-          { date: day(po.createdAt) },
+          // When it was raised, in the organization's zone (ADR-072).
+          { date: doc.dayOf(po.createdAt) },
         ),
       ),
       po.expectedAt &&
@@ -266,7 +267,7 @@ export function printablePurchaseOrder(po: PurchaseOrderPrint): Printable {
     language: po.language,
     secondLanguage: po.secondLanguage,
     sellerCountry: null,
-    name: `${po.number}.pdf`,
+    name: () => `${po.number}.pdf`,
     which: (doc) => kindAndNumber(doc.label(TITLE), po.number),
     draw: (doc) => purchaseOrderDocument(po, doc),
   };

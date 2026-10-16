@@ -563,5 +563,6 @@
   "validation.rmaLineTwice": "A line appears twice on one RMA — send its total once",
   "validation.shipmentLineTwice": "A line appears twice in one shipment — send its total once",
   "validation.taxRate": "rate must be a percentage with at most 4 decimal places, sent as a string",
+  "validation.timeZone": "{property} must be a time zone name, such as America/Vancouver",
   "validation.whitelist": "property {property} should not exist"
 }

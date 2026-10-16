@@ -36,7 +36,9 @@ export interface ProvisionedOrganization {
  */
 export async function provisionOrganization(
   tx: Transaction,
-  input: { name: string; slug: string },
+  // The time zone when one is known (ADR-072); UTC, the column's default,
+  // otherwise.
+  input: { name: string; slug: string; timeZone?: string },
 ): Promise<ProvisionedOrganization> {
   const [organization] = await tx
     .insert(organizations)

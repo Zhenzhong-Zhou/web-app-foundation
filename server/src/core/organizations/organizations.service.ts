@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
+import { canonicalTimeZone } from '../../common/today';
 import {
   addresses,
   organizations,
@@ -70,6 +71,7 @@ export class OrganizationsService {
           rail: organizations.rail,
           logoOnDocuments: organizations.logoOnDocuments,
           paperSize: organizations.paperSize,
+          timeZone: organizations.timeZone,
           expiryWarningDays: organizations.expiryWarningDays,
           expiryCriticalDays: organizations.expiryCriticalDays,
           idleSignOutMinutes: organizations.idleSignOutMinutes,
@@ -129,6 +131,7 @@ export class OrganizationsService {
           rail: organizations.rail,
           logoOnDocuments: organizations.logoOnDocuments,
           paperSize: organizations.paperSize,
+          timeZone: organizations.timeZone,
           expiryWarningDays: organizations.expiryWarningDays,
           expiryCriticalDays: organizations.expiryCriticalDays,
           idleSignOutMinutes: organizations.idleSignOutMinutes,
@@ -175,6 +178,7 @@ export class OrganizationsService {
         rail: existing.rail,
         logoOnDocuments: existing.logoOnDocuments,
         paperSize: existing.paperSize,
+        timeZone: existing.timeZone,
         expiryWarningDays: existing.expiryWarningDays,
         expiryCriticalDays: existing.expiryCriticalDays,
         idleSignOutMinutes: existing.idleSignOutMinutes,
@@ -304,6 +308,11 @@ export class OrganizationsService {
           : {}),
         ...(input.paperSize !== undefined
           ? { paperSize: input.paperSize }
+          : {}),
+        // Stored under its canonical name, so one zone is never stored two
+        // ways (ADR-072); the DTO has checked it is one.
+        ...(input.timeZone !== undefined
+          ? { timeZone: canonicalTimeZone(input.timeZone) ?? input.timeZone }
           : {}),
         ...(input.expiryWarningDays !== undefined
           ? { expiryWarningDays: input.expiryWarningDays }

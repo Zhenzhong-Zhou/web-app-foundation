@@ -69,6 +69,11 @@ export class SessionOrganization {
    * longer be cancelled. Null with no deletion pending.
    */
   deletionStage!: DeletionStage | null;
+  /**
+   * The IANA time zone that decides the organization's day (ADR-072): the
+   * screens count days left, Home's today and the date presets in it.
+   */
+  timeZone!: string;
 }
 
 /** GET /auth/me: everything the app needs to start. */

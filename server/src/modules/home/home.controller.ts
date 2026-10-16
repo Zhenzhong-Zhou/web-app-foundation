@@ -40,10 +40,7 @@ export class HomeController {
     const held = new Set(
       user.roleId ? await this.permissions.listForRole(user.roleId) : [],
     );
-    return this.home.home(
-      held,
-      query.today ?? new Date().toISOString().slice(0, 10),
-    );
+    return this.home.home(held, query.today);
   }
 
   /**

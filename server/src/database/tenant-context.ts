@@ -10,6 +10,12 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 export interface TenantContext {
   userId: string;
   organizationId: string;
+  /**
+   * The organization's time zone (ADR-072), as the request read it with
+   * the membership. Absent for work with no request, a timer or a seed,
+   * which reads it from the row (`timeZoneOf`).
+   */
+  timeZone?: string;
 }
 
 /**
@@ -34,4 +40,14 @@ export function runInTenantContext<T>(context: TenantContext, fn: () => T): T {
 
 export function getTenantContext(): TenantContext | undefined {
   return storage.getStore();
+}
+
+/**
+ * The request's organization's time zone (ADR-072), for what a request
+ * decides with no transaction at hand: a CSV's file name. UTC outside a
+ * request; inside a transaction, `timeZoneOf` reads the row when there is
+ * no request to ask.
+ */
+export function requestTimeZone(): string {
+  return storage.getStore()?.timeZone ?? 'UTC';
 }

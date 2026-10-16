@@ -105,6 +105,8 @@ export class OrganizationController {
       'requiredNameLanguages',
       // What every document is drawn on (ADR-071).
       'paperSize',
+      // What decides the organization's day (ADR-072).
+      'timeZone',
       // Branding and the expiry days (ADR-060). The accent is logged as
       // sent; the row holds the shade that passed.
       'logoFileId',

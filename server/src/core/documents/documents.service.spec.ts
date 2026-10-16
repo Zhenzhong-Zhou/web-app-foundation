@@ -32,11 +32,16 @@ describe('DocumentsService.pdf', () => {
       language: 'en',
       secondLanguage: null,
       sellerCountry: 'CA',
-      name: 'INV-000042.pdf',
+      name: () => 'INV-000042.pdf',
       which: () => 'Invoice · INV-000042',
       draw: () => ({ content: [run('The lines')] }),
     };
-    await service.pdf(printable, { logo, country: 'CA', paper: null });
+    await service.pdf(printable, {
+      logo,
+      country: 'CA',
+      paper: null,
+      timeZone: 'UTC',
+    });
     return definition as TDocumentDefinitions & { content: Content[] };
   }
 

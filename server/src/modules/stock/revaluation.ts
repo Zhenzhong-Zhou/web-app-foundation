@@ -5,7 +5,9 @@ import {
 } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
+import { dayIn } from '../../common/today';
 import { recordPrevious } from '../../core/audit/audit-context';
+import { timeZoneOf } from '../../core/organizations/time-zone';
 import { t } from '../../i18n/translate';
 import { baseCurrency, rateOnOrBefore } from './rates';
 import type { Tx } from './stock.service';
@@ -223,7 +225,8 @@ interface Target {
   kind: string;
   variant_id: string;
   lot_id: string | null;
-  day: string;
+  /** When the stock arrived, as stored; its day is the organization's. */
+  created_at: string;
   reason: string | null;
   to_location_id: string | null;
 }
@@ -297,7 +300,7 @@ export async function correctCost(
 ): Promise<CorrectedCost> {
   const found = await tx.execute(sql`
     select v.id, v.kind, v.variant_id, v.lot_id,
-           (v.created_at at time zone 'UTC')::date::text as day,
+           v.created_at,
            m.reason, m.to_location_id
     from stock_valuations v
     left join stock_movements m on m.id = v.movement_id
@@ -313,6 +316,10 @@ export async function correctCost(
     );
 
   assertAcquisition(target);
+
+  // The day it arrived where the organization is (ADR-072): stock received
+  // at 5 pm in Vancouver arrived that day, not the next.
+  const day = dayIn(await timeZoneOf(tx, organizationId), target.created_at);
 
   const base = await baseCurrency(tx, organizationId);
 
@@ -348,7 +355,7 @@ export async function correctCost(
       tx,
       organizationId,
       input.currency,
-      sql`${target.day}::date`,
+      sql`${day}::date`,
     );
 
     if (!onFile) {
@@ -359,7 +366,7 @@ export async function correctCost(
             defaultMessage:
               'No {currency} rate on or before {day}. Enter one, or give the rate with the cost.',
           },
-          { currency: input.currency, day: target.day },
+          { currency: input.currency, day: day },
         ),
       );
     }

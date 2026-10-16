@@ -8,7 +8,7 @@ import { ZipFile } from 'yazl';
 
 import { BOM, csvMoment, csvRow, type CsvValue } from '../../common/csv';
 import type { Locale } from '../../common/locales';
-import { todayUtc } from '../../common/today';
+import { todayIn } from '../../common/today';
 import type { Transaction } from '../../database/database.module';
 import {
   FILE_SIZES,
@@ -90,7 +90,11 @@ export class OrganizationExportService {
           await tx.execute(sql`set local time zone 'UTC'`);
 
           const [organization] = await tx
-            .select({ name: organizations.name, slug: organizations.slug })
+            .select({
+              name: organizations.name,
+              slug: organizations.slug,
+              timeZone: organizations.timeZone,
+            })
             .from(organizations)
             .where(eq(organizations.id, organizationId));
           // The README in the language the app shows the Owner, which the
@@ -102,7 +106,9 @@ export class OrganizationExportService {
           const locale =
             asked ?? recipientLocale(chosen[0]?.locale, context.language);
 
-          const today = todayUtc(new Date());
+          // The file is named by the organization's day (ADR-072); the
+          // moments inside stay UTC, as the README says.
+          const today = todayIn(organization.timeZone);
           const zip = new ZipFile();
           // A Readable at run time, typed as the older stream interface.
           const archive = zip.outputStream as Readable;

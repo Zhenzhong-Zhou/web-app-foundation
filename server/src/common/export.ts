@@ -1,10 +1,12 @@
 import { BadRequestException } from '@nestjs/common';
 import type { Response } from 'express';
 
+import { requestTimeZone } from '../database/tenant-context';
 import { t, type Translatable, translate } from '../i18n/translate';
 import { type CsvValue, toCsv } from './csv';
 import type { KeysetPage } from './keyset';
 import type { Locale } from './locales';
+import { todayIn } from './today';
 
 /**
  * Exports (ADR-057): every row a list's filters match, as CSV, through the
@@ -67,7 +69,9 @@ export function withinLimit<T>(rows: T[]): T[] {
 
 /**
  * The file: headers in the reader's language, then a row per record, sent
- * as an attachment named for the list and today, `invoices-2026-10-07.csv`.
+ * as an attachment named for the list and today, `invoices-2026-10-07.csv`:
+ * the organization's today (ADR-072). Times inside stay UTC and say so
+ * (ADR-057, amended).
  */
 export function csvFile<T>(
   res: Response,
@@ -76,7 +80,7 @@ export function csvFile<T>(
   rows: T[],
   locale: Locale,
 ): string {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIn(requestTimeZone());
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader(
     'Content-Disposition',

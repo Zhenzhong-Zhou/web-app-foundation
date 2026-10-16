@@ -1,13 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, between, eq, isNotNull, sql } from 'drizzle-orm';
 
-import { todayUtc } from '../../common/today';
+import { todayIn } from '../../common/today';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
-import { productLicences } from '../../database/schema';
+import { organizations, productLicences } from '../../database/schema';
 import { t } from '../../i18n/translate';
 
 /** The notices before an expiry date, the furthest first (ADR-064). */
@@ -51,9 +51,17 @@ export class LicenceRemindersService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  /** Sends what is owed today; returns how many licences were told about. */
+  /**
+   * Sends what is owed today; returns how many licences were told about.
+   *
+   * Today is each organization's, in its own time zone (ADR-072): a licence
+   * expiring tomorrow in Vancouver is told "expires today" at midnight
+   * there, not at 4 pm the day before. Every zone's today is within a day
+   * of UTC's, so the window is read a day wider each side, and each
+   * licence is then measured against its own organization's day.
+   */
   async remind(now: Date = new Date()): Promise<number> {
-    const today = todayUtc(now);
+    const utc = todayIn('UTC', now);
     const candidates = await this.db
       .select({
         id: productLicences.id,
@@ -63,16 +71,21 @@ export class LicenceRemindersService {
         expiresAt: productLicences.expiresAt,
         noticeFor: productLicences.expiryNoticeFor,
         noticeDays: productLicences.expiryNoticeDays,
+        timeZone: organizations.timeZone,
       })
       .from(productLicences)
+      .innerJoin(
+        organizations,
+        eq(organizations.id, productLicences.organizationId),
+      )
       .where(
         and(
           eq(productLicences.isActive, true),
           isNotNull(productLicences.expiresAt),
           between(
             productLicences.expiresAt,
-            shifted(today, -CATCH_UP_DAYS),
-            shifted(today, NOTICE_DAYS[0]),
+            shifted(utc, -CATCH_UP_DAYS - 1),
+            shifted(utc, NOTICE_DAYS[0] + 1),
           ),
         ),
       );
@@ -80,7 +93,7 @@ export class LicenceRemindersService {
     let told = 0;
     for (const licence of candidates) {
       const expiresAt = licence.expiresAt!;
-      const daysLeft = daysUntil(expiresAt, today);
+      const daysLeft = daysUntil(expiresAt, todayIn(licence.timeZone, now));
       const due = noticeDue(daysLeft);
       if (due === null) continue;
 

@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { asc, eq, sql } from 'drizzle-orm';
 
 import { DEFAULT_LOCALE, type Locale } from '../../common/locales';
+import { canonicalTimeZone } from '../../common/today';
 import type { Env } from '../../config/env';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
@@ -85,6 +86,8 @@ export interface CurrentSession {
     /** The deletion day while one is pending, and where it stands (ADR-070). */
     deletionScheduledAt: string | null;
     deletionStage: DeletionStage | null;
+    /** The time zone that decides the organization's day (ADR-072). */
+    timeZone: string;
   } | null;
   /** Empty when there is no organization: permissions come from a role. */
   permissions: Permission[];
@@ -186,6 +189,10 @@ export class AuthService implements OnModuleInit {
       const { organizationId, roleIds } = await provisionOrganization(tx, {
         name: input.organizationName,
         slug,
+        // Stored under its canonical name (ADR-072); the DTO checked it.
+        ...(input.timeZone
+          ? { timeZone: canonicalTimeZone(input.timeZone) ?? undefined }
+          : {}),
       });
 
       await tx.insert(memberships).values({
@@ -398,6 +405,7 @@ export class AuthService implements OnModuleInit {
               expiryCriticalDays: organizations.expiryCriticalDays,
               deletionScheduledAt: organizations.deletionScheduledAt,
               deletionStartedAt: organizations.deletionStartedAt,
+              timeZone: organizations.timeZone,
             })
             .from(organizations)
             .where(eq(organizations.id, organizationId))
@@ -457,6 +465,7 @@ export class AuthService implements OnModuleInit {
           organization.deletionScheduledAt,
           organization.deletionStartedAt,
         ),
+        timeZone: organization.timeZone,
       },
       permissions,
     };

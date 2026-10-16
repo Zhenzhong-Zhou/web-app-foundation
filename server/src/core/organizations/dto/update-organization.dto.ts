@@ -17,6 +17,7 @@ import {
 
 import { IsCurrencyCode } from '../../../common/dto/currency';
 import { IsLocale } from '../../../common/dto/locale';
+import { IsTimeZone } from '../../../common/dto/time-zone';
 import { trim } from '../../../common/dto/trim';
 import type { Locale } from '../../../common/locales';
 import {
@@ -153,6 +154,15 @@ export class UpdateOrganizationDto {
   @IsOptional()
   @IsIn(PAPER_SIZES)
   paperSize?: PaperSize | null;
+
+  /**
+   * The organization's time zone (ADR-072), an IANA name such as
+   * `America/Vancouver`, never an offset. Never null: every organization
+   * has one, UTC until set.
+   */
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsTimeZone()
+  timeZone?: string;
 
   /**
    * When a lot counts as expiring (ADR-060), each 1 to 365 days; critical

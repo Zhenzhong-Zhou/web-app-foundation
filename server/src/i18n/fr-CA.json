@@ -563,5 +563,6 @@
   "validation.rmaLineTwice": "Une ligne apparaît deux fois dans une même autorisation de retour — envoyez son total une seule fois",
   "validation.shipmentLineTwice": "Une ligne apparaît deux fois dans une même expédition — envoyez son total une seule fois",
   "validation.taxRate": "rate doit être un pourcentage avec au plus 4 décimales, envoyé comme chaîne",
+  "validation.timeZone": "{property} doit être le nom d’un fuseau horaire, comme America/Vancouver",
   "validation.whitelist": "la propriété {property} ne doit pas exister"
 }

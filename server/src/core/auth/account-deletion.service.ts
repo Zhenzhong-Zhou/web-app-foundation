@@ -21,7 +21,7 @@ import {
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
 import type { Locale } from '../../common/locales';
-import { todayUtc } from '../../common/today';
+import { todayIn } from '../../common/today';
 import type { Env } from '../../config/env';
 import type { Database, Transaction } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
@@ -66,10 +66,12 @@ const DELETION_GRACE_DAYS = 30;
 
 /**
  * The deletion day for a request made now: 30 days ahead, a calendar day
- * (ADR-052), named as it is in the email and on every page (ADR-069).
+ * (ADR-052), named as it is in the email and on every page (ADR-069). The
+ * UTC day on purpose, not an organization's (ADR-072): an account belongs
+ * to no one zone, and its day must end everywhere before it completes.
  */
 export function deletionDayFor(now: Date): string {
-  return todayUtc(new Date(now.getTime() + DELETION_GRACE_DAYS * DAY));
+  return todayIn('UTC', new Date(now.getTime() + DELETION_GRACE_DAYS * DAY));
 }
 
 /**
@@ -78,7 +80,7 @@ export function deletionDayFor(now: Date): string {
  * organization's deletion can no longer be cancelled (ADR-070).
  */
 export function todayWhereDaysEndLast(now: Date): string {
-  return todayUtc(new Date(now.getTime() - 12 * HOUR));
+  return todayIn('UTC', new Date(now.getTime() - 12 * HOUR));
 }
 
 /**

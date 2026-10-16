@@ -1,5 +1,6 @@
 import type { Content, TableCell } from 'pdfmake/interfaces';
 
+import { dayIn } from '../../common/today';
 import type { DocumentText } from '../../core/documents/document-text';
 import type {
   Drawing,
@@ -33,15 +34,16 @@ const TITLE = t({
  * courtesy: a customer checking a delivery, or a recall a year later,
  * reads them here.
  *
- * Its times are read in UTC: the print page read them in the browser's
- * time zone, which a server does not have, and an organization's own is
- * not kept yet (#41).
+ * Its moments, when it shipped or was voided, are read in the
+ * organization's time zone (ADR-072, #41): a shipment at 5 pm in Vancouver
+ * shipped that day. A lot's expiry is a calendar day and is written as it
+ * is.
  */
 export function packingSlipDocument(
   slip: PackingSlip,
   doc: DocumentText,
 ): Drawing {
-  const day = (value: string | Date) => formatDay(value, doc.locale);
+  const day = (value: string) => formatDay(value, doc.locale);
   const small = (text: string) => run(text, { fontSize: 10.5 });
   const title = doc.label(TITLE);
 
@@ -64,7 +66,7 @@ export function packingSlipDocument(
               id: 'documents.voidedOn',
               defaultMessage: 'Voided {date}: {reason}',
             },
-            { date: day(slip.voidedAt), reason: slip.voidReason ?? '' },
+            { date: doc.dayOf(slip.voidedAt), reason: slip.voidReason ?? '' },
           ),
         ),
       ),
@@ -76,7 +78,7 @@ export function packingSlipDocument(
       doc.label(
         t(
           { id: 'documents.shippedOn', defaultMessage: 'Shipped {date}' },
-          { date: day(slip.createdAt) },
+          { date: doc.dayOf(slip.createdAt) },
         ),
       ),
       // Ours, which the slip is filed and asked about by, then theirs.
@@ -197,17 +199,17 @@ export function packingSlipDocument(
 }
 
 /**
- * The slip for its PDF route, named by the day it shipped and the start
- * of its id. It has no seller copied: it formats in the organization's
- * country as it is now.
+ * The slip for its PDF route, named by the day it shipped, in the
+ * organization's zone (ADR-072), and the start of its id. It has no seller
+ * copied: it formats in the organization's country as it is now.
  */
 export function printablePackingSlip(slip: PackingSlip): Printable {
-  const shipped = new Date(slip.createdAt).toISOString().slice(0, 10);
   return {
     language: slip.language,
     secondLanguage: slip.secondLanguage,
     sellerCountry: null,
-    name: `packing-slip-${shipped}-${slip.id.slice(0, 8)}.pdf`,
+    name: (doc) =>
+      `packing-slip-${dayIn(doc.timeZone, slip.createdAt)}-${slip.id.slice(0, 8)}.pdf`,
     // A slip has no number of its own: the order's names it.
     which: (doc) => kindAndNumber(doc.label(TITLE), slip.order.number),
     draw: (doc) => packingSlipDocument(slip, doc),

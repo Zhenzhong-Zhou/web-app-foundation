@@ -84,6 +84,26 @@ describe('Licence reminders (e2e)', () => {
     expect(await bell(alpha.agent)).toHaveLength(2);
   });
 
+  /**
+   * Each organization's own today (ADR-072). At noon UTC on 9 October it is
+   * already 2 am on the 10th in Kiritimati (UTC+14): a licence whose last
+   * day is the 9th is told "expires today" in UTC and "expired" there.
+   */
+  it('tells each organization by its own day', async () => {
+    const utc = await registerOrganization(app, 'alpha');
+    const ahead = await registerOrganization(app, 'beta');
+    await ahead.agent
+      .patch('/v1/organization')
+      .send({ timeZone: 'Pacific/Kiritimati' })
+      .expect(204);
+    await licence(utc.agent, '2026-10-09');
+    await licence(ahead.agent, '2026-10-09');
+
+    expect(await reminders.remind(now)).toBe(2);
+    expect((await bell(utc.agent))[0].title).toContain('expires today');
+    expect((await bell(ahead.agent))[0].title).toContain('expired on');
+  });
+
   it('sends the latest owed after downtime, not every one missed', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     await licence(alpha.agent, day(now, 5));

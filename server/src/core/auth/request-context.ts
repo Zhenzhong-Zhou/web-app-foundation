@@ -17,6 +17,12 @@ export interface RequestContext {
   /** Null whenever organizationId is. Step 4's permission guard reads this. */
   roleId: string | null;
   /**
+   * The organization's time zone (ADR-072), read with the membership, so
+   * deciding a day costs a request nothing more. Null whenever
+   * organizationId is.
+   */
+  timeZone: string | null;
+  /**
    * How long this session may sit idle before it is signed out, when that
    * is short enough to warn about: not kept, or under the organization's
    * policy (ADR-065). Null for the long, ordinary session.

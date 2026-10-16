@@ -36,6 +36,7 @@ export type SessionOrganization = {
   branding: OrganizationBranding;
   deletionScheduledAt: string | null;
   deletionStage: 'scheduled' | 'lastWeek' | 'underWay' | null;
+  timeZone: string;
 };
 
 export type CurrentSession = {
@@ -107,6 +108,7 @@ export type RegisterDto = {
   name: string;
   organizationName: string;
   locale?: 'en' | 'fr-CA' | 'zh-Hans' | null;
+  timeZone?: string;
 };
 
 export type AuthenticatedUser = {
@@ -339,7 +341,7 @@ export type Person = {
   workPhone: string | null;
   extension: string | null;
   memberSince: string;
-  active: 'today' | 'week' | 'month' | 'older' | 'never';
+  active: 'month' | 'today' | 'week' | 'older' | 'never';
   lastActiveAt?: string | null;
 };
 
@@ -356,7 +358,7 @@ export type PersonDetail = {
   workPhone: string | null;
   extension: string | null;
   memberSince: string;
-  active: 'today' | 'week' | 'month' | 'older' | 'never';
+  active: 'month' | 'today' | 'week' | 'older' | 'never';
   lastActiveAt?: string | null;
   recentActivity?: Array<AuditRecord>;
 };
@@ -383,7 +385,7 @@ export type Member = {
   name: string;
   roleId: string;
   photoFileId?: string | null;
-  active: 'today' | 'week' | 'month' | 'older' | 'never';
+  active: 'month' | 'today' | 'week' | 'older' | 'never';
   lastActiveAt?: string | null;
 };
 
@@ -625,6 +627,7 @@ export type OrganizationProfile = {
   rail: 'dark' | 'light';
   logoOnDocuments: boolean;
   paperSize: 'letter' | 'a4' | null;
+  timeZone: string;
   expiryWarningDays: number;
   expiryCriticalDays: number;
   idleSignOutMinutes: number | null;
@@ -652,6 +655,7 @@ export type UpdateOrganizationDto = {
   logoFileId?: string | null;
   logoOnDocuments?: boolean;
   paperSize?: 'letter' | 'a4' | null;
+  timeZone?: string;
   expiryWarningDays?: number;
   expiryCriticalDays?: number;
   idleSignOutMinutes?: 15 | 30 | 60 | 240 | null;

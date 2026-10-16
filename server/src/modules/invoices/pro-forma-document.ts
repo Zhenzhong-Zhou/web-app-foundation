@@ -5,7 +5,6 @@ import type {
   Drawing,
   Printable,
 } from '../../core/documents/documents.service';
-import { formatDay } from '../../core/documents/format';
 import { addressParts } from '../../core/documents/parties';
 import {
   kindAndNumber,
@@ -62,7 +61,8 @@ export function proFormaDocument(
         doc.label(
           t(
             { id: 'documents.madeOn', defaultMessage: 'Made {date}' },
-            { date: formatDay(proForma.madeAt, doc.locale) },
+            // When it was made, in the organization's zone (ADR-072).
+            { date: doc.dayOf(proForma.madeAt) },
           ),
         ),
         proForma.orderReference &&
@@ -135,7 +135,7 @@ export function printableProForma(proForma: ProForma): Printable {
     secondLanguage: proForma.secondLanguage,
     // Nothing is copied: it formats in the organization's country as now.
     sellerCountry: null,
-    name: `${proForma.orderNumber}-pro-forma.pdf`,
+    name: () => `${proForma.orderNumber}-pro-forma.pdf`,
     which: (doc) => kindAndNumber(doc.label(TITLE), proForma.orderNumber),
     draw: (doc) => proFormaDocument(proForma, doc),
   };

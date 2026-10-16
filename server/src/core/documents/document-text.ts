@@ -1,5 +1,7 @@
 import type { Locale } from '../../common/locales';
+import { dayIn } from '../../common/today';
 import { type Translatable, translate } from '../../i18n/translate';
+import { formatDay } from './format';
 
 /**
  * A message in one of the document's languages. A function when a value
@@ -25,12 +27,24 @@ export interface DocumentText {
   lines: (wording: Wording) => string[];
   /** The same, joined "First / Second". */
   label: (wording: Wording) => string;
+  /**
+   * The organization's time zone (ADR-072), which decides the day a moment
+   * fell on: a shipment at 5 pm in Vancouver shipped that day.
+   */
+  timeZone: string;
+  /**
+   * The day a moment fell on in the organization's zone, written the first
+   * language's way. For moments only: a calendar day, an invoice's date,
+   * is written as it is with formatDay.
+   */
+  dayOf: (moment: string | Date) => string;
 }
 
 export function documentText(
   language: Locale,
   secondLanguage: Locale | null,
   country: string | null,
+  timeZone = 'UTC',
 ): DocumentText {
   const languages =
     secondLanguage && secondLanguage !== language
@@ -53,6 +67,8 @@ export function documentText(
     locale: tags[0],
     lines,
     label: (wording) => lines(wording).join(BETWEEN),
+    timeZone,
+    dayOf: (moment) => formatDay(dayIn(timeZone, moment), tags[0]),
   };
 }
 

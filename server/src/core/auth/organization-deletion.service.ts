@@ -19,7 +19,7 @@ import {
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
 import type { Locale } from '../../common/locales';
-import { todayUtc } from '../../common/today';
+import { todayIn } from '../../common/today';
 import type { Database, Transaction } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import {
@@ -68,11 +68,12 @@ const REMIND_DAYS_BEFORE = 7;
 
 /**
  * The last deletion day whose final 7 days have begun (ADR-070, amended):
- * the reminder goes, and the banner can no longer be hidden. The server's
- * UTC day, so the email and every browser agree.
+ * the reminder goes, and the banner can no longer be hidden. The UTC day,
+ * not the organization's (ADR-072), so the email and every member's
+ * browser agree wherever they are.
  */
 function lastWeekCutoff(now: Date): string {
-  return todayUtc(new Date(now.getTime() + REMIND_DAYS_BEFORE * DAY));
+  return todayIn('UTC', new Date(now.getTime() + REMIND_DAYS_BEFORE * DAY));
 }
 
 /**

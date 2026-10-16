@@ -61,6 +61,8 @@ export class OrganizationProfile {
   logoOnDocuments!: boolean;
   /** Letter or A4, or null for automatic from the country (ADR-071). */
   paperSize!: PaperSize | null;
+  /** The IANA time zone that decides the organization's day (ADR-072). */
+  timeZone!: string;
   expiryWarningDays!: number;
   expiryCriticalDays!: number;
   /** Sign out after inactivity (ADR-065): minutes, or null for off. */

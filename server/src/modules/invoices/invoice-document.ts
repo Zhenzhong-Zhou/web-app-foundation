@@ -233,9 +233,10 @@ export function printableInvoice(invoice: InvoiceDetail): Printable {
     // Copied at issue; a draft has copied none yet, so it takes the
     // organization's as it is now.
     sellerCountry: invoice.sellerCountry,
-    name: invoice.number
-      ? `${invoice.number}.pdf`
-      : `DRAFT ${invoice.id.slice(0, 8)}.pdf`,
+    name: () =>
+      invoice.number
+        ? `${invoice.number}.pdf`
+        : `DRAFT ${invoice.id.slice(0, 8)}.pdf`,
     which: (doc) =>
       kindAndNumber(doc.label(TITLE), invoice.number ?? doc.label(DRAFT_MARK)),
     draw: (doc) => invoiceDocument(invoice, doc),

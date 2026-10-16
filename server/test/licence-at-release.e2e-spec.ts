@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
+import { todayIn } from '../src/common/today';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -475,6 +476,33 @@ describe('Licence at release (e2e)', () => {
         licenceOverridden: true,
       });
       expect(JSON.stringify(entry.payload)).not.toContain('Renewal');
+    });
+  });
+
+  /**
+   * Today is the organization's (ADR-072). Pago Pago (UTC−11) is always at
+   * least a day behind Kiritimati (UTC+14), so a licence whose last day is
+   * Pago Pago's today is current there and already expired in Kiritimati,
+   * whenever the test runs.
+   */
+  describe("the organization's day", () => {
+    it('releases on the last day where the organization is, and not after', async () => {
+      const lastDay = todayIn('Pacific/Pago_Pago');
+
+      const behind = await registerOrganization(app, 'alpha');
+      await setPolicy(behind, { timeZone: 'Pacific/Pago_Pago' });
+      const s = await scenario(behind, { expiresAt: lastDay });
+      await release(behind.agent, s).expect(200);
+      expect((await detail(behind.agent, s.runId)).licenceStatusAtRelease).toBe(
+        'current',
+      );
+
+      const ahead = await registerOrganization(app, 'beta');
+      await setPolicy(ahead, { timeZone: 'Pacific/Kiritimati' });
+      const t = await scenario(ahead, { expiresAt: lastDay });
+      const res = await release(ahead.agent, t).expect(409);
+      expect(message(res)).toContain(`expired on ${lastDay}`);
+      await expectNothingReleased(ahead.agent, t.runId);
     });
   });
 

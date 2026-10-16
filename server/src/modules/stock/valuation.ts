@@ -1,6 +1,7 @@
 import { type SQL, sql } from 'drizzle-orm';
 
-import { todayUtc } from '../../common/today';
+import { todayIn } from '../../common/today';
+import { timeZoneOf } from '../../core/organizations/time-zone';
 import type { stockMovements } from '../../database/schema';
 import { baseCurrency, rateOnOrBefore } from './rates';
 import type { Tx } from './stock.service';
@@ -232,11 +233,11 @@ async function valueInbound(
  * before today. With no base currency, or no rate for a foreign price, the
  * receipt is recorded at zero with its price kept, and waits for a cost.
  *
- * "Today" is the server's today, the UTC day (todayUtc, ADR-052), rather
+ * "Today" is the organization's, in its own time zone (ADR-072), rather
  * than Postgres's `current_date`, which is the session's day and so depends
- * on how the database is configured. A receipt at 5pm in Vancouver still
- * reads tomorrow's rate if one was entered early: ADR-052 defers an
- * organization's own time zone, which changes todayUtc and nothing here.
+ * on how the database is configured. A receipt at 5 pm in Vancouver reads
+ * that day's rate, not tomorrow's, once the organization says it is in
+ * Vancouver.
  */
 async function purchased(
   tx: Tx,
@@ -255,7 +256,7 @@ async function purchased(
           tx,
           organizationId,
           cost.currency,
-          sql`${todayUtc()}::date`,
+          sql`${todayIn(await timeZoneOf(tx, organizationId))}::date`,
         );
 
   if (cost.currency !== base && !applied) return unvalued(cost);
