@@ -59,16 +59,16 @@ const RESOLVERS: Record<string, Resolver> = {
     return row && (row.code ? `${row.name} (${row.code})` : row.name);
   },
 
-  // The partner and the reference: how people say which order they mean.
+  // Its number and its partner: how people say which order they mean.
   order: async (db, id) => {
     const [row] = await db.selectJoined(
       orders,
       partners,
       eq(partners.id, orders.partnerId),
-      { partnerName: partners.name, reference: orders.reference },
+      { number: orders.number, partnerName: partners.name },
       eq(orders.id, id),
     );
-    return row && [row.partnerName, row.reference].filter(Boolean).join(' · ');
+    return row && `${row.number} · ${row.partnerName}`;
   },
 
   production_order: async (db, id) => {

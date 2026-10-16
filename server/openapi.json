@@ -11758,6 +11758,12 @@
               "null"
             ]
           },
+          "orderNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "orderReference": {
             "type": [
               "string",
@@ -11831,6 +11837,7 @@
           "at",
           "quantity",
           "orderId",
+          "orderNumber",
           "orderReference",
           "supplierName",
           "runId",
@@ -11898,6 +11905,12 @@
               "null"
             ]
           },
+          "orderNumber": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "orderReference": {
             "type": [
               "string",
@@ -11930,6 +11943,7 @@
           "partnerId",
           "partnerName",
           "orderId",
+          "orderNumber",
           "orderReference",
           "isSampleOrder",
           "lotId",
@@ -13281,6 +13295,9 @@
           "id": {
             "type": "string"
           },
+          "number": {
+            "type": "string"
+          },
           "reference": {
             "type": [
               "string",
@@ -13293,6 +13310,7 @@
         },
         "required": [
           "id",
+          "number",
           "reference",
           "partnerName"
         ]
@@ -14497,6 +14515,9 @@
           "orderId": {
             "type": "string"
           },
+          "orderNumber": {
+            "type": "string"
+          },
           "orderReference": {
             "type": [
               "string",
@@ -14525,6 +14546,7 @@
           "number",
           "status",
           "orderId",
+          "orderNumber",
           "orderReference",
           "partnerId",
           "partnerName",
@@ -14618,6 +14640,9 @@
           "orderId": {
             "type": "string"
           },
+          "orderNumber": {
+            "type": "string"
+          },
           "orderReference": {
             "type": [
               "string",
@@ -14684,6 +14709,7 @@
           "number",
           "status",
           "orderId",
+          "orderNumber",
           "orderReference",
           "partnerId",
           "partnerName",
@@ -14829,6 +14855,9 @@
           "orderId": {
             "type": "string"
           },
+          "orderNumber": {
+            "type": "string"
+          },
           "orderReference": {
             "type": [
               "string",
@@ -14896,6 +14925,7 @@
           "number",
           "status",
           "orderId",
+          "orderNumber",
           "orderReference",
           "shipmentId",
           "partnerId",
@@ -15118,6 +15148,9 @@
             ]
           },
           "orderId": {
+            "type": "string"
+          },
+          "orderNumber": {
             "type": "string"
           },
           "orderReference": {
@@ -15383,6 +15416,7 @@
           "number",
           "status",
           "orderId",
+          "orderNumber",
           "orderReference",
           "shipmentId",
           "partnerId",

@@ -33,6 +33,8 @@ export class InvoiceSummary {
   number!: string | null;
   status!: InvoiceStatus;
   orderId!: string;
+  /** The order's own number, SO- (ADR-071); the reference is theirs. */
+  orderNumber!: string;
   orderReference!: string | null;
   shipmentId!: string;
   partnerId!: string;
@@ -111,6 +113,8 @@ export class InvoiceDetail extends DocumentParties {
   number!: string | null;
   status!: InvoiceStatus;
   orderId!: string;
+  /** The order's own number, SO- (ADR-071); the reference is theirs. */
+  orderNumber!: string;
   orderReference!: string | null;
   shipmentId!: string;
   partnerId!: string;

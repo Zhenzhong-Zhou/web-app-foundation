@@ -1121,6 +1121,7 @@ export type LotSource = {
   at: string;
   quantity: string;
   orderId: string | null;
+  orderNumber: string | null;
   orderReference: string | null;
   supplierName: string | null;
   runId: string | null;
@@ -1147,6 +1148,7 @@ export type LotRecipient = {
   partnerId: string | null;
   partnerName: string | null;
   orderId: string | null;
+  orderNumber: string | null;
   orderReference: string | null;
   isSampleOrder: boolean;
   lotId: string;
@@ -1493,6 +1495,7 @@ export type Shipment = {
 
 export type SlipOrder = {
   id: string;
+  number: string;
   reference: string | null;
   partnerName: string;
 };
@@ -1773,6 +1776,7 @@ export type ReturnAuthorizationSummary = {
   number: string;
   status: 'open' | 'closed' | 'cancelled';
   orderId: string;
+  orderNumber: string;
   orderReference: string | null;
   partnerId: string;
   partnerName: string;
@@ -1802,6 +1806,7 @@ export type ReturnAuthorizationDetail = {
   number: string;
   status: 'open' | 'closed' | 'cancelled';
   orderId: string;
+  orderNumber: string;
   orderReference: string | null;
   partnerId: string;
   partnerName: string;
@@ -1852,6 +1857,7 @@ export type InvoiceSummary = {
   number: string | null;
   status: 'draft' | 'issued' | 'voided';
   orderId: string;
+  orderNumber: string;
   orderReference: string | null;
   shipmentId: string;
   partnerId: string;
@@ -1920,6 +1926,7 @@ export type InvoiceDetail = {
   number: string | null;
   status: 'draft' | 'issued' | 'voided';
   orderId: string;
+  orderNumber: string;
   orderReference: string | null;
   shipmentId: string;
   partnerId: string;

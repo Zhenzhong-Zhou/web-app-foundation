@@ -94,12 +94,19 @@ export function packingSlipDocument(
           { date: day(slip.createdAt) },
         ),
       ),
+      // Ours, which the slip is filed and asked about by, then theirs.
+      doc.label(
+        t(
+          { id: 'documents.orderNumber', defaultMessage: 'Order {number}' },
+          { number: slip.order.number },
+        ),
+      ),
       slip.order.reference &&
         doc.label(
           t(
             {
-              id: 'documents.orderReference',
-              defaultMessage: 'Order {reference}',
+              id: 'documents.yourOrder',
+              defaultMessage: 'Your order {reference}',
             },
             { reference: slip.order.reference },
           ),

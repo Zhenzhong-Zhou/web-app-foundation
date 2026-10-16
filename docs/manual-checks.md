@@ -975,6 +975,14 @@ await fetch(`${api}/v1/files/product-image`, {
   order by its number, and the orders CSV starts with a Number column.
   Orders lists the number first, as the link; an order's page is headed
   by it, with the partner, linked, and their reference beneath.
+- **MC-2505** *(ADR-071)* Every place that names an order names it by its
+  number: Home's To ship and To receive, titled SO-… and PO-…, the
+  partner and their reference beneath; Invoices to issue, by the order's
+  number; an invoice's and an RMA's link to its order; a lot's trace,
+  where it came in and where it went; the audit log's entries for an
+  order, as `SO-000001 · Northside Pharmacy`; and the invoices CSV, whose
+  Order column holds the number, the reference beside it. A packing
+  slip's PDF says `Order SO-…` and, when they gave one, `Your order …`.
 - **MC-2504** *(ADR-071)* Settings → Organization → Documents has Paper
   size, set to Automatic. With a Canadian registered address, an invoice's
   PDF is Letter. Choose A4 and save: the invoice, a credit note, a packing
@@ -1189,3 +1197,5 @@ first.
 - 2026-10-16: each organization's paper size (ADR-071): MC-2504.
 - 2026-10-16: every CSV writes its times as a spreadsheet opens them
   (ADR-057, amended): MC-1558 extended.
+- 2026-10-16: an order named by its number wherever it appears (ADR-071):
+  MC-2505.

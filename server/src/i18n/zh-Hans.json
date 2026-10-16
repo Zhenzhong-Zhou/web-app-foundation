@@ -51,7 +51,7 @@
   "documents.invoice.voidDetail": "作废于 {date}：{reason}{credits, select, none {} other {——由 {credits} 冲销}}",
   "documents.item": "物品",
   "documents.lot": "批次",
-  "documents.orderReference": "订单 {reference}",
+  "documents.orderNumber": "订单 {number}",
   "documents.packingSlip": "装箱单",
   "documents.packingSlip.void": "已作废——此装箱单上的货物未发出",
   "documents.quantity": "数量",

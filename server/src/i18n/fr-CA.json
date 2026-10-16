@@ -51,7 +51,7 @@
   "documents.invoice.voidDetail": "Annulée le {date} : {reason}{credits, select, none {} other { — contrepassée par {credits}}}",
   "documents.item": "Article",
   "documents.lot": "Lot",
-  "documents.orderReference": "Commande {reference}",
+  "documents.orderNumber": "Commande {number}",
   "documents.packingSlip": "Bordereau d’expédition",
   "documents.packingSlip.void": "ANNULÉ — rien de ce bordereau n’est parti",
   "documents.quantity": "Quantité",

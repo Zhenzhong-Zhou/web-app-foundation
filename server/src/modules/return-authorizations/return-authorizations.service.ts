@@ -85,6 +85,7 @@ export class ReturnAuthorizationsService {
           number: returnAuthorizations.number,
           status: returnAuthorizations.status,
           orderId: returnAuthorizations.orderId,
+          orderNumber: orders.number,
           orderReference: orders.reference,
           partnerId: returnAuthorizations.partnerId,
           partnerName: partners.name,
@@ -117,6 +118,7 @@ export class ReturnAuthorizationsService {
         .select({
           rma: returnAuthorizations,
           partnerName: partners.name,
+          orderNumber: orders.number,
           orderReference: orders.reference,
           invoiceNumber: invoices.number,
         })
@@ -153,6 +155,7 @@ export class ReturnAuthorizationsService {
         number: rma.number,
         status: rma.status,
         orderId: rma.orderId,
+        orderNumber: row.orderNumber,
         orderReference: row.orderReference,
         partnerId: rma.partnerId,
         partnerName: row.partnerName,

@@ -28,7 +28,13 @@ interface HomeResponse {
     kind: string;
     count: number;
     late: number;
-    rows: { id: string; title: string; due: string | null; late: boolean }[];
+    rows: {
+      id: string;
+      title: string;
+      detail: string | null;
+      due: string | null;
+      late: boolean;
+    }[];
   }[];
 }
 
@@ -120,9 +126,12 @@ describe('Home (e2e)', () => {
 
     const toReceive = card(await home(alpha), 'toReceive');
     expect(toReceive).toMatchObject({ count: 2, late: 1 });
-    expect(toReceive?.rows.map((row) => [row.title, row.late])).toEqual([
-      ['PO-LATE', true],
-      ['PO-SOON', false],
+    // Titled by our number (ADR-071), their reference beside the partner.
+    expect(
+      toReceive?.rows.map((row) => [row.title, row.detail, row.late]),
+    ).toEqual([
+      ['PO-000001', expect.stringContaining('PO-LATE'), true],
+      ['PO-000002', expect.stringContaining('PO-SOON'), false],
     ]);
 
     // "See all 2" opens two: the list, filtered as the card's link sets it.

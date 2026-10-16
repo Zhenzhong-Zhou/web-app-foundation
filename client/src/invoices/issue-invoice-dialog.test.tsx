@@ -14,6 +14,7 @@ const DRAFT: InvoiceDetail = {
   number: null,
   status: 'draft',
   orderId: 'order-1',
+  orderNumber: 'SO-000001',
   orderReference: 'SO-1',
   shipmentId: 'ship-1',
   partnerId: 'partner-1',

@@ -51,7 +51,7 @@
   "documents.invoice.voidDetail": "Voided {date}: {reason}{credits, select, none {} other { — reversed by {credits}}}",
   "documents.item": "Item",
   "documents.lot": "Lot",
-  "documents.orderReference": "Order {reference}",
+  "documents.orderNumber": "Order {number}",
   "documents.packingSlip": "Packing slip",
   "documents.packingSlip.void": "VOID — nothing on this slip left",
   "documents.quantity": "Quantity",

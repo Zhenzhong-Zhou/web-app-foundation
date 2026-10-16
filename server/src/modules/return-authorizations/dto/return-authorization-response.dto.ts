@@ -15,6 +15,8 @@ export class ReturnAuthorizationSummary {
   number!: string;
   status!: ReturnAuthorizationStatus;
   orderId!: string;
+  /** The order's own number (ADR-071); the reference is theirs. */
+  orderNumber!: string;
   orderReference!: string | null;
   partnerId!: string;
   partnerName!: string;
@@ -48,6 +50,8 @@ export class ReturnAuthorizationDetail {
   number!: string;
   status!: ReturnAuthorizationStatus;
   orderId!: string;
+  /** The order's own number (ADR-071); the reference is theirs. */
+  orderNumber!: string;
   orderReference!: string | null;
   partnerId!: string;
   partnerName!: string;

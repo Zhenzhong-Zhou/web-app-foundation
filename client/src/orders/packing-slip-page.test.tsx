@@ -19,7 +19,12 @@ const SLIP: PackingSlip = {
   organizationName: 'Acme Botanicals',
   language: 'en',
   secondLanguage: null,
-  order: { id: 'order-1', reference: 'PO-1001', partnerName: 'Northwind' },
+  order: {
+    id: 'order-1',
+    number: 'SO-000001',
+    reference: 'PO-1001',
+    partnerName: 'Northwind',
+  },
   shipTo: null,
   items: [
     {
