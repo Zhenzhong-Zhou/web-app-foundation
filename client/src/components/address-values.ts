@@ -1,3 +1,5 @@
+import type { OrganizationAddress, SiteAddress } from '../api/types.gen';
+
 /**
  * An address as AddressFields holds it: every part a string, blank for
  * none. Its own module, since a component's file may export only
@@ -12,18 +14,10 @@ export interface AddressValues {
   country: string;
 }
 
-/** The parts an address the API sends has, any of them null but two. */
-interface SentAddress {
-  line1: string;
-  line2: string | null;
-  city: string | null;
-  region: string | null;
-  postalCode: string | null;
-  country: string;
-}
-
 /** The form's start: the address as it is, or every part blank. */
-export function addressValues(address: SentAddress | null): AddressValues {
+export function addressValues(
+  address: OrganizationAddress | SiteAddress | null,
+): AddressValues {
   return {
     line1: address?.line1 ?? '',
     line2: address?.line2 ?? '',
