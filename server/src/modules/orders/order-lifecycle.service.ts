@@ -116,14 +116,17 @@ export class OrderLifecycleService {
 
         /**
          * Where a purchase is delivered (ADR-071, amended): the site chosen,
-         * or the organization's one site when nobody chose. With several,
-         * none: guessing would send goods to the wrong building, and the
-         * purchase order prints the registered address until someone picks.
+         * none when that was the choice, or the organization's one site when
+         * nobody chose. With several, none: guessing would send goods to the
+         * wrong building, and the purchase order prints the registered
+         * address until someone picks.
          */
         const deliverToId =
-          input.direction === 'purchase'
-            ? (input.deliverToId ?? (await onlySite(tx, organizationId)))
-            : null;
+          input.direction !== 'purchase'
+            ? null
+            : input.deliverToId !== undefined
+              ? input.deliverToId
+              : await onlySite(tx, organizationId);
 
         const [order] = await tx
           .insert(orders)

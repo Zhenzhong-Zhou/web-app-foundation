@@ -61,13 +61,13 @@ export class CreateOrderDto {
 
   /**
    * Where a purchase is delivered: one of our sites (ADR-071, amended).
-   * Purchases only. Left out, the organization's one site, when it has
-   * exactly one; with several, none, and the purchase order prints the
-   * registered address.
+   * Purchases only. Null for none, so the purchase order prints the
+   * registered address, as the update takes it. Left out, the
+   * organization's one site, when it has exactly one; with several, none.
    */
   @IsOptional()
   @IsUUID()
-  deliverToId?: string;
+  deliverToId?: string | null;
 
   /**
    * At least one, and created in the same transaction as the header

@@ -1400,7 +1400,7 @@ export type CreateOrderDto = {
   reference?: string;
   expectedAt?: string;
   note?: string;
-  deliverToId?: string;
+  deliverToId?: string | null;
   lines: Array<CreateOrderLineDto>;
 };
 

@@ -746,6 +746,9 @@ describe('Orders (e2e)', () => {
         id: ctx.locationId,
         name: 'Main',
       });
+      // None, said so, is none even then: it prints the registered address.
+      const none = await raise(ctx, { deliverToId: null });
+      expect(await deliverTo(ctx, none.id)).toBeNull();
 
       // With two, guessing would send goods to the wrong building.
       const burnaby = await createLocation(ctx.agent, {

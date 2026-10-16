@@ -13161,7 +13161,10 @@
             "maxLength": 1000
           },
           "deliverToId": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
           },
           "lines": {
