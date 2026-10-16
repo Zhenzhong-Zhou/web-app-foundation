@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
 
@@ -15,15 +14,15 @@ import {
 } from '../../core/documents/parties';
 import type { SheetLine } from '../../core/documents/sheet';
 import { documentLanguages } from '../../core/organizations/document-languages';
-import { orderLines, orders, partners, taxCodes } from '../../database/schema';
+import { orderLines, partners, taxCodes } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { loadOrder } from '../orders/load-order';
 import { type InvoiceAmounts, proFormaAmounts } from './invoice-amounts';
 import { namedLines } from './line-names';
 
 /** A pro forma as drawn: the order as it stands, valued as billed. */
 export interface ProForma {
-  orderId: string;
   orderNumber: string;
   /** The customer's reference, which they will look for. */
   orderReference: string | null;
@@ -52,20 +51,9 @@ export class ProFormaService {
   async make(orderId: string, taxCodeId: string | null): Promise<ProForma> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       // Read, not locked: nothing is written.
-      const [order] = await tx
-        .select()
-        .from(orders)
-        .where(
-          and(
-            eq(orders.organizationId, organizationId),
-            eq(orders.id, orderId),
-          ),
-        );
-      if (!order) {
-        throw new NotFoundException(
-          t({ id: 'orders.suchOrder', defaultMessage: 'No such order' }),
-        );
-      }
+      const order = await loadOrder(tx, organizationId, orderId, {
+        lock: false,
+      });
 
       if (order.direction !== 'sale') {
         throw new BadRequestException(
@@ -88,11 +76,12 @@ export class ProFormaService {
               eq(taxCodes.id, taxCodeId),
             ),
           );
+        // As an invoice draft refuses them, in the same words.
         if (!code) {
           throw new BadRequestException(
             t({
-              id: 'invoices.proForma.unknownTaxCode',
-              defaultMessage: 'Unknown tax code',
+              id: 'invoices.suchTaxCode',
+              defaultMessage: 'No such tax code',
             }),
           );
         }
@@ -100,8 +89,9 @@ export class ProFormaService {
           throw new ConflictException(
             t(
               {
-                id: 'invoices.proForma.taxCodeRetired',
-                defaultMessage: '{name} is retired',
+                id: 'invoices.nameRetiredChooseCode',
+                defaultMessage:
+                  '{name} is retired — choose a code still in use',
               },
               { name: code.name },
             ),
@@ -161,7 +151,8 @@ export class ProFormaService {
                 'Every item needs a price for a pro forma. {skus} {count, plural, one {has} other {have}} none: price {count, plural, one {it} other {them}} on the order, then make it again',
             },
             {
-              skus: unpriced.map((line) => line.sku).join(', '),
+              // A list, joined the way each language joins one.
+              skus: unpriced.map((line) => line.sku),
               count: unpriced.length,
             },
           ),
@@ -177,7 +168,11 @@ export class ProFormaService {
               defaultMessage:
                 'A pro forma is in one currency, and this order has {currencies}. Price every item in one of them',
             },
-            { currencies: currencies.filter(Boolean).join(', ') },
+            {
+              currencies: currencies.filter(
+                (currency): currency is string => currency !== null,
+              ),
+            },
           ),
         );
       }
@@ -224,7 +219,6 @@ export class ProFormaService {
       );
 
       return {
-        orderId: order.id,
         orderNumber: order.number,
         orderReference: order.reference,
         madeAt: new Date(),

@@ -198,8 +198,6 @@
   "invoices.proForma.oneCurrency": "A pro forma is in one currency, and this order has {currencies}. Price every item in one of them",
   "invoices.proForma.sale": "A pro forma is for a sale. A purchase prints as a purchase order.",
   "invoices.proForma.sample": "A sample has no prices, so it has no pro forma yet",
-  "invoices.proForma.taxCodeRetired": "{name} is retired",
-  "invoices.proForma.unknownTaxCode": "Unknown tax code",
   "invoices.proForma.unpriced": "Every item needs a price for a pro forma. {skus} {count, plural, one {has} other {have}} none: price {count, plural, one {it} other {them}} on the order, then make it again",
   "invoices.saleInvoiced": "Only a sale is invoiced",
   "invoices.samplesInvoicedTheyShip": "Samples are not invoiced — they ship and trace like sales, but nobody pays for them",

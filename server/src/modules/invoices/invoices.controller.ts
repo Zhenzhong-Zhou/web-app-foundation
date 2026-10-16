@@ -24,7 +24,10 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { DocumentsService } from '../../core/documents/documents.service';
-import { PdfResponse } from '../../core/documents/pdf-response.decorator';
+import {
+  DownloadAsked,
+  PdfResponse,
+} from '../../core/documents/pdf-response.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CreditNotesService } from './credit-notes.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -108,12 +111,12 @@ export class InvoicesController {
   @PdfResponse()
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('download') download: string | undefined,
+    @DownloadAsked() download: boolean,
     @Res() res: Response,
   ): Promise<void> {
     await this.documents.send(
       res,
-      download === '1',
+      download,
       this.invoices.findById(id).then(printableInvoice),
     );
   }

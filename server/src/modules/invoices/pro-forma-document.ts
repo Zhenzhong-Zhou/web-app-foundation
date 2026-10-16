@@ -1,17 +1,20 @@
-import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
+import type { Content } from 'pdfmake/interfaces';
 
 import type { DocumentText } from '../../core/documents/document-text';
-import type { Printable } from '../../core/documents/documents.service';
+import type {
+  Drawing,
+  Printable,
+} from '../../core/documents/documents.service';
 import { formatDay } from '../../core/documents/format';
 import { addressParts } from '../../core/documents/parties';
 import {
   kindAndNumber,
   linesTable,
-  logo,
   masthead,
   notice,
   party,
   run,
+  sellerParty,
   sideBySide,
   totals,
 } from '../../core/documents/sheet';
@@ -33,11 +36,9 @@ const TITLE = t({
 export function proFormaDocument(
   proForma: ProForma,
   doc: DocumentText,
-  logoDataUrl: string | null,
-): TDocumentDefinitions {
+): Drawing {
   const title = doc.label(TITLE);
   const content: Content[] = [];
-  if (logoDataUrl) content.push(logo(logoDataUrl));
 
   content.push(
     masthead(
@@ -80,26 +81,11 @@ export function proFormaDocument(
 
   const { seller } = proForma;
   const parties: Content[] = [
-    party(
-      doc.label(t({ id: 'documents.from', defaultMessage: 'From' })),
+    sellerParty(
+      doc,
       seller.name,
       addressParts(seller.address),
-      seller.taxNumber
-        ? [
-            run(
-              doc.label(
-                t(
-                  {
-                    id: 'documents.taxRegistration',
-                    defaultMessage: 'Tax registration {number}',
-                  },
-                  { number: seller.taxNumber },
-                ),
-              ),
-              { fontSize: 10.5 },
-            ),
-          ]
-        : [],
+      seller.taxNumber,
     ),
     party(
       doc.label(t({ id: 'documents.billTo', defaultMessage: 'Bill to' })),
@@ -151,6 +137,6 @@ export function printableProForma(proForma: ProForma): Printable {
     sellerCountry: null,
     name: `${proForma.orderNumber}-pro-forma.pdf`,
     which: (doc) => kindAndNumber(doc.label(TITLE), proForma.orderNumber),
-    draw: (doc, logo) => proFormaDocument(proForma, doc, logo),
+    draw: (doc) => proFormaDocument(proForma, doc),
   };
 }

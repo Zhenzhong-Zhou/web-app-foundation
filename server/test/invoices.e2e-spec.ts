@@ -648,9 +648,9 @@ describe('Invoices (e2e)', () => {
           await org.agent.get(`/v1/invoices/${r.invoice.id}`).expect(200),
         ).invoice;
 
-      expect(
-        wordsOf(invoiceDocument(await invoice(), english, null)),
-      ).toContain('DRAFT — not an invoice');
+      expect(wordsOf(invoiceDocument(await invoice(), english))).toContain(
+        'DRAFT — not an invoice',
+      );
 
       await issue(org, r.invoice.id).expect(200);
       const { creditNote } = body<{ creditNote: { id: string } }>(
@@ -660,7 +660,7 @@ describe('Invoices (e2e)', () => {
           .expect(200),
       );
 
-      const voided = wordsOf(invoiceDocument(await invoice(), english, null));
+      const voided = wordsOf(invoiceDocument(await invoice(), english));
       expect(voided).toContain('INV-000001');
       expect(voided).toContain('VOID — nothing is owed on this invoice');
       expect(voided).toContain('reversed by CN-000001');
@@ -668,7 +668,7 @@ describe('Invoices (e2e)', () => {
       const note = body<{ creditNote: CreditNoteDetail }>(
         await org.agent.get(`/v1/credit-notes/${creditNote.id}`).expect(200),
       ).creditNote;
-      const credited = wordsOf(creditNoteDocument(note, english, null));
+      const credited = wordsOf(creditNoteDocument(note, english));
       expect(credited).toContain('Credit note');
       expect(credited).toContain('CN-000001');
       expect(credited).toContain('Voids invoice INV-000001');
@@ -689,7 +689,7 @@ describe('Invoices (e2e)', () => {
       ).invoice;
 
       const words = wordsOf(
-        invoiceDocument(invoice, documentText('fr-CA', 'en', 'CA'), null),
+        invoiceDocument(invoice, documentText('fr-CA', 'en', 'CA')),
       );
       expect(words).toContain('Facture / Invoice');
       // A party's heading is drawn in capitals, as the print page showed it.

@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { and, asc, eq, sql } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
@@ -19,7 +15,6 @@ import {
 import { documentLanguages } from '../../core/organizations/document-languages';
 import {
   orderLines,
-  orders,
   type OrderStatus,
   partners,
   productVariants,
@@ -29,6 +24,7 @@ import { t } from '../../i18n/translate';
 import { minorUnits } from '../invoices/invoice-amounts';
 import { namedLines } from '../invoices/line-names';
 import type { Tx } from '../stock/stock.service';
+import { loadOrder } from './load-order';
 
 /** One line as the purchase order prints it; unpriced ones print blank. */
 export interface PurchaseOrderLine {
@@ -78,20 +74,10 @@ export class PurchaseOrderPrintService {
 
   async read(orderId: string): Promise<PurchaseOrderPrint> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [order] = await tx
-        .select()
-        .from(orders)
-        .where(
-          and(
-            eq(orders.organizationId, organizationId),
-            eq(orders.id, orderId),
-          ),
-        );
-      if (!order) {
-        throw new NotFoundException(
-          t({ id: 'orders.suchOrder', defaultMessage: 'No such order' }),
-        );
-      }
+      // Read, not locked: nothing is written.
+      const order = await loadOrder(tx, organizationId, orderId, {
+        lock: false,
+      });
       if (order.direction !== 'purchase') {
         throw new BadRequestException(
           t({

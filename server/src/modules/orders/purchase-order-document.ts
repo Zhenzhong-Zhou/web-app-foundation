@@ -1,11 +1,10 @@
-import type {
-  Content,
-  TableCell,
-  TDocumentDefinitions,
-} from 'pdfmake/interfaces';
+import type { Content, TableCell } from 'pdfmake/interfaces';
 
 import type { DocumentText } from '../../core/documents/document-text';
-import type { Printable } from '../../core/documents/documents.service';
+import type {
+  Drawing,
+  Printable,
+} from '../../core/documents/documents.service';
 import { formatDay, formatMoney } from '../../core/documents/format';
 import { addressParts } from '../../core/documents/parties';
 import {
@@ -15,15 +14,17 @@ import {
   cell,
   GAP,
   head,
+  itemNames,
   kindAndNumber,
   linesOf,
-  logo,
   masthead,
   notice,
+  paragraph,
   party,
   quantityWithUnit,
   raisedByLine,
   run,
+  sellerParty,
   sideBySide,
 } from '../../core/documents/sheet';
 import { t } from '../../i18n/translate';
@@ -43,11 +44,9 @@ const TITLE = t({
 export function purchaseOrderDocument(
   po: PurchaseOrderPrint,
   doc: DocumentText,
-  logoDataUrl: string | null,
-): TDocumentDefinitions {
+): Drawing {
   const day = (value: string | Date) => formatDay(value, doc.locale);
   const content: Content[] = [];
-  if (logoDataUrl) content.push(logo(logoDataUrl));
 
   // A cancelled order printed again must not be supplied against.
   if (po.status === 'cancelled') {
@@ -95,26 +94,11 @@ export function purchaseOrderDocument(
   const { seller, deliverTo } = po;
   content.push(
     sideBySide([
-      party(
-        doc.label(t({ id: 'documents.from', defaultMessage: 'From' })),
+      sellerParty(
+        doc,
         seller.name,
         addressParts(seller.address),
-        seller.taxNumber
-          ? [
-              run(
-                doc.label(
-                  t(
-                    {
-                      id: 'documents.taxRegistration',
-                      defaultMessage: 'Tax registration {number}',
-                    },
-                    { number: seller.taxNumber },
-                  ),
-                ),
-                { fontSize: 10.5 },
-              ),
-            ]
-          : [],
+        seller.taxNumber,
       ),
       party(
         doc.label(t({ id: 'documents.to', defaultMessage: 'To' })),
@@ -157,15 +141,7 @@ export function purchaseOrderDocument(
   ];
   const rows: TableCell[][] = po.lines.map((line) => [
     cell(line.sku),
-    {
-      stack: [
-        run(line.description, { fontSize: 10.5 }),
-        ...(line.secondDescription &&
-        line.secondDescription !== line.description
-          ? [run(line.secondDescription, { fontSize: 10.5 })]
-          : []),
-      ],
-    },
+    itemNames(line),
     cell(quantityWithUnit(doc, line.quantity, line.unitOfMeasure), 'right'),
     cell(money(line.unitPrice, line.currency), 'right'),
     cell(money(line.amount, line.currency), 'right'),
@@ -175,7 +151,7 @@ export function purchaseOrderDocument(
   const unpriced = po.lines.filter((line) => line.unitPrice === null).length;
   if (unpriced > 0) {
     content.push(
-      run(
+      paragraph(
         doc.label(
           t(
             {
@@ -186,7 +162,6 @@ export function purchaseOrderDocument(
             { count: unpriced },
           ),
         ),
-        { fontSize: 10.5, margin: [0, 0, 0, GAP] },
       ),
     );
   }
@@ -244,14 +219,13 @@ export function purchaseOrderDocument(
 
   if (po.note) {
     content.push(
-      run(
+      paragraph(
         doc.label(
           t(
             { id: 'documents.noteText', defaultMessage: 'Note: {note}' },
             { note: po.note },
           ),
         ),
-        { fontSize: 10.5, margin: [0, 0, 0, GAP] },
       ),
     );
   }
@@ -285,6 +259,6 @@ export function printablePurchaseOrder(po: PurchaseOrderPrint): Printable {
     sellerCountry: null,
     name: `${po.number}.pdf`,
     which: (doc) => kindAndNumber(doc.label(TITLE), po.number),
-    draw: (doc, logo) => purchaseOrderDocument(po, doc, logo),
+    draw: (doc) => purchaseOrderDocument(po, doc),
   };
 }

@@ -5,7 +5,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { auditLog } from '../src/database/schema';
+import { auditLog, productVariants } from '../src/database/schema';
 import {
   body,
   createE2eApp,
@@ -232,6 +232,57 @@ describe('Documents as PDF (e2e)', () => {
       await beta.agent
         .get(`/v1/return-authorizations/${rma.id}/pdf`)
         .expect(404);
+    });
+
+    it('names only its own lines, so one not returned refuses nothing', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const s = await shippedSale(org.agent);
+      await org.agent
+        .patch('/v1/organization')
+        .send({ requiredNameLanguages: ['zh-Hans'] })
+        .expect(204);
+      await org.agent
+        .patch(`/v1/partners/${s.partnerId}`)
+        .send({ documentLanguage: 'zh-Hans', documentSecondLanguage: 'en' })
+        .expect(204);
+      // The capsules have their Chinese name; the scoop, on the same
+      // order, has none.
+      const [capsules] = await db
+        .select({ productId: productVariants.productId })
+        .from(productVariants)
+        .where(eq(productVariants.sku, 'FOCUS-60CT'));
+      await org.agent
+        .put(`/v1/products/${capsules.productId}/translations`)
+        .send({ translations: [{ locale: 'zh-Hans', name: '专注胶囊' }] })
+        .expect(204);
+
+      const raise = async (lineId: string) =>
+        body<{ returnAuthorization: { id: string } }>(
+          await org.agent
+            .post('/v1/return-authorizations')
+            .send({
+              orderId: s.orderId,
+              reason: 'Arrived cracked',
+              lines: [{ lineId, quantity: '1', resolution: 'credit' }],
+            })
+            .expect(201),
+        ).returnAuthorization.id;
+
+      const returningCapsules = await raise(s.capsulesLine);
+      expect(
+        isPdf(
+          await pdf(org, `/v1/return-authorizations/${returningCapsules}/pdf`),
+        ),
+      ).toBe(true);
+
+      // Returned, the scoop needs its name, as an invoice would.
+      const returningScoop = await raise(s.scoopLine);
+      const refused = await org.agent
+        .get(`/v1/return-authorizations/${returningScoop}/pdf`)
+        .expect(409);
+      expect(body<{ message: string }>(refused).message).toMatch(
+        /^SCOOP has no .*Chinese name/,
+      );
     });
   });
 });

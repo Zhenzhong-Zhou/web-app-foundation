@@ -1,11 +1,10 @@
-import type {
-  Content,
-  TableCell,
-  TDocumentDefinitions,
-} from 'pdfmake/interfaces';
+import type { Content, TableCell } from 'pdfmake/interfaces';
 
 import type { DocumentText } from '../../core/documents/document-text';
-import type { Printable } from '../../core/documents/documents.service';
+import type {
+  Drawing,
+  Printable,
+} from '../../core/documents/documents.service';
 import { formatDay, formatQuantity } from '../../core/documents/format';
 import { addressParts } from '../../core/documents/parties';
 import {
@@ -14,12 +13,14 @@ import {
   cell,
   GAP,
   head,
+  itemNames,
   kindAndNumber,
   linesOf,
-  logo,
   masthead,
   notice,
+  paragraph,
   party,
+  present,
   raisedByLine,
   run,
   sideBySide,
@@ -49,10 +50,8 @@ const RESOLUTIONS: Record<ReturnResolution, Translatable> = {
 export function returnAuthorizationDocument(
   rma: ReturnAuthorizationPrint,
   doc: DocumentText,
-  logoDataUrl: string | null,
-): TDocumentDefinitions {
+): Drawing {
   const content: Content[] = [];
-  if (logoDataUrl) content.push(logo(logoDataUrl));
 
   if (rma.status === 'cancelled') {
     content.push(
@@ -155,14 +154,13 @@ export function returnAuthorizationDocument(
           ],
           true,
         ),
-    run(
+    paragraph(
       doc.label(
         t(
           { id: 'documents.reason', defaultMessage: 'Reason: {reason}' },
           { reason: rma.reason },
         ),
       ),
-      { fontSize: 10.5, margin: [0, 0, 0, GAP] },
     ),
   );
 
@@ -181,15 +179,7 @@ export function returnAuthorizationDocument(
   ];
   const rows: TableCell[][] = rma.lines.map((line) => [
     cell(line.sku),
-    {
-      stack: [
-        run(line.description, { fontSize: 10.5 }),
-        ...(line.secondDescription &&
-        line.secondDescription !== line.description
-          ? [run(line.secondDescription, { fontSize: 10.5 })]
-          : []),
-      ],
-    },
+    itemNames(line),
     cell(formatQuantity(line.quantity, doc.locale), 'right'),
     cell(doc.label(RESOLUTIONS[line.resolution])),
   ]);
@@ -208,7 +198,7 @@ export function returnAuthorizationDocument(
   );
 
   if (rma.note) {
-    content.push(run(rma.note, { fontSize: 10.5, margin: [0, 0, 0, GAP] }));
+    content.push(paragraph(rma.note));
   }
   content.push(...raisedByLine(doc, rma.raisedBy));
 
@@ -231,9 +221,9 @@ function cutOutLabel(
 ): Content {
   const dashed = () => ({ dash: { length: 4, space: 3 } });
   const site = rma.sendBackTo;
-  const address = addressLines(
-    addressParts(site?.address ?? rma.seller.address),
-  ).filter((line): line is string => Boolean(line));
+  const address = present(
+    addressLines(addressParts(site?.address ?? rma.seller.address)),
+  );
 
   return {
     unbreakable: true,
@@ -315,6 +305,6 @@ export function printableReturnAuthorization(
     sellerCountry: null,
     name: `${rma.number}.pdf`,
     which: (doc) => kindAndNumber(doc.label(TITLE), rma.number),
-    draw: (doc, logo) => returnAuthorizationDocument(rma, doc, logo),
+    draw: (doc) => returnAuthorizationDocument(rma, doc),
   };
 }

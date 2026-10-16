@@ -27,6 +27,16 @@ export interface PrintedAddress {
   country: string | null;
 }
 
+/** The columns a document prints of an address. */
+const PRINTED = {
+  line1: addresses.line1,
+  line2: addresses.line2,
+  city: addresses.city,
+  region: addresses.region,
+  postalCode: addresses.postalCode,
+  country: addresses.country,
+};
+
 /** An address row's printed parts, nothing else from it. */
 function printed(row: PrintedAddress): PrintedAddress {
   return {
@@ -95,7 +105,7 @@ export async function partnerAddress(
   billing: boolean,
 ): Promise<PrintedAddress | null> {
   const [row] = await tx
-    .select()
+    .select(PRINTED)
     .from(addresses)
     .where(
       and(
@@ -111,7 +121,7 @@ export async function partnerAddress(
     )
     .limit(1);
 
-  return row ? printed(row) : null;
+  return row ?? null;
 }
 
 /** A site a document names, and its address while it has one. */
@@ -127,29 +137,26 @@ export async function siteOf(
 ): Promise<PrintedSite | null> {
   if (!locationId) return null;
 
+  // The site's own address is its default one (ADR-071, amended).
   const [site] = await tx
-    .select({ name: locations.name })
+    .select({ name: locations.name, address: PRINTED })
     .from(locations)
+    .leftJoin(
+      addresses,
+      and(
+        eq(addresses.organizationId, organizationId),
+        eq(addresses.locationId, locations.id),
+        eq(addresses.isDefault, true),
+      ),
+    )
     .where(
       and(
         eq(locations.organizationId, organizationId),
         eq(locations.id, locationId),
       ),
     );
-  if (!site) return null;
 
-  const [address] = await tx
-    .select()
-    .from(addresses)
-    .where(
-      and(
-        eq(addresses.organizationId, organizationId),
-        eq(addresses.locationId, locationId),
-        eq(addresses.isDefault, true),
-      ),
-    );
-
-  return { name: site.name, address: address ? printed(address) : null };
+  return site ?? null;
 }
 
 /**

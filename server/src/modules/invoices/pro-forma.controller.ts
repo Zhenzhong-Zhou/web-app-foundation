@@ -16,7 +16,10 @@ import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { DocumentsService } from '../../core/documents/documents.service';
-import { PdfResponse } from '../../core/documents/pdf-response.decorator';
+import {
+  DownloadAsked,
+  PdfResponse,
+} from '../../core/documents/pdf-response.decorator';
 import { ProFormaService } from './pro-forma.service';
 import { printableProForma } from './pro-forma-document';
 
@@ -48,17 +51,19 @@ export class ProFormaController {
     @Param('id', ParseUUIDPipe) id: string,
     @Query('taxCodeId', new ParseUUIDPipe({ optional: true }))
     taxCodeId: string | undefined,
-    @Query('download') download: string | undefined,
+    @DownloadAsked() download: boolean,
     @CurrentUser() user: RequestContext,
     @Res() res: Response,
   ): Promise<void> {
-    const proForma = await this.proFormas.make(id, taxCodeId ?? null);
+    // Read beside the letterhead, as every document is.
+    const making = this.proFormas.make(id, taxCodeId ?? null);
     await this.documents.send(
       res,
-      download === '1',
-      Promise.resolve(printableProForma(proForma)),
-      () =>
-        this.audit.record({
+      download,
+      making.then(printableProForma),
+      async () => {
+        const proForma = await making;
+        await this.audit.record({
           actorId: user.userId,
           action: AUDIT_ACTIONS.ORDER_PRO_FORMA_MADE,
           resourceType: 'order',
@@ -70,7 +75,8 @@ export class ProFormaController {
           },
           ip: user.ip,
           userAgent: user.userAgent,
-        }),
+        });
+      },
     );
   }
 }

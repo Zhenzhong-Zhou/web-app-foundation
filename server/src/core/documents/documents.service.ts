@@ -3,7 +3,7 @@ import { buffer } from 'node:stream/consumers';
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import type { Response } from 'express';
-import type { TDocumentDefinitions } from 'pdfmake/interfaces';
+import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 
 import type { Locale } from '../../common/locales';
 import { organizations, type PaperSize } from '../../database/schema';
@@ -14,7 +14,7 @@ import { FilesService } from '../files/files.service';
 import { registeredAddress } from '../organizations/registered-address';
 import { type DocumentText, documentText } from './document-text';
 import { PdfRenderer } from './pdf-renderer.service';
-import { pageFooter } from './sheet';
+import { logo, pageFooter } from './sheet';
 
 /** A document as its module reads it, ready to draw (ADR-071). */
 export interface Printable {
@@ -33,9 +33,12 @@ export interface Printable {
    * page's foot says beside the page's number (ADR-071, amended).
    */
   which: (doc: DocumentText) => string;
-  /** The drawing, given the document's words and the logo it prints. */
-  draw: (doc: DocumentText, logo: string | null) => TDocumentDefinitions;
+  /** The drawing, in the document's words; the logo is put above it. */
+  draw: (doc: DocumentText) => Drawing;
 }
+
+/** A document's own drawing, its parts in order from the top. */
+export type Drawing = TDocumentDefinitions & { content: Content[] };
 
 /** What every document of an organization draws on, beside its own data. */
 export interface Letterhead {
@@ -108,10 +111,15 @@ export class DocumentsService {
       document.secondLanguage,
       country,
     );
+    const drawn = document.draw(doc);
     return this.renderer.render(
       {
-        ...document.draw(doc, letterhead.logo),
-        // Every page's foot, the same on all six documents.
+        ...drawn,
+        // The logo heads every document (ADR-060), and every page's foot
+        // is the same on all six.
+        content: letterhead.logo
+          ? [logo(letterhead.logo), ...drawn.content]
+          : drawn.content,
         footer: pageFooter(doc, document.which(doc)),
       },
       // The organization's choice for every document, or the country's.

@@ -16,7 +16,10 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { DocumentsService } from '../../core/documents/documents.service';
-import { PdfResponse } from '../../core/documents/pdf-response.decorator';
+import {
+  DownloadAsked,
+  PdfResponse,
+} from '../../core/documents/pdf-response.decorator';
 import { localeOf } from '../../i18n/translate';
 import { printableCreditNote } from './credit-note-document';
 import type {
@@ -93,12 +96,12 @@ export class CreditNotesController {
   @PdfResponse()
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('download') download: string | undefined,
+    @DownloadAsked() download: boolean,
     @Res() res: Response,
   ): Promise<void> {
     await this.documents.send(
       res,
-      download === '1',
+      download,
       this.invoices.findCreditNote(id).then(printableCreditNote),
     );
   }

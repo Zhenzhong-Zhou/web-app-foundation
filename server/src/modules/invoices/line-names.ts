@@ -51,16 +51,28 @@ const languageName = (tag: string) =>
 export async function namedLines(
   tx: Transaction,
   organizationId: string,
-  invoiceId: string,
+  parentId: string,
   languages: DocumentLanguages,
   /**
    * Whose lines: an invoice's, or an order's, which the pro forma, the
    * purchase order and the RMA print (ADR-071). By the id given either way.
    */
   of: 'invoice' | 'order' = 'invoice',
+  /**
+   * Only these of its lines, when the document prints only some: an RMA
+   * names the order lines it returns, and a missing name on any other is
+   * not its to refuse.
+   */
+  only?: string[],
 ): Promise<Map<string, LineNames>> {
   const lines = sql.raw(of === 'order' ? 'order_lines' : 'invoice_lines');
   const parent = sql.raw(of === 'order' ? 'order_id' : 'invoice_id');
+  const just = only
+    ? sql`and l.id in (${sql.join(
+        only.map((id) => sql`${id}::uuid`),
+        sql`, `,
+      )})`
+    : sql``;
 
   const rows = (
     await tx.execute<NameRow>(sql`
@@ -85,7 +97,8 @@ export async function namedLines(
       left join variant_translations vt2
         on vt2.variant_id = v.id and vt2.locale = ${languages.secondLanguage}
       where l.organization_id = ${organizationId}::uuid
-        and l.${parent} = ${invoiceId}::uuid
+        and l.${parent} = ${parentId}::uuid
+        ${just}
       order by l.sku
     `)
   ).rows;

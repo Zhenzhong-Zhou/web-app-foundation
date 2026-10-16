@@ -1,5 +1,6 @@
 import type {
   Content,
+  ContentStack,
   ContentText,
   DynamicContent,
   Size,
@@ -43,20 +44,26 @@ export const MARGIN = millimetres(16);
 const DOT = ' \u00b7 ';
 
 /** The parts that are there: no null, no empty string. */
-function present(parts: (string | null | false | undefined)[]): string[] {
+export function present(
+  parts: (string | null | false | undefined)[],
+): string[] {
   return parts.filter((part): part is string => Boolean(part));
 }
 
 /**
  * A run of text in the families that have its characters: one piece, or a
- * line cut where its script changes, Chinese in Noto Sans SC and the rest
- * in Noto Sans (piecesOf).
+ * line cut where a family lacks the next character (piecesOf).
  */
 export function run(text: string, style: Style = {}): ContentText {
   const pieces = piecesOf(text);
   return pieces.length === 1
     ? { text, font: pieces[0].font, ...style }
     : { text: pieces, ...style };
+}
+
+/** A sentence of the sheet's own, with a part's space beneath it. */
+export function paragraph(text: string): ContentText {
+  return run(text, { fontSize: 10.5, margin: [0, 0, 0, GAP] });
 }
 
 /** The organization's logo, at most 60 mm wide and 18 mm tall (ADR-060). */
@@ -183,6 +190,36 @@ export function party(
   return block(heading, [name, ...addressLines(lines)], extra);
 }
 
+/** The seller as a document's From, its tax registration beneath. */
+export function sellerParty(
+  doc: DocumentText,
+  name: string | null,
+  lines: (string | null)[],
+  taxNumber: string | null,
+): Content {
+  return party(
+    doc.label(t({ id: 'documents.from', defaultMessage: 'From' })),
+    name,
+    lines,
+    taxNumber
+      ? [
+          run(
+            doc.label(
+              t(
+                {
+                  id: 'documents.taxRegistration',
+                  defaultMessage: 'Tax registration {number}',
+                },
+                { number: taxNumber },
+              ),
+            ),
+            { fontSize: 10.5 },
+          ),
+        ]
+      : [],
+  );
+}
+
 /** A table's rules: one under the header and under each line. */
 const LINES_LAYOUT = {
   hLineWidth: (index: number) => (index === 0 ? 0 : 0.75),
@@ -224,6 +261,24 @@ export function linesOf(
     table: { headerRows: 1, widths, body: [header, ...rows] },
     layout: LINES_LAYOUT,
     margin: [0, 0, 0, GAP],
+  };
+}
+
+/**
+ * An item's cell in a table of lines: its name in each language on its own
+ * line, the same weight, the second only when it differs.
+ */
+export function itemNames(line: {
+  description: string;
+  secondDescription: string | null;
+}): ContentStack {
+  return {
+    stack: [
+      run(line.description, { fontSize: 10.5 }),
+      ...(line.secondDescription && line.secondDescription !== line.description
+        ? [run(line.secondDescription, { fontSize: 10.5 })]
+        : []),
+    ],
   };
 }
 
@@ -273,15 +328,7 @@ export function linesTable(
 
   const rows: TableCell[][] = lines.map((line) => [
     cell(line.sku),
-    {
-      stack: [
-        run(line.description, { fontSize: 10.5 }),
-        ...(line.secondDescription &&
-        line.secondDescription !== line.description
-          ? [run(line.secondDescription, { fontSize: 10.5 })]
-          : []),
-      ],
-    },
+    itemNames(line),
     cell(formatQuantity(line.quantity, doc.locale), 'right'),
     cell(money(line.unitPrice), 'right'),
     cell(line.taxCodeName ?? NO_VALUE),
@@ -493,17 +540,16 @@ export function raisedByLine(
 ): Content[] {
   if (!person) return [];
   const who =
-    [person.name, person.jobTitle].filter(Boolean).join(', ') +
+    present([person.name, person.jobTitle]).join(', ') +
     (person.workPhone ? `${DOT}${person.workPhone}` : '');
   return [
-    run(
+    paragraph(
       doc.label(
         t(
           { id: 'documents.raisedBy', defaultMessage: 'Raised by {who}' },
           { who },
         ),
       ),
-      { fontSize: 10.5, margin: [0, 0, 0, GAP] },
     ),
   ];
 }

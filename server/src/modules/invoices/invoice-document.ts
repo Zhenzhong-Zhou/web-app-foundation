@@ -1,22 +1,28 @@
-import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
+import type { Content } from 'pdfmake/interfaces';
 
 import type { DocumentText } from '../../core/documents/document-text';
-import type { Printable } from '../../core/documents/documents.service';
+import type {
+  Drawing,
+  Printable,
+} from '../../core/documents/documents.service';
 import { fontFor } from '../../core/documents/fonts';
 import { formatDay } from '../../core/documents/format';
 import {
   banner,
   kindAndNumber,
   linesTable,
-  logo,
   masthead,
   party,
   run,
+  sellerParty,
   sideBySide,
   totals,
 } from '../../core/documents/sheet';
 import { t } from '../../i18n/translate';
 import type { InvoiceDetail } from './dto/invoice-response.dto';
+
+const TITLE = t({ id: 'documents.invoice', defaultMessage: 'Invoice' });
+const DRAFT_MARK = t({ id: 'documents.draftMark', defaultMessage: 'DRAFT' });
 
 /**
  * An invoice as a PDF (ADR-071), as its print page laid it out (ADR-046,
@@ -32,13 +38,11 @@ import type { InvoiceDetail } from './dto/invoice-response.dto';
 export function invoiceDocument(
   invoice: InvoiceDetail,
   doc: DocumentText,
-  logoDataUrl: string | null,
-): TDocumentDefinitions {
+): Drawing {
   const isDraft = invoice.status === 'draft';
   const day = (value: string | Date) => formatDay(value, doc.locale);
 
   const content: Content[] = [];
-  if (logoDataUrl) content.push(logo(logoDataUrl));
 
   if (isDraft) {
     content.push(
@@ -92,7 +96,7 @@ export function invoiceDocument(
 
   content.push(
     masthead(
-      doc.label(t({ id: 'documents.invoice', defaultMessage: 'Invoice' })),
+      doc.label(TITLE),
       invoice.number ? run(invoice.number, { fontSize: 15, bold: true }) : null,
       [
         invoice.invoiceDate &&
@@ -124,8 +128,8 @@ export function invoiceDocument(
   );
 
   const parties: Content[] = [
-    party(
-      doc.label(t({ id: 'documents.from', defaultMessage: 'From' })),
+    sellerParty(
+      doc,
       invoice.sellerName,
       [
         invoice.sellerLine1,
@@ -135,22 +139,7 @@ export function invoiceDocument(
         invoice.sellerPostalCode,
         invoice.sellerCountry,
       ],
-      invoice.sellerTaxNumber
-        ? [
-            run(
-              doc.label(
-                t(
-                  {
-                    id: 'documents.taxRegistration',
-                    defaultMessage: 'Tax registration {number}',
-                  },
-                  { number: invoice.sellerTaxNumber },
-                ),
-              ),
-              { fontSize: 10.5 },
-            ),
-          ]
-        : [],
+      invoice.sellerTaxNumber,
     ),
     party(
       doc.label(t({ id: 'documents.billTo', defaultMessage: 'Bill to' })),
@@ -215,9 +204,7 @@ export function invoiceDocument(
   if (invoice.note) content.push(run(invoice.note, { fontSize: 10.5 }));
 
   // DRAFT on every page, not only the first, under what is printed.
-  const draftMark = doc.label(
-    t({ id: 'documents.draftMark', defaultMessage: 'DRAFT' }),
-  );
+  const draftMark = doc.label(DRAFT_MARK);
 
   return {
     info: { title: invoice.number ?? draftMark },
@@ -250,11 +237,7 @@ export function printableInvoice(invoice: InvoiceDetail): Printable {
       ? `${invoice.number}.pdf`
       : `DRAFT ${invoice.id.slice(0, 8)}.pdf`,
     which: (doc) =>
-      kindAndNumber(
-        doc.label(t({ id: 'documents.invoice', defaultMessage: 'Invoice' })),
-        invoice.number ??
-          doc.label(t({ id: 'documents.draftMark', defaultMessage: 'DRAFT' })),
-      ),
-    draw: (doc, logo) => invoiceDocument(invoice, doc, logo),
+      kindAndNumber(doc.label(TITLE), invoice.number ?? doc.label(DRAFT_MARK)),
+    draw: (doc) => invoiceDocument(invoice, doc),
   };
 }

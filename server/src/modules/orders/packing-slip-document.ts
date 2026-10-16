@@ -1,11 +1,10 @@
-import type {
-  Content,
-  TableCell,
-  TDocumentDefinitions,
-} from 'pdfmake/interfaces';
+import type { Content, TableCell } from 'pdfmake/interfaces';
 
 import type { DocumentText } from '../../core/documents/document-text';
-import type { Printable } from '../../core/documents/documents.service';
+import type {
+  Drawing,
+  Printable,
+} from '../../core/documents/documents.service';
 import { formatDay, NO_VALUE } from '../../core/documents/format';
 import {
   addressLines,
@@ -15,7 +14,6 @@ import {
   head,
   kindAndNumber,
   linesOf,
-  logo,
   masthead,
   quantityWithUnit,
   run,
@@ -23,6 +21,11 @@ import {
 } from '../../core/documents/sheet';
 import { t } from '../../i18n/translate';
 import type { PackingSlip } from './dto/shipment-response.dto';
+
+const TITLE = t({
+  id: 'documents.packingSlip',
+  defaultMessage: 'Packing slip',
+});
 
 /**
  * One shipment as a PDF (ADR-071), as its packing slip page had it
@@ -37,16 +40,12 @@ import type { PackingSlip } from './dto/shipment-response.dto';
 export function packingSlipDocument(
   slip: PackingSlip,
   doc: DocumentText,
-  logoDataUrl: string | null,
-): TDocumentDefinitions {
+): Drawing {
   const day = (value: string | Date) => formatDay(value, doc.locale);
   const small = (text: string) => run(text, { fontSize: 10.5 });
-  const title = doc.label(
-    t({ id: 'documents.packingSlip', defaultMessage: 'Packing slip' }),
-  );
+  const title = doc.label(TITLE);
 
   const content: Content[] = [];
-  if (logoDataUrl) content.push(logo(logoDataUrl));
 
   // A voided slip found in a drawer later must not pass for goods that
   // left.
@@ -210,13 +209,7 @@ export function printablePackingSlip(slip: PackingSlip): Printable {
     sellerCountry: null,
     name: `packing-slip-${shipped}-${slip.id.slice(0, 8)}.pdf`,
     // A slip has no number of its own: the order's names it.
-    which: (doc) =>
-      kindAndNumber(
-        doc.label(
-          t({ id: 'documents.packingSlip', defaultMessage: 'Packing slip' }),
-        ),
-        slip.order.number,
-      ),
-    draw: (doc, logo) => packingSlipDocument(slip, doc, logo),
+    which: (doc) => kindAndNumber(doc.label(TITLE), slip.order.number),
+    draw: (doc) => packingSlipDocument(slip, doc),
   };
 }

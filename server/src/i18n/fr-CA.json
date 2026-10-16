@@ -198,8 +198,6 @@
   "invoices.proForma.oneCurrency": "Une facture proforma est dans une seule devise, et cette commande en a plusieurs : {currencies}. Chiffrez chaque article dans l’une d’elles",
   "invoices.proForma.sale": "Une facture proforma est pour une vente. Un achat s’imprime en bon de commande.",
   "invoices.proForma.sample": "Un échantillon n’a pas de prix, il n’a donc pas encore de facture proforma",
-  "invoices.proForma.taxCodeRetired": "{name} est retiré",
-  "invoices.proForma.unknownTaxCode": "Code de taxe inconnu",
   "invoices.proForma.unpriced": "Chaque article doit avoir un prix pour une facture proforma. {skus} {count, plural, one {n’en a} other {n’en ont}} pas : {count, plural, one {chiffrez-le} other {chiffrez-les}} sur la commande, puis recommencez",
   "invoices.saleInvoiced": "Seule une vente se facture",
   "invoices.samplesInvoicedTheyShip": "Les échantillons ne se facturent pas — ils s’expédient et se tracent comme des ventes, mais personne ne les paie",

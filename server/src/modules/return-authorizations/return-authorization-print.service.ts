@@ -113,12 +113,14 @@ export class ReturnAuthorizationPrintService {
         organizationId,
         rma.partnerId,
       );
+      // Its own lines only: what it returns is what it names.
       const names = await namedLines(
         tx,
         organizationId,
         rma.orderId,
         languages,
         'order',
+        lines.map((line) => line.orderLineId),
       );
 
       return {

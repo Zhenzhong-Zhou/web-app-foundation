@@ -198,8 +198,6 @@
   "invoices.proForma.oneCurrency": "形式发票只能使用一种货币，而此订单包含 {currencies}。请用其中一种货币为每个物品定价",
   "invoices.proForma.sale": "形式发票仅适用于销售订单。采购订单打印为采购单。",
   "invoices.proForma.sample": "样品没有价格，因此暂无形式发票",
-  "invoices.proForma.taxCodeRetired": "{name} 已停用",
-  "invoices.proForma.unknownTaxCode": "未知的税码",
   "invoices.proForma.unpriced": "形式发票要求每个物品都有价格。{skus}（共 {count} 个）没有价格：请先在订单上定价，然后重新生成",
   "invoices.saleInvoiced": "只有销售才开具发票",
   "invoices.samplesInvoicedTheyShip": "样品不开具发票——它们像销售一样发货和追溯，但无人付款",

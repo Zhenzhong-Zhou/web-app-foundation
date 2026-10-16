@@ -7,7 +7,7 @@ import type { Tx } from '../stock/stock.service';
 
 /**
  * One order of this organization, or a 404, locked for the rest of the
- * transaction.
+ * transaction unless the caller only reads it.
  *
  * The organization is in the where clause rather than checked after, so an
  * order that belongs to someone else reads exactly like one that does not
@@ -23,20 +23,22 @@ import type { Tx } from '../stock/stock.service';
  * a draft, an order is cancelled only if nothing moved against it. With
  * the row locked, a second change to the same order waits for the first to
  * commit and then reads what it left, so no rule is checked against a state
- * that is already gone (#26).
+ * that is already gone (#26). A document drawn from the order changes
+ * nothing, so it reads it unlocked.
  */
 export async function loadOrder(
   tx: Tx,
   organizationId: string,
   orderId: string,
+  { lock = true }: { lock?: boolean } = {},
 ) {
-  const [order] = await tx
+  const query = tx
     .select()
     .from(orders)
     .where(
       and(eq(orders.id, orderId), eq(orders.organizationId, organizationId)),
-    )
-    .for('update');
+    );
+  const [order] = await (lock ? query.for('update') : query);
 
   if (!order)
     throw new NotFoundException(

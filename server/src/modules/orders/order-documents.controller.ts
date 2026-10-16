@@ -1,17 +1,13 @@
-import {
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Query,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Res } from '@nestjs/common';
 import type { Response } from 'express';
 
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { DocumentsService } from '../../core/documents/documents.service';
-import { PdfResponse } from '../../core/documents/pdf-response.decorator';
+import {
+  DownloadAsked,
+  PdfResponse,
+} from '../../core/documents/pdf-response.decorator';
 import { printablePurchaseOrder } from './purchase-order-document';
 import { PurchaseOrderPrintService } from './purchase-order-print.service';
 
@@ -33,12 +29,12 @@ export class OrderDocumentsController {
   @PdfResponse()
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('download') download: string | undefined,
+    @DownloadAsked() download: boolean,
     @Res() res: Response,
   ): Promise<void> {
     await this.documents.send(
       res,
-      download === '1',
+      download,
       this.purchaseOrders.read(id).then(printablePurchaseOrder),
     );
   }

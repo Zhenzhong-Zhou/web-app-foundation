@@ -1,17 +1,13 @@
-import {
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Query,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Res } from '@nestjs/common';
 import type { Response } from 'express';
 
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { DocumentsService } from '../../core/documents/documents.service';
-import { PdfResponse } from '../../core/documents/pdf-response.decorator';
+import {
+  DownloadAsked,
+  PdfResponse,
+} from '../../core/documents/pdf-response.decorator';
 import { printableReturnAuthorization } from './return-authorization-document';
 import { ReturnAuthorizationPrintService } from './return-authorization-print.service';
 
@@ -32,12 +28,12 @@ export class ReturnAuthorizationDocumentsController {
   @PdfResponse()
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('download') download: string | undefined,
+    @DownloadAsked() download: boolean,
     @Res() res: Response,
   ): Promise<void> {
     await this.documents.send(
       res,
-      download === '1',
+      download,
       this.rmas.read(id).then(printableReturnAuthorization),
     );
   }
