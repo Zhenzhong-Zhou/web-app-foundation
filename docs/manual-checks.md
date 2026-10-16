@@ -453,11 +453,13 @@ folder by folder; these check what is already in place.
       edit and close-short dialogs; receiving a line, shipping with its lot
       preview, the shipments and returns on an order, voiding a shipment,
       taking a return with its reasons, and linking a return to an RMA. The
-      packing slip stays English until printed documents (step 5);
+      packing slip is a PDF in the customer's languages, not the
+      reader's (MC-2501);
   - invoices: the list with its status tabs, an invoice with its lines,
       totals, parties and credit notes, the draft's details and tax code,
       the line, issue, void, credit and delete dialogs, and a credit note's
-      page. The printed invoice and credit note stay English until step 5;
+      page. The invoice's and the credit note's PDFs are in the customer's
+      languages instead (MC-2501);
   - returns: the RMA list with its status tabs, raising an RMA with each
       line's resolution by name, an RMA's page with closing, cancelling,
       linking a return and raising a replacement;
@@ -891,7 +893,7 @@ await fetch(`${api}/v1/files/product-image`, {
   everything and Close this organization; as an Admin or a Viewer, the tab
   ends at the registered address. Download everything saves
   `<organization>-export-<day>.zip` straight to disk. Opened: a README in
-  the browser's language; `organization.csv`, `members.csv`,
+  the language the app shows; `organization.csv`, `members.csv`,
   `role_permissions.csv` and a CSV per kind of record, each opening in
   Excel or Numbers with Chinese and French names readable; invoices and
   credit notes with their lines and tax; `files/` with the logo and
@@ -1052,6 +1054,11 @@ await fetch(`${api}/v1/files/product-image`, {
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R12** *(error page)* Make a page crash while you are on it (for
+  a developer: throw in a page's render), so it shows Something went
+  wrong. Press Go back: the page before shows. Crash it again, then choose
+  another page from the menu: that page shows, not the message. Go home
+  the same. Reload on the broken page still shows the message.
 - **MC-R11** *(#120)* On Account, Change password with a wrong current
   password: the refusal says to check it and try again, and the Current
   password field turns red; with VoiceOver, Tab back to it: it reads as
@@ -1062,11 +1069,6 @@ first.
   organization, in 简体中文 too (密码不正确。请检查后重试。, then
   忘记了？给我发送重置链接). Signed out, a wrong password marks both Email
   and Password, never just one.
-- **MC-R12** *(error page)* Make a page crash while you are on it (for
-  a developer: throw in a page's render), so it shows Something went
-  wrong. Press Go back: the page before shows. Crash it again, then choose
-  another page from the menu: that page shows, not the message. Go home
-  the same. Reload on the broken page still shows the message.
 - **MC-R10** *(#122)* As the only member of an organization, on Account,
   choose Delete my account: the dialog closes the organization too.
   Download everything, then cancel: "Your recent work" lists Everything
@@ -1083,7 +1085,7 @@ first.
 - **MC-R08** *(#121)* On any signed-in page, press Tab once: "Skip to
   content" appears at the top left. Press Enter: the next Tab reaches the
   page's own first control, not the rail or the bar. A screen reader's
-  landmarks list a main region. The link never shows on paper.
+  landmarks list a main region.
 - **MC-R07** *(axe-core 4.14)* With VoiceOver on, Tab to your circle at the
   right of the top bar: it reads your initials first, then "signed in as"
   and your email, in English, French and Chinese. With Voice Control on,
@@ -1271,3 +1273,6 @@ first.
   (ADR-071): MC-703, MC-1412, MC-1501, MC-1539 and MC-R06 rewritten.
 - 2026-10-16: a broken page can be left by the menu, Back or Go home,
   and its message offers Go back: MC-R12.
+- 2026-10-16: after ADR-071's review: MC-2501, MC-2507, MC-2509, MC-2510
+  and MC-2511 extended; MC-2401, MC-1406 and MC-R08 rewritten, and MC-R12
+  moved to its place, newest first.
