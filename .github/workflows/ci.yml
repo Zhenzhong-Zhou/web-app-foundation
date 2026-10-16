@@ -246,6 +246,14 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # The mail server the dev stack has (docker-compose.yml). A flow
+      # that waits for its email, as a reset request does, fails without
+      # one, since a reset whose email could not be sent says so rather
+      # than claiming it went (AuthService.requestPasswordReset).
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
 
     steps:
       - uses: actions/checkout@v7
