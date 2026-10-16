@@ -1,7 +1,11 @@
 import { sql } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
-import { documentSequences, type DocumentType } from '../../database/schema';
+import {
+  documentSequences,
+  type DocumentType,
+  type OrderDirection,
+} from '../../database/schema';
 
 /**
  * What a printed number starts with. In code for now; a per-organization
@@ -11,7 +15,14 @@ const PREFIXES: Record<DocumentType, string> = {
   invoice: 'INV-',
   credit_note: 'CN-',
   return_authorization: 'RMA-',
+  sale_order: 'SO-',
+  purchase_order: 'PO-',
 };
+
+/** An order's series, by its direction (ADR-071, amended). */
+export function orderSeries(direction: OrderDirection): DocumentType {
+  return direction === 'sale' ? 'sale_order' : 'purchase_order';
+}
 
 /**
  * The next number in an organization's series, taken inside the caller's

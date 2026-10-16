@@ -31,7 +31,7 @@ test('exports this month’s orders as a CSV the browser saves', async ({
   );
   const text = await readFile(await download.path(), 'utf8');
   // The byte-order mark for Excel, then the headers in English.
-  expect(text.startsWith('\uFEFFReference,Direction,Status,Partner')).toBe(
-    true,
-  );
+  expect(
+    text.startsWith('\uFEFFNumber,Reference,Direction,Status,Partner'),
+  ).toBe(true);
 });

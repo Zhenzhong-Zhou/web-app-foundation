@@ -12268,6 +12268,9 @@
           "id": {
             "type": "string"
           },
+          "number": {
+            "type": "string"
+          },
           "partnerId": {
             "type": "string"
           },
@@ -12321,6 +12324,7 @@
         },
         "required": [
           "id",
+          "number",
           "partnerId",
           "partnerName",
           "direction",
@@ -12686,6 +12690,9 @@
           "id": {
             "type": "string"
           },
+          "number": {
+            "type": "string"
+          },
           "partnerId": {
             "type": "string"
           },
@@ -12792,6 +12799,7 @@
         },
         "required": [
           "id",
+          "number",
           "partnerId",
           "partnerName",
           "direction",

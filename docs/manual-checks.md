@@ -964,6 +964,13 @@ await fetch(`${api}/v1/files/product-image`, {
   download again, and the README is Chinese. Open
   `organization.csv` in Excel or Numbers: `created_at` reads like
   `2026-10-16 03:31:59` and is taken as a date.
+- **MC-2503** *(ADR-071)* On a database that already had orders, after
+  `npm run migrate:all`: every order has a number, SO- for sales and PO-
+  for purchases, counting up from 000001 in the order they were made. A
+  new order takes the next one, a draft included, and a duplicated
+  order, or an RMA's replacement, takes its own. Type an order's number
+  in the lookup: it is found, titled by it. Home's recent records name an
+  order by its number, and the orders CSV starts with a Number column.
 
 ## Regressions
 
@@ -1166,3 +1173,4 @@ first.
   ADR-071): MC-2502.
 - 2026-10-16: the export's README follows the app's language (#118):
   MC-2502 extended.
+- 2026-10-16: orders numbered SO- and PO- (ADR-071, amended): MC-2503.

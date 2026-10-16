@@ -1256,6 +1256,7 @@ export type HomeResponse = {
 
 export type OrderSummary = {
   id: string;
+  number: string;
   partnerId: string;
   partnerName: string;
   direction: 'sale' | 'purchase';
@@ -1354,6 +1355,7 @@ export type OrderLine = {
 
 export type OrderDetail = {
   id: string;
+  number: string;
   partnerId: string;
   partnerName: string;
   direction: 'sale' | 'purchase';

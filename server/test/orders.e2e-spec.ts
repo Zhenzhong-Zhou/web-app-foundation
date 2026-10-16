@@ -163,6 +163,32 @@ describe('Orders (e2e)', () => {
       expect(order.lines[0].sku).toBe('WIDGET-1');
     });
 
+    it('numbers each order as it is created, a series per direction (ADR-071)', async () => {
+      const ctx = await setup('alpha');
+      const created = async (direction: 'sale' | 'purchase') =>
+        body<{ order: { id: string; number: string } }>(
+          await ctx.agent
+            .post('/v1/orders')
+            .send({ ...purchase(ctx.partnerId, ctx.variant.id), direction })
+            .expect(201),
+        ).order;
+
+      const first = await created('purchase');
+      const second = await created('purchase');
+      const sale = await created('sale');
+      expect([first.number, second.number, sale.number]).toEqual([
+        'PO-000001',
+        'PO-000002',
+        'SO-000001',
+      ]);
+
+      // Found by it, beside the reference and the partner's name.
+      const found = body<{ entries: { id: string }[] }>(
+        await ctx.agent.get('/v1/orders?search=PO-000002').expect(200),
+      ).entries;
+      expect(found.map((order) => order.id)).toEqual([second.id]);
+    });
+
     it('rejects an order with no lines', async () => {
       const ctx = await setup('alpha');
 

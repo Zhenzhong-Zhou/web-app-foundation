@@ -13,6 +13,8 @@ import type {
 /** A row of the order list. */
 export class OrderSummary {
   id!: string;
+  /** Ours, SO- or PO- (ADR-071). */
+  number!: string;
   partnerId!: string;
   partnerName!: string;
   direction!: OrderDirection;
@@ -130,6 +132,8 @@ export class OrderDocuments {
 
 export class OrderDetail {
   id!: string;
+  /** Ours, SO- or PO- (ADR-071); `reference` is theirs. */
+  number!: string;
   partnerId!: string;
   partnerName!: string;
   direction!: OrderDirection;

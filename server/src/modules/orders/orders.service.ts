@@ -110,10 +110,11 @@ export class OrdersService {
       if (query.direction) scope.push(eq(orders.direction, query.direction));
       // By expected date (ADR-057); an order without one is left out.
       scope.push(...calendarRange(orders.expectedAt, query));
-      // Its reference or its partner's name (ADR-056).
+      // Its number, its reference or its partner's name (ADR-056, ADR-071).
       if (query.search) {
         const terms = searchTerms(query.search);
         const match = or(
+          codeMatches(orders.number, terms),
           codeMatches(orders.reference, terms),
           partnerMatches(orders.partnerId, terms),
         );
@@ -129,6 +130,7 @@ export class OrdersService {
       const rows = await tx
         .select({
           id: orders.id,
+          number: orders.number,
           partnerId: orders.partnerId,
           partnerName: partners.name,
           direction: orders.direction,
@@ -181,6 +183,7 @@ export class OrdersService {
       const [order] = await tx
         .select({
           id: orders.id,
+          number: orders.number,
           partnerId: orders.partnerId,
           partnerName: partners.name,
           direction: orders.direction,

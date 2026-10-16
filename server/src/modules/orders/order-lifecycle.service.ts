@@ -11,6 +11,7 @@ import { isUniqueViolation } from '../../database/errors';
 import { addresses, orderLines, orders, partners } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { orderSeries, takeNumber } from '../invoices/document-numbers';
 import { type Tx } from '../stock/stock.service';
 import type { CreateOrderDto } from './dto/create-order.dto';
 import type { DuplicateOrderDto } from './dto/duplicate-order.dto';
@@ -100,6 +101,12 @@ export class OrderLifecycleService {
           .insert(orders)
           .values({
             organizationId,
+            // Taken now, so a draft has a number to quote (ADR-071).
+            number: await takeNumber(
+              tx,
+              organizationId,
+              orderSeries(input.direction),
+            ),
             partnerId: input.partnerId,
             direction: input.direction,
             isSample: input.isSample ?? false,
@@ -212,6 +219,12 @@ export class OrderLifecycleService {
         .insert(orders)
         .values({
           organizationId,
+          // Its own, never the source's (ADR-071).
+          number: await takeNumber(
+            tx,
+            organizationId,
+            orderSeries(source.direction),
+          ),
           partnerId: source.partnerId,
           direction: source.direction,
           isSample: source.isSample,

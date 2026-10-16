@@ -9,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -72,6 +73,14 @@ export const orders = pgTable(
     isSample: boolean('is_sample').notNull().default(false),
 
     status: text('status').$type<OrderStatus>().notNull().default('draft'),
+
+    /**
+     * Ours, from the organization's series (ADR-071, amended): SO-000001
+     * for a sale, PO-000001 for a purchase, taken when the order is created,
+     * so a draft has one to quote. A deleted draft leaves a gap, which an
+     * order may have and an invoice may not.
+     */
+    number: text('number').notNull(),
 
     /**
      * When the order was confirmed: its place in line when stock is short
@@ -184,6 +193,8 @@ export const orders = pgTable(
       'gin',
       sql`${t.reference} gin_trgm_ops`,
     ),
+    index('orders_number_trgm_idx').using('gin', sql`${t.number} gin_trgm_ops`),
+    uniqueIndex('orders_org_number_key').on(t.organizationId, t.number),
     check(
       'orders_direction_check',
       sql`${t.direction} in ('purchase', 'sale')`,

@@ -28,6 +28,7 @@ const ALL = ['orders.view', 'orders.create', 'orders.update', 'orders.receive'];
 function order(over: Partial<OrderDetail> = {}): OrderDetail {
   return {
     id: 'order-1',
+    number: 'PO-000001',
     partnerId: 'partner-1',
     partnerName: 'Acme Supplies',
     direction: 'purchase',

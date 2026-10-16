@@ -10,6 +10,7 @@ type OrderRow = Awaited<ReturnType<OrdersService['list']>>['entries'][number];
  * own currency, so an order can hold two, and one total would be wrong.
  */
 export const ORDER_COLUMNS: ExportColumn<OrderRow>[] = [
+  { header: HEADERS.number, value: (row) => row.number },
   { header: HEADERS.reference, value: (row) => row.reference },
   {
     header: t({ id: 'exports.column.direction', defaultMessage: 'Direction' }),
