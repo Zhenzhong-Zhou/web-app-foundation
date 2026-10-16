@@ -603,10 +603,15 @@ describe('Invoices (e2e)', () => {
       expect(await mediaBox()).toBe('/MediaBox [0 0 612 792]');
     });
 
-    it('packs every issued invoice into the export, as its PDF (ADR-071)', async () => {
+    it('packs every issued invoice and credit note into the export, as its PDF (ADR-071)', async () => {
       const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);
       await issue(org, r.invoice.id).expect(200);
+      // Voiding credits it in full: CN-000001.
+      await org.agent
+        .post(`/v1/invoices/${r.invoice.id}/void`)
+        .send({ reason: 'Billed twice', creditDate: TODAY })
+        .expect(200);
 
       const res = await org.agent
         .get('/v1/organization/export')
@@ -614,8 +619,14 @@ describe('Invoices (e2e)', () => {
         .expect(200);
       const zip = readZip(res.body as Buffer);
 
-      const pdf = zip.get('documents/invoices/INV-000001.pdf');
-      expect(pdf?.toString('latin1').startsWith('%PDF-')).toBe(true);
+      for (const name of [
+        'documents/invoices/INV-000001.pdf',
+        'documents/credit-notes/CN-000001.pdf',
+      ]) {
+        expect(zip.get(name)?.toString('latin1').startsWith('%PDF-')).toBe(
+          true,
+        );
+      }
     });
 
     it('draws a draft marked DRAFT, and another organization’s not at all', async () => {

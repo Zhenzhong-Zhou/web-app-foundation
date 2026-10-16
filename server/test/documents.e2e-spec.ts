@@ -151,11 +151,10 @@ describe('Documents as PDF (e2e)', () => {
       });
     });
 
-    it('refuses a purchase, a sample, an unpriced or cancelled sale, and another organization’s tax code', async () => {
+    it('refuses a purchase, a sample, an unpriced or cancelled sale, and a tax code it cannot use', async () => {
       const org = await registerOrganization(app, 'alpha');
       const beta = await registerOrganization(app, 'beta');
       const s = await shippedSale(org.agent);
-      const sample = await shippedSale(beta.agent, { isSample: true });
       const theirs = await gst(beta);
 
       const extra = await createVariant(org.agent, {
@@ -163,40 +162,64 @@ describe('Documents as PDF (e2e)', () => {
         name: 'Extra',
         variant: { sku: 'EXTRA' },
       });
-      const unpriced = body<{ order: { id: string } }>(
-        await org.agent
-          .post('/v1/orders')
-          .send({
-            partnerId: s.partnerId,
-            direction: 'sale',
-            lines: [{ variantId: extra, quantityOrdered: '1' }],
-          })
-          .expect(201),
-      ).order;
-      const purchase = body<{ order: { id: string } }>(
-        await org.agent
-          .post('/v1/orders')
-          .send({
-            partnerId: s.partnerId,
-            direction: 'purchase',
-            lines: [{ variantId: extra, quantityOrdered: '1' }],
-          })
-          .expect(201),
-      ).order;
-
-      const proForma = (agent: Org['agent'], orderId: string, query = '') =>
-        agent.get(`/v1/orders/${orderId}/pro-forma${query}`);
-
-      await proForma(org.agent, purchase.id).expect(400);
-      await proForma(beta.agent, sample.orderId).expect(409);
-      await proForma(org.agent, unpriced.id).expect(409);
-      await proForma(org.agent, s.orderId, `?taxCodeId=${theirs}`).expect(400);
-
+      const raise = async (over: Record<string, unknown>, priced = true) =>
+        body<{ order: { id: string; number: string } }>(
+          await org.agent
+            .post('/v1/orders')
+            .send({
+              partnerId: s.partnerId,
+              direction: 'sale',
+              lines: [
+                {
+                  variantId: extra,
+                  quantityOrdered: '1',
+                  ...(priced ? { unitPrice: '12.5', currency: 'CAD' } : {}),
+                },
+              ],
+              ...over,
+            })
+            .expect(201),
+        ).order;
+      // Each priced, so only the rule under test can refuse it.
+      const purchase = await raise({ direction: 'purchase' });
+      const sample = await raise({ isSample: true });
+      const cancelled = await raise({});
       await org.agent
-        .patch(`/v1/orders/${unpriced.id}`)
+        .patch(`/v1/orders/${cancelled.id}`)
         .send({ status: 'cancelled' })
         .expect(204);
-      await proForma(org.agent, unpriced.id).expect(409);
+      const unpriced = await raise({}, false);
+      const retired = await gst(org);
+      await org.agent
+        .patch(`/v1/tax-codes/${retired}`)
+        .send({ isActive: false })
+        .expect(204);
+
+      const refused = async (orderId: string, status: number, query = '') =>
+        body<{ message: string }>(
+          await org.agent
+            .get(`/v1/orders/${orderId}/pro-forma${query}`)
+            .expect(status),
+        ).message;
+
+      expect(await refused(purchase.id, 400)).toBe(
+        'A pro forma is for a sale. A purchase prints as a purchase order.',
+      );
+      expect(await refused(sample.id, 409)).toBe(
+        'A sample has no prices, so it has no pro forma yet',
+      );
+      expect(await refused(cancelled.id, 409)).toBe(
+        `${cancelled.number} is cancelled, so it has no pro forma`,
+      );
+      expect(await refused(unpriced.id, 409)).toMatch(
+        /^Every item needs a price for a pro forma\. EXTRA has none/,
+      );
+      expect(await refused(s.orderId, 400, `?taxCodeId=${theirs}`)).toBe(
+        'No such tax code',
+      );
+      expect(await refused(s.orderId, 409, `?taxCodeId=${retired}`)).toBe(
+        'GST is retired — choose a code still in use',
+      );
 
       // A refusal makes nothing, so it records nothing.
       expect(
