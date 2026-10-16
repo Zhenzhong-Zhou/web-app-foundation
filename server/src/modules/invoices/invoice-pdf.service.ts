@@ -6,10 +6,14 @@ import {
   DocumentsService,
   paperFor,
 } from '../../core/documents/documents.service';
+import { creditNoteDocument, creditNoteFileName } from './credit-note-document';
 import { invoiceDocument, invoiceFileName } from './invoice-document';
 import { InvoicesService } from './invoices.service';
 
-/** An invoice as a PDF (ADR-071), read as GET /invoices/:id reads it. */
+/**
+ * An invoice or a credit note as a PDF (ADR-071), read as its own GET
+ * reads it.
+ */
 @Injectable()
 export class InvoicePdfService {
   constructor(
@@ -33,6 +37,29 @@ export class InvoicePdfService {
       ),
       paperFor(country),
       invoiceFileName(invoice),
+      download,
+    );
+  }
+
+  async creditNote(
+    id: string,
+    res: Response,
+    download: boolean,
+  ): Promise<void> {
+    const note = await this.invoices.findCreditNote(id);
+    const letterhead = await this.documents.letterhead();
+    // Copied at issue, as the invoice's was.
+    const country = note.sellerCountry ?? letterhead.country;
+
+    await this.documents.send(
+      res,
+      creditNoteDocument(
+        note,
+        documentText(note.language, note.secondLanguage, country),
+        letterhead.logo,
+      ),
+      paperFor(country),
+      creditNoteFileName(note),
       download,
     );
   }

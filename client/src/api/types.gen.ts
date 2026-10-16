@@ -4788,6 +4788,25 @@ export type ShipmentsControllerSlipV1Responses = {
 export type ShipmentsControllerSlipV1Response =
   ShipmentsControllerSlipV1Responses[keyof ShipmentsControllerSlipV1Responses];
 
+export type ShipmentsControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+    shipmentId: string;
+  };
+  query?: {
+    download?: '1';
+  };
+  url: '/v1/orders/{id}/shipments/{shipmentId}/pdf';
+};
+
+export type ShipmentsControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type ShipmentsControllerPdfV1Response =
+  ShipmentsControllerPdfV1Responses[keyof ShipmentsControllerPdfV1Responses];
+
 export type ShipmentsControllerPreviewV1Data = {
   body: PreviewShipmentDto;
   path: {
@@ -5474,6 +5493,24 @@ export type CreditNotesControllerGetV1Responses = {
 
 export type CreditNotesControllerGetV1Response =
   CreditNotesControllerGetV1Responses[keyof CreditNotesControllerGetV1Responses];
+
+export type CreditNotesControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    download?: '1';
+  };
+  url: '/v1/credit-notes/{id}/pdf';
+};
+
+export type CreditNotesControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type CreditNotesControllerPdfV1Response =
+  CreditNotesControllerPdfV1Responses[keyof CreditNotesControllerPdfV1Responses];
 
 export type RecentControllerClearV1Data = {
   body?: never;

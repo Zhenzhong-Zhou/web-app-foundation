@@ -7,6 +7,7 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
+import { ApiOkResponse, ApiProduces, ApiQuery } from '@nestjs/swagger';
 import type { Response } from 'express';
 
 import { csvFile, everyRow, exportFilters } from '../../common/export';
@@ -22,6 +23,7 @@ import type {
 } from './dto/credit-note-response.dto';
 import { ListCreditNotesDto } from './dto/list-credit-notes.dto';
 import { CREDIT_NOTE_COLUMNS } from './invoice-exports';
+import { InvoicePdfService } from './invoice-pdf.service';
 import { InvoicesService } from './invoices.service';
 
 /**
@@ -32,7 +34,10 @@ import { InvoicesService } from './invoices.service';
  */
 @Controller({ path: 'credit-notes', version: '1' })
 export class CreditNotesController {
-  constructor(private readonly invoices: InvoicesService) {}
+  constructor(
+    private readonly invoices: InvoicesService,
+    private readonly pdfs: InvoicePdfService,
+  ) {}
 
   /** Every credit note, newest first, with its date range and search. */
   @Get()
@@ -76,5 +81,22 @@ export class CreditNotesController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<CreditNoteEnvelope> {
     return { creditNote: await this.invoices.findCreditNote(id) };
+  }
+
+  /**
+   * The credit note as a PDF (ADR-071), under the permission that reads
+   * it: inline for Print, an attachment with ?download=1.
+   */
+  @Get(':id/pdf')
+  @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
+  @ApiProduces('application/pdf')
+  @ApiQuery({ name: 'download', required: false, enum: ['1'] })
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  async pdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('download') download: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.pdfs.creditNote(id, res, download === '1');
   }
 }

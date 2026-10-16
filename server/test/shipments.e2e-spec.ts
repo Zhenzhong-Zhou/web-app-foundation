@@ -363,6 +363,32 @@ describe('Shipments (e2e)', () => {
       expect((await byLot(s.focus, s.shelf)).NEVER).toBe('25.0000');
     });
 
+    it('draws the packing slip as a PDF, to download (ADR-071)', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const s = await scenario(alpha);
+      const shipment = body<{ shipment: ShipmentResponse }>(
+        await alpha.agent
+          .post(`/v1/orders/${s.order.id}/shipments`)
+          .send({
+            fromLocationId: s.shelf,
+            lines: [{ lineId: s.focusLine, quantity: '25' }],
+          })
+          .expect(201),
+      ).shipment;
+
+      const res = await alpha.agent
+        .get(`/v1/orders/${s.order.id}/shipments/${shipment.id}/pdf?download=1`)
+        .responseType('blob')
+        .expect(200);
+      expect(res.headers['content-type']).toBe('application/pdf');
+      expect(res.headers['content-disposition']).toMatch(
+        /^attachment; filename="packing-slip-\d{4}-\d{2}-\d{2}-[0-9a-f]{8}\.pdf"/,
+      );
+      expect((res.body as Buffer).toString('latin1').startsWith('%PDF-')).toBe(
+        true,
+      );
+    });
+
     it('returns everything a packing slip prints', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       const s = await scenario(alpha);

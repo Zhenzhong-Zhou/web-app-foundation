@@ -7,7 +7,11 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
+  Res,
 } from '@nestjs/common';
+import { ApiOkResponse, ApiProduces, ApiQuery } from '@nestjs/swagger';
+import type { Response } from 'express';
 
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import { Audited } from '../../core/audit/audited.decorator';
@@ -23,6 +27,7 @@ import type {
   ShipmentPlan,
 } from './dto/shipment-response.dto';
 import { VoidShipmentDto } from './dto/void-shipment.dto';
+import { PackingSlipPdfService } from './packing-slip-pdf.service';
 import { ShipmentVoidsService } from './shipment-voids.service';
 import { ShipmentsService } from './shipments.service';
 import { ShippingService } from './shipping.service';
@@ -38,6 +43,7 @@ export class ShipmentsController {
     private readonly shipments: ShipmentsService,
     private readonly shipping: ShippingService,
     private readonly voids: ShipmentVoidsService,
+    private readonly pdfs: PackingSlipPdfService,
   ) {}
 
   @Get()
@@ -57,6 +63,24 @@ export class ShipmentsController {
     @Param('shipmentId', ParseUUIDPipe) shipmentId: string,
   ): Promise<PackingSlip> {
     return this.shipments.slip(id, shipmentId);
+  }
+
+  /**
+   * The packing slip as a PDF (ADR-071), under the permission that reads
+   * it: inline for Print, an attachment with ?download=1.
+   */
+  @Get(':shipmentId/pdf')
+  @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
+  @ApiProduces('application/pdf')
+  @ApiQuery({ name: 'download', required: false, enum: ['1'] })
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  async pdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('shipmentId', ParseUUIDPipe) shipmentId: string,
+    @Query('download') download: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.pdfs.send(id, shipmentId, res, download === '1');
   }
 
   /**

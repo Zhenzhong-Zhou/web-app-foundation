@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { DocumentsModule } from '../../core/documents/documents.module';
 import { NotificationsModule } from '../../core/notifications/notifications.module';
 import { PartnersModule } from '../partners/partners.module';
 import { ReturnAuthorizationsModule } from '../return-authorizations/return-authorizations.module';
@@ -9,6 +10,7 @@ import { OrderLinesService } from './order-lines.service';
 import { OrderReceiptsService } from './order-receipts.service';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { PackingSlipPdfService } from './packing-slip-pdf.service';
 import { ReturnsController } from './returns.controller';
 import { ReturnsService } from './returns.service';
 import { ShipmentVoidsService } from './shipment-voids.service';
@@ -32,6 +34,7 @@ import { ShippingService } from './shipping.service';
     PartnersModule,
     NotificationsModule,
     ReturnAuthorizationsModule,
+    DocumentsModule,
   ],
   controllers: [OrdersController, ShipmentsController, ReturnsController],
   providers: [
@@ -43,6 +46,7 @@ import { ShippingService } from './shipping.service';
     ShippingService,
     ShipmentVoidsService,
     ReturnsService,
+    PackingSlipPdfService,
   ],
   exports: [OrdersService],
 })
