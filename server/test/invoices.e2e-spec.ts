@@ -536,6 +536,49 @@ describe('Invoices (e2e)', () => {
       ).invoice;
     }
 
+    it('draws the invoice as a PDF, to print or to download (ADR-071)', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      await issue(org, r.invoice.id).expect(200);
+
+      const shown = await org.agent
+        .get(`/v1/invoices/${r.invoice.id}/pdf`)
+        .responseType('blob')
+        .expect(200);
+      expect(shown.headers['content-type']).toBe('application/pdf');
+      expect(shown.headers['content-disposition']).toMatch(
+        /^inline; filename="INV-000001\.pdf"/,
+      );
+      const pdf = (shown.body as Buffer).toString('latin1');
+      expect(pdf.startsWith('%PDF-')).toBe(true);
+      // A Canadian seller prints on Letter (ADR-071).
+      expect(pdf).toContain('/MediaBox [0 0 612 792]');
+
+      const saved = await org.agent
+        .get(`/v1/invoices/${r.invoice.id}/pdf?download=1`)
+        .responseType('blob')
+        .expect(200);
+      expect(saved.headers['content-disposition']).toMatch(
+        /^attachment; filename="INV-000001\.pdf"/,
+      );
+    });
+
+    it('draws a draft marked DRAFT, and another organization’s not at all', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const r = await ready(org);
+      const other = await registerOrganization(app, 'beta');
+
+      const draft = await org.agent
+        .get(`/v1/invoices/${r.invoice.id}/pdf`)
+        .responseType('blob')
+        .expect(200);
+      expect(draft.headers['content-disposition']).toMatch(
+        /^inline; filename="DRAFT [0-9a-f]{8}\.pdf"/,
+      );
+
+      await other.agent.get(`/v1/invoices/${r.invoice.id}/pdf`).expect(404);
+    });
+
     it('numbers the invoice, stores its amounts and copies both parties', async () => {
       const org = await registerOrganization(app, 'alpha');
       const r = await ready(org);

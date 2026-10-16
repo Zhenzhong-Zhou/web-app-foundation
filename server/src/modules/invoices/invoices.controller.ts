@@ -13,6 +13,7 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
+import { ApiOkResponse, ApiProduces, ApiQuery } from '@nestjs/swagger';
 import type { Response } from 'express';
 
 import { csvFile, everyRow, exportFilters } from '../../common/export';
@@ -41,6 +42,7 @@ import { VoidInvoiceDto } from './dto/void-invoice.dto';
 import { InvoiceDraftsService } from './invoice-drafts.service';
 import { INVOICE_COLUMNS } from './invoice-exports';
 import { InvoiceIssuingService } from './invoice-issuing.service';
+import { InvoicePdfService } from './invoice-pdf.service';
 import { InvoicesService } from './invoices.service';
 
 /**
@@ -54,6 +56,7 @@ export class InvoicesController {
     private readonly creditNotes: CreditNotesService,
     private readonly drafts: InvoiceDraftsService,
     private readonly issuing: InvoiceIssuingService,
+    private readonly pdfs: InvoicePdfService,
   ) {}
 
   @Get()
@@ -92,6 +95,24 @@ export class InvoicesController {
   @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
   async get(@Param('id', ParseUUIDPipe) id: string): Promise<InvoiceEnvelope> {
     return { invoice: await this.invoices.findById(id) };
+  }
+
+  /**
+   * The invoice as a PDF (ADR-071), under the permission that reads it:
+   * inline for Print, which opens it in the browser's own viewer, and an
+   * attachment with ?download=1 for Download PDF.
+   */
+  @Get(':id/pdf')
+  @RequirePermissions(PERMISSIONS.INVOICES_VIEW)
+  @ApiProduces('application/pdf')
+  @ApiQuery({ name: 'download', required: false, enum: ['1'] })
+  @ApiOkResponse({ schema: { type: 'string', format: 'binary' } })
+  async pdf(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('download') download: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.pdfs.send(id, res, download === '1');
   }
 
   @Post()

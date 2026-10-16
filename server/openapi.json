@@ -5939,6 +5939,48 @@
         ]
       }
     },
+    "/v1/invoices/{id}/pdf": {
+      "get": {
+        "operationId": "InvoicesController_pdf_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "download",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Invoices"
+        ]
+      }
+    },
     "/v1/invoices/{id}/lines/{lineId}": {
       "patch": {
         "operationId": "InvoicesController_updateLine_v1",

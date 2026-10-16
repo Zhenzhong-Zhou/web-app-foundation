@@ -5309,6 +5309,24 @@ export type InvoicesControllerUpdateV1Responses = {
 export type InvoicesControllerUpdateV1Response =
   InvoicesControllerUpdateV1Responses[keyof InvoicesControllerUpdateV1Responses];
 
+export type InvoicesControllerPdfV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    download?: '1';
+  };
+  url: '/v1/invoices/{id}/pdf';
+};
+
+export type InvoicesControllerPdfV1Responses = {
+  200: Blob | File;
+};
+
+export type InvoicesControllerPdfV1Response =
+  InvoicesControllerPdfV1Responses[keyof InvoicesControllerPdfV1Responses];
+
 export type InvoicesControllerUpdateLineV1Data = {
   body: UpdateInvoiceLineDto;
   path: {
