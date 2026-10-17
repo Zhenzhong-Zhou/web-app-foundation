@@ -23,6 +23,7 @@ import {
   formatMoney,
   NO_VALUE,
 } from '../lib/format';
+import { organizationDayOf } from '../lib/time-zone';
 import { STATUS_TONES } from '../theme/status';
 
 /**
@@ -127,7 +128,8 @@ export function OrderDocuments({ order }: { order: OrderDetail }) {
                       id: 'orders.documents.shipment',
                       defaultMessage: 'Shipment of {date}',
                     },
-                    { date: formatDay(invoice.shippedAt.slice(0, 10)) },
+                    // The organization's day, as the packing slip prints it.
+                    { date: formatDay(organizationDayOf(invoice.shippedAt)) },
                   )}
                 </TableCell>
                 <TableCell align="right">

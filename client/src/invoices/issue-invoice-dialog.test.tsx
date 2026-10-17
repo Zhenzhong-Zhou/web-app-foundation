@@ -2,9 +2,10 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { InvoiceDetail } from '../api/types.gen';
+import { setOrganizationTimeZone } from '../lib/time-zone';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { IssueInvoiceDialog } from './issue-invoice-dialog';
@@ -167,5 +168,29 @@ describe('IssueInvoiceDialog', () => {
 
     expect(await screen.findByText(/no tax code/)).toBeTruthy();
     expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  // 8:28 am on Saturday here in Tokyo; still Friday in Vancouver.
+  it("starts the invoice date at the organization's today (ADR-072)", () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-16T23:28:00.000Z'));
+    setOrganizationTimeZone('America/Vancouver');
+    try {
+      renderWithAuth(
+        <MemoryRouter>
+          <IssueInvoiceDialog
+            invoice={DRAFT}
+            open
+            onClose={() => undefined}
+            onIssued={() => undefined}
+          />
+        </MemoryRouter>,
+      );
+
+      expect(screen.getByLabelText(/Invoice date/)).toHaveValue('2026-10-16');
+    } finally {
+      setOrganizationTimeZone(null);
+      vi.useRealTimers();
+    }
   });
 });

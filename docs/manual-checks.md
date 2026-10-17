@@ -1080,12 +1080,18 @@ override, then reload.
   under it without an override; a packing slip made now prints today's
   date, and its file name carries it; a receipt in USD takes today's rate
   when tomorrow's is also entered; This month on a list's date range is
-  this month; a CSV export's file name carries today's date.
+  this month; a CSV export's file name carries today's date. Void an
+  issued invoice now: its page and its PDF say Voided with today's date,
+  and the order's Documents tab names its shipment by today's. Issue,
+  Void and Credit open on today's date, and a new exchange rate on today.
 - **MC-2606** *(ADR-072)* Another clock: with the organization in
   Vancouver and the computer set to Shanghai, Home shows Vancouver's date
   and, under it, Dates follow the organization's time zone: Pacific Time
   (Vancouver). Times on screens, a stock movement's say, are Shanghai's.
-  Set the computer back to Vancouver: the note goes.
+  At 9 am on the 1st in Shanghai, still the last evening of the month in
+  Vancouver, Stock movements with This month holds the movements made
+  this afternoon in Vancouver, though their times read the 1st. Set the
+  computer back to Vancouver: the note goes.
 - **MC-2607** *(ADR-072)* In 简体中文 on a phone: 概况 → 时区 reads as
   the canvas does; typing 中国 finds 中国标准时间（Shanghai）; the time
   there, the note before saving and Home's note read in Chinese.
@@ -1341,3 +1347,6 @@ first.
   MC-2601 to MC-2608.
 - 2026-10-17: zone names under the database's current spelling, and a
   computer's zone the server does not take: MC-2609 and MC-2610.
+- 2026-10-17: the days still read in UTC or the computer's zone, a void
+  date, a shipment's, the dialogs' and a list's date range: MC-2605 and
+  MC-2606 extended.

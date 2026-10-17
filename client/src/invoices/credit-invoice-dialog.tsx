@@ -31,9 +31,9 @@ import {
   groupedNumberMessage,
   toApiDecimal,
 } from '../lib/format';
+import { organizationToday } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
 import { formatRate } from '../settings/tax-rate';
-import { todayLocal } from './calendar-day';
 
 /** A numeric(18,4) of nothing always reads '0.0000' (ADR-025). */
 const NOTHING = '0.0000';
@@ -100,7 +100,7 @@ export function CreditInvoiceDialog({
       : '',
   );
 
-  const [creditDate, setCreditDate] = useState(todayLocal());
+  const [creditDate, setCreditDate] = useState(organizationToday());
   /**
    * The last answer, with the request it answered. Shown only while it
    * answers what is entered now, so figures for an earlier entry are never

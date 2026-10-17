@@ -1,12 +1,16 @@
 import { withQuery } from './api';
 import type { CalendarDay } from './api-names';
-import { organizationToday } from './time-zone';
+import {
+  organizationTimeZone,
+  organizationToday,
+  startOfDayIn,
+} from './time-zone';
 
 /**
  * Date ranges on lists (ADR-057): the reader picks days; the list asks for
  * them as calendar days (`from`, `to`, both included) or, for a list of
- * instants, as the instants those days begin and end in the reader's time
- * zone (`from` included, `until` excluded).
+ * instants, as the instants those days begin and end in the organization's
+ * time zone (`from` included, `until` excluded; ADR-072).
  */
 
 /** Calendar days, YYYY-MM-DD, either open. */
@@ -74,18 +78,21 @@ export function withDays(path: string, range: DayRange): string {
 
 /**
  * A list of instants: from the start of the first day to the start of the
- * day after the last, both in the reader's time zone.
+ * day after the last, both in the organization's time zone (ADR-072), so
+ * a day's range holds the same moments for everyone in it, as its presets
+ * name the same days.
  */
 export function withInstants(path: string, range: DayRange): string {
-  const start = (day: string) => {
+  const zone = organizationTimeZone();
+  const dayAfter = (day: string) => {
     const [year, month, date] = day.split('-').map(Number);
-    return new Date(year, month - 1, date);
+    return calendarDay(year, month - 1, date + 1);
   };
-  const until = range.to ? start(range.to) : undefined;
-  until?.setDate(until.getDate() + 1);
 
   return withQuery(path, {
-    from: range.from ? start(range.from).toISOString() : undefined,
-    until: until?.toISOString(),
+    from: range.from ? startOfDayIn(zone, range.from).toISOString() : undefined,
+    until: range.to
+      ? startOfDayIn(zone, dayAfter(range.to)).toISOString()
+      : undefined,
   });
 }

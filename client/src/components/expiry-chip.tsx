@@ -13,7 +13,8 @@ import { StatusChip } from './status-chip';
  * "how long" is what someone acts on, and the date is what they check it
  * against. Further off, the date alone. No expiry, a dash.
  *
- * `today` is for tests; the page passes nothing and gets the reader's own.
+ * `today` is for tests; the page passes nothing and gets the
+ * organization's (ADR-072).
  */
 export function ExpiryChip({
   expiresAt,

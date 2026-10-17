@@ -40,7 +40,7 @@ export function invoiceDocument(
   doc: DocumentText,
 ): Drawing {
   const isDraft = invoice.status === 'draft';
-  const day = (value: string | Date) => formatDay(value, doc.locale);
+  const day = (value: string) => formatDay(value, doc.locale);
 
   const content: Content[] = [];
 
@@ -81,7 +81,8 @@ export function invoiceDocument(
                 'Voided {date}: {reason}{credits, select, none {} other { — reversed by {credits}}}',
             },
             {
-              date: invoice.voidedAt ? day(invoice.voidedAt) : '',
+              // When it was voided, in the organization's zone (ADR-072).
+              date: invoice.voidedAt ? doc.dayOf(invoice.voidedAt) : '',
               reason: invoice.voidReason ?? '',
               credits:
                 invoice.creditNotes.length > 0

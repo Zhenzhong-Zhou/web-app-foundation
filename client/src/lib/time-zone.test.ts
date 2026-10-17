@@ -4,6 +4,7 @@ import {
   allTimeZones,
   cityOf,
   offsetLabel,
+  organizationDayOf,
   organizationToday,
   sameZone,
   setOrganizationTimeZone,
@@ -27,6 +28,14 @@ describe('time zones', () => {
     expect(todayIn('Asia/Shanghai', moment)).toBe('2026-10-17');
     expect(todayIn('America/Vancouver', new Date('2026-10-17T06:59:59Z'))).toBe(
       '2026-10-16',
+    );
+  });
+
+  it("reads a moment's day in the organization's zone", () => {
+    setOrganizationTimeZone('America/Vancouver');
+    expect(organizationDayOf('2026-10-17T06:59:59Z')).toBe('2026-10-16');
+    expect(organizationDayOf(new Date('2026-10-17T07:00:00Z'))).toBe(
+      '2026-10-17',
     );
   });
 

@@ -29,8 +29,8 @@ export function organizationTimeZone(): string {
   return organizationZone ?? browserTimeZone();
 }
 
-/** Today in a zone, YYYY-MM-DD. */
-export function todayIn(zone: string, now: Date = new Date()): CalendarDay {
+/** The calendar day a moment falls on in a zone, YYYY-MM-DD. */
+export function dayIn(zone: string, moment: Date | string): CalendarDay {
   const parts = cached(
     `zone-day:${zone}`,
     () =>
@@ -40,10 +40,15 @@ export function todayIn(zone: string, now: Date = new Date()): CalendarDay {
         month: '2-digit',
         day: '2-digit',
       }),
-  ).formatToParts(now);
+  ).formatToParts(new Date(moment));
   const part = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((each) => each.type === type)?.value ?? '';
   return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
+/** Today in a zone, YYYY-MM-DD. */
+export function todayIn(zone: string, now: Date = new Date()): CalendarDay {
+  return dayIn(zone, now);
 }
 
 /**
@@ -52,6 +57,33 @@ export function todayIn(zone: string, now: Date = new Date()): CalendarDay {
  */
 export function organizationToday(now: Date = new Date()): CalendarDay {
   return todayIn(organizationTimeZone(), now);
+}
+
+/**
+ * The organization's day for a moment (ADR-072): the day an invoice was
+ * voided or a shipment made, as its documents print it.
+ */
+export function organizationDayOf(moment: Date | string): CalendarDay {
+  return dayIn(organizationTimeZone(), moment);
+}
+
+/**
+ * The moment a calendar day begins in a zone: its midnight, or, where the
+ * clocks spring forward at midnight, the moment they jump, the first the
+ * day has. A day 23 or 25 hours long so begins and ends where it should.
+ */
+export function startOfDayIn(zone: string, day: CalendarDay): Date {
+  const [year, month, date] = day.split('-').map(Number);
+  const midnight = Date.UTC(year, month - 1, date);
+  const at = (moment: number) =>
+    midnight - offsetMinutes(zone, new Date(moment)) * 60_000;
+  // Midnight by the offset at UTC's midnight, then by the offset there:
+  // the two differ only when the clocks change between them.
+  const first = at(midnight);
+  const second = at(first);
+  // Santiago on 6 September 2026: 23:59 is followed by 01:00, so the
+  // second lands on the day before, and the day begins at the first.
+  return new Date(dayIn(zone, new Date(second)) === day ? second : first);
 }
 
 /** Minutes ahead of UTC in a zone at a moment: 480 in Shanghai. */
