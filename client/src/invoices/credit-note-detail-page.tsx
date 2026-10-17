@@ -29,7 +29,7 @@ import {
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { formatRate } from '../settings/tax-rate';
-import { oneLine } from './calendar-day';
+import { oneLine } from './one-line';
 
 /**
  * One credit note, read-only (ADR-046). It never changes after it is

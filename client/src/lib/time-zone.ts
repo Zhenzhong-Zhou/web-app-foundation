@@ -19,9 +19,44 @@ export function setOrganizationTimeZone(zone: string | null): void {
   organizationZone = zone;
 }
 
-/** This device's own zone, as the browser reports it. */
+/**
+ * Chrome, as Node, gives some zones under names the time-zone database has
+ * since replaced: Calcutta for Kolkata, Kiev for Kyiv. The server stores
+ * the current one (ADR-072), so the client names zones the same way,
+ * whichever browser lists them. The same table as the server's
+ * CURRENT_NAMES in server/src/common/today.ts: a change to one is a change
+ * to both.
+ */
+const CURRENT_NAMES: Readonly<Record<string, string>> = {
+  'Africa/Asmera': 'Africa/Asmara',
+  'America/Buenos_Aires': 'America/Argentina/Buenos_Aires',
+  'America/Catamarca': 'America/Argentina/Catamarca',
+  'America/Coral_Harbour': 'America/Atikokan',
+  'America/Cordoba': 'America/Argentina/Cordoba',
+  'America/Godthab': 'America/Nuuk',
+  'America/Indianapolis': 'America/Indiana/Indianapolis',
+  'America/Jujuy': 'America/Argentina/Jujuy',
+  'America/Louisville': 'America/Kentucky/Louisville',
+  'America/Mendoza': 'America/Argentina/Mendoza',
+  'Asia/Calcutta': 'Asia/Kolkata',
+  'Asia/Katmandu': 'Asia/Kathmandu',
+  'Asia/Rangoon': 'Asia/Yangon',
+  'Asia/Saigon': 'Asia/Ho_Chi_Minh',
+  'Atlantic/Faeroe': 'Atlantic/Faroe',
+  'Europe/Kiev': 'Europe/Kyiv',
+  'Pacific/Enderbury': 'Pacific/Kanton',
+  'Pacific/Ponape': 'Pacific/Pohnpei',
+  'Pacific/Truk': 'Pacific/Chuuk',
+};
+
+/** A zone under the time-zone database's current name, as stored. */
+export function currentName(zone: string): string {
+  return CURRENT_NAMES[zone] ?? zone;
+}
+
+/** This device's own zone, as the browser reports it, by its current name. */
 export function browserTimeZone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return currentName(Intl.DateTimeFormat().resolvedOptions().timeZone);
 }
 
 /** The organization's zone, or this device's before there is one. */
@@ -158,11 +193,11 @@ export function isPlaceOrUtc(zone: string): boolean {
 }
 
 /**
- * Every zone the browser knows that the server takes, UTC included, by
- * offset now and then name.
+ * Every zone the browser knows that the server takes, UTC included, under
+ * its current name, by offset now and then name.
  */
 export function allTimeZones(now: Date = new Date()): string[] {
-  const zones = new Set(Intl.supportedValuesOf('timeZone'));
+  const zones = new Set(Intl.supportedValuesOf('timeZone').map(currentName));
   zones.add('UTC');
   // Each offset read once, not once per comparison.
   return [...zones]

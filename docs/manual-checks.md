@@ -1101,9 +1101,9 @@ override, then reload.
 - **MC-2609** *(ADR-072)* Zone names: in Safari, with the computer in
   Kolkata, register a new organization. Profile → Time zone shows India
   Standard Time (Kolkata) in the box, and Save time zone is greyed out.
-  Open the same organization in Chrome: the box shows India Standard Time
-  (Calcutta), Chrome's name for the same zone, and Save stays greyed out.
-  Safari's list has no Etc/GMT zones.
+  Open the same organization in Chrome, which lists the zone as Calcutta:
+  the box shows India Standard Time (Kolkata) too, typing kolkata finds
+  it, and Save stays greyed out. Safari's list has no Etc/GMT zones.
 - **MC-2610** *(ADR-072)* A computer on a zone the server does not take:
   in Chrome, override the timezone to Etc/GMT-3 (DevTools → Sensors) and
   register. The account is created, and Profile's Time zone is
@@ -1355,3 +1355,5 @@ first.
   date, a shipment's, the dialogs' and a list's date range: MC-2605 and
   MC-2606 extended.
 - 2026-10-17: the audit log's To keeps its last day: MC-R14.
+- 2026-10-17: Chrome's picker names zones as the server stores them:
+  MC-2609 rewritten.

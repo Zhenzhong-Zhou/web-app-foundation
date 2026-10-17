@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   allTimeZones,
+  browserTimeZone,
   cityOf,
+  currentName,
   offsetLabel,
   organizationDayOf,
   organizationToday,
@@ -75,6 +77,21 @@ describe('time zones', () => {
       'UTC',
       'Asia/Kolkata',
     ]);
+  });
+
+  // This runtime, as Chrome, lists Kolkata as Asia/Calcutta, Kyiv as
+  // Europe/Kiev; the server stores the current names (ADR-072).
+  it('names every zone as the server stores it, whichever browser lists it', () => {
+    const zones = allTimeZones(moment);
+    expect(zones).toContain('Asia/Kolkata');
+    expect(zones).toContain('Europe/Kyiv');
+    expect(zones.filter((zone) => currentName(zone) !== zone)).toEqual([]);
+
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      ...new Intl.DateTimeFormat().resolvedOptions(),
+      timeZone: 'Asia/Calcutta',
+    });
+    expect(browserTimeZone()).toBe('Asia/Kolkata');
   });
 
   it('knows one zone under two names, as this browser does', () => {

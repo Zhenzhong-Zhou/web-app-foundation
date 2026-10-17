@@ -272,7 +272,6 @@ export class HomeService {
     });
   }
 
-  /** A card's five most urgent rows, from its list's own read. */
   /**
    * When a lot counts as expiring here (ADR-060), 90 days by default, and
    * the organization's time zone (ADR-072).
@@ -290,6 +289,7 @@ export class HomeService {
     });
   }
 
+  /** A card's five most urgent rows, from its list's own read. */
   private async rows(
     kind: HomeKind,
     today: string,

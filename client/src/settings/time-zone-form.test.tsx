@@ -106,19 +106,28 @@ describe('TimeZoneForm', () => {
     ).toBeEnabled();
   });
 
-  // The server stores the current name; this browser, as Chrome does, lists
-  // the zone under its old one, Calcutta.
-  it('selects the stored zone under the name this browser gives it', () => {
+  // This browser, as Chrome does, lists the zone under its old name,
+  // Calcutta; the picker names it as the server stores it, as Safari does.
+  it('selects the stored zone, named as the server stores it', async () => {
+    const user = userEvent.setup();
     render(
       <TimeZoneForm value="Asia/Kolkata" readOnly={false} onSaved={saved} />,
     );
 
-    expect(screen.getByRole('combobox', { name: 'Time zone' })).toHaveValue(
-      'India Standard Time (Calcutta)',
-    );
+    const box = screen.getByRole('combobox', { name: 'Time zone' });
+    expect(box).toHaveValue('India Standard Time (Kolkata)');
     expect(
       screen.getByRole('button', { name: 'Save time zone' }),
     ).toBeDisabled();
+
+    await user.clear(box);
+    await user.keyboard('kolkata');
+    expect(
+      screen.getByRole('option', {
+        name: 'India Standard Time (Kolkata) UTC+5:30 · Asia/Kolkata',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /Calcutta/ })).toBeNull();
   });
 
   it('is read only for someone who cannot change it', () => {

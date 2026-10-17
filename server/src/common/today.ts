@@ -89,6 +89,8 @@ const AREA_CITY =
  * browser whose list holds only the current name, Safari's, would find
  * nothing to select, and every screen would name the old city. Each one
  * Node 26 returns, from the zones Safari lists that Node names otherwise.
+ * The client keeps the same table for the names Chrome lists
+ * (client/src/lib/time-zone.ts): a change to one is a change to both.
  */
 const CURRENT_NAMES: Readonly<Record<string, string>> = {
   'Africa/Asmera': 'Africa/Asmara',

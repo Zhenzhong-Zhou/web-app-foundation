@@ -2,7 +2,7 @@ import { Paper, Stack, Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
 
 import type { InvoiceDetail } from '../api/types.gen';
-import { oneLine } from './calendar-day';
+import { oneLine } from './one-line';
 
 /** Who issued it and who pays, as they were copied at issue. */
 export function Parties({ invoice }: { invoice: InvoiceDetail }) {
