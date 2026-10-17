@@ -8368,11 +8368,84 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
   any fiscal year: a yearly reset from a chosen month, printed as
   `2026-27`. Trigger: the first organization whose year does not start in
   January.
-- **Run numbers and generated lot codes** (*Open decisions*). The forcing
-  function those entries named, a production module, exists; a run's
-  number would be one more row here. Lot codes are printed on labels and
-  need a product in the scheme, so the two are decided together. Trigger:
-  the first organization that asks for either.
+- **Run numbers, and batch codes from them:** decided in ADR-074, which
+  waits for its own trigger. A run's number becomes a sixth series here.
+
+---
+
+## ADR-074 — Run numbers, and batch codes from them (deferred)
+
+**Status.** Decided, not built. It waits for its trigger, at the end;
+nothing in the code changes until then.
+
+**Context.** A run has no number. Its `id` is a UUIDv7, and its
+`reference` is typed, optional and not unique ("a batch number or the
+maker's works order"); a run without one is titled by its planned
+quantity. The code of the batch it makes, the lot, is typed too, at
+Record output. In the demo both are typed as the same text,
+`FOC-2609-01`: in a GMP batch record the batch number and the lot number
+are usually one identifier. Two *Open decisions* entries asked for this,
+production order numbering and generated lot codes, and said to answer
+both at once. Their forcing function, a production module, has existed
+since ADR-032, and ADR-073 builds the series a run's number needs.
+
+**Decision — a sixth series.** Production runs join ADR-073's series:
+`B-` by default, six digits and no reset, so `B-000124`. A run takes its
+number when it is created, its period from the day it was created in the
+organization's zone, as an order does (ADR-071, amended). Runs are
+cancelled, never deleted, so a cancelled run keeps its number. The
+migration numbers existing runs oldest first, per organization, and the
+series carries on after them. Every ADR-073 rule applies: the prefix,
+tokens, resets, the next number and both refusals, with runs among the
+documents one number names.
+
+**Decision — the number names the run.** It heads the run's page and
+leads the runs list, the lookup (its prefix ranked as ADR-073's are),
+Home's recently opened, the lot trace and the runs CSV. `reference`
+stays, optional, for the co-packer's works order, and is searched beside
+it.
+
+**Decision — a new batch's code starts as the run's number.**
+
+- At Record output, "Start a new batch" fills the code with the run's
+  number. A second new batch from the same run gets `-02`, then `-03`.
+- The code stays editable: a co-packer's own lot code, or a business's
+  own scheme, is typed over it. A suggestion the item already carries
+  (lots are unique per item) moves on to the next suffix.
+- The code is a suggestion until saved. Two people recording at once may
+  see the same one, and the unique index refuses the second.
+- Batch codes are not gapless: a code typed over leaves nothing behind.
+- Unchanged: adding output to an existing batch needs no code, and a lot
+  received from a supplier stays typed, since its code is printed on the
+  box and is not ours to invent.
+
+**Considered and not done.**
+
+- **A counter per item, with the product in the code,** as `FOC-2609-01`
+  reads: it needs a product token and a counter keyed by item, not by
+  organization. The run's number gives every batch a unique code without
+  either.
+- **The number at release rather than creation:** a planned run needs a
+  name to be talked about, as a draft order does.
+- **Reserving a code when the dialog opens:** codes nobody saved would be
+  held for nothing.
+
+**Consequences, once built.**
+
+- A migration: `production_orders.number`, unique per organization,
+  filled for existing runs; a sixth `document_numbering` row for every
+  organization; `production_order` joins `DocumentType`.
+- The run's page, the runs list, the lookup, Home, the trace and the CSV
+  show the number; Record output fills the batch code; the Numbering
+  section gains a row.
+- Designed on the canvas before it is built, and a manual checks section.
+
+**Deferred.** A `{PRODUCT}` token, a short product code in a generated
+batch code. Trigger: the first organization wanting the product in its
+batch codes.
+
+**Trigger.** The next production work, or the first organization asking
+for run numbers or generated batch codes, whichever comes first.
 
 ---
 
@@ -8533,7 +8606,8 @@ they exist so the reasoning is not rediscovered from scratch.
   work, and that charge is neither a component nor part of the output's stock
   value today. A purchase order line against them for a service variant is the
   cheap version; doing it properly means landed cost, which is costing again.
-- **Production order numbering.** `id` is a UUIDv7 and nobody says one aloud.
+- **Production order numbering** — decided in ADR-074, deferred until its
+  trigger. `id` is a UUIDv7 and nobody says one aloud.
   Runs need a human reference the way lots do, and the same scheme question
   applies — see the lot code entry above, and answer both at once or they
   diverge.
@@ -8702,7 +8776,8 @@ they exist so the reasoning is not rediscovered from scratch.
   list, so this reopens it. ADR-055 leaves the slot beside the logo empty
   until then. Trigger: Products or Partners past a few hundred rows, or the
   recall drill missing its two minutes.
-- **Generated lot codes for production runs.** ADR-023 argues against generating
+- **Generated lot codes for production runs** — decided in ADR-074, deferred
+  until its trigger. ADR-023 argues against generating
   SKUs because the organization already has one for every item. A lot code is
   different: it does not pre-exist, it comes into being at the moment of a run,
   and most manufacturing systems issue it from a scheme — date plus line plus
