@@ -97,10 +97,25 @@ describe('Time zone (e2e)', () => {
       expect((await organization(agent)).timeZone).toBe('UTC');
     });
 
-    it('refuses an offset, and a name no zone has', async () => {
-      for (const timeZone of ['+05:00', 'Mars/Olympus_Mons']) {
-        const res = await register(authedAgent(app), { timeZone }).expect(400);
-        expect(JSON.stringify(res.body)).toContain('time zone');
+    it('stores the current name, Kolkata, where Node says Calcutta', async () => {
+      const agent = authedAgent(app);
+      await register(agent, { timeZone: 'Asia/Kolkata' }).expect(201);
+
+      expect((await organization(agent)).timeZone).toBe('Asia/Kolkata');
+    });
+
+    // Nobody typed it, so nobody could correct it: the organization starts
+    // on UTC rather than the registration failing.
+    it('starts on UTC when the browser reports a zone the server does not take', async () => {
+      const reported = ['Etc/Unknown', 'Mars/Olympus_Mons', '+05:00', 'EST'];
+      for (const [index, timeZone] of reported.entries()) {
+        const agent = authedAgent(app);
+        await register(agent, {
+          email: `owner${index}@zone.example.com`,
+          timeZone,
+        }).expect(201);
+
+        expect((await organization(agent)).timeZone).toBe('UTC');
       }
     });
   });
@@ -134,13 +149,30 @@ describe('Time zone (e2e)', () => {
       expect(await changes()).toHaveLength(1);
     });
 
-    it('refuses an offset, and leaves the zone as it was', async () => {
+    // Chrome lists Kyiv under its old name; Safari knows only the new one.
+    it('stores Europe/Kiev as Europe/Kyiv', async () => {
       const org = await registerOrganization(app, 'alpha');
 
       await org.agent
         .patch('/v1/organization')
-        .send({ timeZone: '-0800' })
-        .expect(400);
+        .send({ timeZone: 'Europe/Kiev' })
+        .expect(204);
+      expect((await organization(org.agent)).timeZone).toBe('Europe/Kyiv');
+      expect((await session(org.agent)).timeZone).toBe('Europe/Kyiv');
+    });
+
+    it('refuses an offset, and leaves the zone as it was', async () => {
+      const org = await registerOrganization(app, 'alpha');
+
+      // Offsets under other names too: Etc/GMT+8 is UTC−8 all year, and
+      // EST is Panama's zone to Intl.
+      for (const timeZone of ['-0800', 'Etc/GMT+8', 'EST']) {
+        const res = await org.agent
+          .patch('/v1/organization')
+          .send({ timeZone })
+          .expect(400);
+        expect(JSON.stringify(res.body)).toContain('time zone');
+      }
       await org.agent
         .patch('/v1/organization')
         .send({ timeZone: null })

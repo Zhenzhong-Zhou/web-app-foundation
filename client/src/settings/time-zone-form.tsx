@@ -17,7 +17,9 @@ import { api } from '../lib/api';
 import {
   allTimeZones,
   browserTimeZone,
+  isPlaceOrUtc,
   offsetLabel,
+  sameZone,
   todayIn,
 } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
@@ -60,7 +62,9 @@ export function TimeZoneForm({
   const [now, setNow] = useState(() => new Date());
   // Read aloud only when the choice changes, never on the clock's tick.
   const [announced, setAnnounced] = useState('');
-  const computer = browserTimeZone();
+  // Offered only when the server takes it: never Etc/GMT-3.
+  const browser = browserTimeZone();
+  const computer = isPlaceOrUtc(browser) ? browser : null;
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), TICK_MS);
@@ -80,13 +84,16 @@ export function TimeZoneForm({
       };
     };
     return [
-      option(computer, 'computer'),
+      ...(computer ? [option(computer, 'computer')] : []),
       ...allTimeZones().map((each) => option(each, 'all')),
     ];
   }, [computer]);
 
+  // Through this browser's own names: the server stores Asia/Kolkata, which
+  // Chrome lists as Asia/Calcutta.
   const selected =
-    options.find((each) => each.group === 'all' && each.zone === zone) ?? null;
+    options.find((each) => each.group === 'all' && sameZone(each.zone, zone)) ??
+    null;
 
   const { submitting, error, submit } = useSubmit(onSaved, {
     success: intl.formatMessage({
@@ -138,7 +145,7 @@ export function TimeZoneForm({
       error={error}
       submitting={submitting}
       readOnly={readOnly}
-      saveDisabled={zone === value}
+      saveDisabled={sameZone(zone, value)}
       saveLabel={intl.formatMessage({
         id: 'settings.org.timeZone.save',
         defaultMessage: 'Save time zone',
@@ -152,28 +159,31 @@ export function TimeZoneForm({
         })}
       </Typography>
 
-      {value === 'UTC' && computer !== 'UTC' && !readOnly && (
-        <Alert
-          severity="warning"
-          action={
-            <Button color="inherit" onClick={() => choose(computer)}>
-              {intl.formatMessage(
-                {
-                  id: 'settings.org.timeZone.useComputer',
-                  defaultMessage: 'Use this computer’s: {zone}',
-                },
-                { zone: zoneLabel(computer) },
-              )}
-            </Button>
-          }
-        >
-          {intl.formatMessage({
-            id: 'settings.org.timeZone.stillUtc',
-            defaultMessage:
-              'Still on UTC, the time zone every organization started with. Choose where the business is: in the Americas, UTC is already tomorrow in the evening.',
-          })}
-        </Alert>
-      )}
+      {value === 'UTC' &&
+        computer !== null &&
+        !sameZone(computer, 'UTC') &&
+        !readOnly && (
+          <Alert
+            severity="warning"
+            action={
+              <Button color="inherit" onClick={() => choose(computer)}>
+                {intl.formatMessage(
+                  {
+                    id: 'settings.org.timeZone.useComputer',
+                    defaultMessage: 'Use this computer’s: {zone}',
+                  },
+                  { zone: zoneLabel(computer) },
+                )}
+              </Button>
+            }
+          >
+            {intl.formatMessage({
+              id: 'settings.org.timeZone.stillUtc',
+              defaultMessage:
+                'Still on UTC, the time zone every organization started with. Choose where the business is: in the Americas, UTC is already tomorrow in the evening.',
+            })}
+          </Alert>
+        )}
 
       <Autocomplete
         options={options}

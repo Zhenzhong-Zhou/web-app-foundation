@@ -111,15 +111,53 @@ export function zoneName(zone: string, locale: string): string {
   }
 }
 
-/** Every zone the browser knows, UTC included, by offset now and then name. */
+/**
+ * A zone the server takes (ADR-072): UTC, or a place, one of the time-zone
+ * database's areas then its city. Safari also lists `Etc/GMT+8` and the
+ * like, offsets under another name, which the server refuses.
+ */
+export function isPlaceOrUtc(zone: string): boolean {
+  return (
+    zone === 'UTC' ||
+    /^(Africa|America|Antarctica|Arctic|Asia|Atlantic|Australia|Europe|Indian|Pacific)\//.test(
+      zone,
+    )
+  );
+}
+
+/**
+ * Every zone the browser knows that the server takes, UTC included, by
+ * offset now and then name.
+ */
 export function allTimeZones(now: Date = new Date()): string[] {
   const zones = new Set(Intl.supportedValuesOf('timeZone'));
   zones.add('UTC');
   // Each offset read once, not once per comparison.
   return [...zones]
+    .filter(isPlaceOrUtc)
     .map((zone) => ({ zone, minutes: offsetMinutes(zone, now) }))
     .sort((a, b) => a.minutes - b.minutes || a.zone.localeCompare(b.zone))
     .map(({ zone }) => zone);
+}
+
+/** A zone under the name this browser gives it, or as given if unknown. */
+function asThisBrowserNamesIt(zone: string): string {
+  try {
+    return cached(
+      `zone-as-named:${zone}`,
+      () => new Intl.DateTimeFormat('en-US', { timeZone: zone }),
+    ).resolvedOptions().timeZone;
+  } catch {
+    return zone;
+  }
+}
+
+/**
+ * Whether two names are one zone to this browser: the server stores
+ * `Asia/Kolkata`, which Chrome lists as `Asia/Calcutta` (ADR-072).
+ */
+export function sameZone(a: string, b: string): boolean {
+  return a === b || asThisBrowserNamesIt(a) === asThisBrowserNamesIt(b);
 }
 
 /**

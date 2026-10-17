@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  allTimeZones,
   cityOf,
   offsetLabel,
   organizationToday,
+  sameZone,
   setOrganizationTimeZone,
   todayIn,
 } from './time-zone';
@@ -48,5 +50,27 @@ describe('time zones', () => {
     expect(cityOf('America/Los_Angeles')).toBe('Los Angeles');
     expect(cityOf('America/Argentina/Buenos_Aires')).toBe('Buenos Aires');
     expect(cityOf('UTC')).toBe('UTC');
+  });
+
+  // Safari lists offsets under other names, which the server refuses.
+  it('lists UTC and places, never Etc/GMT+8', () => {
+    vi.spyOn(Intl, 'supportedValuesOf').mockReturnValue([
+      'Etc/GMT+8',
+      'Asia/Kolkata',
+      'Etc/GMT-14',
+      'America/Vancouver',
+    ]);
+
+    expect(allTimeZones(moment)).toEqual([
+      'America/Vancouver',
+      'UTC',
+      'Asia/Kolkata',
+    ]);
+  });
+
+  it('knows one zone under two names, as this browser does', () => {
+    expect(sameZone('Asia/Kolkata', 'Asia/Calcutta')).toBe(true);
+    expect(sameZone('Europe/Kyiv', 'Europe/Kiev')).toBe(true);
+    expect(sameZone('Asia/Kolkata', 'Asia/Kathmandu')).toBe(false);
   });
 });

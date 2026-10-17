@@ -1,3 +1,6 @@
+import { Logger } from '@nestjs/common';
+import type { MockInstance } from 'vitest';
+
 import { canonicalTimeZone, dayIn, todayIn } from './today';
 
 /**
@@ -89,5 +92,68 @@ describe('canonicalTimeZone', () => {
     expect(canonicalTimeZone('Mars/Olympus_Mons')).toBeNull();
     expect(canonicalTimeZone('')).toBeNull();
     expect(canonicalTimeZone('America/')).toBeNull();
+  });
+
+  it('refuses an offset under another name: only UTC or a place', () => {
+    for (const name of ['Etc/GMT+8', 'Etc/UTC', 'GMT', 'EST', 'MST', 'HST']) {
+      expect(canonicalTimeZone(name)).toBeNull();
+    }
+    expect(canonicalTimeZone('utc')).toBe('UTC');
+    expect(canonicalTimeZone('US/Pacific')).toBe('America/Los_Angeles');
+  });
+
+  it('takes every zone Node lists', () => {
+    const refused = Intl.supportedValuesOf('timeZone').filter(
+      (zone) => canonicalTimeZone(zone) === null,
+    );
+    expect(refused).toEqual([]);
+  });
+
+  // Node's ICU names these as CLDR does; Safari lists only the second.
+  it.each([
+    ['Africa/Asmera', 'Africa/Asmara'],
+    ['America/Buenos_Aires', 'America/Argentina/Buenos_Aires'],
+    ['America/Catamarca', 'America/Argentina/Catamarca'],
+    ['America/Coral_Harbour', 'America/Atikokan'],
+    ['America/Cordoba', 'America/Argentina/Cordoba'],
+    ['America/Godthab', 'America/Nuuk'],
+    ['America/Indianapolis', 'America/Indiana/Indianapolis'],
+    ['America/Jujuy', 'America/Argentina/Jujuy'],
+    ['America/Louisville', 'America/Kentucky/Louisville'],
+    ['America/Mendoza', 'America/Argentina/Mendoza'],
+    ['Asia/Calcutta', 'Asia/Kolkata'],
+    ['Asia/Katmandu', 'Asia/Kathmandu'],
+    ['Asia/Rangoon', 'Asia/Yangon'],
+    ['Asia/Saigon', 'Asia/Ho_Chi_Minh'],
+    ['Atlantic/Faeroe', 'Atlantic/Faroe'],
+    ['Europe/Kiev', 'Europe/Kyiv'],
+    ['Pacific/Enderbury', 'Pacific/Kanton'],
+    ['Pacific/Ponape', 'Pacific/Pohnpei'],
+    ['Pacific/Truk', 'Pacific/Chuuk'],
+  ])('stores %s under its current name, %s', (legacy, current) => {
+    expect(canonicalTimeZone(legacy)).toBe(current);
+    expect(canonicalTimeZone(current)).toBe(current);
+  });
+});
+
+describe('a stored zone the server cannot read', () => {
+  let warn: MockInstance;
+
+  beforeEach(() => {
+    warn = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => undefined);
+  });
+
+  afterEach(() => warn.mockRestore());
+
+  it('decides its days in UTC, and says so once', () => {
+    const late = new Date('2026-10-16T23:28:00.000Z');
+    expect(todayIn('Mars/Olympus_Mons', late)).toBe('2026-10-16');
+    expect(dayIn('Mars/Olympus_Mons', '2026-10-17T00:30:00.000Z')).toBe(
+      '2026-10-17',
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain('Mars/Olympus_Mons');
   });
 });

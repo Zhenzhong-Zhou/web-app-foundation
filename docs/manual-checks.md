@@ -1092,6 +1092,17 @@ override, then reload.
 - **MC-2608** *(ADR-072)* With VoiceOver on, choose a zone: it reads It is
   … there once. Leave the page open three minutes: nothing more is read,
   though the time on screen moves on.
+- **MC-2609** *(ADR-072)* Zone names: in Safari, with the computer in
+  Kolkata, register a new organization. Profile → Time zone shows India
+  Standard Time (Kolkata) in the box, and Save time zone is greyed out.
+  Open the same organization in Chrome: the box shows India Standard Time
+  (Calcutta), Chrome's name for the same zone, and Save stays greyed out.
+  Safari's list has no Etc/GMT zones.
+- **MC-2610** *(ADR-072)* A computer on a zone the server does not take:
+  in Chrome, override the timezone to Etc/GMT-3 (DevTools → Sensors) and
+  register. The account is created, and Profile's Time zone is
+  Coordinated Universal Time (UTC), with no This computer group in the
+  list and no Use this computer's button.
 
 ## Regressions
 
@@ -1328,3 +1339,5 @@ first.
   audit log: MC-R13.
 - 2026-10-17: section 26, each organization's time zone (ADR-072):
   MC-2601 to MC-2608.
+- 2026-10-17: zone names under the database's current spelling, and a
+  computer's zone the server does not take: MC-2609 and MC-2610.

@@ -106,6 +106,21 @@ describe('TimeZoneForm', () => {
     ).toBeEnabled();
   });
 
+  // The server stores the current name; this browser, as Chrome does, lists
+  // the zone under its old one, Calcutta.
+  it('selects the stored zone under the name this browser gives it', () => {
+    render(
+      <TimeZoneForm value="Asia/Kolkata" readOnly={false} onSaved={saved} />,
+    );
+
+    expect(screen.getByRole('combobox', { name: 'Time zone' })).toHaveValue(
+      'India Standard Time (Calcutta)',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Save time zone' }),
+    ).toBeDisabled();
+  });
+
   it('is read only for someone who cannot change it', () => {
     render(<TimeZoneForm value="UTC" readOnly onSaved={saved} />);
 

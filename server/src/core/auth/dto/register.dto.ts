@@ -8,7 +8,7 @@ import {
 
 import { IsLocale } from '../../../common/dto/locale';
 import { normalizeEmail } from '../../../common/dto/normalize-email';
-import { IsTimeZone } from '../../../common/dto/time-zone';
+import { IsBrowserTimeZone } from '../../../common/dto/time-zone';
 import { trim } from '../../../common/dto/trim';
 import type { Locale } from '../../../common/locales';
 
@@ -59,10 +59,9 @@ export class RegisterDto {
 
   /**
    * The new organization's time zone (ADR-072): the registering person's
-   * browser zone, which is almost always where the business is. Absent,
-   * UTC, until an Owner sets it on Profile.
+   * browser zone, which is almost always where the business is. Absent, or
+   * one the server does not take, UTC, until an Owner sets it on Profile.
    */
-  @IsOptional()
-  @IsTimeZone()
+  @IsBrowserTimeZone()
   timeZone?: string;
 }

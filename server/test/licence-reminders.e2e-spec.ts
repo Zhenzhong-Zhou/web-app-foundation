@@ -1,5 +1,9 @@
 import type { INestApplication } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 
+import type { Database } from '../src/database/database.module';
+import { UNSAFE_GLOBAL_DB } from '../src/database/database.tokens';
+import { organizations } from '../src/database/schema';
 import { LicenceRemindersService } from '../src/modules/product-licences/licence-reminders.service';
 import {
   addViewer,
@@ -102,6 +106,26 @@ describe('Licence reminders (e2e)', () => {
     expect(await reminders.remind(now)).toBe(2);
     expect((await bell(utc.agent))[0].title).toContain('expires today');
     expect((await bell(ahead.agent))[0].title).toContain('expired on');
+  });
+
+  /**
+   * A zone written by hand, or one a newer time-zone database dropped, is
+   * read as UTC with a warning: the run goes on to every other
+   * organization rather than stopping at it (ADR-072).
+   */
+  it('goes on past a zone it cannot read, telling that one by UTC', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const broken = await registerOrganization(app, 'beta');
+    await app
+      .get<Database>(UNSAFE_GLOBAL_DB)
+      .update(organizations)
+      .set({ timeZone: 'Mars/Olympus_Mons' })
+      .where(eq(organizations.id, broken.organizationId));
+    await licence(alpha.agent, '2026-10-09');
+    await licence(broken.agent, '2026-10-09');
+
+    expect(await reminders.remind(now)).toBe(2);
+    expect((await bell(broken.agent))[0].title).toContain('expires today');
   });
 
   it('sends the latest owed after downtime, not every one missed', async () => {
