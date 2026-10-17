@@ -345,7 +345,10 @@ message, and the screen keys on the code, never on the words.
   the organization's zone, fails everywhere, not only on someone else's
   machine. A test about days sets the organization's zone itself
   (`setOrganizationTimeZone`). Server tests pass the zone and the clock
-  (ADR-072).
+  (ADR-072). A test about a clock change uses one that has already
+  happened: a law can drop one to come, as British Columbia did with
+  1 November 2026's, and machines with older time-zone data still expect
+  it.
 - **`docs/manual-checks.md` moves with the code.** A commit that changes what a
   person sees, or a rule they work under, updates its checks in the same
   commit. A fixed bug that a person could have noticed adds a check under

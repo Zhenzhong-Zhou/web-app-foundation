@@ -62,25 +62,28 @@ describe('withDays and withInstants', () => {
       ]);
     });
 
+    // Clock changes that have happened, never ones to come: a law can drop
+    // one, as British Columbia did with 1 November 2026's, and only newer
+    // time-zone data knows.
     it('keeps each day whole across a change of clocks', () => {
       setOrganizationTimeZone('America/Vancouver');
-      // 8 March 2026 is 23 hours long there, 1 November 25.
+      // 2 November 2025 was 25 hours long there, 8 March 2026 23.
+      expect(instants('2025-11-02', '2025-11-02')).toEqual([
+        '2025-11-02T07:00:00.000Z',
+        '2025-11-03T08:00:00.000Z',
+      ]);
       expect(instants('2026-03-08', '2026-03-08')).toEqual([
         '2026-03-08T08:00:00.000Z',
         '2026-03-09T07:00:00.000Z',
       ]);
-      expect(instants('2026-11-01', '2026-11-01')).toEqual([
-        '2026-11-01T07:00:00.000Z',
-        '2026-11-02T08:00:00.000Z',
-      ]);
     });
 
     it('begins a day that has no midnight when its clocks jump', () => {
-      // Santiago, 6 September 2026: 23:59 on the 5th, then 01:00.
+      // Santiago, 7 September 2025: 23:59 on the 6th, then 01:00.
       setOrganizationTimeZone('America/Santiago');
-      expect(instants('2026-09-05', '2026-09-05')).toEqual([
-        '2026-09-05T04:00:00.000Z',
-        '2026-09-06T04:00:00.000Z',
+      expect(instants('2025-09-06', '2025-09-06')).toEqual([
+        '2025-09-06T04:00:00.000Z',
+        '2025-09-07T04:00:00.000Z',
       ]);
     });
   });

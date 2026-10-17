@@ -76,19 +76,21 @@ describe('todayIn', () => {
     );
   });
 
-  // Vancouver's clocks go back at 2 am on 1 November 2026: midnight moves
-  // from 07:00 UTC to 08:00 UTC, which a fixed offset would get wrong.
+  // Vancouver's clocks went back at 2 am on 2 November 2025: midnight moved
+  // from 07:00 UTC to 08:00 UTC, which a fixed offset would get wrong. A
+  // change that has happened, never one to come: British Columbia dropped
+  // the one due on 1 November 2026, and only newer time-zone data knows.
   it('follows the clock change, not a fixed offset', () => {
     const zone = 'America/Vancouver';
-    expect(todayIn(zone, new Date('2026-11-01T07:30:00.000Z'))).toBe(
-      '2026-11-01',
+    expect(todayIn(zone, new Date('2025-11-02T07:30:00.000Z'))).toBe(
+      '2025-11-02',
     );
-    // 11:30 pm on 1 November, Pacific standard time (UTC−8).
-    expect(todayIn(zone, new Date('2026-11-02T07:30:00.000Z'))).toBe(
-      '2026-11-01',
+    // 11:30 pm on 2 November, Pacific standard time (UTC−8).
+    expect(todayIn(zone, new Date('2025-11-03T07:30:00.000Z'))).toBe(
+      '2025-11-02',
     );
-    expect(todayIn(zone, new Date('2026-11-02T08:00:00.000Z'))).toBe(
-      '2026-11-02',
+    expect(todayIn(zone, new Date('2025-11-03T08:00:00.000Z'))).toBe(
+      '2025-11-03',
     );
   });
 });

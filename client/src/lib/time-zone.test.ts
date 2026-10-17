@@ -48,10 +48,13 @@ describe('time zones', () => {
     expect(organizationToday(moment)).toBe('2026-10-16');
   });
 
+  // Through a clock change that has happened (2 November 2025): one to
+  // come may be dropped by law, as British Columbia's of 1 November 2026
+  // was, and only newer time-zone data knows.
   it('writes the offset as people do, through the clock change', () => {
     expect(offsetLabel('America/Vancouver', moment)).toBe('UTC\u22127');
     expect(
-      offsetLabel('America/Vancouver', new Date('2026-11-02T12:00:00Z')),
+      offsetLabel('America/Vancouver', new Date('2025-11-03T12:00:00Z')),
     ).toBe('UTC\u22128');
     expect(offsetLabel('Asia/Kolkata', moment)).toBe('UTC+5:30');
     expect(offsetLabel('UTC', moment)).toBe('UTC+0');
