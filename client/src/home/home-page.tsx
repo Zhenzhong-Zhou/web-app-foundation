@@ -19,6 +19,7 @@ import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { StatusChip } from '../components/status-chip';
 import { api } from '../lib/api';
+import { daysUntil } from '../lib/expiry';
 import { formatDay } from '../lib/format';
 import {
   differsFromBrowser,
@@ -28,7 +29,7 @@ import {
 import { zoneLabel } from '../lib/time-zone-label';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { GettingStarted } from './getting-started';
-import { CARDS, daysUntil } from './home-cards';
+import { CARDS } from './home-cards';
 import { RecentCard } from './recent-card';
 
 /**

@@ -225,8 +225,12 @@ interface Target {
   kind: string;
   variant_id: string;
   lot_id: string | null;
-  /** When the stock arrived, as stored; its day is the organization's. */
-  created_at: string;
+  /**
+   * When the stock arrived, in milliseconds since the epoch: a number, not
+   * text whose form follows the database's DateStyle. Its day is the
+   * organization's.
+   */
+  arrived_ms: number;
   reason: string | null;
   to_location_id: string | null;
 }
@@ -300,7 +304,7 @@ export async function correctCost(
 ): Promise<CorrectedCost> {
   const found = await tx.execute(sql`
     select v.id, v.kind, v.variant_id, v.lot_id,
-           v.created_at,
+           (extract(epoch from v.created_at) * 1000)::float8 as arrived_ms,
            m.reason, m.to_location_id
     from stock_valuations v
     left join stock_movements m on m.id = v.movement_id
@@ -319,7 +323,10 @@ export async function correctCost(
 
   // The day it arrived where the organization is (ADR-072): stock received
   // at 5 pm in Vancouver arrived that day, not the next.
-  const day = dayIn(await timeZoneOf(tx, organizationId), target.created_at);
+  const day = dayIn(
+    await timeZoneOf(tx, organizationId),
+    new Date(target.arrived_ms),
+  );
 
   const base = await baseCurrency(tx, organizationId);
 

@@ -143,8 +143,3 @@ export const CARDS: Record<HomeKind, CardMeta> = {
     lateIsExpired: true,
   },
 };
-
-/** Whole days from `today` to `day`, both calendar days: negative is past. */
-export function daysUntil(day: string, today: string): number {
-  return Math.round((Date.parse(day) - Date.parse(today)) / 86_400_000);
-}
