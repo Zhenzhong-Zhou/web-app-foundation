@@ -3,10 +3,35 @@
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 16 October 2026: read this first
+## Now, 17 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
+
+- **ADR-072, each organization's time zone (#41):** built on
+  `adr-072-time-zone`, its PR to open. An IANA zone per organization, set
+  at registration from the browser and by an Owner on Profile, decides
+  the organization's day: licences at release and their reminders, the
+  rate a receipt takes, expiring stock, Home (now without `?today=`,
+  ADR-058 amended), every export's file name, the days on documents,
+  dialogs' default dates, and date ranges on lists of moments, at the
+  organization's midnight (ADR-057 amended). Moments stay UTC; screens
+  show times in each reader's own zone; deletion days are unchanged. The
+  amendment at the end of ADR-072 says what building and review settled.
+  - **The PR:** migration **0066**, so its description says to run `npm
+    run migrate:all`; "Fixes #41" and "Fixes #127" (duplicate React keys,
+    a commit of its own). It also carries the registered address's change
+    logged with what it replaced (MC-R13), the audit log's To keeping its
+    last day (MC-R14), and the in-range dependency updates with js-yaml
+    4.3.2 under the type generator.
+  - **Right after the deploy:** set each organization's zone on Settings →
+    Organization → Profile. Every organization from before starts on UTC,
+    and until it is set, Home and days left follow UTC: tomorrow, from
+    4 pm in Vancouver.
+  - **Next:** ADR-073, each organization's document numbering, with
+    periods (a year, month or day in the number) now that the day is the
+    organization's; series per site stays deferred. Its draft is in the
+    chat of 16 October; numbering takes 0067.
 
 - **On `main`:** ADR-055 to ADR-066, all built and merged: the UI pass,
   search, dates and export, Home, file storage (R2), branding, the
@@ -27,10 +52,12 @@ with this one, this one is current.
   takes before it erases an organization's files. `adr-071-documents`
   adds **0063** (order numbers, every existing order numbered), **0064**
   (each organization's paper size) and **0065** (Deliver to and Send back
-  to, filled in for existing orders and RMAs); next is **0066**. Render
-  holds one row per file in `drizzle.__drizzle_migrations` once `main` is
-  deployed there: 63, then 66. After any new migration: `npm run
-  migrate:all`.
+  to, filled in for existing orders and RMAs), merged in #132.
+  `adr-072-time-zone` adds **0066** (each organization's time zone); next
+  is **0067**. Render holds one row per file in
+  `drizzle.__drizzle_migrations` once `main` is deployed there: 66, then
+  67. After any new migration: `npm run migrate:all`, and check its
+  journal time (*Working agreements*, Process).
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
   for typescript-eslint and the Nest CLI (ADR-067, *Deferred*); still so
@@ -171,8 +198,9 @@ with this one, this one is current.
   - **Remaining:** walk MC-2501 to MC-2512 and MC-R12 before merging. The
     PDF routes' and the export's performance budgets are deferred under
     ADR-071, until the first `npm run perf` on the volume seed after the
-    merge (ADR-051). Numbering settings, an organization's prefixes,
-    digits and next number, are ADR-072, the next PR. Then tag v0.7.0.
+    merge (ADR-051). v0.7.0 was tagged on 16 October 2026. Numbering
+    settings, an organization's prefixes, digits and next number, are
+    ADR-073, after the time zone (ADR-072).
 - **`after-adr-070`** (merged, #123): this handoff after #116;
   `UNSAFE_GLOBAL_DB` refused in `modules/` too; in-range dependency
   updates and jsdom 30.1.3; the account button named from the initials it
@@ -215,8 +243,8 @@ with this one, this one is current.
   an organization); have the French and Chinese
   wording checked by someone fluent (MC-1405); edit `docs/principles.md`
   until it reads as Bob's.
-- **Manual checks due:** MC-2501 to MC-2512 and MC-R12 (ADR-071, before
-  its merge); MC-1601 and MC-1602 (an upload in R2, the
+- **Manual checks due:** MC-2601 to MC-2610, MC-R13 and MC-R14 (ADR-072,
+  before its merge); MC-2501 to MC-2512 and MC-R12 (ADR-071); MC-1601 and MC-1602 (an upload in R2, the
   nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
   MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
   photos and 同事 on a phone.
@@ -225,8 +253,10 @@ with this one, this one is current.
   close dialog to someone who reads only Chinese (MC-2406).
 - **Open issues:** #16 (licence status for suspended, cancelled and
   superseded), #18 (site licences), #25 (what the customer kept), #33 (one
-  hook for Load more keyset paging) and #41 (an organization's time zone
-  for today). From ADR-070's review and its walkthrough in Chinese: #117
+  hook for Load more keyset paging) and #133 (the audit log records a
+  field as sent, not as stored, and a few saves that write no entry; from
+  ADR-072's review). #41 and #127 close with ADR-072's PR. From ADR-070's
+  review and its walkthrough in Chinese: #117
   (two one-second windows while a deletion completes), fixed on
   `deletion-started`, and #118 (the export's column glossary and invoice
   PDFs, also under *Open decisions* in `decisions.md`), which ADR-071
@@ -258,7 +288,22 @@ with this one, this one is current.
     locally with a stale server. A chore of its own, since it lengthens
     CI.
 
+- **ADR-072, watch list:** each is small, and matters only when its
+  moment comes.
+  - The next new document passes the organization's zone to
+    `documentText` itself. Its `'UTC'` default is there for specs; make
+    the zone required then.
+  - If the time-zone picker feels slow on a phone, build its zone list
+    when it opens, not when the section does.
+  - Client tests still missing: Home's time-zone note, the zone sent at
+    registration, the Still on UTC note hidden on a computer in UTC and
+    the picker's announcement, the auth provider passing the zone on. Add
+    each when that code is next touched.
+
 ### Deferred, each waiting for its trigger (in the ADRs)
+
+- Time zones: a member's own zone for showing times; a zone per site; a
+  receipt's rate day after a change of zone (ADR-072).
 
 - Product images: a variant's own image; images on order lines and the
   shipping screen; a catalogue outside the app (ADR-062).
@@ -1043,6 +1088,10 @@ in ADR-050's amendment.
 
 - ADR before code for each new area. Server first with e2e tests, then the
   client screens. Each step its own commit.
+- **At the start of every ADR,** before drafting it: check `decisions.md`'s
+  Deferred lines, this handoff's watch lists and the open issues for
+  anything in the same area, and say which triggers have fired. That is
+  when a deferred item is cheapest to pick up.
 - Migrations:
     1. write the schema;
     2. run `npm run migrate:new -- --name <name>`;
@@ -1050,7 +1099,12 @@ in ADR-050's amendment.
        `--> statement-breakpoint`;
     4. run `npm run migrate:all`.
 
-  Check the generated SQL keeps `NULLS NOT DISTINCT`.
+  Check the generated SQL keeps `NULLS NOT DISTINCT`. Check the new
+  entry's `when` in `meta/_journal.json` is later than the one before:
+  the migrator skips a migration whose time is earlier than the last one
+  applied, and still reports success. 0065's was ahead of the clock, so
+  0066 was generated earlier and skipped, with no column and no error,
+  until its time was moved after 0065's.
 - A type change on the client means fixing the test fixtures that build that
   type, in the same commit. Vitest does not type-check; `tsc` and CI do.
 - A commit that changes what a person sees, or a rule they work under,
@@ -1098,6 +1152,14 @@ in ADR-050's amendment.
 - Server e2e: always `npm run test:e2e`. Never run two at once — the second
   now refuses. Don't edit server files while Playwright runs against
   `start:dev`.
+- **`npm run api` is the truth about the document.** An enum written from
+  a TypeScript union can change order when the code around it changes,
+  since TypeScript orders a union by when it first meets each member.
+  Commit what it writes; never put an older order back by hand.
+- **Time zones by name, through one function on each side** (ADR-072):
+  `todayIn` and `dayIn`, never `AT TIME ZONE` in SQL. Node and Chromium
+  spell some zones the old way (`Asia/Calcutta`) and Safari the new;
+  both sides map the old to the current.
 - **Drizzle writes a column without its table name when a query has no
   joins.** Inside a correlated subquery, name the outer row in plain SQL.
   Raw SQL with every table aliased avoids it.

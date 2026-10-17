@@ -5577,6 +5577,18 @@ times as `2026-10-15 18:54:11`, in UTC, which both open as a date; every
 CSV now does the same, through one helper, `csvMoment`, so the
 per-screen exports and the full one agree. Days stay `YYYY-MM-DD`.
 
+**Amendment (October 2026) — ranges of moments at the organization's
+midnight (ADR-072).** A date range over moments, such as movements, runs,
+RMAs and the audit log, turned its days into times at the reader's
+midnight. It now turns them into times at the organization's, so "This
+month" is the same stretch of time for every member, and the presets
+count in the organization's calendar. The end stays exclusive, the next
+day's midnight, correct across a clock change, including a midnight that
+never happens, as in Santiago. The audit log, its export and Your
+activity had kept their own `to`, compared with `<=` at UTC midnight, so
+"To 7 October" left the 7th out; they take `from` and `until` like the
+rest now.
+
 ---
 
 ## ADR-058 — Home: what needs attention, first
@@ -5846,6 +5858,13 @@ plan had not chosen.
 - **User guides,** linked from each Getting started step and each empty
   list: short Markdown under `docs/user/`, already raised in the handoff.
   Trigger: the first customer onboarded without someone beside them.
+
+**Amendment (October 2026) — the organization's today (ADR-072).** Home
+took `?today=`, the reader's day, so overdue and expired followed their
+calendar. It takes no query now: the server counts from the
+organization's today, which every member shares, and a page left open
+past midnight cannot send yesterday. A reader whose computer is on
+another clock is told which zone Home's date follows.
 
 ---
 
@@ -8081,6 +8100,52 @@ already (ADR-046, ADR-052).
 - A time zone per site, for warehouses in different zones. Trigger: the
   first organization with sites in two zones, likely together with
   ADR-073's series per site.
+
+**Amendment (October 2026) — settled while building, and in review.**
+
+- **Days are decided in TypeScript only.** Node and Postgres each carry
+  their own copy of the zone rules, so the server asks only Node:
+  `todayIn` and `dayIn`, one pair on each side, and a query that needs a
+  day is given it, never `AT TIME ZONE`.
+- **The zone travels with the request.** It is read with the membership on
+  every request, at no extra query; a timer or an export's later stream
+  reads the row (`timeZoneOf`). A stored zone the server can no longer
+  read counts as UTC, with a warning, so one organization cannot stop the
+  hourly reminder run.
+- **Current names, and only names.** Node's data still spells about
+  twenty zones the old way (`Asia/Calcutta`, `Europe/Kiev`), which Safari
+  no longer lists, so the server stores the current name (`Asia/Kolkata`)
+  and the client names zones the same way in every browser. Only `UTC` or
+  an Area/City name is taken: `Etc/GMT+8`, `EST` and `MST` are fixed
+  offsets under other names, refused like `+05:00`. The picker leaves
+  them out, and offers this computer's zone only when the server would
+  take it. Registration never fails over the zone: one the server does
+  not know starts the organization on UTC.
+- **What the zone decides, in full.** Besides the list above: every CSV
+  export's file name; an invoice's void date, on screen and in its PDF,
+  and a shipment's date on the order; the dates the issue, void and
+  credit dialogs and the exchange-rate dialog start from; date ranges on
+  lists of moments (ADR-057, amended); and Home, which no longer takes
+  `?today=` (ADR-058, amended).
+- **What it does not.** A deletion countdown counts from each reader's own
+  day, as before: a deletion day ends everywhere, so each person counts to
+  it by their own calendar. A banner hidden "for today" is the reader's
+  day too.
+- **Before an Owner sets it.** "Nothing changes until an Owner sets
+  theirs" holds for the server, not for the screens. For an organization
+  still on UTC, Home, days left and the date presets follow UTC rather
+  than the computer, so from 4 pm in the Americas they show tomorrow.
+  Profile says so, with one button for this computer's zone: set it right
+  after deploying.
+- **Accepted.** Another member's open screen keeps the old zone until its
+  session is read again. A reminder that a licence "expires today" is not
+  sent again if the zone later moves back a day.
+- **Deferred: a receipt's day after a change of zone.** A receipt takes
+  the rate for the organization's today as it arrives; a cost correction
+  reads the arrival day in the zone as it is now. After a change of zone
+  the two can look up neighbouring days' rates. Storing each receipt's
+  rate day settles it. Trigger: the first organization that changes its
+  zone after receiving stock in another currency.
 
 ---
 
