@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Query,
 } from '@nestjs/common';
 
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
@@ -17,7 +16,6 @@ import { getRequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
 import { PermissionsService } from '../../core/authorization/permissions.service';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
-import { HomeQueryDto } from './dto/home-query.dto';
 import type { HomeResponse } from './dto/home-response.dto';
 import { HomeService } from './home.service';
 
@@ -33,14 +31,11 @@ export class HomeController {
   ) {}
 
   @Get()
-  async get(
-    @CurrentUser() user: RequestContext,
-    @Query() query: HomeQueryDto,
-  ): Promise<HomeResponse> {
+  async get(@CurrentUser() user: RequestContext): Promise<HomeResponse> {
     const held = new Set(
       user.roleId ? await this.permissions.listForRole(user.roleId) : [],
     );
-    return this.home.home(held, query.today);
+    return this.home.home(held);
   }
 
   /**

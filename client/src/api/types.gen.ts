@@ -4511,9 +4511,7 @@ export type LookupControllerLookupV1Response =
 export type HomeControllerGetV1Data = {
   body?: never;
   path?: never;
-  query?: {
-    today?: string;
-  };
+  query?: never;
   url: '/v1/home';
 };
 

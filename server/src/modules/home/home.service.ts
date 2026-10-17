@@ -129,18 +129,20 @@ export class HomeService {
   ) {}
 
   /**
-   * Home's cards, counted against `today`: the day the reader's screen
-   * sends, which the app takes from the organization's time zone, or the
-   * organization's own today when none is sent (ADR-058, ADR-072).
+   * Home's cards, counted against the organization's today, in its own
+   * time zone (ADR-058, ADR-072). The server decides it, as the lists the
+   * rows come from do: a screen left open past midnight would send
+   * yesterday, and a card's count would then go by another day than its
+   * rows.
    */
-  async home(held: ReadonlySet<Permission>, asked?: string) {
+  async home(held: ReadonlySet<Permission>) {
     const kinds = CARDS.flatMap(({ kind, permission }) =>
       held.has(permission) ? [kind] : [],
     );
     // The organization's own warning days (ADR-060), for the Expiring card,
-    // and its today unless the screen said which day it is.
+    // and its today.
     const { days: expiringWithin, timeZone } = await this.organization();
-    const today = asked ?? todayIn(timeZone);
+    const today = todayIn(timeZone);
     const totals = await this.totals(kinds, today, expiringWithin);
 
     const cards: HomeCard[] = [];

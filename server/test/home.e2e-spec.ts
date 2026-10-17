@@ -62,13 +62,16 @@ describe('Home (e2e)', () => {
 
   type Org = Awaited<ReturnType<typeof registerOrganization>>;
 
-  /** Days from today, as the reader's calendar writes them. */
+  /**
+   * Days from today in UTC, the zone a new organization starts on, so the
+   * days the server counts from (ADR-072).
+   */
   const day = (offset: number) =>
     new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
 
-  async function home(org: { agent: Org['agent'] }, today = day(0)) {
+  async function home(org: { agent: Org['agent'] }, query = '') {
     return body<HomeResponse>(
-      await org.agent.get(`/v1/home?today=${today}`).expect(200),
+      await org.agent.get(`/v1/home${query}`).expect(200),
     ).cards;
   }
 
@@ -179,9 +182,10 @@ describe('Home (e2e)', () => {
       due: day(13),
     });
 
-    // Read as if three weeks on, in the reader's calendar: LOT-SOON expired.
-    const later = card(await home(alpha, day(21)), 'expiring');
-    expect(later?.late).toBe(1);
+    // A screen that still sends a day is not believed: the server counts
+    // from the organization's today itself (ADR-072).
+    const stale = card(await home(alpha, `?today=${day(21)}`), 'expiring');
+    expect(stale?.late).toBe(0);
 
     // The organization's own days (ADR-060): a year counts both lots, ten
     // days neither.
@@ -195,6 +199,16 @@ describe('Home (e2e)', () => {
       .send({ expiryWarningDays: 10, expiryCriticalDays: 5 })
       .expect(204);
     expect(card(await home(alpha), 'expiring')?.count).toBe(0);
+
+    // Its last day yesterday: LOT-SOON has expired, and counts as late.
+    await alpha.agent
+      .patch(`/v1/stock/lots/${expiring?.rows[0].id}`)
+      .send({ expiresAt: day(-1) })
+      .expect(204);
+    expect(card(await home(alpha), 'expiring')).toMatchObject({
+      count: 1,
+      late: 1,
+    });
   });
 
   it('shows only the cards the member may view', async () => {
@@ -287,10 +301,5 @@ describe('Home (e2e)', () => {
       // A second member: the team step is done for everyone.
       expect((await started(alpha)).steps.team).toBe(true);
     });
-  });
-
-  it('refuses a day that is not a day', async () => {
-    const alpha = await registerOrganization(app, 'alpha');
-    await alpha.agent.get('/v1/home?today=2026-02-30').expect(400);
   });
 });

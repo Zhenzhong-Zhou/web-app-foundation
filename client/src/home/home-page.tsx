@@ -51,8 +51,9 @@ export function HomePage() {
   const today = organizationToday();
   const zone = organizationTimeZone();
 
+  // The server counts the cards from the same day itself.
   const load = useCallback(() => {
-    api<HomeResponse>(`/home?today=${today}`)
+    api<HomeResponse>('/home')
       .then((response) => {
         setHome(response);
         setError(null);
@@ -60,7 +61,7 @@ export function HomePage() {
       .catch((caught: unknown) =>
         setError(caught instanceof Error ? caught.message : String(caught)),
       );
-  }, [today]);
+  }, []);
 
   useEffect(() => {
     load();

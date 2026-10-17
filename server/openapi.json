@@ -3906,16 +3906,7 @@
     "/v1/home": {
       "get": {
         "operationId": "HomeController_get_v1",
-        "parameters": [
-          {
-            "name": "today",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "",
