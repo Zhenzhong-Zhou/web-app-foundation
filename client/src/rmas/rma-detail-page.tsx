@@ -442,7 +442,9 @@ export function RmaDetailPage() {
       )}
 
       <SendBackToDialog
-        key={`${choosingSite ? 'choosing' : 'closed'}-${rma.sendBackTo?.id ?? ''}`}
+        // Each dialog keyed apart from its sibling even while closed (#127):
+        // 'closed-' and 'closed' differed by a dash alone.
+        key={`send-back-${choosingSite ? 'choosing' : 'closed'}-${rma.sendBackTo?.id ?? ''}`}
         open={choosingSite}
         rma={rma}
         onClose={() => setChoosingSite(false)}
@@ -450,7 +452,7 @@ export function RmaDetailPage() {
       />
 
       <LinkReturnDialog
-        key={linking ? 'linking' : 'closed'}
+        key={linking ? 'linking' : 'link-closed'}
         open={linking}
         rmaId={rma.id}
         rmaNumber={rma.number}

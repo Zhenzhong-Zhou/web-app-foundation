@@ -33,7 +33,7 @@ export function setFormatLocale(locale: string): void {
 /** Intl formatters are costly to build and cheap to keep: one per key. */
 const formatters = new Map<string, unknown>();
 
-function cached<T>(key: string, make: () => T): T {
+export function cached<T>(key: string, make: () => T): T {
   let formatter = formatters.get(key) as T | undefined;
   if (formatter === undefined) {
     formatter = make();

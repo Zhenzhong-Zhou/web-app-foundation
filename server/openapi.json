@@ -830,7 +830,7 @@
             }
           },
           {
-            "name": "to",
+            "name": "until",
             "required": false,
             "in": "query",
             "schema": {
@@ -993,7 +993,7 @@
             }
           },
           {
-            "name": "to",
+            "name": "until",
             "required": false,
             "in": "query",
             "schema": {
@@ -1329,7 +1329,7 @@
             }
           },
           {
-            "name": "to",
+            "name": "until",
             "required": false,
             "in": "query",
             "schema": {
@@ -1492,7 +1492,7 @@
             }
           },
           {
-            "name": "to",
+            "name": "until",
             "required": false,
             "in": "query",
             "schema": {
@@ -3906,16 +3906,7 @@
     "/v1/home": {
       "get": {
         "operationId": "HomeController_get_v1",
-        "parameters": [
-          {
-            "name": "today",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "",
@@ -7610,6 +7601,9 @@
               "underWay",
               null
             ]
+          },
+          "timeZone": {
+            "type": "string"
           }
         },
         "required": [
@@ -7618,7 +7612,8 @@
           "roleId",
           "branding",
           "deletionScheduledAt",
-          "deletionStage"
+          "deletionStage",
+          "timeZone"
         ]
       },
       "CurrentSession": {
@@ -7747,6 +7742,9 @@
               "zh-Hans",
               null
             ]
+          },
+          "timeZone": {
+            "type": "string"
           }
         },
         "required": [
@@ -8683,9 +8681,9 @@
           "active": {
             "type": "string",
             "enum": [
+              "month",
               "today",
               "week",
-              "month",
               "older",
               "never"
             ]
@@ -8774,9 +8772,9 @@
           },
           "active": {
             "enum": [
+              "month",
               "today",
               "week",
-              "month",
               "older",
               "never"
             ],
@@ -8920,9 +8918,9 @@
           "active": {
             "type": "string",
             "enum": [
+              "month",
               "today",
               "week",
-              "month",
               "older",
               "never"
             ]
@@ -9909,6 +9907,9 @@
               null
             ]
           },
+          "timeZone": {
+            "type": "string"
+          },
           "expiryWarningDays": {
             "type": "number"
           },
@@ -9958,6 +9959,7 @@
           "rail",
           "logoOnDocuments",
           "paperSize",
+          "timeZone",
           "expiryWarningDays",
           "expiryCriticalDays",
           "idleSignOutMinutes",
@@ -10087,6 +10089,9 @@
               null
             ]
           },
+          "timeZone": {
+            "type": "string"
+          },
           "expiryWarningDays": {
             "type": "number",
             "minimum": 1,
@@ -10128,19 +10133,31 @@
             "maxLength": 200
           },
           "line2": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 200
           },
           "city": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 100
           },
           "region": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 100
           },
           "postalCode": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 32
           },
           "country": {
@@ -16613,19 +16630,31 @@
             "maxLength": 200
           },
           "line2": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 200
           },
           "city": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 100
           },
           "region": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 100
           },
           "postalCode": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 32
           },
           "country": {

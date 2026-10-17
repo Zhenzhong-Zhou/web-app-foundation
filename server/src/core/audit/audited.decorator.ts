@@ -38,9 +38,11 @@ export interface AuditOptions<T = unknown> {
    * two-year table, while forgetting to allow a new field means one missing
    * value in a log. The default stays silence (ADR-018).
    *
-   * This records what a field was set *to*, never what it was before — the
-   * interceptor runs after the handler and never saw the old row. Reconstructing
-   * a change means reading the previous entry for the same resource.
+   * These are what a field was set *to*. The interceptor runs after the
+   * handler and never sees the old row, so what it was *before* comes from
+   * the service, which read the row: `recordPrevious()` in audit-context.ts.
+   * A field given both is logged as `{ from, to }`, and a save that changed
+   * nothing writes no entry; the organization's settings work this way.
    */
   fields?: readonly string[];
 }

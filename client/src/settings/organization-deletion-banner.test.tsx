@@ -1,9 +1,10 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { localToday } from '../lib/expiry';
+import { setOrganizationTimeZone } from '../lib/time-zone';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { OrganizationDeletionBanner } from './organization-deletion-banner';
@@ -51,6 +52,26 @@ describe('OrganizationDeletionBanner', () => {
     );
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.queryByText(/will be deleted/)).not.toBeInTheDocument();
+  });
+
+  it("counts down from the reader's own day, not the organization's (ADR-072)", () => {
+    // 8:28 am on Saturday 17 October here in Tokyo; still Friday afternoon
+    // in Vancouver, where the organization is.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-16T23:28:00.000Z'));
+    setOrganizationTimeZone('America/Vancouver');
+    try {
+      renderWithAuth(<OrganizationDeletionBanner />, {
+        permissions: OWNER,
+        organization: { deletionScheduledAt: '2026-11-16' },
+      });
+
+      // 30 days from Tokyo's 17 October; Vancouver's 16th would say 31.
+      expect(screen.getByText(/in 30 days/)).toBeInTheDocument();
+    } finally {
+      setOrganizationTimeZone(null);
+      vi.useRealTimers();
+    }
   });
 
   it('cannot be hidden in the last 7 days', () => {

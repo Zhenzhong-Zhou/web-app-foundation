@@ -17,6 +17,10 @@ import { defineMessage, rule } from '../../../i18n/validation';
  * states its own shape. The flags and the label are absent on purpose: this
  * is the one address every invoice prints, so it is always the billing
  * default and needs no name.
+ *
+ * An optional line left out is cleared, as a PUT says; the app sends one
+ * it clears as null, so the request names it and the audit log can show it
+ * going (ADR-018), where a line left out is not logged at all.
  */
 export class OrganizationAddressDto {
   @trim()
@@ -29,25 +33,25 @@ export class OrganizationAddressDto {
   @trim()
   @IsString()
   @MaxLength(200)
-  line2?: string;
+  line2?: string | null;
 
   @IsOptional()
   @trim()
   @IsString()
   @MaxLength(100)
-  city?: string;
+  city?: string | null;
 
   @IsOptional()
   @trim()
   @IsString()
   @MaxLength(100)
-  region?: string;
+  region?: string | null;
 
   @IsOptional()
   @trim()
   @IsString()
   @MaxLength(32)
-  postalCode?: string;
+  postalCode?: string | null;
 
   @upper()
   @IsString()

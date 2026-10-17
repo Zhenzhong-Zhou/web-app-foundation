@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { presetRange } from '../lib/date-range';
+import { setOrganizationTimeZone } from '../lib/time-zone';
 import { TestProviders } from '../test/test-providers';
 import { DateRangeFilter } from './date-range-filter';
 
@@ -22,25 +22,34 @@ describe('DateRangeFilter', () => {
   });
 
   it('fills both days from a period, and clears them with Any date', async () => {
-    const user = userEvent.setup();
-    render(<Harness />, { wrapper: TestProviders });
+    // 10 pm on 31 October in Vancouver, where the organization is; already
+    // 1 November here in Tokyo. Last month is the organization's: September.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-01T05:00:00.000Z'));
+    setOrganizationTimeZone('America/Vancouver');
+    try {
+      const user = userEvent.setup();
+      render(<Harness />, { wrapper: TestProviders });
 
-    await user.click(screen.getByRole('button', { name: 'Period' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Last month' }));
+      await user.click(screen.getByRole('button', { name: 'Period' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Last month' }));
 
-    const { from, to } = presetRange('lastMonth');
-    expect(
-      (screen.getByLabelText('Invoice date from') as HTMLInputElement).value,
-    ).toBe(from);
-    expect(
-      (screen.getByLabelText('Invoice date to') as HTMLInputElement).value,
-    ).toBe(to);
+      expect(
+        (screen.getByLabelText('Invoice date from') as HTMLInputElement).value,
+      ).toBe('2026-09-01');
+      expect(
+        (screen.getByLabelText('Invoice date to') as HTMLInputElement).value,
+      ).toBe('2026-09-30');
 
-    await user.click(screen.getByRole('button', { name: 'Period' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Any date' }));
-    expect(
-      (screen.getByLabelText('Invoice date from') as HTMLInputElement).value,
-    ).toBe('');
+      await user.click(screen.getByRole('button', { name: 'Period' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Any date' }));
+      expect(
+        (screen.getByLabelText('Invoice date from') as HTMLInputElement).value,
+      ).toBe('');
+    } finally {
+      setOrganizationTimeZone(null);
+      vi.useRealTimers();
+    }
   });
 
   it('reports a typed day as it changes', async () => {

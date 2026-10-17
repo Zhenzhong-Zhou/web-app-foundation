@@ -6,7 +6,7 @@ import type { INestApplication } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 import type TestAgent from 'supertest/lib/agent';
 
-import { todayUtc } from '../src/common/today';
+import { todayIn } from '../src/common/today';
 import {
   AccountDeletionService,
   deletionDayFor,
@@ -553,7 +553,10 @@ describe('Organization deletion (e2e)', () => {
       // Not yet, 30 days ahead.
       expect(await service().remindDue()).toBe(0);
 
-      const inAWeek = todayUtc(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+      const inAWeek = todayIn(
+        'UTC',
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      );
       await setDay(alpha.organizationId, inAWeek);
       mail.reset();
       expect(await service().remindDue()).toBe(1);
@@ -588,7 +591,7 @@ describe('Organization deletion (e2e)', () => {
 
       await setDay(
         alpha.organizationId,
-        todayUtc(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+        todayIn('UTC', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
       );
       expect(await stage()).toBe('lastWeek');
 

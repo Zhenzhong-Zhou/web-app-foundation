@@ -48,4 +48,16 @@ describe('format', () => {
   it('reads a day in UTC, so a stored date never moves', () => {
     expect(formatDay('2026-10-15', 'zh-Hans-CN')).toBe('2026年10月15日');
   });
+
+  // A moment's day is the organization's (ADR-072): 6:30 pm on 16 October
+  // in Vancouver is already the 17th in UTC.
+  it('reads a moment on the day it fell where the organization is', () => {
+    const shipped = '2026-10-17T01:30:00.000Z';
+    expect(
+      documentText('en', null, 'CA', 'America/Vancouver').dayOf(shipped),
+    ).toBe(formatDay('2026-10-16', 'en-CA'));
+    expect(documentText('en', null, 'CA').dayOf(shipped)).toBe(
+      formatDay('2026-10-17', 'en-CA'),
+    );
+  });
 });

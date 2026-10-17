@@ -33,10 +33,15 @@ export class ListAuditDto extends KeysetQueryDto {
   @IsDate()
   from?: Date;
 
+  /**
+   * The start of the day after the last, excluded, as ADR-057's other lists
+   * of moments take it: a range ending 7 October holds the whole of the
+   * 7th, up to midnight where the organization is (ADR-072).
+   */
   @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? new Date(value) : value,
   )
   @IsDate()
-  to?: Date;
+  until?: Date;
 }

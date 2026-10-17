@@ -40,7 +40,7 @@ export function invoiceDocument(
   doc: DocumentText,
 ): Drawing {
   const isDraft = invoice.status === 'draft';
-  const day = (value: string | Date) => formatDay(value, doc.locale);
+  const day = (value: string) => formatDay(value, doc.locale);
 
   const content: Content[] = [];
 
@@ -81,7 +81,8 @@ export function invoiceDocument(
                 'Voided {date}: {reason}{credits, select, none {} other { — reversed by {credits}}}',
             },
             {
-              date: invoice.voidedAt ? day(invoice.voidedAt) : '',
+              // When it was voided, in the organization's zone (ADR-072).
+              date: invoice.voidedAt ? doc.dayOf(invoice.voidedAt) : '',
               reason: invoice.voidReason ?? '',
               credits:
                 invoice.creditNotes.length > 0
@@ -233,9 +234,10 @@ export function printableInvoice(invoice: InvoiceDetail): Printable {
     // Copied at issue; a draft has copied none yet, so it takes the
     // organization's as it is now.
     sellerCountry: invoice.sellerCountry,
-    name: invoice.number
-      ? `${invoice.number}.pdf`
-      : `DRAFT ${invoice.id.slice(0, 8)}.pdf`,
+    name: () =>
+      invoice.number
+        ? `${invoice.number}.pdf`
+        : `DRAFT ${invoice.id.slice(0, 8)}.pdf`,
     which: (doc) =>
       kindAndNumber(doc.label(TITLE), invoice.number ?? doc.label(DRAFT_MARK)),
     draw: (doc) => invoiceDocument(invoice, doc),

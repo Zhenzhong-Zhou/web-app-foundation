@@ -379,7 +379,9 @@ export function PartnerDetailPage() {
       {/* Needs the lists to name them; saving needs partners.update. */}
       {can('price_lists.view') && (
         <PartnerPriceLists
-          key={`${partner.salePriceListId}:${partner.purchasePriceListId}`}
+          // Prefixed, so a partner with neither pair set does not give both
+          // forms `null:null` (#127).
+          key={`lists-${partner.salePriceListId}:${partner.purchasePriceListId}`}
           partnerId={partner.id}
           salePriceListId={partner.salePriceListId}
           purchasePriceListId={partner.purchasePriceListId}
@@ -391,7 +393,7 @@ export function PartnerDetailPage() {
       {/* What this partner's documents print in (ADR-054). Remounted when
           the saved pair changes, as the price lists above are. */}
       <PartnerDocumentLanguages
-        key={`${partner.documentLanguage}:${partner.documentSecondLanguage}`}
+        key={`languages-${partner.documentLanguage}:${partner.documentSecondLanguage}`}
         partnerId={partner.id}
         documentLanguage={partner.documentLanguage}
         documentSecondLanguage={partner.documentSecondLanguage}

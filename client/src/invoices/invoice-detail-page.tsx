@@ -45,6 +45,7 @@ import {
 } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { useRecordOpened } from '../lib/recent';
+import { organizationDayOf } from '../lib/time-zone';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { formatRate } from '../settings/tax-rate';
@@ -305,7 +306,8 @@ export function InvoiceDetailPage() {
                     'Voided {date}: {reason}. The credit note below reverses it in full.',
                 },
                 {
-                  date: formatDay(invoice.voidedAt),
+                  // The organization's day, as the PDF prints it (ADR-072).
+                  date: formatDay(organizationDayOf(invoice.voidedAt)),
                   reason: invoice.voidReason,
                 },
               )
@@ -586,7 +588,8 @@ export function InvoiceDetailPage() {
       />
 
       <IssueInvoiceDialog
-        key={issuing ? 'issuing' : 'closed'}
+        // Each dialog keyed apart from its sibling even while closed (#127).
+        key={issuing ? 'issuing' : 'issue-closed'}
         invoice={invoice}
         open={issuing}
         onClose={() => setIssuing(false)}
@@ -594,7 +597,7 @@ export function InvoiceDetailPage() {
       />
 
       <VoidInvoiceDialog
-        key={voiding ? 'voiding' : 'closed'}
+        key={voiding ? 'voiding' : 'void-closed'}
         invoice={invoice}
         open={voiding}
         onClose={() => setVoiding(false)}

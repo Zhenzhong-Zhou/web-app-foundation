@@ -20,7 +20,7 @@ export class VoidInvoiceDto {
 
   /**
    * The credit note's date, sent by the client for the reason the invoice
-   * date is: the server does not know the person's calendar day.
+   * date is: a day the person chooses, starting at the organization's today.
    */
   @IsCalendarDay()
   creditDate!: string;

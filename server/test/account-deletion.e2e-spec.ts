@@ -4,7 +4,7 @@ import type { INestApplication } from '@nestjs/common';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import sharp from 'sharp';
 
-import { todayUtc } from '../src/common/today';
+import { todayIn } from '../src/common/today';
 import {
   AccountDeletionService,
   deletionDayFor,
@@ -351,7 +351,9 @@ describe('Account deletion (e2e)', () => {
     async function due(memberId: string): Promise<void> {
       await db
         .update(users)
-        .set({ deletionScheduledAt: todayUtc(new Date(Date.now() - 2 * DAY)) })
+        .set({
+          deletionScheduledAt: todayIn('UTC', new Date(Date.now() - 2 * DAY)),
+        })
         .where(eq(users.id, memberId));
     }
 

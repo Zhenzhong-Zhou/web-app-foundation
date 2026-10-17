@@ -52,7 +52,11 @@ export class SessionContextMiddleware implements NestMiddleware {
     // next() is called synchronously inside run(), so everything downstream —
     // guards, pipes, the handler, TenantDb — sees this store.
     runInTenantContext(
-      { userId: context.userId, organizationId: context.organizationId },
+      {
+        userId: context.userId,
+        organizationId: context.organizationId,
+        timeZone: context.timeZone ?? undefined,
+      },
       () => next(),
     );
   }
@@ -111,6 +115,7 @@ export class SessionContextMiddleware implements NestMiddleware {
       name: user.name,
       organizationId: membership?.organizationId ?? null,
       roleId: membership?.roleId ?? null,
+      timeZone: membership?.timeZone ?? null,
       idleLimitMs,
       // Captured per request rather than read off the session row: ADR-012
       // wants these at event time, and the session's values are from
@@ -152,6 +157,7 @@ export class SessionContextMiddleware implements NestMiddleware {
         lastActiveAt: memberships.lastActiveAt,
         idleSignOutMinutes: organizations.idleSignOutMinutes,
         idleSignOutScope: organizations.idleSignOutScope,
+        timeZone: organizations.timeZone,
       })
       .from(memberships)
       .innerJoin(

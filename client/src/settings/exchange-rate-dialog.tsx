@@ -13,12 +13,8 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { groupedNumberMessage, toApiDecimal } from '../lib/format';
+import { organizationToday } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
-
-/** Today in the browser's calendar, as the YYYY-MM-DD the server takes. */
-function today(): string {
-  return new Date().toLocaleDateString('en-CA');
-}
 
 /**
  * Sets one currency's rate for one day (ADR-048). A PUT: the day is the
@@ -45,7 +41,11 @@ export function ExchangeRateDialog({
   const [currency, setCurrency] = useState(initial?.currency ?? '');
   // Set when the rate is typed with a thousands separator (ADR-054).
   const [rateError, setRateError] = useState<string | null>(null);
-  const [rateDate, setRateDate] = useState(initial?.rateDate ?? today());
+  const [rateDate, setRateDate] = useState(
+    // The organization's today: the day its receipts look a rate up by
+    // (ADR-072).
+    initial?.rateDate ?? organizationToday(),
+  );
   const [rate, setRate] = useState(initial?.rate ?? '');
 
   const { submitting, error, reset, submit } = useSubmit(

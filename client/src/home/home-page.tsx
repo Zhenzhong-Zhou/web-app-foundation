@@ -1,4 +1,5 @@
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ScheduleIcon from '@mui/icons-material/Schedule';
 import {
   Alert,
   Box,
@@ -18,11 +19,17 @@ import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { StatusChip } from '../components/status-chip';
 import { api } from '../lib/api';
-import { dayOf } from '../lib/date-range';
+import { daysUntil } from '../lib/expiry';
 import { formatDay } from '../lib/format';
+import {
+  differsFromBrowser,
+  organizationTimeZone,
+  organizationToday,
+} from '../lib/time-zone';
+import { zoneLabel } from '../lib/time-zone-label';
 import { useExpiryDays } from '../lib/use-expiry-days';
 import { GettingStarted } from './getting-started';
-import { CARDS, daysUntil } from './home-cards';
+import { CARDS } from './home-cards';
 import { RecentCard } from './recent-card';
 
 /**
@@ -40,10 +47,14 @@ export function HomePage() {
   const can = useCan();
   const [home, setHome] = useState<HomeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const today = dayOf(new Date());
+  // The organization's today (ADR-072), so "overdue" is the same for
+  // everyone in it, wherever they read it from.
+  const today = organizationToday();
+  const zone = organizationTimeZone();
 
+  // The server counts the cards from the same day itself.
   const load = useCallback(() => {
-    api<HomeResponse>(`/home?today=${today}`)
+    api<HomeResponse>('/home')
       .then((response) => {
         setHome(response);
         setError(null);
@@ -51,7 +62,7 @@ export function HomePage() {
       .catch((caught: unknown) =>
         setError(caught instanceof Error ? caught.message : String(caught)),
       );
-  }, [today]);
+  }, []);
 
   useEffect(() => {
     load();
@@ -179,6 +190,8 @@ export function HomePage() {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
+              // The organization's date, which the cards count from.
+              timeZone: zone,
             })}
             {session?.organization?.name &&
               intl.formatMessage(
@@ -194,6 +207,25 @@ export function HomePage() {
           </Button>
         </Stack>
       </Stack>
+
+      {/* Only for a reader on another clock (ADR-072): their own date
+          may already be tomorrow, or still yesterday. */}
+      {differsFromBrowser(zone) && (
+        <Typography
+          variant="body2"
+          sx={{ mt: -2, display: 'flex', alignItems: 'center', gap: 1 }}
+        >
+          <ScheduleIcon fontSize="small" aria-hidden />
+          {intl.formatMessage(
+            {
+              id: 'home.timeZoneNote',
+              defaultMessage:
+                'Dates follow the organization’s time zone: {zone}.',
+            },
+            { zone: zoneLabel(zone) },
+          )}
+        </Typography>
+      )}
 
       {error && <Alert severity="error">{error}</Alert>}
 

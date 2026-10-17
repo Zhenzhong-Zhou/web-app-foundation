@@ -19,7 +19,7 @@ const SITE: Location = {
 };
 
 describe('SiteAddressDialog', () => {
-  it('sends the site’s address whole, blanks left out (ADR-071)', async () => {
+  it('sends the site’s address whole, blanks as null (ADR-071)', async () => {
     const user = userEvent.setup();
     const sent: Record<string, unknown>[] = [];
     server.use(
@@ -46,9 +46,13 @@ describe('SiteAddressDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
     await expect.poll(() => sent.length).toBe(1);
+    // A blank line is cleared, and the request says so (ADR-018).
     expect(sent[0]).toEqual({
       line1: '42 Production Way',
+      line2: null,
       city: 'Burnaby',
+      region: null,
+      postalCode: null,
       country: 'CA',
     });
   });

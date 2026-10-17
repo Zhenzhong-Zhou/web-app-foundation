@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
+import { todayIn } from '../src/common/today';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -14,6 +15,7 @@ import {
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
+import { clearOfMidnight } from './utils/time-zones';
 
 interface AuditEntry {
   id: string;
@@ -193,8 +195,40 @@ describe('Audit (e2e)', () => {
       const yesterday = new Date(Date.now() - 86_400_000).toISOString();
 
       expect((await page(alpha, `?from=${tomorrow}`)).entries).toHaveLength(0);
-      expect((await page(alpha, `?to=${yesterday}`)).entries).toHaveLength(0);
+      expect((await page(alpha, `?until=${yesterday}`)).entries).toHaveLength(
+        0,
+      );
       expect((await page(alpha, `?from=${yesterday}`)).entries).toHaveLength(1);
+    });
+
+    /**
+     * The end is the start of the day after the last, excluded (ADR-057):
+     * a range ending today holds all of today, which an end at today's own
+     * midnight, read as included, left out. A new organization is on UTC,
+     * so its days begin at 00:00 UTC (ADR-072).
+     */
+    it('holds the whole of the last day', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await clearOfMidnight(['UTC']);
+      await makeProduct(alpha, 'WIDGET-1');
+
+      const today = todayIn('UTC');
+      const startOf = (day: string) => `${day}T00:00:00.000Z`;
+      const tomorrow = new Date(Date.parse(today) + 86_400_000)
+        .toISOString()
+        .slice(0, 10);
+
+      expect(
+        (
+          await page(
+            alpha,
+            `?from=${startOf(today)}&until=${startOf(tomorrow)}`,
+          )
+        ).entries,
+      ).toHaveLength(1);
+      expect(
+        (await page(alpha, `?until=${startOf(today)}`)).entries,
+      ).toHaveLength(0);
     });
 
     it('pages with a cursor and stops when there is nothing left', async () => {

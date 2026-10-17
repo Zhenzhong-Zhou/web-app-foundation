@@ -6,6 +6,7 @@ import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
 import { afterCursor, sortedOrder } from '../../common/sorted-page';
+import { todayOf } from '../../core/organizations/time-zone';
 import {
   locations,
   lots,
@@ -40,7 +41,11 @@ const STOCK_PAGE_SIZE = 50;
  * by its counts, so "Expiring soon 2" counts exactly the rows pressing it
  * shows.
  */
-function filtersOf(query: ListStockDto, organizationId: string): SQL[] {
+function filtersOf(
+  query: ListStockDto,
+  organizationId: string,
+  today: string,
+): SQL[] {
   /**
    * The organization on every joined table, not only on stock_levels.
    * Redundant for correctness, but without it Postgres joins this
@@ -82,7 +87,9 @@ function filtersOf(query: ListStockDto, organizationId: string): SQL[] {
 
   if (query.expiringWithin) {
     scope.push(
-      sql`${lots.expiresAt} <= current_date + ${query.expiringWithin}::int`,
+      // The organization's today (ADR-072), not the database session's
+      // current_date, which depends on how the database is configured.
+      sql`${lots.expiresAt} <= ${today}::date + ${query.expiringWithin}::int`,
     );
   }
 
@@ -113,14 +120,18 @@ function lotJoin(organizationId: string) {
  * (ADR-058), so a count beside a filter, on a card or on the list itself is
  * always of the same rows.
  */
-export function stockRowsOf(query: ListStockDto, organizationId: string): SQL {
+export function stockRowsOf(
+  query: ListStockDto,
+  organizationId: string,
+  today: string,
+): SQL {
   return sql`${stockLevels}
     inner join ${productVariants}
       on ${productVariants.id} = ${stockLevels.variantId}
     inner join ${products} on ${products.id} = ${productVariants.productId}
     inner join ${locations} on ${locations.id} = ${stockLevels.locationId}
     left join ${lots} on ${lotJoin(organizationId)}
-    where ${and(...filtersOf(query, organizationId))}`;
+    where ${and(...filtersOf(query, organizationId, today))}`;
 }
 
 @Injectable()
@@ -151,7 +162,8 @@ export class StockReadsService {
     const limit = query.limit ?? STOCK_PAGE_SIZE;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const scope = filtersOf(query, organizationId);
+      const today = await todayOf(tx, organizationId);
+      const scope = filtersOf(query, organizationId, today);
       const lotOf = lotJoin(organizationId);
 
       const order = sql`(${locations.name}, ${productVariants.sku}, coalesce(${lots.code}, ''), ${stockLevels.id})`;
@@ -270,11 +282,12 @@ export class StockReadsService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const { expiringWithin, ...rest } = query;
       const unfiltered = { ...rest, needsCost: undefined };
+      const today = await todayOf(tx, organizationId);
 
       const count = async (filters: ListStockDto) => {
         const result = await tx.execute(sql`
           select count(*)::int as count
-          from ${stockRowsOf(filters, organizationId)}
+          from ${stockRowsOf(filters, organizationId, today)}
         `);
         return (result.rows[0] as { count: number }).count;
       };

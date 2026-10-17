@@ -70,6 +70,7 @@ export class OrganizationsService {
           rail: organizations.rail,
           logoOnDocuments: organizations.logoOnDocuments,
           paperSize: organizations.paperSize,
+          timeZone: organizations.timeZone,
           expiryWarningDays: organizations.expiryWarningDays,
           expiryCriticalDays: organizations.expiryCriticalDays,
           idleSignOutMinutes: organizations.idleSignOutMinutes,
@@ -129,6 +130,7 @@ export class OrganizationsService {
           rail: organizations.rail,
           logoOnDocuments: organizations.logoOnDocuments,
           paperSize: organizations.paperSize,
+          timeZone: organizations.timeZone,
           expiryWarningDays: organizations.expiryWarningDays,
           expiryCriticalDays: organizations.expiryCriticalDays,
           idleSignOutMinutes: organizations.idleSignOutMinutes,
@@ -175,6 +177,7 @@ export class OrganizationsService {
         rail: existing.rail,
         logoOnDocuments: existing.logoOnDocuments,
         paperSize: existing.paperSize,
+        timeZone: existing.timeZone,
         expiryWarningDays: existing.expiryWarningDays,
         expiryCriticalDays: existing.expiryCriticalDays,
         idleSignOutMinutes: existing.idleSignOutMinutes,
@@ -305,6 +308,7 @@ export class OrganizationsService {
         ...(input.paperSize !== undefined
           ? { paperSize: input.paperSize }
           : {}),
+        ...(input.timeZone !== undefined ? { timeZone: input.timeZone } : {}),
         ...(input.expiryWarningDays !== undefined
           ? { expiryWarningDays: input.expiryWarningDays }
           : {}),
@@ -345,6 +349,21 @@ export class OrganizationsService {
       };
 
       const existing = await registeredAddress(tx, organizationId);
+
+      /**
+       * The log keeps what the address replaced, as every other setting on
+       * the organization does: issued invoices keep their own copy, but only
+       * the log can say what the address was before a given day. Null for
+       * each line when there was none yet.
+       */
+      recordPrevious({
+        line1: existing?.line1 ?? null,
+        line2: existing?.line2 ?? null,
+        city: existing?.city ?? null,
+        region: existing?.region ?? null,
+        postalCode: existing?.postalCode ?? null,
+        country: existing?.country ?? null,
+      });
 
       if (existing) {
         await tx

@@ -676,6 +676,21 @@ describe('Invoices (e2e)', () => {
       expect(voided).toContain('VOID — nothing is owed on this invoice');
       expect(voided).toContain('reversed by CN-000001');
 
+      // Voided at 5 pm on 14 January in Vancouver, already the 15th in UTC:
+      // the organization's day prints (ADR-072).
+      const late = {
+        ...(await invoice()),
+        voidedAt: new Date('2026-01-15T01:00:00.000Z'),
+      };
+      expect(
+        wordsOf(
+          invoiceDocument(
+            late,
+            documentText('en', null, 'CA', 'America/Vancouver'),
+          ),
+        ),
+      ).toContain('Voided Jan 14, 2026');
+
       const note = body<{ creditNote: CreditNoteDetail }>(
         await org.agent.get(`/v1/credit-notes/${creditNote.id}`).expect(200),
       ).creditNote;

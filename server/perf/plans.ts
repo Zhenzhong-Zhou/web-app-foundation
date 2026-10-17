@@ -297,7 +297,7 @@ async function buildProbes(
     // steps, as an owner sees them.
     {
       name: 'home',
-      run: () => home.home(EVERY_PERMISSION, MONTH_DAYS.to),
+      run: () => home.home(EVERY_PERMISSION),
     },
     // Recently opened (ADR-058): a person's history, newest first, named.
     {

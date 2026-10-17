@@ -1,11 +1,17 @@
 import type { INestApplication } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
+import { todayIn } from '../src/common/today';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { roles, stockMovements, stockValuations } from '../src/database/schema';
+import {
+  exchangeRates,
+  roles,
+  stockMovements,
+  stockValuations,
+} from '../src/database/schema';
 import {
   body,
   createE2eApp,
@@ -17,6 +23,7 @@ import {
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
+import { clearOfMidnight, KIRITIMATI, PAGO_PAGO } from './utils/time-zones';
 import {
   buy,
   cad,
@@ -417,6 +424,54 @@ describe('Costs (e2e)', () => {
       ).toMatchObject({ value: '35.000000' });
 
       expect(await needsCost(s)).toEqual([]);
+    });
+
+    /**
+     * A correction converts at the rate for the day the stock arrived where
+     * the organization is (ADR-048, ADR-072). Two receipts made together, in
+     * Pago Pago and in Kiritimati, arrived a day or two apart, and UTC's day
+     * is the wrong one for at least one of them.
+     */
+    it("converts at the rate for the day it arrived, in the organization's zone", async () => {
+      for (const [slug, zone, value] of [
+        ['alpha', PAGO_PAGO, '32.500000'],
+        ['beta', KIRITIMATI, '35.000000'],
+      ] as const) {
+        const s = await setup(slug);
+        await s.agent
+          .patch('/v1/organization')
+          .send({ timeZone: zone })
+          .expect(204);
+        const extract = await variant(s, 'EXTRACT');
+
+        await clearOfMidnight([KIRITIMATI, PAGO_PAGO]);
+        await db.insert(exchangeRates).values([
+          {
+            organizationId: s.organizationId,
+            currency: 'USD',
+            rateDate: todayIn(PAGO_PAGO),
+            rate: '1.30',
+          },
+          {
+            organizationId: s.organizationId,
+            currency: 'USD',
+            rateDate: todayIn(KIRITIMATI),
+            rate: '1.40',
+          },
+        ]);
+        // By hand, with no price: it waits for the cost.
+        const receipt = await move(s, {
+          variantId: extract,
+          toLocationId: s.shelf,
+          quantity: '100',
+          reason: 'receipt',
+        });
+        const valuation = await valuationOf(db, receipt);
+
+        expect(await setCost(s, valuation.id, usd('0.25'))).toMatchObject({
+          value,
+        });
+      }
     });
 
     it('refuses a cost where the value comes from somewhere else', async () => {

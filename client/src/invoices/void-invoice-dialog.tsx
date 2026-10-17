@@ -14,8 +14,8 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { formatMoney } from '../lib/format';
+import { organizationToday } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
-import { todayLocal } from './calendar-day';
 
 /**
  * Voids an issued invoice by issuing a credit note for all of it
@@ -35,7 +35,7 @@ export function VoidInvoiceDialog({
 }) {
   const intl = useIntl();
   const [reason, setReason] = useState('');
-  const [creditDate, setCreditDate] = useState(todayLocal());
+  const [creditDate, setCreditDate] = useState(organizationToday());
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {

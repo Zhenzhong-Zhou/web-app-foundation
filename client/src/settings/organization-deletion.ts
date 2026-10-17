@@ -3,7 +3,7 @@ import type { IntlShape } from 'react-intl';
 import type { OrganizationLastExport } from '../api/types.gen';
 import { useLanguage } from '../i18n/use-language';
 import { apiUrl } from '../lib/api';
-import { daysUntil } from '../lib/expiry';
+import { daysUntil, localToday } from '../lib/expiry';
 import { formatDay } from '../lib/format';
 
 /**
@@ -29,12 +29,14 @@ export function useExportUrl(): string {
 /**
  * "14 Nov 2026 (in 30 days)": the day as the email names it, unconverted
  * (ADR-052), and how far off it is, as expiry reads in days left (ADR-055).
+ * Counted from the reader's own day, not the organization's (ADR-072): a
+ * deletion day ends everywhere, so each person counts to it by theirs.
  */
 export function dayWithDaysLeft(
   intl: IntlShape,
   day: string,
   /** When the count is known exactly, as the 30 days of a new deletion. */
-  days: number = Math.max(0, daysUntil(day)),
+  days: number = Math.max(0, daysUntil(day, localToday())),
 ): string {
   return intl.formatMessage(
     {

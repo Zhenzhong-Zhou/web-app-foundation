@@ -62,9 +62,8 @@ function acceptUtcMidnight({
 /**
  * A calendar day, YYYY-MM-DD, sent by the client: an invoice, due, credit or
  * rate date, a lot's expiry, an order's expected date, a licence's dates.
- * The organization has no timezone, so the server cannot know the person's
- * day; the client sends it, and a `date` column stores it as it arrives,
- * never through a JS Date (ADR-046, ADR-052).
+ * The client sends the day the person chose, and a `date` column stores it
+ * as it arrives, never through a JS Date (ADR-046, ADR-052).
  *
  * The pattern keeps the shape; strict ISO 8601 refuses a day that does not
  * exist, so 2026-02-30 is a 400 here rather than a 500 from Postgres.

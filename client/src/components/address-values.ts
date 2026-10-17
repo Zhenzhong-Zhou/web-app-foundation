@@ -29,16 +29,18 @@ export function addressValues(
 }
 
 /**
- * The address as a PUT takes it, sent whole: a part left blank is left
- * out, and so cleared.
+ * The address as a PUT takes it, sent whole: a part left blank is sent as
+ * null, cleared. Null rather than left out, so the request says what it
+ * clears and the audit log shows it going, "Suite 200 → —": a part left
+ * out is not logged, and a save that only cleared one logged nothing.
  */
 export function addressBody(values: AddressValues) {
   return {
     line1: values.line1,
-    line2: values.line2 || undefined,
-    city: values.city || undefined,
-    region: values.region || undefined,
-    postalCode: values.postalCode || undefined,
+    line2: values.line2 || null,
+    city: values.city || null,
+    region: values.region || null,
+    postalCode: values.postalCode || null,
     country: values.country,
   };
 }

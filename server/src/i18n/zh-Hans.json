@@ -563,5 +563,6 @@
   "validation.rmaLineTwice": "同一个退货授权中某一行出现了两次——请只发送一次合计数量",
   "validation.shipmentLineTwice": "同一次发货中某一行出现了两次——请只发送一次合计数量",
   "validation.taxRate": "rate 必须是百分比、最多 4 位小数，并以字符串发送",
+  "validation.timeZone": "{property} 必须是时区名称，例如 America/Vancouver",
   "validation.whitelist": "不应存在属性 {property}"
 }

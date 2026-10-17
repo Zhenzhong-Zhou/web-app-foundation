@@ -25,6 +25,14 @@ describe('summarise', () => {
     );
   });
 
+  // An entry records a zone as sent (ADR-018): from Chrome, its old name.
+  // It reads under the name the server stores (ADR-072).
+  it('names a time zone as the server stores it', () => {
+    expect(summarise({ timeZone: { from: 'UTC', to: 'Europe/Kiev' } })).toMatch(
+      /→ .*\(Kyiv\)$/,
+    );
+  });
+
   // What the audit log showed: an unchanged reference and a raw ISO string.
   it('shows only what changed, with calendar days as days', () => {
     const shown = summarise({

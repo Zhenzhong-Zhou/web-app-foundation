@@ -18,16 +18,16 @@ import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api, hasCode } from '../lib/api';
 import { formatMoney } from '../lib/format';
+import { organizationToday } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
-import { todayLocal } from './calendar-day';
 
 /**
  * The one step that cannot be taken back by editing (ADR-046): issuing
  * numbers the invoice, stores its amounts and freezes it. The dialog says
  * so, and shows the total the customer will be asked for.
  *
- * The date defaults to the person's own today, sent as a calendar day —
- * the server does not guess one in UTC.
+ * The date defaults to the organization's today (ADR-072), sent as a
+ * calendar day: the server stores the day chosen, as it arrives.
  *
  * Refused for want of an address or the tax number, it links to where that
  * is set (ADR-061): the organization's address and tax number to
@@ -49,7 +49,7 @@ export function IssueInvoiceDialog({
 }) {
   const intl = useIntl();
   const can = useCan();
-  const [invoiceDate, setInvoiceDate] = useState(todayLocal());
+  const [invoiceDate, setInvoiceDate] = useState(organizationToday());
 
   const { submitting, error, errorCode, reset, submit } = useSubmit(
     async () => {

@@ -26,8 +26,11 @@ export interface Printable {
    * formatting; null takes the organization's as it is now.
    */
   sellerCountry: string | null;
-  /** The file's name. */
-  name: string;
+  /**
+   * The file's name, in the document's words: a packing slip is named by
+   * the day it shipped, in the organization's zone (ADR-072).
+   */
+  name: (doc: DocumentText) => string;
   /**
    * Its kind and number, "Invoice · INV-000042", in its words: what every
    * page's foot says beside the page's number (ADR-071, amended).
@@ -48,6 +51,21 @@ export interface Letterhead {
   country: string | null;
   /** The paper the organization chose; null takes it from the country. */
   paper: PaperSize | null;
+  /** The zone a moment's day is read in (ADR-072). */
+  timeZone: string;
+}
+
+/**
+ * A document's words: its customer's languages, the seller's country's
+ * formatting, and the organization's time zone for a moment's day.
+ */
+function textOf(document: Printable, letterhead: Letterhead): DocumentText {
+  return documentText(
+    document.language,
+    document.secondLanguage,
+    document.sellerCountry ?? letterhead.country,
+    letterhead.timeZone,
+  );
 }
 
 /** Letter where it is the paper sold, A4 everywhere else (ADR-071). */
@@ -93,7 +111,10 @@ export class DocumentsService {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
-      dispositionOf(download ? 'attachment' : 'inline', document.name),
+      dispositionOf(
+        download ? 'attachment' : 'inline',
+        document.name(textOf(document, letterhead)),
+      ),
     );
     // A document is the organization's, for the person who asked.
     res.setHeader('Cache-Control', 'private, no-store');
@@ -106,11 +127,7 @@ export class DocumentsService {
    */
   pdf(document: Printable, letterhead: Letterhead): Promise<Buffer> {
     const country = document.sellerCountry ?? letterhead.country;
-    const doc = documentText(
-      document.language,
-      document.secondLanguage,
-      country,
-    );
+    const doc = textOf(document, letterhead);
     const drawn = document.draw(doc);
     return this.renderer.render(
       {
@@ -140,6 +157,7 @@ export class DocumentsService {
             logoFileId: organizations.logoFileId,
             logoOnDocuments: organizations.logoOnDocuments,
             paperSize: organizations.paperSize,
+            timeZone: organizations.timeZone,
           })
           .from(organizations)
           .where(eq(organizations.id, organizationId));
@@ -150,6 +168,7 @@ export class DocumentsService {
             : null,
           country: address?.country ?? null,
           paper: organization?.paperSize ?? null,
+          timeZone: organization?.timeZone ?? 'UTC',
         };
       },
     );

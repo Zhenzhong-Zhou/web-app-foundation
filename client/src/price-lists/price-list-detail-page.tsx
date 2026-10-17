@@ -263,14 +263,15 @@ export function PriceListDetailPage() {
       </Typography>
 
       <EditPriceListDialog
-        key={editing ? list.id : 'closed'}
+        // Each dialog keyed apart from its sibling even while closed (#127).
+        key={editing ? list.id : 'edit-closed'}
         list={editing ? list : null}
         onClose={() => setEditing(false)}
         onSaved={reload}
       />
 
       <SetPriceDialog
-        key={correcting?.variantId ?? (adding ? 'new' : 'closed')}
+        key={correcting?.variantId ?? (adding ? 'new' : 'price-closed')}
         open={adding || correcting !== null}
         priceListId={list.id}
         currency={list.currency}

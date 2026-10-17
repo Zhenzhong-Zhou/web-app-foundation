@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, asc, eq, lt, lte, type SQL, sql } from 'drizzle-orm';
 
+import { todayIn } from '../../common/today';
 import type { Permission } from '../../core/authorization/permissions';
 import {
   invoices,
@@ -127,12 +128,21 @@ export class HomeService {
     private readonly runs: ProductionOrdersService,
   ) {}
 
-  async home(held: ReadonlySet<Permission>, today: string) {
+  /**
+   * Home's cards, counted against the organization's today, in its own
+   * time zone (ADR-058, ADR-072). The server decides it, as the lists the
+   * rows come from do: a screen left open past midnight would send
+   * yesterday, and a card's count would then go by another day than its
+   * rows.
+   */
+  async home(held: ReadonlySet<Permission>) {
     const kinds = CARDS.flatMap(({ kind, permission }) =>
       held.has(permission) ? [kind] : [],
     );
-    // The organization's own warning days (ADR-060), for the Expiring card.
-    const expiringWithin = await this.expiryWarningDays();
+    // The organization's own warning days (ADR-060), for the Expiring card,
+    // and its today.
+    const { days: expiringWithin, timeZone } = await this.organization();
+    const today = todayIn(timeZone);
     const totals = await this.totals(kinds, today, expiringWithin);
 
     const cards: HomeCard[] = [];
@@ -262,18 +272,24 @@ export class HomeService {
     });
   }
 
-  /** A card's five most urgent rows, from its list's own read. */
-  /** When a lot counts as expiring here (ADR-060): 90 days by default. */
-  private expiryWarningDays(): Promise<number> {
+  /**
+   * When a lot counts as expiring here (ADR-060), 90 days by default, and
+   * the organization's time zone (ADR-072).
+   */
+  private organization(): Promise<{ days: number; timeZone: string }> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [organization] = await tx
-        .select({ days: organizations.expiryWarningDays })
+        .select({
+          days: organizations.expiryWarningDays,
+          timeZone: organizations.timeZone,
+        })
         .from(organizations)
         .where(eq(organizations.id, organizationId));
-      return organization.days;
+      return organization;
     });
   }
 
+  /** A card's five most urgent rows, from its list's own read. */
   private async rows(
     kind: HomeKind,
     today: string,
@@ -433,12 +449,12 @@ function totalOf(
     // list's. The expired are counted among the expiring.
     case 'expiring':
       return counted(
-        stockRowsOf({ expiringWithin }, organizationId),
+        stockRowsOf({ expiringWithin }, organizationId, today),
         lt(lots.expiresAt, today),
       );
 
     case 'costsWaiting':
-      return counted(stockRowsOf({ needsCost: 'true' }, organizationId));
+      return counted(stockRowsOf({ needsCost: 'true' }, organizationId, today));
 
     case 'invoicesToIssue': {
       const where = and(

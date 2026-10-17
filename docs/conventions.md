@@ -114,7 +114,9 @@ Every document is a PDF the server draws (ADR-071), in the same few pieces.
   document's own transaction.
 - **Its words** are server messages in all three catalogues, through
   `doc.label` and `doc.lines`; its figures go through `format.ts`, money
-  and unit prices from their strings and days in UTC.
+  and unit prices from their strings. A calendar day, an invoice's date,
+  is written as it is; a moment's day, when a slip shipped, goes through
+  `doc.dayOf`, in the organization's time zone (ADR-072).
 
 ## Module boundaries
 
@@ -338,6 +340,15 @@ message, and the screen keys on the code, never on the words.
 - Every integration test calls `await app.close()` in `afterAll`, or the
   `pg` pool stays open and the run hangs without explaining why.
 - One integration test per feature as it's built (ADR-008).
+- **The client's unit tests run in Tokyo**, `TZ` set in
+  `vitest.config.ts`, so a test that assumes the computer is in UTC, or in
+  the organization's zone, fails everywhere, not only on someone else's
+  machine. A test about days sets the organization's zone itself
+  (`setOrganizationTimeZone`). Server tests pass the zone and the clock
+  (ADR-072). A test about a clock change uses one that has already
+  happened: a law can drop one to come, as British Columbia did with
+  1 November 2026's, and machines with older time-zone data still expect
+  it.
 - **`docs/manual-checks.md` moves with the code.** A commit that changes what a
   person sees, or a rule they work under, updates its checks in the same
   commit. A fixed bug that a person could have noticed adds a check under
@@ -384,6 +395,13 @@ already covers; the simple create dialogs, which fill fields and POST; and
 `error-boundary`, `color-mode-select`, `form-error`, `auth-layout`.
 
 ---
+
+## Keys that rebuild a component
+
+A component keyed by a value, so it starts again when the value changes,
+gets a prefix naming what it is: `currency-${baseCurrency ?? ''}`,
+`issue-closed`. Two siblings keyed by bare values collide as soon as both
+are empty or closed, and React warns that it may drop one (#127).
 
 ## Loading states
 

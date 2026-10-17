@@ -1,5 +1,9 @@
 import type { INestApplication } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 
+import type { Database } from '../src/database/database.module';
+import { UNSAFE_GLOBAL_DB } from '../src/database/database.tokens';
+import { organizations } from '../src/database/schema';
 import { LicenceRemindersService } from '../src/modules/product-licences/licence-reminders.service';
 import {
   addViewer,
@@ -8,6 +12,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { KIRITIMATI, PAGO_PAGO } from './utils/time-zones';
 
 type Agent = Awaited<ReturnType<typeof registerOrganization>>['agent'];
 
@@ -82,6 +87,73 @@ describe('Licence reminders (e2e)', () => {
     // A month on: the 30-day notice, and only it.
     expect(await reminders.remind(new Date(now.getTime() + 31 * DAY))).toBe(1);
     expect(await bell(alpha.agent)).toHaveLength(2);
+  });
+
+  /**
+   * Each organization's own today (ADR-072). At noon UTC on 9 October it is
+   * already 2 am on the 10th in Kiritimati (UTC+14): a licence whose last
+   * day is the 9th is told "expires today" in UTC and "expired" there.
+   */
+  it('tells each organization by its own day', async () => {
+    const utc = await registerOrganization(app, 'alpha');
+    const ahead = await registerOrganization(app, 'beta');
+    await ahead.agent
+      .patch('/v1/organization')
+      .send({ timeZone: 'Pacific/Kiritimati' })
+      .expect(204);
+    await licence(utc.agent, '2026-10-09');
+    await licence(ahead.agent, '2026-10-09');
+
+    expect(await reminders.remind(now)).toBe(2);
+    expect((await bell(utc.agent))[0].title).toContain('expires today');
+    expect((await bell(ahead.agent))[0].title).toContain('expired on');
+  });
+
+  /**
+   * Every zone's today is within a day of UTC's, so the run reads its
+   * window a day wider each side (ADR-072). At noon UTC on 9 October it is
+   * already the 10th in Kiritimati: its 60-day notice is owed for a licence
+   * expiring on 9 December, 61 days after UTC's today. At 5 am UTC it is
+   * still the 8th in Pago Pago: a licence expired there on 1 October, a
+   * week ago, is owed its last notice, 8 days before UTC's today.
+   */
+  it('reads its window a day wider than UTC each side', async () => {
+    const ahead = await registerOrganization(app, 'alpha');
+    await ahead.agent
+      .patch('/v1/organization')
+      .send({ timeZone: KIRITIMATI })
+      .expect(204);
+    await licence(ahead.agent, '2026-12-09');
+    expect(await reminders.remind(now)).toBe(1);
+
+    const behind = await registerOrganization(app, 'beta');
+    await behind.agent
+      .patch('/v1/organization')
+      .send({ timeZone: PAGO_PAGO })
+      .expect(204);
+    await licence(behind.agent, '2026-10-01');
+    expect(await reminders.remind(new Date('2026-10-09T05:00:00Z'))).toBe(1);
+    expect((await bell(behind.agent))[0].title).toContain('expired on');
+  });
+
+  /**
+   * A zone written by hand, or one a newer time-zone database dropped, is
+   * read as UTC with a warning: the run goes on to every other
+   * organization rather than stopping at it (ADR-072).
+   */
+  it('goes on past a zone it cannot read, telling that one by UTC', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const broken = await registerOrganization(app, 'beta');
+    await app
+      .get<Database>(UNSAFE_GLOBAL_DB)
+      .update(organizations)
+      .set({ timeZone: 'Mars/Olympus_Mons' })
+      .where(eq(organizations.id, broken.organizationId));
+    await licence(alpha.agent, '2026-10-09');
+    await licence(broken.agent, '2026-10-09');
+
+    expect(await reminders.remind(now)).toBe(2);
+    expect((await bell(broken.agent))[0].title).toContain('expires today');
   });
 
   it('sends the latest owed after downtime, not every one missed', async () => {

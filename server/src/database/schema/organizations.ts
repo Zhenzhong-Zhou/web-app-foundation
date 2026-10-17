@@ -177,6 +177,15 @@ export const organizations = pgTable(
     paperSize: text('paper_size').$type<PaperSize>(),
 
     /**
+     * The organization's time zone, an IANA name (ADR-072): what decides its
+     * day, from whether a licence has expired to the date a packing slip
+     * prints. Never an offset, which is wrong half the year. A new
+     * organization takes its registering person's browser zone; UTC, the
+     * zone every organization used before, is the default.
+     */
+    timeZone: text('time_zone').notNull().default('UTC'),
+
+    /**
      * Sign out after inactivity (ADR-065): null for Off, else minutes. It
      * only ever shortens a session's own limit, and applies to sign-ins
      * without Keep me signed in, or to everyone.
@@ -241,6 +250,10 @@ export const organizations = pgTable(
     check(
       'organizations_licence_expired_policy_check',
       sql`${t.licenceExpiredPolicy} in ('block', 'override', 'allow')`,
+    ),
+    check(
+      'organizations_time_zone_not_blank_check',
+      sql`length(btrim(${t.timeZone})) > 0`,
     ),
     check(
       'organizations_paper_size_check',

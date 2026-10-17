@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ProductLicence } from '../api/types.gen';
+import { setOrganizationTimeZone } from '../lib/time-zone';
 import { licenceStatus } from './licence-status';
 
 /**
@@ -33,10 +34,13 @@ describe('licenceStatus', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
+    // UTC, as the server's spec reads the same days; never this computer's.
+    setOrganizationTimeZone('UTC');
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    setOrganizationTimeZone(null);
   });
 
   it('reads a licence with no dates as current', () => {
@@ -63,5 +67,17 @@ describe('licenceStatus', () => {
     expect(licenceStatus(licence({ expiresAt: YESTERDAY })).label).toBe(
       'Expired',
     );
+  });
+
+  it("counts from the organization's day, wherever the reader is (ADR-072)", () => {
+    // 1 pm on 2 October in Vancouver, already 4 am on 3 October in Shanghai.
+    vi.setSystemTime(new Date('2026-10-02T20:00:00.000Z'));
+    const lastDayToday = licence({ expiresAt: TODAY });
+
+    setOrganizationTimeZone('America/Vancouver');
+    expect(licenceStatus(lastDayToday).label).toBe('Expires today');
+
+    setOrganizationTimeZone('Asia/Shanghai');
+    expect(licenceStatus(lastDayToday).label).toBe('Expired');
   });
 });

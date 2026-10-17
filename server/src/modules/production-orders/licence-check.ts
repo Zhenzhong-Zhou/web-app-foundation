@@ -1,6 +1,7 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
+import { todayIn } from '../../common/today';
 import type { Transaction } from '../../database/database.module';
 import {
   organizations,
@@ -49,6 +50,7 @@ export async function checkLicence(
       licenceNotInForcePolicy: organizations.licenceNotInForcePolicy,
       licenceExpiredPolicy: organizations.licenceExpiredPolicy,
       licenceRequired: organizations.licenceRequired,
+      timeZone: organizations.timeZone,
     })
     .from(organizations)
     .where(eq(organizations.id, organizationId));
@@ -102,7 +104,12 @@ export async function checkLicence(
     );
 
   const { isActive, ...licence } = row;
-  const status = licenceStatus({ ...licence, isActive });
+  // Today where the organization is (ADR-072): a licence expiring today is
+  // still current until midnight there, not at midnight UTC.
+  const status = licenceStatus(
+    { ...licence, isActive },
+    todayIn(policy.timeZone),
+  );
 
   return { licence, status, outcome: releaseOutcome(status, policy) };
 }

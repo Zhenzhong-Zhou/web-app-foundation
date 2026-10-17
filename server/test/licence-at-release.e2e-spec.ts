@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
+import { todayIn } from '../src/common/today';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -15,6 +16,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { clearOfMidnight, KIRITIMATI, PAGO_PAGO } from './utils/time-zones';
 
 interface RunDetail {
   id: string;
@@ -475,6 +477,36 @@ describe('Licence at release (e2e)', () => {
         licenceOverridden: true,
       });
       expect(JSON.stringify(entry.payload)).not.toContain('Renewal');
+    });
+  });
+
+  /**
+   * Today is the organization's (ADR-072). Pago Pago (UTC−11) is always at
+   * least a day behind Kiritimati (UTC+14), so a licence whose last day is
+   * Pago Pago's today is current there and already expired in Kiritimati,
+   * whenever the test runs.
+   */
+  describe("the organization's day", () => {
+    it('releases on the last day where the organization is, and not after', async () => {
+      // Pago Pago's midnight between reading its today and releasing would
+      // make the last day yesterday: wait it out if it is that close.
+      await clearOfMidnight([PAGO_PAGO]);
+      const lastDay = todayIn(PAGO_PAGO);
+
+      const behind = await registerOrganization(app, 'alpha');
+      await setPolicy(behind, { timeZone: PAGO_PAGO });
+      const s = await scenario(behind, { expiresAt: lastDay });
+      await release(behind.agent, s).expect(200);
+      expect((await detail(behind.agent, s.runId)).licenceStatusAtRelease).toBe(
+        'current',
+      );
+
+      const ahead = await registerOrganization(app, 'beta');
+      await setPolicy(ahead, { timeZone: KIRITIMATI });
+      const t = await scenario(ahead, { expiresAt: lastDay });
+      const res = await release(ahead.agent, t).expect(409);
+      expect(message(res)).toContain(`expired on ${lastDay}`);
+      await expectNothingReleased(ahead.agent, t.runId);
     });
   });
 

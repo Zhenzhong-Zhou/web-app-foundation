@@ -5,7 +5,7 @@ import type {
   Drawing,
   Printable,
 } from '../../core/documents/documents.service';
-import { formatDay, formatQuantity } from '../../core/documents/format';
+import { formatQuantity } from '../../core/documents/format';
 import { addressParts } from '../../core/documents/parties';
 import {
   addressLines,
@@ -73,7 +73,8 @@ export function returnAuthorizationDocument(
       doc.label(
         t(
           { id: 'documents.dateOn', defaultMessage: 'Date {date}' },
-          { date: formatDay(rma.createdAt, doc.locale) },
+          // When it was raised, in the organization's zone (ADR-072).
+          { date: doc.dayOf(rma.createdAt) },
         ),
       ),
       doc.label(
@@ -310,7 +311,7 @@ export function printableReturnAuthorization(
     language: rma.language,
     secondLanguage: rma.secondLanguage,
     sellerCountry: null,
-    name: `${rma.number}.pdf`,
+    name: () => `${rma.number}.pdf`,
     which: (doc) => kindAndNumber(doc.label(TITLE), rma.number),
     draw: (doc) => returnAuthorizationDocument(rma, doc),
   };

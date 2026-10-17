@@ -3,6 +3,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useLanguage } from '../i18n/use-language';
 import { api, ApiError } from '../lib/api';
 import { isLocale } from '../lib/locales';
+import { setOrganizationTimeZone } from '../lib/time-zone';
 import { setBrand } from '../theme/brand-store';
 import { AuthContext, type CurrentSession } from './auth-context';
 
@@ -84,6 +85,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLocale(accountLocale)) setLocale(accountLocale);
   }, [accountLocale, setLocale]);
+
+  // The organization's zone decides its day (ADR-072): passed on as this
+  // renders, before anything below asks what today is, as the language
+  // provider passes the formatting locale.
+  setOrganizationTimeZone(state.session?.organization?.timeZone ?? null);
 
   // The organization's look follows it the same way (ADR-060): the theme
   // reads it from here, and signing out returns the defaults.

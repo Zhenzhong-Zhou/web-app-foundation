@@ -37,7 +37,8 @@ export class ListStockDto extends KeysetQueryDto {
   /**
    * Only lots expiring within this many days, the expired included: the
    * inventory's "Expiring soon" (ADR-055). Untracked stock has no expiry
-   * and never matches. Counted from the database's today.
+   * and never matches. Counted from the organization's today, in its own
+   * time zone (ADR-072).
    */
   @IsOptional()
   @Type(() => Number)

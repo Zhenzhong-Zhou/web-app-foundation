@@ -1049,11 +1049,81 @@ await fetch(`${api}/v1/files/product-image`, {
   change included. Back to Automatic: Letter again. The audit log shows
   each change. A member without organizations.update sees it read only.
 
+## 26. Each organization's time zone (ADR-072)
+
+Set the computer's own zone in System Settings → General → Date & Time, or
+in Chrome with DevTools → More tools → Sensors → Location → Timezone
+override, then reload.
+
+- **MC-2601** *(ADR-072)* Register a new organization with the computer
+  in Shanghai. Settings → Organization → Profile → Time zone shows China
+  Standard Time (Shanghai), UTC+8 now · Asia/Shanghai, and what time it is
+  there.
+- **MC-2602** *(ADR-072)* An organization from before ADR-072 is on UTC:
+  Time zone shows an amber note, Still on UTC. With the computer in
+  Vancouver, press Use this computer's: Pacific Time (Vancouver): the box
+  fills, the line below says what time it is in Vancouver, and Save time
+  zone saves it, saying Time zone saved. The audit log's entry reads Time
+  zone: Coordinated Universal Time (UTC) → Pacific Time (Vancouver). Save
+  again unchanged: Save is greyed out, and no entry is added.
+- **MC-2603** *(ADR-072)* Finding a zone: type pacific t, then +8: each
+  finds its zones, each named with its city, its offset and its standard
+  name, and This computer's zone comes first. After 5 pm in
+  Vancouver, with the organization in Vancouver, choose Shanghai: The
+  organization's today becomes Saturday … appears above Save; choose
+  Vancouver again and it goes. Do not save.
+- **MC-2604** *(ADR-072)* As an Admin or a Viewer, Time zone is read only,
+  with the time there and An Owner can change it; no amber note, no Save.
+- **MC-2605** *(ADR-072)* The organization's day, after 5 pm in Vancouver
+  with the organization in Vancouver: Home's date is today, not tomorrow; a
+  licence whose last day is today reads Expires today, and a run releases
+  under it without an override; a packing slip made now prints today's
+  date, and its file name carries it; a receipt in USD takes today's rate
+  when tomorrow's is also entered; This month on a list's date range is
+  this month; a CSV export's file name carries today's date. Void an
+  issued invoice now: its page and its PDF say Voided with today's date,
+  and the order's Documents tab names its shipment by today's. Issue,
+  Void and Credit open on today's date, and a new exchange rate on today.
+- **MC-2606** *(ADR-072)* Another clock: with the organization in
+  Vancouver and the computer set to Shanghai, Home shows Vancouver's date
+  and, under it, Dates follow the organization's time zone: Pacific Time
+  (Vancouver). Times on screens, a stock movement's say, are Shanghai's.
+  At 9 am on the 1st in Shanghai, still the last evening of the month in
+  Vancouver, Stock movements with This month holds the movements made
+  this afternoon in Vancouver, though their times read the 1st. Set the
+  computer back to Vancouver: the note goes.
+- **MC-2607** *(ADR-072)* In 简体中文 on a phone: 概况 → 时区 reads as
+  the canvas does; typing 中国 finds 中国标准时间（Shanghai）; the time
+  there, the note before saving and Home's note read in Chinese.
+- **MC-2608** *(ADR-072)* With VoiceOver on, choose a zone: it reads It is
+  … there once. Leave the page open three minutes: nothing more is read,
+  though the time on screen moves on.
+- **MC-2609** *(ADR-072)* Zone names: in Safari, with the computer in
+  Kolkata, register a new organization. Profile → Time zone shows India
+  Standard Time (Kolkata) in the box, and Save time zone is greyed out.
+  Open the same organization in Chrome, which lists the zone as Calcutta:
+  the box shows India Standard Time (Kolkata) too, typing kolkata finds
+  it, and Save stays greyed out. Safari's list has no Etc/GMT zones.
+- **MC-2610** *(ADR-072)* A computer on a zone the server does not take:
+  in Chrome, override the timezone to Etc/GMT-3 (DevTools → Sensors) and
+  register. The account is created, and Profile's Time zone is
+  Coordinated Universal Time (UTC), with no This computer group in the
+  list and no Use this computer's button.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R14** *(audit dates)* In Records → Audit log, change something,
+  then set both dates to today: the change is listed. Before, To left out
+  its own day. Do the same on Your activity, and export each: the file
+  holds the same entries.
+- **MC-R13** *(address log)* On Organization → Profile, change the
+  registered address's first line and save. The audit log's entry shows
+  the line it had before and the new one, not only the new one. Save again
+  without changing anything: no new entry appears. Then empty the second
+  line alone and save: an entry shows it going, Suite 200 → —.
 - **MC-R12** *(error page)* Make a page crash while you are on it (for
   a developer: throw in a page's render), so it shows Something went
   wrong. Press Go back: the page before shows. Crash it again, then choose
@@ -1276,3 +1346,17 @@ first.
 - 2026-10-16: after ADR-071's review: MC-2501, MC-2507, MC-2509, MC-2510
   and MC-2511 extended; MC-2401, MC-1406 and MC-R08 rewritten, and MC-R12
   moved to its place, newest first.
+- 2026-10-16: a registered address change keeps what it replaced in the
+  audit log: MC-R13.
+- 2026-10-17: section 26, each organization's time zone (ADR-072):
+  MC-2601 to MC-2608.
+- 2026-10-17: zone names under the database's current spelling, and a
+  computer's zone the server does not take: MC-2609 and MC-2610.
+- 2026-10-17: the days still read in UTC or the computer's zone, a void
+  date, a shipment's, the dialogs' and a list's date range: MC-2605 and
+  MC-2606 extended.
+- 2026-10-17: the audit log's To keeps its last day: MC-R14.
+- 2026-10-17: Chrome's picker names zones as the server stores them:
+  MC-2609 rewritten.
+- 2026-10-17: a registered address line cleared on its own is logged:
+  MC-R13 extended.
