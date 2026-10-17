@@ -2,6 +2,7 @@ import { defineMessages } from 'react-intl';
 
 import type { ProductLicence } from '../api/types.gen';
 import { intl } from '../i18n/intl';
+import { daysUntil } from '../lib/expiry';
 
 const WORDS = defineMessages({
   withdrawn: { id: 'licences.status.withdrawn', defaultMessage: 'Withdrawn' },
@@ -44,9 +45,10 @@ export interface LicenceStatus {
  * without anyone doing anything, and the two are kept apart: withdrawn is a
  * decision, expired is the calendar.
  *
- * Compared as days against today's UTC day, as the server compares them at
- * release (ADR-050, ADR-052): the two must agree, or the page and release
- * would disagree about a licence near midnight. The dates are YYYY-MM-DD.
+ * Compared as days against the organization's today, as the server
+ * compares them at release (ADR-050, ADR-072): the two must agree, or the
+ * page and release would disagree about a licence near midnight. The dates
+ * are YYYY-MM-DD.
  */
 export function licenceStatus(licence: ProductLicence): LicenceStatus {
   if (!licence.isActive) {
@@ -114,18 +116,4 @@ export function licenceStatus(licence: ProductLicence): LicenceStatus {
     usable: true,
     tone: 'success',
   };
-}
-
-/** Days from today's UTC day; `new Date('2026-10-10')` is UTC midnight. */
-function daysUntil(day: string): number {
-  const MS = 24 * 60 * 60 * 1000;
-  const now = new Date();
-
-  const today = Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate(),
-  );
-
-  return Math.round((new Date(day).getTime() - today) / MS);
 }

@@ -1,5 +1,6 @@
 import type { ToneName } from '../theme/tokens';
 import type { CalendarDay } from './api-names';
+import { organizationToday } from './time-zone';
 
 /** When a lot's expiry turns amber, then red: within so many days. */
 export interface ExpiryDays {
@@ -13,7 +14,11 @@ export interface ExpiryDays {
  */
 export const EXPIRY_DAYS: ExpiryDays = { warning: 90, critical: 30 };
 
-/** The person's own calendar day, YYYY-MM-DD, by their clock and zone. */
+/**
+ * The person's own calendar day, YYYY-MM-DD, by their clock and zone: for
+ * what is theirs alone, a banner hidden for today. The organization's day
+ * is organizationToday (ADR-072).
+ */
 export function localToday(now: Date = new Date()): CalendarDay {
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
@@ -27,12 +32,13 @@ function utcMidnight(day: CalendarDay): number {
 
 /**
  * Whole days from today to a calendar day: 0 is today, below 0 is past.
- * Both are read as UTC midnights, so a change of clocks cannot make a day
- * 23 or 25 hours long and the count off by one.
+ * Today is the organization's (ADR-072), so a lot reads the same days left
+ * to everyone in it. Both are read as UTC midnights, so a change of clocks
+ * cannot make a day 23 or 25 hours long and the count off by one.
  */
 export function daysUntil(
   day: CalendarDay,
-  today: CalendarDay = localToday(),
+  today: CalendarDay = organizationToday(),
 ): number {
   return Math.round((utcMidnight(day) - utcMidnight(today)) / 86_400_000);
 }

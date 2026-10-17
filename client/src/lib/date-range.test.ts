@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { presetRange, withDays, withInstants } from './date-range';
 
 describe('presetRange', () => {
-  const today = new Date(2026, 9, 7); // 7 October 2026, local
+  const today = '2026-10-07';
 
-  it('counts months, quarters and years in the reader’s calendar', () => {
+  it('counts months, quarters and years in the organization’s calendar', () => {
     expect(presetRange('thisMonth', today)).toEqual({
       from: '2026-10-01',
       to: '2026-10-31',
@@ -25,7 +25,7 @@ describe('presetRange', () => {
   });
 
   it('crosses a year for last month in January', () => {
-    expect(presetRange('lastMonth', new Date(2027, 0, 15))).toEqual({
+    expect(presetRange('lastMonth', '2027-01-15')).toEqual({
       from: '2026-12-01',
       to: '2026-12-31',
     });

@@ -39,6 +39,7 @@ import {
   RequiredNameLanguages,
 } from './document-languages-form';
 import { IdleSignOutForm } from './idle-sign-out-form';
+import { TimeZoneForm } from './time-zone-form';
 
 /**
  * The Organization page's tabs (ADR-061), Profile first. Branding is only
@@ -183,6 +184,14 @@ export function OrganizationPage() {
                 address={organization.address}
                 readOnly={!canUpdate}
                 onSaved={reload}
+              />
+              <TimeZoneForm
+                key={`zone-${organization.timeZone}`}
+                value={organization.timeZone}
+                readOnly={!canUpdate}
+                // The session carries the zone, which decides the day on
+                // every screen (ADR-072).
+                onSaved={reloadAll}
               />
               {/* Last, and Owners' only: the organization's records and its
                   end (ADR-070). */}

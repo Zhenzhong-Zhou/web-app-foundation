@@ -1,5 +1,6 @@
 import { intl } from '../i18n/intl';
 import { formatDay, NO_VALUE, SEPARATOR } from '../lib/format';
+import { zoneLabel } from '../lib/time-zone-label';
 import { AUDIT_ACTION_NAMES } from './audit-actions';
 
 /**
@@ -109,6 +110,12 @@ function show(key: string, value: unknown): string {
       : fields
           .map(([field, inner]) => `${label(field)} ${show(field, inner)}`)
           .join(', ');
+  }
+
+  // A time zone as people read it (ADR-072): "Pacific Time (Vancouver)",
+  // not only its standard name.
+  if (key === 'timeZone' && typeof value === 'string') {
+    return zoneLabel(value);
   }
 
   if (typeof value === 'string' && CALENDAR_DAY.test(value)) {

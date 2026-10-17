@@ -6,6 +6,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { PasswordField } from '../components/password-field';
 import { useLanguage } from '../i18n/use-language';
 import { api } from '../lib/api';
+import { browserTimeZone } from '../lib/time-zone';
 import {
   EMAIL_MAX_LENGTH,
   NAME_MAX_LENGTH,
@@ -57,7 +58,9 @@ export function RegisterPage() {
       // verification email and every screen after it speak it (ADR-054).
       await api('/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ ...form, locale }),
+        // Where the business is, almost always (ADR-072): the zone this
+        // browser is in, which an Owner can change on Profile.
+        body: JSON.stringify({ ...form, locale, timeZone: browserTimeZone() }),
       });
 
       // Registration signs the user in, so the cookie is already set. Read

@@ -1,4 +1,6 @@
 import { withQuery } from './api';
+import type { CalendarDay } from './api-names';
+import { organizationToday } from './time-zone';
 
 /**
  * Date ranges on lists (ADR-057): the reader picks days; the list asks for
@@ -30,33 +32,48 @@ export function dayOf(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-/** The days a preset covers, counted from `today` in the reader's calendar. */
-export function presetRange(preset: RangePreset, today = new Date()): DayRange {
-  const year = today.getFullYear();
-  const month = today.getMonth();
+/** A day of the calendar as YYYY-MM-DD; months past 11 roll over. */
+function calendarDay(year: number, month: number, date: number): string {
+  return new Date(Date.UTC(year, month, date)).toISOString().slice(0, 10);
+}
+
+/**
+ * The days a preset covers, counted from `today`: the organization's
+ * (ADR-072), so "This month" is the same month for everyone in it.
+ */
+export function presetRange(
+  preset: RangePreset,
+  today: CalendarDay = organizationToday(),
+): DayRange {
+  const [year, month] = today.split('-').map(Number);
+  return rangeIn(preset, year, month - 1);
+}
+
+function rangeIn(preset: RangePreset, year: number, month: number): DayRange {
+  const dayOf = (y: number, m: number, d: number) => calendarDay(y, m, d);
 
   switch (preset) {
     case 'thisMonth':
       return {
-        from: dayOf(new Date(year, month, 1)),
-        to: dayOf(new Date(year, month + 1, 0)),
+        from: dayOf(year, month, 1),
+        to: dayOf(year, month + 1, 0),
       };
     case 'lastMonth':
       return {
-        from: dayOf(new Date(year, month - 1, 1)),
-        to: dayOf(new Date(year, month, 0)),
+        from: dayOf(year, month - 1, 1),
+        to: dayOf(year, month, 0),
       };
     case 'thisQuarter': {
       const first = month - (month % 3);
       return {
-        from: dayOf(new Date(year, first, 1)),
-        to: dayOf(new Date(year, first + 3, 0)),
+        from: dayOf(year, first, 1),
+        to: dayOf(year, first + 3, 0),
       };
     }
     case 'thisYear':
       return {
-        from: dayOf(new Date(year, 0, 1)),
-        to: dayOf(new Date(year, 11, 31)),
+        from: dayOf(year, 0, 1),
+        to: dayOf(year, 11, 31),
       };
   }
 }
