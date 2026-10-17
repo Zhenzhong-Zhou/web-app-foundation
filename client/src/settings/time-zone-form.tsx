@@ -26,6 +26,9 @@ import { useSubmit } from '../lib/use-submit';
 /** How often the "It is … there" line moves on: often enough to read right. */
 const TICK_MS = 30_000;
 
+/** "Friday, October 16": the day as the form names it, in a zone. */
+const LONG_DAY = { weekday: 'long', day: 'numeric', month: 'long' } as const;
+
 /** A zone in the list: the computer's first, then every zone by offset. */
 interface ZoneOption {
   zone: string;
@@ -105,19 +108,13 @@ export function TimeZoneForm({
       },
       {
         time: intl.formatTime(now, { timeZone: each }),
-        date: intl.formatDate(now, {
-          timeZone: each,
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-        }),
+        date: intl.formatDate(now, { ...LONG_DAY, timeZone: each }),
       },
     );
 
   // The organization's today as it would become: worth saying only when
   // saving would move it to another day.
-  const newToday = todayIn(zone, now);
-  const movesDay = zone !== value && newToday !== todayIn(value, now);
+  const movesDay = todayIn(zone, now) !== todayIn(value, now);
 
   function choose(next: string) {
     setZone(next);
@@ -270,14 +267,7 @@ export function TimeZoneForm({
                 defaultMessage:
                   'The organization’s today becomes {date}. Licences, Home and new documents follow it from the moment you save.',
               },
-              {
-                date: intl.formatDate(now, {
-                  timeZone: zone,
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                }),
-              },
+              { date: intl.formatDate(now, { ...LONG_DAY, timeZone: zone }) },
             )}
           </Typography>
         </Stack>

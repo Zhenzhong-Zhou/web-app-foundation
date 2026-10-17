@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   cityOf,
-  dayIn,
   offsetLabel,
   organizationToday,
   setOrganizationTimeZone,
@@ -24,7 +23,7 @@ describe('time zones', () => {
     expect(todayIn('America/Vancouver', moment)).toBe('2026-10-16');
     expect(todayIn('UTC', moment)).toBe('2026-10-16');
     expect(todayIn('Asia/Shanghai', moment)).toBe('2026-10-17');
-    expect(dayIn('America/Vancouver', '2026-10-17T06:59:59Z')).toBe(
+    expect(todayIn('America/Vancouver', new Date('2026-10-17T06:59:59Z'))).toBe(
       '2026-10-16',
     );
   });

@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
-import { canonicalTimeZone } from '../../common/today';
 import {
   addresses,
   organizations,
@@ -309,11 +308,7 @@ export class OrganizationsService {
         ...(input.paperSize !== undefined
           ? { paperSize: input.paperSize }
           : {}),
-        // Stored under its canonical name, so one zone is never stored two
-        // ways (ADR-072); the DTO has checked it is one.
-        ...(input.timeZone !== undefined
-          ? { timeZone: canonicalTimeZone(input.timeZone) ?? input.timeZone }
-          : {}),
+        ...(input.timeZone !== undefined ? { timeZone: input.timeZone } : {}),
         ...(input.expiryWarningDays !== undefined
           ? { expiryWarningDays: input.expiryWarningDays }
           : {}),

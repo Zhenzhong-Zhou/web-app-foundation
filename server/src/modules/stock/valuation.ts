@@ -1,7 +1,6 @@
 import { type SQL, sql } from 'drizzle-orm';
 
-import { todayIn } from '../../common/today';
-import { timeZoneOf } from '../../core/organizations/time-zone';
+import { todayOf } from '../../core/organizations/time-zone';
 import type { stockMovements } from '../../database/schema';
 import { baseCurrency, rateOnOrBefore } from './rates';
 import type { Tx } from './stock.service';
@@ -256,7 +255,7 @@ async function purchased(
           tx,
           organizationId,
           cost.currency,
-          sql`${todayIn(await timeZoneOf(tx, organizationId))}::date`,
+          sql`${await todayOf(tx, organizationId)}::date`,
         );
 
   if (cost.currency !== base && !applied) return unvalued(cost);

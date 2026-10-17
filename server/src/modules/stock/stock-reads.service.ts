@@ -6,8 +6,7 @@ import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
 import { afterCursor, sortedOrder } from '../../common/sorted-page';
-import { todayIn } from '../../common/today';
-import { timeZoneOf } from '../../core/organizations/time-zone';
+import { todayOf } from '../../core/organizations/time-zone';
 import {
   locations,
   lots,
@@ -163,7 +162,7 @@ export class StockReadsService {
     const limit = query.limit ?? STOCK_PAGE_SIZE;
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
-      const today = todayIn(await timeZoneOf(tx, organizationId));
+      const today = await todayOf(tx, organizationId);
       const scope = filtersOf(query, organizationId, today);
       const lotOf = lotJoin(organizationId);
 
@@ -283,7 +282,7 @@ export class StockReadsService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const { expiringWithin, ...rest } = query;
       const unfiltered = { ...rest, needsCost: undefined };
-      const today = todayIn(await timeZoneOf(tx, organizationId));
+      const today = await todayOf(tx, organizationId);
 
       const count = async (filters: ListStockDto) => {
         const result = await tx.execute(sql`

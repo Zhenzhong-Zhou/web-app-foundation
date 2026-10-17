@@ -1,4 +1,5 @@
 import type { CalendarDay } from './api-names';
+import { cached } from './format';
 
 /**
  * Time zones on the client (ADR-072): the organization's day, and how a
@@ -28,30 +29,21 @@ export function organizationTimeZone(): string {
   return organizationZone ?? browserTimeZone();
 }
 
-/** One formatter per zone, made once: building one is the slow part. */
-const dayFormatters = new Map<string, Intl.DateTimeFormat>();
-
-/** The calendar day a moment falls on in a zone, YYYY-MM-DD. */
-export function dayIn(zone: string, moment: Date | string): CalendarDay {
-  let formatter = dayFormatters.get(zone);
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: zone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    dayFormatters.set(zone, formatter);
-  }
-  const parts = formatter.formatToParts(new Date(moment));
+/** Today in a zone, YYYY-MM-DD. */
+export function todayIn(zone: string, now: Date = new Date()): CalendarDay {
+  const parts = cached(
+    `zone-day:${zone}`,
+    () =>
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: zone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }),
+  ).formatToParts(now);
   const part = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((each) => each.type === type)?.value ?? '';
   return `${part('year')}-${part('month')}-${part('day')}`;
-}
-
-/** Today in a zone, YYYY-MM-DD. */
-export function todayIn(zone: string, now: Date = new Date()): CalendarDay {
-  return dayIn(zone, now);
 }
 
 /**
@@ -65,10 +57,14 @@ export function organizationToday(now: Date = new Date()): CalendarDay {
 /** Minutes ahead of UTC in a zone at a moment: 480 in Shanghai. */
 export function offsetMinutes(zone: string, now: Date = new Date()): number {
   const name =
-    new Intl.DateTimeFormat('en-US', {
-      timeZone: zone,
-      timeZoneName: 'longOffset',
-    })
+    cached(
+      `zone-offset:${zone}`,
+      () =>
+        new Intl.DateTimeFormat('en-US', {
+          timeZone: zone,
+          timeZoneName: 'longOffset',
+        }),
+    )
       .formatToParts(now)
       .find((part) => part.type === 'timeZoneName')?.value ?? 'GMT';
   const match = /GMT([+-])(\d{2}):(\d{2})/.exec(name);
@@ -99,10 +95,14 @@ export function cityOf(zone: string): string {
 export function zoneName(zone: string, locale: string): string {
   try {
     return (
-      new Intl.DateTimeFormat(locale, {
-        timeZone: zone,
-        timeZoneName: 'longGeneric',
-      })
+      cached(
+        `zone-name:${locale}:${zone}`,
+        () =>
+          new Intl.DateTimeFormat(locale, {
+            timeZone: zone,
+            timeZoneName: 'longGeneric',
+          }),
+      )
         .formatToParts(new Date())
         .find((part) => part.type === 'timeZoneName')?.value ?? zone
     );
@@ -115,10 +115,11 @@ export function zoneName(zone: string, locale: string): string {
 export function allTimeZones(now: Date = new Date()): string[] {
   const zones = new Set(Intl.supportedValuesOf('timeZone'));
   zones.add('UTC');
-  return [...zones].sort(
-    (a, b) =>
-      offsetMinutes(a, now) - offsetMinutes(b, now) || a.localeCompare(b),
-  );
+  // Each offset read once, not once per comparison.
+  return [...zones]
+    .map((zone) => ({ zone, minutes: offsetMinutes(zone, now) }))
+    .sort((a, b) => a.minutes - b.minutes || a.zone.localeCompare(b.zone))
+    .map(({ zone }) => zone);
 }
 
 /**

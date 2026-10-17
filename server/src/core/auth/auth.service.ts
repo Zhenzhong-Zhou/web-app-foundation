@@ -12,7 +12,6 @@ import { ConfigService } from '@nestjs/config';
 import { asc, eq, sql } from 'drizzle-orm';
 
 import { DEFAULT_LOCALE, type Locale } from '../../common/locales';
-import { canonicalTimeZone } from '../../common/today';
 import type { Env } from '../../config/env';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
@@ -189,10 +188,7 @@ export class AuthService implements OnModuleInit {
       const { organizationId, roleIds } = await provisionOrganization(tx, {
         name: input.organizationName,
         slug,
-        // Stored under its canonical name (ADR-072); the DTO checked it.
-        ...(input.timeZone
-          ? { timeZone: canonicalTimeZone(input.timeZone) ?? undefined }
-          : {}),
+        timeZone: input.timeZone,
       });
 
       await tx.insert(memberships).values({

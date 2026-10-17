@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 
+import { todayIn } from '../../common/today';
 import type { Transaction } from '../../database/database.module';
 import { organizations } from '../../database/schema';
 import { getTenantContext } from '../../database/tenant-context';
@@ -26,4 +27,12 @@ export async function timeZoneOf(
 
   // A missing organization is a broken record, not a day: UTC, as before.
   return row?.timeZone ?? 'UTC';
+}
+
+/** The organization's today, in its own zone (ADR-072), YYYY-MM-DD. */
+export async function todayOf(
+  tx: Transaction,
+  organizationId: string,
+): Promise<string> {
+  return todayIn(await timeZoneOf(tx, organizationId));
 }

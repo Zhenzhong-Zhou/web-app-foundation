@@ -25,13 +25,6 @@ export const RANGE_PRESETS: readonly RangePreset[] = [
   'thisYear',
 ];
 
-/** A local date as YYYY-MM-DD, in the reader's calendar. */
-export function dayOf(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
 /** A day of the calendar as YYYY-MM-DD; months past 11 roll over. */
 function calendarDay(year: number, month: number, date: number): string {
   return new Date(Date.UTC(year, month, date)).toISOString().slice(0, 10);
@@ -45,35 +38,31 @@ export function presetRange(
   preset: RangePreset,
   today: CalendarDay = organizationToday(),
 ): DayRange {
-  const [year, month] = today.split('-').map(Number);
-  return rangeIn(preset, year, month - 1);
-}
-
-function rangeIn(preset: RangePreset, year: number, month: number): DayRange {
-  const dayOf = (y: number, m: number, d: number) => calendarDay(y, m, d);
+  const [year, calendarMonth] = today.split('-').map(Number);
+  const month = calendarMonth - 1;
 
   switch (preset) {
     case 'thisMonth':
       return {
-        from: dayOf(year, month, 1),
-        to: dayOf(year, month + 1, 0),
+        from: calendarDay(year, month, 1),
+        to: calendarDay(year, month + 1, 0),
       };
     case 'lastMonth':
       return {
-        from: dayOf(year, month - 1, 1),
-        to: dayOf(year, month, 0),
+        from: calendarDay(year, month - 1, 1),
+        to: calendarDay(year, month, 0),
       };
     case 'thisQuarter': {
       const first = month - (month % 3);
       return {
-        from: dayOf(year, first, 1),
-        to: dayOf(year, first + 3, 0),
+        from: calendarDay(year, first, 1),
+        to: calendarDay(year, first + 3, 0),
       };
     }
     case 'thisYear':
       return {
-        from: dayOf(year, 0, 1),
-        to: dayOf(year, 11, 31),
+        from: calendarDay(year, 0, 1),
+        to: calendarDay(year, 11, 31),
       };
   }
 }
