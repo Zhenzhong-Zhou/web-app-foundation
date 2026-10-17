@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, gte, lt, lte, SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lt, SQL } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
 import { auditLog, users } from '../../database/schema';
@@ -86,7 +86,7 @@ export class AuditService {
       query.action ? eq(auditLog.action, query.action) : undefined,
       query.resourceId ? eq(auditLog.resourceId, query.resourceId) : undefined,
       query.from ? gte(auditLog.createdAt, query.from) : undefined,
-      query.to ? lte(auditLog.createdAt, query.to) : undefined,
+      query.until ? lt(auditLog.createdAt, query.until) : undefined,
     ].filter((f): f is SQL => f !== undefined);
 
     // The actor may be a tombstone (ADR-012) — anonymised, still a valid FK

@@ -1115,6 +1115,10 @@ override, then reload.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R14** *(audit dates)* In Records → Audit log, change something,
+  then set both dates to today: the change is listed. Before, To left out
+  its own day. Do the same on Your activity, and export each: the file
+  holds the same entries.
 - **MC-R13** *(address log)* On Organization → Profile, change the
   registered address's first line and save. The audit log's entry shows
   the line it had before and the new one, not only the new one. Save again
@@ -1350,3 +1354,4 @@ first.
 - 2026-10-17: the days still read in UTC or the computer's zone, a void
   date, a shipment's, the dialogs' and a list's date range: MC-2605 and
   MC-2606 extended.
+- 2026-10-17: the audit log's To keeps its last day: MC-R14.

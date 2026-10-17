@@ -23,7 +23,8 @@ import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { When, Who } from '../components/who-and-when';
-import { api } from '../lib/api';
+import { api, withQuery } from '../lib/api';
+import { withInstants } from '../lib/date-range';
 import { NO_VALUE, SEPARATOR } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
@@ -70,22 +71,23 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
 
   const canView = mine || can('audit.view');
 
-  /** The filters as the API wants them. */
-  function queryFor(): string {
-    const query = new URLSearchParams({ limit: String(PAGE_SIZE) });
-
-    if (action) query.set('action', action);
-    if (resourceId) query.set('resourceId', resourceId);
-    if (actorId) query.set('actorId', actorId);
-    // The date input gives YYYY-MM-DD; the API takes ISO timestamps.
-    if (from) query.set('from', new Date(from).toISOString());
-    if (to) query.set('to', new Date(to).toISOString());
-
-    return query.toString();
+  /**
+   * The filters as the API wants them. The date inputs give days; the log
+   * holds moments, so they go as the moments those days begin and end at
+   * the organization's midnight, the last day whole, as every list of
+   * moments asks (ADR-057, ADR-072).
+   */
+  function pathFor(path: string): string {
+    return withInstants(withQuery(path, { action, resourceId, actorId }), {
+      from,
+      to,
+    });
   }
 
   const { entries, error, loading, hasMore, loadingMore, loadMore } =
-    useKeysetList<AuditRecord>(canView ? `${base}?${queryFor()}` : null);
+    useKeysetList<AuditRecord>(
+      canView ? pathFor(`${base}?limit=${PAGE_SIZE}`) : null,
+    );
   const showSkeleton = useDelayedFlag(loading);
 
   /**
@@ -184,9 +186,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
         actions={
           canView && (
             // With the page's own filters; the export is itself an entry.
-            <ExportButton
-              path={`${base}/export?${queryFor().replace(/(^|&)limit=\d+&?/, '$1')}`}
-            />
+            <ExportButton path={pathFor(`${base}/export`)} />
           )
         }
       />

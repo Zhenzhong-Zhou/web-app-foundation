@@ -830,7 +830,7 @@
             }
           },
           {
-            "name": "to",
+            "name": "until",
             "required": false,
             "in": "query",
             "schema": {
@@ -993,7 +993,7 @@
             }
           },
           {
-            "name": "to",
+            "name": "until",
             "required": false,
             "in": "query",
             "schema": {
@@ -1329,7 +1329,7 @@
             }
           },
           {
-            "name": "to",
+            "name": "until",
             "required": false,
             "in": "query",
             "schema": {
@@ -1492,7 +1492,7 @@
             }
           },
           {
-            "name": "to",
+            "name": "until",
             "required": false,
             "in": "query",
             "schema": {

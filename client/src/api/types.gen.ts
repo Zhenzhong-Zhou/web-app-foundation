@@ -3110,7 +3110,7 @@ export type AuditControllerListV1Data = {
       | 'list.exported';
     resourceId?: string;
     from?: string;
-    to?: string;
+    until?: string;
     before?: string;
     limit?: number;
   };
@@ -3211,7 +3211,7 @@ export type AuditControllerExportAuditV1Data = {
       | 'list.exported';
     resourceId?: string;
     from?: string;
-    to?: string;
+    until?: string;
     before?: string;
     limit?: number;
   };
@@ -3397,7 +3397,7 @@ export type WorkControllerActivityV1Data = {
       | 'list.exported';
     resourceId?: string;
     from?: string;
-    to?: string;
+    until?: string;
     before?: string;
     limit?: number;
   };
@@ -3498,7 +3498,7 @@ export type WorkControllerExportActivityV1Data = {
       | 'list.exported';
     resourceId?: string;
     from?: string;
-    to?: string;
+    until?: string;
     before?: string;
     limit?: number;
   };
