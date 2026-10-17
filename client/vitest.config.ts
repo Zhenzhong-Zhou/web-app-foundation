@@ -1,6 +1,13 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
+// The computer's zone, the same on every machine (ADR-072): a test that
+// leans on it then fails everywhere, not only on a laptop that travels.
+// Tokyo, UTC+9 all year, so a day read in the computer's zone differs from
+// UTC's, and from an organization's in the Americas, for hours each day.
+// Set here, before the workers start, as Node reads TZ once per process.
+process.env.TZ = 'Asia/Tokyo';
+
 /**
  * Component tests: jsdom, a mocked network, milliseconds each.
  *
