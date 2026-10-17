@@ -664,10 +664,10 @@ export type UpdateOrganizationDto = {
 
 export type OrganizationAddressDto = {
   line1: string;
-  line2?: string;
-  city?: string;
-  region?: string;
-  postalCode?: string;
+  line2?: string | null;
+  city?: string | null;
+  region?: string | null;
+  postalCode?: string | null;
   country: string;
 };
 
@@ -2206,10 +2206,10 @@ export type UpdateLocationDto = {
 
 export type SiteAddressDto = {
   line1: string;
-  line2?: string;
-  city?: string;
-  region?: string;
-  postalCode?: string;
+  line2?: string | null;
+  city?: string | null;
+  region?: string | null;
+  postalCode?: string | null;
   country: string;
 };
 

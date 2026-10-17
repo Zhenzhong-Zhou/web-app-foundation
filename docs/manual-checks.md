@@ -1122,7 +1122,8 @@ first.
 - **MC-R13** *(address log)* On Organization → Profile, change the
   registered address's first line and save. The audit log's entry shows
   the line it had before and the new one, not only the new one. Save again
-  without changing anything: no new entry appears.
+  without changing anything: no new entry appears. Then empty the second
+  line alone and save: an entry shows it going, Suite 200 → —.
 - **MC-R12** *(error page)* Make a page crash while you are on it (for
   a developer: throw in a page's render), so it shows Something went
   wrong. Press Go back: the page before shows. Crash it again, then choose
@@ -1357,3 +1358,5 @@ first.
 - 2026-10-17: the audit log's To keeps its last day: MC-R14.
 - 2026-10-17: Chrome's picker names zones as the server stores them:
   MC-2609 rewritten.
+- 2026-10-17: a registered address line cleared on its own is logged:
+  MC-R13 extended.

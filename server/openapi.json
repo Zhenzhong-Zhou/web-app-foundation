@@ -10133,19 +10133,31 @@
             "maxLength": 200
           },
           "line2": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 200
           },
           "city": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 100
           },
           "region": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 100
           },
           "postalCode": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 32
           },
           "country": {
@@ -16618,19 +16630,31 @@
             "maxLength": 200
           },
           "line2": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 200
           },
           "city": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 100
           },
           "region": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 100
           },
           "postalCode": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 32
           },
           "country": {

@@ -171,6 +171,33 @@ describe('Organization (e2e)', () => {
     });
   });
 
+  /**
+   * A line cleared on its own is logged going (ADR-018). The app sends it as
+   * null: left out of the request, it was never logged, every line that was
+   * sent compared equal to what it replaced, and the save wrote no entry.
+   */
+  it('records a line cleared on its own', async () => {
+    const org = await registerOrganization(app, 'alpha');
+    const office = { ...HEAD_OFFICE, line2: 'Suite 200', country: 'CA' };
+
+    await org.agent.put('/v1/organization/address').send(office).expect(204);
+    await org.agent
+      .put('/v1/organization/address')
+      .send({ ...office, line2: null })
+      .expect(204);
+
+    expect((await current(org.agent)).address?.line2).toBeNull();
+    const [, cleared, ...rest] = await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.action, 'organization.address_updated'))
+      .orderBy(auditLog.id);
+    expect(rest).toHaveLength(0);
+    expect(cleared.payload).toMatchObject({
+      line2: { from: 'Suite 200', to: null },
+    });
+  });
+
   it('records a tax number change with what it replaced', async () => {
     const org = await registerOrganization(app, 'alpha');
 
