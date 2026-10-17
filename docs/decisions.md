@@ -8139,10 +8139,10 @@ already (ADR-046, ADR-052).
   after deploying.
 - **British Columbia stopped changing its clocks** after 8 March 2026:
   Vancouver is UTC−7 all year, so its day turns at 07:00 UTC, from 5 pm
-  the day before. Only time-zone data from 2026 on knows, so the server's
-  Node must have it, or Vancouver's days begin an hour late from
-  1 November 2026; Postgres's copy no longer matters, since it is never
-  asked. Tests about a clock change use one that has happened.
+  the day before. Only time-zone data 2026b (April 2026) and later knows,
+  so the server's Node must carry it, or Vancouver's days begin an hour
+  late from 1 November 2026. Postgres's copy no longer matters, since it
+  is never asked. Tests about a clock change use one that has happened.
 - **Accepted.** Another member's open screen keeps the old zone until its
   session is read again. A reminder that a licence "expires today" is not
   sent again if the zone later moves back a day.

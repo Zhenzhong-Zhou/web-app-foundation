@@ -27,10 +27,11 @@ with this one, this one is current.
   - **Right after the deploy:** set each organization's zone on Settings →
     Organization → Profile. Every organization from before starts on UTC,
     and until it is set, Home and days left follow UTC: tomorrow, from
-    5 pm in Vancouver. Render's Node must have time-zone data from 2026
-    (`node -p process.versions.tz`): British Columbia stays on UTC−7
-    from 1 November 2026, and older data would begin Vancouver's days an
-    hour late.
+    5 pm in Vancouver. Render's Node must carry time-zone data 2026b or
+    later (`node -p process.versions.tz`; 2026a predates it): British
+    Columbia stays on UTC−7 from 1 November 2026, and older data would
+    begin Vancouver's days an hour late. Homebrew's Node reads Homebrew's
+    own ICU, which can lag; `nvm` and CI carry Node's bundled copy.
   - **Next:** ADR-073, each organization's document numbering, with
     periods (a year, month or day in the number) now that the day is the
     organization's; series per site stays deferred. Its draft is in the
