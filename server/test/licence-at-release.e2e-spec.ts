@@ -16,6 +16,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { clearOfMidnight, KIRITIMATI, PAGO_PAGO } from './utils/time-zones';
 
 interface RunDetail {
   id: string;
@@ -487,10 +488,13 @@ describe('Licence at release (e2e)', () => {
    */
   describe("the organization's day", () => {
     it('releases on the last day where the organization is, and not after', async () => {
-      const lastDay = todayIn('Pacific/Pago_Pago');
+      // Pago Pago's midnight between reading its today and releasing would
+      // make the last day yesterday: wait it out if it is that close.
+      await clearOfMidnight([PAGO_PAGO]);
+      const lastDay = todayIn(PAGO_PAGO);
 
       const behind = await registerOrganization(app, 'alpha');
-      await setPolicy(behind, { timeZone: 'Pacific/Pago_Pago' });
+      await setPolicy(behind, { timeZone: PAGO_PAGO });
       const s = await scenario(behind, { expiresAt: lastDay });
       await release(behind.agent, s).expect(200);
       expect((await detail(behind.agent, s.runId)).licenceStatusAtRelease).toBe(
@@ -498,7 +502,7 @@ describe('Licence at release (e2e)', () => {
       );
 
       const ahead = await registerOrganization(app, 'beta');
-      await setPolicy(ahead, { timeZone: 'Pacific/Kiritimati' });
+      await setPolicy(ahead, { timeZone: KIRITIMATI });
       const t = await scenario(ahead, { expiresAt: lastDay });
       const res = await release(ahead.agent, t).expect(409);
       expect(message(res)).toContain(`expired on ${lastDay}`);

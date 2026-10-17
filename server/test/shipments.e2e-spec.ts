@@ -1,6 +1,9 @@
 import type { INestApplication } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
+import { todayIn } from '../src/common/today';
+import { documentText } from '../src/core/documents/document-text';
+import { formatDay } from '../src/core/documents/format';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
@@ -13,6 +16,9 @@ import {
   stockLevels,
   stockMovements,
 } from '../src/database/schema';
+import type { PackingSlip } from '../src/modules/orders/dto/shipment-response.dto';
+import { packingSlipDocument } from '../src/modules/orders/packing-slip-document';
+import { wordsOf } from './utils/document-words';
 import {
   body,
   createE2eApp,
@@ -21,6 +27,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { clearOfMidnight, KIRITIMATI, PAGO_PAGO } from './utils/time-zones';
 
 interface OrderResponse {
   id: string;
@@ -387,6 +394,57 @@ describe('Shipments (e2e)', () => {
       expect((res.body as Buffer).toString('latin1').startsWith('%PDF-')).toBe(
         true,
       );
+    });
+
+    /**
+     * A slip is dated, and its file named, by the day it shipped where the
+     * organization is (ADR-072): a day apart in Kiritimati and Pago Pago,
+     * at least one of them not UTC's.
+     */
+    it("dates and names the packing slip by the organization's day", async () => {
+      for (const [slug, zone] of [
+        ['alpha', KIRITIMATI],
+        ['beta', PAGO_PAGO],
+      ] as const) {
+        const org = await registerOrganization(app, slug);
+        await org.agent
+          .patch('/v1/organization')
+          .send({ timeZone: zone })
+          .expect(204);
+        const s = await scenario(org);
+
+        await clearOfMidnight([zone]);
+        const shipped = todayIn(zone);
+        const shipment = body<{ shipment: ShipmentResponse }>(
+          await org.agent
+            .post(`/v1/orders/${s.order.id}/shipments`)
+            .send({
+              fromLocationId: s.shelf,
+              lines: [{ lineId: s.focusLine, quantity: '25' }],
+            })
+            .expect(201),
+        ).shipment;
+
+        const pdf = await org.agent
+          .get(
+            `/v1/orders/${s.order.id}/shipments/${shipment.id}/pdf?download=1`,
+          )
+          .responseType('blob')
+          .expect(200);
+        expect(pdf.headers['content-disposition']).toContain(
+          `filename="packing-slip-${shipped}-${shipment.id.slice(0, 8)}.pdf"`,
+        );
+
+        const slip = body<PackingSlip>(
+          await org.agent
+            .get(`/v1/orders/${s.order.id}/shipments/${shipment.id}`)
+            .expect(200),
+        );
+        const doc = documentText('en', null, 'CA', zone);
+        expect(wordsOf(packingSlipDocument(slip, doc))).toContain(
+          `Shipped ${formatDay(shipped, doc.locale)}`,
+        );
+      }
     });
 
     it('returns everything a packing slip prints', async () => {

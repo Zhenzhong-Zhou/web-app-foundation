@@ -50,6 +50,32 @@ describe('todayIn', () => {
     );
   });
 
+  // Vancouver's clocks spring forward at 2 am on 8 March 2026: that day is
+  // 23 hours long, from 08:00 UTC to 07:00 UTC the next morning.
+  it('follows the spring change, a day an hour short', () => {
+    const zone = 'America/Vancouver';
+    expect(todayIn(zone, new Date('2026-03-08T07:59:59.999Z'))).toBe(
+      '2026-03-07',
+    );
+    expect(todayIn(zone, new Date('2026-03-08T08:00:00.000Z'))).toBe(
+      '2026-03-08',
+    );
+    // 1:59 am, then 3:00 am: the clocks jump, the day does not.
+    expect(todayIn(zone, new Date('2026-03-08T09:59:59.999Z'))).toBe(
+      '2026-03-08',
+    );
+    expect(todayIn(zone, new Date('2026-03-08T10:00:00.000Z'))).toBe(
+      '2026-03-08',
+    );
+    // 11:59 pm on 8 March, Pacific daylight time (UTC−7).
+    expect(todayIn(zone, new Date('2026-03-09T06:59:59.999Z'))).toBe(
+      '2026-03-08',
+    );
+    expect(todayIn(zone, new Date('2026-03-09T07:00:00.000Z'))).toBe(
+      '2026-03-09',
+    );
+  });
+
   // Vancouver's clocks go back at 2 am on 1 November 2026: midnight moves
   // from 07:00 UTC to 08:00 UTC, which a fixed offset would get wrong.
   it('follows the clock change, not a fixed offset', () => {

@@ -20,6 +20,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { clearOfMidnight, KIRITIMATI, PAGO_PAGO } from './utils/time-zones';
 import {
   buy,
   cad,
@@ -263,6 +264,48 @@ describe('Stock valuation (e2e)', () => {
         exchangeRate: '1.40000000',
         needsCost: false,
       });
+    });
+
+    /**
+     * The organization's today, not UTC's (ADR-048, ADR-072): Kiritimati is
+     * always a day or two ahead of Pago Pago, and UTC's day is one of the
+     * two or between them, so a receipt costed by UTC's day would take the
+     * wrong rate in at least one.
+     */
+    it("costs a receipt at the rate for the organization's today", async () => {
+      const s = await setup('alpha');
+      const extract = await variant(s, 'EXTRACT');
+
+      await clearOfMidnight([KIRITIMATI, PAGO_PAGO]);
+      await db.insert(exchangeRates).values([
+        {
+          organizationId: s.organizationId,
+          currency: 'USD',
+          rateDate: todayIn(PAGO_PAGO),
+          rate: '1.30',
+        },
+        {
+          organizationId: s.organizationId,
+          currency: 'USD',
+          rateDate: todayIn(KIRITIMATI),
+          rate: '1.40',
+        },
+      ]);
+
+      for (const [zone, rate] of [
+        [PAGO_PAGO, '1.30000000'],
+        [KIRITIMATI, '1.40000000'],
+      ] as const) {
+        await s.agent
+          .patch('/v1/organization')
+          .send({ timeZone: zone })
+          .expect(204);
+        const received = await buy(s, extract, '100', usd('0.25'));
+        expect(await valuationOf(db, received)).toMatchObject({
+          exchangeRate: rate,
+          needsCost: false,
+        });
+      }
     });
 
     it('values nothing until the organization has a base currency', async () => {

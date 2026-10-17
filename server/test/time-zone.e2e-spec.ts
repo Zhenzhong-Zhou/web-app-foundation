@@ -15,14 +15,7 @@ import {
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
-
-/**
- * Two real places 25 hours apart: at any moment they are on different
- * days, Kiritimati always the later. So a test that reads the day through
- * the organization's zone cannot depend on when it runs.
- */
-const KIRITIMATI = 'Pacific/Kiritimati'; // UTC+14
-const PAGO_PAGO = 'Pacific/Pago_Pago'; // UTC−11
+import { clearOfMidnight, KIRITIMATI, PAGO_PAGO } from './utils/time-zones';
 
 /** A calendar day so many days after another, YYYY-MM-DD. */
 function after(day: string, days: number): string {
@@ -187,14 +180,12 @@ describe('Time zone (e2e)', () => {
       await org.agent.patch('/v1/organization').send({ timeZone }).expect(204);
     }
 
-    /**
-     * Expiring soon counts from the organization's today (ADR-060, ADR-072),
-     * not the database's. A lot expiring the day after Kiritimati's today
-     * is within a day there, and never within a day in Pago Pago, which is
-     * always at least a day behind.
-     */
-    it("counts expiring stock from the organization's today", async () => {
-      const org = await registerOrganization(app, 'alpha');
+    /** Ten of a tracked good on a shelf, in one lot expiring on a day. */
+    async function receiveLot(
+      org: { agent: Agent },
+      code: string,
+      expiresAt: string,
+    ) {
       const site = await createLocation(org.agent, {
         name: 'SITE',
         code: 'SITE',
@@ -219,9 +210,21 @@ describe('Time zone (e2e)', () => {
           toLocationId: shelf,
           quantity: '10',
           reason: 'receipt',
-          lot: { code: 'TOMORROW', expiresAt: after(todayIn(KIRITIMATI), 1) },
+          lot: { code, expiresAt },
         })
         .expect(201);
+    }
+
+    /**
+     * Expiring soon counts from the organization's today (ADR-060, ADR-072),
+     * not the database's. A lot expiring the day after Kiritimati's today
+     * is within a day there, and never within a day in Pago Pago, which is
+     * always at least a day behind.
+     */
+    it("counts expiring stock from the organization's today", async () => {
+      const org = await registerOrganization(app, 'alpha');
+      await clearOfMidnight([KIRITIMATI]);
+      await receiveLot(org, 'TOMORROW', after(todayIn(KIRITIMATI), 1));
 
       const expiring = async () =>
         body<{ entries: { lotCode: string | null }[] }>(
@@ -235,14 +238,54 @@ describe('Time zone (e2e)', () => {
       expect(await expiring()).toEqual([]);
     });
 
+    /**
+     * Home counts from the organization's today, which the server decides
+     * (ADR-058, ADR-072): a lot whose last day is Pago Pago's today is due
+     * today there and already late in Kiritimati, a day or two on.
+     */
+    it("counts Home's cards from the organization's today", async () => {
+      const org = await registerOrganization(app, 'alpha');
+      await clearOfMidnight([PAGO_PAGO]);
+      await receiveLot(org, 'LAST-DAY', todayIn(PAGO_PAGO));
+
+      const expiring = async () =>
+        body<{ cards: { kind: string; count: number; late: number }[] }>(
+          await org.agent.get('/v1/home').expect(200),
+        ).cards.find((card) => card.kind === 'expiring');
+
+      await inZone(org, PAGO_PAGO);
+      expect(await expiring()).toMatchObject({ count: 1, late: 0 });
+
+      await inZone(org, KIRITIMATI);
+      expect(await expiring()).toMatchObject({ count: 1, late: 1 });
+    });
+
     it("names a CSV export by the organization's today", async () => {
       const org = await registerOrganization(app, 'alpha');
 
       for (const zone of [KIRITIMATI, PAGO_PAGO]) {
         await inZone(org, zone);
+        await clearOfMidnight([zone]);
         const res = await org.agent.get('/v1/orders/export').expect(200);
         expect(res.headers['content-disposition']).toBe(
           `attachment; filename="orders-${todayIn(zone)}.csv"`,
+        );
+      }
+    });
+
+    it("names the organization's export by its today", async () => {
+      const org = await registerOrganization(app, 'alpha');
+
+      for (const zone of [KIRITIMATI, PAGO_PAGO]) {
+        await inZone(org, zone);
+        await clearOfMidnight([zone]);
+        const today = todayIn(zone);
+        const res = await org.agent
+          .get('/v1/organization/export')
+          .responseType('blob')
+          .expect(200);
+        expect(res.headers['content-disposition']).toMatch(
+          new RegExp(`-export-${today}\\.zip"$`),
         );
       }
     });

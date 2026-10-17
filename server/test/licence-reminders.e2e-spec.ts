@@ -12,6 +12,7 @@ import {
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
+import { KIRITIMATI, PAGO_PAGO } from './utils/time-zones';
 
 type Agent = Awaited<ReturnType<typeof registerOrganization>>['agent'];
 
@@ -106,6 +107,33 @@ describe('Licence reminders (e2e)', () => {
     expect(await reminders.remind(now)).toBe(2);
     expect((await bell(utc.agent))[0].title).toContain('expires today');
     expect((await bell(ahead.agent))[0].title).toContain('expired on');
+  });
+
+  /**
+   * Every zone's today is within a day of UTC's, so the run reads its
+   * window a day wider each side (ADR-072). At noon UTC on 9 October it is
+   * already the 10th in Kiritimati: its 60-day notice is owed for a licence
+   * expiring on 9 December, 61 days after UTC's today. At 5 am UTC it is
+   * still the 8th in Pago Pago: a licence expired there on 1 October, a
+   * week ago, is owed its last notice, 8 days before UTC's today.
+   */
+  it('reads its window a day wider than UTC each side', async () => {
+    const ahead = await registerOrganization(app, 'alpha');
+    await ahead.agent
+      .patch('/v1/organization')
+      .send({ timeZone: KIRITIMATI })
+      .expect(204);
+    await licence(ahead.agent, '2026-12-09');
+    expect(await reminders.remind(now)).toBe(1);
+
+    const behind = await registerOrganization(app, 'beta');
+    await behind.agent
+      .patch('/v1/organization')
+      .send({ timeZone: PAGO_PAGO })
+      .expect(204);
+    await licence(behind.agent, '2026-10-01');
+    expect(await reminders.remind(new Date('2026-10-09T05:00:00Z'))).toBe(1);
+    expect((await bell(behind.agent))[0].title).toContain('expired on');
   });
 
   /**
