@@ -577,13 +577,19 @@ autoComplete for password managers.
 
 ## Supported browsers
 
-What the build targets (Vite's default, "baseline widely available"):
-Chrome and Edge 107 and later, Firefox 104 and later, Safari 16 and later,
-on desktop and phone. In China that includes Edge, the Chromium engines of
-360, QQ and Sogou (index.html asks for them, never their old IE engine) and
-WeChat's in-app browser on a recent phone. Internet Explorer, and any
-browser's IE mode, is not supported.
+What the build targets (Vite 8's default, "baseline widely available"):
+Chrome and Edge 111 and later, Firefox 114 and later, Safari 16.4 and
+later, on desktop and phone (iOS 16.4). In China that includes Edge, the
+Chromium engines of 360, QQ and Sogou (index.html asks for them, never
+their old IE engine) and WeChat's in-app browser on a recent phone.
+Internet Explorer, and any browser's IE mode, is not supported.
 
+- Code holds to that floor, not to the browser in hand. An API newer than
+  the floor is used only where the browser has it, with a fallback
+  elsewhere: `lib/person-initials.ts` builds an `Intl.Segmenter`, which
+  Firefox has only from 125, when there is one, and otherwise splits text
+  into letters with their combining marks. Built unguarded as the module
+  loads, it would stop the whole app in those browsers.
 - Nothing loads from another site: the font is bundled, Chinese uses the
   system's, and no analytics, CDN or Google service is called. A page that
   needs one would fail in mainland China; keep it that way, or make it
