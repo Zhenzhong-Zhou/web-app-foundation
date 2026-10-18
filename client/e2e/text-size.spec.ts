@@ -1,6 +1,14 @@
 import type { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
+import {
+  created,
+  createLocation,
+  createProduct,
+  daysFromNow,
+  E2E_PASSWORD,
+  signInAs,
+} from './support/api';
 
 /**
  * The text size (ADR-075): a percentage on <html>, so every rem in the app
@@ -181,4 +189,84 @@ test('at Larger on a phone, a dialog wraps its buttons inside it', async ({
   expect(add!.y).toBeGreaterThanOrEqual(cancel!.y + cancel!.height);
   const spill = await dialog.evaluate((el) => el.scrollWidth - el.clientWidth);
   expect(spill).toBeLessThanOrEqual(0);
+});
+
+test('at Larger on a phone, Home with its cards fits', async ({
+  page,
+  freshOrg,
+}) => {
+  // Work of its own, so Home shows its cards whatever else the suite is
+  // doing; the shared organization's walk above only meets them by chance.
+  const product = await createProduct(freshOrg.api, { tracksLots: true });
+  const location = await createLocation(freshOrg.api);
+  await created(
+    await freshOrg.api.post('/v1/stock/movements', {
+      data: {
+        variantId: product.variantId,
+        toLocationId: location.id,
+        quantity: '5',
+        reason: 'receipt',
+        lot: { code: 'E2E-PHONE', expiresAt: daysFromNow(10) },
+      },
+    }),
+  );
+
+  await signInAs(page, freshOrg.api);
+  await onAPhoneAtLarger(page);
+  await page.goto('/');
+
+  await expect(
+    page.getByRole('region', { name: 'Expiring soon' }),
+  ).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  expect(await overflowing(page)).toEqual([]);
+});
+
+test('at Larger on a phone, a closing organization’s banner fits', async ({
+  page,
+  freshOrg,
+}) => {
+  const scheduled = await freshOrg.api.post('/v1/organization/deletion', {
+    data: {
+      password: E2E_PASSWORD,
+      organizationName: freshOrg.organizationName,
+      declineExport: true,
+    },
+  });
+  expect(scheduled.ok(), await scheduled.text()).toBeTruthy();
+
+  await signInAs(page, freshOrg.api);
+  await onAPhoneAtLarger(page);
+  await page.goto('/');
+
+  // Its two buttons and × are wider than a phone beside the words, so the
+  // theme's Alert puts them on a line of their own under the words, which
+  // keep their width; without it the words narrow to a column beside them.
+  const cancel = page.getByRole('button', { name: 'Cancel deletion' });
+  await expect(cancel).toBeInViewport();
+  const words = await page
+    .getByRole('alert')
+    .filter({ has: cancel })
+    .locator('.MuiAlert-message')
+    .boundingBox();
+  const button = await cancel.boundingBox();
+  expect(button!.y).toBeGreaterThanOrEqual(words!.y + words!.height - 1);
+
+  await page.waitForLoadState('networkidle');
+  expect(await overflowing(page)).toEqual([]);
+});
+
+test('less motion, when asked: transitions end at once', async ({ page }) => {
+  // A button's own CSS transition, always there, so the check measures the
+  // setting and not whether something happened to be animating.
+  const duration = () =>
+    page
+      .getByRole('button', { name: 'Change password' })
+      .evaluate((el) => parseFloat(getComputedStyle(el).transitionDuration));
+
+  await page.goto('/account');
+  expect(await duration()).toBeGreaterThan(0.1);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await duration()).toBeLessThan(0.001);
 });
