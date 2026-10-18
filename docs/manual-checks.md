@@ -1215,6 +1215,9 @@ Any page, signed in, in a browser at its default font size.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R15** *(organization page)* At 1280 px, Settings → Organization →
+  Profile does not scroll sideways. Change the time zone with VoiceOver on:
+  the new zone is still announced.
 - **MC-R14** *(audit dates)* In Records → Audit log, change something,
   then set both dates to today: the change is listed. Before, To left out
   its own day. Do the same on Your activity, and export each: the file
@@ -1469,3 +1472,4 @@ first.
 - 2026-10-18: ADR-075, the text size: section 28, MC-2801 to MC-2805.
 - 2026-10-18: a variant's chevron is named: MC-2806.
 - 2026-10-18: ADR-075, less motion when asked: MC-2807.
+- 2026-10-18: the time zone's announcer widened the page: MC-R15.
