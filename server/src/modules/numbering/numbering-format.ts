@@ -184,8 +184,13 @@ export function periodBounds(
 /**
  * Every number a prefix can print, as a regular expression both Postgres and
  * JavaScript read alike, and how to read one back: the date its tokens show
- * and its counter. Text needs no escaping: a prefix holds only capitals,
- * digits, `-`, `_` and `/`.
+ * and its counter.
+ *
+ * The prefix's text is escaped although a saved prefix holds only capitals,
+ * digits, `-`, `_` and `/`, none of them special: the pattern is built from
+ * what a person typed, and must stay a literal match whatever reaches it
+ * (CodeQL js/regex-injection). For any prefix that passes prefixProblem the
+ * source is unchanged.
  */
 export function patternOf(prefix: string): {
   source: string;
@@ -197,7 +202,9 @@ export function patternOf(prefix: string): {
   const order = tokensOf(pieces);
   const source = `^${pieces
     .map((piece) =>
-      'token' in piece ? `([0-9]{${TOKEN_WIDTH[piece.token]}})` : piece.text,
+      'token' in piece
+        ? `([0-9]{${TOKEN_WIDTH[piece.token]}})`
+        : piece.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
     )
     .join('')}([0-9]+)$`;
   const regex = new RegExp(source);

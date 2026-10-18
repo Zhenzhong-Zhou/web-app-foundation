@@ -121,6 +121,15 @@ describe('patternOf', () => {
     expect(pattern.read('SO-000050')?.value).toBe(50);
   });
 
+  it('matches a prefix’s text literally, whatever it holds', () => {
+    // Never saved (prefixProblem refuses it), but the pattern stays literal.
+    const pattern = patternOf('A.B+');
+    expect(pattern.read('A.B+7')?.value).toBe(7);
+    expect(pattern.read('AXBB7')).toBeNull();
+    // A saved prefix's pattern is the same as before.
+    expect(patternOf('INV/{YYYY}/').source).toBe('^INV/([0-9]{4})/([0-9]+)$');
+  });
+
   it('reads an empty prefix as digits only', () => {
     const pattern = patternOf('');
     expect(pattern.read('000123')?.value).toBe(123);
