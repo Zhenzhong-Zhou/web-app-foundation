@@ -463,6 +463,11 @@ const GLOSSARY = [
       'number — the number printed on the document, such as INV-000001 or CN-000001.',
   }),
   t({
+    id: 'organization.export.glossary.numbering',
+    defaultMessage:
+      'document_numbering, document_sequences — how each kind of document is numbered, and the counter for each year, month or day; a number already given stays on its document.',
+  }),
+  t({
     id: 'organization.export.glossary.reference',
     defaultMessage:
       'reference — on an order, the customer’s or supplier’s own number for it.',

@@ -2,6 +2,7 @@ import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { and, asc, eq, ne } from 'drizzle-orm';
 
 import { recordContext } from '../../core/audit/audit-context';
+import { todayOf } from '../../core/organizations/time-zone';
 import {
   orderLines,
   orders,
@@ -10,7 +11,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { takeNumber } from '../invoices/document-numbers';
+import { takeNumber } from '../numbering/document-numbers';
 import { lockOpen } from './lock-open';
 
 /**
@@ -139,7 +140,12 @@ export class ReturnAuthorizationReplacementsService {
           .values({
             organizationId,
             // A new sale, so a number of its own (ADR-071).
-            number: await takeNumber(tx, organizationId, 'sale_order'),
+            number: await takeNumber(
+              tx,
+              organizationId,
+              'sale_order',
+              await todayOf(tx, organizationId),
+            ),
             partnerId: source.partnerId,
             direction: 'sale',
             isSample: source.isSample,

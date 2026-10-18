@@ -15,6 +15,7 @@ export * from './contacts';
 export * from './credit-note-lines';
 export * from './credit-note-taxes';
 export * from './credit-notes';
+export * from './document-numbering';
 export * from './document-sequences';
 export * from './exchange-rates';
 export * from './files';

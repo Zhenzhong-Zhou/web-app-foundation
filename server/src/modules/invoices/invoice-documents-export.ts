@@ -13,6 +13,7 @@ import {
 } from '../../core/organizations/export-contributions';
 import type { Transaction } from '../../database/database.module';
 import { creditNotes, invoices } from '../../database/schema';
+import { fileNameOf } from '../numbering/numbering-format';
 import { printableCreditNote } from './credit-note-document';
 import { printableInvoice } from './invoice-document';
 import { InvoicesService } from './invoices.service';
@@ -66,11 +67,13 @@ export class InvoiceDocumentsExport implements ExportContributor, OnModuleInit {
 
     return [
       ...issued.map(({ id, number }) => ({
-        name: `documents/invoices/${number}.pdf`,
+        // Never null here, as only issued invoices are read; the id stands
+        // in only to satisfy the column's type.
+        name: `documents/invoices/${fileNameOf(number ?? id)}.pdf`,
         bytes: drawn(() => this.invoices.findById(id).then(printableInvoice)),
       })),
       ...notes.map(({ id, number }) => ({
-        name: `documents/credit-notes/${number}.pdf`,
+        name: `documents/credit-notes/${fileNameOf(number)}.pdf`,
         bytes: drawn(() =>
           this.invoices.findCreditNote(id).then(printableCreditNote),
         ),

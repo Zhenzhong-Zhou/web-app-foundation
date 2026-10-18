@@ -470,6 +470,13 @@
       "when": 1792199412564,
       "tag": "0066_organization_time_zone",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1792291510318,
+      "tag": "0067_document_numbering",
+      "breakpoints": true
     }
   ]
 }

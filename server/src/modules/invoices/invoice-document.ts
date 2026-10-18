@@ -19,6 +19,7 @@ import {
   totals,
 } from '../../core/documents/sheet';
 import { t } from '../../i18n/translate';
+import { fileNameOf } from '../numbering/numbering-format';
 import type { InvoiceDetail } from './dto/invoice-response.dto';
 
 const TITLE = t({ id: 'documents.invoice', defaultMessage: 'Invoice' });
@@ -236,7 +237,7 @@ export function printableInvoice(invoice: InvoiceDetail): Printable {
     sellerCountry: invoice.sellerCountry,
     name: () =>
       invoice.number
-        ? `${invoice.number}.pdf`
+        ? `${fileNameOf(invoice.number)}.pdf`
         : `DRAFT ${invoice.id.slice(0, 8)}.pdf`,
     which: (doc) =>
       kindAndNumber(doc.label(TITLE), invoice.number ?? doc.label(DRAFT_MARK)),

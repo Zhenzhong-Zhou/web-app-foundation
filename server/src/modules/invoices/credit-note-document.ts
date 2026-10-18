@@ -18,6 +18,7 @@ import {
   totals,
 } from '../../core/documents/sheet';
 import { t } from '../../i18n/translate';
+import { fileNameOf } from '../numbering/numbering-format';
 import type { CreditNoteDetail } from './dto/credit-note-response.dto';
 
 const TITLE = t({ id: 'documents.creditNote', defaultMessage: 'Credit note' });
@@ -123,7 +124,7 @@ export function printableCreditNote(note: CreditNoteDetail): Printable {
     secondLanguage: note.secondLanguage,
     // Copied at issue, as the invoice's was.
     sellerCountry: note.sellerCountry,
-    name: () => `${note.number}.pdf`,
+    name: () => `${fileNameOf(note.number)}.pdf`,
     which: (doc) => kindAndNumber(doc.label(TITLE), note.number),
     draw: (doc) => creditNoteDocument(note, doc),
   };

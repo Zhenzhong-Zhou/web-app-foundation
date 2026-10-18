@@ -116,6 +116,7 @@
   "audit.action.organizationDeletionCancelled": "已取消删除组织",
   "audit.action.organizationDeletionScheduled": "已安排删除组织",
   "audit.action.organizationExported": "已下载全部数据",
+  "audit.action.organizationNumberingUpdated": "编号已更改",
   "audit.action.organizationUpdated": "组织已更新",
   "audit.action.partnerAddressCreated": "合作伙伴地址已添加",
   "audit.action.partnerAddressRetired": "合作伙伴地址已停用",

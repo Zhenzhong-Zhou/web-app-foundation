@@ -3,6 +3,19 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ERROR_CODES, type ErrorCode } from '../common/error-codes';
 
 /**
+ * What a few codes carry beside the code, for the screen to act on: which
+ * series a numbering refusal is about, and the least next number it would
+ * accept (ADR-073).
+ */
+export class ErrorDetails {
+  @ApiPropertyOptional({ type: [String] })
+  series?: string[];
+
+  @ApiPropertyOptional()
+  lowest?: number;
+}
+
+/**
  * Every refusal's body, as AllExceptionsFilter writes it. Declared for the
  * OpenAPI document only (ADR-068): the filter builds the body itself.
  */
@@ -26,6 +39,10 @@ export class ErrorBody {
     enumName: 'ErrorCode',
   })
   code?: ErrorCode;
+
+  /** Beside a few codes only (error-codes.ts). */
+  @ApiPropertyOptional({ type: () => ErrorDetails })
+  details?: ErrorDetails;
 
   @ApiProperty()
   path!: string;

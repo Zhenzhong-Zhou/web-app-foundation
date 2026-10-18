@@ -10,7 +10,12 @@ import { HttpAdapterHost } from '@nestjs/core';
 import type { Request } from 'express';
 
 import { isTranslatable, localeOf, t, translate } from '../../i18n/translate';
-import { codeOf, type ErrorCode } from '../error-codes';
+import {
+  codeOf,
+  detailsOf,
+  type ErrorCode,
+  type ErrorDetails,
+} from '../error-codes';
 
 interface ErrorBody {
   statusCode: number;
@@ -21,6 +26,8 @@ interface ErrorBody {
    * the refusals that have one (error-codes.ts).
    */
   code?: ErrorCode;
+  /** What a few codes carry for the screen to act on (error-codes.ts). */
+  details?: ErrorDetails;
   path: string;
   timestamp: string;
   requestId?: string;
@@ -52,12 +59,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       ? exception.getStatus()
       : HttpStatus.INTERNAL_SERVER_ERROR;
     const code = isHttp ? codeOf(exception.getResponse()) : undefined;
+    const details = isHttp ? detailsOf(exception.getResponse()) : undefined;
 
     const body: ErrorBody = {
       statusCode: status,
       error: HttpStatus[status] ?? 'INTERNAL_SERVER_ERROR',
       message: this.messageFor(exception, isHttp, req),
       ...(code ? { code } : {}),
+      ...(details ? { details } : {}),
       path: httpAdapter.getRequestUrl(req) as string,
       timestamp: new Date().toISOString(),
       requestId: req.id,

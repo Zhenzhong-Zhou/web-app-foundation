@@ -1,4 +1,4 @@
-import { codeOf, ERROR_CODES, withCode } from './error-codes';
+import { codeOf, detailsOf, ERROR_CODES, withCode } from './error-codes';
 
 /**
  * The filter tells the client a code only when it is one of ours, so a
@@ -23,5 +23,30 @@ describe('codeOf', () => {
     expect(codeOf({ message: 'Nope' })).toBeUndefined();
     expect(codeOf('Nope')).toBeUndefined();
     expect(codeOf(null)).toBeUndefined();
+  });
+});
+
+describe('detailsOf', () => {
+  it('passes on what a numbering refusal carries for its screen', () => {
+    const response = withCode(
+      { message: 'Taken', messageId: 'numbering.x' },
+      ERROR_CODES.numberingNumberTaken,
+      { series: ['invoice'], lowest: 454 },
+    );
+
+    expect(detailsOf(response)).toEqual({ series: ['invoice'], lowest: 454 });
+  });
+
+  it('says nothing without a code of ours, or for anything else', () => {
+    expect(
+      detailsOf({ message: 'Nope', details: { lowest: 1 } }),
+    ).toBeUndefined();
+    expect(
+      detailsOf({
+        message: 'Nope',
+        code: 'numbering_number_taken',
+        details: { lowest: 'x', other: 1 },
+      }),
+    ).toBeUndefined();
   });
 });

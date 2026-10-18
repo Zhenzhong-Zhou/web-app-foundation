@@ -116,6 +116,7 @@
   "audit.action.organizationDeletionCancelled": "Organization deletion cancelled",
   "audit.action.organizationDeletionScheduled": "Organization deletion scheduled",
   "audit.action.organizationExported": "Everything downloaded",
+  "audit.action.organizationNumberingUpdated": "Numbering changed",
   "audit.action.organizationUpdated": "Organization updated",
   "audit.action.partnerAddressCreated": "Partner address added",
   "audit.action.partnerAddressRetired": "Partner address retired",

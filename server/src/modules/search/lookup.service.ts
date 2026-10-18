@@ -16,6 +16,8 @@ import {
 import type { Permission } from '../../core/authorization/permissions';
 import {
   creditNotes,
+  documentNumbering,
+  type DocumentType,
   invoices,
   lots,
   orders,
@@ -27,6 +29,7 @@ import {
   returnAuthorizations,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
+import { literalStart } from '../numbering/numbering-format';
 import { partnerMatches } from '../partners/partner-search';
 import { itemMatches } from '../products/item-search';
 import { coverOf } from '../products/product-images';
@@ -79,12 +82,20 @@ const KINDS: { kind: LookupKind; permission: Permission }[] = [
   { kind: 'returnAuthorization', permission: 'return_authorizations.view' },
 ];
 
-/** A query shaped like a known number puts its kind first. */
-const SHAPED: { pattern: RegExp; kind: LookupKind }[] = [
-  { pattern: /^inv-/i, kind: 'invoice' },
-  { pattern: /^cn-/i, kind: 'creditNote' },
-  { pattern: /^rma-/i, kind: 'returnAuthorization' },
-];
+/**
+ * Which kind a series' numbers open (ADR-073): a query starting with a
+ * series' prefix, as the organization set it, puts that kind first.
+ */
+const KIND_OF_SERIES: Record<DocumentType, LookupKind> = {
+  invoice: 'invoice',
+  credit_note: 'creditNote',
+  return_authorization: 'returnAuthorization',
+  sale_order: 'order',
+  purchase_order: 'order',
+};
+
+/** A prefix's text before its date, and the kind it names. */
+type Shaped = { start: string; kind: LookupKind };
 
 type Row = Omit<LookupResult, 'close'>;
 type Tx = Parameters<Parameters<TenantDb['transaction']>[0]>[0];
@@ -163,7 +174,21 @@ export class LookupService {
         if (results.length > 0) groups.push({ kind, results });
       }
 
-      return { groups: ordered(groups, terms) };
+      const prefixes = await tx
+        .select({
+          documentType: documentNumbering.documentType,
+          prefix: documentNumbering.prefix,
+        })
+        .from(documentNumbering)
+        .where(eq(documentNumbering.organizationId, organizationId));
+      const shaped = prefixes
+        .map(({ documentType, prefix }) => ({
+          start: literalStart(prefix).toLowerCase(),
+          kind: KIND_OF_SERIES[documentType],
+        }))
+        .filter(({ start }) => start.length > 0);
+
+      return { groups: ordered(groups, terms, shaped) };
     });
   }
 
@@ -501,12 +526,20 @@ function pass(
 
 /**
  * The fixed order of kinds, with one exception: a query shaped like a
- * known number (INV-, CN-, RMA-), or exactly a lot's code, puts that kind
+ * known number, starting with one of the organization's prefixes (the
+ * longest that fits, ADR-073), or exactly a lot's code, puts that kind
  * first.
  */
-function ordered(groups: LookupGroup[], terms: SearchTerms): LookupGroup[] {
+function ordered(
+  groups: LookupGroup[],
+  terms: SearchTerms,
+  shaped: Shaped[],
+): LookupGroup[] {
+  const query = terms.text.toLowerCase();
   const first =
-    SHAPED.find(({ pattern }) => pattern.test(terms.text))?.kind ??
+    shaped
+      .filter(({ start }) => query.startsWith(start))
+      .sort((a, b) => b.start.length - a.start.length)[0]?.kind ??
     (groups
       .find((group) => group.kind === 'lot')
       ?.results.some(

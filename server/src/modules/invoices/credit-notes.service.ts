@@ -17,8 +17,8 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import { takeNumber } from '../numbering/document-numbers';
 import { computeCredit } from './credit-amounts';
-import { takeNumber } from './document-numbers';
 import type {
   CreditInvoiceDto,
   PreviewCreditDto,
@@ -106,7 +106,12 @@ export class CreditNotesService {
         );
 
         // After every refusal, so a refused credit leaves no gap.
-        const number = await takeNumber(tx, organizationId, 'credit_note');
+        const number = await takeNumber(
+          tx,
+          organizationId,
+          'credit_note',
+          input.creditDate,
+        );
 
         const [creditNote] = await tx
           .insert(creditNotes)

@@ -87,6 +87,8 @@ export const AUDIT_ACTIONS = {
   ORGANIZATION_UPDATED: 'organization.updated',
   /** The registered address every invoice prints (ADR-046). */
   ORGANIZATION_ADDRESS_UPDATED: 'organization.address_updated',
+  /** How each kind of document is numbered (ADR-073). */
+  ORGANIZATION_NUMBERING_UPDATED: 'organization.numbering_updated',
   /**
    * Everything the organization holds, downloaded as one ZIP (ADR-070).
    * Deleting it needs one from the last 24 hours, or a decline.
