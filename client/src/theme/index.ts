@@ -145,6 +145,22 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
         ':lang(zh) .MuiTypography-body1, :lang(zh) .MuiTypography-body2': {
           lineHeight: 1.65,
         },
+        /**
+         * Less motion for those who ask (ADR-075): transitions end at once
+         * and scrolling jumps, so the drawer, menus, dialogs and the
+         * gallery's zoom appear rather than slide, fade or ease. Animations
+         * are left running: a spinner or a skeleton says something is still
+         * happening, and stopped it would read as stuck. MUI ends its
+         * transitions on a timer, not on transitionend, so onExited still
+         * fires.
+         */
+        '@media (prefers-reduced-motion: reduce)': {
+          '*, *::before, *::after': {
+            transitionDuration: '0.01ms !important',
+            transitionDelay: '0s !important',
+            scrollBehavior: 'auto !important',
+          },
+        },
       },
     },
     /**

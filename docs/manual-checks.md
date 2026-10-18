@@ -1205,6 +1205,10 @@ Any page, signed in, in a browser at its default font size.
 - **MC-2806** *(ADR-075)* With VoiceOver on (⌘ F5), open a product with a
   weight and Tab to its variant's chevron: it is read as Details of its
   SKU, collapsed; pressing it reads expanded.
+- **MC-2807** *(ADR-075)* Turn on Reduce motion (macOS: System Settings →
+  Accessibility → Display). The drawer below 1200px, menus and dialogs
+  appear without sliding or fading, and the gallery's zoom jumps rather
+  than eases. A loading spinner still turns.
 
 ## Regressions
 
@@ -1464,3 +1468,4 @@ first.
 - 2026-10-18: ADR-073, the lookup by the organization's prefixes: MC-2713.
 - 2026-10-18: ADR-075, the text size: section 28, MC-2801 to MC-2805.
 - 2026-10-18: a variant's chevron is named: MC-2806.
+- 2026-10-18: ADR-075, less motion when asked: MC-2807.
