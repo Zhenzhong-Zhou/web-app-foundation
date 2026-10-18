@@ -5183,6 +5183,15 @@ unchanged.
   inside a sentence is always underlined; a control with no visible label
   carries one naming what it acts on.
 
+**Amendment (October 2026) — the text size (ADR-075).** The five type
+sizes stand, and a person may scale them all by 112.5% or 125% with Text
+size. A width that holds text is rem, so it grows with them. A button
+still never shrinks beside others, but its label breaks onto a second
+line when it alone is wider than all its space, rather than running off
+a phone's screen; in a table cell it stays on one line. Banners, header
+buttons, dialog footers and date ranges wrap, so no page scrolls
+sideways at 320px.
+
 ---
 
 ## ADR-056 — Search: one lookup in the top bar, and a search on every list
@@ -8619,6 +8628,62 @@ product gets a weight, so the chevron is on the page axe scans.
 **Deferred.** The text size on the account, applied at sign-in as the
 language is (ADR-054). Trigger: someone asking for their size to follow
 them to another device.
+
+**Amendment (October 2026) — settled while building, and in review.**
+
+The text size was built as decided. Walking the main screens at Larger
+found pages that scrolled sideways on a phone, nearly all of them at
+Standard too; the larger text only made them wider. Each was fixed where
+it is shared, so one change covers every screen that uses it.
+
+- **A box of 100% meant to be one pixel.** The time zone form's polite
+  live region was written `width: 1, height: 1`, which `sx` reads as 100%,
+  so it ran from beside the rail past the window's edge. It is `'1px'`.
+  Written out rather than MUI's `visuallyHidden`, which would make
+  `@mui/utils` a direct dependency for one box.
+- **Banners wrap.** The theme's Alert wraps: its message keeps a floor of
+  10rem beside the icon, and its buttons drop to their own line at the
+  right when they do not fit beside it. The closing organization's banner
+  had dragged every page wider while a deletion was pending.
+- **Rows of buttons wrap.** PageHeader's action row wraps, and a page
+  passes its buttons as a fragment, so each is a child of that row; 15
+  pages passed a row of their own, which never wrapped. The theme's
+  DialogActions wraps the same way. A list's date range wraps.
+- **A button never shrinks, and breaks its label only as a last resort.**
+  `MuiButton` keeps `flexShrink: 0` and drops `nowrap` for a cap at its
+  container's width, so "New version" still never stacks beside other
+  buttons, and a label wider than all its space, on a phone at Larger,
+  takes a second line instead of running off the screen. In a table cell
+  it stays on one line; the table scrolls. conventions.md's rule that
+  labels never wrap is narrowed to this.
+- **Grids cap their floor at the row.** Home's three grids ask for
+  `min(rem(…), 100%)`: a 320px floor was wider than a phone's row at any
+  size.
+- **The audit log on a phone.** Its filters sit in FilterRow, and the
+  Action column has a 260px floor, so the table scrolls in its box rather
+  than squeezing the entry into single words. Codes in it stay whole, as
+  ADR-055 asks.
+- **The rail's widths** are in `layout/rail.ts`: as rem() calls, not
+  literals, they broke fast refresh's rule in `side-nav.tsx`.
+- **The review's simplifications.** `useTextSize()` returns only the size,
+  and the picker calls `setTextSize`, as `useBrand` and `setBrand` work;
+  the picker has no `renderValue`, since MUI shows the option's label.
+  Five more widths that hold text went to rem: a person's label column,
+  the numbering digits field, the History drawer, the People search and
+  the gallery's zoom readout.
+- **Tests.** `text-size.spec` walks 14 screens at Larger, at desktop width
+  and at 320px, and names the innermost element past the right edge, so a
+  failure says what to fix. On fresh organizations it proves Home with
+  its cards and a closing banner on a phone, both of which the shared
+  walk met only by chance; it opens a dialog on a phone in French, where
+  labels run longest, and reads a button's transition with and without
+  reduced motion.
+- **Manual checks.** Section 28, MC-2801 to MC-2807, and MC-R15 to MC-R20
+  for the fixes, each in the commit that made it.
+- **Not done.** A lint rule against px widths: nothing yet enforces the
+  rem rule, and the simplify pass found five widths the first pass
+  missed. Trigger: the next px width to slip through a review. Splitting
+  the walk into a test per screen, faster but unlike `accessibility.spec`.
 
 ---
 
