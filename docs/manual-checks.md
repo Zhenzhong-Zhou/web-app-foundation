@@ -1131,7 +1131,8 @@ few invoices and orders.
   typed. Set Starts again to Each year on INV-: Starting again each year
   needs the year in the prefix shows in red and Save stays greyed out; Add
   the date makes it INV-{YYYY}-. A prefix ending in a digit, or in the date,
-  is refused the same way.
+  is refused the same way. Digits of 12, or a next number left empty, say
+  why under the row, and a screen reader reads it on the field.
 - **MC-2704** *(ADR-073)* Give purchase orders the prefix SO-: Sale orders
   and purchase orders would print the same numbers shows, both prefixes in
   red, and Save stays greyed out.
@@ -1426,3 +1427,4 @@ first.
   to MC-2712.
 - 2026-10-18: a date-order refusal links to Organization → Documents:
   MC-2708 extended.
+- 2026-10-18: a bad digits or next number says why: MC-2703 extended.

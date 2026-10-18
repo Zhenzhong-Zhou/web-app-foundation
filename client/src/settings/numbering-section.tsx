@@ -298,6 +298,8 @@ function NumberingForm({
   const refusalId = `${id}-refusal`;
   const clashId = `${id}-clash`;
   const problemId = (key: SeriesKey) => `${id}-${key}-problem`;
+  const digitsProblemId = (key: SeriesKey) => `${id}-${key}-digits`;
+  const nextProblemId = (key: SeriesKey) => `${id}-${key}-next`;
   const describedBy = (...ids: (string | false | undefined)[]) =>
     ids.filter(Boolean).join(' ') || undefined;
 
@@ -507,7 +509,14 @@ function NumberingForm({
       error={!digitsValid(key)}
       fullWidth={fullWidth}
       slotProps={{
-        htmlInput: { 'aria-label': fieldLabel(key, DIGITS), min: 1, max: 10 },
+        htmlInput: {
+          'aria-label': fieldLabel(key, DIGITS),
+          'aria-describedby': describedBy(
+            !digitsValid(key) && digitsProblemId(key),
+          ),
+          min: 1,
+          max: 10,
+        },
       }}
       sx={fullWidth ? undefined : { width: 80 }}
     />
@@ -547,6 +556,7 @@ function NumberingForm({
           htmlInput: {
             'aria-label': fieldLabel(key, NEXT),
             'aria-describedby': describedBy(
+              !nextValid(key) && nextProblemId(key),
               refused.has(key) && lowest !== null && refusalId,
             ),
             min: 1,
@@ -635,6 +645,32 @@ function NumberingForm({
     };
     return (
       <Stack spacing={1}>
+        {!digitsValid(key) && (
+          <Typography
+            variant="body2"
+            role="alert"
+            id={digitsProblemId(key)}
+            sx={{ color: 'error.main' }}
+          >
+            {intl.formatMessage({
+              id: 'settings.numbering.problem.digits',
+              defaultMessage: 'Digits: a whole number from 1 to 10.',
+            })}
+          </Typography>
+        )}
+        {!nextValid(key) && (
+          <Typography
+            variant="body2"
+            role="alert"
+            id={nextProblemId(key)}
+            sx={{ color: 'error.main' }}
+          >
+            {intl.formatMessage({
+              id: 'settings.numbering.problem.next',
+              defaultMessage: 'Next number: a whole number, 1 or more.',
+            })}
+          </Typography>
+        )}
         {problem && (
           <Stack spacing={1} sx={{ color: 'error.main' }}>
             <Typography variant="body2" role="alert" id={problemId(key)}>
@@ -824,7 +860,8 @@ function NumberingForm({
                   </Stack>
                   {printsAs(key)}
                 </Button>
-                {editing === key && (
+                {/* A row in error stays open, so its reason shows. */}
+                {(editing === key || !validOf(key)) && (
                   <Stack spacing={2} sx={{ px: 2, pb: 2 }}>
                     {helper(key)}
                     {prefixField(key, true)}
@@ -865,7 +902,7 @@ function NumberingForm({
                     <TableCell>{nextField(key)}</TableCell>
                     <TableCell>{printsAs(key)}</TableCell>
                   </TableRow>,
-                  editing === key || problemOf(key) ? (
+                  editing === key || !validOf(key) ? (
                     <TableRow key={`${key}-helper`}>
                       <TableCell colSpan={6} sx={{ bgcolor: 'action.hover' }}>
                         {helper(key)}

@@ -232,6 +232,31 @@ describe('NumberingSection', () => {
     expect(sent).toMatchObject({ documentsInDateOrder: true });
   });
 
+  it('says why a digits or next number is refused, and points the field at it', async () => {
+    serve();
+    const user = userEvent.setup();
+    render(<NumberingSection readOnly={false} />);
+    await screen.findByRole('table', { name: 'Numbering' });
+
+    const digits = screen.getByRole('spinbutton', { name: 'Invoices: Digits' });
+    await user.clear(digits);
+    await user.type(digits, '12');
+    expect(digits).toHaveAccessibleDescription(
+      'Digits: a whole number from 1 to 10.',
+    );
+
+    const next = screen.getByRole('spinbutton', {
+      name: 'Invoices: Next number',
+    });
+    await user.clear(next);
+    expect(next).toHaveAccessibleDescription(
+      'Next number: a whole number, 1 or more.',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Save numbering' }),
+    ).toBeDisabled();
+  });
+
   it('is read only, with who can change it, for everyone else', async () => {
     serve();
     render(<NumberingSection readOnly />);
