@@ -6760,6 +6760,34 @@ and your recent work.
 - **The bell's background mark** is `X-Background: 1`, and it polls only
   while its tab is visible, asking at once when it is seen again.
 
+*Amended (October 2026): initials by the name's script.* Two letters from
+the name read as initials only in a script with capitals. 周振中 showed
+周振, the surname and half the given name, which no reader of Chinese
+would write, and a name with no space was cut the same way in any script.
+Initials now follow what readers of the name's own script expect, as
+production apps do:
+
+- **Chinese:** the last two characters, the given name, which is what
+  colleagues call each other and what Chinese workplace apps show; a name
+  of two characters whole. A compound surname reads right (欧阳娜娜 gives
+  娜娜); a two-character surname with a one-character given name does not
+  (司马光 gives 马光), which only a separate surname field could fix.
+- **Latin, Greek and Cyrillic:** the first and last names' initials, as
+  before, now taken by grapheme, so an accent typed as a code point of its
+  own stays on its letter, and skipping emoji and brackets. A mixed name
+  takes only its words in these scripts (Zhou 振中 gives ZH).
+- **Any other script:** its first character, as Google's apps show every
+  name. Never wrong where the app does not know the custom. Fluent UI's
+  choice, a generic icon for scripts it does not handle, was not taken: a
+  team of Arabic names would all look the same.
+
+Names in kanji are read as Chinese, since the characters cannot tell the
+two apart; Japanese is not one of the app's languages. Two Chinese
+characters are set at 0.32 of the circle rather than 0.4, being about
+twice as wide, and are marked `lang="zh"`, so a screen reader on an
+English page reads them in a Chinese voice. Colours are unchanged: a name
+keeps its colour.
+
 **Considered and not done.**
 
 - **An owner adding a photo for someone.** Faster for staff who never
@@ -6778,6 +6806,10 @@ and your recent work.
   second rather than today.
 - **A manager, a mobile number, working hours.** An HR directory's, not
   a team's. Trigger: a team large enough to ask for an organization chart.
+- **Korean names by their given name.** Hangul's custom is Chinese's, the
+  given name's two syllables; today a Korean name shows its surname's, and
+  most of a Korean team would share one. Trigger: Korean as one of the
+  app's languages, or a team that asks.
 
 ---
 
