@@ -91,7 +91,13 @@ export function AccountPage() {
               })}
             </Typography>
           </Box>
-          <Stack direction="row" spacing={1}>
+          {/* Wraps: both buttons are wider than a phone at Larger text. */}
+          <Stack
+            direction="row"
+            useFlexGap
+            spacing={1}
+            sx={{ flexWrap: 'wrap' }}
+          >
             <Button
               variant="outlined"
               onClick={() => setChangingPassword(true)}

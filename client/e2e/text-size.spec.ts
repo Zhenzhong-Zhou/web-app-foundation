@@ -17,13 +17,50 @@ async function rootSize(page: Page): Promise<string> {
   );
 }
 
-/** True when the page itself scrolls sideways; a table's own scroll is fine. */
-async function scrollsSideways(page: Page): Promise<boolean> {
-  return page.evaluate(
-    () =>
-      document.documentElement.scrollWidth >
-      document.documentElement.clientWidth,
-  );
+/**
+ * What makes the page scroll sideways, if anything: the innermost elements
+ * past the window's right edge, leaving out what sits in a box that scrolls
+ * on its own (a table in its container), each named so a failure says
+ * where to look. Empty when the page fits.
+ */
+async function overflowing(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const root = document.documentElement;
+    const width = root.clientWidth;
+    if (root.scrollWidth <= width) return [];
+
+    const past = (el: Element) => el.getBoundingClientRect().right > width + 1;
+    const scrollsOnItsOwn = (el: Element) => {
+      for (
+        let up = el.parentElement;
+        up && up !== root;
+        up = up.parentElement
+      ) {
+        if (getComputedStyle(up).overflowX !== 'visible' && !past(up)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const culprits = Array.from(document.body.querySelectorAll('*')).filter(
+      (el) =>
+        past(el) &&
+        !scrollsOnItsOwn(el) &&
+        !Array.from(el.children).some(past),
+    );
+
+    if (culprits.length === 0) return ['something past the right edge'];
+    return culprits.slice(0, 3).map((el) => {
+      const mui = Array.from(el.classList)
+        .filter((name) => /^Mui[A-Za-z]+-root$/.test(name))
+        .join(' ');
+      const words = (el.getAttribute('aria-label') ?? el.textContent ?? '')
+        .trim()
+        .slice(0, 40);
+      return `${el.tagName.toLowerCase()}${mui ? ` (${mui})` : ''}: ${words}`;
+    });
+  });
 }
 
 /** Larger from the first paint, as a device that chose it before opens. */
@@ -98,16 +135,17 @@ test('at Larger, the main screens never scroll sideways on a desktop', async ({
   test.setTimeout(60_000);
   await atLarger(page);
 
-  const wide: string[] = [];
+  const wide: Record<string, string[]> = {};
   for (const path of SCREENS) {
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await page.waitForLoadState('networkidle');
-    if (await scrollsSideways(page)) wide.push(path);
+    const culprits = await overflowing(page);
+    if (culprits.length > 0) wide[path] = culprits;
   }
 
-  // All at once, so one run lists every screen to fix.
-  expect(wide).toEqual([]);
+  // All at once, so one run lists every screen to fix, and what on it.
+  expect(wide).toEqual({});
 });
 
 test('at Larger and 320px wide, the main screens reflow (WCAG 1.4.10)', async ({
@@ -117,13 +155,14 @@ test('at Larger and 320px wide, the main screens reflow (WCAG 1.4.10)', async ({
   await page.setViewportSize({ width: 320, height: 640 });
   await atLarger(page);
 
-  const wide: string[] = [];
+  const wide: Record<string, string[]> = {};
   for (const path of SCREENS) {
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await page.waitForLoadState('networkidle');
-    if (await scrollsSideways(page)) wide.push(path);
+    const culprits = await overflowing(page);
+    if (culprits.length > 0) wide[path] = culprits;
   }
 
-  expect(wide).toEqual([]);
+  expect(wide).toEqual({});
 });

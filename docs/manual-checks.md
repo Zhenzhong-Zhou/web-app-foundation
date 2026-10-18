@@ -1215,6 +1215,12 @@ Any page, signed in, in a browser at its default font size.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R18** *(buttons on a phone)* At 320 px with Larger text, open
+  Inventory, Orders and Account. Inventory's Export, Trace a lot and Refresh
+  wrap onto a second line at the right; Account's Change password and Your
+  devices wrap; on Organization → Profile, Download everything (ZIP) breaks
+  onto two lines inside its button. No page scrolls sideways. At 1280 px, at
+  Standard, every button reads on one line as before.
 - **MC-R17** *(audit log on a phone)* On a phone (DevTools, 390 px), open
   Records → Audit log with a few Numbering changed entries: the action, from
   and to filters wrap onto lines of their own, the page does not scroll
@@ -1486,3 +1492,4 @@ first.
 - 2026-10-18: the time zone's announcer widened the page: MC-R15.
 - 2026-10-18: a banner's buttons on a phone: MC-R16.
 - 2026-10-18: the audit log on a phone: MC-R17.
+- 2026-10-18: rows of buttons and long labels on a phone: MC-R18.

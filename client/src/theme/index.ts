@@ -180,18 +180,26 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
       },
     },
     /**
-     * A button label never wraps. "New" stacked over "version" doubles the
-     * button's height, which shoves its whole row taller and reads as a layout
-     * bug. Rows of buttons wrap as a group instead (see RecipePanel), so a
-     * narrow screen gets a second row of whole buttons, not broken ones.
+     * A button never shrinks to fit its row, so its label never wraps to make
+     * room: "New" stacked over "version" doubles the button's height, which
+     * shoves its whole row taller and reads as a layout bug. Rows of buttons
+     * wrap as a group instead (see RecipePanel), so a narrow screen gets a
+     * second row of whole buttons, not broken ones.
+     *
+     * The one exception is a label wider than all the space it has, which a
+     * long label on a phone at a larger text size is (ADR-075): capped at
+     * its container's width, it breaks onto a second line rather than
+     * running off the screen. In a table cell never; the table scrolls.
      */
     MuiButton: {
       defaultProps: { variant: 'contained', disableElevation: true },
       styleOverrides: {
         root: {
           textTransform: 'none',
-          whiteSpace: 'nowrap',
           flexShrink: 0,
+          maxWidth: '100%',
+          textAlign: 'center',
+          '.MuiTableCell-root &': { whiteSpace: 'nowrap' },
           minHeight: 36,
           [TOUCH]: { minHeight: 44 },
         },

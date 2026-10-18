@@ -494,12 +494,15 @@ breakpoint, not a `useMediaQuery` branch, so the first paint is right; the hook
 is used only to close an open drawer when the window widens past `lg`. A new
 destination goes into a group in `navigation.ts`, never into the bar.
 
-Rows that mix a label with actions (page headers, the recipe status row) are
-two flex groups that wrap as wholes: the text group takes the remaining space
-down to a floor, and below it the action group drops to its own line,
-right-aligned. Button labels never wrap (set once on `MuiButton`). One filled
-button per group at most — the action the current state is waiting for; the
-rest are text weight.
+Rows that mix a label with actions (page headers, the recipe status row) are two
+flex groups that wrap as wholes: the text group takes the remaining space down
+to a floor, and below it the action group drops to its own line, right-aligned,
+and wraps among itself if it is still too wide. A button never shrinks, so its
+label does not wrap beside other buttons; it breaks onto a second line only when
+it alone is wider than all its space, as on a phone at Larger text (set once on
+`MuiButton`). A row of buttons wraps (`flexWrap: 'wrap'` with `useFlexGap`). One
+filled button per group at most — the action the current state is waiting for;
+the rest are text weight.
 
 ---
 

@@ -180,11 +180,28 @@ export function PageHeader({
           )}
         </Stack>
 
+        {/* The actions wrap among themselves too, once on their own line
+            they are still wider than a phone: Export, Trace a lot and
+            Refresh at a larger text size are. Most pages pass their
+            buttons in a row of their own, which wraps the same way here
+            rather than on every page. */}
         {actions && (
           <Stack
             direction="row"
+            useFlexGap
             spacing={1}
-            sx={{ alignItems: 'center', ml: 'auto' }}
+            sx={{
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              flexWrap: 'wrap',
+              ml: 'auto',
+              maxWidth: '100%',
+              '& > .MuiStack-root': {
+                flexWrap: 'wrap',
+                justifyContent: 'flex-end',
+                rowGap: 1,
+              },
+            }}
           >
             {actions}
           </Stack>
