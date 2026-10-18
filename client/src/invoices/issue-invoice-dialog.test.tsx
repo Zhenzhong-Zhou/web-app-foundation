@@ -1,10 +1,12 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import { useState } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { InvoiceDetail } from '../api/types.gen';
+import { ToastProvider } from '../components/toast-provider';
 import { setOrganizationTimeZone } from '../lib/time-zone';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
@@ -100,6 +102,12 @@ const BILLING_MISSING = {
   code: 'customer_billing_address_missing',
 };
 
+const DATE_ORDER = {
+  message:
+    'Invoices are kept in date order, and INV-000452 is dated 2026-10-17. Date this one 2026-10-17 or later.',
+  code: 'numbering_date_order',
+};
+
 /**
  * The refusal names what is missing; the link saves the search for where it
  * is set (ADR-061). Keyed on the code, so it holds in every language.
@@ -156,6 +164,65 @@ describe('IssueInvoiceDialog', () => {
 
     expect(await screen.findByText(/no billing address/)).toBeTruthy();
     expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('links a refusal for date order to Organization → Documents (ADR-073)', async () => {
+    refuse(DATE_ORDER);
+    await issueAs(['invoices.issue', 'organizations.update']);
+
+    const link = await screen.findByRole('link', {
+      name: 'Change it on Organization → Documents',
+    });
+    expect(link.getAttribute('href')).toBe(
+      '/settings/organization?tab=documents',
+    );
+    const alert = screen.getByRole('alert', { name: 'Error' });
+    expect(alert.contains(link)).toBe(true);
+  });
+
+  it('keeps the date-order link to whoever may change the setting', async () => {
+    refuse(DATE_ORDER);
+    await issueAs(['invoices.issue']);
+
+    expect(await screen.findByText(/kept in date order/)).toBeTruthy();
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('says the number the invoice was issued as (ADR-073)', async () => {
+    server.use(
+      http.post('/api/v1/invoices/inv-1/issue', () =>
+        HttpResponse.json({
+          invoice: { ...DRAFT, status: 'issued', number: 'INV-2026-0453' },
+        }),
+      ),
+    );
+    // The dialog closes, as its page closes it, so the toast is not
+    // hidden behind it.
+    function Issuing() {
+      const [open, setOpen] = useState(true);
+      return (
+        <IssueInvoiceDialog
+          invoice={DRAFT}
+          open={open}
+          onClose={() => setOpen(false)}
+          onIssued={() => undefined}
+        />
+      );
+    }
+    const user = userEvent.setup();
+    renderWithAuth(
+      <ToastProvider>
+        <MemoryRouter>
+          <Issuing />
+        </MemoryRouter>
+      </ToastProvider>,
+      { permissions: ['invoices.issue'] },
+    );
+    await user.click(screen.getByRole('button', { name: 'Issue' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Invoice issued as INV-2026-0453',
+    );
   });
 
   it('offers no link for a refusal without a code', async () => {

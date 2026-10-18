@@ -76,6 +76,30 @@ describe('NumberingSection', () => {
     ).toBeInTheDocument();
   });
 
+  it('says when two series would print the same numbers, on both prefixes', async () => {
+    serve();
+    const user = userEvent.setup();
+    render(<NumberingSection readOnly={false} />);
+    await screen.findByRole('table', { name: 'Numbering' });
+
+    const purchase = screen.getByRole('textbox', {
+      name: 'Purchase orders: Prefix',
+    });
+    await user.clear(purchase);
+    await user.type(purchase, 'SO-');
+
+    const notice =
+      'Sale orders and purchase orders would print the same numbers. Give each its own prefix.';
+    expect(screen.getByText(notice)).toBeInTheDocument();
+    expect(purchase).toHaveAccessibleDescription(notice);
+    expect(
+      screen.getByRole('textbox', { name: 'Sale orders: Prefix' }),
+    ).toHaveAccessibleDescription(notice);
+    expect(
+      screen.getByRole('button', { name: 'Save numbering' }),
+    ).toBeDisabled();
+  });
+
   it('shows the change before saving it, sending a next number only when typed', async () => {
     serve();
     let sent: Record<string, unknown> | null = null;
@@ -143,9 +167,45 @@ describe('NumberingSection', () => {
     await user.click(screen.getByRole('button', { name: 'Save numbering' }));
     await user.click(screen.getByRole('button', { name: 'Change numbering' }));
 
-    await user.click(await screen.findByRole('button', { name: 'Use 454' }));
+    const use = await screen.findByRole('button', { name: 'Use 454' });
+    expect(next).toHaveAccessibleDescription(
+      'INV-000453 is already an invoice. Under INV-, the next number must be 454 or more.',
+    );
+    await user.click(use);
     expect(next).toHaveValue(454);
     expect(await screen.findByText('INV-000454')).toBeInTheDocument();
+  });
+
+  it('reads a refusal’s details only beside its code', async () => {
+    serve();
+    server.use(
+      http.put('/api/v1/organization/numbering', () =>
+        HttpResponse.json(
+          {
+            message: 'Something else went wrong.',
+            details: { series: ['invoice'], lowest: 454 },
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    render(<NumberingSection readOnly={false} />);
+    await screen.findByRole('table', { name: 'Numbering' });
+
+    const next = screen.getByRole('spinbutton', {
+      name: 'Invoices: Next number',
+    });
+    await user.clear(next);
+    await user.type(next, '400');
+    await user.click(screen.getByRole('button', { name: 'Save numbering' }));
+    await user.click(screen.getByRole('button', { name: 'Change numbering' }));
+
+    expect(
+      await screen.findByText('Something else went wrong.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Use 454' })).toBeNull();
+    expect(next).not.toHaveAccessibleDescription();
   });
 
   it('saves the date-order switch on its own straight away', async () => {
