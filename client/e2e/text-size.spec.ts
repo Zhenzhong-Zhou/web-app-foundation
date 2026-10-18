@@ -142,3 +142,43 @@ for (const [where, viewport] of [
     expect(wide).toEqual({});
   });
 }
+
+/** A phone's width at Larger, from the first paint. */
+async function onAPhoneAtLarger(page: Page): Promise<void> {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.addInitScript(() => localStorage.setItem('textSize', 'larger'));
+}
+
+test('at Larger on a phone, a dialog wraps its buttons inside it', async ({
+  page,
+  freshOrg,
+}) => {
+  // In French, where labels run longest: Annuler and Ajouter un emplacement
+  // are wider than a 320px dialog side by side at Larger; in English, Cancel
+  // and Add location still fit. Its own organization, so the shared owner's
+  // language is left alone.
+  const french = await freshOrg.api.patch('/v1/account/profile', {
+    data: { locale: 'fr-CA' },
+  });
+  expect(french.ok(), await french.text()).toBeTruthy();
+
+  await signInAs(page, freshOrg.api);
+  await onAPhoneAtLarger(page);
+  await page.goto('/locations');
+  await page.getByRole('button', { name: 'Ajouter un emplacement' }).click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(page.locator('html')).toHaveCSS('font-size', '20px');
+
+  // The action drops under Annuler, and nothing runs past the dialog.
+  const cancel = await dialog
+    .getByRole('button', { name: 'Annuler' })
+    .boundingBox();
+  const add = await dialog
+    .getByRole('button', { name: 'Ajouter un emplacement' })
+    .boundingBox();
+  expect(add!.y).toBeGreaterThanOrEqual(cancel!.y + cancel!.height);
+  const spill = await dialog.evaluate((el) => el.scrollWidth - el.clientWidth);
+  expect(spill).toBeLessThanOrEqual(0);
+});

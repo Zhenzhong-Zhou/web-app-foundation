@@ -253,6 +253,15 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
       styleOverrides: { paper: { borderRadius: RADIUS.dialog } },
     },
     /**
+     * A dialog's buttons wrap onto a second line at the right when the row
+     * is wider than the dialog, rather than running past its edge: on a
+     * phone at Larger text, French's Annuler and Ajouter un emplacement are
+     * (ADR-075). Each button stays whole, as MuiButton keeps it.
+     */
+    MuiDialogActions: {
+      styleOverrides: { root: { flexWrap: 'wrap', rowGap: 8 } },
+    },
+    /**
      * A banner's actions drop below its message when the two do not fit
      * side by side, rather than pushing the page wider than the screen
      * (found by text-size.spec at 320px). The message keeps a floor beside

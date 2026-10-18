@@ -1217,6 +1217,11 @@ Any page, signed in, in a browser at its default font size.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R20** *(dialogs on a phone)* In Français, at 320 px with Larger
+  text, open Emplacements → Ajouter un emplacement: Ajouter un emplacement
+  sits under Annuler at the right, inside the dialog, and the dialog does
+  not scroll sideways. In English, Cancel and Add location fit side by
+  side. At 1280 px they sit side by side in both.
 - **MC-R19** *(Home on a phone)* In an organization whose Getting started
   is done or dismissed, open Home at 320 px: To ship, To receive and
   Expiring soon each fill the width, one under another, and the page does
@@ -1504,3 +1509,4 @@ first.
 - 2026-10-18: Home's cards on a phone: MC-R19.
 - 2026-10-18: widths that hold text on a person's page, in History and on
   People: MC-2803 extended.
+- 2026-10-18: a dialog's buttons on a phone: MC-R20.
