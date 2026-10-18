@@ -1215,6 +1215,11 @@ Any page, signed in, in a browser at its default font size.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R16** *(banner on a phone)* As an Owner, schedule the organization's
+  deletion, then view any page at 390 px and at 320 px: the banner's words
+  sit beside its icon, and Download everything, Cancel deletion and × move
+  under them, wrapping if they must; nothing runs off the screen. On a
+  desktop they stay to the right of the words. Cancel the deletion.
 - **MC-R15** *(organization page)* At 1280 px, Settings → Organization →
   Profile does not scroll sideways. Change the time zone with VoiceOver on:
   the new zone is still announced.
@@ -1473,3 +1478,4 @@ first.
 - 2026-10-18: a variant's chevron is named: MC-2806.
 - 2026-10-18: ADR-075, less motion when asked: MC-2807.
 - 2026-10-18: the time zone's announcer widened the page: MC-R15.
+- 2026-10-18: a banner's buttons on a phone: MC-R16.

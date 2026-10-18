@@ -244,8 +244,19 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
     MuiDialog: {
       styleOverrides: { paper: { borderRadius: RADIUS.dialog } },
     },
+    /**
+     * A banner's actions drop below its message when the two do not fit
+     * side by side, rather than pushing the page wider than the screen
+     * (found by text-size.spec at 320px). The message keeps a floor beside
+     * the icon, so it is not squeezed to a column of words first; the
+     * actions sit at the right on their own line.
+     */
     MuiAlert: {
-      styleOverrides: { root: { borderRadius: RADIUS.panel } },
+      styleOverrides: {
+        root: { borderRadius: RADIUS.panel, flexWrap: 'wrap' },
+        message: { flex: '1 1 0', minWidth: `min(${rem(160)}, 100%)` },
+        action: { maxWidth: '100%' },
+      },
     },
     /**
      * A tinted chip with its tone's text, in both modes. The words carry
