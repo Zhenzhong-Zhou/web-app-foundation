@@ -122,11 +122,7 @@ export function OrganizationPage() {
             defaultMessage: 'Organization',
           })
         }
-        actions={
-          <Stack direction="row" spacing={1}>
-            {organization && <HistoryButton resourceId={organization.id} />}
-          </Stack>
-        }
+        actions={organization && <HistoryButton resourceId={organization.id} />}
       />
 
       {error && <Alert severity="error">{error}</Alert>}

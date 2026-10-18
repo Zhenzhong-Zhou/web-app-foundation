@@ -78,7 +78,7 @@ export function ProductsPage() {
           defaultMessage: 'Products',
         })}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             {/* The whole catalogue, every language's names (ADR-057). */}
             <ExportButton path="/products/export" />
             {/* Reference data for recipes, so it hangs off the catalogue
@@ -111,7 +111,7 @@ export function ProductsPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
       />
 

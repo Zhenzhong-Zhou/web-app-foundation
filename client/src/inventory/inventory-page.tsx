@@ -257,7 +257,7 @@ export function InventoryPage() {
           defaultMessage: 'Inventory',
         })}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             {/* Every row the filters match, not the page (ADR-057). */}
             <ExportButton
               path={stockPath
@@ -296,7 +296,7 @@ export function InventoryPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
       />
 

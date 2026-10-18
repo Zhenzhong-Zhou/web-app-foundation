@@ -166,7 +166,7 @@ export function ProductDetailPage() {
           color: 'default',
         }}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             <HistoryButton resourceId={product.id} />
             {canEdit && (
               // Discontinuing, not deleting. The product's flag is never
@@ -190,7 +190,7 @@ export function ProductDetailPage() {
                     })}
               </Button>
             )}
-          </Stack>
+          </>
         }
         subtitle={product.description ?? undefined}
       />

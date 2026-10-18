@@ -58,7 +58,7 @@ export function PriceListsPage() {
             'A line added without a price takes one from its customer’s or supplier’s list, and keeps it. Changing a list never changes an order already written.',
         })}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             {can('price_lists.create') && (
               <Button onClick={openDialog(() => setCreating(true))}>
                 {intl.formatMessage({
@@ -67,7 +67,7 @@ export function PriceListsPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
       />
 

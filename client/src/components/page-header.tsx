@@ -55,6 +55,7 @@ export function PageHeader({
   title: string;
   subtitle?: ReactNode;
   status?: { label: string; color: ChipProps['color'] };
+  /** Buttons as a fragment, not a row of their own, so they wrap here. */
   actions?: ReactNode;
 }) {
   const intl = useIntl();
@@ -182,9 +183,9 @@ export function PageHeader({
 
         {/* The actions wrap among themselves too, once on their own line
             they are still wider than a phone: Export, Trace a lot and
-            Refresh at a larger text size are. Most pages pass their
-            buttons in a row of their own, which wraps the same way here
-            rather than on every page. */}
+            Refresh at a larger text size are. So a page passes its buttons
+            as a fragment, each one a child of this row, not in a row of its
+            own that would not wrap. */}
         {actions && (
           <Stack
             direction="row"
@@ -196,11 +197,6 @@ export function PageHeader({
               flexWrap: 'wrap',
               ml: 'auto',
               maxWidth: '100%',
-              '& > .MuiStack-root': {
-                flexWrap: 'wrap',
-                justifyContent: 'flex-end',
-                rowGap: 1,
-              },
             }}
           >
             {actions}

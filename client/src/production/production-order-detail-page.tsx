@@ -167,7 +167,7 @@ export function ProductionOrderDetailPage() {
           color: COLOR_OF_TONE[STATUS_TONES.run[run.status]],
         }}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             <HistoryButton resourceId={run.id} />
             {canRelease && isDraft && (
               <Tooltip
@@ -218,7 +218,7 @@ export function ProductionOrderDetailPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
       />
 

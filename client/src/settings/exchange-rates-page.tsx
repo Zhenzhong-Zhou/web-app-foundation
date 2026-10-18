@@ -112,7 +112,7 @@ export function ExchangeRatesPage() {
             'What one unit of another currency is worth in your base currency, day by day. A purchase priced in that currency is valued at the latest rate on or before the day it arrived. Correcting a rate changes nothing already valued.',
         })}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             {canUpdate && baseCurrency && (
               <Button onClick={openDialog(() => setCreating(true))}>
                 {intl.formatMessage({
@@ -121,7 +121,7 @@ export function ExchangeRatesPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
       />
 

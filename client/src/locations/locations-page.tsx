@@ -53,7 +53,7 @@ export function LocationsPage() {
           defaultMessage: 'Locations',
         })}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             <Button
               variant="text"
               disabled={loading}
@@ -72,7 +72,7 @@ export function LocationsPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
       />
 

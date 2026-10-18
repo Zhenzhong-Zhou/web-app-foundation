@@ -156,7 +156,7 @@ export function PartnerDetailPage() {
               }
         }
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             <HistoryButton resourceId={partner.id} />
             {canEdit && (
               <Button
@@ -169,7 +169,7 @@ export function PartnerDetailPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
         subtitle={
           [partner.code, partner.taxId].filter(Boolean).join(' · ') ||

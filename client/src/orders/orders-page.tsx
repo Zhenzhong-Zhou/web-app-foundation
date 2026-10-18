@@ -142,7 +142,7 @@ export function OrdersPage() {
           defaultMessage: 'Orders',
         })}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             <ExportButton path={path.replace('/orders', '/orders/export')} />
             {canCreate && (
               <Button component={RouterLink} to="/orders/new">
@@ -152,7 +152,7 @@ export function OrdersPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
       />
 
