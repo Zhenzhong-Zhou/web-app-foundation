@@ -29,7 +29,7 @@ import type { Numbering } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { SettingsSection } from '../components/settings-section';
-import { api } from '../lib/api';
+import { api, hasCode } from '../lib/api';
 import type { NumberingReset } from '../lib/api-names';
 import { formatDay, NO_VALUE } from '../lib/format';
 import {
@@ -293,18 +293,19 @@ function NumberingForm({
     {},
   );
 
-  const { submitting, error, errorDetails, reset, submit } = useSubmit(
-    async () => {
-      setConfirming(false);
-      await onSaved();
-    },
-    {
-      success: intl.formatMessage({
-        id: 'settings.numbering.saved',
-        defaultMessage: 'Numbering saved',
-      }),
-    },
-  );
+  const { submitting, error, errorCode, errorDetails, reset, submit } =
+    useSubmit(
+      async () => {
+        setConfirming(false);
+        await onSaved();
+      },
+      {
+        success: intl.formatMessage({
+          id: 'settings.numbering.saved',
+          defaultMessage: 'Numbering saved',
+        }),
+      },
+    );
 
   const set = (key: SeriesKey, change: Partial<Draft>) =>
     setDrafts((current) => ({
@@ -353,11 +354,14 @@ function NumberingForm({
     changed.length > 0 || inOrder !== numbering.documentsInDateOrder;
   const blocked = clash !== undefined || !SERIES.every(validOf);
 
-  /** The series a refusal named, marked on its row. */
+  /** The series a refusal named, marked on its row, keyed on its code. */
+  const taken = hasCode(errorCode, 'numbering_number_taken');
   const refused = new Set(
-    SERIES.filter((key) => errorDetails?.series?.includes(key)),
+    taken || hasCode(errorCode, 'numbering_prefix_shared')
+      ? SERIES.filter((key) => errorDetails?.series?.includes(key))
+      : [],
   );
-  const lowest = errorDetails?.lowest ?? null;
+  const lowest = taken ? (errorDetails?.lowest ?? null) : null;
 
   function save() {
     void submit(() =>

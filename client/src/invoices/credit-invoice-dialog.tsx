@@ -34,6 +34,7 @@ import {
 import { organizationToday } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
 import { formatRate } from '../settings/tax-rate';
+import { DateOrderLink } from './date-order-link';
 import { PeriodHint } from './period-hint';
 
 /** A numeric(18,4) of nothing always reads '0.0000' (ADR-025). */
@@ -184,7 +185,7 @@ export function CreditInvoiceDialog({
   const preview = current?.preview ?? null;
   const refusal = current?.refusal ?? null;
 
-  const { submitting, error, reset, submit } = useSubmit(
+  const { submitting, error, errorCode, reset, submit } = useSubmit(
     async () => {
       close();
       await onIssued();
@@ -280,7 +281,11 @@ export function CreditInvoiceDialog({
             {grouped ? (
               <FormError message={groupedNumberMessage()} />
             ) : (
-              error && <FormError message={error} />
+              error && (
+                <FormError message={error}>
+                  <DateOrderLink errorCode={errorCode} />
+                </FormError>
+              )
             )}
 
             <TableContainer>

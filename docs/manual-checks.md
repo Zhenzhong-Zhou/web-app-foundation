@@ -1154,8 +1154,11 @@ few invoices and orders.
   and Void dialogs show the same line for a credit note's date.
 - **MC-2708** *(ADR-073)* Turn on Keep invoices and credit notes in date
   order, issue an invoice dated today, then try to issue another dated
-  yesterday: refused, naming the first and its date. Issued for today, it
-  takes the next number, with no gap.
+  yesterday: refused, naming the first and its date, with Change it on
+  Organization → Documents, which opens the Documents tab; the Void and
+  Credit dialogs offer the same for a credit note. An Admin sees the
+  refusal without the link. Issued for today, it takes the next number,
+  with no gap.
 - **MC-2709** *(ADR-073)* As an Admin or a Viewer, Numbering is a table of
   each document, Starts again and Next to be given, says whether invoices
   and credit notes are kept in date order, and An Owner can change it, with
@@ -1421,3 +1424,5 @@ first.
   MC-R13 extended.
 - 2026-10-18: ADR-073, each organization's numbering: section 27, MC-2701
   to MC-2712.
+- 2026-10-18: a date-order refusal links to Organization → Documents:
+  MC-2708 extended.

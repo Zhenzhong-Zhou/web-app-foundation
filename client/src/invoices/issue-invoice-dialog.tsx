@@ -20,6 +20,7 @@ import { api, hasCode } from '../lib/api';
 import { formatMoney } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
+import { DateOrderLink } from './date-order-link';
 import { PeriodHint } from './period-hint';
 
 /**
@@ -163,6 +164,7 @@ export function IssueInvoiceDialog({
                     {fix.label}
                   </Link>
                 )}
+                <DateOrderLink errorCode={errorCode} />
               </FormError>
             )}
 

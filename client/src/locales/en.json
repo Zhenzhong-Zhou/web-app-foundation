@@ -582,6 +582,7 @@
   "invoices.creditNotes": "Credit notes",
   "invoices.customer": "Customer",
   "invoices.date": "Date",
+  "invoices.dateOrder.change": "Change it on Organization → Documents",
   "invoices.draft.delete": "Delete draft",
   "invoices.draft.deleteNotice": "Nobody outside has seen it, and it has no number yet. The shipment can be invoiced again afterwards.",
   "invoices.draft.deleteTitle": "Delete this draft?",

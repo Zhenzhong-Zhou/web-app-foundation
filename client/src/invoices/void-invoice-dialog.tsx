@@ -16,6 +16,7 @@ import { api } from '../lib/api';
 import { formatMoney } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
+import { DateOrderLink } from './date-order-link';
 import { PeriodHint } from './period-hint';
 
 /**
@@ -38,7 +39,7 @@ export function VoidInvoiceDialog({
   const [reason, setReason] = useState('');
   const [creditDate, setCreditDate] = useState(organizationToday());
 
-  const { submitting, error, reset, submit } = useSubmit(
+  const { submitting, error, errorCode, reset, submit } = useSubmit(
     async () => {
       close();
       await onVoided();
@@ -85,7 +86,11 @@ export function VoidInvoiceDialog({
 
         <DialogContent>
           <Stack spacing={2}>
-            {error && <FormError message={error} />}
+            {error && (
+              <FormError message={error}>
+                <DateOrderLink errorCode={errorCode} />
+              </FormError>
+            )}
 
             <DialogContentText>
               <FormattedMessage

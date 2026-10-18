@@ -582,6 +582,7 @@
   "invoices.creditNotes": "贷项通知单",
   "invoices.customer": "客户",
   "invoices.date": "日期",
+  "invoices.dateOrder.change": "前往“组织 → 单据”更改",
   "invoices.draft.delete": "删除草稿",
   "invoices.draft.deleteNotice": "外部没有人看过它，它也还没有编号。之后可以为该次发货重新开具发票。",
   "invoices.draft.deleteTitle": "删除此草稿？",

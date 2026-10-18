@@ -582,6 +582,7 @@
   "invoices.creditNotes": "Notes de crédit",
   "invoices.customer": "Client",
   "invoices.date": "Date",
+  "invoices.dateOrder.change": "Modifiez ce réglage dans Organisation → Documents",
   "invoices.draft.delete": "Supprimer le brouillon",
   "invoices.draft.deleteNotice": "Personne à l’extérieur ne l’a vu, et il n’a pas encore de numéro. L’expédition pourra être facturée de nouveau ensuite.",
   "invoices.draft.deleteTitle": "Supprimer ce brouillon?",
