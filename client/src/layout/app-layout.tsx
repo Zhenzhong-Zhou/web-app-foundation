@@ -41,7 +41,8 @@ import { IdleGuard } from './idle-guard';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
 import { OrganizationMark } from './organization-mark';
-import { RAIL_FOLDED_WIDTH, RAIL_WIDTH, SideNav } from './side-nav';
+import { RAIL_FOLDED_WIDTH, RAIL_WIDTH } from './rail';
+import { SideNav } from './side-nav';
 import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
 
 /**
