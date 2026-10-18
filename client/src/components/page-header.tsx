@@ -13,6 +13,8 @@ import { type ReactNode, useEffect } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
+import { rem } from '../theme/rem';
+
 interface Crumb {
   label: string;
   to: string;
@@ -53,6 +55,7 @@ export function PageHeader({
   title: string;
   subtitle?: ReactNode;
   status?: { label: string; color: ChipProps['color'] };
+  /** Buttons as a fragment, not a row of their own, so they wrap here. */
   actions?: ReactNode;
 }) {
   const intl = useIntl();
@@ -148,7 +151,7 @@ export function PageHeader({
         <Stack
           direction="row"
           spacing={1.5}
-          sx={{ alignItems: 'center', flex: '1 1 280px', minWidth: 0 }}
+          sx={{ alignItems: 'center', flex: `1 1 ${rem(280)}`, minWidth: 0 }}
         >
           {/* Detail pages only: a top-level page is reached from the
               navigation, and has nowhere to go up to. */}
@@ -178,11 +181,23 @@ export function PageHeader({
           )}
         </Stack>
 
+        {/* The actions wrap among themselves too, once on their own line
+            they are still wider than a phone: Export, Trace a lot and
+            Refresh at a larger text size are. So a page passes its buttons
+            as a fragment, each one a child of this row, not in a row of its
+            own that would not wrap. */}
         {actions && (
           <Stack
             direction="row"
+            useFlexGap
             spacing={1}
-            sx={{ alignItems: 'center', ml: 'auto' }}
+            sx={{
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              flexWrap: 'wrap',
+              ml: 'auto',
+              maxWidth: '100%',
+            }}
           >
             {actions}
           </Stack>

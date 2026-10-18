@@ -18,6 +18,7 @@ import { type IntlShape, useIntl } from 'react-intl';
 
 import { NO_VALUE } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { rem } from '../theme/rem';
 import type { Variant } from './products-page';
 import { unitLabel } from './units';
 
@@ -47,7 +48,11 @@ function dimensions(variant: Variant, intl: IntlShape): string | null {
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <Stack direction="row" spacing={1}>
-      <Typography variant="body2" color="text.secondary" sx={{ minWidth: 140 }}>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ minWidth: rem(140) }}
+      >
         {label}
       </Typography>
       <Typography variant="body2">{value}</Typography>
@@ -89,7 +94,20 @@ export function VariantRow({
       <TableRow>
         <TableCell padding="checkbox">
           {hasDetail && (
-            <IconButton size="small" onClick={() => setOpen(!open)}>
+            // Named by the variant, the state by aria-expanded: a screen
+            // reader said only "button" (ADR-075).
+            <IconButton
+              size="small"
+              aria-label={intl.formatMessage(
+                {
+                  id: 'products.variant.details',
+                  defaultMessage: 'Details of {sku}',
+                },
+                { sku: variant.sku },
+              )}
+              aria-expanded={open}
+              onClick={() => setOpen(!open)}
+            >
               {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
             </IconButton>
           )}

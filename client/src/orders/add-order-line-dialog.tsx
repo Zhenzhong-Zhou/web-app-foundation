@@ -18,6 +18,7 @@ import { groupedNumberMessage, toApiDecimal } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { useVariants } from '../lib/use-variants';
 import { unitLabel } from '../products/units';
+import { rem } from '../theme/rem';
 
 /**
  * Adds an item to a draft.
@@ -227,7 +228,7 @@ export function AddOrderLineDialog({
                 required={price.trim() !== ''}
                 value={currency}
                 onChange={setCurrency}
-                sx={{ width: 120 }}
+                sx={{ width: rem(120) }}
               />
             </Stack>
           </Stack>

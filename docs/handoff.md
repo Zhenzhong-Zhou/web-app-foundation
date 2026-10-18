@@ -8,8 +8,33 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **ADR-073, each organization's document numbering:** built on
-  `adr-073-numbering`, its PR to open. Five series (invoices, credit
+- **ADR-075, text size, and text that grows:** built on
+  `adr-075-text-size`, its PR to open. Standard, Large and Larger text
+  (100%, 112.5% and 125% of the browser's own size, on `<html>`), in the
+  avatar menu and on the signed-out pages, kept on each device; widths
+  that hold text in rem; less motion when asked; a variant's chevron
+  named for screen readers. Walking 14 screens at Larger found pages that
+  scrolled sideways on a phone, nearly all at Standard too, each fixed
+  where it is shared: banners, header buttons, dialog footers, date
+  ranges, Home's grids, the audit log, and a hidden box 100% wide. The
+  amendment at the end of ADR-075 says what building and review settled;
+  ADR-055 is amended.
+  - **The PR:** client only, no migration and no server change. Its
+    commits: ADR-075, the rem widths, the text size, the chevron, less
+    motion, seven fixes from the walk, the simplify pass, a dialog fix and
+    tests from the review, header buttons as fragments, then this docs
+    commit. Manual checks section 28 and MC-R15 to MC-R20, each with the
+    commit that made it.
+  - **Before merging:** walk MC-2801 to MC-2807 and MC-R15 to MC-R20; show
+    your mom Home and an order in 简体中文 at Larger (MC-2803); have the
+    new French and Chinese labels read by someone fluent. The branch was
+    rebuilt to move manual checks into their commits, so run
+    `scripts/verify.sh` on it before opening the PR.
+  - **Next:** Bob's choice, from the features and fixes he wants before
+    run numbers (ADR-074).
+
+- **ADR-073, each organization's document numbering:** merged in #136.
+  Five series (invoices, credit
   notes, RMAs, sale and purchase orders), each with a prefix that may carry
   `{YYYY}`, `{YY}`, `{MM}` and `{DD}`, a width, a reset (never, yearly,
   monthly, daily) and its next number, set by an Owner on Settings →
@@ -22,21 +47,11 @@ with this one, this one is current.
   says what building settled; ADR-046, ADR-047, ADR-056 and ADR-071 are
   amended. ADR-074 records run numbers and batch codes from them, decided
   and deferred, so other features and fixes come first.
-  - **The PR:** migration **0067** (each organization's five numbering
-    rows; counters by period, with the prefix and width each keeps), so its
-    description says to run `npm run migrate:all`; "Fixes #131". Its
-    commits: ADR-073, ADR-074, server, client, the simplify pass, four from
-    the review (a save takes today's counters first, screens key on the
-    numbering codes, the fields name their reason, and tests), a bad digits
-    or next number saying why, then this docs commit. The description says
-    manual checks section 27 arrives with the client commit: with today's
-    numbers as the defaults, the server commit alone changes nothing a
-    person sees.
-  - **Before merging:** walk MC-2701 to MC-2713; show your mom 编号 on a
-    phone (MC-2710); have the new French and Chinese drafts read by someone
-    fluent. `scripts/verify.sh` passed in full on 18 October.
-  - **Next:** Bob's choice, from the features and fixes he wants before
-    run numbers (ADR-074).
+  - **Migration 0067** (each organization's five numbering rows; counters
+    by period): run `npm run migrate:all` wherever it has not run yet.
+  - **By hand, if not yet done:** walk MC-2701 to MC-2713; show your mom
+    编号 on a phone (MC-2710); have the new French and Chinese drafts read
+    by someone fluent.
 
 - **ADR-072, each organization's time zone (#41):** merged in #134. An IANA zone per organization, set
   at registration from the browser and by an Owner on Profile, decides

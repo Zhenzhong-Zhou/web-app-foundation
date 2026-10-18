@@ -7,6 +7,7 @@ import {
 
 import type { Locale } from '../lib/locales';
 import { type Brand, DEFAULT_BRAND } from './brand-store';
+import { rem } from './rem';
 import {
   DARK,
   DARK_ACCENT_WEIGHT,
@@ -39,9 +40,6 @@ declare module '@mui/material/styles' {
     rail?: Rail;
   }
 }
-
-/** px to rem against the browser's 16px, as MUI sizes its type. */
-const rem = (px: number) => `${px / 16}rem`;
 
 function palette(scheme: Scheme, accent: string, onAccent: string, rail: Rail) {
   return {
@@ -147,6 +145,22 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
         ':lang(zh) .MuiTypography-body1, :lang(zh) .MuiTypography-body2': {
           lineHeight: 1.65,
         },
+        /**
+         * Less motion for those who ask (ADR-075): transitions end at once
+         * and scrolling jumps, so the drawer, menus, dialogs and the
+         * gallery's zoom appear rather than slide, fade or ease. Animations
+         * are left running: a spinner or a skeleton says something is still
+         * happening, and stopped it would read as stuck. MUI ends its
+         * transitions on a timer, not on transitionend, so onExited still
+         * fires.
+         */
+        '@media (prefers-reduced-motion: reduce)': {
+          '*, *::before, *::after': {
+            transitionDuration: '0.01ms !important',
+            transitionDelay: '0s !important',
+            scrollBehavior: 'auto !important',
+          },
+        },
       },
     },
     /**
@@ -166,18 +180,26 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
       },
     },
     /**
-     * A button label never wraps. "New" stacked over "version" doubles the
-     * button's height, which shoves its whole row taller and reads as a layout
-     * bug. Rows of buttons wrap as a group instead (see RecipePanel), so a
-     * narrow screen gets a second row of whole buttons, not broken ones.
+     * A button never shrinks to fit its row, so its label never wraps to make
+     * room: "New" stacked over "version" doubles the button's height, which
+     * shoves its whole row taller and reads as a layout bug. Rows of buttons
+     * wrap as a group instead (see RecipePanel), so a narrow screen gets a
+     * second row of whole buttons, not broken ones.
+     *
+     * The one exception is a label wider than all the space it has, which a
+     * long label on a phone at a larger text size is (ADR-075): capped at
+     * its container's width, it breaks onto a second line rather than
+     * running off the screen. In a table cell never; the table scrolls.
      */
     MuiButton: {
       defaultProps: { variant: 'contained', disableElevation: true },
       styleOverrides: {
         root: {
           textTransform: 'none',
-          whiteSpace: 'nowrap',
           flexShrink: 0,
+          maxWidth: '100%',
+          textAlign: 'center',
+          '.MuiTableCell-root &': { whiteSpace: 'nowrap' },
           minHeight: 36,
           [TOUCH]: { minHeight: 44 },
         },
@@ -230,8 +252,28 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
     MuiDialog: {
       styleOverrides: { paper: { borderRadius: RADIUS.dialog } },
     },
+    /**
+     * A dialog's buttons wrap onto a second line at the right when the row
+     * is wider than the dialog, rather than running past its edge: on a
+     * phone at Larger text, French's Annuler and Ajouter un emplacement are
+     * (ADR-075). Each button stays whole, as MuiButton keeps it.
+     */
+    MuiDialogActions: {
+      styleOverrides: { root: { flexWrap: 'wrap', rowGap: 8 } },
+    },
+    /**
+     * A banner's actions drop below its message when the two do not fit
+     * side by side, rather than pushing the page wider than the screen
+     * (found by text-size.spec at 320px). The message keeps a floor beside
+     * the icon, so it is not squeezed to a column of words first; the
+     * actions sit at the right on their own line.
+     */
     MuiAlert: {
-      styleOverrides: { root: { borderRadius: RADIUS.panel } },
+      styleOverrides: {
+        root: { borderRadius: RADIUS.panel, flexWrap: 'wrap' },
+        message: { flex: '1 1 0', minWidth: `min(${rem(160)}, 100%)` },
+        action: { maxWidth: '100%' },
+      },
     },
     /**
      * A tinted chip with its tone's text, in both modes. The words carry

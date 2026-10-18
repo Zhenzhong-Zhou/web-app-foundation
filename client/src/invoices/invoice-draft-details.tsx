@@ -7,6 +7,7 @@ import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { BLANK_LINE } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
+import { rem } from '../theme/rem';
 
 /**
  * The draft's own fields, and one tax code for every line at once — most
@@ -85,7 +86,7 @@ export function DraftDetails({
                 value={dueDate}
                 onChange={(event) => setDueDate(event.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ minWidth: 200 }}
+                sx={{ minWidth: rem(200) }}
               />
               <TextField
                 id="invoice-note"
@@ -140,7 +141,7 @@ export function DraftDetails({
             })}
             value={taxCodeId}
             onChange={(event) => setTaxCodeId(event.target.value)}
-            sx={{ minWidth: 260 }}
+            sx={{ minWidth: rem(260) }}
             helperText={
               taxCodes.length === 0
                 ? intl.formatMessage({

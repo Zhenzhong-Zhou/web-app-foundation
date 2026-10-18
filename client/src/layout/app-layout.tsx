@@ -31,6 +31,7 @@ import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { LanguageSelect } from '../components/language-select';
 import { PersonAvatar } from '../components/person-avatar';
+import { TextSizeSelect } from '../components/text-size-select';
 import { NameAndEmail } from '../components/who-and-when';
 import { api } from '../lib/api';
 import { initialsOf } from '../lib/person-initials';
@@ -40,7 +41,8 @@ import { IdleGuard } from './idle-guard';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
 import { OrganizationMark } from './organization-mark';
-import { RAIL_FOLDED_WIDTH, RAIL_WIDTH, SideNav } from './side-nav';
+import { RAIL_FOLDED_WIDTH, RAIL_WIDTH } from './rail';
+import { SideNav } from './side-nav';
 import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
 
 /**
@@ -338,6 +340,12 @@ export function AppLayout() {
               >
                 <LanguageSelect />
               </MenuItem>
+              <MenuItem
+                disableRipple
+                sx={{ '&:hover': { bgcolor: 'transparent' } }}
+              >
+                <TextSizeSelect />
+              </MenuItem>
 
               <Divider />
 
@@ -369,7 +377,12 @@ export function AppLayout() {
           onClose={() => setDrawer(false)}
           slotProps={{
             paper: {
-              sx: { width: RAIL_WIDTH + 48, bgcolor: 'rail.bg', px: 1, py: 1 },
+              sx: {
+                width: `calc(${RAIL_WIDTH} + 48px)`,
+                bgcolor: 'rail.bg',
+                px: 1,
+                py: 1,
+              },
             },
           }}
         >

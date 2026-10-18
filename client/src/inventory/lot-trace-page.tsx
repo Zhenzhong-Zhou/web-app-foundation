@@ -42,6 +42,7 @@ import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { LicenceAtRelease } from '../licences/licence-at-release';
 import { withUnit } from '../products/units';
+import { rem } from '../theme/rem';
 
 /**
  * Finding a lot by the start of its code (ADR-044).
@@ -124,7 +125,7 @@ export function LotSearchPage() {
             defaultMessage:
               'Any part of the code works — the batch number is usually enough. Press Enter to search.',
           })}
-          sx={{ maxWidth: 420 }}
+          sx={{ maxWidth: rem(420) }}
           fullWidth
         />
       </Box>

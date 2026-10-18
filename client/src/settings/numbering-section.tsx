@@ -46,6 +46,7 @@ import {
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
+import { rem } from '../theme/rem';
 
 const SERIES = [
   'invoice',
@@ -496,7 +497,7 @@ function NumberingForm({
           },
         },
       }}
-      sx={fullWidth ? undefined : { width: 170 }}
+      sx={fullWidth ? undefined : { width: rem(170) }}
     />
   );
 
@@ -518,7 +519,7 @@ function NumberingForm({
           max: 10,
         },
       }}
-      sx={fullWidth ? undefined : { width: 80 }}
+      sx={fullWidth ? undefined : { width: rem(80) }}
     />
   );
 
@@ -534,7 +535,7 @@ function NumberingForm({
       slotProps={{
         htmlInput: { 'aria-label': fieldLabel(key, STARTS_AGAIN) },
       }}
-      sx={fullWidth ? undefined : { width: 150 }}
+      sx={fullWidth ? undefined : { width: rem(150) }}
     >
       {RESETS.map((each) => (
         <MenuItem key={each} value={each}>
@@ -562,7 +563,7 @@ function NumberingForm({
             min: 1,
           },
         }}
-        sx={{ width: 110 }}
+        sx={{ width: rem(110) }}
       />
       {numbering[key].last && (
         <Typography variant="caption" color="text.secondary" noWrap>

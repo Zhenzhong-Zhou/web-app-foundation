@@ -20,6 +20,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { ExportButton } from '../components/export-button';
+import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { When, Who } from '../components/who-and-when';
@@ -28,6 +29,7 @@ import { withInstants } from '../lib/date-range';
 import { NO_VALUE, SEPARATOR } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { rem } from '../theme/rem';
 import { type AuditRecord, describe, summarise } from './audit-format';
 
 /**
@@ -193,7 +195,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
 
       {/* Their own row rather than beside the title: three controls crowd a
           heading, and an actor filter is the obvious next one. */}
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+      <FilterRow>
         {!mine && (
           <TextField
             id="audit-action"
@@ -205,7 +207,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
             size="small"
             value={action}
             onChange={(event) => changeFilter({ action: event.target.value })}
-            sx={{ minWidth: 220 }}
+            sx={{ minWidth: rem(220) }}
           >
             <MenuItem value="">
               {intl.formatMessage({
@@ -246,7 +248,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
           onChange={(event) => changeFilter({ to: event.target.value })}
           slotProps={{ inputLabel: { shrink: true } }}
         />
-      </Stack>
+      </FilterRow>
 
       {/* As below, for one person's work, opened from their page. */}
       {actorId && (
@@ -347,7 +349,11 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
                 <TableBody>
                   {entries.map((entry) => (
                     <TableRow key={entry.id}>
-                      <TableCell>
+                      {/* A floor, so on a phone the table scrolls inside its
+                          box rather than squeezing what happened into a
+                          column of single words. Codes in it stay whole,
+                          as everywhere (ADR-055). */}
+                      <TableCell sx={{ minWidth: rem(260) }}>
                         {describe(entry.action)}
                         {/* Which one. Without it the organization-wide log
                           reads as a column of "Product updated" (ADR-038). */}

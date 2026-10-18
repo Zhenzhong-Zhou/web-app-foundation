@@ -12,6 +12,7 @@ import { useIntl } from 'react-intl';
 
 import { useCan } from '../auth/permissions';
 import { openDialog } from '../lib/open-dialog';
+import { rem } from '../theme/rem';
 import { HistoryEntries } from './history-entries';
 
 /**
@@ -55,7 +56,7 @@ export function HistoryButton({ resourceId }: { resourceId: string }) {
         anchor="right"
         open={open}
         onClose={() => setOpen(false)}
-        slotProps={{ paper: { sx: { width: { xs: '100%', sm: 420 } } } }}
+        slotProps={{ paper: { sx: { width: { xs: '100%', sm: rem(420) } } } }}
       >
         {/* Mounted only while open, so each open starts from nothing and
             fetches fresh — no stale list flashing before the new one. */}

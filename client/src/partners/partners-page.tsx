@@ -90,7 +90,7 @@ export function PartnersPage() {
           defaultMessage: 'Partners',
         })}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             {/* Every partner, with billing addresses (ADR-057). */}
             <ExportButton path="/partners/export" />
             <Button
@@ -111,7 +111,7 @@ export function PartnersPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
       />
 

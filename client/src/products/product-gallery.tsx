@@ -31,6 +31,7 @@ import { useIntl } from 'react-intl';
 
 import type { ProductImage } from '../api/types.gen';
 import { api, messageFor } from '../lib/api';
+import { rem } from '../theme/rem';
 import { uploadProductImage, type UploadState } from './upload-image';
 
 /** ADR-062's limit, as the server holds it. */
@@ -956,7 +957,7 @@ function Viewer({
           <Typography
             variant="body2"
             aria-live="polite"
-            sx={{ minWidth: 48, textAlign: 'center' }}
+            sx={{ minWidth: rem(48), textAlign: 'center' }}
           >
             {intl.formatNumber(scale, {
               style: 'percent',

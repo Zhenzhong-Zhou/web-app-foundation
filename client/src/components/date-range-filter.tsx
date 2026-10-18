@@ -8,6 +8,7 @@ import {
   RANGE_PRESETS,
   type RangePreset,
 } from '../lib/date-range';
+import { rem } from '../theme/rem';
 
 const PRESETS = defineMessages<RangePreset>({
   thisMonth: { id: 'filters.range.thisMonth', defaultMessage: 'This month' },
@@ -46,8 +47,14 @@ export function DateRangeFilter({
     { date: label },
   );
 
+  // Wraps: two dates and Period are wider than a phone, at any text size.
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+    <Stack
+      direction="row"
+      useFlexGap
+      spacing={1}
+      sx={{ alignItems: 'center', flexWrap: 'wrap' }}
+    >
       <TextField
         type="date"
         size="small"
@@ -57,7 +64,7 @@ export function DateRangeFilter({
           onChange({ ...value, from: event.target.value || undefined })
         }
         slotProps={{ inputLabel: { shrink: true } }}
-        sx={{ width: 170 }}
+        sx={{ width: rem(170) }}
       />
       <TextField
         type="date"
@@ -68,7 +75,7 @@ export function DateRangeFilter({
           onChange({ ...value, to: event.target.value || undefined })
         }
         slotProps={{ inputLabel: { shrink: true } }}
-        sx={{ width: 170 }}
+        sx={{ width: rem(170) }}
       />
       <Button
         variant="outlined"

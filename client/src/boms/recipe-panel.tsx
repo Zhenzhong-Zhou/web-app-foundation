@@ -25,6 +25,7 @@ import { openDialog } from '../lib/open-dialog';
 import { licenceStatus } from '../licences/licence-status';
 import { LicenceStatusChip } from '../licences/licence-status-chip';
 import type { Variant } from '../products/products-page';
+import { rem } from '../theme/rem';
 import { AddBomLineDialog } from './add-bom-line-dialog';
 import { bomStatusLabel } from './bom-status';
 import { CreateBomDialog } from './create-bom-dialog';
@@ -241,7 +242,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
             size="small"
             value={variantId}
             onChange={(event) => setVariantId(event.target.value)}
-            sx={{ minWidth: 200 }}
+            sx={{ minWidth: rem(200) }}
           >
             {variants.map((variant) => (
               <MenuItem key={variant.id} value={variant.id}>
@@ -294,7 +295,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
           size="small"
           value={selected?.id ?? ''}
           onChange={(event) => void load(event.target.value)}
-          sx={{ maxWidth: 260 }}
+          sx={{ maxWidth: rem(260) }}
         >
           {versions.map((version) => (
             <MenuItem key={version.id} value={version.id}>
@@ -335,7 +336,11 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
             <Stack
               direction="row"
               spacing={1.5}
-              sx={{ alignItems: 'center', flex: '1 1 320px', minWidth: 0 }}
+              sx={{
+                alignItems: 'center',
+                flex: `1 1 ${rem(320)}`,
+                minWidth: 0,
+              }}
             >
               <Chip
                 label={bomStatusLabel(selected.status)}
@@ -494,7 +499,7 @@ export function RecipePanel({ variants }: { variants: Variant[] }) {
                   body: { licenceId: event.target.value || null },
                 });
               }}
-              sx={{ maxWidth: 360 }}
+              sx={{ maxWidth: rem(360) }}
               helperText={
                 isDraft
                   ? intl.formatMessage({

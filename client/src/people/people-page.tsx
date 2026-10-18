@@ -17,6 +17,7 @@ import { PageHeader } from '../components/page-header';
 import { PersonAvatar } from '../components/person-avatar';
 import { useResource } from '../lib/use-resource';
 import { roleLabel } from '../members/role-names';
+import { rem } from '../theme/rem';
 import { type Person, phoneLine } from './people-types';
 
 /** One line of a card, cut with an ellipsis, whole on hover. */
@@ -89,7 +90,7 @@ export function PeoplePage() {
                 }),
               },
             }}
-            sx={{ width: { xs: '100%', sm: 340 } }}
+            sx={{ width: { xs: '100%', sm: rem(340) } }}
           />
         }
       />

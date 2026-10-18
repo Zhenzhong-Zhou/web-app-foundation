@@ -37,6 +37,7 @@ import {
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { SiteSelect } from '../locations/site-select';
+import { rem } from '../theme/rem';
 import { resolutionLabel, RESOLUTIONS } from './rma-labels';
 
 /**
@@ -271,7 +272,7 @@ export function RaiseRmaDialog({
                       <TableCell align="right">
                         {formatQuantity(line.quantityReturned)}
                       </TableCell>
-                      <TableCell align="right" sx={{ width: 140 }}>
+                      <TableCell align="right" sx={{ width: rem(140) }}>
                         <TextField
                           size="small"
                           value={quantities[line.id] ?? ''}
@@ -296,7 +297,7 @@ export function RaiseRmaDialog({
                           }}
                         />
                       </TableCell>
-                      <TableCell sx={{ width: 220 }}>
+                      <TableCell sx={{ width: rem(220) }}>
                         <TextField
                           select
                           size="small"

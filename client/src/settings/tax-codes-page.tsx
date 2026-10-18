@@ -63,7 +63,7 @@ export function TaxCodesPage() {
             'Every invoice line carries one. A code can charge two taxes on the same amount, like GST and PST together; a code that charges nothing is Exempt. Changing a rate only affects invoices issued afterwards — issued ones keep the rate they were issued with.',
         })}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             {canCreate && (
               <Button onClick={openDialog(() => setCreating(true))}>
                 {intl.formatMessage({
@@ -72,7 +72,7 @@ export function TaxCodesPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
       />
 

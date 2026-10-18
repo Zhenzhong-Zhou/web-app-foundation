@@ -17,6 +17,7 @@ import { api, messageFor } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import { nearStatus, normalizeHex, safeAccent } from '../theme/accent';
 import { DEFAULT_BRAND } from '../theme/brand-store';
+import { rem } from '../theme/rem';
 import { RAILS } from '../theme/tokens';
 
 /** ADR-060's six, each tested in both modes: none needs adjusting. */
@@ -232,7 +233,7 @@ export function BrandingForm({
             display: 'grid',
             gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
             gap: 1.5,
-            maxWidth: 520,
+            maxWidth: rem(520),
           }}
         >
           {(['dark', 'light'] as const).map((side) => (
@@ -299,7 +300,7 @@ export function BrandingForm({
               sm: 'repeat(3, minmax(0, 1fr))',
             },
             gap: 1,
-            maxWidth: 600,
+            maxWidth: rem(600),
           }}
         >
           {PRESETS.map(([name, hex]) => (
@@ -344,7 +345,7 @@ export function BrandingForm({
             })}
             value={custom}
             onChange={(event) => setCustom(event.target.value)}
-            sx={{ maxWidth: 240 }}
+            sx={{ maxWidth: rem(240) }}
           />
         )}
         {safe?.adjusted && chosen && (

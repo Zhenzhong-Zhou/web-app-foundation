@@ -7,6 +7,9 @@ import UpdateOutlined from '@mui/icons-material/UpdateOutlined';
 import { Box, Paper, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import { rem } from '../theme/rem';
+import { TYPE } from '../theme/tokens';
+
 /**
  * The status page's kinds (conventions.md, "Status pages"): each an icon
  * and a tone, calm for what is merely not there, amber for what is not
@@ -55,7 +58,7 @@ export function StatusPage({
   const body = (
     <Stack
       spacing={1.75}
-      sx={{ alignItems: 'center', textAlign: 'center', maxWidth: 520 }}
+      sx={{ alignItems: 'center', textAlign: 'center', maxWidth: rem(520) }}
     >
       <Box
         aria-hidden
@@ -75,7 +78,7 @@ export function StatusPage({
       <Typography variant="h4" component="h1">
         {title}
       </Typography>
-      <Typography color="text.secondary" sx={{ fontSize: 17 }}>
+      <Typography color="text.secondary" sx={{ fontSize: rem(TYPE.section) }}>
         {message}
       </Typography>
       <Stack
@@ -101,7 +104,10 @@ export function StatusPage({
           bgcolor: 'background.default',
         }}
       >
-        <Paper variant="outlined" sx={{ p: { xs: 3, sm: 5 }, maxWidth: 480 }}>
+        <Paper
+          variant="outlined"
+          sx={{ p: { xs: 3, sm: 5 }, maxWidth: rem(480) }}
+        >
           {body}
         </Paper>
       </Box>

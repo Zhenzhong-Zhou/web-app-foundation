@@ -119,12 +119,12 @@ export function InvoicesPage() {
             'An invoice bills one shipment, and is created from it on the order. Once issued it never changes — a mistake is voided with a credit note and invoiced again.',
         })}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             <ExportButton
               path={path.replace('/invoices', '/invoices/export')}
             />
             <CreditNotesLink />
-          </Stack>
+          </>
         }
       />
 

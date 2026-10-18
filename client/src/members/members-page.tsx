@@ -125,7 +125,7 @@ export function MembersPage() {
           defaultMessage: 'Members',
         })}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             <Button
               variant="text"
               disabled={loading}
@@ -147,7 +147,7 @@ export function MembersPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
       />
 

@@ -1178,11 +1178,75 @@ few invoices and orders.
   before Orders. With today's prefixes, typing SO- or PO- lists Orders
   first.
 
+## 28. Text size (ADR-075)
+
+Any page, signed in, in a browser at its default font size.
+
+- **MC-2801** *(ADR-075)* Open the avatar menu: Text size sits under the
+  colour mode and the language, reading Standard text. Open it: Standard
+  text, Large text and Larger text, each drawn at the size it gives.
+- **MC-2802** *(ADR-075)* Choose Larger text: every word on the page grows
+  at once, the rail and the summary panel widen with it, and nothing else
+  moves. Reload: it opens at Larger, with no flash of the smaller size.
+  Open a second tab of the app: it is at Larger too, and changing it there
+  changes the first tab.
+- **MC-2803** *(ADR-075)* At Larger, walk Home, Inventory, SO-DEMO-1 and
+  INV-000001 at 1280px wide: no label in the rail is cut sooner than at
+  Standard, no page scrolls sideways (a table may, inside its own box),
+  and quantities fit in the ship and receive dialogs' fields. A person's
+  page keeps its labels on one line, and a record's History drawer and the
+  People search widen with the text. In 简体中文 the captions under
+  figures read comfortably.
+- **MC-2804** *(ADR-075)* Set the browser's own font size to Large (Chrome:
+  Settings → Appearance), then choose Large text: the text is larger than
+  either alone, since the choice multiplies the browser's. Back to
+  Standard text, the browser's size alone stands. Set the browser back.
+- **MC-2805** *(ADR-075)* Sign out: the sign-in page shows the language,
+  then Text size, above the card. Choose Large text: the page grows before
+  signing in, and stays so after.
+- **MC-2806** *(ADR-075)* With VoiceOver on (⌘ F5), open a product with a
+  weight and Tab to its variant's chevron: it is read as Details of its
+  SKU, collapsed; pressing it reads expanded.
+- **MC-2807** *(ADR-075)* Turn on Reduce motion (macOS: System Settings →
+  Accessibility → Display). The drawer below 1200px, menus and dialogs
+  appear without sliding or fading, and the gallery's zoom jumps rather
+  than eases. A loading spinner still turns.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R20** *(dialogs on a phone)* In Français, at 320 px with Larger
+  text, open Emplacements → Ajouter un emplacement: Ajouter un emplacement
+  sits under Annuler at the right, inside the dialog, and the dialog does
+  not scroll sideways. In English, Cancel and Add location fit side by
+  side. At 1280 px they sit side by side in both.
+- **MC-R19** *(Home on a phone)* In an organization whose Getting started
+  is done or dismissed, open Home at 320 px: To ship, To receive and
+  Expiring soon each fill the width, one under another, and the page does
+  not scroll sideways. At 1280 px they sit side by side as before.
+- **MC-R18** *(buttons on a phone)* At 320 px with Larger text, open
+  Inventory, Orders and Account. Inventory's Export, Trace a lot and Refresh
+  wrap onto a second line at the right; Account's Change password and Your
+  devices wrap; on Organization → Profile, Download everything (ZIP) breaks
+  onto two lines inside its button. On Orders, Invoices and Movements the
+  two dates and Period wrap under the search. No page scrolls sideways. At 1280 px, at
+  Standard, every button reads on one line as before.
+- **MC-R17** *(audit log on a phone)* On a phone (DevTools, 390 px), open
+  Records → Audit log with a few Numbering changed entries: the action, from
+  and to filters wrap onto lines of their own, the page does not scroll
+  sideways, and each entry reads as sentences in a column wide enough for
+  them, the table scrolling inside its box to show By, When and From. Your
+  activity on Account the same.
+- **MC-R16** *(banner on a phone)* As an Owner, schedule the organization's
+  deletion, then view any page at 390 px and at 320 px: the banner's words
+  sit beside its icon, and Download everything, Cancel deletion and × move
+  under them, wrapping if they must; nothing runs off the screen. On a
+  desktop they stay to the right of the words. Cancel the deletion.
+- **MC-R15** *(organization page)* At 1280 px, Settings → Organization →
+  Profile does not scroll sideways. Change the time zone with VoiceOver on:
+  the new zone is still announced.
 - **MC-R14** *(audit dates)* In Records → Audit log, change something,
   then set both dates to today: the change is listed. Before, To left out
   its own day. Do the same on Your activity, and export each: the file
@@ -1434,3 +1498,15 @@ first.
   MC-2708 extended.
 - 2026-10-18: a bad digits or next number says why: MC-2703 extended.
 - 2026-10-18: ADR-073, the lookup by the organization's prefixes: MC-2713.
+- 2026-10-18: ADR-075, the text size: section 28, MC-2801 to MC-2805.
+- 2026-10-18: a variant's chevron is named: MC-2806.
+- 2026-10-18: ADR-075, less motion when asked: MC-2807.
+- 2026-10-18: the time zone's announcer widened the page: MC-R15.
+- 2026-10-18: a banner's buttons on a phone: MC-R16.
+- 2026-10-18: the audit log on a phone: MC-R17.
+- 2026-10-18: rows of buttons and long labels on a phone: MC-R18.
+- 2026-10-18: the date range on a phone: MC-R18 extended.
+- 2026-10-18: Home's cards on a phone: MC-R19.
+- 2026-10-18: widths that hold text on a person's page, in History and on
+  People: MC-2803 extended.
+- 2026-10-18: a dialog's buttons on a phone: MC-R20.

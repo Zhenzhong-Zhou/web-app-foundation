@@ -2,6 +2,7 @@ import { Box, Container, Paper, Stack, Typography } from '@mui/material';
 import type { ReactNode, SubmitEvent } from 'react';
 
 import { LanguageSelect } from '../components/language-select';
+import { TextSizeSelect } from '../components/text-size-select';
 
 /**
  * The frame every unauthenticated screen shares. Extracted at five, not two —
@@ -23,9 +24,19 @@ export function AuthLayout({
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
       {/* Before anything else, so someone who cannot read the page can
-          still find the one control that changes it (ADR-054). */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          still find the controls that change it: its language first
+          (ADR-054), then its text size (ADR-075). */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'flex-end',
+          gap: 1,
+          mb: 2,
+        }}
+      >
         <LanguageSelect />
+        <TextSizeSelect />
       </Box>
       <Paper sx={{ p: 4 }} elevation={0} variant="outlined">
         <Typography variant="h5" component="h1" sx={{ mb: 3 }}>

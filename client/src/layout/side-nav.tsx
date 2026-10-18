@@ -5,10 +5,6 @@ import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useCan } from '../auth/permissions';
 import { isActive, NAV_GROUPS, type NavItem } from './navigation';
 
-/** The rail open, then folded to its icons. */
-export const RAIL_WIDTH = 232;
-export const RAIL_FOLDED_WIDTH = 64;
-
 /**
  * The navigation itself (ADR-055), drawn by the rail and by the drawer
  * alike, so the two cannot list different places.

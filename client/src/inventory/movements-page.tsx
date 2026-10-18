@@ -35,6 +35,7 @@ import {
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { leavesOf } from '../locations/tree';
+import { rem } from '../theme/rem';
 import { describeMovement } from './describe-movement';
 import {
   MOVEMENT_HEADINGS,
@@ -174,7 +175,7 @@ export function MovementsPage() {
           })}
           value={locationId}
           onChange={(event) => setLocationId(event.target.value)}
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: rem(200) }}
         >
           <MenuItem value="">
             {intl.formatMessage({
@@ -196,7 +197,7 @@ export function MovementsPage() {
           label={intl.formatMessage(MOVEMENT_HEADINGS.why)}
           value={reason}
           onChange={(event) => setReason(event.target.value)}
-          sx={{ minWidth: 160 }}
+          sx={{ minWidth: rem(160) }}
         >
           <MenuItem value="">
             {intl.formatMessage({

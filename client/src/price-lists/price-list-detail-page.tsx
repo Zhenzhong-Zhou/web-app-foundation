@@ -130,7 +130,7 @@ export function PriceListDetailPage() {
           list.currency,
         ].join(SEPARATOR)}
         actions={
-          <Stack direction="row" spacing={1}>
+          <>
             {/* Its items as a spreadsheet, to send a customer (ADR-057). */}
             <ExportButton path={`/price-lists/${id}/export`} />
             <HistoryButton resourceId={list.id} />
@@ -153,7 +153,7 @@ export function PriceListDetailPage() {
                 })}
               </Button>
             )}
-          </Stack>
+          </>
         }
       />
 

@@ -174,7 +174,17 @@ export function OrganizationDeletionBanner() {
       tabIndex={-1}
       severity="warning"
       action={
-        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+        // Wraps on a phone: two buttons and × are wider than its screen.
+        <Stack
+          direction="row"
+          useFlexGap
+          spacing={0.5}
+          sx={{
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+          }}
+        >
           {can('organizations.export') && (
             <Button size="small" href={exportUrl} download>
               {intl.formatMessage({

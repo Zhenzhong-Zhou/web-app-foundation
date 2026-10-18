@@ -8,6 +8,8 @@ import {
 } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import { rem } from '../theme/rem';
+
 /** A filter that is on or off, with how many rows it would leave. */
 export interface QuickFilter {
   id: string;
@@ -46,7 +48,7 @@ export function FilterRow({
           label={search.label}
           value={search.value}
           onChange={(event) => search.onChange(event.target.value)}
-          sx={{ flex: '1 1 260px' }}
+          sx={{ flex: `1 1 ${rem(260)}` }}
           slotProps={{
             input: {
               startAdornment: (
