@@ -18,7 +18,6 @@ import {
   totals,
 } from '../../core/documents/sheet';
 import { t } from '../../i18n/translate';
-import { fileNameOf } from '../numbering/numbering-format';
 import type { ProForma } from './pro-forma.service';
 
 const TITLE = t({
@@ -136,7 +135,7 @@ export function printableProForma(proForma: ProForma): Printable {
     secondLanguage: proForma.secondLanguage,
     // Nothing is copied: it formats in the organization's country as now.
     sellerCountry: null,
-    name: () => `${fileNameOf(proForma.orderNumber)}-pro-forma.pdf`,
+    name: () => `${proForma.orderNumber}-pro-forma.pdf`,
     which: (doc) => kindAndNumber(doc.label(TITLE), proForma.orderNumber),
     draw: (doc) => proFormaDocument(proForma, doc),
   };

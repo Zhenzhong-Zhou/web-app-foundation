@@ -6,6 +6,7 @@ import {
   type Letterhead,
   type Printable,
 } from '../../core/documents/documents.service';
+import { fileNameOf } from '../../core/files/content-disposition';
 import {
   ExportContributions,
   type ExportContributor,
@@ -13,7 +14,6 @@ import {
 } from '../../core/organizations/export-contributions';
 import type { Transaction } from '../../database/database.module';
 import { creditNotes, invoices } from '../../database/schema';
-import { fileNameOf } from '../numbering/numbering-format';
 import { printableCreditNote } from './credit-note-document';
 import { printableInvoice } from './invoice-document';
 import { InvoicesService } from './invoices.service';

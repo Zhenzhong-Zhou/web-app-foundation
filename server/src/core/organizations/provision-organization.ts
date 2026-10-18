@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
 import {
+  DEFAULT_NUMBERING,
   DOCUMENT_TYPES,
   documentNumbering,
   organizations,
@@ -9,7 +10,6 @@ import {
   rolePermissions,
   roles,
 } from '../../database/schema';
-import { DEFAULT_NUMBERING } from '../../modules/numbering/numbering-format';
 import {
   SYSTEM_ROLE_DESCRIPTIONS,
   SYSTEM_ROLE_PERMISSIONS,

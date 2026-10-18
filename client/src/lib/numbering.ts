@@ -1,4 +1,5 @@
 import type { CalendarDay, NumberingReset } from './api-names';
+import { calendarDay } from './date-range';
 
 /**
  * How a number is written (ADR-073), as the server writes it
@@ -10,6 +11,10 @@ import type { CalendarDay, NumberingReset } from './api-names';
 type Token = 'YYYY' | 'YY' | 'MM' | 'DD';
 
 const TOKEN_WIDTH: Record<Token, number> = { YYYY: 4, YY: 2, MM: 2, DD: 2 };
+
+/** The most a prefix prints, and with its digits (Italy and France take 20). */
+const MAX_PRINTED_PREFIX = 16;
+const MAX_PRINTED_NUMBER = 20;
 
 type Piece = { text: string } | { token: Token };
 
@@ -45,7 +50,7 @@ function piecesOf(prefix: string): Piece[] | null {
 const tokensOf = (pieces: Piece[]): Token[] =>
   pieces.flatMap((piece) => ('token' in piece ? [piece.token] : []));
 
-export function printedLength(prefix: string): number {
+function printedLength(prefix: string): number {
   return (piecesOf(prefix) ?? []).reduce(
     (sum, piece) =>
       sum + ('token' in piece ? TOKEN_WIDTH[piece.token] : piece.text.length),
@@ -81,8 +86,8 @@ export function prefixProblem(
   if (texts.some((text) => text.includes('//'))) return 'doubleSlash';
 
   const length = printedLength(prefix);
-  if (length > 16) return 'tooLong';
-  if (length + digits > 20) return 'tooLongWithDigits';
+  if (length > MAX_PRINTED_PREFIX) return 'tooLong';
+  if (length + digits > MAX_PRINTED_NUMBER) return 'tooLongWithDigits';
 
   const year = tokens.includes('YYYY') || tokens.includes('YY');
   const needs: Record<NumberingReset, boolean> = {
@@ -141,14 +146,13 @@ export function nextPeriodStart(
   const year = Number(today.slice(0, 4));
   const month = Number(today.slice(5, 7));
   const date = Number(today.slice(8, 10));
-  const iso = (utc: number) => new Date(utc).toISOString().slice(0, 10);
   switch (reset) {
     case 'yearly':
-      return iso(Date.UTC(year + 1, 0, 1));
+      return calendarDay(year + 1, 0, 1);
     case 'monthly':
-      return iso(Date.UTC(year, month, 1));
+      return calendarDay(year, month, 1);
     case 'daily':
-      return iso(Date.UTC(year, month - 1, date + 1));
+      return calendarDay(year, month - 1, date + 1);
     default:
       return null;
   }

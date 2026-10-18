@@ -27,7 +27,6 @@ import {
 } from '../../core/documents/sheet';
 import type { ReturnResolution } from '../../database/schema';
 import { t, type Translatable } from '../../i18n/translate';
-import { fileNameOf } from '../numbering/numbering-format';
 import type { ReturnAuthorizationPrint } from './return-authorization-print.service';
 
 const TITLE = t({
@@ -312,7 +311,7 @@ export function printableReturnAuthorization(
     language: rma.language,
     secondLanguage: rma.secondLanguage,
     sellerCountry: null,
-    name: () => `${fileNameOf(rma.number)}.pdf`,
+    name: () => `${rma.number}.pdf`,
     which: (doc) => kindAndNumber(doc.label(TITLE), rma.number),
     draw: (doc) => returnAuthorizationDocument(rma, doc),
   };

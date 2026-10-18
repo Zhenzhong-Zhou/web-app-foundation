@@ -6,6 +6,7 @@ import type { Numbering } from '../api/types.gen';
 import type { CalendarDay } from '../lib/api-names';
 import { formatDay } from '../lib/format';
 import { periodKey } from '../lib/numbering';
+import { organizationToday } from '../lib/time-zone';
 import { useResource } from '../lib/use-resource';
 
 /**
@@ -14,10 +15,24 @@ import { useResource } from '../lib/use-resource';
  * today's takes that period's next number. Said only then, and only for a
  * series that starts again: on a normal day nobody sees it.
  *
- * Read when the dialog opens, which is when this mounts; a member who may
- * not read the numbering simply sees no hint.
+ * The numbering is read only once the date leaves today, since today's
+ * date always takes today's number; a member who may not read the
+ * numbering simply sees no hint.
  */
 export function PeriodHint({
+  series,
+  day,
+}: {
+  series: 'invoice' | 'creditNote';
+  day: CalendarDay;
+}) {
+  if (day === organizationToday() || !/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+    return null;
+  }
+  return <OtherPeriodHint series={series} day={day} />;
+}
+
+function OtherPeriodHint({
   series,
   day,
 }: {
@@ -28,7 +43,7 @@ export function PeriodHint({
   const { data } = useResource<{ numbering: Numbering }>(
     '/organization/numbering',
   );
-  if (!data || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  if (!data) return null;
 
   const { reset } = data.numbering[series];
   const { today } = data.numbering;

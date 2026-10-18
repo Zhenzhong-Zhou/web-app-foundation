@@ -174,6 +174,9 @@ export class LookupService {
         if (results.length > 0) groups.push({ kind, results });
       }
 
+      // With one kind found or none, there is no order to choose.
+      if (groups.length < 2) return { groups };
+
       const prefixes = await tx
         .select({
           documentType: documentNumbering.documentType,

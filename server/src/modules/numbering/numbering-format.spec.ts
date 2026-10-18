@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   couldPrintSame,
-  fileNameOf,
   formatNumber,
   literalStart,
   patternOf,
@@ -150,9 +149,5 @@ describe('small helpers', () => {
     expect(literalStart('INV-{YYYY}-')).toBe('INV-');
     expect(literalStart('{YYYY}-')).toBe('');
     expect(literalStart('SO-')).toBe('SO-');
-  });
-
-  it('writes / as _ in a file name', () => {
-    expect(fileNameOf('INV/2026/00452')).toBe('INV_2026_00452');
   });
 });

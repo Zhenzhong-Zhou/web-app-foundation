@@ -48,7 +48,7 @@ export const ERROR_CODES = {
   passwordIncorrect: 'password_incorrect',
   /**
    * Two series could print the same numbers (ADR-073): `details.series`
-   * names both, for the screen to mark.
+   * names both, as the API does (`creditNote`), for the screen to mark.
    */
   numberingPrefixShared: 'numbering_prefix_shared',
   /**
@@ -108,22 +108,10 @@ export function codeOf(response: unknown): ErrorCode | undefined {
 
 /**
  * The details beside a code of ours, and only beside one: a body with no
- * known code says nothing more.
+ * known code says nothing more. Only withCode puts them there, typed.
  */
 export function detailsOf(response: unknown): ErrorDetails | undefined {
-  if (!codeOf(response)) return undefined;
-  const { details } = response as { details?: unknown };
-  if (typeof details !== 'object' || details === null) return undefined;
-  const { series, lowest } = details as Record<string, unknown>;
-  const kept: ErrorDetails = {};
-  if (
-    Array.isArray(series) &&
-    series.every((each) => typeof each === 'string')
-  ) {
-    kept.series = series;
-  }
-  if (typeof lowest === 'number' && Number.isSafeInteger(lowest)) {
-    kept.lowest = lowest;
-  }
-  return Object.keys(kept).length > 0 ? kept : undefined;
+  return codeOf(response)
+    ? (response as { details?: ErrorDetails }).details
+    : undefined;
 }

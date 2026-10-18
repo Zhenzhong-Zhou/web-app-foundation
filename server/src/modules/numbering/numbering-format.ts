@@ -1,4 +1,4 @@
-import type { DocumentType, NumberingReset } from '../../database/schema';
+import type { NumberingReset } from '../../database/schema';
 
 /**
  * How a number is written (ADR-073): pure functions, shared by taking a
@@ -8,21 +8,9 @@ import type { DocumentType, NumberingReset } from '../../database/schema';
  * place of each token, then the counter follows, padded to the width.
  */
 
-/** Today's numbers, each organization's numbers until it changes them. */
-export const DEFAULT_NUMBERING: Record<
-  DocumentType,
-  { prefix: string; digits: number; reset: NumberingReset }
-> = {
-  invoice: { prefix: 'INV-', digits: 6, reset: 'never' },
-  credit_note: { prefix: 'CN-', digits: 6, reset: 'never' },
-  return_authorization: { prefix: 'RMA-', digits: 6, reset: 'never' },
-  sale_order: { prefix: 'SO-', digits: 6, reset: 'never' },
-  purchase_order: { prefix: 'PO-', digits: 6, reset: 'never' },
-};
-
 /** The most a prefix prints, and with its digits (Italy and France take 20). */
-export const MAX_PRINTED_PREFIX = 16;
-export const MAX_PRINTED_NUMBER = 20;
+const MAX_PRINTED_PREFIX = 16;
+const MAX_PRINTED_NUMBER = 20;
 
 type Token = 'YYYY' | 'YY' | 'MM' | 'DD';
 
@@ -281,9 +269,4 @@ export function couldPrintSame(a: string, b: string): boolean {
 export function literalStart(prefix: string): string {
   const brace = prefix.indexOf('{');
   return brace === -1 ? prefix : prefix.slice(0, brace);
-}
-
-/** A number as a file name: `/` would make a folder (ADR-073). */
-export function fileNameOf(number: string): string {
-  return number.replaceAll('/', '_');
 }

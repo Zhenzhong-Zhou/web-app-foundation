@@ -37,16 +37,9 @@ describe('detailsOf', () => {
     expect(detailsOf(response)).toEqual({ series: ['invoice'], lowest: 454 });
   });
 
-  it('says nothing without a code of ours, or for anything else', () => {
+  it('says nothing without a code of ours', () => {
     expect(
       detailsOf({ message: 'Nope', details: { lowest: 1 } }),
-    ).toBeUndefined();
-    expect(
-      detailsOf({
-        message: 'Nope',
-        code: 'numbering_number_taken',
-        details: { lowest: 'x', other: 1 },
-      }),
     ).toBeUndefined();
   });
 });

@@ -32,7 +32,6 @@ import {
   sideBySide,
 } from '../../core/documents/sheet';
 import { t } from '../../i18n/translate';
-import { fileNameOf } from '../numbering/numbering-format';
 import type { PurchaseOrderPrint } from './purchase-order-print.service';
 
 const TITLE = t({
@@ -268,7 +267,7 @@ export function printablePurchaseOrder(po: PurchaseOrderPrint): Printable {
     language: po.language,
     secondLanguage: po.secondLanguage,
     sellerCountry: null,
-    name: () => `${fileNameOf(po.number)}.pdf`,
+    name: () => `${po.number}.pdf`,
     which: (doc) => kindAndNumber(doc.label(TITLE), po.number),
     draw: (doc) => purchaseOrderDocument(po, doc),
   };

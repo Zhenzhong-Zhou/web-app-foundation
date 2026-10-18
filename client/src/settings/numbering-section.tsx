@@ -29,7 +29,7 @@ import type { Numbering } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { SettingsSection } from '../components/settings-section';
-import { api, hasCode } from '../lib/api';
+import { api } from '../lib/api';
 import type { NumberingReset } from '../lib/api-names';
 import { formatDay, NO_VALUE } from '../lib/format';
 import {
@@ -43,6 +43,7 @@ import {
   type PrefixProblem,
   prefixProblem,
 } from '../lib/numbering';
+import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 
@@ -56,15 +57,6 @@ const SERIES = [
 
 type SeriesKey = (typeof SERIES)[number];
 
-/** The server's name for each series, as a refusal's details give it. */
-const SERVER_NAME: Record<SeriesKey, string> = {
-  invoice: 'invoice',
-  creditNote: 'credit_note',
-  returnAuthorization: 'return_authorization',
-  saleOrder: 'sale_order',
-  purchaseOrder: 'purchase_order',
-};
-
 /** The letters a common format keeps when a prefix starts otherwise. */
 const LETTERS: Record<SeriesKey, string> = {
   invoice: 'INV',
@@ -75,6 +67,15 @@ const LETTERS: Record<SeriesKey, string> = {
 };
 
 const RESETS: NumberingReset[] = ['never', 'yearly', 'monthly', 'daily'];
+
+const SECTION = defineMessages({
+  title: { id: 'settings.numbering.title', defaultMessage: 'Numbering' },
+  document: { id: 'settings.numbering.document', defaultMessage: 'Document' },
+  startsAgain: {
+    id: 'settings.numbering.startsAgain',
+    defaultMessage: 'Starts again',
+  },
+});
 
 const SERIES_NAME = defineMessages({
   invoice: { id: 'settings.numbering.invoice', defaultMessage: 'Invoices' },
@@ -160,11 +161,11 @@ export function NumberingSection({ readOnly }: { readOnly: boolean }) {
   const { data, error, reload } = useResource<{ numbering: Numbering }>(
     '/organization/numbering',
   );
+  const showSkeleton = useDelayedFlag(!data && !error);
 
   if (!data) {
-    return error ? (
-      <FormError message={error} />
-    ) : (
+    if (error) return <FormError message={error} />;
+    return showSkeleton ? (
       <Skeleton
         variant="rounded"
         height={320}
@@ -173,27 +174,97 @@ export function NumberingSection({ readOnly }: { readOnly: boolean }) {
           defaultMessage: 'Loading numbering',
         })}
       />
-    );
+    ) : null;
   }
 
-  return (
+  return readOnly ? (
+    <NumberingSummary numbering={data.numbering} />
+  ) : (
     <NumberingForm
       // A save reloads the numbering, and the form starts again from it.
       key={JSON.stringify(data.numbering)}
       numbering={data.numbering}
-      readOnly={readOnly}
       onSaved={reload}
     />
   );
 }
 
+/** The numbering as it stands, for a member who may not change it. */
+function NumberingSummary({ numbering }: { numbering: Numbering }) {
+  const intl = useIntl();
+  const title = intl.formatMessage(SECTION.title);
+
+  return (
+    <SettingsSection
+      title={title}
+      onSubmit={(event) => event.preventDefault()}
+      error={null}
+      submitting={false}
+      readOnly
+      saveLabel=""
+    >
+      <TableContainer>
+        <Table size="small" aria-label={title}>
+          <TableHead>
+            <TableRow>
+              <TableCell>{intl.formatMessage(SECTION.document)}</TableCell>
+              <TableCell>{intl.formatMessage(SECTION.startsAgain)}</TableCell>
+              <TableCell>
+                {intl.formatMessage({
+                  id: 'settings.numbering.nextGiven',
+                  defaultMessage: 'Next to be given',
+                })}
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {SERIES.map((key) => {
+              const { prefix, digits, reset, next } = numbering[key];
+              return (
+                <TableRow key={key}>
+                  <TableCell component="th" scope="row">
+                    {intl.formatMessage(SERIES_NAME[key])}
+                  </TableCell>
+                  <TableCell>
+                    {intl.formatMessage(RESET_LABEL[reset])}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>
+                    {formatNumber(prefix, digits, next[reset], numbering.today)}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Typography>
+        {numbering.documentsInDateOrder
+          ? intl.formatMessage({
+              id: 'settings.numbering.inOrder',
+              defaultMessage:
+                'Invoices and credit notes are kept in date order.',
+            })
+          : intl.formatMessage({
+              id: 'settings.numbering.notInOrder',
+              defaultMessage:
+                'Invoices and credit notes are not kept in date order.',
+            })}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        {intl.formatMessage({
+          id: 'settings.numbering.ownerOnly',
+          defaultMessage: 'An Owner can change it.',
+        })}
+      </Typography>
+    </SettingsSection>
+  );
+}
+
 function NumberingForm({
   numbering,
-  readOnly,
   onSaved,
 }: {
   numbering: Numbering;
-  readOnly: boolean;
   onSaved: () => Promise<void>;
 }) {
   const intl = useIntl();
@@ -222,19 +293,18 @@ function NumberingForm({
     {},
   );
 
-  const { submitting, error, errorCode, errorDetails, reset, submit } =
-    useSubmit(
-      async () => {
-        setConfirming(false);
-        await onSaved();
-      },
-      {
-        success: intl.formatMessage({
-          id: 'settings.numbering.saved',
-          defaultMessage: 'Numbering saved',
-        }),
-      },
-    );
+  const { submitting, error, errorDetails, reset, submit } = useSubmit(
+    async () => {
+      setConfirming(false);
+      await onSaved();
+    },
+    {
+      success: intl.formatMessage({
+        id: 'settings.numbering.saved',
+        defaultMessage: 'Numbering saved',
+      }),
+    },
+  );
 
   const set = (key: SeriesKey, change: Partial<Draft>) =>
     setDrafts((current) => ({
@@ -261,6 +331,8 @@ function NumberingForm({
     digitsValid(key)
       ? prefixProblem(drafts[key].prefix, digitsOf(key), drafts[key].reset)
       : null;
+  const validOf = (key: SeriesKey) =>
+    digitsValid(key) && nextValid(key) && problemOf(key) === null;
 
   const clash = SERIES.flatMap((first, index) =>
     SERIES.slice(index + 1)
@@ -279,21 +351,13 @@ function NumberingForm({
   );
   const dirty =
     changed.length > 0 || inOrder !== numbering.documentsInDateOrder;
-  const blocked =
-    clash !== undefined ||
-    SERIES.some(
-      (key) => problemOf(key) || !digitsValid(key) || !nextValid(key),
-    );
+  const blocked = clash !== undefined || !SERIES.every(validOf);
 
   /** The series a refusal named, marked on its row. */
   const refused = new Set(
-    SERIES.filter((key) => errorDetails?.series?.includes(SERVER_NAME[key])),
+    SERIES.filter((key) => errorDetails?.series?.includes(key)),
   );
-  const lowest =
-    hasCode(errorCode, 'numbering_number_taken') &&
-    errorDetails?.lowest !== undefined
-      ? errorDetails.lowest
-      : null;
+  const lowest = errorDetails?.lowest ?? null;
 
   function save() {
     void submit(() =>
@@ -381,10 +445,8 @@ function NumberingForm({
     id: 'settings.numbering.digits',
     defaultMessage: 'Digits',
   });
-  const STARTS_AGAIN = intl.formatMessage({
-    id: 'settings.numbering.startsAgain',
-    defaultMessage: 'Starts again',
-  });
+  const TITLE = intl.formatMessage(SECTION.title);
+  const STARTS_AGAIN = intl.formatMessage(SECTION.startsAgain);
   const NEXT = intl.formatMessage({
     id: 'settings.numbering.next',
     defaultMessage: 'Next number',
@@ -482,7 +544,7 @@ function NumberingForm({
 
   const printsAs = (key: SeriesKey) => {
     const nextStart = nextPeriodStart(drafts[key].reset, today);
-    const valid = problemOf(key) === null && digitsValid(key) && nextValid(key);
+    const valid = validOf(key);
     return (
       <Stack spacing={0.5} sx={{ alignItems: 'flex-start' }}>
         <Box
@@ -528,15 +590,14 @@ function NumberingForm({
     const problem = problemOf(key);
     const formats = commonFormats(lettersOf(drafts[key].prefix, LETTERS[key]));
     const year = today.slice(0, 4);
+    const yearLabel = (value: string) =>
+      intl.formatMessage(
+        { id: 'settings.numbering.token.year', defaultMessage: 'Year {value}' },
+        { value },
+      );
     const tokenLabel: Record<(typeof DATE_TOKENS)[number], string> = {
-      '{YYYY}': intl.formatMessage(
-        { id: 'settings.numbering.token.year', defaultMessage: 'Year {value}' },
-        { value: year },
-      ),
-      '{YY}': intl.formatMessage(
-        { id: 'settings.numbering.token.year', defaultMessage: 'Year {value}' },
-        { value: year.slice(2) },
-      ),
+      '{YYYY}': yearLabel(year),
+      '{YY}': yearLabel(year.slice(2)),
       '{MM}': intl.formatMessage(
         {
           id: 'settings.numbering.token.month',
@@ -675,89 +736,10 @@ function NumberingForm({
     </FormError>
   );
 
-  if (readOnly) {
-    return (
-      <SettingsSection
-        title={intl.formatMessage({
-          id: 'settings.numbering.title',
-          defaultMessage: 'Numbering',
-        })}
-        onSubmit={(event) => event.preventDefault()}
-        error={null}
-        submitting={false}
-        readOnly
-        saveLabel=""
-      >
-        <TableContainer>
-          <Table
-            size="small"
-            aria-label={intl.formatMessage({
-              id: 'settings.numbering.title',
-              defaultMessage: 'Numbering',
-            })}
-          >
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  {intl.formatMessage({
-                    id: 'settings.numbering.document',
-                    defaultMessage: 'Document',
-                  })}
-                </TableCell>
-                <TableCell>{STARTS_AGAIN}</TableCell>
-                <TableCell>
-                  {intl.formatMessage({
-                    id: 'settings.numbering.nextGiven',
-                    defaultMessage: 'Next to be given',
-                  })}
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {SERIES.map((key) => (
-                <TableRow key={key}>
-                  <TableCell component="th" scope="row">
-                    {seriesName(key)}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage(RESET_LABEL[numbering[key].reset])}
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>{printed(key)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <Typography>
-          {numbering.documentsInDateOrder
-            ? intl.formatMessage({
-                id: 'settings.numbering.inOrder',
-                defaultMessage:
-                  'Invoices and credit notes are kept in date order.',
-              })
-            : intl.formatMessage({
-                id: 'settings.numbering.notInOrder',
-                defaultMessage:
-                  'Invoices and credit notes are not kept in date order.',
-              })}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {intl.formatMessage({
-            id: 'settings.numbering.ownerOnly',
-            defaultMessage: 'An Owner can change it.',
-          })}
-        </Typography>
-      </SettingsSection>
-    );
-  }
-
   return (
     <>
       <SettingsSection
-        title={intl.formatMessage({
-          id: 'settings.numbering.title',
-          defaultMessage: 'Numbering',
-        })}
+        title={TITLE}
         onSubmit={handleSubmit}
         error={null}
         submitting={submitting}
@@ -836,21 +818,10 @@ function NumberingForm({
           <TableContainer
             sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}
           >
-            <Table
-              size="small"
-              aria-label={intl.formatMessage({
-                id: 'settings.numbering.title',
-                defaultMessage: 'Numbering',
-              })}
-            >
+            <Table size="small" aria-label={TITLE}>
               <TableHead>
                 <TableRow>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'settings.numbering.document',
-                      defaultMessage: 'Document',
-                    })}
-                  </TableCell>
+                  <TableCell>{intl.formatMessage(SECTION.document)}</TableCell>
                   <TableCell>{PREFIX}</TableCell>
                   <TableCell>{DIGITS}</TableCell>
                   <TableCell>{STARTS_AGAIN}</TableCell>

@@ -3,7 +3,7 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
-import { and, desc, eq, gt, isNotNull, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, isNotNull, sql } from 'drizzle-orm';
 
 import { ERROR_CODES, withCode } from '../../common/error-codes';
 import { recordPrevious } from '../../core/audit/audit-context';
@@ -15,7 +15,7 @@ import {
   documentSequences,
   type DocumentType,
   invoices,
-  NUMBERING_RESETS,
+  type NumberingReset,
   orders,
   organizations,
   returnAuthorizations,
@@ -29,7 +29,6 @@ import type {
 } from './dto/update-numbering.dto';
 import {
   couldPrintSame,
-  DEFAULT_NUMBERING,
   formatNumber,
   patternOf,
   periodKey,
@@ -70,15 +69,11 @@ export class NumberingService {
       const settings = await settingsOf(tx, organizationId);
       const counters = await countersOf(tx, organizationId);
       const last = await lastNumbers(tx, organizationId);
-      const [organization] = await tx
-        .select({ inOrder: organizations.documentsInDateOrder })
-        .from(organizations)
-        .where(eq(organizations.id, organizationId));
 
       const series = (key: SeriesKey): NumberingSeries => {
         const type = SERIES[key];
-        const setting = settings.get(type) ?? DEFAULT_NUMBERING[type];
-        const nextUnder = (reset: (typeof NUMBERING_RESETS)[number]) =>
+        const setting = settings.get(type)!;
+        const nextUnder = (reset: NumberingReset) =>
           standing(counters, type, periodKey(reset, today));
         return {
           prefix: setting.prefix,
@@ -100,7 +95,7 @@ export class NumberingService {
         returnAuthorization: series('returnAuthorization'),
         saleOrder: series('saleOrder'),
         purchaseOrder: series('purchaseOrder'),
-        documentsInDateOrder: organization?.inOrder ?? false,
+        documentsInDateOrder: await inDateOrder(tx, organizationId),
         today,
       };
     });
@@ -139,16 +134,12 @@ export class NumberingService {
         .for('update');
       const current = new Map(rows.map((row) => [row.documentType, row]));
       const counters = await countersOf(tx, organizationId);
-      const [organization] = await tx
-        .select({ inOrder: organizations.documentsInDateOrder })
-        .from(organizations)
-        .where(eq(organizations.id, organizationId));
 
       // Each series as it stood, in the shape it was sent (ADR-018): the
       // next number only where the screen sent one.
       const before = (key: SeriesKey) => {
         const type = SERIES[key];
-        const setting = current.get(type) ?? DEFAULT_NUMBERING[type];
+        const setting = current.get(type)!;
         return {
           prefix: setting.prefix,
           digits: setting.digits,
@@ -166,7 +157,7 @@ export class NumberingService {
         returnAuthorization: before('returnAuthorization'),
         saleOrder: before('saleOrder'),
         purchaseOrder: before('purchaseOrder'),
-        documentsInDateOrder: organization?.inOrder ?? false,
+        documentsInDateOrder: await inDateOrder(tx, organizationId),
       });
 
       KEYS.forEach((first, index) => {
@@ -183,7 +174,7 @@ export class NumberingService {
                   { first: SERIES[first], second: SERIES[second] },
                 ),
                 ERROR_CODES.numberingPrefixShared,
-                { series: [SERIES[first], SERIES[second]] },
+                { series: [first, second] },
               ),
             );
           }
@@ -192,10 +183,9 @@ export class NumberingService {
 
       const changed = KEYS.filter((key) => {
         const wanted = input[key];
-        const setting = current.get(SERIES[key]);
+        const setting = current.get(SERIES[key])!;
         return (
           wanted.next !== undefined ||
-          !setting ||
           setting.prefix !== wanted.prefix ||
           setting.digits !== wanted.digits ||
           setting.reset !== wanted.reset
@@ -203,14 +193,7 @@ export class NumberingService {
       });
 
       for (const key of changed) {
-        await assertFree(
-          tx,
-          organizationId,
-          SERIES[key],
-          input[key],
-          counters,
-          today,
-        );
+        await assertFree(tx, organizationId, key, input[key], counters, today);
       }
 
       for (const key of changed) {
@@ -232,12 +215,27 @@ export class NumberingService {
   }
 }
 
+/**
+ * Each series' settings. Every organization has a row for each, from the
+ * migration or its registration (ADR-073).
+ */
 async function settingsOf(tx: Transaction, organizationId: string) {
   const rows = await tx
     .select()
     .from(documentNumbering)
     .where(eq(documentNumbering.organizationId, organizationId));
   return new Map(rows.map((row) => [row.documentType, row]));
+}
+
+async function inDateOrder(
+  tx: Transaction,
+  organizationId: string,
+): Promise<boolean> {
+  const [organization] = await tx
+    .select({ inOrder: organizations.documentsInDateOrder })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId));
+  return organization.inOrder;
 }
 
 function countersOf(tx: Transaction, organizationId: string) {
@@ -328,11 +326,12 @@ async function lastNumbers(
 async function assertFree(
   tx: Transaction,
   organizationId: string,
-  type: DocumentType,
+  series: SeriesKey,
   wanted: NumberingSeriesDto,
   counters: Counter[],
   today: string,
 ): Promise<void> {
+  const type = SERIES[series];
   const key = periodKey(wanted.reset, today);
   const stands = standing(counters, type, key);
   const next = wanted.next ?? stands;
@@ -377,7 +376,7 @@ async function assertFree(
               { number: row.number, kind: row.kind },
             ),
             ERROR_CODES.numberingNumberTaken,
-            { series: [type] },
+            { series: [series] },
           ),
         );
       }
@@ -403,7 +402,7 @@ async function assertFree(
           },
         ),
         ERROR_CODES.numberingNumberTaken,
-        { series: [type], lowest },
+        { series: [series], lowest },
       ),
     );
   }
@@ -423,7 +422,7 @@ async function assertFree(
           },
         ),
         ERROR_CODES.numberingNumberTaken,
-        { series: [type], lowest: stands },
+        { series: [series], lowest: stands },
       ),
     );
   }
@@ -446,15 +445,14 @@ async function save(
   const { prefix, digits, reset } = wanted;
 
   await tx
-    .insert(documentNumbering)
-    .values({ organizationId, documentType: type, prefix, digits, reset })
-    .onConflictDoUpdate({
-      target: [
-        documentNumbering.organizationId,
-        documentNumbering.documentType,
-      ],
-      set: { prefix, digits, reset },
-    });
+    .update(documentNumbering)
+    .set({ prefix, digits, reset })
+    .where(
+      and(
+        eq(documentNumbering.organizationId, organizationId),
+        eq(documentNumbering.documentType, type),
+      ),
+    );
 
   const open = counters.some(
     (counter) => counter.documentType === type && counter.period === key,
@@ -494,7 +492,6 @@ async function save(
           eq(documentSequences.documentType, type),
           gt(documentSequences.period, key),
           eq(sql`length(${documentSequences.period})`, key.length),
-          ne(documentSequences.period, ''),
         ),
       );
   }

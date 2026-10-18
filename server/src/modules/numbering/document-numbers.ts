@@ -9,7 +9,7 @@ import type {
   OrderDirection,
 } from '../../database/schema';
 import { t } from '../../i18n/translate';
-import { formatNumber, periodBounds } from './numbering-format';
+import { formatNumber, periodBounds, periodKey } from './numbering-format';
 
 /** An order's series, by its direction (ADR-071, amended). */
 export function orderSeries(direction: OrderDirection): DocumentType {
@@ -47,9 +47,9 @@ export async function takeNumber(
       (organization_id, document_type, period, prefix, digits, next_value)
     select n.organization_id, n.document_type,
       case n.reset
-        when 'yearly' then ${day.slice(0, 4)}
-        when 'monthly' then ${day.slice(0, 7)}
-        when 'daily' then ${day.slice(0, 10)}
+        when 'yearly' then ${periodKey('yearly', day)}
+        when 'monthly' then ${periodKey('monthly', day)}
+        when 'daily' then ${periodKey('daily', day)}
         else ''
       end,
       n.prefix, n.digits, 2

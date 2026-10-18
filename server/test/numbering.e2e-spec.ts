@@ -286,7 +286,7 @@ describe('Numbering (e2e)', () => {
       }).expect(409);
       expect(body<Refusal>(same)).toMatchObject({
         code: 'numbering_prefix_shared',
-        details: { series: ['sale_order', 'purchase_order'] },
+        details: { series: ['saleOrder', 'purchaseOrder'] },
         message:
           'Sale orders and purchase orders would print the same numbers. Give each its own prefix.',
       });
@@ -396,7 +396,7 @@ describe('Numbering (e2e)', () => {
       }).expect(409);
       expect(body<Refusal>(taken)).toMatchObject({
         code: 'numbering_number_taken',
-        details: { series: ['sale_order'], lowest: 4 },
+        details: { series: ['saleOrder'], lowest: 4 },
         message:
           'SO-000003 is already a sale order. Under SO-, the next number must be 4 or more.',
       });
@@ -456,7 +456,7 @@ describe('Numbering (e2e)', () => {
         purchaseOrder: { prefix: 'SO-', digits: 6, reset: 'never', next: 1 },
       }).expect(409);
       expect(body<Refusal>(res).details).toEqual({
-        series: ['purchase_order'],
+        series: ['purchaseOrder'],
         lowest: 4,
       });
     });

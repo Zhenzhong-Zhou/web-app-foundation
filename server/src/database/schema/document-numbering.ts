@@ -21,6 +21,18 @@ export const NUMBERING_RESETS = [
 
 export type NumberingReset = (typeof NUMBERING_RESETS)[number];
 
+/** Today's numbers, each organization's numbers until it changes them. */
+export const DEFAULT_NUMBERING: Record<
+  DocumentType,
+  { prefix: string; digits: number; reset: NumberingReset }
+> = {
+  invoice: { prefix: 'INV-', digits: 6, reset: 'never' },
+  credit_note: { prefix: 'CN-', digits: 6, reset: 'never' },
+  return_authorization: { prefix: 'RMA-', digits: 6, reset: 'never' },
+  sale_order: { prefix: 'SO-', digits: 6, reset: 'never' },
+  purchase_order: { prefix: 'PO-', digits: 6, reset: 'never' },
+};
+
 /**
  * How each organization numbers each kind of document (ADR-073): a prefix,
  * which may carry the document's date as {YYYY}, {YY}, {MM} and {DD}, a
