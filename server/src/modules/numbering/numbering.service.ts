@@ -133,6 +133,33 @@ export class NumberingService {
         .where(eq(documentNumbering.organizationId, organizationId))
         .for('update');
       const current = new Map(rows.map((row) => [row.documentType, row]));
+
+      const changed = KEYS.filter((key) => {
+        const wanted = input[key];
+        const setting = current.get(SERIES[key])!;
+        return (
+          wanted.next !== undefined ||
+          setting.prefix !== wanted.prefix ||
+          setting.digits !== wanted.digits ||
+          setting.reset !== wanted.reset
+        );
+      });
+
+      // Then today's counter for each series that changes, before reading
+      // any: an issue lands wholly before the save or wholly after it.
+      await lockTodaysCounters(
+        tx,
+        organizationId,
+        changed.map((key) => {
+          const { prefix, digits } = current.get(SERIES[key])!;
+          return {
+            type: SERIES[key],
+            period: periodKey(input[key].reset, today),
+            prefix,
+            digits,
+          };
+        }),
+      );
       const counters = await countersOf(tx, organizationId);
 
       // Each series as it stood, in the shape it was sent (ADR-018): the
@@ -181,30 +208,12 @@ export class NumberingService {
         }
       });
 
-      const changed = KEYS.filter((key) => {
-        const wanted = input[key];
-        const setting = current.get(SERIES[key])!;
-        return (
-          wanted.next !== undefined ||
-          setting.prefix !== wanted.prefix ||
-          setting.digits !== wanted.digits ||
-          setting.reset !== wanted.reset
-        );
-      });
-
       for (const key of changed) {
         await assertFree(tx, organizationId, key, input[key], counters, today);
       }
 
       for (const key of changed) {
-        await save(
-          tx,
-          organizationId,
-          SERIES[key],
-          input[key],
-          counters,
-          today,
-        );
+        await save(tx, organizationId, SERIES[key], input[key], today);
       }
 
       await tx
@@ -236,6 +245,37 @@ async function inDateOrder(
     .from(organizations)
     .where(eq(organizations.id, organizationId));
   return organization.inOrder;
+}
+
+/**
+ * Takes today's counter for each series a save changes, before the save
+ * reads any (ADR-073). An issue already holding one is waited for, and the
+ * save's checks then see its number; an issue that comes after waits for
+ * the save, and numbers with what it wrote. A counter not yet open is
+ * opened as its first number would open it, with the settings as they
+ * stand; the update changes nothing, and is there for the row lock.
+ *
+ * Exported for the test that holds a save open while an issue runs.
+ */
+export async function lockTodaysCounters(
+  tx: Transaction,
+  organizationId: string,
+  counters: {
+    type: DocumentType;
+    period: string;
+    prefix: string;
+    digits: number;
+  }[],
+): Promise<void> {
+  for (const { type, period, prefix, digits } of counters) {
+    await tx.execute(sql`
+      insert into document_sequences as s
+        (organization_id, document_type, period, prefix, digits, next_value)
+      values (${organizationId}, ${type}, ${period}, ${prefix}, ${digits}, 1)
+      on conflict (organization_id, document_type, period)
+      do update set next_value = s.next_value
+    `);
+  }
 }
 
 function countersOf(tx: Transaction, organizationId: string) {
@@ -429,22 +469,22 @@ async function assertFree(
 }
 
 /**
- * Writes a series' settings, and carries them to today's counter and any
- * later one already open. An earlier period keeps what it numbered with,
- * so a backdated invoice reads like the rest of its year (ADR-073).
+ * Writes a series' settings, and carries them to today's counter, which the
+ * save holds (lockTodaysCounters), and to any later one already open. An
+ * earlier period keeps what it numbered with, so a backdated invoice reads
+ * like the rest of its year (ADR-073).
  */
 async function save(
   tx: Transaction,
   organizationId: string,
   type: DocumentType,
   wanted: NumberingSeriesDto,
-  counters: Counter[],
   today: string,
 ): Promise<void> {
   const key = periodKey(wanted.reset, today);
   const { prefix, digits, reset } = wanted;
 
-  await tx
+  const [setting] = await tx
     .update(documentNumbering)
     .set({ prefix, digits, reset })
     .where(
@@ -452,35 +492,29 @@ async function save(
         eq(documentNumbering.organizationId, organizationId),
         eq(documentNumbering.documentType, type),
       ),
+    )
+    .returning({ documentType: documentNumbering.documentType });
+  if (!setting) {
+    // As in takeNumber: a missing row is a broken record, not a refusal.
+    throw new Error(
+      `No numbering for ${type} in organization ${organizationId}`,
     );
-
-  const open = counters.some(
-    (counter) => counter.documentType === type && counter.period === key,
-  );
-  if (open || wanted.next !== undefined) {
-    await tx
-      .insert(documentSequences)
-      .values({
-        organizationId,
-        documentType: type,
-        period: key,
-        prefix,
-        digits,
-        nextValue: wanted.next ?? standing(counters, type, key),
-      })
-      .onConflictDoUpdate({
-        target: [
-          documentSequences.organizationId,
-          documentSequences.documentType,
-          documentSequences.period,
-        ],
-        set: {
-          prefix,
-          digits,
-          ...(wanted.next !== undefined ? { nextValue: wanted.next } : {}),
-        },
-      });
   }
+
+  await tx
+    .update(documentSequences)
+    .set({
+      prefix,
+      digits,
+      ...(wanted.next !== undefined ? { nextValue: wanted.next } : {}),
+    })
+    .where(
+      and(
+        eq(documentSequences.organizationId, organizationId),
+        eq(documentSequences.documentType, type),
+        eq(documentSequences.period, key),
+      ),
+    );
 
   if (key !== '') {
     await tx

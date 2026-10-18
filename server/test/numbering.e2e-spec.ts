@@ -1,12 +1,21 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 
 import { todayIn } from '../src/common/today';
 import {
   type Database,
+  PG_POOL,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { auditLog, documentNumbering } from '../src/database/schema';
+import * as schema from '../src/database/schema';
+import {
+  auditLog,
+  documentNumbering,
+  documentSequences,
+} from '../src/database/schema';
+import { lockTodaysCounters } from '../src/modules/numbering/numbering.service';
 import {
   addViewer,
   body,
@@ -192,6 +201,25 @@ describe('Numbering (e2e)', () => {
       );
     }
     return ids;
+  }
+
+  /**
+   * Until an issue's number waits on a counter another transaction holds:
+   * its takeNumber statement, blocked on the row lock.
+   */
+  async function untilTakingWaits(): Promise<void> {
+    // About three seconds, inside the test's own five.
+    for (let tries = 0; tries < 60; tries++) {
+      const { rows } = await db.execute<{ waiting: number }>(sql`
+        select count(*)::int as waiting from pg_stat_activity
+        where datname = current_database()
+          and wait_event_type = 'Lock'
+          and query ilike '%insert into document_sequences%'
+      `);
+      if (rows[0].waiting > 0) return;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error('No issue waited for the counter');
   }
 
   async function issue(org: Org, id: string, invoiceDate: string) {
@@ -382,6 +410,53 @@ describe('Numbering (e2e)', () => {
       // way the counter carries on under the new prefix.
       expect(['INV-000001', 'F-000001']).toContain(issued);
       expect(await issue(org, b, today)).toBe('F-000002');
+    });
+
+    it('holds today’s counter, so an issue waits for it and numbers after it', async () => {
+      const org = await registerOrganization(app, 'alpha');
+      const [a] = await drafts(org, 1);
+      const today = (await numbering(org)).today;
+
+      // A save held open, from a pool of the test's own: today's counter
+      // taken before the first invoice opens it, then the new prefix
+      // written, as the save writes it.
+      const pool = new Pool({
+        connectionString: app.get<Pool>(PG_POOL).options.connectionString,
+        max: 1,
+      });
+      try {
+        let issued = Promise.resolve('');
+        await drizzle(pool, { schema }).transaction(async (tx) => {
+          await lockTodaysCounters(tx, org.organizationId, [
+            { type: 'invoice', period: '', prefix: 'INV-', digits: 6 },
+          ]);
+          await tx
+            .update(documentNumbering)
+            .set({ prefix: 'F-' })
+            .where(
+              and(
+                eq(documentNumbering.organizationId, org.organizationId),
+                eq(documentNumbering.documentType, 'invoice'),
+              ),
+            );
+          await tx
+            .update(documentSequences)
+            .set({ prefix: 'F-' })
+            .where(
+              and(
+                eq(documentSequences.organizationId, org.organizationId),
+                eq(documentSequences.documentType, 'invoice'),
+              ),
+            );
+
+          issued = issue(org, a, today);
+          await untilTakingWaits();
+        });
+
+        expect(await issued).toBe('F-000001');
+      } finally {
+        await pool.end();
+      }
     });
   });
 
