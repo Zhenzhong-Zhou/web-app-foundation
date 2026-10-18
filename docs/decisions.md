@@ -6784,9 +6784,18 @@ production apps do:
 Names in kanji are read as Chinese, since the characters cannot tell the
 two apart; Japanese is not one of the app's languages. Two Chinese
 characters are set at 0.32 of the circle rather than 0.4, being about
-twice as wide, and are marked `lang="zh"`, so a screen reader on an
-English page reads them in a Chinese voice. Colours are unchanged: a name
-keeps its colour.
+twice as wide, and are marked `lang="zh"` wherever the circle is read as
+text (People, a person's page, Members, History, the account menu), so a
+screen reader on an English page reads them in a Chinese voice. Colours
+are unchanged: a name keeps its colour.
+
+The top bar's account button is the one exception. Its name is a single
+label, "{initials}, signed in as {email}", and an accessible name is one
+string: no screen reader is given the language of a part of it. Marking
+the whole button Chinese would read "signed in as" in a Chinese voice, so
+there the initials follow the page's language, as any label mixing two
+languages does. In the Chinese app the page is Chinese and they are read
+as Chinese anyway.
 
 **Considered and not done.**
 

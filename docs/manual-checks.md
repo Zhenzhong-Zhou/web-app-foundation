@@ -831,7 +831,9 @@ await fetch(`${api}/v1/files/product-image`, {
   circle shows 振中, inside the circle in the top bar, History, People and
   your page; as 王芳 it shows 王芳, as Élodie Dupré ÉD, and as محمد علي
   only م. With VoiceOver on and the app in English, read your card on
-  People: 振中 is read in a Chinese voice. Put your own name back.
+  People: 振中 is read in a Chinese voice. Tab to your circle in the top
+  bar: its label follows the page's language, English here, as ADR-063's
+  amendment says. Put your own name back.
 
 ## 20. Licence reminders (ADR-064)
 
@@ -1516,3 +1518,5 @@ first.
   People: MC-2803 extended.
 - 2026-10-18: a dialog's buttons on a phone: MC-R20.
 - 2026-10-18: initials by the name's script: MC-1902.
+- 2026-10-18: the top bar's label follows the page's language: MC-1902
+  extended.
