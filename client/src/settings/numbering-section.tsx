@@ -22,7 +22,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { type SubmitEvent, useRef, useState } from 'react';
+import { type SubmitEvent, useId, useRef, useState } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import type { Numbering } from '../api/types.gen';
@@ -292,6 +292,14 @@ function NumberingForm({
   const inputs = useRef<Partial<Record<SeriesKey, HTMLInputElement | null>>>(
     {},
   );
+  // What a field in error points at with aria-describedby: the words that
+  // say why (conventions.md, "Error codes").
+  const id = useId();
+  const refusalId = `${id}-refusal`;
+  const clashId = `${id}-clash`;
+  const problemId = (key: SeriesKey) => `${id}-${key}-problem`;
+  const describedBy = (...ids: (string | false | undefined)[]) =>
+    ids.filter(Boolean).join(' ') || undefined;
 
   const { submitting, error, errorCode, errorDetails, reset, submit } =
     useSubmit(
@@ -475,6 +483,11 @@ function NumberingForm({
       slotProps={{
         htmlInput: {
           'aria-label': fieldLabel(key, PREFIX),
+          'aria-describedby': describedBy(
+            problemOf(key) !== null && problemId(key),
+            refused.has(key) && refusalId,
+            clash?.includes(key) && clashId,
+          ),
           maxLength: 40,
           ref: (element: HTMLInputElement | null) => {
             inputs.current[key] = element;
@@ -531,7 +544,13 @@ function NumberingForm({
         onChange={(event) => set(key, { next: event.target.value })}
         error={!nextValid(key) || (refused.has(key) && lowest !== null)}
         slotProps={{
-          htmlInput: { 'aria-label': fieldLabel(key, NEXT), min: 1 },
+          htmlInput: {
+            'aria-label': fieldLabel(key, NEXT),
+            'aria-describedby': describedBy(
+              refused.has(key) && lowest !== null && refusalId,
+            ),
+            min: 1,
+          },
         }}
         sx={{ width: 110 }}
       />
@@ -618,7 +637,7 @@ function NumberingForm({
       <Stack spacing={1}>
         {problem && (
           <Stack spacing={1} sx={{ color: 'error.main' }}>
-            <Typography variant="body2" role="alert">
+            <Typography variant="body2" role="alert" id={problemId(key)}>
               {problem === 'resetNeedsDate'
                 ? intl.formatMessage(
                     {
@@ -715,7 +734,7 @@ function NumberingForm({
    * goes back to the form to save again.
    */
   const refusal = error && (
-    <FormError message={error}>
+    <FormError message={error} id={refusalId}>
       {lowest !== null && refused.size === 1 && (
         <Button
           variant="outlined"
@@ -766,6 +785,7 @@ function NumberingForm({
 
         {clash && (
           <FormError
+            id={clashId}
             message={intl.formatMessage(
               {
                 id: 'settings.numbering.clash',
