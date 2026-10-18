@@ -1,15 +1,44 @@
-# web-app-foundation — handoff, 16 October 2026
+# web-app-foundation — handoff, 18 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 17 October 2026: read this first
+## Now, 18 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **ADR-072, each organization's time zone (#41):** built on
-  `adr-072-time-zone`, its PR to open. An IANA zone per organization, set
+- **ADR-073, each organization's document numbering:** built on
+  `adr-073-numbering`, its PR to open. Five series (invoices, credit
+  notes, RMAs, sale and purchase orders), each with a prefix that may carry
+  `{YYYY}`, `{YY}`, `{MM}` and `{DD}`, a width, a reset (never, yearly,
+  monthly, daily) and its next number, set by an Owner on Settings →
+  Organization → Documents → Numbering. The document's own date picks the
+  period; an earlier period stays open and keeps its prefix, so a December
+  invoice issued in January reads like the rest of its year. Two refusals
+  keep one number naming one document, and a date-order switch, off by
+  default, is France's rule. Today's numbers are the defaults, so nothing
+  changes until an Owner changes it. The amendment at the end of ADR-073
+  says what building settled; ADR-046, ADR-047, ADR-056 and ADR-071 are
+  amended. ADR-074 records run numbers and batch codes from them, decided
+  and deferred, so other features and fixes come first.
+  - **The PR:** migration **0067** (each organization's five numbering
+    rows; counters by period, with the prefix and width each keeps), so its
+    description says to run `npm run migrate:all`; "Fixes #131". Its
+    commits: ADR-073, ADR-074, server, client, the simplify pass, four from
+    the review (a save takes today's counters first, screens key on the
+    numbering codes, the fields name their reason, and tests), a bad digits
+    or next number saying why, then this docs commit. The description says
+    manual checks section 27 arrives with the client commit: with today's
+    numbers as the defaults, the server commit alone changes nothing a
+    person sees.
+  - **Before merging:** walk MC-2701 to MC-2713; show your mom 编号 on a
+    phone (MC-2710); have the new French and Chinese drafts read by someone
+    fluent. `scripts/verify.sh` passed in full on 18 October.
+  - **Next:** Bob's choice, from the features and fixes he wants before
+    run numbers (ADR-074).
+
+- **ADR-072, each organization's time zone (#41):** merged in #134. An IANA zone per organization, set
   at registration from the browser and by an Owner on Profile, decides
   the organization's day: licences at release and their reminders, the
   rate a receipt takes, expiring stock, Home (now without `?today=`,
@@ -32,10 +61,7 @@ with this one, this one is current.
     Columbia stays on UTC−7 from 1 November 2026, and older data would
     begin Vancouver's days an hour late. Homebrew's Node reads Homebrew's
     own ICU, which can lag; `nvm` and CI carry Node's bundled copy.
-  - **Next:** ADR-073, each organization's document numbering, with
-    periods (a year, month or day in the number) now that the day is the
-    organization's; series per site stays deferred. Its draft is in the
-    chat of 16 October; numbering takes 0067.
+  - **Next** was ADR-073, above.
 
 - **On `main`:** ADR-055 to ADR-066, all built and merged: the UI pass,
   search, dates and export, Home, file storage (R2), branding, the
@@ -57,10 +83,11 @@ with this one, this one is current.
   adds **0063** (order numbers, every existing order numbered), **0064**
   (each organization's paper size) and **0065** (Deliver to and Send back
   to, filled in for existing orders and RMAs), merged in #132.
-  `adr-072-time-zone` adds **0066** (each organization's time zone); next
-  is **0067**. Render holds one row per file in
-  `drizzle.__drizzle_migrations` once `main` is deployed there: 66, then
-  67. After any new migration: `npm run migrate:all`, and check its
+  `adr-072-time-zone` added **0066** (each organization's time zone),
+  merged in #134; `adr-073-numbering` adds **0067** (numbering); next is
+  **0068**. Render holds one row per file in
+  `drizzle.__drizzle_migrations` once `main` is deployed there: 67, then
+  68. After any new migration: `npm run migrate:all`, and check its
   journal time (*Working agreements*, Process).
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
@@ -247,8 +274,8 @@ with this one, this one is current.
   an organization); have the French and Chinese
   wording checked by someone fluent (MC-1405); edit `docs/principles.md`
   until it reads as Bob's.
-- **Manual checks due:** MC-2601 to MC-2610, MC-R13 and MC-R14 (ADR-072,
-  before its merge); MC-2501 to MC-2512 and MC-R12 (ADR-071); MC-1601 and MC-1602 (an upload in R2, the
+- **Manual checks due:** MC-2701 to MC-2713 (ADR-073, before its merge);
+  MC-2601 to MC-2610, MC-R13 and MC-R14 (ADR-072); MC-2501 to MC-2512 and MC-R12 (ADR-071); MC-1601 and MC-1602 (an upload in R2, the
   nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
   MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
   photos and 同事 on a phone.
@@ -257,9 +284,15 @@ with this one, this one is current.
   close dialog to someone who reads only Chinese (MC-2406).
 - **Open issues:** #16 (licence status for suspended, cancelled and
   superseded), #18 (site licences), #25 (what the customer kept), #33 (one
-  hook for Load more keyset paging) and #133 (the audit log records a
-  field as sent, not as stored, and a few saves that write no entry; from
-  ADR-072's review). #41 and #127 close with ADR-072's PR. From ADR-070's
+  hook for Load more keyset paging), #125 (an order page's totals can
+  differ from its purchase order by a cent), #126 (MUI warns of a select
+  with no options while returns load), #128 (a refused PDF opens as raw
+  JSON in a new tab), #129 (English left inside translated messages), #130
+  (the client's formatMoney passes amounts through Number()) and #133 (the
+  audit log records a field as sent, not as stored, and a few saves that
+  write no entry; ADR-073's save is taken as sent, so it is not one of
+  them). #131 closes with ADR-073's PR; #41 and #127 closed with
+  ADR-072's. From ADR-070's
   review and its walkthrough in Chinese: #117
   (two one-second windows while a deletion completes), fixed on
   `deletion-started`, and #118 (the export's column glossary and invoice
@@ -270,6 +303,13 @@ with this one, this one is current.
 
 ### Still to do, in code
 
+- **From ADR-073's review, not its PR's.** Five dialogs still pass a
+  result through a ref (create price list, raise RMA, create BOM, add
+  order line, RMA detail); `useSubmit`'s success can now take the result
+  instead. CLAUDE.md says a write returns the detail its read returns,
+  while conventions.md says a write that returns the resource returns the
+  same detail class, and the settings writes return 204: make the two
+  agree.
 - **The typo lookup** sits at 270 ms of its 300 ms budget; one query per
   pass if it ever fails.
 - **An MUI warning,** logged twice by the Playwright run: "children must

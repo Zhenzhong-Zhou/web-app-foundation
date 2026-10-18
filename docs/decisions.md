@@ -3146,6 +3146,11 @@ IRN), this app's invoice is the company's own record and a commercial
 invoice, and the tax invoice is issued there. Trigger: the first customer,
 or legal entity, outside Canada.
 
+**Amendment (October 2026) — each organization's numbering (ADR-073).**
+The prefix, the width and when a series starts again are each
+organization's, `INV-` and six digits only the defaults. Invoices stay
+gapless within a series and period, rather than within the organization.
+
 ---
 
 ## ADR-047 — Return authorizations, and credit notes for what comes back
@@ -3361,6 +3366,11 @@ credit note routes gain a preview and a create beside the void.
   restocking or scrapping is an ordinary move or correction (ADR-043).
 - **Returns to suppliers** as a document (ADR-043, still deferred).
 - **Pro forma invoices** (ADR-046, still deferred).
+
+**Amendment (October 2026) — their own series (ADR-073).** Credit notes
+and RMAs follow their series' settings, as invoices do; a credit note's
+period is its credit date, an RMA's the day it is raised in the
+organization's zone.
 
 ---
 
@@ -5384,6 +5394,12 @@ used for queries of 3 characters or more.
 - **Pinyin with tone marks, or fuzzy pinyin** (zh typed as z, l as n, as
   some regional accents do). Trigger: a Chinese-reading user missing a
   record they typed the way they say it.
+
+**Amendment (October 2026) — the organization's prefixes (ADR-073).** A
+query shaped like a known number is one that starts with one of the
+organization's own prefixes, the longest that fits, read when the lookup
+runs; order numbers join invoices, credit notes and RMAs. `INV-`, `CN-` and
+`RMA-` are only the defaults.
 
 ---
 
@@ -8003,6 +8019,11 @@ printed. An organization that moves keeps its issued invoices on the
 paper they were issued on, as everything else they print stays as
 issued; a size the organization chose still wins for every document.
 
+**Amendment (October 2026) — order numbers by their series (ADR-073).**
+Sale and purchase orders follow their series' settings, their period the
+day each is made in the organization's zone. A `/` in a number is written
+`_` in a document's file name, and in the export's `documents/`.
+
 ---
 
 ## ADR-072 — Each organization's time zone (amends ADR-052 and ADR-071)
@@ -8371,6 +8392,60 @@ are a 400. Two conflicts are a 409, each with its code (conventions.md,
 - **Run numbers, and batch codes from them:** decided in ADR-074, which
   waits for its own trigger. A run's number becomes a sixth series here.
 
+**Amendment (October 2026) — settled while building, and in review.**
+
+- **The counter keeps the prefix as written, not as printed.** A series
+  that never starts again, or starts again each year but shows the month,
+  prints several prefixes within one counter's period, so
+  `document_sequences.prefix` holds the prefix with its tokens
+  (`INV-{YYYY}-`) and each number prints it from its own date. The rule
+  stands: an earlier period goes on with what it numbered with.
+- **A save takes today's counters first, as decided.** Before reading
+  anything, a save takes today's counter for each series it changes,
+  opening it at 1 if it is not yet open, so an issue waits for the save or
+  the save's checks see the issue. First built locking only the settings,
+  which taking a number never waits for: an issue during a save could open
+  today's period with the old prefix and keep it for the rest of the
+  period. The review found it; a test holds a save open while an issue
+  waits, and fails without the lock.
+- **Refusals carry details.** `numbering_number_taken` and
+  `numbering_prefix_shared` name their series in the API's names
+  (`invoice`, `creditNote`), and the first the least next number accepted,
+  in `details` beside the code (conventions.md, "Error codes"), for the
+  screen's Use. `numbering_date_order` has its way out too: Change it on
+  Organization → Documents, for those who may change the numbering.
+- **Going below the numbers given is the same refusal.** Below where the
+  counter stands, while documents carry the prefix, `numbering_number_taken`
+  says the numbers up to the last given; a number a later period would give
+  again is refused the same way, with no least number.
+- **Date order sits in `takeNumber`,** for invoices and credit notes
+  alike, read after the counter's lock rather than inside its statement:
+  an issue that waited for a save then follows a rule the same save turned
+  on.
+- **Where the code lives.** `takeNumber` moved from `modules/invoices` to
+  `modules/numbering`, beside the rules in `numbering-format.ts`; the
+  client's `lib/numbering.ts` holds the same rules, so the screen says what
+  the server would refuse as it is typed. `DEFAULT_NUMBERING` is in the
+  schema file. `dispositionOf` writes `/` as `_` for every download, and
+  the export takes the same helper from `core/files`.
+- **What the screen added, from the canvas.** The last number given under
+  each next number, and the next period's first under Prints as; three
+  common formats per series, keeping its letters, none with `/`; Change
+  the numbering? before a change to a series is saved, the date-order
+  switch alone saving straight away; each field in error says why, and
+  names it to a screen reader; under an invoice's or credit note's date, a
+  line when the date falls in another period than today's, read only once
+  the date moves off today; and issuing says the number given: "Invoice
+  issued as INV-2026-0453".
+- **Accepted.** The number-taken check reads every matching number back
+  into Node, and the last numbers given take five queries, three on
+  unindexed columns: both run only when the numbering is saved or opened.
+- **Tested otherwise than planned.** An order made at 23:30 on 31 December
+  in Vancouver needs the server's clock pinned, which the end-to-end suite
+  cannot do; an organization in Kiritimati, whose daily prefix prints its
+  own day rather than UTC's, shows the same thing, beside ADR-072's tests
+  of `dayIn` either side of midnight.
+
 ---
 
 ## ADR-074 — Run numbers, and batch codes from them (deferred)
@@ -8439,6 +8514,10 @@ it.
   show the number; Record output fills the batch code; the Numbering
   section gains a row.
 - Designed on the canvas before it is built, and a manual checks section.
+- The number-taken check's list of numbered tables in
+  `numbering.service.ts` is raw SQL: `production_orders` joins it by hand,
+  or the check stops seeing run numbers without failing to compile
+  (ADR-073's review).
 
 **Deferred.** A `{PRODUCT}` token, a short product code in a generated
 batch code. Trigger: the first organization wanting the product in its

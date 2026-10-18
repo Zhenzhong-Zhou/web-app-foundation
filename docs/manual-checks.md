@@ -1172,6 +1172,11 @@ few invoices and orders.
   it is PO/2026/0001, and its PDF downloads as PO_2026_0001.pdf.
 - **MC-2712** *(ADR-073)* History on the Organization page shows Numbering
   changed, with each changed series as it was and as it is.
+- **MC-2713** *(ADR-073)* The lookup follows the organization's prefixes:
+  set the invoices' prefix to QX-, issue one (QX-000001), and give an order
+  the reference QX-000001. Typing QX-000001 in the top bar lists Invoices
+  before Orders. With today's prefixes, typing SO- or PO- lists Orders
+  first.
 
 ## Regressions
 
@@ -1428,3 +1433,4 @@ first.
 - 2026-10-18: a date-order refusal links to Organization → Documents:
   MC-2708 extended.
 - 2026-10-18: a bad digits or next number says why: MC-2703 extended.
+- 2026-10-18: ADR-073, the lookup by the organization's prefixes: MC-2713.
