@@ -1215,6 +1215,12 @@ Any page, signed in, in a browser at its default font size.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R17** *(audit log on a phone)* On a phone (DevTools, 390 px), open
+  Records → Audit log with a few Numbering changed entries: the action, from
+  and to filters wrap onto lines of their own, the page does not scroll
+  sideways, and each entry reads as sentences in a column wide enough for
+  them, the table scrolling inside its box to show By, When and From. Your
+  activity on Account the same.
 - **MC-R16** *(banner on a phone)* As an Owner, schedule the organization's
   deletion, then view any page at 390 px and at 320 px: the banner's words
   sit beside its icon, and Download everything, Cancel deletion and × move
@@ -1479,3 +1485,4 @@ first.
 - 2026-10-18: ADR-075, less motion when asked: MC-2807.
 - 2026-10-18: the time zone's announcer widened the page: MC-R15.
 - 2026-10-18: a banner's buttons on a phone: MC-R16.
+- 2026-10-18: the audit log on a phone: MC-R17.

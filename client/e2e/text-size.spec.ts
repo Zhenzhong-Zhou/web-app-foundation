@@ -47,6 +47,7 @@ const SCREENS = [
   '/account',
   '/settings/organization',
   '/members',
+  '/audit',
 ];
 
 test('the account menu sets the text size, and a reload keeps it', async ({

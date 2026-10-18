@@ -193,8 +193,15 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
       />
 
       {/* Their own row rather than beside the title: three controls crowd a
-          heading, and an actor filter is the obvious next one. */}
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+          heading, and an actor filter is the obvious next one. It wraps, so
+          on a phone the dates go under the action instead of off the
+          screen. */}
+      <Stack
+        direction="row"
+        useFlexGap
+        spacing={2}
+        sx={{ alignItems: 'center', flexWrap: 'wrap' }}
+      >
         {!mine && (
           <TextField
             id="audit-action"
@@ -348,7 +355,11 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
                 <TableBody>
                   {entries.map((entry) => (
                     <TableRow key={entry.id}>
-                      <TableCell>
+                      {/* A floor, so on a phone the table scrolls inside its
+                          box rather than squeezing what happened into a
+                          column of single words. Codes in it stay whole,
+                          as everywhere (ADR-055). */}
+                      <TableCell sx={{ minWidth: rem(260) }}>
                         {describe(entry.action)}
                         {/* Which one. Without it the organization-wide log
                           reads as a column of "Product updated" (ADR-038). */}
