@@ -1290,6 +1290,7 @@
   "products.variant.add": "添加规格",
   "products.variant.addTitle": "添加规格",
   "products.variant.added": "规格已添加",
+  "products.variant.details": "{sku} 的详情",
   "products.variant.dimensions": "{length} × {width} × {height} 毫米",
   "products.variant.dimensionsLabel": "尺寸",
   "products.variant.editTitle": "编辑 {sku}",

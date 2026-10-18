@@ -94,7 +94,20 @@ export function VariantRow({
       <TableRow>
         <TableCell padding="checkbox">
           {hasDetail && (
-            <IconButton size="small" onClick={() => setOpen(!open)}>
+            // Named by the variant, the state by aria-expanded: a screen
+            // reader said only "button" (ADR-075).
+            <IconButton
+              size="small"
+              aria-label={intl.formatMessage(
+                {
+                  id: 'products.variant.details',
+                  defaultMessage: 'Details of {sku}',
+                },
+                { sku: variant.sku },
+              )}
+              aria-expanded={open}
+              onClick={() => setOpen(!open)}
+            >
               {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
             </IconButton>
           )}

@@ -1290,6 +1290,7 @@
   "products.variant.add": "Ajouter une variante",
   "products.variant.addTitle": "Ajouter une variante",
   "products.variant.added": "Variante ajoutée",
+  "products.variant.details": "Détails de {sku}",
   "products.variant.dimensions": "{length} × {width} × {height} mm",
   "products.variant.dimensionsLabel": "Dimensions",
   "products.variant.editTitle": "Modifier {sku}",

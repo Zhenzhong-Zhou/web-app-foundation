@@ -91,6 +91,13 @@ const SCREENS: Screen[] = [
  */
 async function seed(api: APIRequestContext): Promise<Seed> {
   const product = await createProduct(api, { tracksLots: true });
+  // A weight, so the variant's chevron is drawn and axe checks that it is
+  // named (ADR-075): without one, the product page has no chevron at all.
+  const weighed = await api.patch(
+    `/v1/products/${product.id}/variants/${product.variantId}`,
+    { data: { weightGrams: 250 } },
+  );
+  expect(weighed.ok(), await weighed.text()).toBeTruthy();
   const location = await createLocation(api);
   const partner = await createPartner(api);
 

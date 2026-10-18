@@ -1290,6 +1290,7 @@
   "products.variant.add": "Add variant",
   "products.variant.addTitle": "Add a variant",
   "products.variant.added": "Variant added",
+  "products.variant.details": "Details of {sku}",
   "products.variant.dimensions": "{length} × {width} × {height} mm",
   "products.variant.dimensionsLabel": "Dimensions",
   "products.variant.editTitle": "Edit {sku}",

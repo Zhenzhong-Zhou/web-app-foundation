@@ -1202,6 +1202,9 @@ Any page, signed in, in a browser at its default font size.
 - **MC-2805** *(ADR-075)* Sign out: the sign-in page shows the language,
   then Text size, above the card. Choose Large text: the page grows before
   signing in, and stays so after.
+- **MC-2806** *(ADR-075)* With VoiceOver on (⌘ F5), open a product with a
+  weight and Tab to its variant's chevron: it is read as Details of its
+  SKU, collapsed; pressing it reads expanded.
 
 ## Regressions
 
@@ -1460,3 +1463,4 @@ first.
 - 2026-10-18: a bad digits or next number says why: MC-2703 extended.
 - 2026-10-18: ADR-073, the lookup by the organization's prefixes: MC-2713.
 - 2026-10-18: ADR-075, the text size: section 28, MC-2801 to MC-2805.
+- 2026-10-18: a variant's chevron is named: MC-2806.
