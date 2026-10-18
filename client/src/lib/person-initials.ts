@@ -20,14 +20,25 @@ const CASED = /[\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}]/u;
 /** What counts towards initials: a letter or a digit, never a mark or emoji. */
 const LETTER = /[\p{L}\p{N}]/u;
 
-const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+/**
+ * Only where the browser has one: Firefox does from 125, below the floor
+ * the build targets, and building it there would stop the app loading.
+ */
+const segmenter =
+  typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    : undefined;
+/** Without a segmenter, a letter with the combining marks typed after it. */
+const LETTER_WITH_MARKS = /\P{M}\p{M}*/gu;
 
 /**
  * Text as a reader sees its characters: an emoji, or a letter typed with
  * its accent as a second code point, is one, never cut in half.
  */
 function graphemes(text: string): string[] {
-  return Array.from(segmenter.segment(text), (part) => part.segment);
+  return segmenter
+    ? Array.from(segmenter.segment(text), (part) => part.segment)
+    : (text.match(LETTER_WITH_MARKS) ?? []);
 }
 
 /** A text's letters and digits, as graphemes, without marks or emoji. */

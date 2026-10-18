@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { colourOf, initialsLang, initialsOf } from './person-initials';
 
@@ -45,6 +45,57 @@ describe('initialsOf', () => {
     expect(initialsOf('', 'mo.li@example.com')).toBe('MO');
     expect(initialsOf('🙂', 'zoe@example.com')).toBe('ZO');
     expect(initialsOf(null, null)).toBe('?');
+  });
+});
+
+/** Every expectation above, for the run without Intl.Segmenter. */
+const EXPECTED: [
+  name: string | null,
+  initials: string,
+  email?: string | null,
+][] = [
+  ['Mei Lin', 'ML'],
+  ['mei lin', 'ML'],
+  ['Arjun Kumar Patel', 'AP'],
+  ['Bob', 'BO'],
+  ['Élodie Dupré', 'ÉD'],
+  ['Олег Петров', 'ОП'],
+  ['E\u0301lodie Dupre\u0301', 'E\u0301D'],
+  ['周振中', '振中'],
+  ['周 振中', '振中'],
+  ['欧阳娜娜', '娜娜'],
+  ['王芳', '王芳'],
+  ['明', '明'],
+  ['محمد علي', 'م'],
+  ['דוד לוי', 'ד'],
+  ['やまだ', 'や'],
+  ['🙂 Bob Smith', 'BS'],
+  ['(Bob)', 'BO'],
+  ['Zhou 振中', 'ZH'],
+  ['ßaron Klein', 'ßK'],
+  ['', 'MO', 'mo.li@example.com'],
+  ['🙂', 'ZO', 'zoe@example.com'],
+  [null, '?', null],
+];
+
+describe('initialsOf without Intl.Segmenter', () => {
+  it('gives the same initials, as in Firefox before 125', async () => {
+    // The module looks for Intl.Segmenter when it loads, so it is loaded
+    // again under an Intl that has none.
+    vi.stubGlobal(
+      'Intl',
+      Object.assign(Object.create(Intl), { Segmenter: undefined }),
+    );
+    vi.resetModules();
+    try {
+      const { initialsOf: withoutSegmenter } =
+        await import('./person-initials');
+      for (const [name, initials, email] of EXPECTED) {
+        expect(withoutSegmenter(name, email), String(name)).toBe(initials);
+      }
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 
