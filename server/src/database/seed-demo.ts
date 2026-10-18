@@ -1,9 +1,10 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { AppModule } from '../app.module';
 import { AuthService } from '../core/auth/auth.service';
+import { SYSTEM_ROLES } from '../core/authorization/permissions';
 import { OrganizationsService } from '../core/organizations/organizations.service';
 import { BomsService } from '../modules/boms/boms.service';
 import { ExchangeRatesService } from '../modules/costs/exchange-rates.service';
@@ -28,13 +29,18 @@ import { ReturnAuthorizationsService } from '../modules/return-authorizations/re
 import { StockService } from '../modules/stock/stock.service';
 import { TaxCodesService } from '../modules/tax-codes/tax-codes.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
-import { lots, memberships, productVariants, users } from './schema';
+import { lots, memberships, productVariants, roles, users } from './schema';
+import { auditor, recordOpeningHistory } from './seed-demo-audit';
+import { addTeam, describeTeam } from './seed-demo-team';
+import { addTeamWork } from './seed-demo-team-work';
 import { addVariety, daysFromNow } from './seed-demo-variety';
 import { runInTenantContext } from './tenant-context';
 
 /**
- * One product, made once, through the same services the API calls, and a
- * range of others around it for the screens (seed-demo-variety.ts).
+ * One product, made once, through the same services the API calls, a range
+ * of others around it for the screens (seed-demo-variety.ts), and a team of
+ * nine doing the rest of the app's work, with the history each step leaves
+ * (seed-demo-team.ts, seed-demo-team-work.ts, seed-demo-audit.ts).
  *
  * Not part of `seed`, deliberately. That one runs on every deploy, production
  * included, and its job is the permission vocabulary — demo products written
@@ -59,7 +65,9 @@ import { runInTenantContext } from './tenant-context';
  *
  * With an email, it seeds that existing account's organization instead, and
  * refuses up front if the demo is already there, rather than failing partway
- * on the first duplicate.
+ * on the first duplicate. It refuses an account that is not an Owner there
+ * too: the team's work gives the account the Owner's steps, and History
+ * would show them as its own.
  */
 
 /** Fixed rather than random, so a demo account can always be signed into. */
@@ -83,6 +91,12 @@ async function seedDemo(): Promise<void> {
   try {
     const db = app.get<Database>(UNSAFE_GLOBAL_DB);
 
+    // On the database's clock, which stamps every row: the opening history
+    // covers only what this run made (seed-demo-audit.ts). A raw query
+    // returns the timestamp as Postgres wrote it, to the microsecond.
+    const started = await db.execute(sql`select now() as now`);
+    const [{ now: startedAt }] = started.rows as { now: string }[];
+
     const account = requested
       ? await existingAccount(db, requested)
       : await freshAccount(app.get(AuthService));
@@ -90,6 +104,14 @@ async function seedDemo(): Promise<void> {
     if (!account) {
       logger.error(
         `No account for ${requested} — register it, or run without an email`,
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    if (account.role !== SYSTEM_ROLES.OWNER) {
+      logger.error(
+        `${account.email} has the ${account.role} role, not Owner, in its organization. The demo gives this account the Owner's steps (exchange rates, price lists, issuing invoices): run it with an Owner's email, or without one.`,
       );
       process.exitCode = 1;
       return;
@@ -427,7 +449,7 @@ async function seedDemo(): Promise<void> {
           { name: 'GST', rate: '5' },
           { name: 'PST', rate: '7' },
         ]);
-        await taxCode('Exempt', []);
+        const exempt = await taxCode('Exempt', []);
 
         const draft = await invoiceDrafts.createDraft(
           { shipmentId: shipment.id, taxCodeId: gst.id },
@@ -801,6 +823,36 @@ async function seedDemo(): Promise<void> {
           `Demo data written for ${email}: run FOC-2609-01 closed with ${closed.variances.length} line variance(s); SO-DEMO-1 shipped 400 of 600, invoiced as ${invoice.number}, with 5 returned, ${rma.number} received and credited as ${creditNote.number}, and a shipment of 100 voided; 4 retained, 2 sampled; PO-DEMO-2 bought in USD at 1.37; SO-DEMO-2 confirmed for 500 and partly backordered; ${quebecInvoice.number} printing in French and English for Pharmacie Saint-Laurent, ${chineseInvoice.number} in Chinese for 明德药房`,
         );
         logger.log(variety);
+
+        /**
+         * History: a creation entry for what the Owner made above, then the
+         * team, then their work, each step written to the audit log as its
+         * route would. Last, like the variety, and on items of their own.
+         */
+        const audited = auditor(app);
+        const opened = await recordOpeningHistory(
+          db,
+          audited,
+          account.organizationId,
+          actor,
+          startedAt,
+        );
+        const team = await addTeam(app, db, audited, account, DEMO_PASSWORD);
+        const teamWork = await addTeamWork(app, db, audited, account, team, {
+          siteId: site.id,
+          shelfId: shelf.id,
+          supplierId: supplier.id,
+          usSupplierId: usSupplier.id,
+          customerId: customer.id,
+          quebecId: quebec.id,
+          chineseId: chinese.id,
+          gstId: gst.id,
+          exemptId: exempt.id,
+        });
+
+        logger.log(`History opened with ${opened} records, by the Owner`);
+        logger.log(teamWork);
+        logger.log(describeTeam(team, DEMO_PASSWORD));
       },
     );
   } finally {
@@ -812,6 +864,8 @@ interface DemoAccount {
   userId: string;
   organizationId: string;
   email: string;
+  /** The account's role in that organization, by name. */
+  role: string;
 }
 
 async function existingAccount(
@@ -819,9 +873,14 @@ async function existingAccount(
   email: string,
 ): Promise<DemoAccount | undefined> {
   const [row] = await db
-    .select({ userId: users.id, organizationId: memberships.organizationId })
+    .select({
+      userId: users.id,
+      organizationId: memberships.organizationId,
+      role: roles.name,
+    })
     .from(users)
     .innerJoin(memberships, eq(memberships.userId, users.id))
+    .innerJoin(roles, eq(roles.id, memberships.roleId))
     .where(eq(users.email, email));
 
   return row && { ...row, email };
@@ -857,7 +916,12 @@ async function freshAccount(auth: AuthService): Promise<DemoAccount> {
     `Registered ${email} — sign in with password ${DEMO_PASSWORD}`,
   );
 
-  return { userId: user.id, organizationId: user.organizationId, email };
+  return {
+    userId: user.id,
+    organizationId: user.organizationId,
+    email,
+    role: SYSTEM_ROLES.OWNER,
+  };
 }
 
 void seedDemo();

@@ -70,10 +70,7 @@ export class AuditInterceptor implements NestInterceptor {
 
     // @Audited() on a @Public() route. Nothing to attribute the event to, and
     // audit_log.organization_id is NOT NULL by design.
-    const payload = withContext(
-      combine(pick(req.body, options.fields), takePrevious()),
-      takeContext(),
-    );
+    const payload = auditPayload(req.body, options.fields);
 
     // A Save that changed nothing. The handler ran and succeeded, but a row
     // saying "quantity: 222 → 222" is noise in every history that shows it.
@@ -117,6 +114,22 @@ export class AuditInterceptor implements NestInterceptor {
 }
 
 /**
+ * The row's payload: the context the service recorded, then the fields the
+ * route named, each as `{ from, to }` where the service recorded what was
+ * there. Exported, with `unchanged`, for the demo seed, which calls services
+ * directly and writes the row each route would (seed-demo-audit.ts).
+ */
+export function auditPayload(
+  body: unknown,
+  fields: readonly string[] | undefined,
+): Record<string, unknown> | undefined {
+  return withContext(
+    combine(pick(body, fields), takePrevious()),
+    takeContext(),
+  );
+}
+
+/**
  * True only when every recorded field has a previous value equal to the new
  * one — the case the service can prove, because it recorded what was there.
  *
@@ -127,7 +140,9 @@ export class AuditInterceptor implements NestInterceptor {
  * "222" against a stored "222.0000" counts as a change: the strings differ,
  * and parsing them here would be the JS arithmetic ADR-025 rules out.
  */
-function unchanged(payload: Record<string, unknown> | undefined): boolean {
+export function unchanged(
+  payload: Record<string, unknown> | undefined,
+): boolean {
   if (!payload) return false;
 
   const values = Object.values(payload);

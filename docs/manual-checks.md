@@ -57,8 +57,26 @@ RMA, **SO-DEMO-6** with a voided invoice and its full credit note,
 retired partner. Every state the redesigned screens draw (ADR-055) has
 one example among them.
 
-Keep a second browser profile, or a private window, for a second user and a
-second organization.
+Around those, a team of nine, whose addresses the seed prints; each signs in
+with the demo password. **Anika Sharma** is a second Owner; **Daniel
+Okafor**, **李静**, **Marc-André Gagnon**, **王建国** and **Sarah Chen** are
+Admins, Sarah promoted from Viewer; **Chloé Tremblay**, **Tom Becker** and
+**Fatima Haddad** are Viewers, and Fatima has never signed in. Each record
+above has its creation in History, by the Owner, and what the team did is in
+History as theirs: the **Richmond warehouse**, with zones, an aisle,
+shelves, a fridge and a **Quarantine**; **MAGCAP** in three sizes;
+**PO-DEMO-7** bought in euros, and **PO-DEMO-9** three days late, priced
+from **Lakeshore Packaging 2026**; lot **VC-0301** expired and quarantined;
+**SLEEP-BLEND-01** issued from hand-picked lot **CHA-0522**, and
+**SLEEP-60-01** made in two outputs, 970 of 1000; a draft second version of
+the Calm recipe; **CALM-RUN-03** cancelled; a licence expiring in 6 days and
+one lapsed; **SO-DEMO-7** priced from **Co-op members CAD**, with an RMA to
+replace two bottles; **SO-DEMO-8** invoiced in US dollars; and **Retail CAD
+2025** retired. Exchange rates, price lists and issuing invoices are the
+Owner's, as the roles allow.
+
+Keep a second browser profile, or a private window, for one of the team or
+a second organization.
 
 ---
 
@@ -834,6 +852,19 @@ await fetch(`${api}/v1/files/product-image`, {
   English, read your card on People: 振中 is read in a Chinese voice. Tab
   to your circle in the top bar: its label follows the page's language,
   English here, as ADR-063's amendment says. Put your own name back.
+- **MC-1903** *(seed:demo)* Members lists ten people, each with a face and a
+  role, Sarah Chen an Admin, and the audit log filtered to Changed a
+  member's role has one entry, by the Owner. On People, Fatima Haddad's card
+  shows only her name and role. Open each colleague's page: as the Owner,
+  last active is today for Daniel Okafor, 李静, Marc-André Gagnon, 王建国 and
+  Sarah Chen, three days ago for Anika Sharma, twelve for Tom Becker and
+  forty for Chloé Tremblay, and Fatima has never signed in. SO-DEMO-7's
+  History reads Sarah creating and confirming it, 王建国 shipping it and
+  Sarah closing it; its invoice's History reads 李静 drafting it and the
+  Owner issuing it. Any record the Owner made, such as Focus 60ct, has its
+  creation in History. Sign in as 王建国: the top bar's circle shows 建国.
+  Sign in as Fatima: a colleague's page gives only Active today, this week
+  for Anika, this month for Tom, and over a month ago for Chloé.
 
 ## 20. Licence reminders (ADR-064)
 
@@ -1522,3 +1553,4 @@ first.
   extended.
 - 2026-10-18: a mixed name takes its Latin words wherever they sit:
   MC-1902 extended.
+- 2026-10-18: the demo's team and their work: Before you start, MC-1903.
