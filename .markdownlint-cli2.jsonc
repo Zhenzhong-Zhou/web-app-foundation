@@ -15,6 +15,11 @@
     "**/coverage/**",
     "client/playwright-report/**",
     "client/test-results/**",
+    // Playwright's configured output folders (outputDir in
+    // client/playwright.config.ts and client/playwright.screenshots.config.ts),
+    // where a failed run leaves an error-context.md to lint otherwise.
+    "client/e2e/.output/**",
+    "client/screenshots/.output/**",
     "review/**"
   ]
 }
