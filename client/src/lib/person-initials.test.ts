@@ -35,6 +35,8 @@ describe('initialsOf', () => {
     expect(initialsOf('🙂 Bob Smith')).toBe('BS');
     expect(initialsOf('(Bob)')).toBe('BO');
     expect(initialsOf('Zhou 振中')).toBe('ZH');
+    expect(initialsOf('张伟 David')).toBe('DA');
+    expect(initialsOf('王芳 (Fiona)')).toBe('FI');
   });
 
   it('never makes one letter two when capitalising', () => {
@@ -72,6 +74,8 @@ const EXPECTED: [
   ['🙂 Bob Smith', 'BS'],
   ['(Bob)', 'BO'],
   ['Zhou 振中', 'ZH'],
+  ['张伟 David', 'DA'],
+  ['王芳 (Fiona)', 'FI'],
   ['ßaron Klein', 'ßK'],
   ['', 'MO', 'mo.li@example.com'],
   ['🙂', 'ZO', 'zoe@example.com'],

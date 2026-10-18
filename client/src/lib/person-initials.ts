@@ -61,6 +61,7 @@ function capital(grapheme: string): string {
  *   gives 振中, 王芳 gives 王芳.
  * - **Latin, Greek and Cyrillic**: the first and last names' initials, or
  *   the first two letters of a single name. Mei Lin gives ML, Bob gives BO.
+ *   A mixed name takes only these words, wherever they sit.
  * - **Any other script**: its first character, which is never wrong where
  *   the app does not know the custom.
  *
@@ -77,14 +78,14 @@ export function initialsOf(name: string | null, email?: string | null): string {
     const letters = words.flat();
     if (letters.every((g) => HAN.test(g))) return letters.slice(-2).join('');
 
-    const first = words[0][0];
-    if (!CASED.test(first)) return first;
-    // Only the words in a cased script: Zhou 振中 gives ZH, not Z振.
+    // Only the words in a cased script, wherever they sit: Zhou 振中 gives
+    // ZH, not Z振, and 张伟 David gives DA, as David alone would.
     const cased = words.filter((word) => CASED.test(word[0]));
+    if (cased.length === 0) return words[0][0];
     const pair =
       cased.length > 1
-        ? [first, cased[cased.length - 1][0]]
-        : words[0].slice(0, 2);
+        ? [cased[0][0], cased[cased.length - 1][0]]
+        : cased[0].slice(0, 2);
     return pair.map(capital).join('');
   }
 

@@ -829,11 +829,11 @@ await fetch(`${api}/v1/files/product-image`, {
   as active then. In 中文 on a phone, People reads 同事 and the cards fit.
 - **MC-1902** Without a photo, rename yourself on Account to 周振中: your
   circle shows 振中, inside the circle in the top bar, History, People and
-  your page; as 王芳 it shows 王芳, as Élodie Dupré ÉD, and as محمد علي
-  only م. With VoiceOver on and the app in English, read your card on
-  People: 振中 is read in a Chinese voice. Tab to your circle in the top
-  bar: its label follows the page's language, English here, as ADR-063's
-  amendment says. Put your own name back.
+  your page; as 王芳 it shows 王芳, as 张伟 David it shows DA, as Élodie
+  Dupré ÉD, and as محمد علي only م. With VoiceOver on and the app in
+  English, read your card on People: 振中 is read in a Chinese voice. Tab
+  to your circle in the top bar: its label follows the page's language,
+  English here, as ADR-063's amendment says. Put your own name back.
 
 ## 20. Licence reminders (ADR-064)
 
@@ -1520,3 +1520,5 @@ first.
 - 2026-10-18: initials by the name's script: MC-1902.
 - 2026-10-18: the top bar's label follows the page's language: MC-1902
   extended.
+- 2026-10-18: a mixed name takes its Latin words wherever they sit:
+  MC-1902 extended.
