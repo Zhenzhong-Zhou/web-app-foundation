@@ -1215,6 +1215,10 @@ Any page, signed in, in a browser at its default font size.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R19** *(Home on a phone)* In an organization whose Getting started
+  is done or dismissed, open Home at 320 px: To ship, To receive and
+  Expiring soon each fill the width, one under another, and the page does
+  not scroll sideways. At 1280 px they sit side by side as before.
 - **MC-R18** *(buttons on a phone)* At 320 px with Larger text, open
   Inventory, Orders and Account. Inventory's Export, Trace a lot and Refresh
   wrap onto a second line at the right; Account's Change password and Your
@@ -1495,3 +1499,4 @@ first.
 - 2026-10-18: the audit log on a phone: MC-R17.
 - 2026-10-18: rows of buttons and long labels on a phone: MC-R18.
 - 2026-10-18: the date range on a phone: MC-R18 extended.
+- 2026-10-18: Home's cards on a phone: MC-R19.

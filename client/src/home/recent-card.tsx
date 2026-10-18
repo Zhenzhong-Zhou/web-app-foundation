@@ -10,6 +10,7 @@ import {
   recentTitle,
   recentWhen,
 } from '../lib/recent-labels';
+import { rem } from '../theme/rem';
 
 /** How many Home shows (ADR-058). */
 const ON_HOME = 6;
@@ -75,7 +76,7 @@ export function RecentCard() {
           m: 0,
           p: 0,
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gridTemplateColumns: `repeat(auto-fit, minmax(min(${rem(220)}, 100%), 1fr))`,
           gap: 1.25,
         }}
       >

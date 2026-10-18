@@ -246,7 +246,7 @@ export function HomePage() {
             <Box
               sx={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gridTemplateColumns: `repeat(auto-fit, minmax(min(${rem(150)}, 100%), 1fr))`,
                 gap: 1.5,
               }}
             >
@@ -287,11 +287,14 @@ export function HomePage() {
             />
           )}
 
+          {/* A column's floor is capped at the row, so on a phone a card is
+              as wide as the screen rather than wider (found by
+              text-size.spec at 320px). */}
           {showCards && (
             <Box
               sx={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gridTemplateColumns: `repeat(auto-fit, minmax(min(${rem(320)}, 100%), 1fr))`,
                 gap: 2,
               }}
             >
