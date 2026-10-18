@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   bigint,
   check,
+  integer,
   pgTable,
   primaryKey,
   text,
@@ -26,24 +27,24 @@ export const DOCUMENT_TYPES = [
 export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 
 /**
- * The next number per organization per document type (ADR-046).
+ * The next number per organization, series and period (ADR-046, ADR-073).
  *
- * Invoice numbers are gapless within an organization: the customer quotes
- * them and an auditor counts them. A number is taken inside the transaction
- * that issues the document, as an upsert that increments this row, so a
- * failed issue rolls the number back with everything else.
+ * Invoice numbers are gapless within a series and period: the customer
+ * quotes them and an auditor counts them. A number is taken inside the
+ * transaction that issues the document, as an upsert that increments this
+ * row, so a failed issue rolls the number back with everything else.
  *
  * A Postgres sequence was the alternative. Sequences are not transactional —
  * a rolled-back issue burns its number — and they are global rather than
  * per tenant.
  *
- * The cost: two issues in one organization at the same moment queue on this
- * row for the length of an issue. At the rate a business issues invoices,
- * that is invisible.
+ * The cost: two issues in one series and period at the same moment queue on
+ * this row for the length of an issue. At the rate a business issues
+ * invoices, that is invisible.
  *
- * Rows are created on first use, so a new organization needs no seeding.
- * No updated_at: the row is a counter, and when it moved is on the document
- * that took the number.
+ * Rows are created on first use, from the series' settings in
+ * document_numbering. No updated_at: the row is a counter, and when it moved
+ * is on the document that took the number.
  */
 export const documentSequences = pgTable(
   'document_sequences',
@@ -52,7 +53,25 @@ export const documentSequences = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
 
-    documentType: text('document_type').notNull(),
+    documentType: text('document_type').$type<DocumentType>().notNull(),
+
+    /**
+     * Which year, month or day this counter numbers (ADR-073): '' for a
+     * series that never starts again, then 2026, 2026-10 or 2026-10-17,
+     * from the document's own date. An earlier period stays open, so an
+     * invoice dated 31 December and issued in January takes 2026's next.
+     */
+    period: text('period').notNull().default(''),
+
+    /**
+     * The prefix and width this period numbers with, the prefix as written
+     * with its date tokens. Copied from the settings when the period opens,
+     * and rewritten by a change for today's period and later ones only: an
+     * earlier period goes on as it was, so a backdated invoice reads like the
+     * rest of its year.
+     */
+    prefix: text('prefix').notNull(),
+    digits: integer('digits').notNull(),
 
     /**
      * The number the next document takes. bigint in mode number: a count of
@@ -63,7 +82,7 @@ export const documentSequences = pgTable(
   (t) => [
     primaryKey({
       name: 'document_sequences_pkey',
-      columns: [t.organizationId, t.documentType],
+      columns: [t.organizationId, t.documentType, t.period],
     }),
 
     check(
@@ -72,5 +91,10 @@ export const documentSequences = pgTable(
     ),
 
     check('document_sequences_next_value_check', sql`${t.nextValue} >= 1`),
+    check(
+      'document_sequences_period_check',
+      sql`${t.period} ~ '^([0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?)?$'`,
+    ),
+    check('document_sequences_digits_check', sql`${t.digits} between 1 and 10`),
   ],
 );

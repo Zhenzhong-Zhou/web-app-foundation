@@ -186,6 +186,15 @@ export const organizations = pgTable(
     timeZone: text('time_zone').notNull().default('UTC'),
 
     /**
+     * Whether an invoice or credit note may be dated before the latest one
+     * already given in its series and period (ADR-073). On, it may not:
+     * France's continuous, chronological numbering. Off by default.
+     */
+    documentsInDateOrder: boolean('documents_in_date_order')
+      .notNull()
+      .default(false),
+
+    /**
      * Sign out after inactivity (ADR-065): null for Off, else minutes. It
      * only ever shortens a session's own limit, and applies to sign-ins
      * without Keep me signed in, or to everyone.

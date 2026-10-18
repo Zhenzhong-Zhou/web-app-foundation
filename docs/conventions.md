@@ -324,6 +324,14 @@ message, and the screen keys on the code, never on the words.
   `aria-describedby` points at the refusal's words through `FormError`'s
   `id`, which sits on the words rather than the alert, whose own label,
   "Error", would be read instead.
+- **Details, when the way out needs a value.** `withCode(t(...), code,
+  details)` adds what the screen acts on beside the code: which series a
+  numbering refusal is about, in the API's names (`creditNote`), and the
+  least next number it accepts (ADR-073). Declared in `ErrorDetails`
+  (`server/src/openapi/error-body.ts`), so the client's type is generated;
+  read on the client as `errorDetails` from `useSubmit`, and only behind
+  `hasCode`. Values only, never words, and the filter passes them only
+  beside a code on the list.
 - **With a code, the message still says what to do next, but names no
   control on the screen.** The screen, keyed on the code, adds the link or
   the words naming its own control, from the client's catalogue, so

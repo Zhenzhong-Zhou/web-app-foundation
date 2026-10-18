@@ -784,6 +784,7 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.numbering_updated",
                 "organization.exported",
                 "organization.deletion_scheduled",
                 "organization.deletion_cancelled",
@@ -947,6 +948,7 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.numbering_updated",
                 "organization.exported",
                 "organization.deletion_scheduled",
                 "organization.deletion_cancelled",
@@ -1283,6 +1285,7 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.numbering_updated",
                 "organization.exported",
                 "organization.deletion_scheduled",
                 "organization.deletion_cancelled",
@@ -1446,6 +1449,7 @@
                 "production_order.cancelled",
                 "organization.updated",
                 "organization.address_updated",
+                "organization.numbering_updated",
                 "organization.exported",
                 "organization.deletion_scheduled",
                 "organization.deletion_cancelled",
@@ -6912,6 +6916,49 @@
         ]
       }
     },
+    "/v1/organization/numbering": {
+      "get": {
+        "operationId": "NumberingController_get_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NumberingEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Numbering"
+        ]
+      },
+      "put": {
+        "operationId": "NumberingController_update_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNumberingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Numbering"
+        ]
+      }
+    },
     "/v1/costs/valuation": {
       "get": {
         "operationId": "CostsController_stockValuation_v1",
@@ -8681,11 +8728,11 @@
           "active": {
             "type": "string",
             "enum": [
+              "never",
               "month",
               "today",
               "week",
-              "older",
-              "never"
+              "older"
             ]
           },
           "lastActiveAt": {
@@ -8772,11 +8819,11 @@
           },
           "active": {
             "enum": [
+              "never",
               "month",
               "today",
               "week",
-              "older",
-              "never"
+              "older"
             ],
             "type": "string"
           },
@@ -8918,11 +8965,11 @@
           "active": {
             "type": "string",
             "enum": [
+              "never",
               "month",
               "today",
               "week",
-              "older",
-              "never"
+              "older"
             ]
           },
           "lastActiveAt": {
@@ -16667,6 +16714,175 @@
           "country"
         ]
       },
+      "NumberingNext": {
+        "type": "object",
+        "properties": {
+          "never": {
+            "type": "number"
+          },
+          "yearly": {
+            "type": "number"
+          },
+          "monthly": {
+            "type": "number"
+          },
+          "daily": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "never",
+          "yearly",
+          "monthly",
+          "daily"
+        ]
+      },
+      "NumberingSeries": {
+        "type": "object",
+        "properties": {
+          "prefix": {
+            "type": "string"
+          },
+          "digits": {
+            "type": "number"
+          },
+          "reset": {
+            "type": "string",
+            "enum": [
+              "never",
+              "yearly",
+              "monthly",
+              "daily"
+            ]
+          },
+          "next": {
+            "$ref": "#/components/schemas/NumberingNext"
+          },
+          "last": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "prefix",
+          "digits",
+          "reset",
+          "next",
+          "last"
+        ]
+      },
+      "Numbering": {
+        "type": "object",
+        "properties": {
+          "invoice": {
+            "$ref": "#/components/schemas/NumberingSeries"
+          },
+          "creditNote": {
+            "$ref": "#/components/schemas/NumberingSeries"
+          },
+          "returnAuthorization": {
+            "$ref": "#/components/schemas/NumberingSeries"
+          },
+          "saleOrder": {
+            "$ref": "#/components/schemas/NumberingSeries"
+          },
+          "purchaseOrder": {
+            "$ref": "#/components/schemas/NumberingSeries"
+          },
+          "documentsInDateOrder": {
+            "type": "boolean"
+          },
+          "today": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "invoice",
+          "creditNote",
+          "returnAuthorization",
+          "saleOrder",
+          "purchaseOrder",
+          "documentsInDateOrder",
+          "today"
+        ]
+      },
+      "NumberingEnvelope": {
+        "type": "object",
+        "properties": {
+          "numbering": {
+            "$ref": "#/components/schemas/Numbering"
+          }
+        },
+        "required": [
+          "numbering"
+        ]
+      },
+      "NumberingSeriesDto": {
+        "type": "object",
+        "properties": {
+          "prefix": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "digits": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "reset": {
+            "type": "string",
+            "enum": [
+              "never",
+              "yearly",
+              "monthly",
+              "daily"
+            ]
+          },
+          "next": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 9999999999
+          }
+        },
+        "required": [
+          "prefix",
+          "digits",
+          "reset"
+        ]
+      },
+      "UpdateNumberingDto": {
+        "type": "object",
+        "properties": {
+          "invoice": {
+            "$ref": "#/components/schemas/NumberingSeriesDto"
+          },
+          "creditNote": {
+            "$ref": "#/components/schemas/NumberingSeriesDto"
+          },
+          "returnAuthorization": {
+            "$ref": "#/components/schemas/NumberingSeriesDto"
+          },
+          "saleOrder": {
+            "$ref": "#/components/schemas/NumberingSeriesDto"
+          },
+          "purchaseOrder": {
+            "$ref": "#/components/schemas/NumberingSeriesDto"
+          },
+          "documentsInDateOrder": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "invoice",
+          "creditNote",
+          "returnAuthorization",
+          "saleOrder",
+          "purchaseOrder",
+          "documentsInDateOrder"
+        ]
+      },
       "ValuationPool": {
         "type": "object",
         "properties": {
@@ -17616,6 +17832,7 @@
           "production_order.cancelled",
           "organization.updated",
           "organization.address_updated",
+          "organization.numbering_updated",
           "organization.exported",
           "organization.deletion_scheduled",
           "organization.deletion_cancelled",
@@ -17652,7 +17869,10 @@
           "only_member",
           "organization_export_required",
           "organization_deletion_under_way",
-          "password_incorrect"
+          "password_incorrect",
+          "numbering_prefix_shared",
+          "numbering_number_taken",
+          "numbering_date_order"
         ]
       },
       "ApiVocabulary": {
@@ -17694,6 +17914,20 @@
           "errorCode"
         ]
       },
+      "ErrorDetails": {
+        "type": "object",
+        "properties": {
+          "series": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lowest": {
+            "type": "number"
+          }
+        }
+      },
       "ErrorBody": {
         "type": "object",
         "properties": {
@@ -17722,6 +17956,9 @@
                 "$ref": "#/components/schemas/ErrorCode"
               }
             ]
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
           },
           "path": {
             "type": "string"

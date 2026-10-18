@@ -341,7 +341,7 @@ export type Person = {
   workPhone: string | null;
   extension: string | null;
   memberSince: string;
-  active: 'month' | 'today' | 'week' | 'older' | 'never';
+  active: 'never' | 'month' | 'today' | 'week' | 'older';
   lastActiveAt?: string | null;
 };
 
@@ -358,7 +358,7 @@ export type PersonDetail = {
   workPhone: string | null;
   extension: string | null;
   memberSince: string;
-  active: 'month' | 'today' | 'week' | 'older' | 'never';
+  active: 'never' | 'month' | 'today' | 'week' | 'older';
   lastActiveAt?: string | null;
   recentActivity?: Array<AuditRecord>;
 };
@@ -385,7 +385,7 @@ export type Member = {
   name: string;
   roleId: string;
   photoFileId?: string | null;
-  active: 'month' | 'today' | 'week' | 'older' | 'never';
+  active: 'never' | 'month' | 'today' | 'week' | 'older';
   lastActiveAt?: string | null;
 };
 
@@ -2213,6 +2213,51 @@ export type SiteAddressDto = {
   country: string;
 };
 
+export type NumberingNext = {
+  never: number;
+  yearly: number;
+  monthly: number;
+  daily: number;
+};
+
+export type NumberingSeries = {
+  prefix: string;
+  digits: number;
+  reset: 'never' | 'yearly' | 'monthly' | 'daily';
+  next: NumberingNext;
+  last: string | null;
+};
+
+export type Numbering = {
+  invoice: NumberingSeries;
+  creditNote: NumberingSeries;
+  returnAuthorization: NumberingSeries;
+  saleOrder: NumberingSeries;
+  purchaseOrder: NumberingSeries;
+  documentsInDateOrder: boolean;
+  today: string;
+};
+
+export type NumberingEnvelope = {
+  numbering: Numbering;
+};
+
+export type NumberingSeriesDto = {
+  prefix: string;
+  digits: number;
+  reset: 'never' | 'yearly' | 'monthly' | 'daily';
+  next?: number;
+};
+
+export type UpdateNumberingDto = {
+  invoice: NumberingSeriesDto;
+  creditNote: NumberingSeriesDto;
+  returnAuthorization: NumberingSeriesDto;
+  saleOrder: NumberingSeriesDto;
+  purchaseOrder: NumberingSeriesDto;
+  documentsInDateOrder: boolean;
+};
+
 export type ValuationPool = {
   variantId: string;
   sku: string;
@@ -2544,6 +2589,7 @@ export const AuditAction = {
   PRODUCTION_ORDER_CANCELLED: 'production_order.cancelled',
   ORGANIZATION_UPDATED: 'organization.updated',
   ORGANIZATION_ADDRESS_UPDATED: 'organization.address_updated',
+  ORGANIZATION_NUMBERING_UPDATED: 'organization.numbering_updated',
   ORGANIZATION_EXPORTED: 'organization.exported',
   ORGANIZATION_DELETION_SCHEDULED: 'organization.deletion_scheduled',
   ORGANIZATION_DELETION_CANCELLED: 'organization.deletion_cancelled',
@@ -2582,6 +2628,9 @@ export const ErrorCode = {
   ORGANIZATION_EXPORT_REQUIRED: 'organization_export_required',
   ORGANIZATION_DELETION_UNDER_WAY: 'organization_deletion_under_way',
   PASSWORD_INCORRECT: 'password_incorrect',
+  NUMBERING_PREFIX_SHARED: 'numbering_prefix_shared',
+  NUMBERING_NUMBER_TAKEN: 'numbering_number_taken',
+  NUMBERING_DATE_ORDER: 'numbering_date_order',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -2593,11 +2642,17 @@ export type ApiVocabulary = {
   errorCode: ErrorCode;
 };
 
+export type ErrorDetails = {
+  series?: Array<string>;
+  lowest?: number;
+};
+
 export type ErrorBody = {
   statusCode: number;
   error: string;
   message: string | Array<string>;
   code?: ErrorCode;
+  details?: ErrorDetails;
   path: string;
   timestamp: string;
   requestId?: string;
@@ -3084,6 +3139,7 @@ export type AuditControllerListV1Data = {
       | 'production_order.cancelled'
       | 'organization.updated'
       | 'organization.address_updated'
+      | 'organization.numbering_updated'
       | 'organization.exported'
       | 'organization.deletion_scheduled'
       | 'organization.deletion_cancelled'
@@ -3185,6 +3241,7 @@ export type AuditControllerExportAuditV1Data = {
       | 'production_order.cancelled'
       | 'organization.updated'
       | 'organization.address_updated'
+      | 'organization.numbering_updated'
       | 'organization.exported'
       | 'organization.deletion_scheduled'
       | 'organization.deletion_cancelled'
@@ -3371,6 +3428,7 @@ export type WorkControllerActivityV1Data = {
       | 'production_order.cancelled'
       | 'organization.updated'
       | 'organization.address_updated'
+      | 'organization.numbering_updated'
       | 'organization.exported'
       | 'organization.deletion_scheduled'
       | 'organization.deletion_cancelled'
@@ -3472,6 +3530,7 @@ export type WorkControllerExportActivityV1Data = {
       | 'production_order.cancelled'
       | 'organization.updated'
       | 'organization.address_updated'
+      | 'organization.numbering_updated'
       | 'organization.exported'
       | 'organization.deletion_scheduled'
       | 'organization.deletion_cancelled'
@@ -5760,6 +5819,34 @@ export type LocationsControllerSetAddressV1Responses = {
 
 export type LocationsControllerSetAddressV1Response =
   LocationsControllerSetAddressV1Responses[keyof LocationsControllerSetAddressV1Responses];
+
+export type NumberingControllerGetV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/organization/numbering';
+};
+
+export type NumberingControllerGetV1Responses = {
+  200: NumberingEnvelope;
+};
+
+export type NumberingControllerGetV1Response =
+  NumberingControllerGetV1Responses[keyof NumberingControllerGetV1Responses];
+
+export type NumberingControllerUpdateV1Data = {
+  body: UpdateNumberingDto;
+  path?: never;
+  query?: never;
+  url: '/v1/organization/numbering';
+};
+
+export type NumberingControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type NumberingControllerUpdateV1Response =
+  NumberingControllerUpdateV1Responses[keyof NumberingControllerUpdateV1Responses];
 
 export type CostsControllerStockValuationV1Data = {
   body?: never;

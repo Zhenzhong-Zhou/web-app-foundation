@@ -30,7 +30,7 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { takeNumber } from './document-numbers';
+import { takeNumber } from '../numbering/document-numbers';
 import type { IssueInvoiceDto } from './dto/issue-invoice.dto';
 import type { VoidInvoiceDto } from './dto/void-invoice.dto';
 import { computeAmounts, type InvoiceAmounts } from './invoice-amounts';
@@ -188,7 +188,12 @@ export class InvoiceIssuingService {
           }
 
           // Last, so every refusal above leaves the series untouched.
-          const number = await takeNumber(tx, organizationId, 'invoice');
+          const number = await takeNumber(
+            tx,
+            organizationId,
+            'invoice',
+            input.invoiceDate,
+          );
 
           const [row] = await tx
             .update(invoices)
@@ -354,7 +359,12 @@ export class InvoiceIssuingService {
           );
 
         // After every refusal, so a refused void leaves no gap in the series.
-        const number = await takeNumber(tx, organizationId, 'credit_note');
+        const number = await takeNumber(
+          tx,
+          organizationId,
+          'credit_note',
+          input.creditDate,
+        );
 
         const [creditNote] = await tx
           .insert(creditNotes)

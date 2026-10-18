@@ -2,6 +2,9 @@ import { eq } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
 import {
+  DEFAULT_NUMBERING,
+  DOCUMENT_TYPES,
+  documentNumbering,
   organizations,
   permissions,
   rolePermissions,
@@ -22,7 +25,7 @@ export interface ProvisionedOrganization {
 
 /**
  * Creates an organization together with its three system roles and their
- * permission grants (ADR-004: roles are per-org).
+ * permission grants (ADR-004: roles are per-org), and its numbering.
  *
  * Takes a transaction handle rather than injecting the database, for two
  * reasons. ADR-004 requires registration to create user + org + Owner
@@ -82,6 +85,16 @@ export async function provisionOrganization(
   );
 
   await tx.insert(rolePermissions).values(grants);
+
+  // Today's numbering for every series (ADR-073), so taking a number always
+  // reads a real row.
+  await tx.insert(documentNumbering).values(
+    DOCUMENT_TYPES.map((documentType) => ({
+      organizationId: organization.id,
+      documentType,
+      ...DEFAULT_NUMBERING[documentType],
+    })),
+  );
 
   return {
     organizationId: organization.id,

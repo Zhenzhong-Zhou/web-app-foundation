@@ -12,7 +12,7 @@ import { type ReactNode, type SubmitEvent, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { InvoiceDetail } from '../api/types.gen';
+import type { InvoiceDetail, InvoiceEnvelope } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
@@ -20,6 +20,8 @@ import { api, hasCode } from '../lib/api';
 import { formatMoney } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
+import { DateOrderLink } from './date-order-link';
+import { PeriodHint } from './period-hint';
 
 /**
  * The one step that cannot be taken back by editing (ADR-046): issuing
@@ -51,18 +53,24 @@ export function IssueInvoiceDialog({
   const can = useCan();
   const [invoiceDate, setInvoiceDate] = useState(organizationToday());
 
-  const { submitting, error, errorCode, reset, submit } = useSubmit(
-    async () => {
-      close();
-      await onIssued();
-    },
-    {
-      success: intl.formatMessage({
-        id: 'invoices.issued',
-        defaultMessage: 'Invoice issued',
-      }),
-    },
-  );
+  const { submitting, error, errorCode, reset, submit } =
+    useSubmit<InvoiceEnvelope>(
+      async () => {
+        close();
+        await onIssued();
+      },
+      {
+        // The number the server gave (ADR-073).
+        success: ({ invoice: issued }) =>
+          intl.formatMessage(
+            {
+              id: 'invoices.issuedAs',
+              defaultMessage: 'Invoice issued as {number}',
+            },
+            { number: issued.number ?? '' },
+          ),
+      },
+    );
 
   function close() {
     reset();
@@ -73,7 +81,7 @@ export function IssueInvoiceDialog({
     event.preventDefault();
 
     void submit(() =>
-      api(`/invoices/${invoice.id}/issue`, {
+      api<InvoiceEnvelope>(`/invoices/${invoice.id}/issue`, {
         method: 'POST',
         body: JSON.stringify({ invoiceDate }),
       }),
@@ -156,6 +164,7 @@ export function IssueInvoiceDialog({
                     {fix.label}
                   </Link>
                 )}
+                <DateOrderLink errorCode={errorCode} />
               </FormError>
             )}
 
@@ -207,6 +216,7 @@ export function IssueInvoiceDialog({
               onChange={(event) => setInvoiceDate(event.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
             />
+            <PeriodHint series="invoice" day={invoiceDate} />
           </Stack>
         </DialogContent>
 

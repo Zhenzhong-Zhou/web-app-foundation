@@ -7,12 +7,13 @@ import {
 import { and, asc, eq, gt, type SQL } from 'drizzle-orm';
 
 import { recordPrevious } from '../../core/audit/audit-context';
+import { todayOf } from '../../core/organizations/time-zone';
 import { isUniqueViolation } from '../../database/errors';
 import { addresses, orderLines, orders, partners } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { orderSeries, takeNumber } from '../invoices/document-numbers';
 import { assertSite, onlySite, siteStillInUse } from '../locations/sites';
+import { orderSeries, takeNumber } from '../numbering/document-numbers';
 import { type Tx } from '../stock/stock.service';
 import type { CreateOrderDto } from './dto/create-order.dto';
 import type { DuplicateOrderDto } from './dto/duplicate-order.dto';
@@ -137,6 +138,7 @@ export class OrderLifecycleService {
               tx,
               organizationId,
               orderSeries(input.direction),
+              await todayOf(tx, organizationId),
             ),
             partnerId: input.partnerId,
             direction: input.direction,
@@ -266,6 +268,7 @@ export class OrderLifecycleService {
             tx,
             organizationId,
             orderSeries(source.direction),
+            await todayOf(tx, organizationId),
           ),
           partnerId: source.partnerId,
           direction: source.direction,

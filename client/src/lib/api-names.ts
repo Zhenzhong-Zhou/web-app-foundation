@@ -5,6 +5,7 @@ import type {
   InvoiceSummary,
   LookupResponse,
   LotCostEntry,
+  NumberingSeries,
   OrderSummary,
   OrganizationProfile,
   PriceList,
@@ -82,3 +83,6 @@ export type ReturnResolution = ReturnAuthorizationLine['resolution'];
 export type RunStatus = ProductionRun['status'];
 
 export type ValuationKind = LotCostEntry['kind'];
+
+/** When a numbering series starts again from 1 (ADR-073). */
+export type NumberingReset = NumberingSeries['reset'];

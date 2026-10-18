@@ -46,11 +46,37 @@ export const ERROR_CODES = {
    * ADR-070): the screen marks the field that holds it (#120).
    */
   passwordIncorrect: 'password_incorrect',
+  /**
+   * Two series could print the same numbers (ADR-073): `details.series`
+   * names both, as the API does (`creditNote`), for the screen to mark.
+   */
+  numberingPrefixShared: 'numbering_prefix_shared',
+  /**
+   * A series would give a number a document already carries, or go below
+   * the numbers given (ADR-073): `details.series` names it, and
+   * `details.lowest` is the least next number accepted, when there is one.
+   */
+  numberingNumberTaken: 'numbering_number_taken',
+  /**
+   * Invoices and credit notes are kept in date order, and this one is
+   * dated before the latest in its series (ADR-073).
+   */
+  numberingDateOrder: 'numbering_date_order',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
 const KNOWN: ReadonlySet<string> = new Set(Object.values(ERROR_CODES));
+
+/**
+ * What a few codes carry for the screen to act on, beside the code itself:
+ * which series a numbering refusal is about, and the least next number it
+ * would accept (ADR-073). Never words: those are the message's.
+ */
+export interface ErrorDetails {
+  series?: string[];
+  lowest?: number;
+}
 
 /**
  * A refusal's response body with its code beside the message:
@@ -62,8 +88,9 @@ const KNOWN: ReadonlySet<string> = new Set(Object.values(ERROR_CODES));
 export function withCode<T extends object>(
   response: T,
   code: ErrorCode,
-): T & { code: ErrorCode } {
-  return { ...response, code };
+  details?: ErrorDetails,
+): T & { code: ErrorCode; details?: ErrorDetails } {
+  return { ...response, code, ...(details ? { details } : {}) };
 }
 
 /**
@@ -76,5 +103,15 @@ export function codeOf(response: unknown): ErrorCode | undefined {
   const { code } = response as { code?: unknown };
   return typeof code === 'string' && KNOWN.has(code)
     ? (code as ErrorCode)
+    : undefined;
+}
+
+/**
+ * The details beside a code of ours, and only beside one: a body with no
+ * known code says nothing more. Only withCode puts them there, typed.
+ */
+export function detailsOf(response: unknown): ErrorDetails | undefined {
+  return codeOf(response)
+    ? (response as { details?: ErrorDetails }).details
     : undefined;
 }

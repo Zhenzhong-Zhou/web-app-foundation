@@ -48,6 +48,27 @@ export const LOCATIONS = [
   },
 ];
 
+/** Every organization's numbering until it changes it (ADR-073). */
+export const NUMBERING = {
+  invoice: series('INV-'),
+  creditNote: series('CN-'),
+  returnAuthorization: series('RMA-'),
+  saleOrder: series('SO-'),
+  purchaseOrder: series('PO-'),
+  documentsInDateOrder: false,
+  today: '2026-10-17',
+};
+
+function series(prefix: string) {
+  return {
+    prefix,
+    digits: 6,
+    reset: 'never' as const,
+    next: { never: 1, yearly: 1, monthly: 1, daily: 1 },
+    last: null,
+  };
+}
+
 export const handlers = [
   // Record pages report an opening (ADR-058); nothing to check in most
   // specs, so it is answered here once.
@@ -63,6 +84,10 @@ export const handlers = [
   ),
   http.get('/api/v1/stock/lots', () => HttpResponse.json([])),
   http.get(`${BASE}/boms`, () => HttpResponse.json([])),
+  // Read by the date hint in the Issue, Credit and Void dialogs (ADR-073).
+  http.get(`${BASE}/organization/numbering`, () =>
+    HttpResponse.json({ numbering: NUMBERING }),
+  ),
   http.post(`${BASE}/boms`, () =>
     HttpResponse.json({ bom: { id: 'bom-1' } }, { status: 201 }),
   ),

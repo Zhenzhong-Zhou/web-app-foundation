@@ -6,6 +6,7 @@ import {
   type Letterhead,
   type Printable,
 } from '../../core/documents/documents.service';
+import { fileNameOf } from '../../core/files/content-disposition';
 import {
   ExportContributions,
   type ExportContributor,
@@ -66,11 +67,13 @@ export class InvoiceDocumentsExport implements ExportContributor, OnModuleInit {
 
     return [
       ...issued.map(({ id, number }) => ({
-        name: `documents/invoices/${number}.pdf`,
+        // Never null here, as only issued invoices are read; the id stands
+        // in only to satisfy the column's type.
+        name: `documents/invoices/${fileNameOf(number ?? id)}.pdf`,
         bytes: drawn(() => this.invoices.findById(id).then(printableInvoice)),
       })),
       ...notes.map(({ id, number }) => ({
-        name: `documents/credit-notes/${number}.pdf`,
+        name: `documents/credit-notes/${fileNameOf(number)}.pdf`,
         bytes: drawn(() =>
           this.invoices.findCreditNote(id).then(printableCreditNote),
         ),

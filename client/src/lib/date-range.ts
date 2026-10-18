@@ -30,7 +30,7 @@ export const RANGE_PRESETS: readonly RangePreset[] = [
 ];
 
 /** A day of the calendar as YYYY-MM-DD; months past 11 roll over. */
-function calendarDay(year: number, month: number, date: number): string {
+export function calendarDay(year: number, month: number, date: number): string {
   return new Date(Date.UTC(year, month, date)).toISOString().slice(0, 10);
 }
 

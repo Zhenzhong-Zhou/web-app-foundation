@@ -11,6 +11,7 @@ import { instantRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
 import { recordPrevious } from '../../core/audit/audit-context';
+import { todayOf } from '../../core/organizations/time-zone';
 import type { Transaction } from '../../database/database.module';
 import {
   creditNoteLines,
@@ -24,8 +25,8 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
-import { takeNumber } from '../invoices/document-numbers';
 import { assertSite, onlySite, siteShippedFrom } from '../locations/sites';
+import { takeNumber } from '../numbering/document-numbers';
 import { loadOrder } from '../orders/load-order';
 import { requestedLines } from '../orders/order-line-lookup';
 import { partnerMatches } from '../partners/partner-search';
@@ -293,6 +294,7 @@ export class ReturnAuthorizationsService {
           tx,
           organizationId,
           'return_authorization',
+          await todayOf(tx, organizationId),
         );
 
         const [rma] = await tx
