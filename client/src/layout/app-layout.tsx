@@ -31,6 +31,7 @@ import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { LanguageSelect } from '../components/language-select';
 import { PersonAvatar } from '../components/person-avatar';
+import { TextSizeSelect } from '../components/text-size-select';
 import { NameAndEmail } from '../components/who-and-when';
 import { api } from '../lib/api';
 import { initialsOf } from '../lib/person-initials';
@@ -337,6 +338,12 @@ export function AppLayout() {
                 sx={{ '&:hover': { bgcolor: 'transparent' } }}
               >
                 <LanguageSelect />
+              </MenuItem>
+              <MenuItem
+                disableRipple
+                sx={{ '&:hover': { bgcolor: 'transparent' } }}
+              >
+                <TextSizeSelect />
               </MenuItem>
 
               <Divider />

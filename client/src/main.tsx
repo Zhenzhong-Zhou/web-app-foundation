@@ -14,6 +14,11 @@ import { AuthProvider } from './auth/auth-provider';
 import { ToastProvider } from './components/toast-provider';
 import { LanguageProvider } from './i18n/language-provider';
 import { LocalizedTheme } from './i18n/localized-theme';
+import { initTextSize } from './theme/text-size';
+
+// This device's text size (ADR-075), before anything renders, so the first
+// paint is already at it rather than Standard for a moment.
+initTextSize();
 
 /**
  * A data router, so a page can hold a navigation until the person chooses

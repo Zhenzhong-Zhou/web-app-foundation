@@ -1178,6 +1178,31 @@ few invoices and orders.
   before Orders. With today's prefixes, typing SO- or PO- lists Orders
   first.
 
+## 28. Text size (ADR-075)
+
+Any page, signed in, in a browser at its default font size.
+
+- **MC-2801** *(ADR-075)* Open the avatar menu: Text size sits under the
+  colour mode and the language, reading Standard text. Open it: Standard
+  text, Large text and Larger text, each drawn at the size it gives.
+- **MC-2802** *(ADR-075)* Choose Larger text: every word on the page grows
+  at once, the rail and the summary panel widen with it, and nothing else
+  moves. Reload: it opens at Larger, with no flash of the smaller size.
+  Open a second tab of the app: it is at Larger too, and changing it there
+  changes the first tab.
+- **MC-2803** *(ADR-075)* At Larger, walk Home, Inventory, SO-DEMO-1 and
+  INV-000001 at 1280px wide: no label in the rail is cut sooner than at
+  Standard, no page scrolls sideways (a table may, inside its own box),
+  and quantities fit in the ship and receive dialogs' fields. In 简体中文
+  the captions under figures read comfortably.
+- **MC-2804** *(ADR-075)* Set the browser's own font size to Large (Chrome:
+  Settings → Appearance), then choose Large text: the text is larger than
+  either alone, since the choice multiplies the browser's. Back to
+  Standard text, the browser's size alone stands. Set the browser back.
+- **MC-2805** *(ADR-075)* Sign out: the sign-in page shows the language,
+  then Text size, above the card. Choose Large text: the page grows before
+  signing in, and stays so after.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -1434,3 +1459,4 @@ first.
   MC-2708 extended.
 - 2026-10-18: a bad digits or next number says why: MC-2703 extended.
 - 2026-10-18: ADR-073, the lookup by the organization's prefixes: MC-2713.
+- 2026-10-18: ADR-075, the text size: section 28, MC-2801 to MC-2805.
