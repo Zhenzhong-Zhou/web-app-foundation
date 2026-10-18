@@ -827,6 +827,11 @@ await fetch(`${api}/v1/files/product-image`, {
   record's History show faces. Leave a tab open and hidden for a few
   minutes, then look at People from another account: you are not shown
   as active then. In 中文 on a phone, People reads 同事 and the cards fit.
+- **MC-1902** Without a photo, rename yourself on Account to 周振中: your
+  circle shows 振中, inside the circle in the top bar, History, People and
+  your page; as 王芳 it shows 王芳, as Élodie Dupré ÉD, and as محمد علي
+  only م. With VoiceOver on and the app in English, read your card on
+  People: 振中 is read in a Chinese voice. Put your own name back.
 
 ## 20. Licence reminders (ADR-064)
 
@@ -1510,3 +1515,4 @@ first.
 - 2026-10-18: widths that hold text on a person's page, in History and on
   People: MC-2803 extended.
 - 2026-10-18: a dialog's buttons on a phone: MC-R20.
+- 2026-10-18: initials by the name's script: MC-1902.

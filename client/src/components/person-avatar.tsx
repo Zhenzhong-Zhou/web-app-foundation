@@ -1,11 +1,13 @@
 import { Avatar } from '@mui/material';
 
-import { colourOf, initialsOf } from '../lib/person-initials';
+import { colourOf, initialsLang, initialsOf } from '../lib/person-initials';
 
 /**
  * A person's face (ADR-063): their photo, or their initials on their own
  * colour. The photo's address carries its id, so a new one is a new
  * address; small circles load the 128 px size, large ones the 512.
+ * Two Chinese characters are set smaller than two Latin letters, being
+ * about twice as wide, and marked Chinese for a screen reader's voice.
  */
 export function PersonAvatar({
   userId,
@@ -24,6 +26,9 @@ export function PersonAvatar({
     userId && photoFileId
       ? `/api/v1/people/${userId}/photo?size=${size > 64 ? 'full' : 'thumb'}&v=${photoFileId}`
       : undefined;
+  const initials = initialsOf(name, email);
+  const lang = initialsLang(initials);
+  const scale = lang && [...initials].length > 1 ? 0.32 : 0.4;
 
   return (
     <Avatar
@@ -33,13 +38,13 @@ export function PersonAvatar({
       sx={{
         width: size,
         height: size,
-        fontSize: Math.max(11, Math.round(size * 0.4)),
+        fontSize: Math.max(11, Math.round(size * scale)),
         fontWeight: 600,
         bgcolor: colourOf(name, email),
         color: '#FFFFFF',
       }}
     >
-      {initialsOf(name, email)}
+      <span lang={lang}>{initials}</span>
     </Avatar>
   );
 }
