@@ -35,11 +35,6 @@ function lettersOf(text: string): string[] {
   return graphemes(text).filter((g) => LETTER.test(g));
 }
 
-/** The first letter or digit of a word, skipping a bracket or an emoji. */
-function firstLetter(word: string): string | undefined {
-  return lettersOf(word)[0];
-}
-
 /** A capital, unless the capital is two letters (ß gives SS). */
 function capital(grapheme: string): string {
   const upper = grapheme.toUpperCase();
@@ -61,30 +56,29 @@ function capital(grapheme: string): string {
  * Without a letter in the name, the first two letters of the email.
  */
 export function initialsOf(name: string | null, email?: string | null): string {
+  // Each word as its letters; a word without one (an emoji, a bracket) goes.
   const words = (name ?? '')
-    .trim()
     .split(/\s+/)
-    .filter((word) => firstLetter(word));
+    .map(lettersOf)
+    .filter((letters) => letters.length > 0);
 
   if (words.length > 0) {
-    const letters = lettersOf(words.join(''));
+    const letters = words.flat();
     if (letters.every((g) => HAN.test(g))) return letters.slice(-2).join('');
 
-    const first = firstLetter(words[0]) as string;
+    const first = words[0][0];
     if (!CASED.test(first)) return first;
     // Only the words in a cased script: Zhou 振中 gives ZH, not Z振.
-    const cased = words.filter((word) =>
-      CASED.test(firstLetter(word) as string),
-    );
+    const cased = words.filter((word) => CASED.test(word[0]));
     const pair =
       cased.length > 1
-        ? [first, firstLetter(cased[cased.length - 1]) as string]
-        : lettersOf(cased[0]).slice(0, 2);
+        ? [first, cased[cased.length - 1][0]]
+        : words[0].slice(0, 2);
     return pair.map(capital).join('');
   }
 
   const letters = lettersOf((email ?? '').split('@')[0]).slice(0, 2);
-  return letters.length > 0 ? letters.map(capital).join('') : '?';
+  return letters.map(capital).join('') || '?';
 }
 
 /**
