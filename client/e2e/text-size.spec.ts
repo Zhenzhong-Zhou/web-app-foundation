@@ -74,11 +74,19 @@ async function atLarger(page: Page): Promise<void> {
   });
 }
 
-/** Lists that need nothing seeded, each with its own kind of layout. */
+/**
+ * Lists that need nothing seeded, each with its own kind of layout; every
+ * list with a date range is here, since that row is the widest.
+ */
 const SCREENS = [
   '/',
   '/inventory',
   '/orders',
+  '/movements',
+  '/invoices',
+  '/credit-notes',
+  '/return-authorizations',
+  '/production',
   '/products',
   '/partners',
   '/account',
@@ -132,7 +140,7 @@ test('the sign-in page offers the text size before signing in', async ({
 test('at Larger, the main screens never scroll sideways on a desktop', async ({
   page,
 }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
   await atLarger(page);
 
   const wide: Record<string, string[]> = {};
@@ -151,7 +159,7 @@ test('at Larger, the main screens never scroll sideways on a desktop', async ({
 test('at Larger and 320px wide, the main screens reflow (WCAG 1.4.10)', async ({
   page,
 }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
   await page.setViewportSize({ width: 320, height: 640 });
   await atLarger(page);
 

@@ -47,8 +47,14 @@ export function DateRangeFilter({
     { date: label },
   );
 
+  // Wraps: two dates and Period are wider than a phone, at any text size.
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+    <Stack
+      direction="row"
+      useFlexGap
+      spacing={1}
+      sx={{ alignItems: 'center', flexWrap: 'wrap' }}
+    >
       <TextField
         type="date"
         size="small"
