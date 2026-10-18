@@ -10,13 +10,6 @@ import { expect, test } from './fixtures';
  * rest of the suite on the shared organization.
  */
 
-/** The root's computed size: 16px is Chromium's default, so Standard. */
-async function rootSize(page: Page): Promise<string> {
-  return page.evaluate(
-    () => getComputedStyle(document.documentElement).fontSize,
-  );
-}
-
 /**
  * What makes the page scroll sideways, if anything: the innermost elements
  * past the window's right edge, leaving out what sits in a box that scrolls
@@ -45,9 +38,7 @@ async function overflowing(page: Page): Promise<string[]> {
 
     const culprits = Array.from(document.body.querySelectorAll('*')).filter(
       (el) =>
-        past(el) &&
-        !scrollsOnItsOwn(el) &&
-        !Array.from(el.children).some(past),
+        past(el) && !scrollsOnItsOwn(el) && !Array.from(el.children).some(past),
     );
 
     if (culprits.length === 0) return ['something past the right edge'];
@@ -60,17 +51,6 @@ async function overflowing(page: Page): Promise<string[]> {
         .slice(0, 40);
       return `${el.tagName.toLowerCase()}${mui ? ` (${mui})` : ''}: ${words}`;
     });
-  });
-}
-
-/** Larger from the first paint, as a device that chose it before opens. */
-async function atLarger(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    try {
-      localStorage.setItem('textSize', 'larger');
-    } catch {
-      // Storage refused: the spec's own checks then fail and say so.
-    }
   });
 }
 
@@ -100,23 +80,24 @@ test('the account menu sets the text size, and a reload keeps it', async ({
 }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  expect(await rootSize(page)).toBe('16px');
+  // 16px is Chromium's default, so Standard.
+  await expect(page.locator('html')).toHaveCSS('font-size', '16px');
 
   await page.getByRole('button', { name: /signed in as/ }).click();
   await page.getByRole('combobox', { name: 'Text size' }).click();
   await page.getByRole('option', { name: 'Larger text' }).click();
 
-  expect(await rootSize(page)).toBe('20px');
+  await expect(page.locator('html')).toHaveCSS('font-size', '20px');
 
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  expect(await rootSize(page)).toBe('20px');
+  await expect(page.locator('html')).toHaveCSS('font-size', '20px');
 
   // Back to Standard leaves the browser's own size in charge again.
   await page.getByRole('button', { name: /signed in as/ }).click();
   await page.getByRole('combobox', { name: 'Text size' }).click();
   await page.getByRole('option', { name: 'Standard text' }).click();
-  expect(await rootSize(page)).toBe('16px');
+  await expect(page.locator('html')).toHaveCSS('font-size', '16px');
 });
 
 test('the sign-in page offers the text size before signing in', async ({
@@ -132,45 +113,32 @@ test('the sign-in page offers the text size before signing in', async ({
   await page.getByRole('combobox', { name: 'Text size' }).click();
   await page.getByRole('option', { name: 'Large text' }).click();
 
-  expect(await rootSize(page)).toBe('18px');
+  await expect(page.locator('html')).toHaveCSS('font-size', '18px');
 
   await context.close();
 });
 
-test('at Larger, the main screens never scroll sideways on a desktop', async ({
-  page,
-}) => {
-  test.setTimeout(90_000);
-  await atLarger(page);
+for (const [where, viewport] of [
+  ['never scroll sideways on a desktop', null],
+  ['reflow at 320px wide (WCAG 1.4.10)', { width: 320, height: 640 }],
+] as const) {
+  test(`at Larger, the main screens ${where}`, async ({ page }) => {
+    test.setTimeout(90_000);
+    if (viewport) await page.setViewportSize(viewport);
+    // Larger from the first paint, as a device that chose it before opens.
+    await page.addInitScript(() => localStorage.setItem('textSize', 'larger'));
 
-  const wide: Record<string, string[]> = {};
-  for (const path of SCREENS) {
-    await page.goto(path);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await page.waitForLoadState('networkidle');
-    const culprits = await overflowing(page);
-    if (culprits.length > 0) wide[path] = culprits;
-  }
+    const wide: Record<string, string[]> = {};
+    for (const path of SCREENS) {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await expect(page.locator('html')).toHaveCSS('font-size', '20px');
+      await page.waitForLoadState('networkidle');
+      const culprits = await overflowing(page);
+      if (culprits.length > 0) wide[path] = culprits;
+    }
 
-  // All at once, so one run lists every screen to fix, and what on it.
-  expect(wide).toEqual({});
-});
-
-test('at Larger and 320px wide, the main screens reflow (WCAG 1.4.10)', async ({
-  page,
-}) => {
-  test.setTimeout(90_000);
-  await page.setViewportSize({ width: 320, height: 640 });
-  await atLarger(page);
-
-  const wide: Record<string, string[]> = {};
-  for (const path of SCREENS) {
-    await page.goto(path);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await page.waitForLoadState('networkidle');
-    const culprits = await overflowing(page);
-    if (culprits.length > 0) wide[path] = culprits;
-  }
-
-  expect(wide).toEqual({});
-});
+    // All at once, so one run lists every screen to fix, and what on it.
+    expect(wide).toEqual({});
+  });
+}

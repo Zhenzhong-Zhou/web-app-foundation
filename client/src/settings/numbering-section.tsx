@@ -519,7 +519,7 @@ function NumberingForm({
           max: 10,
         },
       }}
-      sx={fullWidth ? undefined : { width: 80 }}
+      sx={fullWidth ? undefined : { width: rem(80) }}
     />
   );
 

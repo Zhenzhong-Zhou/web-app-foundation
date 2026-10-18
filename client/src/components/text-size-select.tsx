@@ -4,6 +4,7 @@ import { defineMessages, useIntl } from 'react-intl';
 
 import {
   isTextSize,
+  setTextSize,
   TEXT_SCALE,
   TEXT_SIZES,
   type TextSize,
@@ -30,13 +31,12 @@ const NAMES = defineMessages<TextSize>({
  */
 export function TextSizeSelect() {
   const intl = useIntl();
-  const [size, setSize] = useTextSize();
+  const size = useTextSize();
 
   return (
     <Select
       size="small"
       value={size}
-      renderValue={(value) => intl.formatMessage(NAMES[value])}
       inputProps={{
         'aria-label': intl.formatMessage({
           id: 'components.textSize.label',
@@ -45,7 +45,7 @@ export function TextSizeSelect() {
       }}
       onChange={(event) => {
         const next = event.target.value;
-        if (isTextSize(next)) setSize(next);
+        if (isTextSize(next)) setTextSize(next);
       }}
     >
       {TEXT_SIZES.map((option) => (

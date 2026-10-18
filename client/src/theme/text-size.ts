@@ -101,7 +101,7 @@ function snapshot(): TextSize {
   return current;
 }
 
-/** The size now, and the way to change it; every picker shows the same. */
-export function useTextSize(): [TextSize, (size: TextSize) => void] {
-  return [useSyncExternalStore(subscribe, snapshot), setTextSize];
+/** The size now; every picker shows the same. */
+export function useTextSize(): TextSize {
+  return useSyncExternalStore(subscribe, snapshot);
 }

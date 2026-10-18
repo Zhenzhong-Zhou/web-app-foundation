@@ -20,6 +20,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
 import { ExportButton } from '../components/export-button';
+import { FilterRow } from '../components/filter-row';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { When, Who } from '../components/who-and-when';
@@ -193,15 +194,8 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
       />
 
       {/* Their own row rather than beside the title: three controls crowd a
-          heading, and an actor filter is the obvious next one. It wraps, so
-          on a phone the dates go under the action instead of off the
-          screen. */}
-      <Stack
-        direction="row"
-        useFlexGap
-        spacing={2}
-        sx={{ alignItems: 'center', flexWrap: 'wrap' }}
-      >
+          heading, and an actor filter is the obvious next one. */}
+      <FilterRow>
         {!mine && (
           <TextField
             id="audit-action"
@@ -254,7 +248,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
           onChange={(event) => changeFilter({ to: event.target.value })}
           slotProps={{ inputLabel: { shrink: true } }}
         />
-      </Stack>
+      </FilterRow>
 
       {/* As below, for one person's work, opened from their page. */}
       {actorId && (

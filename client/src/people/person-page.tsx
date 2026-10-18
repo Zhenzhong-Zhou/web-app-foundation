@@ -19,6 +19,7 @@ import { LoadFailure } from '../errors/load-failure';
 import { relativeTime, SEPARATOR } from '../lib/format';
 import { useResource } from '../lib/use-resource';
 import { roleLabel } from '../members/role-names';
+import { rem } from '../theme/rem';
 import { activeLabel, type PersonDetail, phoneLine } from './people-types';
 
 /**
@@ -169,7 +170,7 @@ export function PersonPage() {
                   key={label}
                   sx={{
                     display: 'grid',
-                    gridTemplateColumns: '140px minmax(0, 1fr)',
+                    gridTemplateColumns: `${rem(140)} minmax(0, 1fr)`,
                     gap: 1.5,
                     py: 1,
                     borderTop: 1,

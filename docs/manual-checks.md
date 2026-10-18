@@ -1193,8 +1193,10 @@ Any page, signed in, in a browser at its default font size.
 - **MC-2803** *(ADR-075)* At Larger, walk Home, Inventory, SO-DEMO-1 and
   INV-000001 at 1280px wide: no label in the rail is cut sooner than at
   Standard, no page scrolls sideways (a table may, inside its own box),
-  and quantities fit in the ship and receive dialogs' fields. In 简体中文
-  the captions under figures read comfortably.
+  and quantities fit in the ship and receive dialogs' fields. A person's
+  page keeps its labels on one line, and a record's History drawer and the
+  People search widen with the text. In 简体中文 the captions under
+  figures read comfortably.
 - **MC-2804** *(ADR-075)* Set the browser's own font size to Large (Chrome:
   Settings → Appearance), then choose Large text: the text is larger than
   either alone, since the choice multiplies the browser's. Back to
@@ -1500,3 +1502,5 @@ first.
 - 2026-10-18: rows of buttons and long labels on a phone: MC-R18.
 - 2026-10-18: the date range on a phone: MC-R18 extended.
 - 2026-10-18: Home's cards on a phone: MC-R19.
+- 2026-10-18: widths that hold text on a person's page, in History and on
+  People: MC-2803 extended.

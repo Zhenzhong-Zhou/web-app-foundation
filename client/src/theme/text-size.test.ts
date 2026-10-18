@@ -41,11 +41,11 @@ describe('text size', () => {
 
   it('tells every reader when it changes', () => {
     const { result } = renderHook(() => useTextSize());
-    expect(result.current[0]).toBe('standard');
+    expect(result.current).toBe('standard');
 
     act(() => setTextSize('larger'));
 
-    expect(result.current[0]).toBe('larger');
+    expect(result.current).toBe('larger');
   });
 
   it('follows a change made in another tab', () => {
@@ -58,7 +58,7 @@ describe('text size', () => {
       window.dispatchEvent(new StorageEvent('storage', { key: 'textSize' }));
     });
 
-    expect(result.current[0]).toBe('large');
+    expect(result.current).toBe('large');
     expect(html()).toBe('112.5%');
   });
 });
