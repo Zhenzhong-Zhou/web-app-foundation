@@ -8,6 +8,14 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
+- **Initials by the name's script (ADR-063 amended):** on
+  `initials-by-script`, client only, no migration. A person without a
+  photo shows what readers of their name's script expect: a Chinese name
+  its given name (周振中, 振中), Latin, Greek and Cyrillic names their
+  initials, any other script its first character. Two Chinese characters
+  are set smaller and marked Chinese for screen readers.
+  - **Before merging:** walk MC-1902.
+
 - **ADR-075, text size, and text that grows:** built on
   `adr-075-text-size`, its PR to open. Standard, Large and Larger text
   (100%, 112.5% and 125% of the browser's own size, on `<html>`), in the
@@ -358,6 +366,10 @@ with this one, this one is current.
     registration, the Still on UTC note hidden on a computer in UTC and
     the picker's announcement, the auth provider passing the zone on. Add
     each when that code is next touched.
+- **A browser-compatibility lint rule** (eslint-plugin-compat) set to the
+  build target, so code using an API newer than the floor fails ESLint;
+  the code review on initials-by-script caught Intl.Segmenter by reading.
+  A chore of its own: a new dependency, and it may flag existing code.
 
 ### Deferred, each waiting for its trigger (in the ADRs)
 
