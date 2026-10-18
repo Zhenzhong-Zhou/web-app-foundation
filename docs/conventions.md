@@ -520,6 +520,12 @@ and the tokens lack becomes a token first.
 - **Five type sizes:** `h5` for a page title, `h6` for a section, `body1`,
   `body2` and `caption`. No others, and no capitals: `overline` is sentence
   case.
+- **Text that grows** (ADR-075). A font size is rem, through the theme's
+  variants, and never px on a page: px ignores the person's text size. A
+  width beside or around text (a field, a label column, a panel, a flex
+  basis) is `rem(px)` from `theme/rem.ts`, so it grows with the text and
+  cuts or wraps where it does at Standard. Spacing, borders, icon-only boxes
+  and images stay px.
 - **Links** take the accent and underline on hover. **Buttons**: one filled per
   group, as above; the rest text weight.
 - **Density** is the theme's: compact with a mouse, 44px targets under a finger

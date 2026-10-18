@@ -35,6 +35,7 @@ import {
   toApiDecimal,
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
+import { rem } from '../theme/rem';
 
 /**
  * A quantity of nothing, recognised as text rather than parsed: "", "0",
@@ -376,7 +377,7 @@ export function ShipOrderDialog({
                           ),
                         },
                       }}
-                      sx={{ width: 140 }}
+                      sx={{ width: rem(140) }}
                     />
                   </Stack>
 
@@ -515,7 +516,10 @@ export function ShipOrderDialog({
                                 <TableCell align="right">
                                   {formatQuantity(lot.onHand)}
                                 </TableCell>
-                                <TableCell align="right" sx={{ width: 140 }}>
+                                <TableCell
+                                  align="right"
+                                  sx={{ width: rem(140) }}
+                                >
                                   <TextField
                                     size="small"
                                     value={picking[lot.lotId] ?? ''}

@@ -14,6 +14,7 @@ import { useIntl } from 'react-intl';
 import { SettingsSection } from '../components/settings-section';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
+import { rem } from '../theme/rem';
 
 type Scope = 'unticked' | 'everyone';
 const MINUTES = [15, 30, 60, 240] as const;
@@ -111,7 +112,7 @@ export function IdleSignOutForm({
           id: 'settings.security.afterHelp',
           defaultMessage: 'Only real use counts as activity.',
         })}
-        sx={{ maxWidth: 240 }}
+        sx={{ maxWidth: rem(240) }}
       >
         <MenuItem value="off">
           {intl.formatMessage({

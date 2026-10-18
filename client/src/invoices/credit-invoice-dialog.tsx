@@ -34,6 +34,7 @@ import {
 import { organizationToday } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
 import { formatRate } from '../settings/tax-rate';
+import { rem } from '../theme/rem';
 import { DateOrderLink } from './date-order-link';
 import { PeriodHint } from './period-hint';
 
@@ -390,7 +391,7 @@ export function CreditInvoiceDialog({
                             },
                           )}
                         </TableCell>
-                        <TableCell align="right" sx={{ width: 140 }}>
+                        <TableCell align="right" sx={{ width: rem(140) }}>
                           <TextField
                             size="small"
                             value={row?.quantity ?? ''}
@@ -412,7 +413,7 @@ export function CreditInvoiceDialog({
                             }}
                           />
                         </TableCell>
-                        <TableCell align="right" sx={{ width: 160 }}>
+                        <TableCell align="right" sx={{ width: rem(160) }}>
                           <TextField
                             size="small"
                             value={
@@ -527,7 +528,7 @@ export function CreditInvoiceDialog({
               value={creditDate}
               onChange={(event) => setCreditDate(event.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
-              sx={{ maxWidth: 240 }}
+              sx={{ maxWidth: rem(240) }}
             />
             <PeriodHint series="creditNote" day={creditDate} />
           </Stack>

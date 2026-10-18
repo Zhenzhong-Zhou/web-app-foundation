@@ -32,6 +32,7 @@ import { useResource } from '../lib/use-resource';
 import { useSubmit } from '../lib/use-submit';
 import { useTab } from '../lib/use-tab';
 import { DefaultSaleListForm } from '../price-lists/default-sale-list-form';
+import { rem } from '../theme/rem';
 import { BrandingForm } from './branding-form';
 import { ClosingSections } from './closing-sections';
 import {
@@ -853,7 +854,7 @@ function BaseCurrencyForm({
           defaultMessage:
             'What stock is valued in: CAD, USD. It cannot change once stock carries a value in it.',
         })}
-        sx={{ maxWidth: 240 }}
+        sx={{ maxWidth: rem(240) }}
       />
     </SettingsSection>
   );

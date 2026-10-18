@@ -49,6 +49,7 @@ import { organizationDayOf } from '../lib/time-zone';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
 import { formatRate } from '../settings/tax-rate';
+import { rem } from '../theme/rem';
 import { CreditInvoiceDialog } from './credit-invoice-dialog';
 import { DeleteDraftDialog } from './delete-draft-dialog';
 import { DraftDetails } from './invoice-draft-details';
@@ -638,7 +639,7 @@ function TotalRow({
   strong?: boolean;
 }) {
   return (
-    <Stack direction="row" spacing={3} sx={{ minWidth: 260 }}>
+    <Stack direction="row" spacing={3} sx={{ minWidth: rem(260) }}>
       <Typography
         variant="body2"
         sx={{ flexGrow: 1, fontWeight: strong ? 600 : undefined }}

@@ -369,7 +369,12 @@ export function AppLayout() {
           onClose={() => setDrawer(false)}
           slotProps={{
             paper: {
-              sx: { width: RAIL_WIDTH + 48, bgcolor: 'rail.bg', px: 1, py: 1 },
+              sx: {
+                width: `calc(${RAIL_WIDTH} + 48px)`,
+                bgcolor: 'rail.bg',
+                px: 1,
+                py: 1,
+              },
             },
           }}
         >

@@ -1,8 +1,11 @@
+import { rem } from '../theme/rem';
+
 /**
  * How wide a name may grow beside a face before it is cut with "…", whole
  * on hover; the email beneath it is cut at the name's width, never less
  * than the floor, so a short name's email stays readable (ADR-063). The
- * same in every list and menu.
+ * same in every list and menu. In rem, so a larger text size moves the cut
+ * with the text rather than cutting more of it (ADR-075).
  */
-export const EMAIL_MAX_WIDTH = 200;
-export const EMAIL_MIN_WIDTH = 140;
+export const EMAIL_MAX_WIDTH = rem(200);
+export const EMAIL_MIN_WIDTH = rem(140);

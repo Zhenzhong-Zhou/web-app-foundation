@@ -28,6 +28,7 @@ import { withInstants } from '../lib/date-range';
 import { NO_VALUE, SEPARATOR } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
+import { rem } from '../theme/rem';
 import { type AuditRecord, describe, summarise } from './audit-format';
 
 /**
@@ -205,7 +206,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
             size="small"
             value={action}
             onChange={(event) => changeFilter({ action: event.target.value })}
-            sx={{ minWidth: 220 }}
+            sx={{ minWidth: rem(220) }}
           >
             <MenuItem value="">
               {intl.formatMessage({

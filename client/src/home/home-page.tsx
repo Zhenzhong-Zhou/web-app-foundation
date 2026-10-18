@@ -28,6 +28,8 @@ import {
 } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
 import { useExpiryDays } from '../lib/use-expiry-days';
+import { rem } from '../theme/rem';
+import { TYPE } from '../theme/tokens';
 import { GettingStarted } from './getting-started';
 import { CARDS } from './home-cards';
 import { RecentCard } from './recent-card';
@@ -233,7 +235,10 @@ export function HomePage() {
         <Skeleton variant="rounded" height={120} />
       ) : (
         <>
-          <Typography sx={{ mt: -1.5, fontSize: 17 }} color="text.secondary">
+          <Typography
+            sx={{ mt: -1.5, fontSize: rem(TYPE.section) }}
+            color="text.secondary"
+          >
             {summary}
           </Typography>
 
@@ -347,7 +352,8 @@ function CountTile({ card }: { card: HomeCard }) {
       </Typography>
       <Typography
         sx={{
-          fontSize: 30,
+          // In rem, so it grows with the text size (ADR-075).
+          fontSize: rem(30),
           fontWeight: 700,
           lineHeight: 1.2,
           color: 'inherit',

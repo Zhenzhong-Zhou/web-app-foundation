@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Notification } from '../api/types.gen';
 import { api } from '../lib/api';
 import { relativeTime } from '../lib/format';
+import { rem } from '../theme/rem';
 
 /** How often the badge re-checks while the app is open. */
 const POLL_MS = 60_000;
@@ -191,7 +192,7 @@ export function NotificationBell() {
         anchorEl={anchor}
         open={anchor !== null}
         onClose={() => setAnchor(null)}
-        slotProps={{ paper: { sx: { width: 380, maxHeight: 480 } } }}
+        slotProps={{ paper: { sx: { width: rem(380), maxHeight: 480 } } }}
       >
         <Stack
           direction="row"

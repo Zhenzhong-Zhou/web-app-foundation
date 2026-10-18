@@ -23,6 +23,7 @@ import { api } from '../lib/api';
 import type { LookupKind } from '../lib/api-names';
 import { RECENT_PATHS, type RecentEntry } from '../lib/recent';
 import { RECENT_KIND_LABELS, recentTitle } from '../lib/recent-labels';
+import { rem } from '../theme/rem';
 import { KIND_LABELS, listOf, pathOf } from './lookup-kinds';
 
 /** The server's minimum, after trimming (ADR-056). */
@@ -97,7 +98,7 @@ export function LookupBox() {
 
   if (inline) {
     return (
-      <Box sx={{ width: '100%', maxWidth: 420 }}>
+      <Box sx={{ width: '100%', maxWidth: rem(420) }}>
         <LookupField inputRef={input} />
       </Box>
     );

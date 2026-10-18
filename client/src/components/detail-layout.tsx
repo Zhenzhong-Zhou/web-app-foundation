@@ -1,6 +1,8 @@
 import { Box, Chip, Paper, Stack, Tab, Tabs } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import { rem } from '../theme/rem';
+
 export interface DetailTab<T extends string> {
   id: T;
   label: string;
@@ -46,7 +48,7 @@ export function DetailLayout<T extends string>({
         alignItems: 'start',
         gridTemplateColumns: {
           xs: 'minmax(0, 1fr)',
-          md: 'minmax(0, 1fr) 300px',
+          md: `minmax(0, 1fr) ${rem(300)}`,
         },
       }}
     >

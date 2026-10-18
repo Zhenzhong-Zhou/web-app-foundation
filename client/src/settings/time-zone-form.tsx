@@ -24,6 +24,7 @@ import {
 } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
 import { useSubmit } from '../lib/use-submit';
+import { rem } from '../theme/rem';
 
 /** How often the "It is … there" line moves on: often enough to read right. */
 const TICK_MS = 30_000;
@@ -238,7 +239,7 @@ export function TimeZoneForm({
             )}
           />
         )}
-        sx={{ maxWidth: 520 }}
+        sx={{ maxWidth: rem(520) }}
       />
 
       <Stack
@@ -246,7 +247,7 @@ export function TimeZoneForm({
         spacing={1}
         sx={{
           alignItems: 'center',
-          maxWidth: 520,
+          maxWidth: rem(520),
           p: 1.5,
           borderRadius: 1,
           bgcolor: 'action.hover',
@@ -262,7 +263,7 @@ export function TimeZoneForm({
           spacing={1}
           sx={{
             alignItems: 'flex-start',
-            maxWidth: 520,
+            maxWidth: rem(520),
             p: 1.5,
             borderRadius: 1,
             border: 1,

@@ -37,6 +37,7 @@ import {
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { unitLabel } from '../products/units';
+import { rem } from '../theme/rem';
 import { RETURN_REASONS, returnReasonLabel } from './return-reasons';
 
 /**
@@ -488,7 +489,7 @@ export function ReturnOrderDialog({
                               <TableCell align="right">
                                 {formatQuantity(lot.returned)}
                               </TableCell>
-                              <TableCell align="right" sx={{ width: 140 }}>
+                              <TableCell align="right" sx={{ width: rem(140) }}>
                                 <TextField
                                   size="small"
                                   value={byLot[line.lineId]?.[lot.lotId] ?? ''}
@@ -550,7 +551,7 @@ export function ReturnOrderDialog({
                         },
                       }}
                       helperText={unitLabel(line.unitOfMeasure, intl)}
-                      sx={{ width: 180 }}
+                      sx={{ width: rem(180) }}
                     />
                   )}
                 </Stack>

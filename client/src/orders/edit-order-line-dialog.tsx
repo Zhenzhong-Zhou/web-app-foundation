@@ -21,6 +21,7 @@ import {
   toApiDecimal,
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
+import { rem } from '../theme/rem';
 
 /**
  * Quantity and price, and a dialog rather than inline fields.
@@ -181,7 +182,7 @@ export function EditOrderLineDialog({
                 required={price.trim() !== ''}
                 value={currency}
                 onChange={setCurrency}
-                sx={{ width: 120 }}
+                sx={{ width: rem(120) }}
               />
             </Stack>
           </Stack>

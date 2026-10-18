@@ -34,6 +34,7 @@ import { useSubmit } from '../lib/use-submit';
 import { useUnsavedChanges } from '../lib/use-unsaved-changes';
 import { SiteSelect } from '../locations/site-select';
 import { unitLabel } from '../products/units';
+import { rem } from '../theme/rem';
 
 interface LineDraft {
   /** Local only — React needs a stable key before the row has a variant. */
@@ -441,7 +442,7 @@ export function CreateOrderPage() {
                   id: 'orders.create.currency.help',
                   defaultMessage: 'For any prices below',
                 })}
-                sx={{ width: 160, flexShrink: 0 }}
+                sx={{ width: rem(160), flexShrink: 0 }}
               />
             </Stack>
 
@@ -521,7 +522,7 @@ export function CreateOrderPage() {
                         ? unitLabel(line.variant.unitOfMeasure, intl)
                         : BLANK_LINE
                     }
-                    sx={{ width: 140 }}
+                    sx={{ width: rem(140) }}
                   />
 
                   <TextField
@@ -541,7 +542,7 @@ export function CreateOrderPage() {
                         defaultMessage: 'Set a currency first',
                       })
                     }
-                    sx={{ width: 140 }}
+                    sx={{ width: rem(140) }}
                     slotProps={{
                       htmlInput: { inputMode: 'decimal', maxLength: 19 },
                     }}

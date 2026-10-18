@@ -43,6 +43,7 @@ import { useExpiryDays } from '../lib/use-expiry-days';
 import { useKeysetList } from '../lib/use-keyset-list';
 import { useListSort } from '../lib/use-list-sort';
 import { displayWithUnit } from '../products/units';
+import { rem } from '../theme/rem';
 import { EditLotDialog } from './edit-lot-dialog';
 import { type MoveMode, MoveStockDialog } from './move-stock-dialog';
 import { MovementHistoryDialog } from './movement-history-dialog';
@@ -367,7 +368,7 @@ export function InventoryPage() {
           select
           value={locationId}
           onChange={(event) => setLocationId(event.target.value)}
-          sx={{ minWidth: 200 }}
+          sx={{ minWidth: rem(200) }}
         >
           <MenuItem value="">
             {intl.formatMessage({

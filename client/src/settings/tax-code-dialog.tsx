@@ -19,6 +19,7 @@ import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
 import { groupedNumberMessage, toApiDecimal } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
+import { rem } from '../theme/rem';
 import { rateNumber } from './tax-rate';
 
 /** The remove button's mark: a symbol, the same in every language. */
@@ -216,7 +217,7 @@ export function TaxCodeDialog({
                   slotProps={{
                     htmlInput: { inputMode: 'decimal', maxLength: 8 },
                   }}
-                  sx={{ width: 120 }}
+                  sx={{ width: rem(120) }}
                 />
                 <IconButton
                   aria-label={

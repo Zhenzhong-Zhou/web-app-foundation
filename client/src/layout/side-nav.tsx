@@ -3,11 +3,16 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 
 import { useCan } from '../auth/permissions';
+import { rem } from '../theme/rem';
 import { isActive, NAV_GROUPS, type NavItem } from './navigation';
 
-/** The rail open, then folded to its icons. */
-export const RAIL_WIDTH = 232;
-export const RAIL_FOLDED_WIDTH = 64;
+/**
+ * The rail open, then folded to its icons. In rem, so it widens with the
+ * text size and a label is cut where it is at Standard (ADR-075); the
+ * icons are rem too, so the folded rail grows with them.
+ */
+export const RAIL_WIDTH = rem(232);
+export const RAIL_FOLDED_WIDTH = rem(64);
 
 /**
  * The navigation itself (ADR-055), drawn by the rail and by the drawer

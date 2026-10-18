@@ -39,6 +39,7 @@ import {
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
 import { withUnit } from '../products/units';
+import { rem } from '../theme/rem';
 
 /**
  * The lots chosen for one component, added up exactly (ADR-025), each read
@@ -583,7 +584,7 @@ export function ReleaseRunDialog({
                               <TableCell align="right">
                                 {formatQuantity(lot.onHand)}
                               </TableCell>
-                              <TableCell align="right" sx={{ width: 140 }}>
+                              <TableCell align="right" sx={{ width: rem(140) }}>
                                 <TextField
                                   size="small"
                                   value={picking[lot.lotId] ?? ''}

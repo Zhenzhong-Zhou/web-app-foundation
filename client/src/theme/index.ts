@@ -7,6 +7,7 @@ import {
 
 import type { Locale } from '../lib/locales';
 import { type Brand, DEFAULT_BRAND } from './brand-store';
+import { rem } from './rem';
 import {
   DARK,
   DARK_ACCENT_WEIGHT,
@@ -39,9 +40,6 @@ declare module '@mui/material/styles' {
     rail?: Rail;
   }
 }
-
-/** px to rem against the browser's 16px, as MUI sizes its type. */
-const rem = (px: number) => `${px / 16}rem`;
 
 function palette(scheme: Scheme, accent: string, onAccent: string, rail: Rail) {
   return {

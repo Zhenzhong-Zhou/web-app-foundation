@@ -13,6 +13,8 @@ import { type ReactNode, useEffect } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
+import { rem } from '../theme/rem';
+
 interface Crumb {
   label: string;
   to: string;
@@ -148,7 +150,7 @@ export function PageHeader({
         <Stack
           direction="row"
           spacing={1.5}
-          sx={{ alignItems: 'center', flex: '1 1 280px', minWidth: 0 }}
+          sx={{ alignItems: 'center', flex: `1 1 ${rem(280)}`, minWidth: 0 }}
         >
           {/* Detail pages only: a top-level page is reached from the
               navigation, and has nowhere to go up to. */}
