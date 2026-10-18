@@ -1110,6 +1110,65 @@ override, then reload.
   Coordinated Universal Time (UTC), with no This computer group in the
   list and no Use this computer's button.
 
+## 27. Each organization's numbering (ADR-073)
+
+Settings → Organization → Documents, as an Owner, in an organization with a
+few invoices and orders.
+
+- **MC-2701** *(ADR-073)* The Numbering section lists Invoices, Credit
+  notes, Return authorizations, Sale orders and Purchase orders, each with
+  its prefix, digits, Starts again, next number and Prints as. An
+  organization from before ADR-073 shows INV-, CN-, RMA-, SO- and PO-, six
+  digits, Never, the next number its documents reached, and Last: under it.
+  Save numbering is greyed out until something changes.
+- **MC-2702** *(ADR-073)* Click into the invoice prefix: Start from a
+  common format offers INV-000001, INV-2026-0001, each year, and
+  INV20261017-001, each day, with today's date; none uses /. Pick the
+  yearly one: the prefix reads INV-{YYYY}-, 4 digits, Each year, Prints as
+  INV-2026-0001, and From Jan 1, 2027: INV-2027-0001 beneath it. The date
+  buttons put {YYYY}, {YY}, {MM} or {DD} where the cursor is.
+- **MC-2703** *(ADR-073)* Type inv- in a prefix: it turns to INV- as
+  typed. Set Starts again to Each year on INV-: Starting again each year
+  needs the year in the prefix shows in red and Save stays greyed out; Add
+  the date makes it INV-{YYYY}-. A prefix ending in a digit, or in the date,
+  is refused the same way.
+- **MC-2704** *(ADR-073)* Give purchase orders the prefix SO-: Sale orders
+  and purchase orders would print the same numbers shows, both prefixes in
+  red, and Save stays greyed out.
+- **MC-2705** *(ADR-073)* Change a prefix and Save numbering: Change the
+  numbering? lists each changed series with its next number and the last
+  given, which stays. Cancel changes nothing; Change numbering saves, says
+  Numbering saved, and the next document made prints the new prefix.
+  Turning Keep invoices and credit notes in date order on or off alone
+  saves with no dialog.
+- **MC-2706** *(ADR-073)* Set the invoices' next number below the last
+  given and save: the dialog shows the refusal, naming the invoice that
+  carries that number, with Use and the lowest number accepted. Use puts it
+  in the next number, and saving again goes through. Moving to a new prefix
+  no document carries, such as F-, may start again at 1.
+- **MC-2707** *(ADR-073)* With invoices on INV-{YYYY}-, Each year, open
+  a draft's Issue dialog and date it 31 December last year: Dated in
+  2025, so it takes 2025's next number, not 2026's shows under the date,
+  and goes when the date is this year's. Issue it: the toast says Invoice
+  issued as INV-2025-…, the next number of last year's series. The Credit
+  and Void dialogs show the same line for a credit note's date.
+- **MC-2708** *(ADR-073)* Turn on Keep invoices and credit notes in date
+  order, issue an invoice dated today, then try to issue another dated
+  yesterday: refused, naming the first and its date. Issued for today, it
+  takes the next number, with no gap.
+- **MC-2709** *(ADR-073)* As an Admin or a Viewer, Numbering is a table of
+  each document, Starts again and Next to be given, says whether invoices
+  and credit notes are kept in date order, and An Owner can change it, with
+  no fields and no Save.
+- **MC-2710** *(ADR-073)* On a phone (DevTools device toolbar, 390 px),
+  each document is a row with its next number; tapping one opens its
+  formats, date buttons and fields. In Chinese, the section reads 编号, with
+  常用格式, 重新编号 and 打印为.
+- **MC-2711** *(ADR-073)* Set purchase orders to PO/{YYYY}/ and make one:
+  it is PO/2026/0001, and its PDF downloads as PO_2026_0001.pdf.
+- **MC-2712** *(ADR-073)* History on the Organization page shows Numbering
+  changed, with each changed series as it was and as it is.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -1360,3 +1419,5 @@ first.
   MC-2609 rewritten.
 - 2026-10-17: a registered address line cleared on its own is logged:
   MC-R13 extended.
+- 2026-10-18: ADR-073, each organization's numbering: section 27, MC-2701
+  to MC-2712.

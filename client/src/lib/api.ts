@@ -1,4 +1,4 @@
-import type { ErrorCode } from '../api/types.gen';
+import type { ErrorCode, ErrorDetails } from '../api/types.gen';
 import { intl } from '../i18n/intl';
 
 const BASE = '/api/v1';
@@ -16,6 +16,11 @@ export class ApiError extends Error {
    * instead.
    */
   readonly code?: string;
+  /**
+   * What a few codes carry for the screen to act on, such as the least
+   * next number a numbering refusal accepts (ADR-073).
+   */
+  readonly details?: ErrorDetails;
 
   constructor(
     message: string,
@@ -23,6 +28,7 @@ export class ApiError extends Error {
     requestId?: string,
     retryAfterSeconds?: number,
     code?: string,
+    details?: ErrorDetails,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -30,6 +36,7 @@ export class ApiError extends Error {
     this.requestId = requestId;
     this.retryAfterSeconds = retryAfterSeconds;
     this.code = code;
+    this.details = details;
   }
 }
 
@@ -180,6 +187,7 @@ async function send(path: string, init: ApiInit): Promise<Response> {
       message?: string | string[];
       requestId?: string;
       code?: string;
+      details?: ErrorDetails;
     } | null;
 
     const message = Array.isArray(body?.message)
@@ -199,6 +207,7 @@ async function send(path: string, init: ApiInit): Promise<Response> {
       body?.requestId,
       retryAfter(response),
       body?.code,
+      body?.details,
     );
   }
 

@@ -16,6 +16,7 @@ import { api } from '../lib/api';
 import { formatMoney } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
+import { PeriodHint } from './period-hint';
 
 /**
  * Voids an issued invoice by issuing a credit note for all of it
@@ -130,6 +131,7 @@ export function VoidInvoiceDialog({
               onChange={(event) => setCreditDate(event.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
             />
+            <PeriodHint series="creditNote" day={creditDate} />
           </Stack>
         </DialogContent>
 

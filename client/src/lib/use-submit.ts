@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import type { ErrorDetails } from '../api/types.gen';
 import { useToast } from '../components/use-toast';
 import { ApiError, messageFor } from './api';
 
@@ -20,7 +21,8 @@ import { ApiError, messageFor } from './api';
  *
  * `errorCode` is the refusal's code when the server gave one, read with
  * hasCode in lib/api.ts, for a dialog that can offer the way out, such as a
- * link to the setting that is missing. Set and cleared with `error`.
+ * link to the setting that is missing. Set and cleared with `error`, as
+ * `errorDetails` is, what a few codes carry beside it (ADR-073).
  */
 export function useSubmit(
   onDone: () => void | Promise<void>,
@@ -29,12 +31,14 @@ export function useSubmit(
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<ErrorDetails | null>(null);
   const toast = useToast();
 
   /** Clears state when a dialog closes, so reopening starts clean. */
   function reset() {
     setError(null);
     setErrorCode(null);
+    setErrorDetails(null);
     setSubmitting(false);
   }
 
@@ -42,12 +46,16 @@ export function useSubmit(
     setSubmitting(true);
     setError(null);
     setErrorCode(null);
+    setErrorDetails(null);
 
     try {
       await action();
     } catch (caught) {
       setError(messageFor(caught));
       setErrorCode(caught instanceof ApiError ? (caught.code ?? null) : null);
+      setErrorDetails(
+        caught instanceof ApiError ? (caught.details ?? null) : null,
+      );
       return;
     } finally {
       setSubmitting(false);
@@ -58,5 +66,5 @@ export function useSubmit(
     await onDone();
   }
 
-  return { submitting, error, errorCode, reset, submit };
+  return { submitting, error, errorCode, errorDetails, reset, submit };
 }
