@@ -14,6 +14,12 @@ test('a partner once opened is on Home and in the empty search', async ({
   });
   await signInAs(page, freshOrg.api);
 
+  // The page reports its opening once the record has loaded, without
+  // waiting for the answer. Leaving the moment the heading shows can
+  // cancel that request in flight, and then nothing is remembered.
+  const remembered = page.waitForResponse(
+    (res) => res.url().endsWith('/recent') && res.request().method() === 'POST',
+  );
   await page.goto(`/partners/${partner.id}`);
   await expect(
     page.getByRole('heading', {
@@ -21,6 +27,7 @@ test('a partner once opened is on Home and in the empty search', async ({
       name: 'E2E Recently Opened Pharmacy',
     }),
   ).toBeVisible();
+  expect((await remembered).status()).toBe(204);
 
   await page.goto('/');
   const recent = page.getByRole('region', { name: 'Recently opened' });
