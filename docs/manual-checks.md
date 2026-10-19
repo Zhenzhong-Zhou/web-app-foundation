@@ -1321,6 +1321,11 @@ roleId, locale, note }) })`, with a role's id from `/api/v1/roles`.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R21** *(links in an audit entry)* On Records → Audit log, an
+  entry whose detail names something you may open, such as Invitation
+  sent's role: the name is underlined as well as in the accent, before any
+  hover, so it is told from the words beside it without its colour. It
+  opens its page, Members for a role.
 - **MC-R20** *(dialogs on a phone)* In Français, at 320 px with Larger
   text, open Emplacements → Ajouter un emplacement: Ajouter un emplacement
   sits under Annuler at the right, inside the dialog, and the dialog does
@@ -1623,3 +1628,4 @@ first.
 - 2026-10-18: the audit log in words (ADR-076): section 29, and section
   14's audit item.
 - 2026-10-19: invitations (ADR-077), the email: section 30.
+- 2026-10-19: a link in an audit entry is underlined: MC-R21.
