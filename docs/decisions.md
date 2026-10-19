@@ -8880,6 +8880,50 @@ in development and demo data.
   reach the payload; ADR-054's "a raw id never reaches a screen" now means
   UUIDs too; ADR-057's audit export writes words.
 
+*Amended while building:*
+
+- **References are named in `AuditService.record`**, not in the
+  interceptor, so every writer that records through it is covered: the
+  routes, the demo seed, and the pro forma and the organization's export,
+  which write their own entries. Deleting an account, and scheduling or
+  cancelling an organization's deletion, write their rows straight to the
+  table inside their transactions; those rows hold no reference.
+- **A shipment is named by its order's number**, and its tracking number
+  when it has one, and links to its order: it has no page of its own, so
+  its order's id is stored beside the shipment's when the row is written.
+  A row written before this has no order's id and reads as plain text.
+- **The raw payload stays in the API**, beside the words, as the event's
+  data for programs; removing it was considered while building and not
+  done, since programs read it and no person does.
+- **A reference reaches the client as `{ text, link: { kind, id } }`**,
+  not as the `{ kind, id, text }` the Decision describes. The link is null
+  where there is nothing to link to: a person, a record of no stated
+  kind, or a shipment written before its order's id was stored. The
+  client follows it only where its kind has a page and the reader may
+  open it; a kind with no page, such as a tax code or a site, reads as
+  plain text.
+- **Dates in a payload are recorded as sent and read as the days they
+  name:** an export's From, sent as the organization's midnight
+  (ADR-072), in the organization's zone; its To, sent as the start of the
+  day after (ADR-057), as the day before, and named To; a day stored as
+  UTC midnight before ADR-052, as that day. So an export reads as the
+  days chosen. A date is never walked into `{}`.
+- **Recording an undeclared field fails to compile** through `@Audited`'s
+  fields, `recordPrevious`, `recordContext`, the seed's helper or
+  `AuditService.record`, which take only declared keys. The compiler does
+  not see a row that deletion inserts into the table directly, or the
+  keys inside an export's filters, which are its list's query: an e2e
+  test reads a scheduled deletion and an export's search in words. A test
+  words every declared field in all three languages, as a value and as a
+  change.
+- **A time zone reads as its generic name and city**, as the client's
+  picker says it: "Pacific Time (Vancouver)", the name in the reader's
+  language and the city as the zone's id spells it.
+- **A person filter reads as "you" to the reader**, as on Your activity,
+  and as "one person" to anyone else; never as a name (ADR-038).
+- **Old rows read a reference as its kind in words** ("an order", "a tax
+  code"), never as today's name.
+
 ---
 
 ## Open decisions

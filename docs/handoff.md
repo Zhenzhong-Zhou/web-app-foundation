@@ -8,7 +8,29 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **The demo's team (`demo-seed-team`):** no migration; a server feature
+- **ADR-076, the audit log in words (`adr-076-audit-in-words`):** no
+  migration; server and client. Every screen with an audit entry (the
+  audit log, a record's History, Your activity, your recent work on
+  Account, a person's recent work) and the audit CSV read in the
+  reader's language, with no id anywhere a person reads. A reference is
+  named when its row is written, keeps that name after a rename, and
+  opens its record where it has a page the reader may open; a shipment
+  reads as its order's number and opens its order. Every key a payload
+  may hold is declared with its name in each language and how its value
+  reads; `@Audited`, `recordPrevious`, `recordContext` and
+  `AuditService.record` cannot record an undeclared one, and an e2e test
+  reads what the compiler does not see: a row written straight to the
+  table, and an export's filters. One formatter on the server words each
+  entry for the screens and the CSV; the client renders what it is
+  given, and its own action names and field labels are gone. Old rows
+  are read, not rewritten: a reference in one reads as its kind in
+  words. Closes the known edge on field names in an audit entry, and the
+  audit log's part of #129. The amendment at the end of ADR-076 says what
+  building settled; ADR-018, ADR-038, ADR-054 and ADR-057 are amended.
+  - **Before merging:** walk section 29, and look at the audit log in
+    简体中文 on a demo seeded on this branch.
+
+- **The demo's team:** merged in #140; no migration, a server feature
   with three chores riding along (below). `seed:demo` now adds nine
   colleagues across every role, with work details and last active spread
   across every coarse value; writes the audit row each seeded step's route
@@ -21,8 +43,8 @@ with this one, this one is current.
   expiring and lapsed. In `seed-demo-audit.ts`, `seed-demo-team.ts` and
   `seed-demo-team-work.ts`, run after the variety and kept off the figures
   the manual checks name.
-  - **Before merging:** walk MC-1903. CI runs `npm run seed:demo` on an
-    empty database; run it locally after changing a service it calls. The
+  - **Keeping it current:** CI runs `npm run seed:demo` on an empty
+    database; run it locally after changing a service it calls. The
     seed builds each row with the interceptor's own `auditPayload`, but each
     step names its route's action, resource type and fields by hand, copied
     from that route's `@Audited`: change one, change the seed.
