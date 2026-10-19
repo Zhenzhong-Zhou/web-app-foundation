@@ -8,25 +8,46 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **Initials by the name's script (ADR-063 amended):** on
-  `initials-by-script`, client only, no migration. A person without a
-  photo shows what readers of their name's script expect: a Chinese name
-  its given name (周振中, 振中), Latin, Greek and Cyrillic names their
-  initials, any other script its first character. Two Chinese characters
-  are set smaller and marked Chinese for screen readers.
-  - **Before merging:** walk MC-1902.
+- **The demo's team (`demo-seed-team`):** no migration; a server feature
+  with three chores riding along (below). `seed:demo` now adds nine
+  colleagues across every role, with work details and last active spread
+  across every coarse value; writes the audit row each seeded step's route
+  would, so History, Your activity, People and the audit log start full; and
+  fills what the demo never reached: a second site with every kind of
+  location, variants, equipment, contacts, a customer and a supplier price
+  list, a purchase in euros and a late one, a nested recipe with a
+  hand-picked lot and two outputs, a cancelled run, a draft recipe version,
+  an expired lot, a sale in US dollars, an RMA by replacement, and licences
+  expiring and lapsed. In `seed-demo-audit.ts`, `seed-demo-team.ts` and
+  `seed-demo-team-work.ts`, run after the variety and kept off the figures
+  the manual checks name.
+  - **Before merging:** walk MC-1903. CI runs `npm run seed:demo` on an
+    empty database; run it locally after changing a service it calls. The
+    seed builds each row with the interceptor's own `auditPayload`, but each
+    step names its route's action, resource type and fields by hand, copied
+    from that route's `@Audited`: change one, change the seed.
+  - **Riding along:** the order page imports its Delete icon by path, so
+    the dev server no longer re-bundles mid-session; nodemailer 10.1.7 and
+    pdfmake 0.3.12, with pdfkit 0.20.2 (the same documents, drawn with
+    both versions, came out identical but for their date and ID); and both
+    packages' versions at 0.7.0, the latest tag.
 
-- **ADR-075, text size, and text that grows:** built on
-  `adr-075-text-size`, its PR to open. Standard, Large and Larger text
-  (100%, 112.5% and 125% of the browser's own size, on `<html>`), in the
-  avatar menu and on the signed-out pages, kept on each device; widths
-  that hold text in rem; less motion when asked; a variant's chevron
-  named for screen readers. Walking 14 screens at Larger found pages that
-  scrolled sideways on a phone, nearly all at Standard too, each fixed
-  where it is shared: banners, header buttons, dialog footers, date
-  ranges, Home's grids, the audit log, and a hidden box 100% wide. The
-  amendment at the end of ADR-075 says what building and review settled;
-  ADR-055 is amended.
+- **Initials by the name's script (ADR-063 amended):** merged in #139. A
+  person without a photo shows what readers of their name's script expect: a
+  Chinese name its given name (周振中, 振中), Latin, Greek and Cyrillic names
+  their initials, any other script its first character. Two Chinese
+  characters are set smaller and marked Chinese for screen readers.
+
+- **ADR-075, text size, and text that grows:** merged in #137. Standard,
+  Large and Larger text (100%, 112.5% and 125% of the browser's own size, on
+  `<html>`), in the avatar menu and on the signed-out pages, kept on each
+  device; widths that hold text in rem; less motion when asked; a variant's
+  chevron named for screen readers. Walking 14 screens at Larger found pages
+  that scrolled sideways on a phone, nearly all at Standard too, each fixed
+  where it is shared: banners, header buttons, dialog footers, date ranges,
+  Home's grids, the audit log, and a hidden box 100% wide. The amendment at
+  the end of ADR-075 says what building and review settled; ADR-055 is
+  amended.
   - **The PR:** client only, no migration and no server change. Its
     commits: ADR-075, the rem widths, the text size, the chevron, less
     motion, seven fixes from the walk, the simplify pass, a dialog fix and
@@ -115,8 +136,9 @@ with this one, this one is current.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
   for typescript-eslint and the Nest CLI (ADR-067, *Deferred*); still so
-  on 15 October 2026, with typescript-eslint 8.71.2 accepting `<6.1.0`
-  and the Nest CLI 12.0.8 depending on TypeScript `~6.0.2`.
+  on 18 October 2026, with typescript-eslint 8.71.2 accepting `<6.1.0`,
+  the Nest CLI 12.0.8 depending on TypeScript `~6.0.2`, and
+  `@nestjs/swagger` 12.0.2 accepting up to 6.
 - **ADR-046 amended:** a taxed invoice needs the seller's tax number,
   refused with `organization_tax_number_missing` and linked to Profile
   (`invoice-tax-number`, MC-711). Tax profiles by country are deferred in
@@ -218,14 +240,13 @@ with this one, this one is current.
   MC-2406. Three ADR-070 amendments were committed after the code they
   describe; #116's description says which. What it left waiting is filed
   as #117 to #122, under *Open issues* below.
-- **Release:** **v0.7.0-rc.2** is tagged on `main` at #114's merge, a
-  GitHub pre-release whose notes list the SVG upload fix from #113, which
-  rc.1 (after #93, Nest 12) lacks. The Performance workflow its tag
-  started passed on 14 October 2026. #116 (ADR-070) merged after rc.2,
-  so v0.7.0 carries closing an organization as well. Next: let it run in
-  production for a few days, then tag v0.7.0, with its notes in
-  `docs/releases/v0.7.0.txt`, listing the SVG fix and closing an
-  organization too.
+- **Release:** **v0.7.0** was tagged and released on 16 October 2026,
+  its notes in `docs/releases/v0.7.0.txt` and the GitHub release. Before
+  it, **v0.7.0-rc.2** was tagged on `main` at #114's merge, a GitHub
+  pre-release whose notes list the SVG upload fix from #113, which rc.1
+  (after #93, Nest 12) lacks; the Performance workflow its tag started
+  passed on 14 October 2026. #116 (ADR-070) merged after rc.2, so v0.7.0
+  carries closing an organization as well.
   v0.6.0 and v0.5.0's notes are the GitHub releases and `docs/releases/`.
   Release notes are release notes only: they say nothing of manual checks
   or the walkthrough.
@@ -385,6 +406,9 @@ with this one, this one is current.
 - Sessions: lock screen and switch user with a PIN, for a native app or
   shared scanners, handhelds or kiosks; a maximum session length
   (ADR-065).
+- TypeScript 7, once typescript-eslint and @nestjs/swagger accept it and
+  the Nest CLI builds with it (today below 6.1.0, up to 6, and ~6.0.2;
+  ADR-067).
 
 ## Where things stand
 
@@ -1176,6 +1200,9 @@ in ADR-050's amendment.
   applied, and still reports success. 0065's was ahead of the clock, so
   0066 was generated earlier and skipped, with no column and no error,
   until its time was moved after 0065's.
+- **At each release,** before tagging it, set both packages' version to
+  it: `npm version <x.y.z> --no-git-tag-version` in `server/` and in
+  `client/`.
 - A type change on the client means fixing the test fixtures that build that
   type, in the same commit. Vitest does not type-check; `tsc` and CI do.
 - A commit that changes what a person sees, or a rule they work under,
@@ -1211,8 +1238,9 @@ in ADR-050's amendment.
 
 - Find every caller before moving a method, including
   `server/src/database/seed-demo.ts`, and calls split over two lines
-  (`this.taxCodes` then `.findById`). After a server move, run
-  `npm run seed:demo`: no test runs it.
+  (`this.taxCodes` then `.findById`). CI runs `npm run seed:demo` on a
+  fresh database, but only once the change is pushed, so after a server
+  move run it locally too.
 - Prove a move lost nothing: every non-import line of the old file should
   appear, as often, across the new ones.
 - Check a new comment's claims against the code it describes before
