@@ -44,6 +44,26 @@ export const ACTION_NAMES: Record<AuditAction, Translatable> = {
     id: 'audit.action.exchangeRateSet',
     defaultMessage: 'Exchange rate set',
   }),
+  'invitation.accepted': t({
+    id: 'audit.action.invitationAccepted',
+    defaultMessage: 'Invitation accepted',
+  }),
+  'invitation.link_copied': t({
+    id: 'audit.action.invitationLinkCopied',
+    defaultMessage: 'Invitation link copied',
+  }),
+  'invitation.resent': t({
+    id: 'audit.action.invitationResent',
+    defaultMessage: 'Invitation resent',
+  }),
+  'invitation.revoked': t({
+    id: 'audit.action.invitationRevoked',
+    defaultMessage: 'Invitation revoked',
+  }),
+  'invitation.sent': t({
+    id: 'audit.action.invitationSent',
+    defaultMessage: 'Invitation sent',
+  }),
   'invoice.created': t({
     id: 'audit.action.invoiceCreated',
     defaultMessage: 'Invoice drafted',
@@ -365,6 +385,7 @@ export const RESOURCE_TYPE_NAMES: Record<string, Translatable> = {
   }),
   price_list: t({ id: 'audit.type.priceList', defaultMessage: 'Price list' }),
   user: t({ id: 'audit.type.user', defaultMessage: 'Member' }),
+  invitation: t({ id: 'audit.type.invitation', defaultMessage: 'Invitation' }),
   audit: t({ id: 'audit.type.audit', defaultMessage: 'Audit log' }),
   invoices: t({ id: 'audit.type.invoices', defaultMessage: 'Invoices' }),
   'credit-notes': t({

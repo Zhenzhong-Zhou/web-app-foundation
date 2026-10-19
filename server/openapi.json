@@ -737,6 +737,11 @@
                 "member.removed",
                 "member.left",
                 "user.account_deleted",
+                "invitation.sent",
+                "invitation.resent",
+                "invitation.link_copied",
+                "invitation.revoked",
+                "invitation.accepted",
                 "product.created",
                 "product.updated",
                 "product.variant_added",
@@ -909,6 +914,11 @@
                 "member.removed",
                 "member.left",
                 "user.account_deleted",
+                "invitation.sent",
+                "invitation.resent",
+                "invitation.link_copied",
+                "invitation.revoked",
+                "invitation.accepted",
                 "product.created",
                 "product.updated",
                 "product.variant_added",
@@ -1263,6 +1273,11 @@
                 "member.removed",
                 "member.left",
                 "user.account_deleted",
+                "invitation.sent",
+                "invitation.resent",
+                "invitation.link_copied",
+                "invitation.revoked",
+                "invitation.accepted",
                 "product.created",
                 "product.updated",
                 "product.variant_added",
@@ -1435,6 +1450,11 @@
                 "member.removed",
                 "member.left",
                 "user.account_deleted",
+                "invitation.sent",
+                "invitation.resent",
+                "invitation.link_copied",
+                "invitation.revoked",
+                "invitation.accepted",
                 "product.created",
                 "product.updated",
                 "product.variant_added",
@@ -1686,6 +1706,204 @@
         },
         "tags": [
           "Users"
+        ]
+      }
+    },
+    "/v1/invitations": {
+      "get": {
+        "operationId": "InvitationsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Invitation"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Invitations"
+        ]
+      },
+      "post": {
+        "operationId": "InvitationsController_invite_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvitationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedInvitation"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Invitations"
+        ]
+      }
+    },
+    "/v1/invitations/{id}/resend": {
+      "post": {
+        "operationId": "InvitationsController_resend_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Invitations"
+        ]
+      }
+    },
+    "/v1/invitations/{id}/link": {
+      "post": {
+        "operationId": "InvitationsController_copyLink_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopiedInvitationLink"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Invitations"
+        ]
+      }
+    },
+    "/v1/invitations/{id}": {
+      "delete": {
+        "operationId": "InvitationsController_revoke_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Invitations"
+        ]
+      }
+    },
+    "/v1/invitations/read": {
+      "post": {
+        "operationId": "InvitationsController_read_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationRead"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Invitations"
+        ]
+      }
+    },
+    "/v1/invitations/accept": {
+      "post": {
+        "operationId": "InvitationsController_accept_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInvitationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedUserEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Invitations"
         ]
       }
     },
@@ -9227,6 +9445,338 @@
         },
         "required": [
           "roleId"
+        ]
+      },
+      "InvitationSender": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "InvitationLinkState": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "emailed",
+              "copied",
+              "ended",
+              "notSent"
+            ]
+          },
+          "lastDay": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "lastDay"
+        ]
+      },
+      "Invitation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "roleId": {
+            "type": "string"
+          },
+          "invitedBy": {
+            "$ref": "#/components/schemas/InvitationSender"
+          },
+          "invitedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "link": {
+            "$ref": "#/components/schemas/InvitationLinkState"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "roleId",
+          "invitedBy",
+          "invitedAt",
+          "link"
+        ]
+      },
+      "CreateInvitationDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "roleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          },
+          "delivery": {
+            "type": "string",
+            "enum": [
+              "email",
+              "link"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "roleId"
+        ]
+      },
+      "CreatedInvitation": {
+        "type": "object",
+        "properties": {
+          "invitation": {
+            "$ref": "#/components/schemas/Invitation"
+          },
+          "link": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "invitation",
+          "link"
+        ]
+      },
+      "InvitationEnvelope": {
+        "type": "object",
+        "properties": {
+          "invitation": {
+            "$ref": "#/components/schemas/Invitation"
+          }
+        },
+        "required": [
+          "invitation"
+        ]
+      },
+      "CopiedInvitationLink": {
+        "type": "object",
+        "properties": {
+          "invitation": {
+            "$ref": "#/components/schemas/Invitation"
+          },
+          "link": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "invitation",
+          "link"
+        ]
+      },
+      "InvitationTokenDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "InvitationOrganization": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "logo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "deletionScheduledAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "logo",
+          "deletionScheduledAt"
+        ]
+      },
+      "InvitationInviter": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "email"
+        ]
+      },
+      "InvitationRole": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ]
+      },
+      "InvitationPreview": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "organization": {
+            "$ref": "#/components/schemas/InvitationOrganization"
+          },
+          "inviter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InvitationInviter"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "role": {
+            "$ref": "#/components/schemas/InvitationRole"
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastDay": {
+            "type": "string"
+          },
+          "hasAccount": {
+            "type": "boolean"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "organization",
+          "inviter",
+          "role",
+          "note",
+          "lastDay",
+          "hasAccount",
+          "locale"
+        ]
+      },
+      "InvitationRead": {
+        "type": "object",
+        "properties": {
+          "invitation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InvitationPreview"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "invitation"
+        ]
+      },
+      "AcceptInvitationDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 200
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 128
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          },
+          "keepSignedIn": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "token"
         ]
       },
       "ProductSummary": {
@@ -17950,6 +18500,11 @@
           "member.removed",
           "member.left",
           "user.account_deleted",
+          "invitation.sent",
+          "invitation.resent",
+          "invitation.link_copied",
+          "invitation.revoked",
+          "invitation.accepted",
           "product.created",
           "product.updated",
           "product.variant_added",
@@ -18037,7 +18592,13 @@
           "password_incorrect",
           "numbering_prefix_shared",
           "numbering_number_taken",
-          "numbering_date_order"
+          "numbering_date_order",
+          "already_a_member",
+          "already_invited",
+          "email_unverified",
+          "invitations_daily_limit",
+          "account_deletion_scheduled",
+          "invitation_ended"
         ]
       },
       "ApiVocabulary": {
@@ -18090,6 +18651,18 @@
           },
           "lowest": {
             "type": "number"
+          },
+          "invitationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "day": {
+            "type": "string",
+            "format": "date"
           }
         }
       },

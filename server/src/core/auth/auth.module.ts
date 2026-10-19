@@ -46,8 +46,16 @@ import { SessionContextMiddleware } from './session-context.middleware';
   ],
   // Exported for the guard, and for password-change flows that must revoke
   // other sessions (ADR-011). AuthTokenService is exported so admin-created
-  // users can be issued a verification token from core/users.
-  exports: [SessionService, PasswordService, AuthTokenService],
+  // users can be issued a verification token from core/users; it,
+  // AccountEventService and AuthService's verification email for accepting
+  // an invitation (ADR-077).
+  exports: [
+    SessionService,
+    PasswordService,
+    AuthTokenService,
+    AccountEventService,
+    AuthService,
+  ],
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

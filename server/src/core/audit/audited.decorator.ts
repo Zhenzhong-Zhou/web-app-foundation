@@ -7,7 +7,12 @@ import type { AuditField } from './audit-fields';
 export const AUDITED = 'audit:options';
 
 export interface AuditOptions<T = unknown> {
-  action: AuditAction;
+  /**
+   * What happened, or, where one route records one of two events, how to
+   * tell from what it returned: an invitation made by email is sent, and
+   * one made by a copied link is copied (ADR-077).
+   */
+  action: AuditAction | ((response: T) => AuditAction);
   resourceType?: string;
   /**
    * Pulls the affected row's id out of the handler's return value, or off the

@@ -146,6 +146,18 @@ export function renderLogo(input: Buffer, type: Sniffed): Promise<Rendered[]> {
   });
 }
 
+/**
+ * A kept logo small enough to send inline, for the invitation page
+ * (ADR-077): twice the 32 px it is shown at, so it stays sharp, and at
+ * most four times as wide. Never enlarged.
+ */
+export function renderLogoMark(logo: Buffer): Promise<Buffer> {
+  return sharp(logo, { failOn: 'error', limitInputPixels: MAX_PIXELS })
+    .resize({ width: 256, height: 64, fit: 'inside', withoutEnlargement: true })
+    .png({ compressionLevel: 9 })
+    .toBuffer();
+}
+
 /** Any failure to decode is the upload's fault, said once. */
 async function decoded<T>(work: () => Promise<T>): Promise<T> {
   try {

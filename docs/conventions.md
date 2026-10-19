@@ -167,10 +167,11 @@ Pairs currently being watched rather than extracted:
 
 - `AuthenticatedUser` and `CurrentSession.user` share four fields and differ in
   the fifth. Extract the shared fields at the third response shape.
-- `register.dto.ts` and `create-user.dto.ts` repeat the same email, name, and
-  password rules, and have already drifted once. Extract to validation constants
-  — not a shared DTO, which the rule above forbids — at the fourth DTO, or the
-  first time a rule changes in one and not the other.
+- `register.dto.ts`, `create-user.dto.ts` and `accept-invitation.dto.ts`
+  repeat the same name and password rules, the first two the email rule too,
+  and have already drifted once. Extract to validation constants — not a
+  shared DTO, which the rule above forbids — at the fourth DTO, or the first
+  time a rule changes in one and not the other.
 
 Test helpers follow the same rule with one addition: extract *knowledge* (a
 library's interface shape, a stub that must match a real service) and leave

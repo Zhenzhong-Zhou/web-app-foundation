@@ -16,6 +16,7 @@ import { SessionGuard } from './core/auth/session.guard';
 import { AuthorizationModule } from './core/authorization/authorization.module';
 import { PermissionGuard } from './core/authorization/permission.guard';
 import { FilesModule } from './core/files/files.module';
+import { InvitationsModule } from './core/invitations/invitations.module';
 import { OrganizationsModule } from './core/organizations/organizations.module';
 import { PeopleModule } from './core/people/people.module';
 import { UsersModule } from './core/users/users.module';
@@ -126,6 +127,7 @@ import { TaxCodesModule } from './modules/tax-codes/tax-codes.module';
     FilesModule,
     PeopleModule,
     UsersModule,
+    InvitationsModule,
 
     // Feature modules. These consume the above and add nothing to it.
     ProductsModule,

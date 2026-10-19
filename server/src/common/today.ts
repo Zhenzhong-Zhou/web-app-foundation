@@ -66,6 +66,56 @@ export function todayIn(timeZone: string, now: Date = new Date()): string {
   return dayIn(timeZone, now);
 }
 
+/** A calendar day so many days on (or back, when negative), YYYY-MM-DD. */
+export function addDays(day: string, days: number): string {
+  const date = new Date(`${day}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * The moment a calendar day begins in a time zone: its midnight, or its
+ * first moment where the clocks skip midnight. What a day-long period
+ * ends at, an invitation's link for one (ADR-077).
+ */
+export function startOfDayIn(timeZone: string, day: string): Date {
+  const midnight = Date.parse(`${day}T00:00:00.000Z`);
+  // The zone's offset at a guess, applied, then asked again at the answer:
+  // the second pass corrects a guess made on the other side of a change.
+  let moment = midnight;
+  for (let pass = 0; pass < 2; pass += 1) {
+    moment = midnight - offsetIn(timeZone, new Date(moment));
+  }
+  // A day whose midnight never happens starts at its first hour that does.
+  while (dayIn(timeZone, new Date(moment)) < day) moment += 60 * 60 * 1000;
+  return new Date(moment);
+}
+
+/** How far ahead of UTC a zone's clocks are at a moment, in milliseconds. */
+function offsetIn(timeZone: string, moment: Date): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(moment);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((each) => each.type === type)?.value ?? 0);
+  const wall = Date.UTC(
+    part('year'),
+    part('month') - 1,
+    part('day'),
+    part('hour'),
+    part('minute'),
+    part('second'),
+  );
+  return wall - Math.floor(moment.getTime() / 1000) * 1000;
+}
+
 /**
  * An IANA name: letters first, then letters, digits, `_`, `+`, `-` and
  * `/`. What this refuses is an offset such as `+05:00` or `-0800`, which

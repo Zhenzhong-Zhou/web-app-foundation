@@ -92,6 +92,14 @@ const NOT_AUDITED = new Map<string, string>([
     'Reads only: computes what a shipment would take. A POST because the question has a body (ADR-041)',
   ],
   [
+    'InvitationsController.read',
+    'Reads only, spending nothing: a POST so that a mail scanner fetching the link cannot open it (ADR-077)',
+  ],
+  [
+    'InvitationsController.accept',
+    'Audited by the service, with the new member as its actor: the route is public, and the actor exists only once it has run (ADR-077)',
+  ],
+  [
     'InvoicesController.previewCredit',
     'Computes a credit and stores nothing — a POST only because it carries a body (ADR-047)',
   ],

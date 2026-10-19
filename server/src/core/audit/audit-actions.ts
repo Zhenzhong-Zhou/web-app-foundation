@@ -23,6 +23,17 @@ export const AUDIT_ACTIONS = {
    */
   USER_ACCOUNT_DELETED: 'user.account_deleted',
 
+  /**
+   * An invitation's links (ADR-077), each with the address and the role:
+   * sent, sent again, copied for the inviter to pass on, and revoked.
+   */
+  INVITATION_SENT: 'invitation.sent',
+  INVITATION_RESENT: 'invitation.resent',
+  INVITATION_LINK_COPIED: 'invitation.link_copied',
+  INVITATION_REVOKED: 'invitation.revoked',
+  /** Its actor is the new member, who exists once they accept. */
+  INVITATION_ACCEPTED: 'invitation.accepted',
+
   PRODUCT_CREATED: 'product.created',
   PRODUCT_UPDATED: 'product.updated',
 

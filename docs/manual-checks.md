@@ -1282,6 +1282,40 @@ Signed in as the demo Owner the seed prints.
 - **MC-2906** *(ADR-076)* The audit log's Action filter names each action
   in the language, never by its code.
 
+## 30. Invitations (ADR-077)
+
+Signed in as the demo Owner the seed prints, with Mailpit open. Until
+Members has Invite, send an invitation from the browser's console on the
+app: `await fetch('/api/v1/invitations', { method: 'POST', headers: {
+'Content-Type': 'application/json' }, body: JSON.stringify({ email,
+roleId, locale, note }) })`, with a role's id from `/api/v1/roles`.
+
+- **MC-3001** *(ADR-077)* Invite `newcomer@example.com` as Admin, in
+  `zh-Hans`, with the note `<b>Dock 3</b>`, a line break, then `bring
+  boots`. Mailpit has one email, in Chinese, subject included. It opens
+  加入 and the organization's name, in words with no image. It names the
+  demo Owner by name and by address, the role as 管理员 with its line
+  saying what an Admin does, and the note under 来自 … 的留言 as typed (the
+  tags shown as text, the line break kept). The link works until the end
+  of its seventh day, named with the organization's time zone, and opens
+  `/invitation?token=…` on the app's address, never the API's; the same
+  address is written out for when the button does not open. It ends 由 …
+  代 … 发送, naming the app as MAIL_FROM does.
+- **MC-3002** *(ADR-077)* With the account's language set to Français,
+  invite another address with no `locale`: the email is in French, the
+  inviter's language, and its role line is French too.
+- **MC-3003** *(ADR-077, ADR-076)* With Mailpit stopped, invite another
+  address: the invitation is still made, its link `notSent`. Records →
+  Audit log's Invitation sent entry for it reads Email not sent, and in
+  中文 and Français too.
+- **MC-3017** *(ADR-077)* Signed in as Sarah Chen, an Admin, invite
+  `gone@example.com` with a note, then leave the organization from
+  Account. As the demo Owner, resend it from the console
+  (`POST /api/v1/invitations/<id>/resend`, its id from
+  `/api/v1/invitations`): the new email says the organization invited
+  you, in its subject and its first line, with no name or address of
+  Sarah's, and the note comes from the organization.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -1588,3 +1622,4 @@ first.
 - 2026-10-18: the demo's team and their work: Before you start, MC-1903.
 - 2026-10-18: the audit log in words (ADR-076): section 29, and section
   14's audit item.
+- 2026-10-19: invitations (ADR-077), the email: section 30.

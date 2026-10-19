@@ -92,7 +92,10 @@ export class AuditInterceptor implements NestInterceptor {
     try {
       await this.audit.record({
         actorId: context.userId,
-        action: options.action,
+        action:
+          typeof options.action === 'function'
+            ? options.action(response)
+            : options.action,
         resourceType: options.resourceType,
         // Narrowed for the extractor: Express types params as
         // `string | string[]` to allow wildcard routes, which this codebase
