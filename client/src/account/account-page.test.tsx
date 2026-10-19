@@ -12,10 +12,13 @@ import { AccountPage } from './account-page';
 const EXPORTED: AuditRecord = {
   id: 'entry-1',
   action: 'organization.exported',
+  actionName: 'Everything downloaded',
   resourceType: 'organization',
+  resourceTypeName: 'Organization',
   resourceId: 'org-1',
   resourceLabel: null,
   payload: null,
+  details: [],
   actorId: 'user-1',
   actorEmail: 'owner@alpha.example.com',
   actorName: 'Owner',

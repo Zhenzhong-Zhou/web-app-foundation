@@ -239,7 +239,13 @@ export class OrganizationExportService {
                 action: AUDIT_ACTIONS.ORGANIZATION_EXPORTED,
                 resourceType: 'organization',
                 resourceId: organizationId,
-                payload: { ...counts },
+                // Each key named, so the compiler checks it is declared.
+                payload: {
+                  tables: counts.tables,
+                  rows: counts.rows,
+                  files: counts.files,
+                  documents: counts.documents,
+                },
                 ip: context.ip,
                 userAgent: context.userAgent,
               }),

@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Headers,
   Param,
   ParseUUIDPipe,
   Query,
@@ -10,6 +11,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
+import { localeOf } from '../../i18n/translate';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
 import { PERMISSIONS } from '../authorization/permissions';
@@ -42,8 +44,13 @@ export class PeopleController {
   async find(
     @CurrentUser() user: RequestContext,
     @Param('userId', ParseUUIDPipe) userId: string,
+    @Headers('accept-language') acceptLanguage?: string,
   ): Promise<PersonDetail> {
-    const person = await this.people.find(userId, await this.held(user));
+    const person = await this.people.find(
+      userId,
+      await this.held(user),
+      localeOf(acceptLanguage),
+    );
     // Your own page shows no activity: your work is on your Account page.
     if (userId === user.userId) delete person.recentActivity;
     return person;

@@ -2,11 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, gte, lt, SQL } from 'drizzle-orm';
 
 import { pageOf } from '../../common/keyset';
+import type { Locale } from '../../common/locales';
 import { auditLog, users } from '../../database/schema';
+import { getTenantContext } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
+import { timeZoneOf } from '../organizations/time-zone';
 import type { AuditAction } from './audit-actions';
+import type { FieldValues } from './audit-context';
 import { resolveLabel } from './audit-labels';
 import { nameReferences } from './audit-references';
+import { actionNameOf, wordEntry } from './audit-words';
+import type { AuditActionName, AuditDetail } from './dto/audit-response.dto';
 import type { ListAuditDto } from './dto/list-audit.dto';
 
 export interface AuditEntry {
@@ -14,7 +20,8 @@ export interface AuditEntry {
   action: AuditAction;
   resourceType?: string;
   resourceId?: string;
-  payload?: Record<string, unknown>;
+  /** Declared keys only (ADR-076), so an undeclared one fails to compile. */
+  payload?: FieldValues;
   ip?: string;
   userAgent?: string;
 }
@@ -36,6 +43,10 @@ export interface AuditRecord {
   ip: string | null;
   userAgent: string | null;
   createdAt: Date;
+  /** The entry in words, in the reader's language (ADR-076). */
+  actionName: string;
+  resourceTypeName: string | null;
+  details: AuditDetail[];
 }
 
 export interface AuditPage {
@@ -77,7 +88,11 @@ export class AuditService {
     });
   }
 
-  async list(query: ListAuditDto): Promise<AuditPage> {
+  /**
+   * A page of the log, each entry worded in the reader's language
+   * (ADR-076), for the screens and the CSV alike.
+   */
+  async list(query: ListAuditDto, locale: Locale): Promise<AuditPage> {
     const limit = query.limit ?? DEFAULT_LIMIT;
 
     const filters = [
@@ -123,7 +138,24 @@ export class AuditService {
 
     // The driving table's columns are never actually null; LeftJoinedRow
     // cannot express that, so the narrowing happens once, here.
-    return pageOf(rows as unknown as AuditRecord[], limit);
+    type Unworded = Omit<
+      AuditRecord,
+      'actionName' | 'resourceTypeName' | 'details'
+    >;
+    // Whose days a filter on moments names (ADR-072).
+    const timeZone = await this.tenantDb.transaction((tx, organizationId) =>
+      timeZoneOf(tx, organizationId),
+    );
+    const reading = {
+      locale,
+      timeZone,
+      readerId: getTenantContext()?.userId ?? null,
+    };
+    const worded = (rows as unknown as Unworded[]).map((row) => ({
+      ...row,
+      ...wordEntry(row, reading),
+    }));
+    return pageOf(worded, limit);
   }
 
   /**
@@ -137,7 +169,7 @@ export class AuditService {
    * helper, and adding one for a single caller is more surface than a scoped
    * query here.
    */
-  async listActions(): Promise<string[]> {
+  async listActions(locale: Locale): Promise<AuditActionName[]> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const rows = await tx
         .selectDistinct({ action: auditLog.action })
@@ -145,7 +177,11 @@ export class AuditService {
         .where(eq(auditLog.organizationId, organizationId))
         .orderBy(asc(auditLog.action));
 
-      return rows.map((row) => row.action);
+      // Named for the filter, in the reader's language (ADR-076).
+      return rows.map((row) => ({
+        action: row.action,
+        name: actionNameOf(row.action, locale),
+      }));
     });
   }
 }

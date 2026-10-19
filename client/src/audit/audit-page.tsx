@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useSearchParams } from 'react-router-dom';
 
+import type { AuditActionName } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { ExportButton } from '../components/export-button';
 import { FilterRow } from '../components/filter-row';
@@ -69,7 +70,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
   const actorId = mine ? '' : (params.get('actorId') ?? '');
   const base = mine ? '/account/activity' : '/audit';
 
-  const [actions, setActions] = useState<string[]>([]);
+  const [actions, setActions] = useState<AuditActionName[]>([]);
 
   const canView = mine || can('audit.view');
 
@@ -124,7 +125,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
 
     let ignore = false;
 
-    void api<string[]>('/audit/actions')
+    void api<AuditActionName[]>('/audit/actions')
       .then((rows) => {
         if (!ignore) setActions(rows);
       })
@@ -215,9 +216,9 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
                 defaultMessage: 'All actions',
               })}
             </MenuItem>
-            {actions.map((key) => (
+            {actions.map(({ action: key, name }) => (
               <MenuItem key={key} value={key}>
-                {describe(key)}
+                {name}
               </MenuItem>
             ))}
           </TextField>

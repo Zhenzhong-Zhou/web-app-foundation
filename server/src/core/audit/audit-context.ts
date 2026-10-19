@@ -1,11 +1,17 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-/** Field name to its value before the handler changed it. */
-type PreviousValues = Record<string, unknown>;
+import type { AuditField } from './audit-fields';
+
+/**
+ * Declared keys to their values (ADR-076): one AUDIT_FIELDS does not name
+ * fails to compile here, as an undeclared action does. A payload, as
+ * AuditService.record takes it.
+ */
+export type FieldValues = Partial<Record<AuditField, unknown>>;
 
 const storage = new AsyncLocalStorage<{
-  previous: PreviousValues;
-  context: Record<string, unknown>;
+  previous: FieldValues;
+  context: FieldValues;
 }>();
 
 /**
@@ -35,7 +41,7 @@ export function enterAuditContext(): void {
  * A no-op outside a request, so a seed script or a test calling a service
  * directly needs no special case.
  */
-export function recordPrevious(values: PreviousValues): void {
+export function recordPrevious(values: FieldValues): void {
   const store = storage.getStore();
   if (!store) return;
 
@@ -56,19 +62,19 @@ export function recordPrevious(values: PreviousValues): void {
  * the caller: a catalogue code or a quantity, never a note or anything that
  * names a person.
  */
-export function recordContext(values: Record<string, unknown>): void {
+export function recordContext(values: FieldValues): void {
   const store = storage.getStore();
   if (!store) return;
 
   Object.assign(store.context, values);
 }
 
-export function takeContext(): Record<string, unknown> | undefined {
+export function takeContext(): FieldValues | undefined {
   const context = storage.getStore()?.context;
   return context && Object.keys(context).length > 0 ? context : undefined;
 }
 
-export function takePrevious(): PreviousValues | undefined {
+export function takePrevious(): FieldValues | undefined {
   const previous = storage.getStore()?.previous;
   return previous && Object.keys(previous).length > 0 ? previous : undefined;
 }

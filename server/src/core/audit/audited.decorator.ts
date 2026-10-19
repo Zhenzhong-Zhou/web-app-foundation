@@ -2,6 +2,7 @@ import { SetMetadata } from '@nestjs/common';
 import type { Request } from 'express';
 
 import type { AuditAction } from './audit-actions';
+import type { AuditField } from './audit-fields';
 
 export const AUDITED = 'audit:options';
 
@@ -44,7 +45,7 @@ export interface AuditOptions<T = unknown> {
    * A field given both is logged as `{ from, to }`, and a save that changed
    * nothing writes no entry; the organization's settings work this way.
    */
-  fields?: readonly string[];
+  fields?: readonly AuditField[];
 }
 
 /**

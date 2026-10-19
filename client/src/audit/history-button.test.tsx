@@ -12,7 +12,9 @@ import { HistoryButton } from './history-button';
 const ENTRY: AuditRecord = {
   id: 'audit-1',
   action: 'product.variant_updated',
+  actionName: 'Product variant updated',
   resourceType: 'product',
+  resourceTypeName: 'Product',
   resourceId: 'product-1',
   resourceLabel: 'Widget',
   actorId: 'user-1',
@@ -20,6 +22,14 @@ const ENTRY: AuditRecord = {
   actorName: 'Owner',
   actorPhotoFileId: null,
   payload: { sku: { from: 'WIDGET-1', to: 'RENAMED-1' } },
+  details: [
+    {
+      field: 'SKU',
+      changed: true,
+      from: { text: 'WIDGET-1' },
+      value: { text: 'RENAMED-1' },
+    },
+  ],
   ip: null,
   userAgent: null,
   createdAt: new Date().toISOString(),

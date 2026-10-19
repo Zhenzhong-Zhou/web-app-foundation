@@ -10,7 +10,7 @@ import { AUDIT_ACTIONS } from './audit-actions';
 import { recordContext } from './audit-context';
 import { AUDIT_COLUMNS } from './audit-exports';
 import { Audited } from './audited.decorator';
-import type { AuditPage } from './dto/audit-response.dto';
+import type { AuditActionName, AuditPage } from './dto/audit-response.dto';
 import { ListAuditDto } from './dto/list-audit.dto';
 
 @Controller({ path: 'audit', version: '1' })
@@ -23,8 +23,11 @@ export class AuditController {
    */
   @Get()
   @RequirePermissions(PERMISSIONS.AUDIT_VIEW)
-  list(@Query() query: ListAuditDto): Promise<AuditPage> {
-    return this.audit.list(query);
+  list(
+    @Query() query: ListAuditDto,
+    @Headers('accept-language') acceptLanguage?: string,
+  ): Promise<AuditPage> {
+    return this.audit.list(query, localeOf(acceptLanguage));
   }
 
   /**
@@ -39,21 +42,16 @@ export class AuditController {
     @Res({ passthrough: true }) res: Response,
     @Headers('accept-language') acceptLanguage?: string,
   ) {
+    const locale = localeOf(acceptLanguage);
     const rows = await everyRow((before, limit) =>
-      this.audit.list({ ...query, before, limit }),
+      this.audit.list({ ...query, before, limit }, locale),
     );
     recordContext({
       list: 'audit',
       filters: exportFilters(query),
       rows: rows.length,
     });
-    return csvFile(
-      res,
-      'audit-log',
-      AUDIT_COLUMNS,
-      rows,
-      localeOf(acceptLanguage),
-    );
+    return csvFile(res, 'audit-log', AUDIT_COLUMNS, rows, locale);
   }
 
   /**
@@ -65,7 +63,9 @@ export class AuditController {
    */
   @Get('actions')
   @RequirePermissions(PERMISSIONS.AUDIT_VIEW)
-  listActions(): Promise<string[]> {
-    return this.audit.listActions();
+  listActions(
+    @Headers('accept-language') acceptLanguage?: string,
+  ): Promise<AuditActionName[]> {
+    return this.audit.listActions(localeOf(acceptLanguage));
   }
 }

@@ -305,6 +305,37 @@ export type NotificationPage = {
   nextCursor: string | null;
 };
 
+export type AuditLink = {
+  kind:
+    | 'role'
+    | 'invoice'
+    | 'location'
+    | 'order'
+    | 'lot'
+    | 'product'
+    | 'partner'
+    | 'tax_code'
+    | 'price_list'
+    | 'variant'
+    | 'order_line'
+    | 'order_return';
+  id: string;
+};
+
+export type AuditValue = {
+  text: string;
+  day?: string | null;
+  at?: string | null;
+  link?: AuditLink | null;
+};
+
+export type AuditDetail = {
+  field: string;
+  changed: boolean;
+  from: AuditValue | null;
+  value: AuditValue | null;
+};
+
 export type AuditRecord = {
   id: string;
   action: string;
@@ -321,11 +352,19 @@ export type AuditRecord = {
   ip: string | null;
   userAgent: string | null;
   createdAt: string;
+  actionName: string;
+  resourceTypeName: string | null;
+  details: Array<AuditDetail>;
 };
 
 export type AuditPage = {
   entries: Array<AuditRecord>;
   nextCursor: string | null;
+};
+
+export type AuditActionName = {
+  action: string;
+  name: string;
 };
 
 export type Person = {
@@ -3083,6 +3122,9 @@ export type NotificationsControllerMarkAllReadV1Response =
 
 export type AuditControllerListV1Data = {
   body?: never;
+  headers: {
+    'accept-language': string;
+  };
   path?: never;
   query?: {
     actorId?: string;
@@ -3284,13 +3326,16 @@ export type AuditControllerExportAuditV1Response =
 
 export type AuditControllerListActionsV1Data = {
   body?: never;
+  headers: {
+    'accept-language': string;
+  };
   path?: never;
   query?: never;
   url: '/v1/audit/actions';
 };
 
 export type AuditControllerListActionsV1Responses = {
-  200: Array<string>;
+  200: Array<AuditActionName>;
 };
 
 export type AuditControllerListActionsV1Response =
@@ -3312,6 +3357,9 @@ export type PeopleControllerListV1Response =
 
 export type PeopleControllerFindV1Data = {
   body?: never;
+  headers: {
+    'accept-language': string;
+  };
   path: {
     userId: string;
   };
@@ -3372,6 +3420,9 @@ export type WorkControllerUpdateDetailsV1Response =
 
 export type WorkControllerActivityV1Data = {
   body?: never;
+  headers: {
+    'accept-language': string;
+  };
   path?: never;
   query?: {
     actorId?: string;

@@ -57,8 +57,12 @@ export class WorkController {
   activity(
     @CurrentUser() context: RequestContext,
     @Query() query: ListAuditDto,
+    @Headers('accept-language') acceptLanguage?: string,
   ): Promise<AuditPage> {
-    return this.audit.list({ ...query, actorId: context.userId });
+    return this.audit.list(
+      { ...query, actorId: context.userId },
+      localeOf(acceptLanguage),
+    );
   }
 
   /** As the audit log's export (ADR-057), and an entry of its own. */
@@ -71,20 +75,15 @@ export class WorkController {
     @Headers('accept-language') acceptLanguage?: string,
   ) {
     const mine = { ...query, actorId: context.userId };
+    const locale = localeOf(acceptLanguage);
     const rows = await everyRow((before, limit) =>
-      this.audit.list({ ...mine, before, limit }),
+      this.audit.list({ ...mine, before, limit }, locale),
     );
     recordContext({
       list: 'your-activity',
       filters: exportFilters(mine),
       rows: rows.length,
     });
-    return csvFile(
-      res,
-      'your-activity',
-      AUDIT_COLUMNS,
-      rows,
-      localeOf(acceptLanguage),
-    );
+    return csvFile(res, 'your-activity', AUDIT_COLUMNS, rows, locale);
   }
 }

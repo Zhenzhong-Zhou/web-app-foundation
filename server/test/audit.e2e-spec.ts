@@ -386,13 +386,15 @@ describe('Audit (e2e)', () => {
       await makeProduct(alpha, 'WIDGET-1');
       await makeProduct(alpha, 'WIDGET-2');
 
-      const actions = body<string[]>(
+      const actions = body<{ action: string; name: string }[]>(
         await alpha.agent.get('/v1/audit/actions').expect(200),
       );
 
       // From the data rather than the constant, so the filter never offers an
-      // option that returns nothing — and two products yield one action.
-      expect(actions).toEqual(['product.created']);
+      // option that returns nothing — and two products yield one action,
+      // named in words (ADR-076).
+      expect(actions.map((each) => each.action)).toEqual(['product.created']);
+      expect(actions[0].name).not.toBe('product.created');
     });
 
     /**
@@ -406,7 +408,7 @@ describe('Audit (e2e)', () => {
       await makeProduct(beta, 'THEIRS-1');
 
       expect(
-        body<string[]>(await alpha.agent.get('/v1/audit/actions').expect(200)),
+        body<unknown[]>(await alpha.agent.get('/v1/audit/actions').expect(200)),
       ).toEqual([]);
     });
 

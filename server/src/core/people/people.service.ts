@@ -3,6 +3,7 @@ import type { Readable } from 'node:stream';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 
+import type { Locale } from '../../common/locales';
 import { files, memberships, roles, users } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
@@ -87,6 +88,7 @@ export class PeopleService {
   async find(
     userId: string,
     held: ReadonlySet<Permission>,
+    locale: Locale,
   ): Promise<PersonDetail> {
     const row = await this.tenantDb.transaction(async (tx, organizationId) => {
       const [found] = await tx
@@ -107,7 +109,10 @@ export class PeopleService {
 
     const person: PersonDetail = shown(row, held);
     if (held.has('audit.view')) {
-      const { entries } = await this.audit.list({ actorId: userId, limit: 20 });
+      const { entries } = await this.audit.list(
+        { actorId: userId, limit: 20 },
+        locale,
+      );
       person.recentActivity = entries;
     }
     return person;
