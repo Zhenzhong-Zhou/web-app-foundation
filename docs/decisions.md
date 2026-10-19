@@ -9311,11 +9311,23 @@ they exist so the reasoning is not rediscovered from scratch.
   consequence, and password reset sends a link to an address nobody confirmed.
   Candidates are actions the unverified user takes themselves: inviting a
   member, which ADR-077 now refuses, and changing their own email address,
-  still open. Capping their *role* is not a candidate — an admin creating
-  an Admin cannot control whether that person verifies, and either
-  rejecting the action or silently downgrading it makes
-  `memberships.role_id` disagree with the behaviour. Expiring the token is
-  fine; expiring the account is not.
+  still open (its own entry, below). Capping their *role* is not a
+  candidate — an admin creating an Admin cannot control whether that
+  person verifies, and either rejecting the action or silently downgrading
+  it makes `memberships.role_id` disagree with the behaviour. Expiring the
+  token is fine; expiring the account is not. The rule for every feature
+  to come: any feature that sends email to an address a member typed (an
+  invitation today; an invoice emailed to a customer later) requires the
+  sender's own address to be confirmed, as ADR-077 does for invitations.
+- **Changing your own email address.** Nobody can today: the address is
+  fixed from registration or the invitation. When it comes, the new
+  address is confirmed before it takes effect, by a link sent to it; the
+  old address is told it changed; the password is asked for first; one
+  account per address still holds, so an address another account has is
+  refused; and the change is recorded in the account's history
+  (ADR-022). Trigger: the first person who needs to change theirs, such
+  as someone who joined by a copied link with a mistyped address. It gets
+  its own ADR and PR, outside the onboarding chain.
 - **Registration: open, or by invitation.** Next after ADR-077. Today
   anyone who finds the sign-up page creates an organization on the
   production server, with no billing, no support, and data we are then

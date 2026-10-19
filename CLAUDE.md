@@ -72,6 +72,10 @@ Karpathy's observations on LLM coding pitfalls
   (ADR-054).
 - **Audit.** Writes are `@Audited`, or listed in `NOT_AUDITED` with a
   reason; free text stays out of the payload (ADR-018).
+- **Mail to a typed address.** A feature that sends email to an address
+  a member typed (an invitation today; an invoice emailed to a customer
+  later) requires the sender's own address to be confirmed first, as
+  ADR-077 does for invitations (`email_unverified`).
 - **Manual checks.** A commit that changes what a person sees, or a rule
   they work under, updates `docs/manual-checks.md` in the same commit
   (`docs/conventions.md`, Tests).
