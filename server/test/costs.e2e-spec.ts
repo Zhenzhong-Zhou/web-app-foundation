@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { todayIn } from '../src/common/today';
 import {
@@ -8,20 +8,18 @@ import {
 } from '../src/database/database.module';
 import {
   exchangeRates,
-  roles,
   stockMovements,
   stockValuations,
 } from '../src/database/schema';
 import {
+  addMember,
   body,
   createE2eApp,
   createLocation,
   createPartner,
   createVariant,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
-import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 import { clearOfMidnight, KIRITIMATI, PAGO_PAGO } from './utils/time-zones';
 import {
@@ -607,31 +605,7 @@ describe('Costs (e2e)', () => {
     it('keeps costs to the Owner', async () => {
       const s = await setup('alpha');
 
-      const [admin] = await db
-        .select({ id: roles.id })
-        .from(roles)
-        .where(
-          and(
-            eq(roles.organizationId, s.organizationId),
-            eq(roles.name, 'Admin'),
-          ),
-        );
-
-      await s.agent
-        .post('/v1/users')
-        .send({
-          email: 'admin@alpha.example.com',
-          name: 'Admin',
-          password: PASSWORD,
-          roleId: admin.id,
-        })
-        .expect(201);
-
-      const agent = authedAgent(app);
-      await agent
-        .post('/v1/auth/login')
-        .send({ email: 'admin@alpha.example.com', password: PASSWORD })
-        .expect(200);
+      const agent = await addMember(app, s, 'admin@alpha.example.com', 'Admin');
 
       await agent.get('/v1/costs/valuation').expect(403);
       await agent

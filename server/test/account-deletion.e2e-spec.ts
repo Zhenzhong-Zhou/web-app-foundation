@@ -328,6 +328,12 @@ describe('Account deletion (e2e)', () => {
      */
     it('emails in the language of the request, for someone with none chosen', async () => {
       const { member, email } = await team();
+      // An invitation gives its account a language (ADR-077); one
+      // registered with none, or made before, has none.
+      await db
+        .update(users)
+        .set({ locale: null })
+        .where(eq(users.email, email));
 
       await member
         .post('/v1/account/deletion')

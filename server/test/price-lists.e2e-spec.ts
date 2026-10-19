@@ -1,20 +1,13 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
 
 import {
-  type Database,
-  UNSAFE_GLOBAL_DB,
-} from '../src/database/database.module';
-import { roles } from '../src/database/schema';
-import {
+  addMember,
   body,
   createE2eApp,
   createPartner,
   createVariant,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
-import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
 interface Line {
@@ -39,11 +32,9 @@ interface OrderDetail {
  */
 describe('Price lists (e2e)', () => {
   let app: INestApplication;
-  let db: Database;
 
   beforeAll(async () => {
     app = await createE2eApp();
-    db = app.get<Database>(UNSAFE_GLOBAL_DB);
   });
 
   afterAll(async () => {
@@ -577,31 +568,7 @@ describe('Price lists (e2e)', () => {
       });
       await assign(s, s.customer, { salePriceListId: wholesale });
 
-      const [admin] = await db
-        .select({ id: roles.id })
-        .from(roles)
-        .where(
-          and(
-            eq(roles.organizationId, s.organizationId),
-            eq(roles.name, 'Admin'),
-          ),
-        );
-
-      await s.agent
-        .post('/v1/users')
-        .send({
-          email: 'admin@alpha.example.com',
-          name: 'Admin',
-          password: PASSWORD,
-          roleId: admin.id,
-        })
-        .expect(201);
-
-      const agent = authedAgent(app);
-      await agent
-        .post('/v1/auth/login')
-        .send({ email: 'admin@alpha.example.com', password: PASSWORD })
-        .expect(200);
+      const agent = await addMember(app, s, 'admin@alpha.example.com', 'Admin');
 
       await agent.get('/v1/price-lists').expect(403);
       await agent

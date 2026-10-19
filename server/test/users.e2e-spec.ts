@@ -7,6 +7,7 @@ import {
 } from '../src/database/database.module';
 import { auditLog, memberships, users } from '../src/database/schema';
 import {
+  addMember as invited,
   body,
   createE2eApp,
   PASSWORD,
@@ -87,29 +88,21 @@ describe('Users (e2e)', () => {
     };
   }
 
-  /** Creates a member with the given role and signs in as them. */
+  /**
+   * A member with the given role, invited and accepted (ADR-077), signed
+   * in as them, with their id.
+   */
   async function addMember(
     owner: Awaited<ReturnType<typeof registerOrg>>,
     email: string,
     roleName: string,
   ) {
-    const res = await owner.agent
-      .post('/v1/users')
-      .send({
-        email,
-        name: roleName,
-        password: PASSWORD,
-        roleId: await roleIdNamed(app, owner.organizationId, roleName),
-      })
-      .expect(201);
-
-    const agent = authedAgent(app);
-    await agent
-      .post('/v1/auth/login')
-      .send({ email, password: PASSWORD })
-      .expect(200);
-
-    return { agent, id: body<{ user: MemberResponse }>(res).user.id };
+    const agent = await invited(app, owner, email, roleName);
+    const [user] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email));
+    return { agent, id: user.id };
   }
 
   /** Creates a Viewer in `owner`'s organization and signs in as them. */
@@ -301,9 +294,9 @@ describe('Users (e2e)', () => {
         .expect(403);
 
       // A failed action is not an action — the interceptor's concatMap never
-      // runs on an error path. One row, not zero: addViewer created a member
-      // above, and that did audit.
-      expect(await db.select().from(auditLog)).toHaveLength(1);
+      // runs on an error path. Two rows, not none: addViewer invited a
+      // member above, who accepted, and both audit (ADR-077).
+      expect(await db.select().from(auditLog)).toHaveLength(2);
     });
   });
 
@@ -329,11 +322,15 @@ describe('Users (e2e)', () => {
       const res = await owner.agent.get('/v1/audit').expect(200);
       const page = body<AuditPageResponse>(res);
 
-      expect(page.entries).toHaveLength(1);
       // Joined server-side: a tombstoned actor (ADR-012) is not in
-      // GET /v1/users, so a client could not resolve this id itself.
-      expect(page.entries[0].actorEmail).toBe('owner@alpha.example.com');
-      expect(page.entries[0].action).toBe('user.created');
+      // GET /v1/users, so a client could not resolve this id itself. The
+      // invitation is the Owner's, its acceptance the new member's.
+      expect(
+        page.entries.map((entry) => [entry.action, entry.actorEmail]),
+      ).toEqual([
+        ['invitation.accepted', 'viewer@alpha.example.com'],
+        ['invitation.sent', 'owner@alpha.example.com'],
+      ]);
       expect(page.nextCursor).toBeNull();
     });
 
@@ -353,16 +350,16 @@ describe('Users (e2e)', () => {
 
       const res = await alpha.agent.get('/v1/audit').expect(200);
 
-      // Beta created a member and alpha did not, so alpha's log is empty —
+      // Beta added a member and alpha did not, so alpha's log is empty —
       // and an empty result is its own code path through the left join.
       expect(body<AuditPageResponse>(res).entries).toHaveLength(0);
-      expect(await db.select().from(auditLog)).toHaveLength(1);
+      expect(await db.select().from(auditLog)).toHaveLength(2);
     });
 
     it('pages with a keyset cursor', async () => {
       const owner = await registerOrg('alpha');
+      // Two rows: the invitation, and its acceptance.
       await addViewer(owner, 'one@alpha.example.com');
-      await addViewer(owner, 'two@alpha.example.com');
 
       const first = body<AuditPageResponse>(
         await owner.agent.get('/v1/audit?limit=1').expect(200),

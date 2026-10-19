@@ -14,13 +14,12 @@ import {
   stockMovements,
 } from '../src/database/schema';
 import {
+  addMember,
   addViewer,
   body,
   createE2eApp,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
-import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
 
 interface ProductResponse {
@@ -543,21 +542,13 @@ describe('Stock (e2e)', () => {
     it('refuses an adjustment without stock.adjust', async () => {
       const ctx = await setup('alpha');
 
-      await ctx.agent
-        .post('/v1/users')
-        .send({
-          email: 'mover@alpha.example.com',
-          name: 'Mover',
-          password: PASSWORD,
-          roleId: await moverRole(ctx.organizationId),
-        })
-        .expect(201);
-
-      const mover = authedAgent(app);
-      await mover
-        .post('/v1/auth/login')
-        .send({ email: 'mover@alpha.example.com', password: PASSWORD })
-        .expect(200);
+      await moverRole(ctx.organizationId);
+      const mover = await addMember(
+        app,
+        ctx,
+        'mover@alpha.example.com',
+        'Mover',
+      );
 
       // Receiving is what happened in the world, and stock.move covers it.
       await mover
