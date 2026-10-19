@@ -360,7 +360,10 @@ describe('Return authorizations (e2e)', () => {
         .where(eq(auditLog.action, 'return_authorization.updated'));
       expect(entry.resourceId).toBe(rma.id);
       expect(entry.payload).toEqual({
-        sendBackToId: { from: s.shelf, to: burnaby },
+        sendBackToId: {
+          from: { id: s.shelf, label: 'Shelf' },
+          to: { id: burnaby, label: 'Burnaby warehouse' },
+        },
       });
 
       // None: the RMA prints the registered address.
@@ -780,8 +783,9 @@ describe('Return authorizations (e2e)', () => {
         .where(eq(auditLog.action, 'return_authorization.return_linked'));
 
       expect(entry.resourceId).toBe(rma.id);
+      // The return named by its order's number, never its id (ADR-076).
       expect(entry.payload).toEqual({
-        returnId,
+        returnId: { id: returnId, label: 'SO-000001' },
         returnAuthorization: 'RMA-000001',
       });
     });

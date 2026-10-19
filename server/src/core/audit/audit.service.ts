@@ -6,6 +6,7 @@ import { auditLog, users } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import type { AuditAction } from './audit-actions';
 import { resolveLabel } from './audit-labels';
+import { nameReferences } from './audit-references';
 import type { ListAuditDto } from './dto/list-audit.dto';
 
 export interface AuditEntry {
@@ -69,7 +70,8 @@ export class AuditService {
         entry.resourceType,
         entry.resourceId,
       ),
-      payload: entry.payload,
+      // Each reference with the name it has now (ADR-076).
+      payload: await nameReferences(this.tenantDb, entry.payload),
       ip: entry.ip,
       userAgent: entry.userAgent,
     });

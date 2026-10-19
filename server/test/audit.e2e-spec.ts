@@ -317,6 +317,69 @@ describe('Audit (e2e)', () => {
     });
   });
 
+  describe('references in the details (ADR-076)', () => {
+    it('names a role change on both sides, by role', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const roleRows = await db
+        .select({ id: roles.id, name: roles.name })
+        .from(roles)
+        .where(eq(roles.organizationId, alpha.organizationId));
+      const roleId = (name: string) =>
+        roleRows.find((role) => role.name === name)!.id;
+
+      const created = body<{ user: { id: string } }>(
+        await alpha.agent
+          .post('/v1/users')
+          .send({
+            email: 'sarah@alpha.example.com',
+            name: 'Sarah',
+            password: PASSWORD,
+            roleId: roleId('Viewer'),
+          })
+          .expect(201),
+      );
+      await alpha.agent
+        .patch(`/v1/users/${created.user.id}`)
+        .send({ roleId: roleId('Admin') })
+        .expect(204);
+
+      const { entries } = await page(alpha, '?action=user.role_changed');
+      expect(entries[0].payload).toEqual({
+        roleId: {
+          from: { id: roleId('Viewer'), label: 'Viewer' },
+          to: { id: roleId('Admin'), label: 'Admin' },
+        },
+      });
+    });
+
+    it('keeps the id with no name where there is none to give', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      await alpha.agent
+        .get(`/v1/audit/export?actorId=${alpha.userId}`)
+        .expect(200);
+
+      // A person is never named in the log (ADR-038): the filter keeps the
+      // id, for its link, and no label.
+      const { entries } = await page(alpha, '?action=list.exported');
+      expect(entries[0].payload).toMatchObject({
+        filters: { actorId: { id: alpha.userId, label: null } },
+      });
+    });
+
+    it('keeps a moment as it was sent, naming only references', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      // From as the screen sends it: the organization's midnight (ADR-072).
+      await alpha.agent
+        .get('/v1/audit/export?from=2026-09-30T16:00:00.000Z')
+        .expect(200);
+
+      const { entries } = await page(alpha, '?action=list.exported');
+      expect(entries[0].payload).toMatchObject({
+        filters: { from: '2026-09-30T16:00:00.000Z' },
+      });
+    });
+  });
+
   describe('GET /v1/audit/actions', () => {
     it('lists only the actions that have occurred', async () => {
       const alpha = await registerOrganization(app, 'alpha');

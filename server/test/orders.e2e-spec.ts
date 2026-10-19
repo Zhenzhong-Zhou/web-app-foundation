@@ -831,9 +831,24 @@ describe('Orders (e2e)', () => {
         .select()
         .from(auditLog)
         .where(eq(auditLog.action, 'order.updated'));
-      expect(entry.payload).toEqual({
-        deliverToId: { from: ctx.locationId, to: burnaby },
-      });
+      // Each side named as it was then (ADR-076), and kept after a rename.
+      const named = {
+        deliverToId: {
+          from: { id: ctx.locationId, label: 'Main' },
+          to: { id: burnaby, label: 'Burnaby warehouse' },
+        },
+      };
+      expect(entry.payload).toEqual(named);
+
+      await ctx.agent
+        .patch(`/v1/locations/${burnaby}`)
+        .send({ name: 'Burnaby DC' })
+        .expect(204);
+      const [again] = await db
+        .select()
+        .from(auditLog)
+        .where(eq(auditLog.id, entry.id));
+      expect(again.payload).toEqual(named);
 
       // None: the purchase order prints the registered address.
       await ctx.agent
