@@ -155,6 +155,25 @@ for (const [where, viewport] of [
   });
 }
 
+test('at Larger, the invitation page reflows at 320px wide, signed out', async ({
+  browser,
+  api,
+}) => {
+  const { token } = await inviteByLink(api, uniqueEmail('larger-page'));
+  const context = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+    viewport: { width: 320, height: 640 },
+  });
+  const page = await context.newPage();
+  await page.addInitScript(() => localStorage.setItem('textSize', 'larger'));
+  await page.goto(`/invitation?token=${token}`);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('html')).toHaveCSS('font-size', '20px');
+
+  expect(await overflowing(page)).toEqual([]);
+  await context.close();
+});
+
 /** A phone's width at Larger, from the first paint. */
 async function onAPhoneAtLarger(page: Page): Promise<void> {
   await page.setViewportSize({ width: 320, height: 640 });

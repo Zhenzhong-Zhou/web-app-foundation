@@ -179,5 +179,30 @@ for (const colorScheme of ['light', 'dark'] as const) {
       // All screens at once, so one run reports everything to fix.
       expect(found).toEqual({});
     });
+
+    test('the invitation page meets WCAG 2.2 AA, signed out', async ({
+      browser,
+      freshOrg,
+    }) => {
+      await verifyEmail(freshOrg.api, freshOrg.email);
+      const { token } = await inviteByLink(
+        freshOrg.api,
+        uniqueEmail('a11y-page'),
+        'Viewer',
+        { note: 'Bring boots.' },
+      );
+      // The newcomer's own browser, with no session (ADR-077).
+      const context = await browser.newContext({
+        colorScheme,
+        storageState: { cookies: [], origins: [] },
+      });
+      const page = await context.newPage();
+      await page.goto(`/invitation?token=${token}`);
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await page.waitForLoadState('networkidle');
+
+      expect(await violations(page)).toEqual([]);
+      await context.close();
+    });
   });
 }
