@@ -751,9 +751,12 @@ Paper is checked first because it must not change at all.
   to 中文 and to a phone (or a narrow window): the counts sit two by two, cards
   stack, nothing scrolls sideways, and the wording reads naturally. Register a
   new organization: Getting started leads with seven steps; add a location and
-  see its step ticked on Refresh; Skip the team step; Dismiss the card and
-  bring it back with Show Getting started. Sign in as a viewer: no Skip or
-  Dismiss, and only the cards that role may see.
+  see its step ticked on Refresh. The last step reads Invite your team: its
+  Invite someone opens Members with the Invite dialog, and closing it takes
+  `?invite` off the address, so Back and a reload leave it shut (ADR-077).
+  Skip the team step; Dismiss the card and bring it back with Show Getting
+  started. Sign in as a viewer: no Skip or Dismiss, the team step with no
+  button, and only the cards that role may see.
 
 ## 16. Files (ADR-059)
 
@@ -1720,3 +1723,5 @@ first.
   MC-3010 to MC-3016.
 - 2026-10-19: Add member gone (ADR-077): MC-1550 names the invitation
   page instead.
+- 2026-10-19: Getting started's Invite your team (ADR-077): MC-1559
+  extended.

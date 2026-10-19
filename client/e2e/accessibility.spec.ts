@@ -78,6 +78,11 @@ const SCREENS: Screen[] = [
     ready: heading,
   },
   { name: 'members', path: () => '/members', ready: heading },
+  {
+    name: 'the Invite dialog',
+    path: () => '/members?invite',
+    ready: (page) => page.getByRole('dialog'),
+  },
   { name: 'tax codes', path: () => '/settings/tax-codes', ready: heading },
   {
     name: 'exchange rates',

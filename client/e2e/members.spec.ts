@@ -64,6 +64,26 @@ test.describe('invitations', () => {
     expect(mail.text).toContain('Bring boots');
   });
 
+  test('opens from Getting started by the address, which closing takes off', async ({
+    page,
+    freshOrg,
+  }) => {
+    await signInAs(page, freshOrg.api);
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Invite someone' }).click();
+
+    await expect(page).toHaveURL(/\/members\?invite$/);
+    const dialog = inviteDialog(page, freshOrg.organizationName);
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+
+    // Off the address, so a reload or Back does not open it again.
+    await expect(page).toHaveURL(/\/members$/);
+    await page.reload();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(dialog).toBeHidden();
+  });
+
   test('copies a link instead, sending nothing, and says it works once', async ({
     page,
     context,

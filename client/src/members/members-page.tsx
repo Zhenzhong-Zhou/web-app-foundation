@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
+import { useSearchParams } from 'react-router-dom';
 
 import type {
   CopiedInvitationLink,
@@ -66,6 +67,10 @@ export function MembersPage() {
     key: 0,
   });
   const [inviteOpen, setInviteOpen] = useState(false);
+  // Getting started opens Invite through the address, ?invite. Closing
+  // takes it off, so Back or a reload does not open it again.
+  const [params, setParams] = useSearchParams();
+  const asked = inviting && params.has('invite');
   const [rowBusy, setRowBusy] = useState<string | null>(null);
 
   const loading = members === null && error === null;
@@ -275,13 +280,26 @@ export function MembersPage() {
       {inviting && (
         <InviteDialog
           key={`invite-${invite.key}`}
-          open={inviteOpen}
+          // Asked for by the address, once the roles it offers have come.
+          open={inviteOpen || (asked && !loading)}
           start={invite.start}
           roles={roles}
           members={members ?? []}
           invitations={invitations}
           isOwner={isOwner}
-          onClose={() => setInviteOpen(false)}
+          onClose={() => {
+            setInviteOpen(false);
+            if (asked) {
+              setParams(
+                (current) => {
+                  const next = new URLSearchParams(current);
+                  next.delete('invite');
+                  return next;
+                },
+                { replace: true },
+              );
+            }
+          }}
           onChanged={load}
         />
       )}

@@ -67,12 +67,15 @@ const M = defineMessages({
       'Raise an order, ship it and issue its invoice: the whole flow once',
   },
   invoiceAction: { id: 'orders.raise', defaultMessage: 'Raise an order' },
-  teamTitle: { id: 'home.start.team', defaultMessage: 'Add your team' },
+  teamTitle: { id: 'home.start.team', defaultMessage: 'Invite your team' },
   teamHint: {
     id: 'home.start.team.hint',
     defaultMessage: 'People who work here, each with their role. Optional.',
   },
-  teamAction: { id: 'home.start.team.action', defaultMessage: 'Add a member' },
+  teamAction: {
+    id: 'home.start.team.action',
+    defaultMessage: 'Invite someone',
+  },
 });
 
 /** The seven steps (ADR-058), in the order they depend on each other. */
@@ -137,7 +140,8 @@ const STEPS: { key: GettingStartedStep; meta: StepMeta }[] = [
       title: M.teamTitle,
       hint: M.teamHint,
       action: M.teamAction,
-      to: '/members',
+      // Members with the Invite dialog open (ADR-077).
+      to: '/members?invite',
     },
   },
 ];
@@ -147,16 +151,20 @@ const STEPS: { key: GettingStartedStep; meta: StepMeta }[] = [
  * organization holds. The first open step's button is the page's primary
  * action. Only the team step can be skipped; the card can be dismissed.
  * Both controls are the organization's settings, offered only to those who
- * may change them (`canManage`).
+ * may change them (`canManage`). The team step's Invite someone is for
+ * those who may invite (`canInvite`, users.create); anyone else sees the
+ * step without it.
  */
 export function GettingStarted({
   state,
   canManage,
+  canInvite,
   onDismiss,
   onSkipTeam,
 }: {
   state: HomeResponse['gettingStarted'];
   canManage: boolean;
+  canInvite: boolean;
   onDismiss: () => void;
   onSkipTeam: () => void;
 }) {
@@ -264,13 +272,15 @@ export function GettingStarted({
                     })}
                   </Button>
                 )}
-                <Button
-                  component={RouterLink}
-                  to={meta.to}
-                  variant={key === next ? 'contained' : 'outlined'}
-                >
-                  {intl.formatMessage(meta.action)}
-                </Button>
+                {(key !== 'team' || canInvite) && (
+                  <Button
+                    component={RouterLink}
+                    to={meta.to}
+                    variant={key === next ? 'contained' : 'outlined'}
+                  >
+                    {intl.formatMessage(meta.action)}
+                  </Button>
+                )}
               </Stack>
             )}
           </Stack>

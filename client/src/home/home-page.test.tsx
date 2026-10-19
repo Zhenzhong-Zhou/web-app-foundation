@@ -153,6 +153,43 @@ describe('HomePage', () => {
     await vi.waitFor(() => expect(skipped).toBe(true));
   });
 
+  it('offers Invite someone on the team step to those who may invite, opening the dialog', async () => {
+    const team = {
+      gettingStarted: {
+        ...COMPLETE,
+        steps: { ...COMPLETE.steps, team: false },
+        complete: false,
+      },
+      cards: [],
+    };
+    serve(team);
+    const { unmount } = renderWithAuth(routed(<HomePage />), {
+      permissions: ['users.create'],
+    });
+
+    const start = await screen.findByRole('region', {
+      name: 'Getting started',
+    });
+    expect(within(start).getByText('Invite your team')).toBeTruthy();
+    expect(
+      within(start)
+        .getByRole('link', { name: 'Invite someone' })
+        .getAttribute('href'),
+    ).toBe('/members?invite');
+    unmount();
+
+    // Without users.create, the step and no button (ADR-077).
+    serve(team);
+    renderWithAuth(routed(<HomePage />), { permissions: [] });
+    const theirs = await screen.findByRole('region', {
+      name: 'Getting started',
+    });
+    expect(within(theirs).getByText('Invite your team')).toBeTruthy();
+    expect(
+      within(theirs).queryByRole('link', { name: 'Invite someone' }),
+    ).toBeNull();
+  });
+
   it('keeps Skip and Dismiss from those who may not change the settings', async () => {
     serve({
       gettingStarted: {

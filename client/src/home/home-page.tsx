@@ -278,6 +278,7 @@ export function HomePage() {
             <GettingStarted
               state={started}
               canManage={can('organizations.update')}
+              canInvite={can('users.create')}
               onDismiss={() =>
                 void act('/home/getting-started/dismiss', 'POST')
               }
