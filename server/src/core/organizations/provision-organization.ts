@@ -54,7 +54,8 @@ export async function provisionOrganization(
       Object.values(SYSTEM_ROLES).map((name) => ({
         organizationId: organization.id,
         name,
-        description: SYSTEM_ROLE_DESCRIPTIONS[name],
+        // In English, as the name is: the screens translate both by key.
+        description: SYSTEM_ROLE_DESCRIPTIONS[name].message,
         // Seeded roles the UI must not allow deleting: an org with no Owner
         // cannot be recovered.
         isSystem: true,

@@ -32,6 +32,10 @@ export const OWNED_THROUGH_PARENT = new Map<string, string>([
     'Exported as role_permissions.csv, by role name and permission key',
   ],
   [
+    'auth_tokens',
+    'Not exported: an invitation’s links, credentials kept only as their hash, which go with it (ADR-077)',
+  ],
+  [
     'sessions',
     'Not exported: each person’s own sign-ins, moved to their next organization when it is deleted',
   ],

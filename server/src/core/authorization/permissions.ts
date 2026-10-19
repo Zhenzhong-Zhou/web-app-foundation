@@ -1,3 +1,5 @@
+import { t, type Translatable } from '../../i18n/translate';
+
 /**
  * The permission vocabulary (ADR-004). Single source of truth for the seed,
  * the @RequirePermission decorator, and the guard.
@@ -290,10 +292,28 @@ for (const [role, keys] of Object.entries(SYSTEM_ROLE_PERMISSIONS)) {
   }
 }
 
-export const SYSTEM_ROLE_DESCRIPTIONS: Record<SystemRole, string> = {
-  [SYSTEM_ROLES.OWNER]: 'Full control of the organization',
-  [SYSTEM_ROLES.ADMIN]: 'Manage members and roles',
-  [SYSTEM_ROLES.VIEWER]: 'Read-only access',
+/**
+ * Each system role by what it lets a person do, in a line a newcomer
+ * understands (ADR-077): on the Invite dialog, the invitation page and the
+ * email, translated by key as the role names are (ADR-054). When the roles
+ * change, these change with them. Provisioning stores the English in
+ * roles.description, which the export writes.
+ */
+export const SYSTEM_ROLE_DESCRIPTIONS: Record<SystemRole, Translatable> = {
+  [SYSTEM_ROLES.OWNER]: t({
+    id: 'roles.description.owner',
+    defaultMessage:
+      'Everything, including costs, issuing invoices, settings and closing the organization.',
+  }),
+  [SYSTEM_ROLES.ADMIN]: t({
+    id: 'roles.description.admin',
+    defaultMessage:
+      'Day-to-day work: stock, orders, production and drafting invoices. Can add and remove members.',
+  }),
+  [SYSTEM_ROLES.VIEWER]: t({
+    id: 'roles.description.viewer',
+    defaultMessage: 'Looks at orders, stock and invoices, and changes nothing.',
+  }),
 };
 
 /**

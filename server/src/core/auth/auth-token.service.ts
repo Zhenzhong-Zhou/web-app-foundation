@@ -7,7 +7,7 @@ import { and, eq, gt, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Env } from '../../config/env';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
-import { type AuthTokenPurpose, authTokens } from '../../database/schema';
+import { type AccountTokenPurpose, authTokens } from '../../database/schema';
 
 export interface IssuedToken {
   /** The only time the plaintext exists. Send it, never store it. */
@@ -28,7 +28,7 @@ export interface IssuedToken {
  */
 @Injectable()
 export class AuthTokenService {
-  private readonly ttls: Record<AuthTokenPurpose, number>;
+  private readonly ttls: Record<AccountTokenPurpose, number>;
 
   constructor(
     @Inject(UNSAFE_GLOBAL_DB) private readonly db: Database,
@@ -55,7 +55,10 @@ export class AuthTokenService {
    * old email" is a support question rather than a security one. Requesting a
    * new link is the user saying the old one is not the one they want.
    */
-  async issue(userId: string, purpose: AuthTokenPurpose): Promise<IssuedToken> {
+  async issue(
+    userId: string,
+    purpose: AccountTokenPurpose,
+  ): Promise<IssuedToken> {
     await this.invalidateOutstanding(userId, purpose);
     await this.sweepSpent(userId);
 
@@ -88,7 +91,7 @@ export class AuthTokenService {
    */
   async consume(
     token: string,
-    purpose: AuthTokenPurpose,
+    purpose: AccountTokenPurpose,
   ): Promise<string | null> {
     const [row] = await this.db
       .update(authTokens)
@@ -103,6 +106,8 @@ export class AuthTokenService {
       )
       .returning({ userId: authTokens.userId });
 
+    // An account's purpose, so auth_tokens_owner_check gives it a user:
+    // narrowed here, once, for verification and reset alike.
     return row?.userId ?? null;
   }
 
@@ -113,7 +118,7 @@ export class AuthTokenService {
    */
   async invalidateOutstanding(
     userId: string,
-    purpose: AuthTokenPurpose,
+    purpose: AccountTokenPurpose,
   ): Promise<void> {
     await this.db
       .update(authTokens)

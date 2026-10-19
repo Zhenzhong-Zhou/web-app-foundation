@@ -19,6 +19,7 @@ export * from './document-numbering';
 export * from './document-sequences';
 export * from './exchange-rates';
 export * from './files';
+export * from './invitations';
 export * from './invoice-line-taxes';
 export * from './invoice-lines';
 export * from './invoice-taxes';

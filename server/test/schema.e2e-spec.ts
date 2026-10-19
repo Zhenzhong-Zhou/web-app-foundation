@@ -7,9 +7,11 @@ import {
 } from '../src/database/database.module';
 import {
   ACCOUNT_EVENT_ACTIONS,
+  AUTH_TOKEN_PURPOSES,
   DOCUMENT_TYPES,
   FILE_KINDS,
   IDLE_SIGN_OUT_SCOPES,
+  INVITATION_LINKS,
   INVOICE_STATUSES,
   MOVEMENT_REASONS,
   NUMBERING_RESETS,
@@ -90,6 +92,8 @@ describe('schema invariants', () => {
    */
   describe.each([
     ['account_events_action_check', ACCOUNT_EVENT_ACTIONS],
+    ['auth_tokens_purpose_check', AUTH_TOKEN_PURPOSES],
+    ['invitations_link_check', INVITATION_LINKS],
     ['orders_status_check', ORDER_STATUSES],
     ['orders_direction_check', ORDER_DIRECTIONS],
     ['stock_movements_reason_check', MOVEMENT_REASONS],

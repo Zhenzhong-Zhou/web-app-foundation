@@ -307,9 +307,9 @@ export type NotificationPage = {
 
 export type AuditLink = {
   kind:
+    | 'location'
     | 'role'
     | 'invoice'
-    | 'location'
     | 'order'
     | 'lot'
     | 'product'

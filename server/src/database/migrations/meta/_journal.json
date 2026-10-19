@@ -477,6 +477,13 @@
       "when": 1792291510318,
       "tag": "0067_document_numbering",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1792438887695,
+      "tag": "0068_invitations",
+      "breakpoints": true
     }
   ]
 }
