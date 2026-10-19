@@ -8,6 +8,26 @@ the new session reads current code.
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
+- **Next: onboarding, a chain of three** (Bob's priority, 19 October
+  2026), one PR each, ADR first, each finished before the next begins.
+  After them, each in Open decisions with its trigger: the operator's
+  console and support access, a public demo, plans and billing, job
+  roles; one person in two organizations is ADR-077's, *Deferred*.
+    1. **ADR-077, invitations** (`adr-077-invitations`): drafted. Invite
+       replaces Add member, by email or a copied link, for seven days; no
+       route sets another person's password. Next: the canvas designs
+       (Invite dialog, Invited list, the invitation page, the email),
+       then the server with its e2e tests in a new chat. Its migration
+       will be **0068**.
+    2. **Registration by invitation:** a setting, open or by invitation;
+       an organization invitation from `npm run org:invite`, its first
+       Owner whoever accepts. Open decisions, "Registration: open, or by
+       invitation".
+    3. **A newcomer's first sign-in:** what you can do here, the
+       inviter's note, a first-week checklist, a help button with
+       ADR-058's user guides. Open decisions, "A newcomer's first
+       sign-in".
+
 - **ADR-076, the audit log in words (`adr-076-audit-in-words`):** no
   migration; server and client. Every screen with an audit entry (the
   audit log, a record's History, Your activity, your recent work on
