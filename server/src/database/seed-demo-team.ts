@@ -171,8 +171,9 @@ const COLLEAGUES: Colleague[] = [
 ];
 
 /**
- * Adds the team through UsersService.create, as an Owner does on Members
- * (ADR-006: no invitations yet), each with the demo's password.
+ * Adds the team through UsersService.create, each with the demo's password,
+ * known on purpose: a person joins by invitation (ADR-077), but a demo's
+ * colleagues are there to be signed into.
  *
  * Addresses are always at example.com, never the Owner's own domain:
  * seeding an existing account must not create accounts at a real one. The

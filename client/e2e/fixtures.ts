@@ -3,9 +3,11 @@ import { type APIRequestContext, test as base } from '@playwright/test';
 import { OWNER_STATE_PATH } from './global-setup';
 import {
   createApiContext,
-  E2E_PASSWORD,
+  inviteByLink,
+  joinByLink,
   registerOrganization,
   type SeededOrganization,
+  uniqueEmail,
 } from './support/api';
 
 /**
@@ -48,32 +50,9 @@ export const test = base.extend<Fixtures>({
 
   viewerApi: async ({ api }, use) => {
     // Registration only ever creates an Owner, so a Viewer has to be invited
-    // by one. That is also how it happens in reality.
-    const email = `viewer-${Date.now().toString(36)}@example.test`;
-    const roles = await api.get('/v1/roles');
-    const viewer = (
-      (await roles.json()) as { id: string; name: string }[]
-    ).find((role) => role.name === 'Viewer');
-
-    // A missing Viewer role means the organisation was not seeded, and the
-    // non-null assertion below would report it as "cannot read properties of
-    // undefined" three lines later.
-    if (!viewer)
-      throw new Error('No Viewer role — is the organisation seeded?');
-
-    await api.post('/v1/users', {
-      data: {
-        email,
-        name: 'E2E Viewer',
-        password: E2E_PASSWORD,
-        roleId: viewer!.id,
-      },
-    });
-
-    const context = await createApiContext();
-    await context.post('/v1/auth/login', {
-      data: { email, password: E2E_PASSWORD },
-    });
+    // by one, and accept (ADR-077). That is also how it happens in reality.
+    const { token } = await inviteByLink(api, uniqueEmail('viewer'));
+    const context = await joinByLink(token, 'E2E Viewer');
 
     await use(context);
     await context.dispose();

@@ -1624,35 +1624,6 @@
         "tags": [
           "Users"
         ]
-      },
-      "post": {
-        "operationId": "UsersController_create_v1",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateUserDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Users"
-        ]
       }
     },
     "/v1/users/{id}": {
@@ -9369,70 +9340,6 @@
           "name",
           "roleId",
           "active"
-        ]
-      },
-      "CreateUserDto": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "maxLength": 254,
-            "format": "email"
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 100
-          },
-          "password": {
-            "type": "string",
-            "minLength": 12,
-            "maxLength": 128
-          },
-          "roleId": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "email",
-          "name",
-          "password",
-          "roleId"
-        ]
-      },
-      "CreatedMember": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "roleId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "email",
-          "name",
-          "roleId"
-        ]
-      },
-      "UserEnvelope": {
-        "type": "object",
-        "properties": {
-          "user": {
-            "$ref": "#/components/schemas/CreatedMember"
-          }
-        },
-        "required": [
-          "user"
         ]
       },
       "UpdateUserDto": {

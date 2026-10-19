@@ -19,8 +19,9 @@ export class CreateUserDto {
   @MaxLength(100)
   name!: string;
 
-  // Admin-created users get a password now; email verification and a
-  // set-your-own-password flow land in step 5. Same minimum as registration —
+  // Only the demo seed's colleagues get a password this way, known on
+  // purpose so the demo can be signed into; a person who joins by
+  // invitation chooses their own (ADR-077). Same minimum as registration —
   // this account is not lesser for having been created by someone else.
   @IsString()
   @MinLength(12)

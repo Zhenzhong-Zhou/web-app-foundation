@@ -37,7 +37,6 @@ import { openDialog } from '../lib/open-dialog';
 import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { activeLabel } from '../people/people-types';
-import { CreateMemberDialog } from './create-member-dialog.tsx';
 import { refusalLabel } from './invitation-words';
 import { InviteDialog } from './invite-dialog';
 import { copyToClipboard, type InviteView } from './invite-view';
@@ -60,7 +59,6 @@ export function MembersPage() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
   // The Invite dialog, where it opens, and a count that mounts it afresh
   // for each opening.
   const [invite, setInvite] = useState<{ start: InviteView; key: number }>({
@@ -270,23 +268,8 @@ export function MembersPage() {
                 })}
               </Button>
             )}
-            {inviting && (
-              <Button onClick={openDialog(() => setCreating(true))}>
-                {intl.formatMessage({
-                  id: 'members.add',
-                  defaultMessage: 'Add member',
-                })}
-              </Button>
-            )}
           </>
         }
-      />
-
-      <CreateMemberDialog
-        open={creating}
-        roles={roles}
-        onClose={() => setCreating(false)}
-        onCreated={load}
       />
 
       {inviting && (

@@ -428,24 +428,6 @@ export type Member = {
   lastActiveAt?: string | null;
 };
 
-export type CreateUserDto = {
-  email: string;
-  name: string;
-  password: string;
-  roleId: string;
-};
-
-export type CreatedMember = {
-  id: string;
-  email: string;
-  name: string;
-  roleId: string;
-};
-
-export type UserEnvelope = {
-  user: CreatedMember;
-};
-
 export type UpdateUserDto = {
   roleId: string;
 };
@@ -3753,20 +3735,6 @@ export type UsersControllerListV1Responses = {
 
 export type UsersControllerListV1Response =
   UsersControllerListV1Responses[keyof UsersControllerListV1Responses];
-
-export type UsersControllerCreateV1Data = {
-  body: CreateUserDto;
-  path?: never;
-  query?: never;
-  url: '/v1/users';
-};
-
-export type UsersControllerCreateV1Responses = {
-  201: UserEnvelope;
-};
-
-export type UsersControllerCreateV1Response =
-  UsersControllerCreateV1Responses[keyof UsersControllerCreateV1Responses];
 
 export type UsersControllerRemoveV1Data = {
   body?: never;

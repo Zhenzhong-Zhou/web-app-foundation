@@ -10,7 +10,6 @@ import {
   addMember as invited,
   body,
   createE2eApp,
-  PASSWORD,
   registerOrganization,
   roleIdNamed,
 } from './utils/fixtures';
@@ -183,120 +182,26 @@ describe('Users (e2e)', () => {
     });
   });
 
+  // ADR-077: nobody sets another person's password. A person joins by
+  // invitation and chooses their own.
   describe('POST /v1/users', () => {
-    it('creates a member with the given role', async () => {
-      const owner = await registerOrg('alpha');
-
-      const res = await owner.agent
-        .post('/v1/users')
-        .send({
-          email: 'viewer@alpha.example.com',
-          name: 'Viewer',
-          password: PASSWORD,
-          roleId: owner.viewerRoleId,
-        })
-        .expect(201);
-
-      expect(body<{ user: MemberResponse }>(res).user.roleId).toBe(
-        owner.viewerRoleId,
-      );
-      expect(await db.select().from(memberships)).toHaveLength(2);
-    });
-
-    it('refuses a Viewer, which lacks users.create', async () => {
-      const owner = await registerOrg('alpha');
-      const viewer = await addViewer(owner, 'viewer@alpha.example.com');
-
-      // The roadmap line. Note this is the *same* authenticated user who gets
-      // 200 on GET /v1/users above — so the refusal is a property of the role
-      // and the route, not of the session.
-      await viewer
-        .post('/v1/users')
-        .send({
-          email: 'sneaky@alpha.example.com',
-          name: 'Sneaky',
-          password: PASSWORD,
-          roleId: owner.viewerRoleId,
-        })
-        .expect(403);
-
-      expect(await db.select().from(memberships)).toHaveLength(2);
-    });
-
-    it('refuses a role belonging to another organization', async () => {
-      const alpha = await registerOrg('alpha');
-      const beta = await registerOrg('beta');
-
-      // A well-formed uuid for a role that exists — just not here. TenantDb
-      // scopes the lookup, so it is simply not found.
-      await alpha.agent
-        .post('/v1/users')
-        .send({
-          email: 'crossorg@alpha.example.com',
-          name: 'Cross',
-          password: PASSWORD,
-          roleId: beta.viewerRoleId,
-        })
-        .expect(400);
-
-      expect(await db.select().from(memberships)).toHaveLength(2);
-    });
-
-    it('rejects an email that already has an account', async () => {
+    it('is gone, so no route makes a member with a password', async () => {
       const owner = await registerOrg('alpha');
 
       await owner.agent
         .post('/v1/users')
         .send({
-          email: 'owner@alpha.example.com',
-          name: 'Duplicate',
-          password: PASSWORD,
+          email: 'sam@example.com',
+          name: 'Sam',
+          password: 'a-password-someone-else-knows',
           roleId: owner.viewerRoleId,
         })
-        .expect(409);
-    });
-
-    it('records an audit row', async () => {
-      const owner = await registerOrg('alpha');
-
-      const res = await owner.agent
-        .post('/v1/users')
-        .send({
-          email: 'viewer@alpha.example.com',
-          name: 'Viewer',
-          password: PASSWORD,
-          roleId: owner.viewerRoleId,
-        })
-        .expect(201);
-
-      const [row] = await db.select().from(auditLog);
-
-      // ADR-012: ip and user_agent are captured at event time, because the
-      // user row is anonymised on deletion and stops identifying anyone.
-      expect(row.action).toBe('user.created');
-      expect(row.resourceId).toBe(body<{ user: MemberResponse }>(res).user.id);
-      expect(row.organizationId).toBe(owner.organizationId);
-      expect(row.ip).not.toBeNull();
-    });
-
-    it('records nothing when the action was refused', async () => {
-      const owner = await registerOrg('alpha');
-      const viewer = await addViewer(owner, 'viewer@alpha.example.com');
-
-      await viewer
-        .post('/v1/users')
-        .send({
-          email: 'sneaky@alpha.example.com',
-          name: 'Sneaky',
-          password: PASSWORD,
-          roleId: owner.viewerRoleId,
-        })
-        .expect(403);
-
-      // A failed action is not an action — the interceptor's concatMap never
-      // runs on an error path. Two rows, not none: addViewer invited a
-      // member above, who accepted, and both audit (ADR-077).
-      expect(await db.select().from(auditLog)).toHaveLength(2);
+        .expect(404);
+      const made = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, 'sam@example.com'));
+      expect(made).toEqual([]);
     });
   });
 

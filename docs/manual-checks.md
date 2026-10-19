@@ -95,8 +95,9 @@ a second organization.
   stock and orders, but has no buttons for what it may not do, and a direct
   URL to a settings page shows "not allowed" rather than an empty page.
 - **MC-107** The last Owner cannot be removed or demoted; the app says why.
-- **MC-109** Add an Admin and sign in as them. They can manage members, but
-  changing or removing the Owner is refused.
+- **MC-109** Invite an Admin, accept in a private window, and sign in as
+  them. They can manage members and invite, but changing or removing the
+  Owner is refused.
 - **MC-108** A second organization, in the second profile, sees none of the
   first's products, partners, orders, lots or audit entries, even by pasting
   a URL from the first.
@@ -498,7 +499,7 @@ folder by folder; these check what is already in place.
       partner's lists and the organization's default;
   - settings: the Organization page's sections and licence policy, tax
       codes with their rates (9,975 % in French), and exchange rates;
-  - members: the list, changing a role and adding a member, with the
+  - members: the list, changing a role and inviting a member, with the
       built-in roles (Owner, Admin, Viewer) named in the language and a
       role the organization named itself shown as named;
   - audit: the audit log with its filters and the History panel on a
@@ -692,7 +693,7 @@ Paper is checked first because it must not change at all.
   summary does. On SO-DEMO-2, with nothing invoiced or returned, no links and
   no warning appear.
 - **MC-1550** On Sign in, Register, Reset password, Account's Change password
-  and Add member's temporary password, each password field has an eye button
+  and the invitation page (ADR-077), each password field has an eye button
   at its end. It starts hidden; pressing it shows the text and the button's
   name becomes "Hide password" (显示密码 / 隐藏密码 in Chinese); pressing again hides
   it. On Change password, showing the new password leaves the current one
@@ -1717,3 +1718,5 @@ first.
   Invite and Invited.
 - 2026-10-19: invitations (ADR-077), the invitation page: MC-3004 extended,
   MC-3010 to MC-3016.
+- 2026-10-19: Add member gone (ADR-077): MC-1550 names the invitation
+  page instead.

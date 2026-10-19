@@ -200,6 +200,17 @@ describe('Invitations (e2e)', () => {
       await viewer.post(`/v1/invitations/${sent.id}/resend`).expect(403);
       await viewer.post(`/v1/invitations/${sent.id}/link`).expect(403);
       await viewer.delete(`/v1/invitations/${sent.id}`).expect(403);
+
+      // A refused write is not an action: none of the five is recorded.
+      const recorded = await db
+        .select({ action: auditLog.action })
+        .from(auditLog)
+        .where(eq(auditLog.organizationId, alpha.organizationId));
+      expect(recorded.map((row) => row.action).sort()).toEqual([
+        'invitation.accepted',
+        'invitation.sent',
+        'invitation.sent',
+      ]);
     });
 
     it('makes nobody a member: the address is on Invited, never among the members', async () => {

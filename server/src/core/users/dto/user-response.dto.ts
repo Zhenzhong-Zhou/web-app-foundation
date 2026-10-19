@@ -18,16 +18,3 @@ export class Member {
   /** The time itself, only for those who may read the history. */
   lastActiveAt?: Date | null;
 }
-
-/** A member just created. */
-export class CreatedMember {
-  id!: string;
-  email!: string;
-  name!: string;
-  roleId!: string;
-}
-
-/** POST /users. */
-export class UserEnvelope {
-  user!: CreatedMember;
-}
