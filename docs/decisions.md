@@ -9324,7 +9324,11 @@ they exist so the reasoning is not rediscovered from scratch.
   production by invitation now. By invitation, an organization comes from
   an organization invitation on ADR-077's machinery, issued by the
   operator from the command line (`npm run org:invite` with an email and
-  a name, from a laptop or the host's shell, with no web surface); the
+  a name), with no web surface. Render's free services have no shell, so
+  it runs on a laptop against the production database's external
+  address. It sends no mail: it prints the link for the operator to send,
+  as Copy link does, so the laptop needs only that address and the app's
+  (`CLIENT_URL`), never the mail key, and Mailpit plays no part. The
   person who accepts becomes its first Owner. ADR-070's "starting a new
   organization from an existing account" can ride on it. Selling in
   public later is the setting turned to open, not a rewrite. Two other
