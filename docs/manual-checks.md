@@ -1284,37 +1284,77 @@ Signed in as the demo Owner the seed prints.
 
 ## 30. Invitations (ADR-077)
 
-Signed in as the demo Owner the seed prints, with Mailpit open. Until
-Members has Invite, send an invitation from the browser's console on the
-app: `await fetch('/api/v1/invitations', { method: 'POST', headers: {
-'Content-Type': 'application/json' }, body: JSON.stringify({ email,
-roleId, locale, note }) })`, with a role's id from `/api/v1/roles`.
+Signed in as the demo Owner the seed prints, on Settings → Members, with
+Mailpit open.
 
-- **MC-3001** *(ADR-077)* Invite `newcomer@example.com` as Admin, in
-  `zh-Hans`, with the note `<b>Dock 3</b>`, a line break, then `bring
-  boots`. Mailpit has one email, in Chinese, subject included. It opens
-  加入 and the organization's name, in words with no image. It names the
-  demo Owner by name and by address, the role as 管理员 with its line
-  saying what an Admin does, and the note under 来自 … 的留言 as typed (the
-  tags shown as text, the line break kept). The link works until the end
-  of its seventh day, named with the organization's time zone, and opens
-  `/invitation?token=…` on the app's address, never the API's; the same
-  address is written out for when the button does not open. It ends 由 …
-  代 … 发送, naming the app as MAIL_FROM does.
+- **MC-3001** *(ADR-077)* Invite: the dialog asks for Email, then the
+  three roles as cards, each with its line saying what it lets a person
+  do, Viewer chosen; Write to them in, starting at your own language; and
+  A note from you, counting to 500. Invite `newcomer@example.com` as
+  Admin, writing to them in 简体中文, with the note `<b>Dock 3</b>`, a line
+  break, then `bring boots`, and Send invitation. A notice says it was
+  sent, and Invited lists it: Admin, Invited by you, today, Emailed ·
+  until the seventh day from now. Mailpit has one email, in Chinese,
+  subject included. It opens 加入 and the organization's name, in words
+  with no image. It names the demo Owner by name and by address, the
+  role as 管理员 with its line saying what an Admin does, and the note
+  under 来自 … 的留言 as typed (the tags shown as text, the line break
+  kept). The link works until the end of its seventh day, named with the
+  organization's time zone, and opens `/invitation?token=…` on the app's
+  address, never the API's; the same address is written out for when the
+  button does not open. It ends 由 … 代 … 发送, naming the app as
+  MAIL_FROM does.
 - **MC-3002** *(ADR-077)* With the account's language set to Français,
-  invite another address with no `locale`: the email is in French, the
-  inviter's language, and its role line is French too.
-- **MC-3003** *(ADR-077, ADR-076)* With Mailpit stopped, invite another
-  address: the invitation is still made, its link `notSent`. Records →
-  Audit log's Invitation sent entry for it reads Email not sent, and in
-  中文 and Français too.
+  open Invite: Write to them in starts at Français, and an invitation
+  sent so is French, its role line too.
+- **MC-3003** *(ADR-077)* Invite another address with Copy link instead:
+  the dialog becomes Link copied, the link is on the clipboard and in a
+  field with Copy again, it says the link works once until its last day
+  and who joins by it, as what, and No email was sent. Mailpit has
+  nothing for that address, and Invited reads Link copied · until ….
+  Where the browser does not let the page copy (Safari, until you allow
+  it), the dialog reads Your invitation link instead and asks you to copy
+  the field, which is selected; it never says Link copied.
+- **MC-3004** *(ADR-077)* On an emailed row, Resend: a notice, and a
+  second email. Copy link on it: Link copied says the link in the email no
+  longer works. Copy link again: it says the link copied before no longer
+  works. Revoke asks first, then the row goes with a notice; with
+  nobody left, Invited is gone, heading and all.
+- **MC-3005** *(ADR-077)* Invite your own address: Email says you are
+  already a member here, as an Owner. Invite an address already on
+  Invited: Email says when and by whom it was invited and until when its
+  link works, with Resend instead; for one whose link has ended it says
+  it ended, and Resend starts it again. With Members open in a second
+  tab, invite an address there, then the same address here, with no
+  reload: Email says it was already invited, with Resend instead.
+- **MC-3006** *(ADR-077, ADR-076)* With Mailpit stopped, Send invitation:
+  the dialog says Couldn't send the email, with Close, Try again and Copy
+  link. Invited reads Email not sent, in the warning tone, and the audit
+  log's Invitation sent entry reads Email not sent, in 中文 and Français
+  too. Try again with Mailpit still stopped: it says it tried again, and
+  at the next try how many more times.
+- **MC-3007** *(ADR-077)* Sign in as Sarah Chen, an Admin: on Invite the
+  Owner card is disabled and says only an Owner can invite an Owner, and
+  an Owner's invitation on Invited has no Resend, Copy link or Revoke.
+  Inviting that invitation's address says it was already invited, and
+  that only an Owner can resend it, with no Resend instead. As Tom
+  Becker, a Viewer, Members has no Invite and no Invited, and its line
+  says an Owner or an Admin invites new members.
+- **MC-3008** *(ADR-077)* Register a fresh organization and, without
+  confirming its email, Send invitation from Members: the dialog asks you
+  to confirm your own email first, naming it, with Resend confirmation,
+  which sends it again.
+- **MC-3009** *(ADR-077)* At 390 px wide in 中文: Invited's rows are cards,
+  each with 重新发送, 复制链接 and 收回, and 邀请 opens the dialog full screen,
+  a close button before its title and 发送邀请 and 复制链接，自己发送 at its foot.
+  At Larger text (ADR-075), neither Members nor the dialog scrolls
+  sideways.
 - **MC-3017** *(ADR-077)* Signed in as Sarah Chen, an Admin, invite
   `gone@example.com` with a note, then leave the organization from
-  Account. As the demo Owner, resend it from the console
-  (`POST /api/v1/invitations/<id>/resend`, its id from
-  `/api/v1/invitations`): the new email says the organization invited
-  you, in its subject and its first line, with no name or address of
-  Sarah's, and the note comes from the organization.
+  Account. As the demo Owner, Resend it from Invited: the new email says
+  the organization invited you, in its subject and its first line, with
+  no name or address of Sarah's, and the note comes from the
+  organization.
 
 ## Regressions
 
@@ -1633,3 +1673,5 @@ first.
 - 2026-10-19: invitations (ADR-077), the email: section 30.
 - 2026-10-19: a link in an audit entry is underlined: MC-R21.
 - 2026-10-19: the demo's own accounts start confirmed: MC-R06 rewritten.
+- 2026-10-19: invitations (ADR-077), Members: section 30 rewritten for
+  Invite and Invited.

@@ -8,8 +8,11 @@ import {
   createPartner,
   createProduct,
   daysFromNow,
+  inviteByLink,
   signInAs,
+  uniqueEmail,
 } from './support/api';
+import { verifyEmail } from './support/mail';
 
 /**
  * WCAG 2.2 AA on the main screens, in both colour modes (ADR-055, step 6).
@@ -89,7 +92,11 @@ const SCREENS: Screen[] = [
  * with a lot 20 days from expiry (a red chip), and an order with a line,
  * which opens in tabs beside its summary.
  */
-async function seed(api: APIRequestContext): Promise<Seed> {
+async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
+  // Someone on Members' Invited (ADR-077), which needs a verified inviter.
+  await verifyEmail(api, ownerEmail);
+  await inviteByLink(api, uniqueEmail('a11y'));
+
   const product = await createProduct(api, { tracksLots: true });
   // A weight, so the variant's chevron is drawn and axe checks that it is
   // named (ADR-075): without one, the product page has no chevron at all.
@@ -154,7 +161,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       // Twenty screens and an axe pass each: longer than one flow.
       test.setTimeout(120_000);
 
-      const data = await seed(freshOrg.api);
+      const data = await seed(freshOrg.api, freshOrg.email);
       await signInAs(page, freshOrg.api);
 
       const found: Record<string, string[]> = {};

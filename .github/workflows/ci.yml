@@ -256,6 +256,9 @@ jobs:
         image: axllent/mailpit:latest
         ports:
           - 1025:1025
+          # Its HTTP API, which e2e/support/mail.ts reads the mail back
+          # from: a verification link, an invitation.
+          - 8025:8025
 
     steps:
       - uses: actions/checkout@v7

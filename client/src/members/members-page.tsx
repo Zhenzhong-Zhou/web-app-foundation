@@ -1,5 +1,7 @@
+import PersonAddAlt from '@mui/icons-material/PersonAddAlt';
 import {
   Alert,
+  Box,
   Button,
   MenuItem,
   Paper,
@@ -14,33 +16,59 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
-import { useIntl } from 'react-intl';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { FormattedMessage, useIntl } from 'react-intl';
 
-import type { Member, Role } from '../api/types.gen';
+import type {
+  CopiedInvitationLink,
+  Invitation,
+  InvitationEnvelope,
+  Member,
+  Role,
+} from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { PersonAvatar } from '../components/person-avatar';
-import { api, messageFor } from '../lib/api';
+import { useToast } from '../components/use-toast';
+import { api, ApiError, messageFor } from '../lib/api';
 import { formatMoment } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
 import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { activeLabel } from '../people/people-types';
 import { CreateMemberDialog } from './create-member-dialog.tsx';
+import { refusalLabel } from './invitation-words';
+import { InviteDialog } from './invite-dialog';
+import { copyToClipboard, type InviteView } from './invite-view';
+import { InvitedSection } from './invited-section';
 import { roleLabel } from './role-names';
+
+const FORM: InviteView = { kind: 'form' };
 
 export function MembersPage() {
   const intl = useIntl();
   const { session } = useAuth();
   const can = useCan();
 
+  const toast = useToast();
+  // Invitations are for those who may invite (ADR-077): users.create.
+  const inviting = can('users.create');
+
   const [members, setMembers] = useState<Member[] | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  // The Invite dialog, where it opens, and a count that mounts it afresh
+  // for each opening.
+  const [invite, setInvite] = useState<{ start: InviteView; key: number }>({
+    start: FORM,
+    key: 0,
+  });
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [rowBusy, setRowBusy] = useState<string | null>(null);
 
   const loading = members === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
@@ -48,29 +76,38 @@ export function MembersPage() {
   // Both in one round trip. The members list carries roleId rather than a
   // name — the id is what PATCH takes and what survives a rename — and the
   // roles list is needed for the dropdown regardless.
-  const load = useCallback(async () => {
-    try {
-      const [nextMembers, nextRoles] = await Promise.all([
+  const read = useCallback(
+    () =>
+      Promise.all([
         api<Member[]>('/users'),
         api<Role[]>('/roles'),
-      ]);
+        inviting ? api<Invitation[]>('/invitations') : Promise.resolve([]),
+      ]),
+    [inviting],
+  );
+
+  const load = useCallback(async () => {
+    try {
+      const [nextMembers, nextRoles, nextInvitations] = await read();
 
       setMembers(nextMembers);
       setRoles(nextRoles);
+      setInvitations(nextInvitations);
       setError(null);
     } catch (caught) {
       setError(messageFor(caught));
     }
-  }, []);
+  }, [read]);
 
   useEffect(() => {
     let ignore = false;
 
-    void Promise.all([api<Member[]>('/users'), api<Role[]>('/roles')])
-      .then(([nextMembers, nextRoles]) => {
+    void read()
+      .then(([nextMembers, nextRoles, nextInvitations]) => {
         if (ignore) return;
         setMembers(nextMembers);
         setRoles(nextRoles);
+        setInvitations(nextInvitations);
       })
       .catch((caught: unknown) => {
         if (!ignore) setError(messageFor(caught));
@@ -79,7 +116,88 @@ export function MembersPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [read]);
+
+  const isOwner =
+    roles.find((role) => role.id === session?.organization?.roleId)?.name ===
+    'Owner';
+
+  function openInvite(start: InviteView) {
+    setInvite((current) => ({ start, key: current.key + 1 }));
+    setInviteOpen(true);
+  }
+
+  /** A row's refusal in words, as the Invite dialog says it. */
+  function refusal(caught: unknown): string {
+    const refused = caught instanceof ApiError ? caught : null;
+    return refusalLabel(
+      {
+        message: messageFor(caught),
+        code: refused?.code ?? null,
+        details: refused?.details ?? null,
+      },
+      session?.organization?.name ?? '',
+      intl,
+    );
+  }
+
+  async function resend(invitation: Invitation) {
+    setRowBusy(invitation.id);
+    setError(null);
+    try {
+      const { invitation: next } = await api<InvitationEnvelope>(
+        `/invitations/${invitation.id}/resend`,
+        { method: 'POST' },
+      );
+      await load();
+      if (next.link.status === 'notSent') {
+        openInvite({ kind: 'notSent', invitation: next });
+      } else {
+        toast(
+          intl.formatMessage(
+            {
+              id: 'members.invited.resent',
+              defaultMessage: 'Invitation sent again to {email}',
+            },
+            { email: next.email },
+          ),
+        );
+      }
+    } catch (caught) {
+      setError(refusal(caught));
+    } finally {
+      setRowBusy(null);
+    }
+  }
+
+  async function copy(invitation: Invitation) {
+    setRowBusy(invitation.id);
+    setError(null);
+    try {
+      const made = await api<CopiedInvitationLink>(
+        `/invitations/${invitation.id}/link`,
+        { method: 'POST' },
+      );
+      const copied = await copyToClipboard(made.link);
+      await load();
+      openInvite({
+        kind: 'copied',
+        invitation: made.invitation,
+        link: made.link,
+        // The link that was out is spent now, and the dialog says so.
+        replaces:
+          invitation.link.status === 'emailed' ||
+          invitation.link.status === 'copied'
+            ? invitation.link.status
+            : null,
+        copied,
+      });
+    } catch (caught) {
+      setError(refusal(caught));
+    } finally {
+      setRowBusy(null);
+    }
+  }
 
   async function changeRole(memberId: string, roleId: string) {
     setSaving(memberId);
@@ -139,7 +257,20 @@ export function MembersPage() {
 
             {/* Hidden without users.create — display only, since the 403 is the
             actual control (ADR-016). */}
-            {can('users.create') && (
+            {inviting && (
+              <Button
+                variant="contained"
+                startIcon={<PersonAddAlt />}
+                disabled={loading}
+                onClick={openDialog(() => openInvite(FORM))}
+              >
+                {intl.formatMessage({
+                  id: 'members.invite',
+                  defaultMessage: 'Invite',
+                })}
+              </Button>
+            )}
+            {inviting && (
               <Button onClick={openDialog(() => setCreating(true))}>
                 {intl.formatMessage({
                   id: 'members.add',
@@ -158,9 +289,86 @@ export function MembersPage() {
         onCreated={load}
       />
 
+      {inviting && (
+        <InviteDialog
+          key={`invite-${invite.key}`}
+          open={inviteOpen}
+          start={invite.start}
+          roles={roles}
+          members={members ?? []}
+          invitations={invitations}
+          isOwner={isOwner}
+          onClose={() => setInviteOpen(false)}
+          onChanged={load}
+        />
+      )}
+
+      <Typography color="text.secondary">
+        {inviting
+          ? intl.formatMessage({
+              id: 'members.lead',
+              defaultMessage:
+                'Everyone here signs in with their own email and password. To add someone, invite them: they choose their password when they accept.',
+            })
+          : intl.formatMessage({
+              id: 'members.lead.noInvite',
+              defaultMessage:
+                'Everyone here signs in with their own email and password. An Owner or an Admin invites new members.',
+            })}
+      </Typography>
+
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Paper variant="outlined">
+      {/* None pending, no heading: the line above says how to add someone. */}
+      {invitations.length > 0 && (
+        <InvitedSection
+          invitations={invitations}
+          roles={roles}
+          isOwner={isOwner}
+          selfId={session?.user.id}
+          busy={rowBusy}
+          actions={{
+            resend: (invitation) => void resend(invitation),
+            copy: (invitation) => void copy(invitation),
+          }}
+          onRevoked={load}
+        />
+      )}
+
+      <Paper
+        variant="outlined"
+        component="section"
+        aria-labelledby="members-heading"
+      >
+        <Typography
+          variant="h6"
+          component="h2"
+          id="members-heading"
+          sx={{ px: 2.5, pt: 2, pb: 1.5 }}
+        >
+          {members ? (
+            <FormattedMessage
+              id="members.heading"
+              defaultMessage="Members <muted>{count}</muted>"
+              values={{
+                count: members.length,
+                muted: (chunks: ReactNode[]) => (
+                  <Box
+                    component="span"
+                    sx={{ color: 'text.secondary', fontWeight: 400 }}
+                  >
+                    {chunks}
+                  </Box>
+                ),
+              }}
+            />
+          ) : (
+            intl.formatMessage({
+              id: 'layout.menu.members',
+              defaultMessage: 'Members',
+            })
+          )}
+        </Typography>
         {loading ? (
           <Stack sx={{ p: 2 }} spacing={1}>
             {showSkeleton ? (
@@ -172,7 +380,12 @@ export function MembersPage() {
           </Stack>
         ) : (
           <TableContainer>
-            <Table>
+            <Table
+              aria-label={intl.formatMessage({
+                id: 'layout.menu.members',
+                defaultMessage: 'Members',
+              })}
+            >
               <TableHead>
                 <TableRow>
                   <TableCell>

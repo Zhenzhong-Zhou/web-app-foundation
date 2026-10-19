@@ -7,7 +7,9 @@ import {
   createProduct,
   daysFromNow,
   E2E_PASSWORD,
+  inviteByLink,
   signInAs,
+  uniqueEmail,
 } from './support/api';
 
 /**
@@ -130,8 +132,10 @@ for (const [where, viewport] of [
   ['never scroll sideways on a desktop', null],
   ['reflow at 320px wide (WCAG 1.4.10)', { width: 320, height: 640 }],
 ] as const) {
-  test(`at Larger, the main screens ${where}`, async ({ page }) => {
+  test(`at Larger, the main screens ${where}`, async ({ page, api }) => {
     test.setTimeout(90_000);
+    // Members with someone on Invited, its widest row (ADR-077).
+    await inviteByLink(api, uniqueEmail('larger'));
     if (viewport) await page.setViewportSize(viewport);
     // Larger from the first paint, as a device that chose it before opens.
     await page.addInitScript(() => localStorage.setItem('textSize', 'larger'));

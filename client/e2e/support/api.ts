@@ -246,3 +246,62 @@ export async function createPartner(
   const body = (await response.json()) as { partner: { id: string } };
   return { id: body.partner.id, name, code: overrides.code };
 }
+
+/** A role's id in the signed-in member's organization, by its name. */
+export async function roleIdNamed(
+  api: APIRequestContext,
+  name: string,
+): Promise<string> {
+  const roles = (await (await api.get('/v1/roles')).json()) as {
+    id: string;
+    name: string;
+  }[];
+  const role = roles.find((each) => each.name === name);
+  if (!role) throw new Error(`No ${name} role — is the organisation seeded?`);
+  return role.id;
+}
+
+/** An address of a test's own, so its mail is never another test's. */
+export function uniqueEmail(label: string): string {
+  return `${unique(label)}@example.test`;
+}
+
+/**
+ * An invitation made by a link to pass on (ADR-077), no email sent: what a
+ * test needs to open the invitation page as its person would. The inviter
+ * must be verified.
+ */
+export async function inviteByLink(
+  api: APIRequestContext,
+  email: string,
+  role = 'Viewer',
+  extra: { locale?: string; note?: string } = {},
+): Promise<{ id: string; token: string }> {
+  const response = await api.post('/v1/invitations', {
+    data: {
+      email,
+      roleId: await roleIdNamed(api, role),
+      delivery: 'link',
+      ...extra,
+    },
+  });
+  expect(response.ok(), await response.text()).toBeTruthy();
+  const { invitation, link } = (await response.json()) as {
+    invitation: { id: string };
+    link: string;
+  };
+  return { id: invitation.id, token: new URL(link).searchParams.get('token')! };
+}
+
+/** A new account made by accepting an invitation, signed in on its own. */
+export async function joinByLink(
+  token: string,
+  name = 'E2E Member',
+): Promise<APIRequestContext> {
+  const api = await createApiContext();
+  const response = await api.post('/v1/invitations/accept', {
+    data: { token, name, password: E2E_PASSWORD },
+  });
+  expect(response.ok(), await response.text()).toBeTruthy();
+  return api;
+}

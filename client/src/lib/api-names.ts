@@ -3,6 +3,7 @@ import type {
   Bom,
   HomeCard,
   HomeResponse,
+  Invitation,
   InvoiceSummary,
   LookupResponse,
   LotCostEntry,
@@ -33,6 +34,12 @@ import type {
 export type CalendarDay = string;
 
 export type BomStatus = Bom['status'];
+
+/**
+ * Where an invitation's link stands (ADR-077): emailed or copied and live,
+ * an email that did not go, or ended and not accepted.
+ */
+export type InvitationLinkStatus = Invitation['link']['status'];
 
 export type GettingStartedStep = keyof HomeResponse['gettingStarted']['steps'];
 
