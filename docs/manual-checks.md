@@ -1423,7 +1423,10 @@ first.
   `credit-amounts.ts`: MC-709 and MC-710 are its check.
 - **MC-R06** *(ADR-055)* Signed in with an unconfirmed email, Print an
   invoice: the "Confirm your email address" banner is on screen and not in
-  the PDF, which the server draws from the invoice alone (ADR-071).
+  the PDF, which the server draws from the invoice alone (ADR-071). The
+  demo's own accounts start confirmed, so register one, leave it
+  unconfirmed, and give its address to `npm run seed:demo -- <email>`,
+  which fills it and leaves its address as it is.
 
 ---
 
@@ -1629,3 +1632,4 @@ first.
   14's audit item.
 - 2026-10-19: invitations (ADR-077), the email: section 30.
 - 2026-10-19: a link in an audit entry is underlined: MC-R21.
+- 2026-10-19: the demo's own accounts start confirmed: MC-R06 rewritten.

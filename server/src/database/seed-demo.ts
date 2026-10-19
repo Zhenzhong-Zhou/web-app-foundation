@@ -99,7 +99,7 @@ async function seedDemo(): Promise<void> {
 
     const account = requested
       ? await existingAccount(db, requested)
-      : await freshAccount(app.get(AuthService));
+      : await freshAccount(app.get(AuthService), db);
 
     if (!account) {
       logger.error(
@@ -890,9 +890,13 @@ async function existingAccount(
  * A new account and organization, registered exactly as the Register page
  * does it — user, organization and Owner membership in one transaction
  * (ADR-004) — so the demo is signed into like any real account. The email is
- * stamped with the time, so every run is its own organization.
+ * stamped with the time, so every run is its own organization. Verified, as
+ * nobody reads an example.com inbox, so Invite works at once (ADR-077).
  */
-async function freshAccount(auth: AuthService): Promise<DemoAccount> {
+async function freshAccount(
+  auth: AuthService,
+  db: Database,
+): Promise<DemoAccount> {
   const stamp = new Date()
     .toISOString()
     .replace(/[-:]/g, '')
@@ -911,6 +915,10 @@ async function freshAccount(auth: AuthService): Promise<DemoAccount> {
   if (!user.organizationId) {
     throw new Error('Registration created no organization');
   }
+  await db
+    .update(users)
+    .set({ emailVerifiedAt: new Date() })
+    .where(eq(users.id, user.id));
 
   new Logger('SeedDemo').log(
     `Registered ${email} — sign in with password ${DEMO_PASSWORD}`,
