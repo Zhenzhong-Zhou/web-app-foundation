@@ -2,7 +2,7 @@ import { Link, List, ListItem, Stack, Typography } from '@mui/material';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { type AuditRecord, describe } from '../audit/audit-format';
+import type { AuditRecord } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
 import { relativeTime, SEPARATOR } from '../lib/format';
 
@@ -50,7 +50,7 @@ export function RecentWork({ entries }: { entries?: AuditRecord[] }) {
           {entries.map((entry) => (
             <ListItem key={entry.id} disableGutters divider>
               <Typography variant="body2" sx={{ flexGrow: 1, minWidth: 0 }}>
-                {[describe(entry.action), entry.resourceLabel]
+                {[entry.actionName, entry.resourceLabel]
                   .filter(Boolean)
                   .join(SEPARATOR)}
               </Typography>

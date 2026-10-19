@@ -4,9 +4,9 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
+import type { AuditRecord } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
-import type { AuditRecord } from './audit-format';
 import { HistoryButton } from './history-button';
 
 const ENTRY: AuditRecord = {
@@ -61,7 +61,7 @@ describe('HistoryButton', () => {
     expect(
       await screen.findByText('Product variant updated'),
     ).toBeInTheDocument();
-    expect(screen.getByText('sku: WIDGET-1 → RENAMED-1')).toBeInTheDocument();
+    expect(screen.getByText('SKU: WIDGET-1 → RENAMED-1')).toBeInTheDocument();
 
     // Scoped to this record, or the drawer is the whole organization's log.
     expect(requested[0].searchParams.get('resourceId')).toBe('product-1');

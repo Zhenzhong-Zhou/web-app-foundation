@@ -12,7 +12,6 @@ import type { ReactNode } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 
-import { describe } from '../audit/audit-format';
 import { PageHeader } from '../components/page-header';
 import { PersonAvatar } from '../components/person-avatar';
 import { LoadFailure } from '../errors/load-failure';
@@ -223,7 +222,7 @@ export function PersonPage() {
               {person.recentActivity.map((entry) => (
                 <ListItem key={entry.id} disableGutters divider>
                   <Typography variant="body2" sx={{ flexGrow: 1, minWidth: 0 }}>
-                    {[describe(entry.action), entry.resourceLabel]
+                    {[entry.actionName, entry.resourceLabel]
                       .filter(Boolean)
                       .join(SEPARATOR)}
                   </Typography>

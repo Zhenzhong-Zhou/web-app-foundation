@@ -1,4 +1,5 @@
 import type {
+  AuditLink,
   Bom,
   HomeCard,
   HomeResponse,
@@ -86,3 +87,6 @@ export type ValuationKind = LotCostEntry['kind'];
 
 /** When a numbering series starts again from 1 (ADR-073). */
 export type NumberingReset = NumberingSeries['reset'];
+
+/** The kinds of record an audit entry's reference links to (ADR-076). */
+export type AuditLinkKind = AuditLink['kind'];
