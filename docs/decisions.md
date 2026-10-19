@@ -9327,13 +9327,20 @@ they exist so the reasoning is not rediscovered from scratch.
   a name, from a laptop or the host's shell, with no web surface); the
   person who accepts becomes its first Owner. ADR-070's "starting a new
   organization from an existing account" can ride on it. Selling in
-  public later is the setting turned to open, not a rewrite.
+  public later is the setting turned to open, not a rewrite. Two other
+  gates were weighed and left for later, each needing more built first:
+  open sign-up with each new organization waiting for the operator's
+  approval, and payment before the organization exists. The command is
+  the console's first form: the console's Invite an organization calls
+  the same service.
 - **A newcomer's first sign-in.** After registration. What you can do
-  here, from the role's permission descriptions (already translated),
-  grouped by area with a sentence each rather than 45 lines; the
-  inviter's note; a short first-week checklist per membership, matched to
-  what the role may do and dismissed per membership (ADR-058's Getting
-  started stays the organization's); and help: one help button in the
+  here, from the permission descriptions (already translated), grouped by
+  area with a sentence each rather than 45 lines; the inviter's note; a
+  short first-week checklist per membership, matched to what the member
+  may do and dismissed per membership (ADR-058's Getting started stays
+  the organization's). Both are built from the member's permissions,
+  never from a role's name, so they grow finer with job roles and need no
+  change when those come. And help: one help button in the
   header that opens the guide for the page, in the reader's language,
   with "Learn more" from empty states and Getting started steps, which
   are ADR-058's deferred user guides. No pinned tours: they break with
@@ -9368,11 +9375,12 @@ they exist so the reasoning is not rediscovered from scratch.
 - **Job roles.** Three roles cannot say "receives deliveries and manages
   nobody": a receiver needs Admin, which also adds and removes members
   and corrects counts. Preset roles (Warehouse, Sales, Finance) or a role
-  editor. System roles' descriptions then come from the translated key
-  only (ADR-077), `roles.description` holds custom roles' descriptions,
-  and the export writes the translated line for system roles. Trigger:
-  the first customer whose staff need different access, or the
-  newcomer's checklist, which reads as two lists until then.
+  editor. An invitation names its role by id, so invitations need no
+  change when roles do. System roles' descriptions then come from the
+  translated key only (ADR-077), `roles.description` holds custom roles'
+  descriptions, and the export writes the translated line for system
+  roles. Trigger: the first customer whose staff need different access,
+  or the newcomer's checklist, which reads as two lists until then.
 - **Audit filtering in the UI.** `ListAuditDto` accepts action, actorId, from,
   and to; the client sends none of them. Two years of retention (ADR-012)
   makes "load more" a poor way to reach an old entry, but a filter UI designed

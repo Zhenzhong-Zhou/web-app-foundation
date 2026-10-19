@@ -10,9 +10,12 @@ with this one, this one is current.
 
 - **Next: onboarding, a chain of three** (Bob's priority, 19 October
   2026), one PR each, ADR first, each finished before the next begins.
-  After them, each in Open decisions with its trigger: the operator's
-  console and support access, a public demo, plans and billing, job
-  roles; one person in two organizations is ADR-077's, *Deferred*.
+  After them, in this order unless a trigger brings one forward, each
+  with its entry in Open decisions: job roles; one person in two
+  organizations, then a practice organization (ADR-077, *Deferred*); a
+  public demo; plans and billing; the operator's console and support
+  access. Not code, and not to slip behind it: Render's free database
+  expires on 12 November 2026 (*Still to do, by hand*).
     1. **ADR-077, invitations** (`adr-077-invitations`): drafted. Invite
        replaces Add member, by email or a copied link, for seven days; no
        route sets another person's password. Next: the canvas designs
