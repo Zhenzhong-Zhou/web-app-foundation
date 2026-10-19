@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
-import type { AuditRecord } from '../audit/audit-format';
+import type { AuditRecord } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { AccountPage } from './account-page';
@@ -12,10 +12,13 @@ import { AccountPage } from './account-page';
 const EXPORTED: AuditRecord = {
   id: 'entry-1',
   action: 'organization.exported',
+  actionName: 'Everything downloaded',
   resourceType: 'organization',
+  resourceTypeName: 'Organization',
   resourceId: 'org-1',
   resourceLabel: null,
   payload: null,
+  details: [],
   actorId: 'user-1',
   actorEmail: 'owner@alpha.example.com',
   actorName: 'Owner',

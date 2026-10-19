@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
+import { recordContext } from '../../core/audit/audit-context';
 import { isCheckViolation } from '../../database/errors';
 import { MovementReason } from '../../database/schema';
 import {
@@ -99,6 +100,11 @@ export class StockService {
    * their own. Opens one and delegates.
    */
   async record(input: RecordMovementInput, actorId: string) {
+    // The movement's label is its SKU; why it moved is read from here, in
+    // the reader's words (ADR-076). Only the movements route and the seeds
+    // come through record(): orders and runs call recordWithin.
+    recordContext({ reason: input.reason });
+
     return this.tenantDb.transaction(async (tx, organizationId) => {
       /**
        * The shape first, then the quantity. A movement whose direction

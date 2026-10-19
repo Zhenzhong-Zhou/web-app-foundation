@@ -11,7 +11,13 @@ import { concatMap, type Observable } from 'rxjs';
 
 import { getRequestContext } from '../auth/request-context';
 import { AuditService } from './audit.service';
-import { enterAuditContext, takeContext, takePrevious } from './audit-context';
+import {
+  enterAuditContext,
+  type FieldValues,
+  takeContext,
+  takePrevious,
+} from './audit-context';
+import type { AuditField } from './audit-fields';
 import { AUDITED, type AuditOptions } from './audited.decorator';
 
 /**
@@ -121,8 +127,8 @@ export class AuditInterceptor implements NestInterceptor {
  */
 export function auditPayload(
   body: unknown,
-  fields: readonly string[] | undefined,
-): Record<string, unknown> | undefined {
+  fields: readonly AuditField[] | undefined,
+): FieldValues | undefined {
   return withContext(
     combine(pick(body, fields), takePrevious()),
     takeContext(),

@@ -7,6 +7,8 @@ import {
   invoices,
   locations,
   lots,
+  orderLines,
+  orderReturns,
   orders,
   organizations,
   partners,
@@ -16,6 +18,8 @@ import {
   products,
   productVariants,
   returnAuthorizations,
+  roles,
+  shipments,
   stockMovements,
   stockValuations,
   taxCodes,
@@ -105,7 +109,8 @@ const RESOLVERS: Record<string, Resolver> = {
     return row?.name;
   },
 
-  // The customer and the number, or "draft" before it has one.
+  // The customer and the number; before it has one, the customer alone.
+  // A label holds no words (ADR-076): the action already says "draft".
   invoice: async (db, id) => {
     const [row] = await db.selectJoined(
       invoices,
@@ -114,7 +119,7 @@ const RESOLVERS: Record<string, Resolver> = {
       { partnerName: partners.name, number: invoices.number },
       eq(invoices.id, id),
     );
-    return row && `${row.partnerName} · ${row.number ?? 'draft'}`;
+    return row && [row.partnerName, row.number].filter(Boolean).join(' · ');
   },
 
   // The customer and the number, as an invoice is named.
@@ -165,13 +170,14 @@ const RESOLVERS: Record<string, Resolver> = {
       { sku: productVariants.sku, code: lots.code },
       eq(lots.id, id),
     );
-    return row && `${row.sku} lot ${row.code}`;
+    return row && `${row.sku} · ${row.code}`;
   },
 
-  // The SKU is copied onto the movement row already, so no join.
+  // The SKU is copied onto the movement row already, so no join. Its
+  // reason is a code, recorded in the payload to be read in words.
   stock_movement: async (db, id) => {
     const [row] = await db.select(stockMovements, eq(stockMovements.id, id));
-    return row && `${row.sku} · ${row.reason}`;
+    return row?.sku;
   },
 
   // The item a cost was set on.
@@ -188,14 +194,81 @@ const RESOLVERS: Record<string, Resolver> = {
 
   exchange_rate: async (db, id) => {
     const [row] = await db.select(exchangeRates, eq(exchangeRates.id, id));
-    return row && `${row.currency} ${row.rateDate}`;
+    // The day is in the payload, read as a day in the reader's language.
+    return row?.currency;
   },
 
   price_list: async (db, id) => {
     const [row] = await db.select(priceLists, eq(priceLists.id, id));
     return row?.name;
   },
+
+  /*
+   * Kinds named only as references inside a payload (ADR-076), never as
+   * the record a row is about.
+   */
+
+  // A system role's name is a key the reader's language words.
+  role: async (db, id) => {
+    const [row] = await db.select(roles, eq(roles.id, id));
+    return row?.name;
+  },
+
+  variant: async (db, id) => {
+    const [row] = await db.select(productVariants, eq(productVariants.id, id));
+    return row?.sku;
+  },
+
+  order_line: async (db, id) => {
+    const [row] = await db.select(orderLines, eq(orderLines.id, id));
+    return row?.sku;
+  },
+
+  // A return received against an order: the order's number.
+  order_return: async (db, id) => {
+    const [row] = await db.selectJoined(
+      orderReturns,
+      orders,
+      eq(orders.id, orderReturns.orderId),
+      { number: orders.number },
+      eq(orderReturns.id, id),
+    );
+    return row?.number;
+  },
 };
+
+/**
+ * A shipment: its order's number, and the tracking number when there is
+ * one; and its order's id, since a shipment has no page and links to its
+ * order (ADR-076). Outside RESOLVERS, which give a name alone: a reference
+ * to a shipment keeps both. Undefined, never a throw, as resolveLabel.
+ */
+export async function resolveShipment(
+  db: TenantDb,
+  id: string,
+): Promise<{ label: string; orderId: string } | undefined> {
+  try {
+    const [row] = await db.selectJoined(
+      shipments,
+      orders,
+      eq(orders.id, shipments.orderId),
+      {
+        orderId: orders.id,
+        number: orders.number,
+        tracking: shipments.trackingNumber,
+      },
+      eq(shipments.id, id),
+    );
+    return (
+      row && {
+        label: [row.number, row.tracking].filter(Boolean).join(' · '),
+        orderId: row.orderId,
+      }
+    );
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Undefined when the type has no resolver, the row is gone, or the lookup

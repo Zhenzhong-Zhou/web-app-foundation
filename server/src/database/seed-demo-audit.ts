@@ -5,6 +5,7 @@ import { auditPayload, unchanged } from '../core/audit/audit.interceptor';
 import { AuditService } from '../core/audit/audit.service';
 import { AUDIT_ACTIONS, type AuditAction } from '../core/audit/audit-actions';
 import { enterAuditContext } from '../core/audit/audit-context';
+import type { AuditField } from '../core/audit/audit-fields';
 import type { Database } from './database.module';
 
 /**
@@ -18,7 +19,7 @@ export interface AuditEntry<T> {
   id: string | ((result: T) => string);
   /** The request body the screen would have sent, for `fields` to pick. */
   body?: object;
-  fields?: readonly string[];
+  fields?: readonly AuditField[];
 }
 
 export type Audited = <T>(

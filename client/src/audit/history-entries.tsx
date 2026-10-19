@@ -12,6 +12,7 @@ import {
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
+import type { AuditRecord } from '../api/types.gen';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PersonAvatar } from '../components/person-avatar';
 import {
@@ -22,7 +23,7 @@ import {
 } from '../lib/format';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useKeysetList } from '../lib/use-keyset-list';
-import { type AuditRecord, describe, summarise } from './audit-format';
+import { AuditDetails } from './audit-details';
 
 /** A screen's worth. The full log is one link away for anything longer. */
 const PAGE_SIZE = 20;
@@ -89,13 +90,11 @@ export function HistoryEntries({ resourceId }: { resourceId: string }) {
                   size={28}
                 />
                 <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                  <Typography variant="body2">
-                    {describe(entry.action)}
-                  </Typography>
+                  <Typography variant="body2">{entry.actionName}</Typography>
 
-                  {summarise(entry.payload) && (
+                  {entry.details.length > 0 && (
                     <Typography variant="body2" color="text.secondary">
-                      {summarise(entry.payload)}
+                      <AuditDetails details={entry.details} />
                     </Typography>
                   )}
 

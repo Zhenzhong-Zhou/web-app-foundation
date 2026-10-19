@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import type { AuditRecord } from '../audit/audit-format';
+import type { AuditRecord } from '../api/types.gen';
 import { PageHeader } from '../components/page-header';
 import { useResource } from '../lib/use-resource';
 import { AccountPhoto } from './account-photo';

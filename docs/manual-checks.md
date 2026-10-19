@@ -502,9 +502,9 @@ folder by folder; these check what is already in place.
       built-in roles (Owner, Admin, Viewer) named in the language and a
       role the organization named itself shown as named;
   - audit: the audit log with its filters and the History panel on a
-      record, timestamps and action names in the language ("Commande
-      expédiée", not "Order shipped"); field names stay as the API names
-      them.
+      record, timestamps, action names, field names and their values in
+      the language ("Commande expédiée", not "Order shipped"), and no id
+      anywhere (ADR-076, section 29).
 
   A refusal from the server (a wrong password, a rule broken) stays in
   English until the server translates (ADR-054, step 6), and so do
@@ -1250,6 +1250,38 @@ Any page, signed in, in a browser at its default font size.
   appear without sliding or fading, and the gallery's zoom jumps rather
   than eases. A loading spinner still turns.
 
+## 29. The audit log in words (ADR-076)
+
+Signed in as the demo Owner the seed prints.
+
+- **MC-2901** *(ADR-076)* Records → Audit log, in English, then 中文 and
+  Français: each entry's action, record type and details read in the
+  language, with no id anywhere. An invoice drafted reads Tax code: GST
+  and Shipment: SO-…, the shipment opening its order; an RMA, its lines
+  by SKU, quantity and resolution, and its order and invoice by number;
+  Sarah Chen's role change, Viewer → Admin, the role names in the
+  language. The order's number opens the order, and the role opens
+  Members.
+- **MC-2902** *(ADR-076)* On Tax codes, rename GST to GST 5%. The audit
+  log's earlier entries still say GST: a reference keeps the name it had
+  when the entry was written.
+- **MC-2903** *(ADR-076)* Sign in to an organization seeded before
+  ADR-076. Its entries name no reference ("a tax code", "an order"), never
+  showing an id, and each still opens its record where there is one.
+- **MC-2904** *(ADR-076)* Export the audit log in 中文 and open the file:
+  By holds the person's name then their email, Action and Record type are
+  in Chinese, Record is the record's name, and Details is one line in
+  words. There is no id column and no id anywhere in the file; a moment in
+  the details reads like When, `2026-10-15 18:54:11`.
+- **MC-2905** *(ADR-076, ADR-072)* Set the organization's time zone to
+  China Standard Time (Shanghai). On the audit log, set From to 1 October
+  and To to 7 October, and export: the export's entry reads From
+  2026-10-01, To 2026-10-07, the days chosen, not the 8th that To is sent
+  as. Export Your activity: its entry reads Person you. Signed in as Anika
+  Sharma, the same entry reads Person one person.
+- **MC-2906** *(ADR-076)* The audit log's Action filter names each action
+  in the language, never by its code.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -1554,3 +1586,5 @@ first.
 - 2026-10-18: a mixed name takes its Latin words wherever they sit:
   MC-1902 extended.
 - 2026-10-18: the demo's team and their work: Before you start, MC-1903.
+- 2026-10-18: the audit log in words (ADR-076): section 29, and section
+  14's audit item.

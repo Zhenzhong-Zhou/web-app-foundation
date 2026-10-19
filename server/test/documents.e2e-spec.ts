@@ -143,11 +143,12 @@ describe('Documents as PDF (e2e)', () => {
         .where(eq(auditLog.action, 'order.pro_forma_made'));
       expect(entries).toHaveLength(1);
       expect(entries[0].resourceId).toBe(s.orderId);
-      // 10 and 5 at 12.50 is 187.50; GST of 9.375 rounds to 9.38.
+      // 10 and 5 at 12.50 is 187.50; GST of 9.375 rounds to 9.38. The tax
+      // code is named as it was then, not left an id (ADR-076).
       expect(entries[0].payload).toEqual({
         total: '196.8800',
         currency: 'CAD',
-        taxCodeId,
+        taxCodeId: { id: taxCodeId, label: 'GST' },
       });
     });
 

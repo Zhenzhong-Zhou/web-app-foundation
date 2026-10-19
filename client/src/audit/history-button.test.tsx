@@ -4,15 +4,17 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
+import type { AuditRecord } from '../api/types.gen';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
-import type { AuditRecord } from './audit-format';
 import { HistoryButton } from './history-button';
 
 const ENTRY: AuditRecord = {
   id: 'audit-1',
   action: 'product.variant_updated',
+  actionName: 'Product variant updated',
   resourceType: 'product',
+  resourceTypeName: 'Product',
   resourceId: 'product-1',
   resourceLabel: 'Widget',
   actorId: 'user-1',
@@ -20,6 +22,14 @@ const ENTRY: AuditRecord = {
   actorName: 'Owner',
   actorPhotoFileId: null,
   payload: { sku: { from: 'WIDGET-1', to: 'RENAMED-1' } },
+  details: [
+    {
+      field: 'SKU',
+      changed: true,
+      from: { text: 'WIDGET-1' },
+      value: { text: 'RENAMED-1' },
+    },
+  ],
   ip: null,
   userAgent: null,
   createdAt: new Date().toISOString(),
@@ -51,7 +61,7 @@ describe('HistoryButton', () => {
     expect(
       await screen.findByText('Product variant updated'),
     ).toBeInTheDocument();
-    expect(screen.getByText('sku: WIDGET-1 → RENAMED-1')).toBeInTheDocument();
+    expect(screen.getByText('SKU: WIDGET-1 → RENAMED-1')).toBeInTheDocument();
 
     // Scoped to this record, or the drawer is the whole organization's log.
     expect(requested[0].searchParams.get('resourceId')).toBe('product-1');

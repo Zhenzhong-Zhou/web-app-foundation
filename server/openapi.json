@@ -857,6 +857,14 @@
               "maximum": 100,
               "type": "number"
             }
+          },
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1051,7 +1059,16 @@
     "/v1/audit/actions": {
       "get": {
         "operationId": "AuditController_listActions_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -1060,7 +1077,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "$ref": "#/components/schemas/AuditActionName"
                   }
                 }
               }
@@ -1104,6 +1121,14 @@
             "name": "userId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
             "schema": {
               "type": "string"
             }
@@ -1357,6 +1382,14 @@
               "minimum": 1,
               "maximum": 100,
               "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -8555,6 +8588,105 @@
           "nextCursor"
         ]
       },
+      "AuditLink": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "role",
+              "invoice",
+              "location",
+              "order",
+              "lot",
+              "product",
+              "partner",
+              "tax_code",
+              "price_list",
+              "variant",
+              "order_line",
+              "order_return"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id"
+        ]
+      },
+      "AuditValue": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "day": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "link": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditLink"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "AuditDetail": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "changed": {
+            "type": "boolean"
+          },
+          "from": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuditValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "field",
+          "changed",
+          "from",
+          "value"
+        ]
+      },
       "AuditRecord": {
         "type": "object",
         "properties": {
@@ -8628,6 +8760,21 @@
           "createdAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "actionName": {
+            "type": "string"
+          },
+          "resourceTypeName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditDetail"
+            }
           }
         },
         "required": [
@@ -8643,7 +8790,10 @@
           "actorPhotoFileId",
           "ip",
           "userAgent",
-          "createdAt"
+          "createdAt",
+          "actionName",
+          "resourceTypeName",
+          "details"
         ]
       },
       "AuditPage": {
@@ -8665,6 +8815,21 @@
         "required": [
           "entries",
           "nextCursor"
+        ]
+      },
+      "AuditActionName": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "name"
         ]
       },
       "Person": {
