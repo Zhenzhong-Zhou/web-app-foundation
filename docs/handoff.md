@@ -1,9 +1,9 @@
-# web-app-foundation — handoff, 18 October 2026
+# web-app-foundation — handoff, 19 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 18 October 2026: read this first
+## Now, 19 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
@@ -16,12 +16,30 @@ with this one, this one is current.
   public demo; plans and billing; the operator's console and support
   access. Not code, and not to slip behind it: Render's free database
   expires on 12 November 2026 (*Still to do, by hand*).
-    1. **ADR-077, invitations** (`adr-077-invitations`): drafted. Invite
-       replaces Add member, by email or a copied link, for seven days; no
-       route sets another person's password. Next: the canvas designs
-       (Invite dialog, Invited list, the invitation page, the email),
-       then the server with its e2e tests in a new chat. Its migration
-       will be **0068**.
+    1. **ADR-077, invitations** (`adr-077-invitations`): the server step
+       is done; the client step is next. Invite replaces Add member, by
+       email or a copied link, for seven days; no route sets another
+       person's password. Built: migration **0068** (`invitations`, and
+       `auth_tokens.invitation_id` in an exclusive arc with `user_id`),
+       `core/invitations` with its e2e tests, the email in three
+       languages (manual checks section 30), and the `addMember` fixture
+       inviting and accepting. Settled while building, all in ADR-077:
+       Admins act on no Owner's invitation, the server refusing Resend,
+       Copy link and Revoke and Invited hiding them on such a row; the
+       account takes the language the invitation page was in when they
+       accepted; the 30-day sweep removes the invitation's row only, the
+       audit log keeping who invited which address; `invitations.csv` is
+       in the export, its columns in the README's glossary; a failed
+       send's audit entry reads Email not sent, as Invited does in the
+       warning tone; an expired invitation still blocks a new one,
+       `already_invited` saying its link has ended and Resend starting it
+       again; an existing account signs in through `POST /v1/auth/login`,
+       then accepts with the token alone; an account due for deletion is
+       refused with its day, the page offering Keep my account, then
+       Join. Next, from the canvas designs: Members' Invite dialog and
+       Invited list, the invitation page among the signed-out pages,
+       Getting started's "Invite your team", and `POST /v1/users` removed
+       in the commit that replaces Add member, with its specs.
     2. **Registration by invitation:** a setting, open or by invitation;
        an organization invitation from `npm run org:invite`, its first
        Owner whoever accepts. Open decisions, "Registration: open, or by
@@ -392,6 +410,11 @@ with this one, this one is current.
 
 ### Still to do, in code
 
+- **The client has no Content-Security-Policy.** Nothing in the
+  repository sets one for the static site, and helmet's covers only the
+  API's own responses. One set at Render must allow `data:` images
+  (`img-src 'self' data:`), or the invitation page's logo, which comes
+  inline (ADR-077), will not load.
 - **From ADR-073's review, not its PR's.** Five dialogs still pass a
   result through a ref (create price list, raise RMA, create BOM, add
   order line, RMA detail); `useSubmit`'s success can now take the result
