@@ -215,7 +215,9 @@ export class AuthController {
   @Public()
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  // Ten a minute, times the test factor, as registration's: the browser
+  // suite confirms every inviter it makes (ADR-077).
+  @Throttle({ default: { limit: limit(10), ttl: 60_000 } })
   async verifyEmail(
     @Body() dto: VerifyEmailDto,
     @Req() req: Request,
