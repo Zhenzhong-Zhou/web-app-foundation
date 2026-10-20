@@ -43,6 +43,9 @@ offers either language (MC-1405).
 | Price list | Liste de prix | 价目表 | |
 | Tax code | Code de taxe | 税码 | |
 | Organization | Organisation | 组织 | The tenant: a company using the app. |
+| Invitation | Invitation | 邀请 | To join an organization that exists (ADR-077). The page calls an organization invitation one too. |
+| Organization invitation | Invitation à créer une organisation | 创建组织的邀请 | The operator's link to set up a new organization, as its Owner (ADR-078). The page says Set up / Créer / 创建. |
+| Start an organization | Créer une organisation | 创建组织 | An account with no organization making one, where registration is open (ADR-078). |
 | Sign in / Sign out | Se connecter / Se déconnecter | 登录 / 退出登录 | |
 | Email (address) | Courriel | 电子邮箱 | Quebec usage. |
 

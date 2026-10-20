@@ -3,7 +3,7 @@
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 19 October 2026: read this first
+## Now, 20 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
@@ -11,7 +11,7 @@ with this one, this one is current.
 - **Next: onboarding, a chain of three** (Bob's priority, 19 October
   2026), one PR each, ADR first, each finished before the next begins.
   Invitations are merged; registration by invitation (ADR-078) is
-  being built.
+  built and reviewed, waiting for its walk and merge.
   After them, in this order unless a trigger brings one forward, each
   with its entry in Open decisions: job roles; one person in two
   organizations, then a practice organization (ADR-077, *Deferred*); a
@@ -61,18 +61,19 @@ with this one, this one is current.
          members.' where is_system and name = 'Admin'`; a fresh one
          needs nothing.
     2. **ADR-078, registration by invitation** (`adr-078-registration`):
-       drafted and designed. `REGISTRATION`, open or by invitation,
-       production by invitation when unset; the sign-up route refused
-       before it reads anything. An organization invitation from `npm run
-       org:invite`, run on a laptop against production's database, asking
-       each question when run bare and printing the link with a message to
-       send; `OPERATOR_EMAIL`, if set, hears of each acceptance. The
-       organization is made when it is accepted, its first Owner
-       unconfirmed until they confirm. An account with no organization
-       starts one by invitation, or from Home where registration is open,
-       and Home stops answering it with an error. The canvas has its nine
-       boards, under "Registration by invitation (ADR-078)". Next: the
-       server. Its migration will be **0069**.
+       built and reviewed, not merged. Eight commits: the ADR and five
+       points from its discussion, the schema (0069), the server, the
+       command, the tests, the client, these docs. `REGISTRATION`, open or
+       by invitation, production by invitation when unset; the sign-up
+       route refused before it reads anything. `npm run org:invite` on a
+       laptop against production's database, asking each question when run
+       bare, printing the link and a message to send; `OPERATOR_EMAIL`,
+       if set, hears of each acceptance. The organization is made when the
+       invitation is accepted, its first Owner unconfirmed until they
+       confirm. An account with no organization starts one by invitation,
+       or from Home where registration is open. What building settled is
+       in ADR-078's as-built amendment. Next: walk section 31, merge, then
+       Render's two settings (*Still to do, by hand*).
     3. **A newcomer's first sign-in:** what you can do here, the
        inviter's note, a first-week checklist, a help button with
        ADR-058's user guides. Open decisions, "A newcomer's first
@@ -209,7 +210,7 @@ with this one, this one is current.
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
   "Error codes"). Since then, through #124: ADR-067 to ADR-070 below,
   and `deletion-started` (#117).
-- **Migrations:** through **0062** on `main`, 63 files in
+- **Migrations:** through **0068** on `main`, 69 files in
   `server/src/database/migrations/`. 0055 and 0056 are ADR-069's (#114);
   0057 to 0061 are ADR-070's (#116): the deletion day, the reminder, and
   whose account goes with it (0059 put it on the organization, 0060 moved
@@ -220,11 +221,13 @@ with this one, this one is current.
   (each organization's paper size) and **0065** (Deliver to and Send back
   to, filled in for existing orders and RMAs), merged in #132.
   `adr-072-time-zone` added **0066** (each organization's time zone),
-  merged in #134; `adr-073-numbering` adds **0067** (numbering); next is
-  **0068**. Render holds one row per file in
-  `drizzle.__drizzle_migrations` once `main` is deployed there: 67, then
-  68. After any new migration: `npm run migrate:all`, and check its
-  journal time (*Working agreements*, Process).
+  merged in #134; `adr-073-numbering` **0067** (numbering, #136);
+  `adr-077-invitations` **0068** (invitations, #143);
+  `adr-078-registration` adds **0069** (organization invitations); next
+  is **0070**. Render holds one row per file in
+  `drizzle.__drizzle_migrations` once `main` is deployed there: 69, then
+  70 with ADR-078. After any new migration: `npm run migrate:all`, and
+  check its journal time (*Working agreements*, Process).
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
   for typescript-eslint and the Nest CLI (ADR-067, *Deferred*); still so
@@ -390,6 +393,15 @@ with this one, this one is current.
 
 ### Still to do, by hand
 
+- **ADR-078, before merging:** walk section 31 of `docs/manual-checks.md`
+  (MC-3101 to MC-3110), MC-3106 and MC-3109 in 中文 on a phone too, and
+  file the issue Claude Code drafted: another device's session keeps
+  pointing at an organization the account has left (ADR-069's area).
+- **ADR-078, after it merges and deploys:** on Render's web service set
+  `REGISTRATION=invitation` and, to be told of acceptances,
+  `OPERATOR_EMAIL`; check the deploy log; then run `npm run org:invite --
+  --list` against production (`docs/runbooks/render.md`, "Registration
+  and organization invitations") to see it reach the database.
 - **Render's free database expires on 12 November 2026.** Move to a paid
   database, or create a free one again, empty, by the steps in
   `docs/runbooks/render.md`. Before any real customer: a paid database and
@@ -410,9 +422,9 @@ with this one, this one is current.
   an organization); have the French and Chinese
   wording checked by someone fluent (MC-1405); edit `docs/principles.md`
   until it reads as Bob's.
-- **Manual checks due:** MC-2701 to MC-2713 (ADR-073, before its merge);
-  MC-2601 to MC-2610, MC-R13 and MC-R14 (ADR-072); MC-2501 to MC-2512 and MC-R12 (ADR-071); MC-1601 and MC-1602 (an upload in R2, the
-  nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
+- **Manual checks due:** MC-2601 to MC-2610, MC-R13 and MC-R14
+  (ADR-072); MC-2501 to MC-2512 and MC-R12 (ADR-071); MC-1601 and
+  MC-1602 (an upload in R2, the nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
   MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
   photos and 同事 on a phone.
 - **Try `/usability-walkthrough`** on the deletion flows (ADR-069 and
@@ -495,11 +507,11 @@ with this one, this one is current.
     the zone required then.
   - If the time-zone picker feels slow on a phone, build its zone list
     when it opens, not when the section does.
-  - Client tests still missing: Home's time-zone note, the zone sent at
-    registration, the Still on UTC note hidden on a computer in UTC and
-    the picker's announcement, the auth provider passing the zone on. Add
-    each when that code is next touched. ADR-078 touches Home and the
-    register page, so it takes the first two.
+  - Client tests still missing: the Still on UTC note hidden on a
+    computer in UTC and the picker's announcement, the auth provider
+    passing the zone on. Add each when that code is next touched. ADR-078
+    added Home's time-zone note, naming the zone, and the zone sent at
+    registration.
 - **A browser-compatibility lint rule** (eslint-plugin-compat) set to the
   build target, so code using an API newer than the floor fails ESLint;
   the code review on initials-by-script caught Intl.Segmenter by reading.

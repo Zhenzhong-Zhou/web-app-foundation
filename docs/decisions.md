@@ -9548,6 +9548,65 @@ deferred item.
   command, the sweep, e2e tests); then the client, after the design; then
   the docs.
 
+**Amendment (October 2026) — as built.** What building it, and its
+reviews, settled:
+
+- **Erasure.** Erasing an account (ADR-069) rewrites the address on any
+  organization invitation it accepted to the same placeholder as
+  `users.email`, in the erasure transaction. The row still says the
+  organization began from an invitation, and when, but no longer whose
+  address it was.
+- **The command and acceptance take turns.** Acceptance takes the
+  command's lock on the address before it holds the row, and replacing or
+  revoking changes only an invitation not yet accepted. A replace that
+  finds it accepted meanwhile is refused and says so, so it never prints
+  a link that already reads as ended; a revoke that finds nothing waiting
+  says so, rather than Revoked, and exits 1. A test holds the lock to
+  prove acceptance waits.
+- **English when left out.** `--language` is English whenever `--email`
+  or `--name` is on the command line; only a bare run asks. `CLIENT_URL`
+  and the database's address are asked for whenever the shell does not
+  set them, on one line too: the command never refuses to run for want of
+  a setting, so its unit tests cover its arguments and answers, not such
+  a refusal.
+- **The command's input.** One reader serves the whole run, so piped
+  answers queue rather than get lost; a piped answer is never echoed, and
+  the database's address is hidden at a terminal. A wrong answer is asked
+  again, the database's address included. Ctrl-D, Ctrl-C and the end of
+  piped input end the run with "Cancelled. Nothing was written." and exit
+  130. Addresses are checked as registration checks them, with
+  class-validator's `isEmail`.
+- **The test setups.** `REGISTRATION` is pinned to open in the e2e
+  suite's Vitest config and in the Playwright API server's environment,
+  so a value left in `.env` for MC-3101 cannot break either.
+- **One way to make an organization.** Registration makes its
+  organization through `startOrganization`, as accepting an organization
+  invitation and Start an organization do. The organization name's limit
+  is one constant on each side, in `account-rules.ts` and
+  `lib/validation.ts`, used by the server's three DTOs and the command,
+  and by the sign-up and Start forms; Settings' Profile still has its own
+  100. Starting one when the account already belongs to an organization
+  is refused with the next step: leave it first.
+- **The page.** The organization's initials follow a rule of their own,
+  not a person's: the first two Han characters of a Chinese name
+  (海港草本有限公司, 海港), otherwise the first letters of its first two
+  words (Reid Supply Co., RS). Both kinds of invitation share their four
+  accept forms, in `invitation-parts.tsx`, each passing its words and how
+  it accepts, so a fix to one reaches both. Keeping an account clears a
+  refusal carried past Keep my account, on both kinds. When the sign-up
+  form or Start turns into the explanation, focus moves to its heading,
+  so a screen reader says what changed (ADR-055). `/register` shows the
+  signed-out frame at once while the setting loads, and a spinner after
+  250 ms. Start refused with a 409 reads the session again, so the
+  deletion banner or the new organization's Home appears.
+- **Recent activity** names every account event, ADR-069's and ADR-077's
+  among them, with a test that leaving, deletion and starting read in
+  words, never as codes.
+- **Found, not this ADR's:** another device's session keeps pointing at
+  an organization the account has left, since a session's organization
+  changes only on its own device. Left to an issue of its own, in
+  ADR-069's area.
+
 ---
 
 ## Open decisions
