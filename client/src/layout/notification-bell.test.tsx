@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import { renderWithAuth } from '../test/render-with-auth';
@@ -42,5 +42,54 @@ describe('NotificationBell', () => {
     expect(
       screen.getByRole('button', { name: 'Notifications' }),
     ).toHaveTextContent(/^$/);
+  });
+
+  it('opens the page on People of someone the reader invited, once they join (ADR-079)', async () => {
+    server.use(
+      http.get('/api/v1/notifications/unread-count', () =>
+        HttpResponse.json({ count: 1 }),
+      ),
+      http.get('/api/v1/notifications', () =>
+        HttpResponse.json({
+          entries: [
+            {
+              id: 'n-1',
+              type: 'invitation.accepted',
+              title: 'Wang Fang joined',
+              body: 'Wang Fang accepted your invitation and joined Alpha Co as a Viewer.',
+              resourceType: 'user',
+              resourceId: 'user-wang',
+              readAt: null,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+          nextCursor: null,
+        }),
+      ),
+      http.post(
+        '/api/v1/notifications/n-1/read',
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <NotificationBell />
+        <Routes>
+          <Route path="/" element={null} />
+          <Route path="/people/:userId" element={<h1>Their page</h1>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Notifications, 1 unread' }),
+    );
+    await user.click(
+      await screen.findByRole('menuitem', { name: /Wang Fang joined/ }),
+    );
+    expect(
+      await screen.findByRole('heading', { name: 'Their page' }),
+    ).toBeVisible();
   });
 });

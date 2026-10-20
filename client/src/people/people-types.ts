@@ -1,6 +1,9 @@
 import { defineMessages, type IntlShape } from 'react-intl';
 
 import type { Person } from '../api/types.gen';
+import type { CalendarDay } from '../lib/api-names';
+import { daysUntil } from '../lib/expiry';
+import { organizationDayOf, organizationToday } from '../lib/time-zone';
 
 /**
  * The organization's people, generated from the server's OpenAPI document
@@ -59,4 +62,22 @@ export function phoneLine(person: Person, intl: IntlShape): string | null {
     },
     { phone: person.workPhone ?? '', extension: person.extension },
   );
+}
+
+/**
+ * How long someone is New on People: the welcome's two weeks, from the
+ * membership's start (ADR-079), as the server's WELCOME_DAYS counts them.
+ */
+const NEW_FOR_DAYS = 14;
+
+/**
+ * The day someone joined, in the organization's zone, while they are New;
+ * null after their two weeks.
+ */
+export function joinedRecently(
+  person: Pick<Person, 'memberSince'>,
+  today: CalendarDay = organizationToday(),
+): CalendarDay | null {
+  const joined = organizationDayOf(person.memberSince);
+  return daysUntil(joined, today) >= -NEW_FOR_DAYS ? joined : null;
 }

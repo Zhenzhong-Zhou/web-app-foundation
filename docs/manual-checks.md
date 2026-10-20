@@ -1507,7 +1507,8 @@ The pages, in a private window unless a check says otherwise.
   the Owner, within a minute the bell has … joined, reading … accepted your
   invitation and joined Demo … as a Viewer; Mailpit has no email about it.
   With Account's language set to 中文, the same entry reads …加入了 and
-  …接受了您的邀请，以查看者身份加入 Demo …。 As an Admin of the demo team,
+  …接受了您的邀请，以查看者身份加入 Demo …。 Choosing the entry opens
+  the newcomer's page on People. As an Admin of the demo team,
   invite another address, then leave the organization before it is
   accepted, and accept it: nobody's bell says so.
 - **MC-3202** *(ADR-079)* Help on a computer, about 1280 to 1440 px wide:
@@ -1561,6 +1562,64 @@ The pages, in a private window unless a check says otherwise.
   links in place, with no space added between Chinese words; All guides
   reads 所有指南, grouped 工作, 资料, 设置 and 我. Learn more reads 了解更多,
   right after the words it follows, with no space before it.
+- **MC-3207** *(ADR-079)* The welcome as a Viewer, on a computer: as the
+  demo Owner, invite an address as a Viewer with a note of two lines, and
+  accept it from Mailpit in a private window. Home leads with Welcome to
+  Demo …, your name, above the counts: You joined today as a Viewer, and
+  the card stays for your first two weeks, until the day fourteen days on.
+  On the left, the note as typed, its line break kept, under the Owner's
+  photo or initials, their name opening their page on People; then What
+  you can do here, a line per area, ending To do more, ask … with each
+  name opening People. On the right, Your first week, 0 of 3 done: Say
+  who you are, Look up a product or a lot and Open an order, each with
+  its button. The foot says Help is at the top, beside the bell. Open a
+  product and come back: Look up is ticked and reads You opened … as a
+  link to it. Dismiss: the card goes, and a message says What you can do
+  here stays on Your account, with Undo; Undo brings the card back, and
+  a reload keeps it. Dismiss again and reload: Home as usual. As an Admin
+  of the demo team, invite an address with a note and leave the
+  organization before it is accepted; once accepted, the card's note
+  reads From Demo … with no name.
+- **MC-3208** *(ADR-079)* The welcome as an Admin joined by a copied
+  link: invite as an Admin with Copy link, and open the link in a private
+  window. The first week starts with Confirm your email address: We sent
+  a link to … Inviting colleagues waits until you confirm, with Resend the
+  link, which then reads Sent. What you can do here ends with no one to
+  ask. The yellow banner asking to confirm is not on Home, and is on
+  Orders and every other page. Confirm from Mailpit: Home ticks Confirmed,
+  and the banner is gone everywhere. Add a photo on Your account: Say who
+  you are reads Photo added, opening Account. Receive stock or raise an
+  order: it is ticked, naming what you did as a link to it.
+- **MC-3209** *(ADR-079)* The welcome for a founder: set up an
+  organization from `npm run org:invite`'s link. Home's card reads You
+  started this organization today, then in one line You may do everything
+  here, including settings and closing the organization, and Setting up
+  the organization is in Getting started, below, above Getting started.
+  Its first week has only Confirm your email address and Say who you are.
+  Dismiss Getting started, as its Owner, and reload: the first week grows
+  to the founder's work, Look up, Receive stock and Raise an order.
+- **MC-3210** *(ADR-079)* The welcome in 中文 on a phone, about 390 px,
+  with Account's language set to 中文: as MC-3207's Viewer, the card reads
+  欢迎来到 Demo …，your name, and 您今天以查看者身份加入。这张卡片在首页显示两周，到
+  the day. One column: the note, then 您的第一周 with 已完成 0/3, then one
+  row, 您在这里可以做什么 with how many areas and 点开查看, which opens the
+  areas on a tap and closes them on another; then the foot about 帮助.
+  The card is about a screen long, and nothing scrolls sideways at Larger
+  text either. 隐藏 shows 欢迎卡片已隐藏… with 撤销. As MC-3209's founder,
+  您在这里可以做所有事情 comes first, above 您的第一周, and no row folds.
+- **MC-3211** *(ADR-079)* People's New: as the demo Owner, after MC-3207,
+  People marks the newcomer New · joined today, and whoever joined in the
+  last two weeks New · joined and the day; the faces in a row stay level.
+  The line under the title adds how many joined in the last two weeks.
+  The demo's team joined when the seed ran, so within two weeks of
+  seeding they are marked too; from the fifteenth day only newcomers are.
+  In 中文, 新加入 · 今天; in Français, Nouveau · depuis aujourd’hui.
+- **MC-3212** *(ADR-079)* Your access on Account: as MC-3207's Viewer,
+  Account has Your access at Demo …, below your details: Viewer, the line
+  Looks at orders, stock and invoices, and changes nothing, then What you
+  can do here as on the card, with To do more, ask … opening People. It is
+  there with the card dismissed. As the demo Owner, it reads Owner, its
+  line, and You may do everything here, in one line.
 
 ## Regressions
 
@@ -1912,3 +1971,5 @@ first.
   its dimming: MC-3202 extended.
 - 2026-10-20: every target in the top bar is 44 px at any text size:
   MC-3204 extended.
+- 2026-10-20: ADR-079, the welcome, your access, the bell and People:
+  MC-3201 extended, MC-3207 to MC-3212.

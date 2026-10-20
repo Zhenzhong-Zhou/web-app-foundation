@@ -9,6 +9,7 @@ import {
   createProduct,
   daysFromNow,
   inviteByLink,
+  joinByLink,
   signInAs,
   uniqueEmail,
 } from './support/api';
@@ -202,6 +203,31 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
       // All screens at once, so one run reports everything to fix.
       expect(found).toEqual({});
+    });
+
+    test('a newcomer’s Home, with their welcome, meets WCAG 2.2 AA', async ({
+      page,
+      freshOrg,
+    }) => {
+      // A Viewer with a note and colleagues to ask (ADR-079), the card's
+      // fullest state; the founder's is the Home row above.
+      await verifyEmail(freshOrg.api, freshOrg.email);
+      const { token } = await inviteByLink(
+        freshOrg.api,
+        uniqueEmail('a11y-welcome'),
+        'Viewer',
+        { note: 'Bring boots.\nAsk for Li Na.' },
+      );
+      const newcomer = await joinByLink(token, 'E2E Newcomer');
+      await signInAs(page, newcomer);
+      await page.goto('/');
+      await expect(
+        page.getByRole('region', { name: /^Welcome to / }),
+      ).toBeVisible();
+      await page.waitForLoadState('networkidle');
+
+      expect(await violations(page)).toEqual([]);
+      await newcomer.dispose();
     });
 
     test('the invitation page meets WCAG 2.2 AA, signed out', async ({

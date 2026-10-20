@@ -13,6 +13,7 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { AuditRecord } from '../api/types.gen';
+import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { useResource } from '../lib/use-resource';
 import { AccountPhoto } from './account-photo';
@@ -21,15 +22,17 @@ import { LeaveOrDelete } from './leave-or-delete';
 import { ProfileForm } from './profile-form';
 import { RecentWork } from './recent-work';
 import { WorkDetailsForm } from './work-details-form';
+import { YourAccess } from './your-access';
 
 /**
  * Your account (ADR-063): who you are, with your photo beside it; your
- * details at work, which colleagues see; signing in and security; your
- * recent work; and your data and your account (ADR-069). Each its own
- * card, in that order.
+ * details at work, which colleagues see; your access there (ADR-079);
+ * signing in and security; your recent work; and your data and your
+ * account (ADR-069). Each its own card, in that order.
  */
 export function AccountPage() {
   const intl = useIntl();
+  const { session } = useAuth();
   const [changingPassword, setChangingPassword] = useState(false);
   // Read here, so the last section can have it read again once closing the
   // organization from there has written to it (#122).
@@ -67,6 +70,12 @@ export function AccountPage() {
       <Paper variant="outlined" sx={{ p: 3 }}>
         <WorkDetailsForm />
       </Paper>
+
+      {session?.organization && (
+        <Paper variant="outlined" sx={{ p: 3 }}>
+          <YourAccess />
+        </Paper>
+      )}
 
       {/* One line, as designed (ADR-063): the password in a dialog, the
           devices on their own page. */}

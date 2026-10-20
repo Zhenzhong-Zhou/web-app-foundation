@@ -7,10 +7,11 @@ import {
   Link,
   Paper,
   Skeleton,
+  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -18,6 +19,7 @@ import type { HomeCard, HomeResponse, HomeRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { StatusChip } from '../components/status-chip';
+import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner';
 import { api } from '../lib/api';
 import { daysUntil } from '../lib/expiry';
 import { formatDay } from '../lib/format';
@@ -35,13 +37,15 @@ import { greeting } from './greeting';
 import { CARDS } from './home-cards';
 import { NoOrganization } from './no-organization';
 import { RecentCard } from './recent-card';
+import { WelcomeCard } from './welcome-card';
 
 /**
  * Home (ADR-058): what needs attention, first. A greeting by the reader's
  * clock, one sentence saying how much needs doing, a row of counts (tinted
  * only when something is late or near expiry), the quick actions, then a
  * card per kind of work the reader's role sees. A new organization gets
- * Getting started instead of a page of zeros.
+ * Getting started instead of a page of zeros. A newcomer's own welcome
+ * leads it for their first two weeks (ADR-079).
  *
  * Read when the page opens, with a refresh, as every list is; not live.
  */
@@ -59,6 +63,9 @@ function OrganizationHome() {
   const can = useCan();
   const [home, setHome] = useState<HomeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The welcome just dismissed, a moment to undo it (ADR-079).
+  const [undoing, setUndoing] = useState(false);
+  const dismissing = useRef<Promise<unknown> | null>(null);
   // The organization's today (ADR-072), so "overdue" is the same for
   // everyone in it, wherever they read it from.
   const today = organizationToday();
@@ -84,6 +91,33 @@ function OrganizationHome() {
     await api(path, { method }).catch(() => undefined);
     load();
   }
+
+  /** Gone at once, with Undo; a failed write brings it back. */
+  function dismissWelcome() {
+    setHome((current) => current && { ...current, welcome: null });
+    setUndoing(true);
+    dismissing.current = api('/home/welcome/dismiss', { method: 'POST' }).catch(
+      load,
+    );
+  }
+
+  async function undoWelcome() {
+    setUndoing(false);
+    // After the dismissal has landed, so the two cannot cross.
+    await dismissing.current;
+    await act('/home/welcome/dismiss', 'DELETE');
+  }
+
+  const welcome = home?.welcome ?? null;
+  // The banner asking the same is not shown here while the card lists it,
+  // nor while Home is still loading the card that may (ADR-079).
+  useCoverUnverifiedBanner(
+    home
+      ? !!welcome?.items.some(
+          (item) => item.key === 'confirmEmail' && !item.done,
+        )
+      : !error,
+  );
 
   const cards = home?.cards ?? [];
   const count = cards.reduce((sum, card) => sum + card.count, 0);
@@ -225,6 +259,14 @@ function OrganizationHome() {
             {summary}
           </Typography>
 
+          {welcome && (
+            <WelcomeCard
+              welcome={welcome}
+              startShows={!!showStart}
+              onDismiss={dismissWelcome}
+            />
+          )}
+
           {showCards && cards.length > 0 && (
             <Box
               sx={{
@@ -308,6 +350,29 @@ function OrganizationHome() {
             )}
         </>
       )}
+
+      <Snackbar
+        open={undoing}
+        autoHideDuration={8000}
+        onClose={(_event, reason) => {
+          // A click elsewhere is somebody carrying on, not dismissing.
+          if (reason !== 'clickaway') setUndoing(false);
+        }}
+        message={intl.formatMessage({
+          id: 'home.welcome.dismissed',
+          defaultMessage:
+            'Welcome card hidden. What you can do here stays on Your account.',
+        })}
+        action={
+          <Button color="inherit" onClick={() => void undoWelcome()}>
+            {intl.formatMessage({
+              id: 'home.welcome.undo',
+              defaultMessage: 'Undo',
+            })}
+          </Button>
+        }
+        slotProps={{ content: { role: 'status' } }}
+      />
     </Stack>
   );
 }

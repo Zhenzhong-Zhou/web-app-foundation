@@ -48,6 +48,7 @@ import { OrganizationMark } from './organization-mark';
 import { RAIL_FOLDED_WIDTH, RAIL_WIDTH } from './rail';
 import { SideNav } from './side-nav';
 import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
+import { UnverifiedBannerContext } from './unverified-banner-context';
 
 /**
  * Where the rail appears (ADR-055). Below it the same groups open in a
@@ -110,6 +111,8 @@ function Frame() {
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [folded, setFolded] = useState(storedFolded);
+  // Whether the page asks to confirm the address itself (ADR-079).
+  const [unverifiedCovered, setUnverifiedCovered] = useState(false);
   const bar = useRef<HTMLElement>(null);
 
   /**
@@ -474,16 +477,18 @@ function Frame() {
             sx={{ py: { xs: 2, sm: 4 }, '&:focus': { outline: 'none' } }}
           >
             <Stack spacing={3}>
-              <UnverifiedBanner />
+              <UnverifiedBanner covered={unverifiedCovered} />
               <DeletionBanner />
               <OrganizationDeletionBanner />
               {/* Signs out after inactivity, warning a minute before (ADR-065). */}
               <IdleGuard />
               {/* Inside the page so the rail and the bar survive, and reset by
                 the address, so a person whose page broke can click away. */}
-              <ErrorBoundary resetKey={location.pathname}>
-                <Outlet />
-              </ErrorBoundary>
+              <UnverifiedBannerContext.Provider value={setUnverifiedCovered}>
+                <ErrorBoundary resetKey={location.pathname}>
+                  <Outlet />
+                </ErrorBoundary>
+              </UnverifiedBannerContext.Provider>
             </Stack>
           </Container>
         </HelpFrame>
@@ -496,15 +501,16 @@ function Frame() {
  * ADR-017 chose to let an unverified user in rather than block login, on the
  * grounds that losing a registration to a dead SMTP connection would be
  * absurd. This is the other half of that decision — without a visible prompt,
- * "unverified" is a state with no way out.
+ * "unverified" is a state with no way out. Off while the page asks the same
+ * itself, as Home's welcome does (ADR-079).
  */
-function UnverifiedBanner() {
+function UnverifiedBanner({ covered }: { covered: boolean }) {
   const intl = useIntl();
   const { session } = useAuth();
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
 
-  if (!session || session.user.emailVerified) return null;
+  if (!session || session.user.emailVerified || covered) return null;
 
   return (
     <Alert

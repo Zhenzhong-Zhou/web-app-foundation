@@ -38,6 +38,9 @@ function linkFor(entry: Notification): string | null {
     // Licences have no page of their own: the list, where it is (ADR-064).
     case 'product_licence':
       return '/licences';
+    // Someone the reader invited has joined: their page on People (ADR-079).
+    case 'user':
+      return `/people/${entry.resourceId}`;
     default:
       return null;
   }
