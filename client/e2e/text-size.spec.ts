@@ -245,41 +245,79 @@ test('at Larger on a phone, Home with its cards fits', async ({
   expect(await overflowing(page)).toEqual([]);
 });
 
-test('at Larger on a phone, the top bar keeps six 44px targets', async ({
-  page,
-  freshOrg,
-}) => {
-  // Its own organization, with no logo, so the mark is its initials.
-  await signInAs(page, freshOrg.api);
-  await onAPhoneAtLarger(page);
-  await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.locator('html')).toHaveCSS('font-size', '20px');
+/**
+ * Every target in the top bar, 44px each way (ADR-075, ADR-079): on a
+ * phone, ☰, the organization, search, Help, the bell and the account; on a
+ * computer, the organization, the search box, Help, the bell and the account.
+ */
+for (const size of ['standard', 'larger'] as const) {
+  for (const [where, viewport] of [
+    ['a phone', { width: 320, height: 640 }],
+    ['a computer', { width: 1280, height: 800 }],
+  ] as const) {
+    const phone = viewport.width < 600;
 
-  // At 320px the name would be cut to a few letters: its initials stand
-  // alone, so Help beside the bell leaves every target its 44px (ADR-079).
-  const bar = page.getByRole('banner');
-  const mark = bar.getByRole('link');
-  await expect(mark).toHaveText(/^[A-Z0-9]{1,2}$/);
+    test(`at ${size} text on ${where}, every target in the top bar is 44px`, async ({
+      page,
+      freshOrg,
+    }) => {
+      // Its own organization, with no logo, so the mark is its name or
+      // its initials.
+      await signInAs(page, freshOrg.api);
+      await page.setViewportSize(viewport);
+      if (size === 'larger') {
+        await page.addInitScript(() =>
+          localStorage.setItem('textSize', 'larger'),
+        );
+      }
+      await page.goto('/');
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await expect(page.locator('html')).toHaveCSS(
+        'font-size',
+        size === 'larger' ? '20px' : '16px',
+      );
 
-  const targets = [
-    bar.getByRole('button', { name: 'Open navigation' }),
-    mark,
-    bar.getByRole('button', { name: 'Search everything' }),
-    bar.getByRole('button', { name: 'Help', exact: true }),
-    bar.getByRole('button', { name: 'Notifications' }),
-    bar.getByRole('button', { name: /signed in as/ }),
-  ];
-  const small: string[] = [];
-  for (const target of targets) {
-    const box = await target.boundingBox();
-    if (!box || box.width < 44 || box.height < 44) {
-      small.push(`${await target.textContent()}: ${box?.width}x${box?.height}`);
-    }
+      const bar = page.getByRole('banner');
+      const mark = bar.getByRole('link');
+      // At 320px and Larger the name would be cut to a few letters: its
+      // initials stand alone, so Help beside the bell leaves every target
+      // its 44px (ADR-079).
+      if (phone && size === 'larger') {
+        await expect(mark).toHaveText(/^[A-Z0-9]{1,2}$/);
+      }
+
+      const targets = phone
+        ? [
+            bar.getByRole('button', { name: 'Open navigation' }),
+            mark,
+            bar.getByRole('button', { name: 'Search everything' }),
+            bar.getByRole('button', { name: 'Help', exact: true }),
+            bar.getByRole('button', { name: 'Notifications' }),
+            bar.getByRole('button', { name: /signed in as/ }),
+          ]
+        : [
+            mark,
+            // The box, not the input inside it: the box takes the tap.
+            bar.locator('.MuiInputBase-root'),
+            bar.getByRole('button', { name: 'Help', exact: true }),
+            bar.getByRole('button', { name: 'Notifications' }),
+            bar.getByRole('button', { name: /signed in as/ }),
+          ];
+      const small: string[] = [];
+      for (const target of targets) {
+        const box = await target.boundingBox();
+        if (!box || box.width < 44 || box.height < 44) {
+          const name =
+            (await target.getAttribute('aria-label')) ??
+            (await target.textContent());
+          small.push(`${name}: ${box?.width}x${box?.height}`);
+        }
+      }
+      expect(small).toEqual([]);
+      expect(await overflowing(page)).toEqual([]);
+    });
   }
-  expect(small).toEqual([]);
-  expect(await overflowing(page)).toEqual([]);
-});
+}
 
 test('at Larger on a phone, a closing organization’s banner fits', async ({
   page,

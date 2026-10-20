@@ -1541,8 +1541,10 @@ The pages, in a private window unless a check says otherwise.
   Help as its icon alone. It opens full screen, headed Help · Orders, with
   Close, which returns to the page. On a real phone at 320 px wide (or
   DevTools) with Larger text (ADR-075), the organization shows its logo,
-  or its initials, alone, every control in the bar is a full fingertip
-  wide and tall, and nothing scrolls sideways.
+  or its initials, alone, and nothing scrolls sideways. At Standard and
+  at Larger, on the phone and on a computer, every control in the bar,
+  the organization and the search box among them, is a full fingertip
+  wide and tall (44 px, DevTools' box model).
 - **MC-3205** *(ADR-079)* Learn more: on a new organization's Home, each
   Getting started step's hint ends with Learn more, which opens Help at
   that step's section, scrolled to it and marked for a moment; with the
@@ -1908,3 +1910,5 @@ first.
 - 2026-10-20: ADR-079, Help: MC-3202 to MC-3206.
 - 2026-10-20: a dialog opened with Help open sits beside it, Help above
   its dimming: MC-3202 extended.
+- 2026-10-20: every target in the top bar is 44 px at any text size:
+  MC-3204 extended.

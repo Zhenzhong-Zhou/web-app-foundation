@@ -219,8 +219,20 @@ function Frame() {
         >
           {/* No flexWrap. A bar that wraps changes height with the window and
               drags the page with it. */}
-          {/* Closer on a phone, so six targets fit at 320 px (ADR-079). */}
-          <Toolbar sx={{ gap: { xs: 0.5, sm: 1 }, minHeight: { xs: 56 } }}>
+          {/* Closer on a phone, so six targets fit at 320 px (ADR-079).
+              Every target in the bar is a fingertip, 44 px each way, at
+              any text size and with any pointer: the bar is the one place
+              every page shares, and on a phone it is reached with a thumb
+              (ADR-075). Set here, not in the theme, which sizes the rest of
+              the app's controls by the pointer. */}
+          <Toolbar
+            sx={{
+              gap: { xs: 0.5, sm: 1 },
+              minHeight: { xs: 56 },
+              '& > .MuiIconButton-root, & > .MuiButton-root, & > * > .MuiIconButton-root':
+                { minWidth: 44, minHeight: 44 },
+            }}
+          >
             <IconButton
               edge="start"
               aria-label={intl.formatMessage({
@@ -245,18 +257,18 @@ function Frame() {
               color="inherit"
               title={orgName}
               sx={[
-                { minWidth: 0, flexShrink: 1 },
-                tight && {
+                {
                   minWidth: 44,
                   minHeight: 44,
-                  flexShrink: 0,
+                  flexShrink: 1,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
                 },
+                tight && { flexShrink: 0, justifyContent: 'center' },
               ]}
             >
-              <Box sx={{ maxWidth: { xs: '50vw', [BAR]: 320 } }}>
+              {/* minWidth 0, or the name would not shrink to be cut. */}
+              <Box sx={{ maxWidth: { xs: '50vw', [BAR]: 320 }, minWidth: 0 }}>
                 <OrganizationMark name={orgName} initials={tight} />
               </Box>
             </Link>
@@ -269,6 +281,7 @@ function Frame() {
                 display: 'flex',
                 justifyContent: { xs: 'flex-end', md: 'center' },
                 minWidth: 0,
+                '& .MuiInputBase-root': { minHeight: 44 },
               }}
             >
               <LookupBox />
