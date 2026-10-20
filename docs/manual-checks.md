@@ -1524,7 +1524,14 @@ The pages, in a private window unless a check says otherwise.
   Inventory. Follow See also in a guide: that page opens, with its own
   guide. Esc inside Help, or Close, shuts it, and focus is back on Help. A
   guide downloads only when Help shows it (DevTools, Network: the guide's
-  file, `orders.md` locally, arrives as Help opens, and none before).
+  file, `orders.md` locally, arrives as Help opens, and none before). With
+  Help open on Locations, open Add location (Tab to it, as Help covers
+  it at this width): the dialog sits in the room beside Help, the page
+  behind it dimmed and Help not; Help scrolls under the mouse or a finger,
+  pressing its links or Close does nothing, and Tab stays in the dialog.
+  With VoiceOver on, Help is not read while the dialog is open. Cancel:
+  Help works again. In a window narrower than about 1085 px, Help dims
+  with the page and the dialog stays centred.
 - **MC-3203** *(ADR-079)* Help on a wide screen, about 1900 px with the
   rail open or 1700 px folded: opening Help moves the page to the left,
   at its full width, and Help sits beside it without covering anything;
@@ -1899,3 +1906,5 @@ first.
 - 2026-10-20: ADR-079, the server: section 32, MC-3201.
 - 2026-10-20: Inventory's row actions for whoever may see stock: MC-310.
 - 2026-10-20: ADR-079, Help: MC-3202 to MC-3206.
+- 2026-10-20: a dialog opened with Help open sits beside it, Help above
+  its dimming: MC-3202 extended.

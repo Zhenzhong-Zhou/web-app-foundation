@@ -74,3 +74,63 @@ test('Learn more on a Getting started step opens Help at its section', async ({
   await help.getByRole('button', { name: 'Close help' }).click();
   await expect(step.getByRole('button', { name: 'Learn more' })).toBeFocused();
 });
+
+test('a dialog opened beside Help leaves Help readable above its dimming', async ({
+  page,
+}) => {
+  await page.goto('/locations');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.getByRole('button', { name: 'Help', exact: true }).click();
+
+  // By id, not by role: while a dialog is open, MUI hides the page, Help
+  // with it, from assistive technology, and roles go with it.
+  const help = page.locator('#help-panel');
+  const title = help.locator('h2');
+  await expect(title).toHaveText('Locations');
+
+  // Over the page at this width, Help covers its top right, where Add
+  // location is; the keyboard still reaches it.
+  await page.getByRole('button', { name: 'Add location' }).focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+
+  // Help's words are on top, not under the dimming, and the dialog sits
+  // beside Help rather than under it.
+  await expect(title).toBeVisible();
+  const box = (await title.boundingBox())!;
+  const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  const onTop = await page.evaluate(
+    ({ x, y }) => !!document.elementFromPoint(x, y)?.closest('#help-panel'),
+    point,
+  );
+  expect(onTop).toBe(true);
+  const panel = (await help.boundingBox())!;
+  const paper = (await dialog.boundingBox())!;
+  expect(paper.x + paper.width).toBeLessThanOrEqual(panel.x);
+
+  // It scrolls under the mouse, and the keyboard stays in the dialog.
+  const scroller = help.locator('[data-help-scroller]');
+  await page.mouse.move(point.x, point.y + 200);
+  await page.mouse.wheel(0, 600);
+  await expect
+    .poll(() => scroller.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+  expect(
+    await dialog.evaluate((element) =>
+      element.contains(document.activeElement),
+    ),
+  ).toBe(true);
+
+  // Closed, the dialog leaves Help as it was, under the page's own menus.
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    page
+      .getByRole('complementary', { name: 'Help' })
+      .getByRole('heading', { level: 2, name: 'Locations' }),
+  ).toBeVisible();
+  expect(
+    await help.evaluate((element) => getComputedStyle(element).zIndex),
+  ).toBe('1099');
+});

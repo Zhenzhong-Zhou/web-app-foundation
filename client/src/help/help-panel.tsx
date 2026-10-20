@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Dialog,
+  GlobalStyles,
   IconButton,
   Link,
   Skeleton,
@@ -21,6 +22,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react';
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
@@ -49,6 +51,9 @@ const WIDTH_PX = 420;
 /** The page at its widest, as its Container is (`maxWidth="lg"`). */
 const PAGE_MAX = 'lg' as const;
 
+/** A dialog's margin either side of its paper, as MUI draws it. */
+const DIALOG_MARGINS = 64;
+
 const M = defineMessages({
   help: { id: 'help.title', defaultMessage: 'Help' },
   close: { id: 'help.close', defaultMessage: 'Close help' },
@@ -65,6 +70,19 @@ function rootFontSize(): number {
 }
 
 /**
+ * Whether one of the page's dialogs is open: MUI puts each at the end of
+ * <body> as it opens, and takes it away once it has closed.
+ */
+function subscribeToDialogs(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.body, { childList: true });
+  return () => observer.disconnect();
+}
+
+const dialogShown = () =>
+  document.querySelector('body > .MuiDialog-root') !== null;
+
+/**
  * The page, and Help beside it or over it (ADR-079). Help slides over the
  * right of the page with nothing dimmed, so the page still works while the
  * person follows the steps. Where the window leaves the page its full width
@@ -75,6 +93,16 @@ function rootFontSize(): number {
  * The top bar is measured rather than assumed: Help starts under it, at
  * whatever height the text size gives it, and the bar's width is the room
  * the page and the panel share.
+ *
+ * A dialog the page opens moves into the room beside Help, and Help stays
+ * above the dialog's dimming, so the steps can still be read while they
+ * are followed inside it. It is to read and scroll, by mouse or touch,
+ * and nothing in it can be pressed meanwhile: MUI's dialog keeps the
+ * keyboard's focus to itself and hides the rest of the page, Help with
+ * it, from assistive technology, so what someone sees beside the dialog is
+ * never something they could press that a screen reader could not reach.
+ * Where the window leaves no room beside Help for a dialog at its usual
+ * width, Help is dimmed with the page, as before.
  */
 export function HelpFrame({
   bar,
@@ -88,13 +116,19 @@ export function HelpFrame({
   const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
   // A new text size changes the panel's width in px: render again for it.
   useTextSize();
-  const [size, setSize] = useState({ height: 56, width: 0 });
+  const [size, setSize] = useState({ height: 56, width: 0, viewport: 0 });
+  const dialog = useSyncExternalStore(subscribeToDialogs, dialogShown);
 
   useEffect(() => {
     const element = bar.current;
     if (!element || typeof ResizeObserver === 'undefined') return;
+    // The bar's width moves with the window's, so this sees both.
     const observer = new ResizeObserver(() =>
-      setSize({ height: element.offsetHeight, width: element.offsetWidth }),
+      setSize({
+        height: element.offsetHeight,
+        width: element.offsetWidth,
+        viewport: window.innerWidth,
+      }),
     );
     observer.observe(element);
     return () => observer.disconnect();
@@ -105,10 +139,22 @@ export function HelpFrame({
     !!help?.open &&
     !phone &&
     size.width >= theme.breakpoints.values[PAGE_MAX] + width;
+  const roomForDialog =
+    !!help?.open &&
+    !phone &&
+    size.viewport - width >= theme.breakpoints.values.sm + DIALOG_MARGINS;
+  const aboveDialog = roomForDialog && dialog;
 
   return (
     <>
       <Box sx={beside ? { pr: `${width}px` } : undefined}>{children}</Box>
+
+      {/* A dialog centres in the room beside Help, not under it. */}
+      {roomForDialog && (
+        <GlobalStyles
+          styles={{ '.MuiDialog-container': { paddingRight: `${width}px` } }}
+        />
+      )}
 
       {help &&
         (phone ? (
@@ -140,7 +186,9 @@ export function HelpFrame({
                 right: 0,
                 bottom: 0,
                 width: `min(${rem(WIDTH_PX)}, 100%)`,
-                zIndex: theme.zIndex.appBar - 1,
+                zIndex: aboveDialog
+                  ? theme.zIndex.modal + 1
+                  : theme.zIndex.appBar - 1,
                 display: 'flex',
                 flexDirection: 'column',
                 bgcolor: 'background.paper',
@@ -151,6 +199,11 @@ export function HelpFrame({
                 boxShadow: beside
                   ? 'none'
                   : '-8px 0 24px rgba(20, 26, 36, 0.14)',
+                // Beside a dialog, scrolled and read, never pressed.
+                ...(aboveDialog && {
+                  '& *': { pointerEvents: 'none' },
+                  '& [data-help-scroller]': { pointerEvents: 'auto' },
+                }),
               }}
             >
               <PanelBody help={help} phone={false} />
@@ -281,6 +334,7 @@ function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
 
       <Box
         ref={scroller}
+        data-help-scroller
         sx={{
           position: 'relative',
           flex: 1,
