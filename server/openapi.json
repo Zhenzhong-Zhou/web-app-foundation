@@ -8003,7 +8003,6 @@
               "enum": [
                 "users.view",
                 "users.create",
-                "users.update",
                 "users.delete",
                 "roles.view",
                 "roles.assign",
@@ -18709,7 +18708,6 @@
         "enum": [
           "users.view",
           "users.create",
-          "users.update",
           "users.delete",
           "roles.view",
           "roles.assign",

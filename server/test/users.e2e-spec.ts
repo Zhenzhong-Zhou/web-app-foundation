@@ -406,10 +406,11 @@ describe('Users (e2e)', () => {
         .expect(403);
     });
 
-    it('refuses a role that may edit members but not change their roles', async () => {
+    it('refuses a role that may invite and remove members but not change their roles', async () => {
       const alpha = await registerOrg('alpha');
-      // users.update is editing another member's details; which role they
-      // hold is roles.assign, a privilege change of its own (permissions.ts).
+      // Managing who belongs is not the same as what they may do: which role
+      // a member holds is roles.assign, a privilege change of its own
+      // (permissions.ts).
       const [office] = await db
         .insert(roles)
         .values({
@@ -421,7 +422,13 @@ describe('Users (e2e)', () => {
       const rows = await db
         .select({ id: permissions.id })
         .from(permissions)
-        .where(inArray(permissions.key, ['users.view', 'users.update']));
+        .where(
+          inArray(permissions.key, [
+            'users.view',
+            'users.create',
+            'users.delete',
+          ]),
+        );
       await db
         .insert(rolePermissions)
         .values(

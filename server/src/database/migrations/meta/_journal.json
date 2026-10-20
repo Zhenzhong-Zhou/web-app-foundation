@@ -498,6 +498,13 @@
       "when": 1792521783786,
       "tag": "0070_membership_welcome",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1792531642677,
+      "tag": "0071_drop_users_update",
+      "breakpoints": true
     }
   ]
 }

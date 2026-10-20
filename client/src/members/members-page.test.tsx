@@ -26,6 +26,8 @@ describe('MembersPage', () => {
     server.use(
       http.get('/api/v1/users', () => HttpResponse.json([SAM])),
       http.get('/api/v1/roles', () => HttpResponse.json(ROLES)),
+      // Read for whoever may invite (users.create).
+      http.get('/api/v1/invitations', () => HttpResponse.json([])),
     );
     renderWithAuth(
       <MemoryRouter>
@@ -45,8 +47,8 @@ describe('MembersPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows the role as words to someone who may only edit members', async () => {
-    renderAs(['users.view', 'roles.view', 'users.update']);
+  it('shows the role as words to someone who may invite and remove members', async () => {
+    renderAs(['users.view', 'roles.view', 'users.create', 'users.delete']);
 
     expect(await screen.findByText('Viewer')).toBeInTheDocument();
     expect(

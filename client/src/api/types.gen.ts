@@ -45,7 +45,6 @@ export type CurrentSession = {
   permissions: Array<
     | 'users.view'
     | 'users.create'
-    | 'users.update'
     | 'users.delete'
     | 'roles.view'
     | 'roles.assign'
@@ -2654,7 +2653,6 @@ export type Readiness = {
 export const Permission = {
   USERS_VIEW: 'users.view',
   USERS_CREATE: 'users.create',
-  USERS_UPDATE: 'users.update',
   USERS_DELETE: 'users.delete',
   ROLES_VIEW: 'roles.view',
   ROLES_ASSIGN: 'roles.assign',
