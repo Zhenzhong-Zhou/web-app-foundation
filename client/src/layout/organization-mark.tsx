@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material';
 
 import { useBranding } from '../auth/use-branding';
+import { initialsLang, organizationInitialsOf } from '../lib/person-initials';
 
 /** Most logos are made for white, so a dark ground gets a white plate. */
 const PLATE = { bgcolor: '#FFFFFF', borderRadius: 1, px: 1, py: 0.5 };
@@ -10,15 +11,29 @@ const PLATE = { bgcolor: '#FFFFFF', borderRadius: 1, px: 1, py: 0.5 };
  * it has one, at most 32 px tall, else its name. The logo sits on a white
  * plate in dark mode, and on the dark rail when `onRail`. Fills its
  * parent's width, so the caller sets how wide the corner may grow.
+ *
+ * `initials`, where the name would be cut to a few letters: the
+ * organization's initials in its place (ADR-079); a logo stays a logo.
  */
 export function OrganizationMark({
   name,
   onRail = false,
+  initials = false,
 }: {
   name: string;
   onRail?: boolean;
+  initials?: boolean;
 }) {
   const branding = useBranding();
+
+  if (!branding?.logoFileId && initials) {
+    const short = organizationInitialsOf(name);
+    return (
+      <Typography variant="h6" component="div" lang={initialsLang(short)}>
+        {short}
+      </Typography>
+    );
+  }
 
   if (!branding?.logoFileId) {
     return (

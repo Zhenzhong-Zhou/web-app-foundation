@@ -28,11 +28,15 @@ import { verifyEmail } from './support/mail';
  */
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
-/** One row per screen: where it is, and what says it has loaded. */
+/**
+ * One row per screen: where it is, what says it has loaded, and what to
+ * open on it first, if anything.
+ */
 interface Screen {
   name: string;
   path: (seed: Seed) => string;
   ready: (page: Page) => ReturnType<Page['getByRole']>;
+  open?: (page: Page) => Promise<void>;
 }
 
 interface Seed {
@@ -47,6 +51,17 @@ const SCREENS: Screen[] = [
   { name: 'inventory', path: () => '/inventory', ready: heading },
   { name: 'movements', path: () => '/movements', ready: heading },
   { name: 'orders', path: () => '/orders', ready: heading },
+  {
+    // Over the page, which still reads beside it (ADR-079).
+    name: 'Help, open on Orders',
+    path: () => '/orders',
+    open: (page) =>
+      page.getByRole('button', { name: 'Help', exact: true }).click(),
+    ready: (page) =>
+      page
+        .getByRole('complementary', { name: 'Help' })
+        .getByRole('heading', { level: 2, name: 'Orders' }),
+  },
   {
     name: 'an order',
     path: (seed) => `/orders/${seed.orderId}`,
@@ -173,6 +188,10 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
       for (const screen of SCREENS) {
         await page.goto(screen.path(data));
+        if (screen.open) {
+          await expect(heading(page)).toBeVisible();
+          await screen.open(page);
+        }
         await expect(screen.ready(page).first()).toBeVisible();
         // Lists fill after their request; axe should see what a person does.
         await page.waitForLoadState('networkidle');

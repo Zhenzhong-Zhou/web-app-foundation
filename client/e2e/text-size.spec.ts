@@ -245,6 +245,42 @@ test('at Larger on a phone, Home with its cards fits', async ({
   expect(await overflowing(page)).toEqual([]);
 });
 
+test('at Larger on a phone, the top bar keeps six 44px targets', async ({
+  page,
+  freshOrg,
+}) => {
+  // Its own organization, with no logo, so the mark is its initials.
+  await signInAs(page, freshOrg.api);
+  await onAPhoneAtLarger(page);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('html')).toHaveCSS('font-size', '20px');
+
+  // At 320px the name would be cut to a few letters: its initials stand
+  // alone, so Help beside the bell leaves every target its 44px (ADR-079).
+  const bar = page.getByRole('banner');
+  const mark = bar.getByRole('link');
+  await expect(mark).toHaveText(/^[A-Z0-9]{1,2}$/);
+
+  const targets = [
+    bar.getByRole('button', { name: 'Open navigation' }),
+    mark,
+    bar.getByRole('button', { name: 'Search everything' }),
+    bar.getByRole('button', { name: 'Help', exact: true }),
+    bar.getByRole('button', { name: 'Notifications' }),
+    bar.getByRole('button', { name: /signed in as/ }),
+  ];
+  const small: string[] = [];
+  for (const target of targets) {
+    const box = await target.boundingBox();
+    if (!box || box.width < 44 || box.height < 44) {
+      small.push(`${await target.textContent()}: ${box?.width}x${box?.height}`);
+    }
+  }
+  expect(small).toEqual([]);
+  expect(await overflowing(page)).toEqual([]);
+});
+
 test('at Larger on a phone, a closing organization’s banner fits', async ({
   page,
   freshOrg,

@@ -21,7 +21,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 
@@ -33,10 +33,14 @@ import { LanguageSelect } from '../components/language-select';
 import { PersonAvatar } from '../components/person-avatar';
 import { TextSizeSelect } from '../components/text-size-select';
 import { NameAndEmail } from '../components/who-and-when';
+import { HelpButton } from '../help/help-button';
+import { HelpFrame } from '../help/help-panel';
+import { HelpProvider } from '../help/help-provider';
 import { api } from '../lib/api';
 import { initialsOf } from '../lib/person-initials';
 import { LookupBox } from '../search/lookup-box';
 import { OrganizationDeletionBanner } from '../settings/organization-deletion-banner';
+import { useTextSize } from '../theme/text-size';
 import { IdleGuard } from './idle-guard';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
@@ -86,8 +90,19 @@ function rememberFolded(folded: boolean): void {
  * Deliberately not the same component as AuthLayout. Those screens are a
  * centered card on an empty page; this is chrome around content. Merging them
  * behind a prop would be one component pretending to be two.
+ *
+ * Help (ADR-079) holds its state around the frame, so the bar's button, the
+ * panel and a page's Learn more share it.
  */
 export function AppLayout() {
+  return (
+    <HelpProvider>
+      <Frame />
+    </HelpProvider>
+  );
+}
+
+function Frame() {
   const intl = useIntl();
   const location = useLocation();
   const { session, refresh } = useAuth();
@@ -95,6 +110,7 @@ export function AppLayout() {
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [folded, setFolded] = useState(storedFolded);
+  const bar = useRef<HTMLElement>(null);
 
   /**
    * Only to close the drawer when the window grows past the breakpoint with
@@ -103,6 +119,15 @@ export function AppLayout() {
    * paint is already right and nothing flashes while this resolves.
    */
   const wide = useMediaQuery(theme.breakpoints.up(BAR));
+
+  /**
+   * A phone narrower than most, at Larger text (ADR-075): the name would be
+   * cut to a few letters, so the logo or the initials stand alone, and the
+   * bar's six targets keep their 44 px (ADR-079).
+   */
+  const narrow = useMediaQuery('(max-width: 359.95px)', { noSsr: true });
+  const textSize = useTextSize();
+  const tight = narrow && textSize === 'larger';
 
   const orgName =
     session?.organization?.name ??
@@ -182,6 +207,7 @@ export function AppLayout() {
         {/* Sticky and never hidden on scroll: it holds the bell and the
             account, and a bar that comes and goes moves the page. */}
         <AppBar
+          ref={bar}
           position="sticky"
           color="default"
           elevation={0}
@@ -193,7 +219,8 @@ export function AppLayout() {
         >
           {/* No flexWrap. A bar that wraps changes height with the window and
               drags the page with it. */}
-          <Toolbar sx={{ gap: 1, minHeight: { xs: 56 } }}>
+          {/* Closer on a phone, so six targets fit at 320 px (ADR-079). */}
+          <Toolbar sx={{ gap: { xs: 0.5, sm: 1 }, minHeight: { xs: 56 } }}>
             <IconButton
               edge="start"
               aria-label={intl.formatMessage({
@@ -217,10 +244,20 @@ export function AppLayout() {
               underline="none"
               color="inherit"
               title={orgName}
-              sx={{ minWidth: 0, flexShrink: 1 }}
+              sx={[
+                { minWidth: 0, flexShrink: 1 },
+                tight && {
+                  minWidth: 44,
+                  minHeight: 44,
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+              ]}
             >
               <Box sx={{ maxWidth: { xs: '50vw', [BAR]: 320 } }}>
-                <OrganizationMark name={orgName} />
+                <OrganizationMark name={orgName} initials={tight} />
               </Box>
             </Link>
 
@@ -236,6 +273,9 @@ export function AppLayout() {
             >
               <LookupBox />
             </Box>
+
+            {/* Beside the bell (ADR-079), where the welcome says it is. */}
+            <HelpButton />
 
             <NotificationBell />
 
@@ -410,27 +450,30 @@ export function AppLayout() {
 
         {/* The page's main landmark (#121), and where the skip link puts
             focus: -1 takes it by script without adding a Tab stop, and its
-            outline is left off because nothing in it is pressed. */}
-        <Container
-          component="main"
-          id={MAIN_CONTENT_ID}
-          tabIndex={-1}
-          maxWidth="lg"
-          sx={{ py: { xs: 2, sm: 4 }, '&:focus': { outline: 'none' } }}
-        >
-          <Stack spacing={3}>
-            <UnverifiedBanner />
-            <DeletionBanner />
-            <OrganizationDeletionBanner />
-            {/* Signs out after inactivity, warning a minute before (ADR-065). */}
-            <IdleGuard />
-            {/* Inside the page so the rail and the bar survive, and reset by
+            outline is left off because nothing in it is pressed. Help sits
+            over the right of it, or beside it (ADR-079). */}
+        <HelpFrame bar={bar}>
+          <Container
+            component="main"
+            id={MAIN_CONTENT_ID}
+            tabIndex={-1}
+            maxWidth="lg"
+            sx={{ py: { xs: 2, sm: 4 }, '&:focus': { outline: 'none' } }}
+          >
+            <Stack spacing={3}>
+              <UnverifiedBanner />
+              <DeletionBanner />
+              <OrganizationDeletionBanner />
+              {/* Signs out after inactivity, warning a minute before (ADR-065). */}
+              <IdleGuard />
+              {/* Inside the page so the rail and the bar survive, and reset by
                 the address, so a person whose page broke can click away. */}
-            <ErrorBoundary resetKey={location.pathname}>
-              <Outlet />
-            </ErrorBoundary>
-          </Stack>
-        </Container>
+              <ErrorBoundary resetKey={location.pathname}>
+                <Outlet />
+              </ErrorBoundary>
+            </Stack>
+          </Container>
+        </HelpFrame>
       </Box>
     </Box>
   );

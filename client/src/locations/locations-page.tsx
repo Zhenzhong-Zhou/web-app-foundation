@@ -108,7 +108,7 @@ export function LocationsPage() {
             ))}
           </Box>
         ) : (
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'locations', section: 'add' }}>
             {intl.formatMessage({
               id: 'locations.empty',
               defaultMessage:

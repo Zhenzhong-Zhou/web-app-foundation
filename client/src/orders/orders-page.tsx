@@ -349,7 +349,7 @@ export function OrdersPage() {
         ) : (
           // No Raise an order here: the page header already offers it, and
           // a second button for the same act is one too many.
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'orders', section: 'raise' }}>
             {search || range.from || range.to
               ? intl.formatMessage({
                   id: 'inventory.noMatch',

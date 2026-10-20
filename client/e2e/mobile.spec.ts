@@ -77,3 +77,29 @@ test('lists Invited as cards on a phone, and invites full screen, in Chinese', a
     dialog.getByRole('button', { name: '复制链接，自己发送' }),
   ).toBeVisible();
 });
+
+test('opens Help full screen on a phone, in Chinese, and closes it', async ({
+  page,
+}) => {
+  await page.addInitScript(() => localStorage.setItem('language', 'zh-Hans'));
+  await page.goto('/orders');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  // The icon alone in the bar, named for a screen reader (ADR-079).
+  const button = page.getByRole('button', { name: '帮助', exact: true });
+  await button.click();
+
+  const help = page.getByRole('dialog', { name: '帮助 · 订单' });
+  const box = await help.boundingBox();
+  expect(box?.width).toBe(page.viewportSize()?.width);
+  await expect(
+    help.getByRole('heading', { level: 2, name: '订单' }),
+  ).toBeFocused();
+  await expect(
+    help.getByRole('heading', { level: 3, name: '创建订单' }),
+  ).toBeVisible();
+
+  await help.getByRole('button', { name: '关闭帮助' }).click();
+  await expect(help).toBeHidden();
+  await expect(button).toBeFocused();
+});

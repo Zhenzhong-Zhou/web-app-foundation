@@ -249,7 +249,7 @@ export function PartnersPage() {
             </Table>
           </TableContainer>
         ) : (
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'partners', section: 'add' }}>
             {items?.length
               ? intl.formatMessage({
                   id: 'inventory.noMatch',

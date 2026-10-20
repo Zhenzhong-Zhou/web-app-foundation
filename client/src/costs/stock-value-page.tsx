@@ -28,6 +28,7 @@ import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { LearnMore } from '../help/learn-more';
 import { api, messageFor } from '../lib/api';
 import {
   displayQuantity,
@@ -183,11 +184,17 @@ export function StockValuePage() {
           id: 'layout.menu.stockValue',
           defaultMessage: 'Stock value',
         })}
-        subtitle={intl.formatMessage({
-          id: 'costs.intro',
-          defaultMessage:
-            'Each lot carries what it cost; stock without lots carries a running average. Values are material cost only — what was bought and what went into a batch — in the base currency.',
-        })}
+        subtitle={
+          <LearnMore
+            target={{ guide: 'stock-value', section: 'costs' }}
+            variant="beside"
+            after={intl.formatMessage({
+              id: 'costs.intro',
+              defaultMessage:
+                'Each lot carries what it cost; stock without lots carries a running average. Values are material cost only — what was bought and what went into a batch — in the base currency.',
+            })}
+          />
+        }
         actions={<ExportButton path="/costs/valuation/export" />}
       />
 

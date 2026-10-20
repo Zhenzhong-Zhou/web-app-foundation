@@ -1510,6 +1510,48 @@ The pages, in a private window unless a check says otherwise.
   …接受了您的邀请，以查看者身份加入 Demo …。 As an Admin of the demo team,
   invite another address, then leave the organization before it is
   accepted, and accept it: nobody's bell says so.
+- **MC-3202** *(ADR-079)* Help on a computer, about 1280 to 1440 px wide:
+  the top bar has Help, its icon and the word, between Search and the
+  bell. On Orders, press it: Help slides in over the right of the page,
+  under the bar, with nothing dimmed, and the button shows pressed. The
+  page beneath still scrolls and its controls work. The guide is Orders,
+  its title and sections, steps numbered and the permission notes set
+  apart. At its foot, All guides lists Work, Records, Settings and You,
+  only the pages you can open (as a Viewer: no Stock value, Audit log,
+  Exchange rates or Price lists), then What you can do here is on Your
+  account. Choose Inventory in the rail: Help now shows Inventory's guide.
+  Choose Home in All guides: Home's guide shows and the page stays on
+  Inventory. Follow See also in a guide: that page opens, with its own
+  guide. Esc inside Help, or Close, shuts it, and focus is back on Help. A
+  guide downloads only when Help shows it (DevTools, Network: the guide's
+  file, `orders.md` locally, arrives as Help opens, and none before).
+- **MC-3203** *(ADR-079)* Help on a wide screen, about 1900 px with the
+  rail open or 1700 px folded: opening Help moves the page to the left,
+  at its full width, and Help sits beside it without covering anything;
+  closing Help puts the page back. Just below that width, Help is over
+  the page again, as in MC-3202.
+- **MC-3204** *(ADR-079)* Help on a phone, about 390 px: the bar shows
+  Help as its icon alone. It opens full screen, headed Help · Orders, with
+  Close, which returns to the page. On a real phone at 320 px wide (or
+  DevTools) with Larger text (ADR-075), the organization shows its logo,
+  or its initials, alone, every control in the bar is a full fingertip
+  wide and tall, and nothing scrolls sideways.
+- **MC-3205** *(ADR-079)* Learn more: on a new organization's Home, each
+  Getting started step's hint ends with Learn more, which opens Help at
+  that step's section, scrolled to it and marked for a moment; with the
+  system's Reduce motion on, it jumps there and the mark comes and goes
+  without fading. An empty list, such as Production with no runs, has
+  Learn more beside its words. Organization's Numbering (Documents) and
+  Licences at release (Stock) have it beside their headings, Sign out
+  after inactivity (Security) at the end of After's help, and Exchange
+  rates, Stock value and Price lists at the end of their introductions.
+  Closing Help puts focus back on the Learn more that opened it.
+- **MC-3206** *(ADR-079)* Reading a guide in 中文: with Account's language
+  set to 中文, open 帮助 on 订单, on a computer and on a phone (帮助 · 订单).
+  The guide reads in Chinese, 创建订单 and the other sections, bold and
+  links in place, with no space added between Chinese words; All guides
+  reads 所有指南, grouped 工作, 资料, 设置 and 我. Learn more reads 了解更多,
+  right after the words it follows, with no space before it.
 
 ## Regressions
 
@@ -1856,3 +1898,4 @@ first.
   (#144, ADR-079): MC-R22.
 - 2026-10-20: ADR-079, the server: section 32, MC-3201.
 - 2026-10-20: Inventory's row actions for whoever may see stock: MC-310.
+- 2026-10-20: ADR-079, Help: MC-3202 to MC-3206.

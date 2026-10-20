@@ -20,6 +20,7 @@ import type { ExchangeRate, OrganizationProfile } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
+import { LearnMore } from '../help/learn-more';
 import { api, messageFor } from '../lib/api';
 import { formatDay, formatQuantity } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
@@ -106,11 +107,17 @@ export function ExchangeRatesPage() {
           id: 'layout.menu.exchangeRates',
           defaultMessage: 'Exchange rates',
         })}
-        subtitle={intl.formatMessage({
-          id: 'settings.rates.intro',
-          defaultMessage:
-            'What one unit of another currency is worth in your base currency, day by day. A purchase priced in that currency is valued at the latest rate on or before the day it arrived. Correcting a rate changes nothing already valued.',
-        })}
+        subtitle={
+          <LearnMore
+            target={{ guide: 'exchange-rates', section: 'add' }}
+            variant="beside"
+            after={intl.formatMessage({
+              id: 'settings.rates.intro',
+              defaultMessage:
+                'What one unit of another currency is worth in your base currency, day by day. A purchase priced in that currency is valued at the latest rate on or before the day it arrived. Correcting a rate changes nothing already valued.',
+            })}
+          />
+        }
         actions={
           <>
             {canUpdate && baseCurrency && (
@@ -153,7 +160,7 @@ export function ExchangeRatesPage() {
             {showSkeleton ? <Skeleton height={48} /> : null}
           </Stack>
         ) : loaded?.rates.length === 0 ? (
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'exchange-rates', section: 'add' }}>
             {intl.formatMessage({
               id: 'settings.rates.empty',
               defaultMessage: 'No rates yet.',

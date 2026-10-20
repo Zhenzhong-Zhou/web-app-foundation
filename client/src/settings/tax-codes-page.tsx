@@ -84,7 +84,7 @@ export function TaxCodesPage() {
             {showSkeleton ? <Skeleton height={48} /> : null}
           </Stack>
         ) : codes?.length === 0 ? (
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'tax-codes', section: 'add' }}>
             {intl.formatMessage({
               id: 'settings.tax.empty',
               defaultMessage:

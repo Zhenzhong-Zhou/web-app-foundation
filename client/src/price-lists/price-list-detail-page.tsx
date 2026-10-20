@@ -161,7 +161,7 @@ export function PriceListDetailPage() {
 
       <Paper variant="outlined">
         {list.items.length === 0 ? (
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'price-lists', section: 'prices' }}>
             {intl.formatMessage({
               id: 'priceLists.noPrices',
               defaultMessage: 'No prices on this list yet.',

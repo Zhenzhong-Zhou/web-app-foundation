@@ -1,0 +1,415 @@
+import CloseIcon from '@mui/icons-material/Close';
+import HelpOutlineOutlined from '@mui/icons-material/HelpOutlineOutlined';
+import {
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  IconButton,
+  Link,
+  Skeleton,
+  Slide,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import {
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
+import { Link as RouterLink } from 'react-router-dom';
+
+import { useCan } from '../auth/permissions';
+import { useLanguage } from '../i18n/use-language';
+import { useDelayedFlag } from '../lib/use-delayed-flag';
+import { rem } from '../theme/rem';
+import { useTextSize } from '../theme/text-size';
+import { guideGroups } from './guide-groups';
+import { GuideView } from './guide-view';
+import { type GuideName, GUIDES, loadGuide } from './guides';
+import type { HelpState } from './help-context';
+import {
+  GUIDE_TITLE_ID,
+  HELP_HEADING_ID,
+  HELP_PANEL_ID,
+  sectionElementId,
+} from './help-ids';
+import { parseGuide } from './markdown';
+import { useHelp } from './use-help';
+
+/** The panel's width, in rem so it grows with the text (ADR-075). */
+const WIDTH_PX = 420;
+
+/** The page at its widest, as its Container is (`maxWidth="lg"`). */
+const PAGE_MAX = 'lg' as const;
+
+const M = defineMessages({
+  help: { id: 'help.title', defaultMessage: 'Help' },
+  close: { id: 'help.close', defaultMessage: 'Close help' },
+  allGuides: { id: 'help.allGuides', defaultMessage: 'All guides' },
+  failed: {
+    id: 'help.failed',
+    defaultMessage:
+      'This guide could not be opened. Check your connection, then try again.',
+  },
+});
+
+function rootFontSize(): number {
+  return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+}
+
+/**
+ * The page, and Help beside it or over it (ADR-079). Help slides over the
+ * right of the page with nothing dimmed, so the page still works while the
+ * person follows the steps. Where the window leaves the page its full width
+ * beside the panel, the page moves over to make room instead and nothing is
+ * covered; a page never gets narrower for Help. On a phone, Help is full
+ * screen, with Close.
+ *
+ * The top bar is measured rather than assumed: Help starts under it, at
+ * whatever height the text size gives it, and the bar's width is the room
+ * the page and the panel share.
+ */
+export function HelpFrame({
+  bar,
+  children,
+}: {
+  bar: RefObject<HTMLElement | null>;
+  children: ReactNode;
+}) {
+  const help = useHelp();
+  const theme = useTheme();
+  const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
+  // A new text size changes the panel's width in px: render again for it.
+  useTextSize();
+  const [size, setSize] = useState({ height: 56, width: 0 });
+
+  useEffect(() => {
+    const element = bar.current;
+    if (!element || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() =>
+      setSize({ height: element.offsetHeight, width: element.offsetWidth }),
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [bar]);
+
+  const width = (WIDTH_PX / 16) * rootFontSize();
+  const beside =
+    !!help?.open &&
+    !phone &&
+    size.width >= theme.breakpoints.values[PAGE_MAX] + width;
+
+  return (
+    <>
+      <Box sx={beside ? { pr: `${width}px` } : undefined}>{children}</Box>
+
+      {help &&
+        (phone ? (
+          <Dialog
+            open={help.open}
+            onClose={help.close}
+            fullScreen
+            aria-labelledby={HELP_HEADING_ID}
+            // Focus goes back to what opened Help: the state sees to it.
+            disableRestoreFocus
+          >
+            <PanelBody help={help} phone />
+          </Dialog>
+        ) : (
+          <Slide in={help.open} direction="left" mountOnEnter unmountOnExit>
+            <Box
+              component="aside"
+              id={HELP_PANEL_ID}
+              aria-labelledby={HELP_HEADING_ID}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  event.stopPropagation();
+                  help.close();
+                }
+              }}
+              sx={{
+                position: 'fixed',
+                top: size.height,
+                right: 0,
+                bottom: 0,
+                width: `min(${rem(WIDTH_PX)}, 100%)`,
+                zIndex: theme.zIndex.appBar - 1,
+                display: 'flex',
+                flexDirection: 'column',
+                bgcolor: 'background.paper',
+                borderLeft: 1,
+                borderColor: 'divider',
+                // Over the page, a shadow says it floats; beside it, the
+                // border is enough.
+                boxShadow: beside
+                  ? 'none'
+                  : '-8px 0 24px rgba(20, 26, 36, 0.14)',
+              }}
+            >
+              <PanelBody help={help} phone={false} />
+            </Box>
+          </Slide>
+        ))}
+    </>
+  );
+}
+
+/** The header with Close, the guide, and the list of guides at its foot. */
+function PanelBody({ help, phone }: { help: HelpState; phone: boolean }) {
+  const intl = useIntl();
+  const { locale } = useLanguage();
+  const { guide, section, request, takeFocusRef } = help;
+
+  const [attempt, setAttempt] = useState(0);
+  const [loaded, setLoaded] = useState<{
+    key: string;
+    text: string | null;
+  } | null>(null);
+  const key = `${guide} ${locale} ${attempt}`;
+
+  useEffect(() => {
+    let ignore = false;
+    loadGuide(guide, locale).then(
+      (text) => {
+        if (!ignore) setLoaded({ key, text });
+      },
+      () => {
+        if (!ignore) setLoaded({ key, text: null });
+      },
+    );
+    return () => {
+      ignore = true;
+    };
+  }, [guide, locale, key]);
+
+  const current = loaded?.key === key ? loaded : null;
+  const text = current?.text;
+  const parsed = useMemo(() => (text ? parseGuide(text) : null), [text]);
+  const showSkeleton = useDelayedFlag(!current);
+
+  const scroller = useRef<HTMLDivElement>(null);
+  const shown = useRef<GuideName | null>(null);
+
+  /**
+   * Once the guide is drawn: the section asked for scrolled into view and
+   * marked for a moment, or else the top of a guide newly shown. Focus moves
+   * only when the person asked in Help or by a Learn more.
+   */
+  useEffect(() => {
+    const box = scroller.current;
+    if (!parsed || !box) return;
+    const focus = takeFocusRef.current;
+    takeFocusRef.current = false;
+
+    const heading = section
+      ? document.getElementById(sectionElementId(section))
+      : null;
+    if (heading && box.contains(heading)) {
+      shown.current = guide;
+      box.scrollTop = heading.offsetTop - 8;
+      if (focus) heading.focus({ preventScroll: true });
+      heading.setAttribute('data-marked', '');
+      const timer = window.setTimeout(
+        () => heading.removeAttribute('data-marked'),
+        1600,
+      );
+      return () => {
+        window.clearTimeout(timer);
+        heading.removeAttribute('data-marked');
+      };
+    }
+
+    if (shown.current !== guide) box.scrollTop = 0;
+    shown.current = guide;
+    if (focus) {
+      document.getElementById(GUIDE_TITLE_ID)?.focus({ preventScroll: true });
+    }
+  }, [parsed, guide, section, request, takeFocusRef]);
+
+  return (
+    <>
+      <Stack
+        direction="row"
+        sx={{
+          alignItems: 'center',
+          gap: 1,
+          pl: 2.5,
+          pr: 1,
+          py: 1,
+          borderBottom: 1,
+          borderColor: 'divider',
+          flexShrink: 0,
+        }}
+      >
+        <Typography
+          id={HELP_HEADING_ID}
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 1,
+            flex: 1,
+            minWidth: 0,
+            color: 'primary.main',
+            fontWeight: 600,
+          }}
+        >
+          <HelpOutlineOutlined fontSize="small" aria-hidden />
+          {phone
+            ? intl.formatMessage(
+                {
+                  id: 'help.titleWithGuide',
+                  defaultMessage: 'Help · {guide}',
+                },
+                { guide: intl.formatMessage(GUIDES[guide].label) },
+              )
+            : intl.formatMessage(M.help)}
+        </Typography>
+        <IconButton
+          aria-label={intl.formatMessage(M.close)}
+          onClick={help.close}
+        >
+          <CloseIcon />
+        </IconButton>
+      </Stack>
+
+      <Box
+        ref={scroller}
+        sx={{
+          position: 'relative',
+          flex: 1,
+          overflowY: 'auto',
+          // Eased, except where less motion is asked for (ADR-075), when
+          // it jumps; set by scrollTop, so it eases that too.
+          scrollBehavior: 'smooth',
+          px: { xs: 2, sm: 2.75 },
+          pt: 2.25,
+          pb: 3.5,
+        }}
+      >
+        {parsed ? (
+          <GuideView guide={parsed} onFollow={help.follow} />
+        ) : current ? (
+          <Alert
+            severity="error"
+            action={
+              <Button variant="text" onClick={() => setAttempt(attempt + 1)}>
+                {intl.formatMessage({
+                  id: 'common.tryAgain',
+                  defaultMessage: 'Try again',
+                })}
+              </Button>
+            }
+          >
+            {intl.formatMessage(M.failed)}
+          </Alert>
+        ) : showSkeleton ? (
+          <Stack spacing={1}>
+            <Skeleton height={36} width="50%" />
+            <Skeleton height={96} />
+            <Skeleton height={96} />
+          </Stack>
+        ) : null}
+
+        <AllGuides help={help} />
+      </Box>
+    </>
+  );
+}
+
+/** The guides for the pages the person can open, shown here when chosen. */
+function AllGuides({ help }: { help: HelpState }) {
+  const intl = useIntl();
+  const can = useCan();
+
+  return (
+    <Box
+      component="nav"
+      aria-labelledby="help-all-guides"
+      sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}
+    >
+      <Typography
+        id="help-all-guides"
+        variant="subtitle1"
+        component="h3"
+        color="text.secondary"
+        sx={{ mb: 1 }}
+      >
+        {intl.formatMessage(M.allGuides)}
+      </Typography>
+      <Stack spacing={1.5}>
+        {guideGroups(can).map((group) => (
+          <Box key={group.label.id}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontWeight: 600 }}
+            >
+              {intl.formatMessage(group.label)}
+            </Typography>
+            <Box
+              component="ul"
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                columnGap: 0.75,
+                rowGap: 0.5,
+                m: 0,
+                p: 0,
+                listStyle: 'none',
+                // A dot between names, which is not read aloud.
+                '& > li + li::before': {
+                  content: '"·" / ""',
+                  color: 'text.secondary',
+                  mr: 0.75,
+                },
+              }}
+            >
+              {group.guides.map((name) => (
+                <li key={name}>
+                  <Link
+                    component="button"
+                    type="button"
+                    aria-current={name === help.guide ? 'true' : undefined}
+                    onClick={() => help.show(name)}
+                    sx={{
+                      font: 'inherit',
+                      verticalAlign: 'baseline',
+                      fontWeight: name === help.guide ? 600 : undefined,
+                    }}
+                  >
+                    {intl.formatMessage(GUIDES[name].label)}
+                  </Link>
+                </li>
+              ))}
+            </Box>
+          </Box>
+        ))}
+        <Typography>
+          <FormattedMessage
+            id="help.yourAccess"
+            defaultMessage="What you can do here is on <link>Your account</link>."
+            values={{
+              link: (chunks: ReactNode[]) => (
+                <Link
+                  component={RouterLink}
+                  to="/account#your-access"
+                  underline="always"
+                  onClick={help.follow}
+                >
+                  {chunks}
+                </Link>
+              ),
+            }}
+          />
+        </Typography>
+      </Stack>
+    </Box>
+  );
+}

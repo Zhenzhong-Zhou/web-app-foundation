@@ -19,43 +19,7 @@ import { VerifyEmailPage } from './auth/verify-email-page';
 import { NotFoundRoute } from './errors/not-found-page';
 import { AppLayout } from './layout/app-layout';
 import { useDelayedFlag } from './lib/use-delayed-flag';
-import {
-  AccountPage,
-  AuditPage,
-  CreateOrderPage,
-  CreditNoteDetailPage,
-  CreditNotesPage,
-  ExchangeRatesPage,
-  HomePage,
-  InventoryPage,
-  InvoiceDetailPage,
-  InvoicesPage,
-  LicencesPage,
-  LocationsPage,
-  LotSearchPage,
-  LotTracePage,
-  MembersPage,
-  MovementsPage,
-  OrderDetailPage,
-  OrdersPage,
-  OrganizationPage,
-  PartnerDetailPage,
-  PartnersPage,
-  PeoplePage,
-  PersonPage,
-  PriceListDetailPage,
-  PriceListsPage,
-  ProductDetailPage,
-  ProductionOrderDetailPage,
-  ProductionOrdersPage,
-  ProductsPage,
-  RmaDetailPage,
-  RmasPage,
-  SessionsPage,
-  StockValuePage,
-  TaxCodesPage,
-  YourActivityPage,
-} from './pages';
+import { SIGNED_IN_ROUTES } from './routes';
 
 /** Needs a session. Remembers where the caller was headed. */
 function Protected({ children }: { children: ReactNode }) {
@@ -210,56 +174,9 @@ export default function App() {
           </Protected>
         }
       >
-        <Route path="/" element={split(HomePage)} />
-        <Route path="/account" element={split(AccountPage)} />
-        <Route path="/account/sessions" element={split(SessionsPage)} />
-        <Route path="/account/activity" element={split(YourActivityPage)} />
-        <Route path="/people" element={split(PeoplePage)} />
-        <Route path="/people/:userId" element={split(PersonPage)} />
-        <Route path="/members" element={split(MembersPage)} />
-        <Route path="/audit" element={split(AuditPage)} />
-        <Route
-          path="/settings/organization"
-          element={split(OrganizationPage)}
-        />
-        <Route path="/settings/tax-codes" element={split(TaxCodesPage)} />
-        <Route
-          path="/settings/exchange-rates"
-          element={split(ExchangeRatesPage)}
-        />
-        <Route path="/settings/price-lists" element={split(PriceListsPage)} />
-        <Route
-          path="/settings/price-lists/:id"
-          element={split(PriceListDetailPage)}
-        />
-        <Route path="/costs" element={split(StockValuePage)} />
-        <Route path="/products" element={split(ProductsPage)} />
-        <Route path="/products/:id" element={split(ProductDetailPage)} />
-        <Route path="/licences" element={split(LicencesPage)} />
-        <Route path="/inventory" element={split(InventoryPage)} />
-        <Route path="/movements" element={split(MovementsPage)} />
-        <Route path="/lots" element={split(LotSearchPage)} />
-        <Route path="/lots/:id" element={split(LotTracePage)} />
-        <Route path="/locations" element={split(LocationsPage)} />
-        <Route path="/partners" element={split(PartnersPage)} />
-        <Route path="/partners/:id" element={split(PartnerDetailPage)} />
-        <Route path="/orders" element={split(OrdersPage)} />
-        <Route path="/orders/new" element={split(CreateOrderPage)} />
-        <Route path="/orders/:id" element={split(OrderDetailPage)} />
-        <Route path="/invoices" element={split(InvoicesPage)} />
-        <Route path="/invoices/:id" element={split(InvoiceDetailPage)} />
-        <Route path="/credit-notes" element={split(CreditNotesPage)} />
-        <Route path="/credit-notes/:id" element={split(CreditNoteDetailPage)} />
-        <Route path="/return-authorizations" element={split(RmasPage)} />
-        <Route
-          path="/return-authorizations/:id"
-          element={split(RmaDetailPage)}
-        />
-        <Route path="/production" element={split(ProductionOrdersPage)} />
-        <Route
-          path="/production/:id"
-          element={split(ProductionOrderDetailPage)}
-        />
+        {SIGNED_IN_ROUTES.map(({ path, page }) => (
+          <Route key={path} path={path} element={split(page)} />
+        ))}
       </Route>
 
       {/* Outside both guards deliberately. Inside Protected, a signed-out

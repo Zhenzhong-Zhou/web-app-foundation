@@ -506,7 +506,7 @@ export function InventoryPage() {
             </Table>
           </TableContainer>
         ) : (
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'inventory', section: 'receive' }}>
             {needsCost && !expiring
               ? intl.formatMessage({
                   id: 'inventory.noneNeedsCost',

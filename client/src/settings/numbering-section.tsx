@@ -198,6 +198,7 @@ function NumberingSummary({ numbering }: { numbering: Numbering }) {
   return (
     <SettingsSection
       title={title}
+      learnMore={{ guide: 'organization', section: 'numbering' }}
       onSubmit={(event) => event.preventDefault()}
       error={null}
       submitting={false}
@@ -800,6 +801,7 @@ function NumberingForm({
     <>
       <SettingsSection
         title={TITLE}
+        learnMore={{ guide: 'organization', section: 'numbering' }}
         onSubmit={handleSubmit}
         error={null}
         submitting={submitting}

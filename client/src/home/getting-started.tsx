@@ -12,6 +12,8 @@ import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { HomeResponse } from '../api/types.gen';
+import type { LearnMoreTarget } from '../help/guides';
+import { LearnMore } from '../help/learn-more';
 import type { GettingStartedStep } from '../lib/api-names';
 
 interface StepMeta {
@@ -19,6 +21,8 @@ interface StepMeta {
   hint: MessageDescriptor;
   action: MessageDescriptor;
   to: string;
+  /** The guide's section on doing it, after the hint (ADR-079). */
+  learnMore: LearnMoreTarget;
 }
 
 const M = defineMessages({
@@ -87,6 +91,7 @@ const STEPS: { key: GettingStartedStep; meta: StepMeta }[] = [
       hint: M.organizationHint,
       action: M.organizationAction,
       to: '/settings/organization',
+      learnMore: { guide: 'organization', section: 'profile' },
     },
   },
   {
@@ -96,6 +101,7 @@ const STEPS: { key: GettingStartedStep; meta: StepMeta }[] = [
       hint: M.locationHint,
       action: M.locationTitle,
       to: '/locations',
+      learnMore: { guide: 'locations', section: 'add' },
     },
   },
   {
@@ -105,6 +111,7 @@ const STEPS: { key: GettingStartedStep; meta: StepMeta }[] = [
       hint: M.productHint,
       action: M.productTitle,
       to: '/products',
+      learnMore: { guide: 'products', section: 'add' },
     },
   },
   {
@@ -114,6 +121,7 @@ const STEPS: { key: GettingStartedStep; meta: StepMeta }[] = [
       hint: M.partnerHint,
       action: M.partnerTitle,
       to: '/partners',
+      learnMore: { guide: 'partners', section: 'add' },
     },
   },
   {
@@ -123,6 +131,7 @@ const STEPS: { key: GettingStartedStep; meta: StepMeta }[] = [
       hint: M.receiptHint,
       action: M.receiptTitle,
       to: '/inventory',
+      learnMore: { guide: 'inventory', section: 'receive' },
     },
   },
   {
@@ -132,6 +141,7 @@ const STEPS: { key: GettingStartedStep; meta: StepMeta }[] = [
       hint: M.invoiceHint,
       action: M.invoiceAction,
       to: '/orders/new',
+      learnMore: { guide: 'orders', section: 'raise' },
     },
   },
   {
@@ -142,6 +152,7 @@ const STEPS: { key: GettingStartedStep; meta: StepMeta }[] = [
       action: M.teamAction,
       // Members with the Invite dialog open (ADR-077).
       to: '/members?invite',
+      learnMore: { guide: 'members', section: 'invite' },
     },
   },
 ];
@@ -258,7 +269,11 @@ export function GettingStarted({
                   )}
                 </Typography>
                 <Typography color="text.secondary">
-                  {intl.formatMessage(meta.hint)}
+                  <LearnMore
+                    target={meta.learnMore}
+                    variant="inline"
+                    after={intl.formatMessage(meta.hint)}
+                  />
                 </Typography>
               </Box>
             </Stack>
