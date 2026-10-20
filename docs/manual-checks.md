@@ -1501,6 +1501,18 @@ The pages, in a private window unless a check says otherwise.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R22** *(#144)* Locally, with `REGISTRATION=open`, sign in as one
+  of the demo's team who is not the last Owner, such as Tom Becker, in two
+  browsers side by side, A and B (or a normal and a private window), both
+  on Home. In A: Account → Leave … (the button names the organization):
+  A's Home offers Join an organization and Start an organization. Click
+  into B: with no reload, it shows the same Home with no organization. In
+  A: Start an organization, named Reid Supply Co.: A lands on its Home
+  with Getting started. Click into B: with no reload, it shows Reid Supply
+  Co.'s Home, as A does, and Start an organization is gone; a reload
+  still shows it. The same when A accepts an invitation, or an
+  organization invitation from `npm run org:invite`, instead of starting
+  one.
 - **MC-R21** *(links in an audit entry)* On Records → Audit log, an
   entry whose detail names something you may open, such as Invitation
   sent's role: the name is underlined as well as in the accent, before any
@@ -1825,3 +1837,5 @@ first.
 - 2026-10-20: ADR-078, the command: MC-3102 to MC-3105.
 - 2026-10-20: ADR-078, the client: MC-3101 rewritten for the By invitation
   page; MC-3106 to MC-3110 added.
+- 2026-10-20: another device's session finds its organization again
+  (#144, ADR-079): MC-R22.

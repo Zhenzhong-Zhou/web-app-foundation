@@ -90,9 +90,17 @@ export class SessionContextMiddleware implements NestMiddleware {
     // Re-read every request, never cached. The session's current_org_id is a
     // pointer, not a grant: someone removed from an organization has to lose
     // access on their next request, not at session expiry (ADR-004).
-    const membership = session.currentOrgId
+    let membership = session.currentOrgId
       ? await this.findMembership(user.id, session.currentOrgId)
       : undefined;
+
+    // Only its own device moves a session's pointer, so another device may
+    // have left, joined or started an organization since (#144). A pointer
+    // to none, or to one the account no longer belongs to, chooses again;
+    // one that still resolves is never moved.
+    if (!membership) {
+      membership = await this.chooseAgain(session.sessionId, user.id);
+    }
 
     // The idle limit this session is held to: its own if not kept, the
     // organization's if it applies and is shorter (ADR-065). Past it, the
@@ -146,6 +154,19 @@ export class SessionContextMiddleware implements NestMiddleware {
       .update(memberships)
       .set({ lastActiveAt: new Date(now) })
       .where(eq(memberships.id, membership.id));
+  }
+
+  /**
+   * The organization signing in would choose, kept on the session so the
+   * next request finds it at once. None for an account in none, and a
+   * removed member's old organization is never among the choices.
+   */
+  private async chooseAgain(sessionId: string, userId: string) {
+    const organizationId = await this.sessions.firstOrganizationOf(userId);
+    if (!organizationId) return undefined;
+
+    await this.sessions.setCurrentOrg(sessionId, organizationId);
+    return this.findMembership(userId, organizationId);
   }
 
   private async findMembership(userId: string, organizationId: string) {

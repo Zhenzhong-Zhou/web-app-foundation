@@ -22,9 +22,17 @@ interface Resolved {
  * else is one, and surfacing it beats a blank page with the reason in the
  * console.
  */
-async function resolveSession(): Promise<Resolved> {
+async function resolveSession({
+  background = false,
+}: { background?: boolean } = {}): Promise<Resolved> {
   try {
-    return { session: await api<CurrentSession>('/auth/me'), error: null };
+    return {
+      session: await api<CurrentSession>(
+        '/auth/me',
+        background ? { headers: { 'X-Background': '1' } } : {},
+      ),
+      error: null,
+    };
   } catch (caught) {
     if (caught instanceof ApiError && caught.status === 401) {
       return { session: null, error: null };
@@ -71,6 +79,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ignore = true;
     };
   }, []);
+
+  /**
+   * Another device may have left, joined or started an organization since
+   * (#144): the session is read again when this window regains focus, or
+   * the page becomes visible again, as a phone's tab does coming back from
+   * the background, so an open page catches up without a reload. Switching
+   * tabs on a computer brings both, and the two share one read: one at a
+   * time, and only while signed in. In the background, as the bell's poll
+   * is (ADR-063): coming back to a window is not activity. A read that
+   * fails leaves the page as it was; the boot screen's Try again is for a
+   * page that never loaded.
+   */
+  const signedIn = state.session !== null;
+  useEffect(() => {
+    if (!signedIn) return;
+    let live = true;
+    let reading = false;
+
+    const read = () => {
+      if (reading) return;
+      reading = true;
+      void resolveSession({ background: true }).then((resolved) => {
+        reading = false;
+        // Signed out meanwhile: the late answer is not this page's.
+        if (live && !resolved.error) setState({ ...resolved, loading: false });
+      });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') read();
+    };
+
+    window.addEventListener('focus', read);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      live = false;
+      window.removeEventListener('focus', read);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [signedIn]);
 
   /**
    * The account's language follows the person to this device (ADR-054):

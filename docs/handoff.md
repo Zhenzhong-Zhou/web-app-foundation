@@ -515,11 +515,10 @@ with this one, this one is current.
   - If the time-zone picker feels slow on a phone, build its zone list
     when it opens, not when the section does.
   - Client tests still missing: the Still on UTC note hidden on a
-    computer in UTC and the picker's announcement, the auth provider
-    passing the zone on. Add each when that code is next touched. ADR-078
-    added Home's time-zone note, naming the zone, and the zone sent at
-    registration. ADR-079's fix for #144 reads the session again on
-    focus, in the auth provider, so it takes the auth provider's test.
+    computer in UTC and the picker's announcement. Add each when that
+    code is next touched. ADR-078 added Home's time-zone note, naming the
+    zone, and the zone sent at registration; ADR-079's fix for #144 the
+    auth provider passing the zone on.
 - **A browser-compatibility lint rule** (eslint-plugin-compat) set to the
   build target, so code using an API newer than the floor fails ESLint;
   the code review on initials-by-script caught Intl.Segmenter by reading.
