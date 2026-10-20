@@ -1,5 +1,3 @@
-import { createHash, randomBytes } from 'node:crypto';
-
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { and, eq, gt, isNull, lt, or, sql } from 'drizzle-orm';
@@ -7,7 +5,12 @@ import { and, eq, gt, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Env } from '../../config/env';
 import type { Database, Transaction } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
-import { type AccountTokenPurpose, authTokens } from '../../database/schema';
+import {
+  type AccountTokenPurpose,
+  type AuthTokenPurpose,
+  authTokens,
+} from '../../database/schema';
+import { hashToken, newToken } from './token-hash';
 
 type Executor = Database | Transaction;
 
@@ -21,7 +24,8 @@ export interface IssuedToken {
 }
 
 /**
- * Single-use tokens for email verification, password reset and invitations.
+ * Single-use tokens for email verification, password reset, invitations and
+ * organization invitations.
  *
  * Deliberately shaped like SessionService: 32 CSPRNG bytes, SHA-256 stored,
  * plaintext returned once. The reasoning transfers exactly — there is nothing
@@ -50,10 +54,6 @@ export class AuthTokenService {
     };
   }
 
-  private hashToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
-  }
-
   /**
    * Issuing invalidates this user's outstanding tokens of the same purpose.
    *
@@ -68,11 +68,11 @@ export class AuthTokenService {
     await this.invalidateOutstanding(userId, purpose);
     await this.sweepSpent(userId);
 
-    const token = randomBytes(32).toString('base64url');
+    const token = newToken();
     const expiresAt = new Date(Date.now() + this.ttls[purpose]);
 
     await this.db.insert(authTokens).values({
-      tokenHash: this.hashToken(token),
+      tokenHash: hashToken(token),
       userId,
       purpose,
       expiresAt,
@@ -104,7 +104,7 @@ export class AuthTokenService {
       .set({ consumedAt: new Date() })
       .where(
         and(
-          eq(authTokens.tokenHash, this.hashToken(token)),
+          eq(authTokens.tokenHash, hashToken(token)),
           eq(authTokens.purpose, purpose),
           isNull(authTokens.consumedAt),
           gt(authTokens.expiresAt, new Date()),
@@ -163,10 +163,10 @@ export class AuthTokenService {
         ),
       );
 
-    const token = randomBytes(32).toString('base64url');
+    const token = newToken();
 
     await executor.insert(authTokens).values({
-      tokenHash: this.hashToken(token),
+      tokenHash: hashToken(token),
       invitationId,
       purpose: 'invitation',
       expiresAt,
@@ -184,7 +184,7 @@ export class AuthTokenService {
     const [row] = await this.db
       .select({ invitationId: authTokens.invitationId })
       .from(authTokens)
-      .where(this.liveInvitation(token));
+      .where(this.liveInvitation(token, 'invitation'));
 
     return row?.invitationId ?? null;
   }
@@ -201,7 +201,7 @@ export class AuthTokenService {
     const [row] = await executor
       .update(authTokens)
       .set({ consumedAt: new Date() })
-      .where(this.liveInvitation(token))
+      .where(this.liveInvitation(token, 'invitation'))
       .returning({ invitationId: authTokens.invitationId });
 
     return row?.invitationId ?? null;
@@ -227,10 +227,47 @@ export class AuthTokenService {
       );
   }
 
-  private liveInvitation(token: string) {
+  /**
+   * The organization invitation a live link is for, spending nothing, as
+   * findInvitation() does for one to join (ADR-078). Null for anything
+   * not live, all alike. The command issues these links itself, through
+   * token-hash.ts, since it runs outside Nest.
+   */
+  async findOrganizationInvitation(token: string): Promise<string | null> {
+    const [row] = await this.db
+      .select({ id: authTokens.organizationInvitationId })
+      .from(authTokens)
+      .where(this.liveInvitation(token, 'organization_invitation'));
+
+    return row?.id ?? null;
+  }
+
+  /**
+   * Validates and spends an organization invitation's link in one
+   * statement, as consumeInvitation() does: two clicks on Set up start
+   * one organization.
+   */
+  async consumeOrganizationInvitation(
+    executor: Executor,
+    token: string,
+  ): Promise<string | null> {
+    const [row] = await executor
+      .update(authTokens)
+      .set({ consumedAt: new Date() })
+      .where(this.liveInvitation(token, 'organization_invitation'))
+      .returning({ id: authTokens.organizationInvitationId });
+
+    return row?.id ?? null;
+  }
+
+  /** A live link of either invitation's kind (ADR-077, ADR-078). */
+  private liveInvitation(
+    token: string,
+    purpose: Exclude<AuthTokenPurpose, AccountTokenPurpose>,
+  ) {
     return and(
-      eq(authTokens.tokenHash, this.hashToken(token)),
-      eq(authTokens.purpose, 'invitation'),
+      eq(authTokens.tokenHash, hashToken(token)),
+      eq(authTokens.purpose, purpose),
       isNull(authTokens.consumedAt),
       gt(authTokens.expiresAt, new Date()),
     );

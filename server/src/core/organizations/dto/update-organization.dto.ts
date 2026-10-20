@@ -15,6 +15,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 
+import { ORGANIZATION_NAME_MAX_LENGTH } from '../../../common/dto/account-rules';
 import { IsCurrencyCode } from '../../../common/dto/currency';
 import { IsLocale } from '../../../common/dto/locale';
 import { IsTimeZone } from '../../../common/dto/time-zone';
@@ -47,7 +48,7 @@ export class UpdateOrganizationDto {
   @trim()
   @IsString()
   @MinLength(1)
-  @MaxLength(100)
+  @MaxLength(ORGANIZATION_NAME_MAX_LENGTH)
   name?: string;
 
   /**

@@ -12,6 +12,7 @@ import type {
   OrganizationProfile,
   PriceList,
   ProductionRun,
+  RegistrationSetting,
   ReturnAuthorizationLine,
   ReturnAuthorizationSummary,
   RunDetail,
@@ -97,3 +98,6 @@ export type NumberingReset = NumberingSeries['reset'];
 
 /** The kinds of record an audit entry's reference links to (ADR-076). */
 export type AuditLinkKind = AuditLink['kind'];
+
+/** Who may create an organization here (ADR-078): anyone, or by invitation. */
+export type Registration = RegistrationSetting['registration'];

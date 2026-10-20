@@ -32,6 +32,7 @@ import {
   files,
   memberships,
   notifications,
+  organizationInvitations,
   organizations,
   recentRecords,
   roles,
@@ -462,7 +463,7 @@ export class AccountDeletionService {
       // Keep my account that came first has cleared the day, and one that
       // comes now waits for this to finish, and finds nothing to keep.
       const [user] = await tx
-        .select({ photoFileId: users.photoFileId })
+        .select({ email: users.email, photoFileId: users.photoFileId })
         .from(users)
         .where(and(eq(users.id, userId), dueBy(now)))
         .for('update');
@@ -503,10 +504,27 @@ export class AccountDeletionService {
       await tx.delete(accountEvents).where(eq(accountEvents.userId, userId));
       await tx.delete(notifications).where(eq(notifications.userId, userId));
 
+      const erased = `deleted-${userId}@invalid`;
+      // An organization invitation they accepted stays with the
+      // organization it started (ADR-078), so it takes the same
+      // placeholder as the account rather than keep the address.
+      await tx
+        .update(organizationInvitations)
+        .set({ email: erased })
+        .where(
+          and(
+            eq(
+              sql`lower(${organizationInvitations.email})`,
+              user.email.toLowerCase(),
+            ),
+            isNotNull(organizationInvitations.acceptedAt),
+          ),
+        );
+
       await tx
         .update(users)
         .set({
-          email: `deleted-${userId}@invalid`,
+          email: erased,
           name: DELETED_NAME,
           passwordHash: null,
           locale: null,

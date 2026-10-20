@@ -46,3 +46,41 @@ describe('validateEnv, FILES_S3_ENDPOINT', () => {
     ).toThrow(/FILES_S3_ENDPOINT: .*FILES_BUCKET/);
   });
 });
+
+/**
+ * ADR-078's two settings: a typo in either fails at boot, rather than
+ * quietly meaning the default or telling nobody.
+ */
+describe('validateEnv, REGISTRATION and OPERATOR_EMAIL', () => {
+  it('takes open or invitation, and leaves REGISTRATION unset when it is', () => {
+    expect(
+      validateEnv({ ...REQUIRED, REGISTRATION: 'open' }).REGISTRATION,
+    ).toBe('open');
+    expect(
+      validateEnv({ ...REQUIRED, REGISTRATION: 'invitation' }).REGISTRATION,
+    ).toBe('invitation');
+    expect(validateEnv(REQUIRED).REGISTRATION).toBeUndefined();
+  });
+
+  it('refuses any other REGISTRATION, naming it', () => {
+    expect(() => validateEnv({ ...REQUIRED, REGISTRATION: 'closed' })).toThrow(
+      /REGISTRATION/,
+    );
+  });
+
+  it('takes an address for OPERATOR_EMAIL, and counts empty as unset', () => {
+    expect(
+      validateEnv({ ...REQUIRED, OPERATOR_EMAIL: 'ops@example.com' })
+        .OPERATOR_EMAIL,
+    ).toBe('ops@example.com');
+    expect(
+      validateEnv({ ...REQUIRED, OPERATOR_EMAIL: '' }).OPERATOR_EMAIL,
+    ).toBeUndefined();
+  });
+
+  it('refuses an OPERATOR_EMAIL that is not an address, naming it', () => {
+    expect(() =>
+      validateEnv({ ...REQUIRED, OPERATOR_EMAIL: 'ops-at-example' }),
+    ).toThrow(/OPERATOR_EMAIL/);
+  });
+});

@@ -96,8 +96,12 @@ const NOT_AUDITED = new Map<string, string>([
     'Reads only, spending nothing: a POST so that a mail scanner fetching the link cannot open it (ADR-077)',
   ],
   [
+    'OrganizationStartController.start',
+    'Account events, as registration: the organization does not exist until it has run (ADR-022, ADR-078)',
+  ],
+  [
     'InvitationsController.accept',
-    'Audited by the service, with the new member as its actor: the route is public, and the actor exists only once it has run (ADR-077)',
+    'An invitation to join is audited by the service, with the new member as its actor: the route is public, and the actor exists only once it has run (ADR-077). An organization invitation is not: the organization it starts begins with an empty log, as after registration (ADR-078)',
   ],
   [
     'InvoicesController.previewCredit',

@@ -109,9 +109,36 @@ export class InvitationPreview {
 }
 
 /**
- * POST /invitations/read. Null for a link used, expired or revoked, all
- * alike, so an old or guessed link says nothing more.
+ * An organization invitation as its page shows it (ADR-078), and nothing
+ * more: the organization it starts, as the operator named it, and the
+ * Owner's role in words. No inviter and no note: the operator's own
+ * message carries both.
+ */
+export class OrganizationInvitationPreview {
+  /** The address it is for, which the page shows and does not let change. */
+  email!: string;
+  /** The organization it starts, renamed on Profile afterwards. */
+  organizationName!: string;
+  /** The Owner's role, in words, in the request's language. */
+  role!: InvitationRole;
+  /**
+   * The link's last day, YYYY-MM-DD: it works until that day has ended
+   * everywhere, there being no organization's zone yet.
+   */
+  lastDay!: string;
+  /** Decides between creating an account and signing in to set it up. */
+  hasAccount!: boolean;
+  /** The language the page starts in, the operator's choice. */
+  locale!: Locale;
+}
+
+/**
+ * POST /invitations/read: an invitation to join (ADR-077) or an
+ * organization invitation (ADR-078), at most one of the two set. Both null
+ * for a link used, expired or revoked, all alike, so an old or guessed
+ * link says nothing more.
  */
 export class InvitationRead {
   invitation!: InvitationPreview | null;
+  organizationInvitation!: OrganizationInvitationPreview | null;
 }

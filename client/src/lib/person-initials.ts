@@ -94,6 +94,35 @@ export function initialsOf(name: string | null, email?: string | null): string {
 }
 
 /**
+ * What an organization without a logo shows (ADR-078), by a rule of its
+ * own: a company's name is not a person's, and most end the same way,
+ * 有限公司 or Ltd., which a person's rule would take.
+ *
+ * - **Starting in Chinese**: its first two Chinese characters. 海港草本有限公司
+ *   gives 海港, 青禾贸易 gives 青禾.
+ * - **Otherwise**: the first letters of its first two words, or one letter
+ *   for a name of one word. Reid Supply Co. gives RS, Acme gives A.
+ */
+export function organizationInitialsOf(name: string): string {
+  const words = name
+    .split(/\s+/)
+    .map(lettersOf)
+    .filter((letters) => letters.length > 0);
+  if (words.length === 0) return '?';
+  if (HAN.test(words[0][0])) {
+    return words
+      .flat()
+      .filter((g) => HAN.test(g))
+      .slice(0, 2)
+      .join('');
+  }
+  return words
+    .slice(0, 2)
+    .map((word) => capital(word[0]))
+    .join('');
+}
+
+/**
  * The language initials are written in, for their element's `lang`:
  * Chinese characters are marked Chinese, so a screen reader reads them in
  * a Chinese voice on an English page. The rest follow the page's.

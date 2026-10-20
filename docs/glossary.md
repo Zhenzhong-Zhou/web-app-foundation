@@ -43,6 +43,9 @@ offers either language (MC-1405).
 | Price list | Liste de prix | 价目表 | |
 | Tax code | Code de taxe | 税码 | |
 | Organization | Organisation | 组织 | The tenant: a company using the app. |
+| Invitation | Invitation | 邀请 | To join an organization that exists (ADR-077). The page calls an organization invitation one too. |
+| Organization invitation | Invitation à créer une organisation | 创建组织的邀请 | The operator's link to set up a new organization, as its Owner (ADR-078). The page says Set up / Créer / 创建. |
+| Start an organization | Créer une organisation | 创建组织 | An account with no organization making one, where registration is open (ADR-078). |
 | Sign in / Sign out | Se connecter / Se déconnecter | 登录 / 退出登录 | |
 | Email (address) | Courriel | 电子邮箱 | Quebec usage. |
 
@@ -51,8 +54,9 @@ offers either language (MC-1405).
 - **Apostrophes:** use ’ (U+2019) in translations, never '. An ASCII
   apostrophe is ICU's escape character and can swallow a placeholder.
 - **French (Canada):** Quebec typography, as the Office québécois de la
-  langue française recommends: no space before ? or !, a non-breaking space
-  before : and inside « ». Vouvoiement throughout.
+  langue française recommends: no space before ?, ! or ;, a non-breaking
+  space before : and inside « ». Vouvoiement throughout. This holds in the
+  client's and the server's catalogues alike.
 - **Simplified Chinese:** full-width punctuation (，。？：), a space between
   Chinese and a Latin word or a number only where it reads better, none
   around full-width punctuation.

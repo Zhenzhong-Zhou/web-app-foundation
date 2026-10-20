@@ -42,6 +42,62 @@ goes for `BACKUP_S3_ENDPOINT` in GitHub's secrets, which nothing checks.
 
 For development and testing, all of that is acceptable.
 
+## Registration and organization invitations (ADR-078)
+
+Production takes new organizations by invitation. Two settings on the web
+service, under Environment; saving redeploys it:
+
+- **`REGISTRATION=invitation`.** Unset means the same in production, but
+  set it, so the dashboard says what production does. `open` turns the
+  sign-up form on, as for a public demo.
+- **`OPERATOR_EMAIL`**, optional: the inbox told by email whenever an
+  organization invitation is accepted. Leave it unset to be told nothing,
+  and use `--list` instead.
+
+A mistyped value fails the deploy at boot, and Render keeps the previous
+deploy running: check the deploy log after saving.
+
+### Inviting an organization
+
+From your laptop, since the free web service has no shell, once the
+deploy that added migration 0069 is live; before then it says the
+database's migrations stop before 0069, and writes nothing.
+
+1. In `server/`, run `npm run org:invite`. It asks each question: the
+   person's email, the organization's name, the language (1, 2 or 3;
+   English when left empty), then the app's address and the database's,
+   unless the shell sets `CLIENT_URL` or `DATABASE_URL`. A wrong answer
+   is said and asked again; Ctrl-C or Ctrl-D at any question cancels, and
+   nothing is written.
+2. **The app's address** is the static site's, `CLIENT_URL` as the web
+   service has it, such as `https://<your site>.onrender.com`.
+3. **The database's address** is the database's External Database URL,
+   from its Connect panel, with `?sslmode=no-verify` on the end, as the
+   backup secret has it. Paste it at the prompt: it is not shown and not
+   kept in the shell's history. The command never reads `.env`, so it
+   cannot write to the development database by mistake; never put the
+   production address there. If it times out, check that the database's
+   Access Control lets your address in.
+4. It refuses an address that already belongs to an organization.
+   Otherwise it shows the database's host and name, the app, the address,
+   the name and the language, and asks before writing: anything but y or
+   yes writes nothing. It prints the link and its last day, then a
+   message in the invitation's language with the link under it: paste
+   that message whole into a chat or an email of your own. Nothing is
+   emailed.
+
+`npm run org:invite -- --email … --name "…"` does the same on one line,
+English unless `--language` says otherwise (`fr-CA` or `zh-Hans`). Run it
+again for the same address to replace a waiting invitation: it asks
+first, the old link stops working, and the new one has seven days.
+`--list` shows what is waiting, what ended unaccepted (run again to send
+a new link) and what was accepted, the last two for 30 days;
+`--revoke --email …` ends one, after asking. `--help` shows each way to
+run it.
+
+An organization invited onto the free database goes with it when the
+database expires: a real customer waits for the paid one.
+
 ## When the free database expires
 
 Start empty. Nothing on the free database is real data; restoring the last

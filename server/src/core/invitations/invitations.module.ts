@@ -9,6 +9,7 @@ import { InvitationsController } from './invitations.controller';
 import { InvitationsService } from './invitations.service';
 import { InvitationsSweepService } from './invitations-sweep.service';
 import { InvitationsSweepTimer } from './invitations-sweep.timer';
+import { OrganizationInvitationAcceptanceService } from './organization-invitation-acceptance.service';
 
 @Module({
   // AuthModule for the tokens, sessions, passwords and account events an
@@ -19,6 +20,7 @@ import { InvitationsSweepTimer } from './invitations-sweep.timer';
   providers: [
     InvitationsService,
     InvitationAcceptanceService,
+    OrganizationInvitationAcceptanceService,
     InvitationsSweepService,
     InvitationsSweepTimer,
   ],

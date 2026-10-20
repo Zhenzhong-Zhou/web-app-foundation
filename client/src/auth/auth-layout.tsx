@@ -1,5 +1,5 @@
 import { Box, Container, Paper, Stack, Typography } from '@mui/material';
-import type { ReactNode, SubmitEvent } from 'react';
+import type { ReactNode, Ref, SubmitEvent } from 'react';
 
 import { LanguageSelect } from '../components/language-select';
 import { TextSizeSelect } from '../components/text-size-select';
@@ -14,12 +14,16 @@ import { TextSizeSelect } from '../components/text-size-select';
  */
 export function AuthLayout({
   title,
+  titleRef,
   above,
   notice,
   onSubmit,
   children,
 }: {
-  title: string;
+  /** Left out only while a page is read, before it knows its heading. */
+  title?: string;
+  /** For a page that moves focus to its heading, so it is announced. */
+  titleRef?: Ref<HTMLHeadingElement>;
   /** Before the heading: who a page is for, as an invitation's organization. */
   above?: ReactNode;
   /** Under the language choice: what came of a change made there. */
@@ -47,9 +51,17 @@ export function AuthLayout({
       {notice && <Box sx={{ mb: 2 }}>{notice}</Box>}
       <Paper sx={{ p: 4 }} elevation={0} variant="outlined">
         {above && <Box sx={{ mb: 2 }}>{above}</Box>}
-        <Typography variant="h5" component="h1" sx={{ mb: 3 }}>
-          {title}
-        </Typography>
+        {title && (
+          <Typography
+            ref={titleRef}
+            tabIndex={titleRef ? -1 : undefined}
+            variant="h5"
+            component="h1"
+            sx={{ mb: 3 }}
+          >
+            {title}
+          </Typography>
+        )}
 
         <Box component={onSubmit ? 'form' : 'div'} onSubmit={onSubmit}>
           <Stack spacing={2}>{children}</Stack>

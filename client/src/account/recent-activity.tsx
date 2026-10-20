@@ -27,7 +27,9 @@ interface AccountEvent {
 }
 
 /**
- * Wording for the seven account events (ADR-022).
+ * Wording for the account events (ADR-022): leaving an organization and
+ * asking for the account's deletion or keeping it (ADR-069), joining one
+ * (ADR-077) and starting one (ADR-078) among them.
  *
  * A closed map rather than derived text, unlike the audit log's: this list is
  * fixed and small, and the phrasing matters more — somebody is reading it to
@@ -70,6 +72,26 @@ const ACTION_LABELS = defineMessages({
   'account.verification_resent': {
     id: 'account.activity.verificationResent',
     defaultMessage: 'Verification email resent',
+  },
+  'account.deletion_requested': {
+    id: 'account.activity.deletionRequested',
+    defaultMessage: 'Account deletion requested',
+  },
+  'account.deletion_cancelled': {
+    id: 'account.activity.deletionCancelled',
+    defaultMessage: 'Account deletion cancelled',
+  },
+  'account.left_organization': {
+    id: 'account.activity.leftOrganization',
+    defaultMessage: 'Left an organization',
+  },
+  'account.invitation_accepted': {
+    id: 'account.activity.invitationAccepted',
+    defaultMessage: 'Joined an organization',
+  },
+  'account.organization_started': {
+    id: 'account.activity.organizationStarted',
+    defaultMessage: 'Started an organization',
   },
 });
 

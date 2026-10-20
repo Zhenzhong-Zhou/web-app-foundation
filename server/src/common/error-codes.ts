@@ -91,6 +91,12 @@ export const ERROR_CODES = {
    * accepting with.
    */
   invitationEnded: 'invitation_ended',
+  /**
+   * New organizations come by invitation on this deployment (ADR-078):
+   * the sign-up form and Start an organization are refused, before either
+   * reads anything, and the screen explains how to get an invitation.
+   */
+  registrationClosed: 'registration_closed',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

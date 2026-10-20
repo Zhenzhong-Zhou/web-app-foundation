@@ -7,17 +7,19 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { type SubmitEvent, useState } from 'react';
-import { useIntl } from 'react-intl';
+import { type ReactNode, type SubmitEvent, useState } from 'react';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { PasswordField } from '../components/password-field';
 import { api, ApiError } from '../lib/api';
-import { KEEP_SIGNED_IN, SIGNED_OUT_REASON } from '../lib/session-keys';
+import { SIGNED_OUT_REASON } from '../lib/session-keys';
 import { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH } from '../lib/validation';
 import { AuthLayout } from './auth-layout';
 import { authMessageFor } from './auth-message';
 import { useAuth } from './use-auth';
+import { useKeepSignedIn } from './use-keep-signed-in';
+import { useRegistration } from './use-registration';
 
 export function LoginPage() {
   const intl = useIntl();
@@ -25,6 +27,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [registration] = useRegistration();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -35,9 +38,8 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   // Remembered by this browser: unticked once on a shared computer, it
   // starts unticked there next time (ADR-065).
-  const [keepSignedIn, setKeepSignedIn] = useState(
-    () => window.localStorage.getItem(KEEP_SIGNED_IN) !== 'false',
-  );
+  const [keepSignedIn, setKeepSignedIn, rememberKeepSignedIn] =
+    useKeepSignedIn();
   // Signed out for inactivity: said once, then forgotten.
   const [idleMinutes] = useState(() => {
     const reason = window.sessionStorage.getItem(SIGNED_OUT_REASON);
@@ -56,7 +58,7 @@ export function LoginPage() {
         method: 'POST',
         body: JSON.stringify({ email, password, keepSignedIn }),
       });
-      window.localStorage.setItem(KEEP_SIGNED_IN, String(keepSignedIn));
+      rememberKeepSignedIn();
 
       // The login response carries { user }; /auth/me carries user,
       // organization and permissions. Reading through keeps one shape and one
@@ -198,12 +200,31 @@ export function LoginPage() {
         })}
       </Link>
 
-      <Link component={RouterLink} to="/register" variant="body2">
-        {intl.formatMessage({
-          id: 'auth.createAnAccount',
-          defaultMessage: 'Create an account',
-        })}
-      </Link>
+      {/* By invitation, no form to create an account: the way to learn
+          how to get one instead (ADR-078). Nothing while it is read. */}
+      {registration === 'open' && (
+        <Link component={RouterLink} to="/register" variant="body2">
+          {intl.formatMessage({
+            id: 'auth.createAnAccount',
+            defaultMessage: 'Create an account',
+          })}
+        </Link>
+      )}
+      {registration === 'invitation' && (
+        <Typography variant="body2" color="text.secondary">
+          <FormattedMessage
+            id="auth.login.byInvitation"
+            defaultMessage="New here? Accounts start from an invitation. <link>How to get one</link>"
+            values={{
+              link: (chunks: ReactNode[]) => (
+                <Link component={RouterLink} to="/register">
+                  {chunks}
+                </Link>
+              ),
+            }}
+          />
+        </Typography>
+      )}
     </AuthLayout>
   );
 }

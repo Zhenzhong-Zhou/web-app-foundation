@@ -8,6 +8,7 @@ import {
 
 import {
   NAME_MAX_LENGTH,
+  ORGANIZATION_NAME_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
 } from '../../../common/dto/account-rules';
@@ -40,7 +41,7 @@ export class RegisterDto {
   @trim()
   @IsString()
   @MinLength(1)
-  @MaxLength(100)
+  @MaxLength(ORGANIZATION_NAME_MAX_LENGTH)
   organizationName!: string;
 
   /**

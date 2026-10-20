@@ -16,6 +16,8 @@ import { AuthTokenService } from './auth-token.service';
 import { OrganizationDeletionController } from './organization-deletion.controller';
 import { OrganizationDeletionService } from './organization-deletion.service';
 import { OrganizationDeletionTimer } from './organization-deletion.timer';
+import { OrganizationStartController } from './organization-start.controller';
+import { OrganizationStartService } from './organization-start.service';
 import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
 import { SessionContextMiddleware } from './session-context.middleware';
@@ -27,6 +29,7 @@ import { SessionContextMiddleware } from './session-context.middleware';
     AuthController,
     AccountController,
     OrganizationDeletionController,
+    OrganizationStartController,
   ],
   providers: [
     AuthService,
@@ -43,6 +46,8 @@ import { SessionContextMiddleware } from './session-context.middleware';
     // they share the deletion day, the emails and the only member's account.
     OrganizationDeletionService,
     OrganizationDeletionTimer,
+    // Starting one (ADR-078), an account's act before any organization.
+    OrganizationStartService,
   ],
   // Exported for the guard, and for password-change flows that must revoke
   // other sessions (ADR-011). AuthTokenService is exported so admin-created

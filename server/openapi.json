@@ -22,6 +22,27 @@
         ]
       }
     },
+    "/v1/auth/registration": {
+      "get": {
+        "operationId": "AuthController_registration_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationSetting"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/v1/auth/register": {
       "post": {
         "operationId": "AuthController_register_v1",
@@ -500,6 +521,78 @@
         },
         "tags": [
           "OrganizationDeletion"
+        ]
+      }
+    },
+    "/v1/organization": {
+      "post": {
+        "operationId": "OrganizationStartController_start_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartOrganizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthenticatedUserEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "OrganizationStart"
+        ]
+      },
+      "get": {
+        "operationId": "OrganizationController_get_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Organization"
+        ]
+      },
+      "patch": {
+        "operationId": "OrganizationController_update_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Organization"
         ]
       }
     },
@@ -2393,49 +2486,6 @@
         },
         "tags": [
           "ProductLicences"
-        ]
-      }
-    },
-    "/v1/organization": {
-      "get": {
-        "operationId": "OrganizationController_get_v1",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OrganizationEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Organization"
-        ]
-      },
-      "patch": {
-        "operationId": "OrganizationController_update_v1",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateOrganizationDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Organization"
         ]
       }
     },
@@ -7977,6 +8027,21 @@
           "permissions"
         ]
       },
+      "RegistrationSetting": {
+        "type": "object",
+        "properties": {
+          "registration": {
+            "type": "string",
+            "enum": [
+              "open",
+              "invitation"
+            ]
+          }
+        },
+        "required": [
+          "registration"
+        ]
+      },
       "RegisterDto": {
         "type": "object",
         "properties": {
@@ -8598,6 +8663,22 @@
         },
         "required": [
           "deletionScheduledAt"
+        ]
+      },
+      "StartOrganizationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "timeZone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
         ]
       },
       "Role": {
@@ -9634,6 +9715,42 @@
           "locale"
         ]
       },
+      "OrganizationInvitationPreview": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/InvitationRole"
+          },
+          "lastDay": {
+            "type": "string"
+          },
+          "hasAccount": {
+            "type": "boolean"
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr-CA",
+              "zh-Hans"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "organizationName",
+          "role",
+          "lastDay",
+          "hasAccount",
+          "locale"
+        ]
+      },
       "InvitationRead": {
         "type": "object",
         "properties": {
@@ -9646,10 +9763,21 @@
                 "type": "null"
               }
             ]
+          },
+          "organizationInvitation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrganizationInvitationPreview"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
-          "invitation"
+          "invitation",
+          "organizationInvitation"
         ]
       },
       "AcceptInvitationDto": {
@@ -9680,6 +9808,9 @@
           },
           "keepSignedIn": {
             "type": "boolean"
+          },
+          "timeZone": {
+            "type": "string"
           }
         },
         "required": [
@@ -18505,7 +18636,8 @@
           "email_unverified",
           "invitations_daily_limit",
           "account_deletion_scheduled",
-          "invitation_ended"
+          "invitation_ended",
+          "registration_closed"
         ]
       },
       "ApiVocabulary": {

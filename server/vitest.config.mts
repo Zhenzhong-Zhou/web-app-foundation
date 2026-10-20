@@ -40,6 +40,9 @@ export default defineConfig({
           name: 'e2e',
           include: ['test/**/*.e2e-spec.ts'],
           globalSetup: ['./test/global-setup.ts'],
+          // Open whatever the root .env says (ADR-078): every suite registers
+          // its organizations, and the app reads .env only for what is unset.
+          env: { REGISTRATION: 'open' },
           // One file at a time, as --runInBand did: every suite truncates
           // the one test database before each of its tests.
           fileParallelism: false,

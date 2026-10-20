@@ -48,6 +48,10 @@ const SELF_SERVICE = new Map<string, string>([
   ['AccountController.requestDeletion', 'Deleting your own account (ADR-069)'],
   ['AccountController.cancelDeletion', 'As above'],
   ['AccountController.exportData', 'Your own data (ADR-069)'],
+  [
+    'OrganizationStartController.start',
+    'Starting an organization for your own account, which has none (ADR-078)',
+  ],
   ['WorkController.details', 'Your own details at work (ADR-063)'],
   ['WorkController.updateDetails', 'As above'],
   [
