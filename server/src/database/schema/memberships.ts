@@ -56,6 +56,16 @@ export const memberships = pgTable(
      */
     lastActiveAt: timestamp('last_active_at', { withTimezone: true }),
 
+    /**
+     * The welcome on Home (ADR-079): when this member dismissed it (null:
+     * not dismissed). The membership's, since someone in two organizations
+     * is a newcomer in each; set and cleared by the person alone, and not
+     * audited, as it changes only what they see.
+     */
+    welcomeDismissedAt: timestamp('welcome_dismissed_at', {
+      withTimezone: true,
+    }),
+
     ...timestamps,
   },
   (t) => [
