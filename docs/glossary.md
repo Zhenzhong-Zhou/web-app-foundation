@@ -54,8 +54,9 @@ offers either language (MC-1405).
 - **Apostrophes:** use ’ (U+2019) in translations, never '. An ASCII
   apostrophe is ICU's escape character and can swallow a placeholder.
 - **French (Canada):** Quebec typography, as the Office québécois de la
-  langue française recommends: no space before ? or !, a non-breaking space
-  before : and inside « ». Vouvoiement throughout.
+  langue française recommends: no space before ?, ! or ;, a non-breaking
+  space before : and inside « ». Vouvoiement throughout. This holds in the
+  client's and the server's catalogues alike.
 - **Simplified Chinese:** full-width punctuation (，。？：), a space between
   Chinese and a Latin word or a number only where it reads better, none
   around full-width punctuation.
