@@ -10,11 +10,13 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 
+import { registrationMode } from '../../common/registration';
 import type { Env } from '../../config/env';
 import { isUniqueViolation } from '../../database/errors';
 import { t } from '../../i18n/translate';
@@ -24,6 +26,7 @@ import { CurrentUser } from './current-user.decorator';
 import type {
   AuthenticatedUserEnvelope,
   CurrentSession,
+  RegistrationSetting,
   SentEmail,
   VerifiedEmail,
 } from './dto/auth-response.dto';
@@ -38,6 +41,7 @@ import {
   loginTracker,
 } from './login-throttle';
 import { Public } from './public.decorator';
+import { RegistrationOpenGuard } from './registration-open.guard';
 import type { RequestContext } from './request-context';
 import {
   clearSessionCookieOptions,
@@ -69,14 +73,28 @@ export class AuthController {
   }
 
   /**
+   * Whether the sign-up form is open here (ADR-078): the signed-out pages
+   * hide Create an account, and /register explains, when it is not.
+   */
+  @Public()
+  @Get('registration')
+  registration(): RegistrationSetting {
+    return { registration: registrationMode() };
+  }
+
+  /**
    * Registration is expensive (an argon2 hash plus a multi-statement
    * transaction) and creates rows, so it gets a stricter limit than the global
    * default. ADR-011's email+IP keying applies to *login*; registration has no
    * account to target, so IP alone is the right key here.
+   *
+   * Refused by its guard while organizations come by invitation (ADR-078),
+   * before the body is validated or the address looked up.
    */
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RegistrationOpenGuard)
   @Throttle({ default: { limit: limit(5), ttl: 60_000 } })
   async register(
     @Body() dto: RegisterDto,

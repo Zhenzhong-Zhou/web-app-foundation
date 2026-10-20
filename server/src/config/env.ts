@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { CALENDAR_DAY_INPUTS } from '../common/dto/calendar-day';
+import { REGISTRATION_MODES } from '../common/registration';
 
 /**
  * The single source of truth for environment configuration.
@@ -58,6 +59,19 @@ export const envSchema = z.object({
   // instants. Read per request by IsCalendarDay(); declared here so a typo
   // fails at boot rather than silently meaning strict.
   CALENDAR_DAY_INPUT: z.enum(CALENDAR_DAY_INPUTS).default('strict'),
+
+  // ADR-078: who may create an organization themselves, open or by
+  // invitation. Read per request by registrationMode(), which also decides
+  // what unset means (invitation in production, open elsewhere); declared
+  // here so a typo fails at boot rather than silently meaning the default.
+  REGISTRATION: z.enum(REGISTRATION_MODES).optional(),
+  // ADR-078: the address told of each organization invitation accepted.
+  // Optional; empty counts as unset, so `OPERATOR_EMAIL=` in a file tells
+  // nobody rather than failing boot. Read per request by operatorEmail().
+  OPERATOR_EMAIL: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.email().optional(),
+  ),
 
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),

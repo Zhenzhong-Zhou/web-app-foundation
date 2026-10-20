@@ -168,9 +168,9 @@ Pairs currently being watched rather than extracted:
 - `AuthenticatedUser` and `CurrentSession.user` share four fields and differ in
   the fifth. Extract the shared fields at the third response shape.
 
-Extracted at three: a name's and a new password's limits, which every DTO
-taking them reads from `common/dto/account-rules.ts` as constants (not a shared
-DTO, which the rule above forbids).
+Extracted at three: a name's, a new password's and an organization's name's
+limits, which every DTO taking them reads from `common/dto/account-rules.ts` as
+constants (not a shared DTO, which the rule above forbids).
 
 Test helpers follow the same rule with one addition: extract *knowledge* (a
 library's interface shape, a stub that must match a real service) and leave

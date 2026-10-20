@@ -1,4 +1,5 @@
 import type { Locale } from '../../../common/locales';
+import type { RegistrationMode } from '../../../common/registration';
 import type { OrganizationRail } from '../../../database/schema';
 import type { Permission } from '../../authorization/permissions';
 
@@ -100,6 +101,15 @@ export class AuthenticatedUser {
 /** POST /auth/register and /auth/login. */
 export class AuthenticatedUserEnvelope {
   user!: AuthenticatedUser;
+}
+
+/**
+ * GET /auth/registration (ADR-078): whether the sign-up form is open on
+ * this deployment, for the signed-out pages, which have no setting of
+ * their own.
+ */
+export class RegistrationSetting {
+  registration!: RegistrationMode;
 }
 
 /** POST /auth/verify-email. */

@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { HourlyTimer } from '../../common/hourly-timer';
 import { InvitationsSweepService } from './invitations-sweep.service';
 
-/** Sweeps the invitations ended 30 days ago (ADR-077). */
+/** Sweeps the invitations, and organization invitations, ended 30 days ago (ADR-077, ADR-078). */
 @Injectable()
 export class InvitationsSweepTimer extends HourlyTimer {
   constructor(private readonly invitations: InvitationsSweepService) {

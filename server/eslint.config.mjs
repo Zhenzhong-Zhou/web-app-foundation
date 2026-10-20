@@ -87,6 +87,9 @@ export default tseslint.config(
       // hourly (ADR-077). The rest of core/invitations goes through TenantDb.
       'src/core/invitations/invitation-acceptance.service.ts',
       'src/core/invitations/invitations-sweep.service.ts',
+      // An organization invitation read and accepted by its link, before
+      // the organization it starts exists (ADR-078).
+      'src/core/invitations/organization-invitation-acceptance.service.ts',
     ],
     rules: {
       'no-restricted-imports': [

@@ -45,6 +45,7 @@ import type {
 import { InvitationTokenDto } from './dto/invitation-token.dto';
 import { InvitationAcceptanceService } from './invitation-acceptance.service';
 import { InvitationsService } from './invitations.service';
+import { OrganizationInvitationAcceptanceService } from './organization-invitation-acceptance.service';
 
 /**
  * Invitations (ADR-077). Inviting, listing, resending, copying a link and
@@ -52,12 +53,16 @@ import { InvitationsService } from './invitations.service';
  * and each revoked, is recorded with the address and the role. Reading
  * and accepting are public: the link is the credential, rate limited as
  * verification's and reset's are.
+ *
+ * Reading and accepting serve organization invitations too (ADR-078): one
+ * link shape, `/invitation?token=…`, and the token says which kind.
  */
 @Controller({ path: 'invitations', version: '1' })
 export class InvitationsController {
   constructor(
     private readonly invitations: InvitationsService,
     private readonly acceptance: InvitationAcceptanceService,
+    private readonly organizationAcceptance: OrganizationInvitationAcceptanceService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -145,11 +150,14 @@ export class InvitationsController {
     @Body() dto: InvitationTokenDto,
     @Req() req: Request,
   ): Promise<InvitationRead> {
+    const locale = localeOf(req.headers['accept-language']);
+    const invitation = await this.acceptance.read(dto.token, locale);
     return {
-      invitation: await this.acceptance.read(
-        dto.token,
-        localeOf(req.headers['accept-language']),
-      ),
+      invitation,
+      // An invitation to join is the common case, read first.
+      organizationInvitation: invitation
+        ? null
+        : await this.organizationAcceptance.read(dto.token, locale),
     };
   }
 
@@ -173,14 +181,23 @@ export class InvitationsController {
       language: req.headers['accept-language'],
     };
 
+    // An organization invitation's link starts an organization (ADR-078);
+    // any other, live or not, goes the way an invitation to join does,
+    // where an ended one is refused as ended.
+    const organization = await this.organizationAcceptance.owns(dto.token);
+
     const context = getRequestContext(req);
     if (context) {
       return {
-        user: await this.acceptance.acceptSignedIn(context, dto.token, meta),
+        user: organization
+          ? await this.organizationAcceptance.acceptSignedIn(context, dto, meta)
+          : await this.acceptance.acceptSignedIn(context, dto.token, meta),
       };
     }
 
-    const { user, session } = await this.acceptance.acceptNew(dto, meta);
+    const { user, session } = organization
+      ? await this.organizationAcceptance.acceptNew(dto, meta)
+      : await this.acceptance.acceptNew(dto, meta);
     res.cookie(
       SESSION_COOKIE_NAME,
       session.token,

@@ -102,6 +102,10 @@ export type CurrentSession = {
   idleLimitMs?: number | null;
 };
 
+export type RegistrationSetting = {
+  registration: 'open' | 'invitation';
+};
+
 export type RegisterDto = {
   email: string;
   password: string;
@@ -254,6 +258,11 @@ export type DeleteOrganizationDto = {
 
 export type OrganizationDeletionScheduled = {
   deletionScheduledAt: string;
+};
+
+export type StartOrganizationDto = {
+  name: string;
+  timeZone?: string;
 };
 
 export type Role = {
@@ -504,8 +513,18 @@ export type InvitationPreview = {
   locale: 'en' | 'fr-CA' | 'zh-Hans';
 };
 
+export type OrganizationInvitationPreview = {
+  email: string;
+  organizationName: string;
+  role: InvitationRole;
+  lastDay: string;
+  hasAccount: boolean;
+  locale: 'en' | 'fr-CA' | 'zh-Hans';
+};
+
 export type InvitationRead = {
   invitation: InvitationPreview | null;
+  organizationInvitation: OrganizationInvitationPreview | null;
 };
 
 export type AcceptInvitationDto = {
@@ -514,6 +533,7 @@ export type AcceptInvitationDto = {
   password?: string;
   locale?: 'en' | 'fr-CA' | 'zh-Hans';
   keepSignedIn?: boolean;
+  timeZone?: string;
 };
 
 export type ProductSummary = {
@@ -2747,6 +2767,7 @@ export const ErrorCode = {
   INVITATIONS_DAILY_LIMIT: 'invitations_daily_limit',
   ACCOUNT_DELETION_SCHEDULED: 'account_deletion_scheduled',
   INVITATION_ENDED: 'invitation_ended',
+  REGISTRATION_CLOSED: 'registration_closed',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -2790,6 +2811,20 @@ export type AuthControllerMeV1Responses = {
 
 export type AuthControllerMeV1Response =
   AuthControllerMeV1Responses[keyof AuthControllerMeV1Responses];
+
+export type AuthControllerRegistrationV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/auth/registration';
+};
+
+export type AuthControllerRegistrationV1Responses = {
+  200: RegistrationSetting;
+};
+
+export type AuthControllerRegistrationV1Response =
+  AuthControllerRegistrationV1Responses[keyof AuthControllerRegistrationV1Responses];
 
 export type AuthControllerRegisterV1Data = {
   body: RegisterDto;
@@ -3078,6 +3113,48 @@ export type OrganizationDeletionControllerRequestDeletionV1Responses = {
 
 export type OrganizationDeletionControllerRequestDeletionV1Response =
   OrganizationDeletionControllerRequestDeletionV1Responses[keyof OrganizationDeletionControllerRequestDeletionV1Responses];
+
+export type OrganizationControllerGetV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/organization';
+};
+
+export type OrganizationControllerGetV1Responses = {
+  200: OrganizationEnvelope;
+};
+
+export type OrganizationControllerGetV1Response =
+  OrganizationControllerGetV1Responses[keyof OrganizationControllerGetV1Responses];
+
+export type OrganizationControllerUpdateV1Data = {
+  body: UpdateOrganizationDto;
+  path?: never;
+  query?: never;
+  url: '/v1/organization';
+};
+
+export type OrganizationControllerUpdateV1Responses = {
+  204: void;
+};
+
+export type OrganizationControllerUpdateV1Response =
+  OrganizationControllerUpdateV1Responses[keyof OrganizationControllerUpdateV1Responses];
+
+export type OrganizationStartControllerStartV1Data = {
+  body: StartOrganizationDto;
+  path?: never;
+  query?: never;
+  url: '/v1/organization';
+};
+
+export type OrganizationStartControllerStartV1Responses = {
+  201: AuthenticatedUserEnvelope;
+};
+
+export type OrganizationStartControllerStartV1Response =
+  OrganizationStartControllerStartV1Responses[keyof OrganizationStartControllerStartV1Responses];
 
 export type RolesControllerListV1Data = {
   body?: never;
@@ -4121,34 +4198,6 @@ export type ProductLicencesControllerUpdateV1Responses = {
 
 export type ProductLicencesControllerUpdateV1Response =
   ProductLicencesControllerUpdateV1Responses[keyof ProductLicencesControllerUpdateV1Responses];
-
-export type OrganizationControllerGetV1Data = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/v1/organization';
-};
-
-export type OrganizationControllerGetV1Responses = {
-  200: OrganizationEnvelope;
-};
-
-export type OrganizationControllerGetV1Response =
-  OrganizationControllerGetV1Responses[keyof OrganizationControllerGetV1Responses];
-
-export type OrganizationControllerUpdateV1Data = {
-  body: UpdateOrganizationDto;
-  path?: never;
-  query?: never;
-  url: '/v1/organization';
-};
-
-export type OrganizationControllerUpdateV1Responses = {
-  204: void;
-};
-
-export type OrganizationControllerUpdateV1Response =
-  OrganizationControllerUpdateV1Responses[keyof OrganizationControllerUpdateV1Responses];
 
 export type OrganizationControllerExportAllV1Data = {
   body?: never;

@@ -50,7 +50,7 @@ import { roleWords } from './role-words';
  * The one refusal every link that is not live gets, all alike (ADR-077),
  * with its code, so the page tells it from a field the server refused.
  */
-function ended(): BadRequestException {
+export function ended(): BadRequestException {
   return new BadRequestException(
     withCode(
       t({
@@ -202,16 +202,7 @@ export class InvitationAcceptanceService {
     const invitation = await this.live(token);
 
     if (context.email.toLowerCase() !== invitation.email) {
-      throw new ForbiddenException(
-        t(
-          {
-            id: 'invitations.otherAccount',
-            defaultMessage:
-              'This invitation is for {email}. Sign out, then open the link again.',
-          },
-          { email: invitation.email },
-        ),
-      );
+      throw otherAccount(invitation.email);
     }
 
     const [account] = await this.db
@@ -298,15 +289,7 @@ export class InvitationAcceptanceService {
     meta: EventMeta,
   ): Promise<{ user: AuthenticatedUser; session: NewSession }> {
     const { name, password } = dto;
-    if (!name || !password) {
-      throw new BadRequestException(
-        t({
-          id: 'invitations.nameAndPassword',
-          defaultMessage:
-            'Give your name and choose a password to accept the invitation.',
-        }),
-      );
-    }
+    if (!name || !password) throw nameAndPassword();
 
     const invitation = await this.live(dto.token);
 
@@ -574,8 +557,33 @@ export class InvitationAcceptanceService {
   }
 }
 
+/** Signed in as another address: the page signs out, then opens it again. */
+export function otherAccount(email: string): ForbiddenException {
+  return new ForbiddenException(
+    t(
+      {
+        id: 'invitations.otherAccount',
+        defaultMessage:
+          'This invitation is for {email}. Sign out, then open the link again.',
+      },
+      { email },
+    ),
+  );
+}
+
+/** Accepting with no account takes a name and a password. */
+export function nameAndPassword(): BadRequestException {
+  return new BadRequestException(
+    t({
+      id: 'invitations.nameAndPassword',
+      defaultMessage:
+        'Give your name and choose a password to accept the invitation.',
+    }),
+  );
+}
+
 /** The address has an account: the page signs in, then joins. */
-function signInFirst(): ConflictException {
+export function signInFirst(): ConflictException {
   return new ConflictException(
     t({
       id: 'invitations.signInFirst',

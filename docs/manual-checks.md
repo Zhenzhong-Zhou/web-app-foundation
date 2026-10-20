@@ -1400,6 +1400,18 @@ The invitation page, in a private window unless a check says otherwise:
   no name or address of Sarah's, and the note comes from the
   organization. Its link's page says the same.
 
+## 31. Registration by invitation (ADR-078)
+
+Locally, with the API restarted after each change to the root `.env`.
+
+- **MC-3101** *(ADR-078)* With `REGISTRATION=invitation` in `.env`, fill
+  in the sign-up form and Create account: it is refused, saying new
+  organizations join by invitation, and no account is made (sign in with
+  that address: refused). An address that already has an account is
+  refused the same way, never told it is taken. Set `REGISTRATION=open`
+  and register: it works as before. With the line removed and
+  `NODE_ENV=development`, it is open.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -1725,3 +1737,4 @@ first.
   page instead.
 - 2026-10-19: Getting started's Invite your team (ADR-077): MC-1559
   extended.
+- 2026-10-20: ADR-078, the server: section 31, MC-3101.

@@ -27,8 +27,7 @@ import { escapeHtml } from '../../shared/mail/escape-html';
 import { MailService } from '../../shared/mail/mail.service';
 import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
-import { provisionOrganization } from '../organizations/provision-organization';
-import { uniqueSlug } from '../organizations/slug';
+import { startOrganization } from '../organizations/start-organization';
 import { AccountEventService } from './account-event.service';
 import { AuthTokenService } from './auth-token.service';
 import type { DeletionStage } from './dto/auth-response.dto';
@@ -184,17 +183,10 @@ export class AuthService implements OnModuleInit {
       // ADR-004: user + organization + Owner membership in ONE transaction.
       // A user with no organization has no role, so no permissions, and no way
       // to acquire either — an account that exists but cannot do anything.
-      const slug = await uniqueSlug(tx, input.organizationName);
-      const { organizationId, roleIds } = await provisionOrganization(tx, {
+      const organizationId = await startOrganization(tx, {
         name: input.organizationName,
-        slug,
         timeZone: input.timeZone,
-      });
-
-      await tx.insert(memberships).values({
         userId: created.id,
-        organizationId,
-        roleId: roleIds.Owner,
       });
 
       return { ...created, organizationId };
