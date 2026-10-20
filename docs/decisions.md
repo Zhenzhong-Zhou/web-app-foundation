@@ -5890,9 +5890,10 @@ plan had not chosen.
   before entering real data, from the demo seed. Trigger: a prospective
   customer asking to explore first; it needs its own decision on where the
   sample lives and how it is cleared.
-- **User guides,** linked from each Getting started step and each empty
-  list: short Markdown under `docs/user/`, already raised in the handoff.
-  Trigger: the first customer onboarded without someone beside them.
+- **User guides** — decided in ADR-079, whose registration by invitation
+  made the trigger the normal case: kept with the client rather than under
+  `docs/user/`, one per page, opened by Help in the top bar and by Learn
+  more on each Getting started step and each empty list.
 
 **Amendment (October 2026) — the organization's today (ADR-072).** Home
 took `?today=`, the reader's day, so overdue and expired followed their
@@ -5900,6 +5901,14 @@ calendar. It takes no query now: the server counts from the
 organization's today, which every member shares, and a page left open
 past midnight cannot send yesterday. A reader whose computer is on
 another clock is told which zone Home's date follows.
+
+**Amendment (October 2026) — a newcomer's welcome, and Learn more
+(ADR-079).** Home leads with a newcomer's own welcome card for their first
+two weeks, above Getting started, and `GET /v1/home` returns it as
+`welcome`. Getting started stays the organization's: while it shows, the
+welcome's first week keeps only the newcomer's own two items. Each of its
+steps, and every empty list, gains Learn more, which opens that page's
+guide.
 
 ---
 
@@ -7457,6 +7466,14 @@ belongs to no organization can be invited back, signing in to accept. An
 account in another organization still cannot, so a person still belongs
 to one, and "A block in another organization" stays deferred: its trigger
 is now one person in two organizations (ADR-077, *Deferred*).
+
+**Amendment (October 2026) — a session finds its organization again
+(ADR-079, #144).** Leaving moved only the session that left; every other
+session of the account kept pointing at the organization it had left, and
+kept doing so after the account joined or started another. The session
+middleware now repairs a session whose organization is none, or is no
+longer one of the account's memberships, picking one as sign-in does, and
+stores it. A session whose organization is still valid is never moved.
 
 ---
 
@@ -9607,6 +9624,287 @@ reviews, settled:
   changes only on its own device. Left to an issue of its own, in
   ADR-069's area.
 
+**Amendment (October 2026) — the first Owner's first step (ADR-079).**
+Getting started is still unchanged. The newcomer's welcome on Home lists
+Confirm your email address first for the first Owner, with Resend, and
+says that inviting waits for it, until they confirm.
+
+---
+
+## ADR-079 — A newcomer's first sign-in: a welcome on Home, and help on every page (amends ADR-058, ADR-069 and ADR-078)
+
+**Context.** ADR-077 and ADR-078 settled how a person arrives: by a link,
+to an organization that exists or to one they set up. What they meet next
+is the Home everyone has. Nothing says what this account may do here, so a
+Viewer learns it from buttons that are not there and an Admin from being
+refused. The inviter's note was read once, on the invitation page, and is
+gone from sight. The first Owner of an organization the operator invited
+starts unconfirmed (ADR-078), and inviting waits on confirming, which only
+a banner says. And nothing explains a screen: ADR-058 deferred user guides
+until "the first customer onboarded without someone beside them", and
+ADR-078 has made that the normal case, a printed link and nobody beside
+the person who opens it.
+
+This is the third of the three onboarding pieces. What it builds has to
+hold when job roles come (Open decisions), and when one person belongs to
+two organizations (ADR-077, *Deferred*).
+
+Checked before drafting, as the working agreements ask:
+
+- **Fired.** ADR-058's deferred user guides, by the trigger above: taken
+  here, kept with the client rather than under `docs/user/` (below).
+  ADR-078's first Owner, unconfirmed, for whom it left a step to this ADR:
+  taken here. "Job roles" in Open decisions, whose trigger includes this
+  checklist, which with three roles reads as two lists: it fires, and is
+  not taken here, since job roles are already next after the chain and a
+  checklist built from permissions needs no change when they come.
+  ADR-072's watch list, the auth provider's test, which fires because
+  #144's fix touches the auth provider (below).
+- **Not fired, and kept in step.** ADR-058's sample data, a practice
+  organization, which waits on one person in two organizations. ADR-077's
+  deferred items, all unchanged; its "a tour on first sign-in", considered
+  and not done, points here, and this ADR keeps to no tours. ADR-078's
+  Home listing the invitations waiting for an address, which still waits
+  for a lost link. "Changing your own email address": the confirm step
+  shows a mistyped address sooner but cannot fix one, so its trigger
+  stands. "What unverified access should be limited to": unchanged.
+- **Corrected.** The Open decisions entry took the permission descriptions
+  to be translated already. They are not: `PERMISSION_DESCRIPTIONS` is
+  English, seeded into `permissions.description` with
+  `onConflictDoNothing`, and no screen shows it. What a person may do
+  needs words of its own, in the client's catalogues (below).
+- **Open issues.** #144, another device's session keeping an organization
+  the account has left, is in this area and rides along (below). #142, a
+  Content-Security-Policy for the client, keeps its own PR: guides are
+  text bundled with the client, with no images and nothing fetched from
+  elsewhere, so nothing here is one more thing a policy must allow. #129,
+  English left inside translated messages, stays open: the guide check
+  below finds a missing translation, not English inside one.
+
+**Decision — a welcome on Home, the person's own.** A newcomer's first
+page is Home, as everyone's is, and it leads with a card of their own: a
+greeting by name to the organization, the inviter's note, what they can do
+here, and their first week. Not a dialog in front of the page, and not a
+page of its own: the work is right there, and they can start on it at
+once.
+
+- It belongs to the membership, not to the account and not to the
+  organization: someone in two organizations, one day, is a newcomer in
+  each. Getting started (ADR-058) stays the organization's.
+- It shows from joining until the person dismisses it, every item of their
+  first week is done, or two weeks have passed since the membership began,
+  whichever comes first. Two weeks, because a part-timer's first week is a
+  few days. Members from before this ADR joined more than two weeks ago,
+  so none of them sees it.
+- Dismissing is the person's alone and per membership, in
+  `memberships.welcome_dismissed_at` (migration 0070). It changes only
+  what they see, as a recently opened record does (ADR-058), so it is not
+  audited.
+- Whoever started the organization, by registering, by an organization
+  invitation or with Start an organization (ADR-078), has no inviter:
+  their card has no note, and Getting started below it is their real list.
+- In the reader's language (ADR-054). Nothing in it lives in a hover
+  tooltip, which phones and handhelds do not have.
+
+**Decision — what you can do here, from permissions.** One sentence per
+area, for the areas the person may touch: stock and locations; products
+and licences; orders; production; invoices and returns; costs, prices and
+tax; partners; people and the organization. Each sentence is put together
+from what they hold: "see what is on hand and where" for `stock.view`
+alone, "receive, ship and move stock" with `stock.move`, "correct a count"
+with `stock.adjust`. An area they cannot touch is left out, not listed as
+refused.
+
+- Built on the client, from the session's permissions, never from a role's
+  name, so it grows finer with job roles and needs no change when they
+  come. The words are the client's, in its three catalogues (ADR-054): one
+  phrase per permission or group of permissions, joined as each language
+  joins a list (`Intl.ListFormat`). The map is keyed by the generated
+  `Permission` type (ADR-068), so a permission without a phrase does not
+  compile.
+- It ends with whom to ask for more: up to three members who may change
+  roles (`roles.assign`), those who joined first first, by name; never the
+  reader, and nobody for a reader who may change roles. The names come
+  from the server, which alone knows who holds what.
+- The same block sits on Account, under the person's role in this
+  organization, so it outlasts the card.
+- `PERMISSION_DESCRIPTIONS` stays as it is, English, in the database:
+  nothing a person reads comes from it.
+
+**Decision — the inviter's note.** The note an inviter wrote (ADR-077)
+shows on the card as typed, plain text, under the inviter's name and photo
+or initials (ADR-063). It is read from the invitation that made the
+membership, which ADR-077 keeps with it for this. Once the inviter has
+left or deleted their account, the note is from the organization, as the
+email and the invitation page already say (ADR-077). No note and no
+inviter for whoever started the organization.
+
+**Decision — the first week, ticked by what the person does.** Up to five
+items, each a short line with a button to where it is done, each ticked by
+what the person has done here since joining, never by hand: a ticked box
+proves nothing, and Getting started ticks the same way (ADR-058).
+
+- **Confirm your email address,** listed for whoever joined unconfirmed:
+  the first Owner from an organization invitation (ADR-078), and whoever
+  accepted a copied link (ADR-077). Ticked once they confirm. Resend
+  beside it, and, for someone who may invite, a line saying inviting waits
+  for it (`email_unverified`). First, since it unlocks the rest.
+- **Say who you are:** a photo or a job title (ADR-063), ticked when
+  either is set.
+- Then the first three of these the person may do, in this order: **look
+  up a product or a lot** (`products.view` or `stock.view`), ticked by
+  opening one, which recently opened already records (ADR-058); **receive
+  stock** (`stock.move`); **raise an order** (`orders.create`); **ship an
+  order** (`orders.ship`); **plan a production run**
+  (`production.create`); **draft an invoice** (`invoices.create`). Those
+  five change something, and each is ticked by the person's own entry in
+  the audit log since joining, read through its actor index. Someone who
+  may do none of the five gets **open an order** (`orders.view`) after the
+  lookup, ticked the same way the lookup is.
+- While Getting started shows on Home, the list keeps only the person's
+  own two items, confirming and saying who they are: the organization's
+  steps are then that member's list, and the same task twice would read as
+  two things to do.
+- Chosen and ticked on the server, from the member's permissions, and sent
+  with Home; the client words each item and links it.
+
+**Decision — help on every page.** One button in the top bar, beside the
+bell, named Help. It opens the guide for the page the person is on, in
+their language: beside the page on a wide screen, so they can follow it
+while they work, and full screen on a phone. While it is open it follows
+them to the next page's guide. At its foot, the guides for every page the
+person can open.
+
+- Learn more on every empty state (`EmptyState`) and on each Getting
+  started step opens the same panel at the right guide, and at the right
+  section of it.
+- No tours pinned to the screen: they break with every change of layout,
+  and the layout changes. No screenshots or video either: they go stale,
+  and would need one per language.
+- The signed-out pages keep their own words, and have no Help.
+
+**Decision — guides with the client, and checked.** Guides change and
+translate with the code, so they live with it, not under `docs/user/` as
+ADR-058 first had it.
+
+- One guide per area of the rail, about twenty, each a Markdown file per
+  language: `client/src/help/guides/<language>/<guide>.md`. Every
+  signed-in route maps to exactly one guide: Orders covers the list, a new
+  order and an order.
+- Loaded when the panel opens, one guide in one language at a time, so no
+  screen downloads them.
+- A fixed subset of Markdown: headings, paragraphs, lists, bold, and links
+  to pages of the app. Drawn by a small renderer of our own, with no raw
+  HTML, no images and nothing fetched, its links the router's. No new
+  dependency: a Markdown library would bring dozens of packages to a
+  client with nine dependencies, for a subset this small.
+- A section that a Learn more opens has an id beside its heading, the same
+  in every language, so the link survives translation.
+- A unit test, run by `npm run verify` and so by CI, fails when a
+  signed-in route has no guide, a guide lacks a language, a guide's
+  languages disagree on its sections, a guide uses Markdown outside the
+  subset, or a link names a page or a section that does not exist. The
+  signed-in routes become a list that `App.tsx` renders, so the test reads
+  the same list the router does.
+
+**Decision — how a guide is written.** Short: what the page is for; the
+few things done there, each as steps; the words met on it, as the glossary
+has them; and why something might be refused. The same for every reader:
+where a control needs a permission, the guide says so ("only someone who
+may issue invoices sees Issue") rather than hiding the section from those
+without it. Plain words, the reader addressed as "you", and no control
+described by its position or colour. English first, written from the
+screens themselves; French and Chinese drafts beside it, beta as the app's
+are (ADR-054), read by someone fluent when one can be found.
+
+**Decision — #144 rides along: a session finds its organization again.** A
+session's organization is set only by its own device, so another device of
+the same account keeps one the account has left. ADR-078 makes that a
+newcomer's problem: someone with no organization, signed in on a phone and
+a laptop, accepts an invitation on the phone, and the laptop's Home still
+offers Start an organization, which the server then refuses. Its own
+commit, ahead of this ADR's server, closing #144.
+
+- When a session's organization is none, or no longer one of the account's
+  memberships, the session middleware picks one as sign-in does, today the
+  oldest membership, and stores it. That covers every way a membership
+  changes at once: leaving, removal, deletion, accepting, starting. A
+  session whose organization is still valid is never moved.
+- The client reads the session again when its window regains focus, so an
+  open page catches up without a reload. That touches the auth provider,
+  so ADR-072's watch list brings its test: the auth provider passing the
+  zone on.
+- Carrying the organization on each request, for one person in two
+  organizations, stays with that ADR (ADR-077, *Deferred*).
+
+**Considered and not done.**
+
+- **A welcome dialog or page on first sign-in.** It stands between the
+  person and the work, is closed unread, and cannot be found again.
+- **A product tour,** pointing at controls one at a time. It breaks
+  whenever the layout changes, and teaches where things are rather than
+  what they are for.
+- **Ticking the first week's items by hand.** It records that someone
+  pressed a box.
+- **Guides on a help site of their own.** They would drift from the code,
+  and be translated apart from it.
+- **What you can do here from the role's description** (ADR-077). Three
+  sentences for three roles: nothing finer once job roles come, and
+  nothing for a role an organization makes.
+- **A Markdown library.** Above.
+
+**Deferred — each with what brings it in.**
+
+- **Searching the guides.** Trigger: enough guides that the list at the
+  panel's foot is slow to scan.
+- **Help on the signed-out pages.** Trigger: a question about signing in,
+  accepting or setting up that the page's own words do not answer.
+- **Asking for help from the panel,** by a message to whoever may change
+  roles, or to support. Trigger: the operator's console and support access
+  (Open decisions).
+- **A first week per job,** "your first week receiving goods". Trigger:
+  job roles.
+- **Screenshots or short videos.** Trigger: a guide that words alone
+  cannot make clear, with a way to keep them current in three languages.
+- **A keyboard shortcut for Help.** Trigger: someone asking for one, with
+  a key that does not collide with typing.
+
+**Consequences.**
+
+- Migration 0070: `memberships.welcome_dismissed_at`.
+- Server, in `modules/home` and `core/auth`: `GET /v1/home` gains
+  `welcome`, null unless the card shows, with the inviter and their note,
+  the first week's items and whether each is done, and the names to ask;
+  `POST /v1/home/welcome/dismiss`, the person's own, with no permission
+  and in `NOT_AUDITED` with its reason; `GET /v1/account/membership`,
+  beside leaving's `DELETE`, the role and the names to ask for Account,
+  from the same function as Home's. `npm run api` after the routes change.
+  Home's perf probe covers a newcomer's Home (ADR-051). E2e tests: who
+  sees the card and until when, each item ticked by its own act, the
+  shorter list while Getting started shows, the note after its inviter has
+  left, dismissing per membership.
+- #144: the session middleware's repair, with the e2e tests the issue
+  lists; the client's read on focus, with its test and the auth provider's
+  zone test.
+- Client: Help and its panel; the renderer, the route list, the guide map
+  and the check; Learn more on empty states and Getting started's steps;
+  the welcome card on Home; what you can do here on Account. Designed on
+  the canvas first: the card for a Viewer, an Admin and a founder not yet
+  confirmed, in English and 中文 on a phone; the panel on a computer and on
+  a phone; the top bar with Help at 320 px and Larger text (ADR-075). Unit
+  tests for the phrases, the renderer and the card; Playwright for the
+  panel following the page, a Learn more and the card; the panel and the
+  card in `accessibility.spec`.
+- The guides, about twenty in each of three languages, a commit of their
+  own.
+- Docs: manual checks section 32, reading the guides in English and 中文
+  among them; the glossary's welcome, first week, Help and guide; the
+  handoff.
+- Build order: this ADR; #144; the server; the client after the design,
+  Help, then the guides, then the welcome; the docs last, after the
+  reviews. Built by Claude Code, a prompt per commit (handoff, *How code
+  is delivered*).
+
 ---
 
 ## Open decisions
@@ -9715,23 +10013,12 @@ they exist so the reasoning is not rediscovered from scratch.
 - **Registration: open, or by invitation** — decided in ADR-078: a
   setting, production by invitation, and organizations from the
   operator's `npm run org:invite`.
-- **A newcomer's first sign-in.** After registration by invitation
-  (ADR-078), whose first Owner starts unconfirmed: a step to confirm the
-  address belongs here, for them. What you can do here, from the
-  permission descriptions (already translated), grouped by area with a
-  sentence each rather than 45 lines; the inviter's note; a short
-  first-week checklist per membership, matched to what the member may do
-  and dismissed per membership (ADR-058's Getting started stays the
-  organization's). Both are built from the member's permissions, never
-  from a role's name, so they grow finer with job roles and need no change
-  when those come. And help: one help button in the header that opens the
-  guide for the page, in the reader's language, with "Learn more" from
-  empty states and Getting started steps, which are ADR-058's deferred
-  user guides. No pinned tours: they break with every change of layout.
-  Nothing essential in hover tooltips, which phones and handhelds do not
-  have. Guides live with the client, so they version and translate with
-  the code, and a check fails when a route has no guide or a guide lacks a
-  language. Most of the cost is writing them.
+- **A newcomer's first sign-in** — decided in ADR-079: a welcome card on
+  Home, the member's own for two weeks, with what they can do here from
+  their permissions, the inviter's note, and a first week ticked by what
+  they do; and Help on every page, its guides kept and checked with the
+  client. The permission descriptions it counted on were never translated,
+  so what a person can do has its own words.
 - **The operator: a console and support access.** Platform staff are not
   a role in any organization: a flag, a guard and routes of their own,
   and a second factor. Read-mostly: organizations, plan, member count,
@@ -9766,7 +10053,9 @@ they exist so the reasoning is not rediscovered from scratch.
   translated key only (ADR-077), `roles.description` holds custom roles'
   descriptions, and the export writes the translated line for system
   roles. Trigger: the first customer whose staff need different access,
-  or the newcomer's checklist, which reads as two lists until then.
+  or the newcomer's checklist, which reads as two lists until then. The
+  checklist came with ADR-079, built from permissions so it needs no
+  change when roles do; job roles are next after the onboarding chain.
 - **Audit filtering in the UI.** `ListAuditDto` accepts action, actorId, from,
   and to; the client sends none of them. Two years of retention (ADR-012)
   makes "load more" a poor way to reach an old entry, but a filter UI designed
