@@ -6,6 +6,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 
+import { NAME_MAX_LENGTH } from '../../../common/dto/account-rules';
 import { IsLocale } from '../../../common/dto/locale';
 import { trim } from '../../../common/dto/trim';
 import type { Locale } from '../../../common/locales';
@@ -28,7 +29,7 @@ export class UpdateProfileDto {
   @trim()
   @IsString()
   @MinLength(1)
-  @MaxLength(100)
+  @MaxLength(NAME_MAX_LENGTH)
   name?: string;
 
   /**

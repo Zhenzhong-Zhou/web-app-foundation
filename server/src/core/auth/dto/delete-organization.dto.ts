@@ -1,5 +1,6 @@
 import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 
+import { PASSWORD_MAX_LENGTH } from '../../../common/dto/account-rules';
 import { trim } from '../../../common/dto/trim';
 
 /** Asking for the organization to be deleted (ADR-070). */
@@ -7,7 +8,7 @@ export class DeleteOrganizationDto {
   // No MinLength, as in delete-account.dto.ts: a 400 for "too short" would
   // answer a question about the stored password before anything is checked.
   @IsString()
-  @MaxLength(128)
+  @MaxLength(PASSWORD_MAX_LENGTH)
   password!: string;
 
   /**

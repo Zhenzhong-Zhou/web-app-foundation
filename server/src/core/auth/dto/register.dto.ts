@@ -6,6 +6,11 @@ import {
   MinLength,
 } from 'class-validator';
 
+import {
+  NAME_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from '../../../common/dto/account-rules';
 import { IsLocale } from '../../../common/dto/locale';
 import { normalizeEmail } from '../../../common/dto/normalize-email';
 import { IsBrowserTimeZone } from '../../../common/dto/time-zone';
@@ -20,26 +25,16 @@ export class RegisterDto {
   @MaxLength(254) // RFC 5321 maximum
   email!: string;
 
-  /**
-   * Length only, no composition rules.
-   *
-   * NIST SP 800-63B advises against mandatory symbol/digit/case requirements:
-   * they push people toward predictable patterns (Password1!) without adding
-   * real entropy. Length is what matters.
-   *
-   * The maximum is a denial-of-service guard, not a security limit — argon2
-   * would happily spend seconds hashing a multi-megabyte string. Unlike
-   * bcrypt, it does not silently truncate.
-   */
+  // Length only, as every new password is (account-rules.ts).
   @IsString()
-  @MinLength(12)
-  @MaxLength(128)
+  @MinLength(PASSWORD_MIN_LENGTH)
+  @MaxLength(PASSWORD_MAX_LENGTH)
   password!: string;
 
   @trim()
   @IsString()
   @MinLength(1)
-  @MaxLength(100)
+  @MaxLength(NAME_MAX_LENGTH)
   name!: string;
 
   @trim()

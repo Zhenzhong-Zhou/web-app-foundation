@@ -6,6 +6,11 @@ import {
   MinLength,
 } from 'class-validator';
 
+import {
+  NAME_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from '../../../common/dto/account-rules';
 import { IsLocale } from '../../../common/dto/locale';
 import { trim } from '../../../common/dto/trim';
 import type { Locale } from '../../../common/locales';
@@ -21,14 +26,14 @@ export class AcceptInvitationDto extends InvitationTokenDto {
   @trim()
   @IsString()
   @MinLength(1)
-  @MaxLength(100)
+  @MaxLength(NAME_MAX_LENGTH)
   name?: string;
 
-  // Registration's rule: length only (register.dto.ts).
+  // Length only, as every new password is (account-rules.ts).
   @IsOptional()
   @IsString()
-  @MinLength(12)
-  @MaxLength(128)
+  @MinLength(PASSWORD_MIN_LENGTH)
+  @MaxLength(PASSWORD_MAX_LENGTH)
   password?: string;
 
   /** The language the page was in, which the new account takes. */
