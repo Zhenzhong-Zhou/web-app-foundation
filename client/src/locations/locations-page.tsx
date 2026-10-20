@@ -96,6 +96,7 @@ export function LocationsPage() {
                 location={location}
                 all={items ?? []}
                 depth={0}
+                canCreate={canCreate}
                 canEdit={canEdit}
                 onEdit={setEditing}
                 onAddress={setAddressing}
