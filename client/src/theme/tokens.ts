@@ -106,6 +106,32 @@ export function towardWhite(hex: string, weight: number): string {
 /** How much of the accent dark mode keeps. */
 export const DARK_ACCENT_WEIGHT = 0.45;
 
+/**
+ * A colour laid over another at `weight` (0 to 1), as an opaque colour:
+ * what the eye sees of a tint on its ground, so its contrast can be
+ * checked.
+ */
+export function mix(colour: string, ground: string, weight: number): string {
+  const channels = (hex: string) => {
+    const value = parseInt(hex.slice(1), 16);
+    return [value >> 16, (value >> 8) & 255, value & 255];
+  };
+  const over = channels(colour);
+  const mixed = channels(ground).map((channel, index) =>
+    Math.round(channel + (over[index] - channel) * weight)
+      .toString(16)
+      .padStart(2, '0'),
+  );
+  return `#${mixed.join('')}`.toUpperCase();
+}
+
+/**
+ * How much of the accent a chosen card's panel takes, such as the role
+ * chosen on Invite (ADR-077): enough to mark it beside its border, little
+ * enough that its text reads as on any panel, whatever the accent.
+ */
+export const CHOSEN_WEIGHT = 0.06;
+
 /** Text on the accent: white on the light accent, near black on the dark. */
 export const ON_ACCENT = { light: '#FFFFFF', dark: '#10141A' } as const;
 

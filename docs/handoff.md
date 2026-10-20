@@ -1,12 +1,73 @@
-# web-app-foundation — handoff, 18 October 2026
+# web-app-foundation — handoff, 19 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 18 October 2026: read this first
+## Now, 19 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
+
+- **Next: onboarding, a chain of three** (Bob's priority, 19 October
+  2026), one PR each, ADR first, each finished before the next begins.
+  Invitations are built; registration by invitation is next.
+  After them, in this order unless a trigger brings one forward, each
+  with its entry in Open decisions: job roles; one person in two
+  organizations, then a practice organization (ADR-077, *Deferred*); a
+  public demo; plans and billing; the operator's console and support
+  access. Not code, and not to slip behind it: Render's free database
+  expires on 12 November 2026 (*Still to do, by hand*).
+    1. **ADR-077, invitations** (`adr-077-invitations`): built, server
+       and client; not merged. Invite replaces Add member, by email or a
+       copied link, each link working to the end of its seventh day in
+       the organization's zone; `POST /v1/users` is gone, and no route
+       sets another person's password. Migration **0068**
+       (`invitations`, and `auth_tokens.invitation_id` in an exclusive
+       arc with `user_id`). Members has Invite and Invited, cards and a
+       full-screen dialog on a phone; the invitation page is among the
+       signed-out pages at `/invitation`; Getting started's seventh step
+       reads Invite your team. Settled while building, each in ADR-077:
+       Admins act on no Owner's invitation; the account takes the
+       invitation page's language; the audit log keeps who invited which
+       address, the 30-day sweep removing the invitation's row alone;
+       `invitations.csv` is in the export, its columns in the README's
+       glossary; a failed send reads Email not sent; an expired
+       invitation still blocks a new one, and Resend starts it again; an
+       account with no organization signs in through sign-in, then
+       accepts, and one due for deletion keeps it first; the mockups'
+       role lines in one voice; the read carries the logo inline and the
+       organization's deletion day; `delivery: "link"` makes an
+       invitation by Copy link with no email; the email is as designed,
+       signed by `MAIL_FROM`'s name; an invitation is the
+       organization's, so once its inviter has left or deleted their
+       account the email and the page name the organization alone; the
+       page names the inviter by address too, as the email does, and an
+       ended link is refused with `invitation_ended`. Settled on the
+       screens, not in the ADR: Revoke asks first; Invited is hidden while nobody is
+       pending; Getting started opens the dialog through `?invite`,
+       which closing takes off; the demo's own accounts start confirmed.
+       The browser suite reads mail back from Mailpit's API (CI maps
+       8025), and confirming an email follows `THROTTLE_FACTOR`. A
+       name's and a new password's limits are constants in
+       `common/dto/account-rules.ts`, the duplication watch having
+       reached three DTOs.
+       - **Before merging:** walk section 30 and MC-1559 on a demo
+         seeded on this branch, in English and 中文, one invitation
+         emailed through Mailpit. A local database that ran 0068 before
+         the Admin role line changed keeps the old line until
+         `update roles set description = 'Day-to-day work: stock,
+         orders, production and drafting invoices. Can add and remove
+         members.' where is_system and name = 'Admin'`; a fresh one
+         needs nothing.
+    2. **Registration by invitation (next):** a setting, open or by
+       invitation; an organization invitation from `npm run org:invite`,
+       its first Owner whoever accepts. Open decisions, "Registration:
+       open, or by invitation". It starts with its ADR, and builds on
+       ADR-077's page, link and token.
+    3. **A newcomer's first sign-in:** what you can do here, the
+       inviter's note, a first-week checklist, a help button with
+       ADR-058's user guides. Open decisions, "A newcomer's first
+       sign-in".
 
 - **ADR-076, the audit log in words (`adr-076-audit-in-words`):** no
   migration; server and client. Every screen with an audit entry (the
@@ -369,6 +430,11 @@ with this one, this one is current.
 
 ### Still to do, in code
 
+- **The client has no Content-Security-Policy.** Nothing in the
+  repository sets one for the static site, and helmet's covers only the
+  API's own responses. One set at Render must allow `data:` images
+  (`img-src 'self' data:`), or the invitation page's logo, which comes
+  inline (ADR-077), will not load.
 - **From ADR-073's review, not its PR's.** Five dialogs still pass a
   result through a ref (create price list, raise RMA, create BOM, add
   order line, RMA detail); `useSubmit`'s success can now take the result
@@ -398,6 +464,21 @@ with this one, this one is current.
     locally with a stale server. A chore of its own, since it lengthens
     CI.
 
+- **ADR-077, watch list:**
+  - tax-codes' "lets Admin and Viewer read but not change codes" timed
+    out once under full-suite load, at Vitest's five seconds, and passes
+    alone in under 200 ms: `addMember` now invites and accepts each
+    member, a few more requests than Add member made. If it recurs, look
+    at what the fixture spends before raising the timeout.
+  - Playwright's global setup once found no confirmation email for its
+    Owner in Mailpit within its ten seconds (`scripts/verify.sh`, 19
+    October 2026), and the same setup passed on the next run. Nothing
+    from that run's API had reached Mailpit, which took mail sent to it
+    directly; a `nest start --watch` dev server on port 3000 was
+    rebuilding `server/dist` at the time, which the API Playwright starts
+    on port 3100 builds too. If it recurs, check whether the e2e API sent
+    the email at all before raising the timeout, and try with no dev
+    server running.
 - **ADR-072, watch list:** each is small, and matters only when its
   moment comes.
   - The next new document passes the organization's zone to
@@ -1184,6 +1265,12 @@ in ADR-050's amendment.
 
 ### How code is delivered
 
+- **Big features (an ADR, server, client) are written in a claude.ai chat
+  and delivered as mbox files,** one per commit, numbered (`0001-`,
+  `0002-`, …) so they apply in order, in one folder, for
+  `git am ~/Downloads/<folder>/*.mbox`. Claude Code applies them, runs
+  `scripts/verify.sh`, fixes what fails, and does code review and small
+  changes.
 - **Every answer that changes files opens with a roadmap:** a tree or
   relative paths, each marked **new**, **full replacement** or **snippet**.
 - **New files, and changes touching several places or a large chunk of one

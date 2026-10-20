@@ -307,9 +307,9 @@ export type NotificationPage = {
 
 export type AuditLink = {
   kind:
+    | 'location'
     | 'role'
     | 'invoice'
-    | 'location'
     | 'order'
     | 'lot'
     | 'product'
@@ -428,26 +428,92 @@ export type Member = {
   lastActiveAt?: string | null;
 };
 
-export type CreateUserDto = {
-  email: string;
-  name: string;
-  password: string;
-  roleId: string;
-};
-
-export type CreatedMember = {
-  id: string;
-  email: string;
-  name: string;
-  roleId: string;
-};
-
-export type UserEnvelope = {
-  user: CreatedMember;
-};
-
 export type UpdateUserDto = {
   roleId: string;
+};
+
+export type InvitationSender = {
+  id: string;
+  name: string;
+};
+
+export type InvitationLinkState = {
+  status: 'emailed' | 'copied' | 'ended' | 'notSent';
+  lastDay: string | null;
+};
+
+export type Invitation = {
+  id: string;
+  email: string;
+  roleId: string;
+  invitedBy: InvitationSender;
+  invitedAt: string;
+  link: InvitationLinkState;
+};
+
+export type CreateInvitationDto = {
+  email: string;
+  roleId: string;
+  locale?: 'en' | 'fr-CA' | 'zh-Hans';
+  note?: string | null;
+  delivery?: 'email' | 'link';
+};
+
+export type CreatedInvitation = {
+  invitation: Invitation;
+  link: string | null;
+};
+
+export type InvitationEnvelope = {
+  invitation: Invitation;
+};
+
+export type CopiedInvitationLink = {
+  invitation: Invitation;
+  link: string;
+};
+
+export type InvitationTokenDto = {
+  token: string;
+};
+
+export type InvitationOrganization = {
+  name: string;
+  logo: string | null;
+  deletionScheduledAt: string | null;
+};
+
+export type InvitationInviter = {
+  name: string;
+  email: string;
+};
+
+export type InvitationRole = {
+  name: string;
+  description: string | null;
+};
+
+export type InvitationPreview = {
+  email: string;
+  organization: InvitationOrganization;
+  inviter: InvitationInviter | null;
+  role: InvitationRole;
+  note: string | null;
+  lastDay: string;
+  hasAccount: boolean;
+  locale: 'en' | 'fr-CA' | 'zh-Hans';
+};
+
+export type InvitationRead = {
+  invitation: InvitationPreview | null;
+};
+
+export type AcceptInvitationDto = {
+  token: string;
+  name?: string;
+  password?: string;
+  locale?: 'en' | 'fr-CA' | 'zh-Hans';
+  keepSignedIn?: boolean;
 };
 
 export type ProductSummary = {
@@ -2581,6 +2647,11 @@ export const AuditAction = {
   MEMBER_REMOVED: 'member.removed',
   MEMBER_LEFT: 'member.left',
   USER_ACCOUNT_DELETED: 'user.account_deleted',
+  INVITATION_SENT: 'invitation.sent',
+  INVITATION_RESENT: 'invitation.resent',
+  INVITATION_LINK_COPIED: 'invitation.link_copied',
+  INVITATION_REVOKED: 'invitation.revoked',
+  INVITATION_ACCEPTED: 'invitation.accepted',
   PRODUCT_CREATED: 'product.created',
   PRODUCT_UPDATED: 'product.updated',
   PRODUCT_VARIANT_ADDED: 'product.variant_added',
@@ -2670,6 +2741,12 @@ export const ErrorCode = {
   NUMBERING_PREFIX_SHARED: 'numbering_prefix_shared',
   NUMBERING_NUMBER_TAKEN: 'numbering_number_taken',
   NUMBERING_DATE_ORDER: 'numbering_date_order',
+  ALREADY_A_MEMBER: 'already_a_member',
+  ALREADY_INVITED: 'already_invited',
+  EMAIL_UNVERIFIED: 'email_unverified',
+  INVITATIONS_DAILY_LIMIT: 'invitations_daily_limit',
+  ACCOUNT_DELETION_SCHEDULED: 'account_deletion_scheduled',
+  INVITATION_ENDED: 'invitation_ended',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -2684,6 +2761,9 @@ export type ApiVocabulary = {
 export type ErrorDetails = {
   series?: Array<string>;
   lowest?: number;
+  invitationId?: string;
+  at?: string;
+  day?: string;
 };
 
 export type ErrorBody = {
@@ -3134,6 +3214,11 @@ export type AuditControllerListV1Data = {
       | 'member.removed'
       | 'member.left'
       | 'user.account_deleted'
+      | 'invitation.sent'
+      | 'invitation.resent'
+      | 'invitation.link_copied'
+      | 'invitation.revoked'
+      | 'invitation.accepted'
       | 'product.created'
       | 'product.updated'
       | 'product.variant_added'
@@ -3236,6 +3321,11 @@ export type AuditControllerExportAuditV1Data = {
       | 'member.removed'
       | 'member.left'
       | 'user.account_deleted'
+      | 'invitation.sent'
+      | 'invitation.resent'
+      | 'invitation.link_copied'
+      | 'invitation.revoked'
+      | 'invitation.accepted'
       | 'product.created'
       | 'product.updated'
       | 'product.variant_added'
@@ -3432,6 +3522,11 @@ export type WorkControllerActivityV1Data = {
       | 'member.removed'
       | 'member.left'
       | 'user.account_deleted'
+      | 'invitation.sent'
+      | 'invitation.resent'
+      | 'invitation.link_copied'
+      | 'invitation.revoked'
+      | 'invitation.accepted'
       | 'product.created'
       | 'product.updated'
       | 'product.variant_added'
@@ -3534,6 +3629,11 @@ export type WorkControllerExportActivityV1Data = {
       | 'member.removed'
       | 'member.left'
       | 'user.account_deleted'
+      | 'invitation.sent'
+      | 'invitation.resent'
+      | 'invitation.link_copied'
+      | 'invitation.revoked'
+      | 'invitation.accepted'
       | 'product.created'
       | 'product.updated'
       | 'product.variant_added'
@@ -3636,20 +3736,6 @@ export type UsersControllerListV1Responses = {
 export type UsersControllerListV1Response =
   UsersControllerListV1Responses[keyof UsersControllerListV1Responses];
 
-export type UsersControllerCreateV1Data = {
-  body: CreateUserDto;
-  path?: never;
-  query?: never;
-  url: '/v1/users';
-};
-
-export type UsersControllerCreateV1Responses = {
-  201: UserEnvelope;
-};
-
-export type UsersControllerCreateV1Response =
-  UsersControllerCreateV1Responses[keyof UsersControllerCreateV1Responses];
-
 export type UsersControllerRemoveV1Data = {
   body?: never;
   path: {
@@ -3681,6 +3767,110 @@ export type UsersControllerUpdateV1Responses = {
 
 export type UsersControllerUpdateV1Response =
   UsersControllerUpdateV1Responses[keyof UsersControllerUpdateV1Responses];
+
+export type InvitationsControllerListV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/invitations';
+};
+
+export type InvitationsControllerListV1Responses = {
+  200: Array<Invitation>;
+};
+
+export type InvitationsControllerListV1Response =
+  InvitationsControllerListV1Responses[keyof InvitationsControllerListV1Responses];
+
+export type InvitationsControllerInviteV1Data = {
+  body: CreateInvitationDto;
+  path?: never;
+  query?: never;
+  url: '/v1/invitations';
+};
+
+export type InvitationsControllerInviteV1Responses = {
+  201: CreatedInvitation;
+};
+
+export type InvitationsControllerInviteV1Response =
+  InvitationsControllerInviteV1Responses[keyof InvitationsControllerInviteV1Responses];
+
+export type InvitationsControllerResendV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/invitations/{id}/resend';
+};
+
+export type InvitationsControllerResendV1Responses = {
+  200: InvitationEnvelope;
+};
+
+export type InvitationsControllerResendV1Response =
+  InvitationsControllerResendV1Responses[keyof InvitationsControllerResendV1Responses];
+
+export type InvitationsControllerCopyLinkV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/invitations/{id}/link';
+};
+
+export type InvitationsControllerCopyLinkV1Responses = {
+  200: CopiedInvitationLink;
+};
+
+export type InvitationsControllerCopyLinkV1Response =
+  InvitationsControllerCopyLinkV1Responses[keyof InvitationsControllerCopyLinkV1Responses];
+
+export type InvitationsControllerRevokeV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/invitations/{id}';
+};
+
+export type InvitationsControllerRevokeV1Responses = {
+  204: void;
+};
+
+export type InvitationsControllerRevokeV1Response =
+  InvitationsControllerRevokeV1Responses[keyof InvitationsControllerRevokeV1Responses];
+
+export type InvitationsControllerReadV1Data = {
+  body: InvitationTokenDto;
+  path?: never;
+  query?: never;
+  url: '/v1/invitations/read';
+};
+
+export type InvitationsControllerReadV1Responses = {
+  200: InvitationRead;
+};
+
+export type InvitationsControllerReadV1Response =
+  InvitationsControllerReadV1Responses[keyof InvitationsControllerReadV1Responses];
+
+export type InvitationsControllerAcceptV1Data = {
+  body: AcceptInvitationDto;
+  path?: never;
+  query?: never;
+  url: '/v1/invitations/accept';
+};
+
+export type InvitationsControllerAcceptV1Responses = {
+  200: AuthenticatedUserEnvelope;
+};
+
+export type InvitationsControllerAcceptV1Response =
+  InvitationsControllerAcceptV1Responses[keyof InvitationsControllerAcceptV1Responses];
 
 export type ProductsControllerListV1Data = {
   body?: never;

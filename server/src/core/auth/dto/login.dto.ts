@@ -6,6 +6,7 @@ import {
   MaxLength,
 } from 'class-validator';
 
+import { PASSWORD_MAX_LENGTH } from '../../../common/dto/account-rules';
 import { normalizeEmail } from '../../../common/dto/normalize-email';
 
 export class LoginDto {
@@ -21,7 +22,7 @@ export class LoginDto {
   // layer instead of at password change. MaxLength stays: it caps argon2's
   // input, so nobody can post a 10 MB string and buy 30s of CPU.
   @IsString()
-  @MaxLength(128)
+  @MaxLength(PASSWORD_MAX_LENGTH)
   password!: string;
 
   /**

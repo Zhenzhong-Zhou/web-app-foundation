@@ -10,19 +10,21 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { primaryKey } from './columns';
+import { invitations } from './invitations';
 import { users } from './users';
 
 /**
- * Single-use tokens for email verification and password reset.
+ * Single-use tokens for email verification, password reset and invitations.
  *
  * **No organization_id.** Like `users`, these belong to a global identity
  * rather than to a tenant (ADR-004) — a password reset is an account action,
- * and the user may hold memberships in several organizations.
+ * and the user may hold memberships in several organizations. An
+ * invitation's belongs to the invitation instead (ADR-077), since the person
+ * it is for may have no account yet.
  *
- * One table for both purposes because the columns, the hashing, the expiry
+ * One table for every purpose because the columns, the hashing, the expiry
  * check, the single-use rule, and the sweep are identical; only the lifetime
- * differs, and that is a value rather than a schema. Invitations (ADR-006)
- * will be the third purpose.
+ * differs, and that is a value rather than a schema.
  *
  * No `created_at` trigger and no `updated_at`: a token is written once and
  * consumed once, never edited.
@@ -30,9 +32,13 @@ import { users } from './users';
 export const AUTH_TOKEN_PURPOSES = [
   'email_verification',
   'password_reset',
+  'invitation',
 ] as const;
 
 export type AuthTokenPurpose = (typeof AUTH_TOKEN_PURPOSES)[number];
+
+/** Every purpose but an invitation's belongs to an account. */
+export type AccountTokenPurpose = Exclude<AuthTokenPurpose, 'invitation'>;
 
 export const authTokens = pgTable(
   'auth_tokens',
@@ -45,10 +51,14 @@ export const authTokens = pgTable(
     // CSPRNG output with nothing to guess.
     tokenHash: text('token_hash').notNull(),
 
-    // CASCADE per ADR-012: a token exists only to serve one user.
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+    // CASCADE per ADR-012: a token exists only to serve one user, or one
+    // invitation. Exactly one of the two, by purpose (the check below).
+    userId: uuid('user_id').references(() => users.id, {
+      onDelete: 'cascade',
+    }),
+    invitationId: uuid('invitation_id').references(() => invitations.id, {
+      onDelete: 'cascade',
+    }),
 
     // Checked against AUTH_TOKEN_PURPOSES by the check constraint below.
     // text rather than a pg enum: adding a value to an enum type needs
@@ -72,12 +82,22 @@ export const authTokens = pgTable(
     // Supports the lazy sweep and "invalidate this user's outstanding reset
     // tokens", both of which filter by user and purpose.
     index('auth_tokens_user_purpose_idx').on(t.userId, t.purpose),
+    // An invitation's links, for spending the live one and for the
+    // organization's daily count (ADR-077).
+    index('auth_tokens_invitation_id_idx').on(t.invitationId),
     // purpose separates "verifies an email" from "grants a password change".
     // A typo writing 'password-reset' would create a token no lookup ever
     // matches — silent, and surfacing only as users reporting dead links.
     check(
       'auth_tokens_purpose_check',
-      sql`${t.purpose} IN ('email_verification', 'password_reset')`,
+      sql`${t.purpose} IN ('email_verification', 'password_reset', 'invitation')`,
+    ),
+    // An exclusive arc, as addresses' owner is (ADR-028): an account's
+    // token or an invitation's, never both and never neither, and the
+    // invitation's exactly when that is its purpose.
+    check(
+      'auth_tokens_owner_check',
+      sql`num_nonnulls(${t.userId}, ${t.invitationId}) = 1 and (${t.purpose} = 'invitation') = (${t.invitationId} is not null)`,
     ),
   ],
 );

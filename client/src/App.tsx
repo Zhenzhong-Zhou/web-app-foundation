@@ -10,6 +10,7 @@ import { useIntl } from 'react-intl';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { ForgotPasswordPage } from './auth/forgot-password-page';
+import { InvitationPage } from './auth/invitation-page';
 import { LoginPage } from './auth/login-page';
 import { RegisterPage } from './auth/register-page';
 import { ResetPasswordPage } from './auth/reset-password-page';
@@ -187,6 +188,8 @@ export default function App() {
           since registration signs you in and then mails you; reset is reached
           while signed out by definition. Neither may sit behind Protected. */}
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      {/* Signed in or out: whoever holds the link reads it (ADR-077). */}
+      <Route path="/invitation" element={<InvitationPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route

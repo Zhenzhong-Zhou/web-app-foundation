@@ -62,6 +62,35 @@ export const ERROR_CODES = {
    * dated before the latest in its series (ADR-073).
    */
   numberingDateOrder: 'numbering_date_order',
+  /** The address is already a member of this organization (ADR-077). */
+  alreadyAMember: 'already_a_member',
+  /**
+   * The address already has a pending invitation here, which can be resent
+   * (ADR-077): `details.invitationId` names it.
+   */
+  alreadyInvited: 'already_invited',
+  /**
+   * Inviting needs the inviter's own address verified (ADR-077): the screen
+   * offers to resend their verification.
+   */
+  emailUnverified: 'email_unverified',
+  /**
+   * The organization has issued its 50 invitation links in the last 24
+   * hours (ADR-077): `details.at` is when the next one can be.
+   */
+  invitationsDailyLimit: 'invitations_daily_limit',
+  /**
+   * The account accepting an invitation is to be deleted (ADR-069,
+   * ADR-077): `details.day` is its day, and the page offers Keep my
+   * account, then Join.
+   */
+  accountDeletionScheduled: 'account_deletion_scheduled',
+  /**
+   * An invitation's link is used, past its days or revoked, all alike
+   * (ADR-077): the page shows that it ended, never the field it was
+   * accepting with.
+   */
+  invitationEnded: 'invitation_ended',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
@@ -71,11 +100,18 @@ const KNOWN: ReadonlySet<string> = new Set(Object.values(ERROR_CODES));
 /**
  * What a few codes carry for the screen to act on, beside the code itself:
  * which series a numbering refusal is about, and the least next number it
- * would accept (ADR-073). Never words: those are the message's.
+ * would accept (ADR-073); the invitation to resend, when the next link can
+ * be made, and the day an account is to be deleted (ADR-077). Never
+ * words: those are the message's.
  */
 export interface ErrorDetails {
   series?: string[];
   lowest?: number;
+  invitationId?: string;
+  /** A moment, ISO 8601, for the screen to show in its reader's time. */
+  at?: string;
+  /** A calendar day, YYYY-MM-DD (ADR-052). */
+  day?: string;
 }
 
 /**

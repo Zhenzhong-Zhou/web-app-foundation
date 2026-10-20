@@ -8,7 +8,6 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
-  Post,
 } from '@nestjs/common';
 
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
@@ -19,9 +18,8 @@ import { PERMISSIONS } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
 import { activeSince } from '../people/people.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import type { Member, UserEnvelope } from './dto/user-response.dto';
+import type { Member } from './dto/user-response.dto';
 import { UsersService } from './users.service';
 
 @Controller({ path: 'users', version: '1' })
@@ -51,18 +49,6 @@ export class UsersController {
         ...(exact ? { lastActiveAt: lastActiveAt ?? null } : {}),
       }),
     );
-  }
-
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @RequirePermissions(PERMISSIONS.USERS_CREATE)
-  @Audited({
-    action: AUDIT_ACTIONS.USER_CREATED,
-    resourceType: 'user',
-    resourceId: (response: { user: { id: string } }) => response.user.id,
-  })
-  async create(@Body() dto: CreateUserDto): Promise<UserEnvelope> {
-    return { user: await this.users.create(dto) };
   }
 
   /**

@@ -317,7 +317,7 @@ function displayName(
  * the request sent reads as the zone does now; the id itself when Intl
  * cannot name it.
  */
-function zoneLabel(locale: Locale, zone: string): string {
+export function zoneLabel(locale: Locale, zone: string): string {
   const current = canonicalTimeZone(zone);
   if (!current) return zone;
   try {

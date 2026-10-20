@@ -6,6 +6,11 @@ import {
   MinLength,
 } from 'class-validator';
 
+import {
+  NAME_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from '../../../common/dto/account-rules';
 import { normalizeEmail } from '../../../common/dto/normalize-email';
 
 export class CreateUserDto {
@@ -16,15 +21,17 @@ export class CreateUserDto {
 
   @IsString()
   @MinLength(1)
-  @MaxLength(100)
+  @MaxLength(NAME_MAX_LENGTH)
   name!: string;
 
-  // Admin-created users get a password now; email verification and a
-  // set-your-own-password flow land in step 5. Same minimum as registration —
-  // this account is not lesser for having been created by someone else.
+  // Only the demo seed's colleagues get a password this way, known on
+  // purpose so the demo can be signed into; a person who joins by
+  // invitation chooses their own (ADR-077). The same rule as every new
+  // password (account-rules.ts): this account is not lesser for having been
+  // created by someone else.
   @IsString()
-  @MinLength(12)
-  @MaxLength(128)
+  @MinLength(PASSWORD_MIN_LENGTH)
+  @MaxLength(PASSWORD_MAX_LENGTH)
   password!: string;
 
   // The role is chosen, not defaulted. A silent default here is how everyone

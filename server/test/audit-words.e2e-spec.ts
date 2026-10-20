@@ -6,8 +6,9 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { roles } from '../src/database/schema';
+import { roles, users } from '../src/database/schema';
 import {
+  addMember,
   body,
   createE2eApp,
   PASSWORD,
@@ -72,19 +73,13 @@ describe('The audit log in words (e2e)', () => {
         );
       return role.id;
     };
-    const created = body<{ user: { id: string } }>(
-      await alpha.agent
-        .post('/v1/users')
-        .send({
-          email: 'sarah@alpha.example.com',
-          name: 'Sarah',
-          password: PASSWORD,
-          roleId: await roleId('Viewer'),
-        })
-        .expect(201),
-    );
+    await addMember(app, alpha, 'sarah@alpha.example.com', 'Viewer');
+    const [sarah] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, 'sarah@alpha.example.com'));
     await alpha.agent
-      .patch(`/v1/users/${created.user.id}`)
+      .patch(`/v1/users/${sarah.id}`)
       .send({ roleId: await roleId('Admin') })
       .expect(204);
     return {

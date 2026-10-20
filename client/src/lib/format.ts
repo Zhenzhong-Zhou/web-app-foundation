@@ -168,6 +168,38 @@ export function formatDay(
 }
 
 /**
+ * A calendar day without its year, "26 Oct", where the year goes without
+ * saying: an invitation's last day, seven days off at most (ADR-077). In
+ * UTC, as formatDay, so the day comes back exactly.
+ */
+export function formatDayShort(
+  value: string,
+  locale: string | undefined = current,
+): string {
+  return cached(
+    `dayShort:${locale}`,
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      }),
+  ).format(new Date(value));
+}
+
+/** A calendar day in full, "26 October 2026", in a sentence. In UTC. */
+export function formatDayLong(
+  value: string,
+  locale: string | undefined = current,
+): string {
+  return cached(
+    `dayLong:${locale}`,
+    () =>
+      new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }),
+  ).format(new Date(value));
+}
+
+/**
  * A money amount in its own currency.
  *
  * Intl knows each currency's minor units, so JPY renders without decimals and

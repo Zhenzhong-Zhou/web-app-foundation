@@ -1,0 +1,26 @@
+import { Module } from '@nestjs/common';
+
+import { MailModule } from '../../shared/mail/mail.module';
+import { AuditModule } from '../audit/audit.module';
+import { AuthModule } from '../auth/auth.module';
+import { FilesModule } from '../files/files.module';
+import { InvitationAcceptanceService } from './invitation-acceptance.service';
+import { InvitationsController } from './invitations.controller';
+import { InvitationsService } from './invitations.service';
+import { InvitationsSweepService } from './invitations-sweep.service';
+import { InvitationsSweepTimer } from './invitations-sweep.timer';
+
+@Module({
+  // AuthModule for the tokens, sessions, passwords and account events an
+  // acceptance writes; FilesModule for the storage the logo is read from;
+  // AuditModule for the acceptance, recorded by hand (ADR-077).
+  imports: [AuthModule, AuditModule, FilesModule, MailModule],
+  controllers: [InvitationsController],
+  providers: [
+    InvitationsService,
+    InvitationAcceptanceService,
+    InvitationsSweepService,
+    InvitationsSweepTimer,
+  ],
+})
+export class InvitationsModule {}

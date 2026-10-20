@@ -7,12 +7,11 @@ import {
 } from '../src/database/database.module';
 import { bomLines, boms } from '../src/database/schema';
 import {
+  addMember,
   body,
   createE2eApp,
   createVariant,
-  PASSWORD,
   registerOrganization,
-  roleIdNamed,
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
@@ -668,21 +667,12 @@ describe('BOMs (e2e)', () => {
         lines: [{ componentVariantId: blend, quantity: '2400' }],
       });
 
-      await alpha.agent
-        .post('/v1/users')
-        .send({
-          email: 'viewer@alpha.example.com',
-          name: 'Viewer',
-          password: PASSWORD,
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
-        })
-        .expect(201);
-
-      const viewer = authedAgent(app);
-      await viewer
-        .post('/v1/auth/login')
-        .send({ email: 'viewer@alpha.example.com', password: PASSWORD })
-        .expect(200);
+      const viewer = await addMember(
+        app,
+        alpha,
+        'viewer@alpha.example.com',
+        'Viewer',
+      );
 
       const res = await viewer.get('/v1/boms').expect(200);
       expect(body<BomResponse[]>(res)).toHaveLength(1);

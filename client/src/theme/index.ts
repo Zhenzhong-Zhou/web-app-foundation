@@ -9,10 +9,12 @@ import type { Locale } from '../lib/locales';
 import { type Brand, DEFAULT_BRAND } from './brand-store';
 import { rem } from './rem';
 import {
+  CHOSEN_WEIGHT,
   DARK,
   DARK_ACCENT_WEIGHT,
   FONT_STACK,
   LIGHT,
+  mix,
   ON_ACCENT,
   RADIUS,
   type Rail,
@@ -31,12 +33,12 @@ import {
 declare module '@mui/material/styles' {
   interface Palette {
     tone: Record<ToneName, Tone>;
-    surface: { head: string; line: string };
+    surface: { head: string; line: string; chosen: string };
     rail: Rail;
   }
   interface PaletteOptions {
     tone?: Record<ToneName, Tone>;
-    surface?: { head: string; line: string };
+    surface?: { head: string; line: string; chosen: string };
     rail?: Rail;
   }
 }
@@ -53,7 +55,11 @@ function palette(scheme: Scheme, accent: string, onAccent: string, rail: Rail) {
     text: { primary: scheme.text, secondary: scheme.muted },
     divider: scheme.border,
     tone: scheme.tones,
-    surface: { head: scheme.head, line: scheme.line },
+    surface: {
+      head: scheme.head,
+      line: scheme.line,
+      chosen: mix(accent, scheme.surface, CHOSEN_WEIGHT),
+    },
   };
 }
 

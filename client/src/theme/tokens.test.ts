@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   BRAND,
+  CHOSEN_WEIGHT,
   DARK,
   DARK_ACCENT_WEIGHT,
   LIGHT,
+  mix,
   ON_ACCENT,
   RAILS,
   type Scheme,
@@ -59,6 +61,21 @@ describe('tokens (ADR-055)', () => {
       expect(contrast(s.text, ground)).toBeGreaterThanOrEqual(AA);
       expect(contrast(s.muted, ground)).toBeGreaterThanOrEqual(AA);
     }
+  });
+
+  it('lays a tint over its ground', () => {
+    expect(mix('#000000', '#FFFFFF', 0.5)).toBe('#808080');
+    expect(mix('#5546B8', '#FFFFFF', 0)).toBe('#FFFFFF');
+  });
+
+  it.each(SCHEMES)('keeps %s text readable on a chosen card', (name, s) => {
+    const accent =
+      name === 'dark'
+        ? towardWhite(BRAND.accent, DARK_ACCENT_WEIGHT)
+        : BRAND.accent;
+    const chosen = mix(accent, s.surface, CHOSEN_WEIGHT);
+    expect(contrast(s.text, chosen)).toBeGreaterThanOrEqual(AA);
+    expect(contrast(s.muted, chosen)).toBeGreaterThanOrEqual(AA);
   });
 
   it.each(SCHEMES)('keeps every %s status tone readable', (_, s) => {

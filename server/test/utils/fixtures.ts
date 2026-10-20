@@ -1,12 +1,12 @@
 import type { INestApplication } from '@nestjs/common';
 import { ThrottlerStorage } from '@nestjs/throttler';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../../src/database/database.module';
-import { roles } from '../../src/database/schema';
+import { roles, users } from '../../src/database/schema';
 import { MailService } from '../../src/shared/mail/mail.service';
 import {
   createTestApp,
@@ -147,38 +147,69 @@ export async function roleIdNamed(
   return role.id;
 }
 
+/** Who invites, signed in on the agent, and where to. */
+interface Inviter {
+  agent: Agent;
+  organizationId: string;
+}
+
 /**
- * A member the Owner has added with one of the system roles, signed in: who a
- * spec acts as to show what that role may and may not do.
+ * A member the Owner has invited with one of the organization's roles, who
+ * accepted and is signed in: who a spec acts as to show what that role may
+ * and may not do. Through invitations, as a person joins (ADR-077): the
+ * Owner's address verified first, as inviting needs, then the link read
+ * back from the email that carried it.
  */
 export async function addMember(
   app: INestApplication,
-  owner: Awaited<ReturnType<typeof registerOrganization>>,
+  owner: Inviter,
   email: string,
   roleName: string,
 ) {
+  const { user } = body<{ user: { id: string } }>(
+    await owner.agent.get('/v1/auth/me').expect(200),
+  );
+  await app
+    .get<Database>(UNSAFE_GLOBAL_DB)
+    .update(users)
+    .set({ emailVerifiedAt: new Date() })
+    .where(and(eq(users.id, user.id), isNull(users.emailVerifiedAt)));
+
   await owner.agent
-    .post('/v1/users')
+    .post('/v1/invitations')
     .send({
       email,
-      name: roleName,
-      password: PASSWORD,
       roleId: await roleIdNamed(app, owner.organizationId, roleName),
     })
     .expect(201);
 
   const member = authedAgent(app);
   await member
-    .post('/v1/auth/login')
-    .send({ email, password: PASSWORD })
+    .post('/v1/invitations/accept')
+    .send({
+      token: invitationToken(app, email),
+      name: roleName,
+      password: PASSWORD,
+    })
     .expect(200);
   return member;
+}
+
+/**
+ * The token in the latest invitation emailed to an address, as the person
+ * would follow it. Needs the recording mail service createE2eApp installs.
+ */
+export function invitationToken(app: INestApplication, email: string): string {
+  const mail = app.get<RecordingMailService>(MailService).lastTo(email);
+  const token = /\/invitation\?token=([\w-]+)/.exec(mail?.text ?? '')?.[1];
+  if (!token) throw new Error(`No invitation emailed to ${email}`);
+  return token;
 }
 
 /** The member most permission tests act as: reads allowed, writes refused. */
 export function addViewer(
   app: INestApplication,
-  owner: Awaited<ReturnType<typeof registerOrganization>>,
+  owner: Inviter,
   email: string,
 ) {
   return addMember(app, owner, email, 'Viewer');

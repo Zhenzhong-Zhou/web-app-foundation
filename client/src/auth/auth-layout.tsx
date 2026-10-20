@@ -14,10 +14,16 @@ import { TextSizeSelect } from '../components/text-size-select';
  */
 export function AuthLayout({
   title,
+  above,
+  notice,
   onSubmit,
   children,
 }: {
   title: string;
+  /** Before the heading: who a page is for, as an invitation's organization. */
+  above?: ReactNode;
+  /** Under the language choice: what came of a change made there. */
+  notice?: ReactNode;
   onSubmit?: (event: SubmitEvent) => void;
   children: ReactNode;
 }) {
@@ -38,7 +44,9 @@ export function AuthLayout({
         <LanguageSelect />
         <TextSizeSelect />
       </Box>
+      {notice && <Box sx={{ mb: 2 }}>{notice}</Box>}
       <Paper sx={{ p: 4 }} elevation={0} variant="outlined">
+        {above && <Box sx={{ mb: 2 }}>{above}</Box>}
         <Typography variant="h5" component="h1" sx={{ mb: 3 }}>
           {title}
         </Typography>

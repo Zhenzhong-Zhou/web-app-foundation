@@ -8,8 +8,11 @@ import {
   createPartner,
   createProduct,
   daysFromNow,
+  inviteByLink,
   signInAs,
+  uniqueEmail,
 } from './support/api';
+import { verifyEmail } from './support/mail';
 
 /**
  * WCAG 2.2 AA on the main screens, in both colour modes (ADR-055, step 6).
@@ -75,6 +78,11 @@ const SCREENS: Screen[] = [
     ready: heading,
   },
   { name: 'members', path: () => '/members', ready: heading },
+  {
+    name: 'the Invite dialog',
+    path: () => '/members?invite',
+    ready: (page) => page.getByRole('dialog'),
+  },
   { name: 'tax codes', path: () => '/settings/tax-codes', ready: heading },
   {
     name: 'exchange rates',
@@ -89,7 +97,11 @@ const SCREENS: Screen[] = [
  * with a lot 20 days from expiry (a red chip), and an order with a line,
  * which opens in tabs beside its summary.
  */
-async function seed(api: APIRequestContext): Promise<Seed> {
+async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
+  // Someone on Members' Invited (ADR-077), which needs a verified inviter.
+  await verifyEmail(api, ownerEmail);
+  await inviteByLink(api, uniqueEmail('a11y'));
+
   const product = await createProduct(api, { tracksLots: true });
   // A weight, so the variant's chevron is drawn and axe checks that it is
   // named (ADR-075): without one, the product page has no chevron at all.
@@ -154,7 +166,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       // Twenty screens and an axe pass each: longer than one flow.
       test.setTimeout(120_000);
 
-      const data = await seed(freshOrg.api);
+      const data = await seed(freshOrg.api, freshOrg.email);
       await signInAs(page, freshOrg.api);
 
       const found: Record<string, string[]> = {};
@@ -171,6 +183,31 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
       // All screens at once, so one run reports everything to fix.
       expect(found).toEqual({});
+    });
+
+    test('the invitation page meets WCAG 2.2 AA, signed out', async ({
+      browser,
+      freshOrg,
+    }) => {
+      await verifyEmail(freshOrg.api, freshOrg.email);
+      const { token } = await inviteByLink(
+        freshOrg.api,
+        uniqueEmail('a11y-page'),
+        'Viewer',
+        { note: 'Bring boots.' },
+      );
+      // The newcomer's own browser, with no session (ADR-077).
+      const context = await browser.newContext({
+        colorScheme,
+        storageState: { cookies: [], origins: [] },
+      });
+      const page = await context.newPage();
+      await page.goto(`/invitation?token=${token}`);
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await page.waitForLoadState('networkidle');
+
+      expect(await violations(page)).toEqual([]);
+      await context.close();
     });
   });
 }

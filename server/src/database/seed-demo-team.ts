@@ -12,7 +12,7 @@ import type { WorkDetailsDto } from '../core/people/dto/work-details.dto';
 import { WorkService } from '../core/people/work.service';
 import { UsersService } from '../core/users/users.service';
 import type { Database } from './database.module';
-import { memberships } from './schema';
+import { memberships, users } from './schema';
 import type { Audited } from './seed-demo-audit';
 
 /** Who the demo was registered as. */
@@ -171,8 +171,9 @@ const COLLEAGUES: Colleague[] = [
 ];
 
 /**
- * Adds the team through UsersService.create, as an Owner does on Members
- * (ADR-006: no invitations yet), each with the demo's password.
+ * Adds the team through UsersService.create, each with the demo's password,
+ * known on purpose: a person joins by invitation (ADR-077), but a demo's
+ * colleagues are there to be signed into.
  *
  * Addresses are always at example.com, never the Owner's own domain:
  * seeding an existing account must not create accounts at a real one. The
@@ -185,7 +186,7 @@ export async function addTeam(
   owner: DemoOwner,
   password: string,
 ): Promise<Team> {
-  const users = app.get(UsersService);
+  const accounts = app.get(UsersService);
   const work = app.get(WorkService);
 
   const roleRows = await app.get(RolesService).listForOrganization();
@@ -208,7 +209,7 @@ export async function addTeam(
         id: (created) => created.id,
       },
       () =>
-        users.create({
+        accounts.create({
           email,
           name: colleague.name,
           password,
@@ -216,6 +217,11 @@ export async function addTeam(
         }),
     );
     team[colleague.key] = { id: member.id, email };
+    // Verified, as the Owner is: nobody reads these inboxes (ADR-077).
+    await db
+      .update(users)
+      .set({ emailVerifiedAt: new Date() })
+      .where(eq(users.id, member.id));
 
     // Their own details, as each would set them on Account; not audited,
     // as a change to one's own membership never is (ADR-063).
@@ -277,7 +283,7 @@ export async function addTeam(
         body: { roleId: promoted },
         fields: ['roleId'],
       },
-      () => users.updateRole(ownerContext, id, promoted),
+      () => accounts.updateRole(ownerContext, id, promoted),
     );
   }
 

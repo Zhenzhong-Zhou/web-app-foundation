@@ -12,6 +12,7 @@ import {
   deletionDayFor,
 } from '../src/core/auth/account-deletion.service';
 import { OrganizationDeletionService } from '../src/core/auth/organization-deletion.service';
+import { PasswordService } from '../src/core/auth/password.service';
 import { FILE_STORAGE, type FileStorage } from '../src/core/files/file-storage';
 import {
   exportedTables,
@@ -27,6 +28,7 @@ import {
   accountEvents,
   auditLog,
   files,
+  memberships,
   organizations,
   sessions,
   users,
@@ -258,6 +260,7 @@ describe('Organization deletion (e2e)', () => {
       expect(readme).toContain('全部内容');
       expect(readme).toContain('术语表：各列的含义');
       expect(readme).toContain('bill_to_…');
+      expect(readme).toContain('在 invitations.csv 中，每一条邀请');
       // Times as a spreadsheet opens them: no T, no Z, no fractions, and
       // no offset, which is how Postgres writes them.
       const organization = zip.get('organization.csv')!.toString('utf8');
@@ -829,6 +832,38 @@ describe('Organization deletion (e2e)', () => {
       return body<{ deletionScheduledAt: string }>(res).deletionScheduledAt;
     }
 
+    /**
+     * A member who joined after the deletion was scheduled, signed in.
+     * Nobody can now (ADR-077), but an organization scheduled before that
+     * rule may hold one, so the database is given them directly.
+     */
+    async function joinedSince(
+      org: Org,
+      email: string,
+      roleName: string,
+    ): Promise<TestAgent> {
+      const [user] = await db
+        .insert(users)
+        .values({
+          email,
+          name: roleName,
+          passwordHash: await app.get(PasswordService).hash(PASSWORD),
+        })
+        .returning({ id: users.id });
+      await db.insert(memberships).values({
+        userId: user.id,
+        organizationId: org.organizationId,
+        roleId: await roleIdNamed(app, org.organizationId, roleName),
+      });
+
+      const member = authedAgent(app);
+      await member
+        .post('/v1/auth/login')
+        .send({ email, password: PASSWORD })
+        .expect(200);
+      return member;
+    }
+
     it('deletes the organization and the account in one step', async () => {
       const alpha = await registerOrganization(app, 'alpha');
 
@@ -940,8 +975,7 @@ describe('Organization deletion (e2e)', () => {
         id: alpha.organizationId,
         name: ALPHA,
       });
-      const second = await addMember(
-        app,
+      const second = await joinedSince(
         alpha,
         'second@alpha.example.com',
         'Owner',
@@ -961,7 +995,7 @@ describe('Organization deletion (e2e)', () => {
     it('lets go of the organization once the only member has left it', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await both(alpha);
-      await addMember(app, alpha, 'second@alpha.example.com', 'Owner');
+      await joinedSince(alpha, 'second@alpha.example.com', 'Owner');
 
       // Having made a colleague Owner, the person who chose both leaves.
       await alpha.agent.delete('/v1/account/membership').expect(204);
@@ -980,8 +1014,7 @@ describe('Organization deletion (e2e)', () => {
     it('lets go of the organization when an Owner removes the person', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await both(alpha);
-      const second = await addMember(
-        app,
+      const second = await joinedSince(
         alpha,
         'second@alpha.example.com',
         'Owner',
@@ -1014,8 +1047,7 @@ describe('Organization deletion (e2e)', () => {
     it('keeps only the account of a person demoted since', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await both(alpha);
-      const second = await addMember(
-        app,
+      const second = await joinedSince(
         alpha,
         'second@alpha.example.com',
         'Owner',
@@ -1064,8 +1096,7 @@ describe('Organization deletion (e2e)', () => {
     it('records a colleague’s cancel on the account without their address', async () => {
       const alpha = await registerOrganization(app, 'alpha');
       await both(alpha);
-      const second = await addMember(
-        app,
+      const second = await joinedSince(
         alpha,
         'second@alpha.example.com',
         'Owner',

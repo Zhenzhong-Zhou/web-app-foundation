@@ -167,7 +167,7 @@ export class AccountEventService {
     const [row] = await this.db
       .select({
         sameBrowser: sql<number>`count(*) filter (
-          where ${accountEvents.action} in ('session.created', 'account.registered')
+          where ${accountEvents.action} in ('session.created', 'account.registered', 'account.invitation_accepted')
             and ${accountEvents.userAgent} = ${userAgent ?? null}
         )::int`,
       })
@@ -194,9 +194,9 @@ export class AccountEventService {
     if (!notifiable) return;
 
     /**
-     * A browser this account has signed in from before, registration
-     * included. Every sign-in being news is how a bell teaches people to
-     * ignore it.
+     * A browser this account has signed in from before, registration and
+     * accepting an invitation included (ADR-077). Every sign-in being news
+     * is how a bell teaches people to ignore it.
      */
     if (action === 'session.created' && history.sameBrowser > 0) return;
 

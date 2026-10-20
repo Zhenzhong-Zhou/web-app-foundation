@@ -2,6 +2,7 @@ import type { ChipProps } from '@mui/material';
 
 import type {
   BomStatus,
+  InvitationLinkStatus,
   InvoiceStatus,
   OrderStatus,
   ReturnAuthorizationStatus,
@@ -25,6 +26,7 @@ export const STATUS_TONES: {
   returnAuthorization: Record<ReturnAuthorizationStatus, ToneName>;
   run: Record<RunStatus, ToneName>;
   recipe: Record<BomStatus, ToneName>;
+  invitation: Record<InvitationLinkStatus, ToneName>;
 } = {
   order: {
     draft: 'neutral',
@@ -45,6 +47,13 @@ export const STATUS_TONES: {
     cancelled: 'neutral',
   },
   recipe: { draft: 'neutral', active: 'info', archived: 'neutral' },
+  // A link that is out, quietly; one that needs the inviter, in warning.
+  invitation: {
+    emailed: 'info',
+    copied: 'info',
+    notSent: 'warning',
+    ended: 'warning',
+  },
 };
 
 /**

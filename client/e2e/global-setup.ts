@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { registerOrganization } from './support/api';
+import { verifyEmail } from './support/mail';
 
 export const OWNER_STATE_PATH = './e2e/.auth/owner.json';
 export const OWNER_CREDENTIALS_PATH = './e2e/.auth/owner-credentials.json';
@@ -24,6 +25,8 @@ export const OWNER_CREDENTIALS_PATH = './e2e/.auth/owner-credentials.json';
  */
 async function globalSetup(): Promise<void> {
   const organization = await registerOrganization('owner');
+  // Verified, as inviting needs (ADR-077), through the link it was sent.
+  await verifyEmail(organization.api, organization.email);
 
   const state = await organization.api.storageState();
 

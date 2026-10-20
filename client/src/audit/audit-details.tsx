@@ -65,11 +65,13 @@ export function AuditDetails({ details }: { details: Detail[] }) {
         : value.text;
     const page = value.link ? PAGES[value.link.kind] : null;
     if (!value.link || !page || !can(page.may)) return text;
+    // Underlined, as every link inside a line of text is: colour alone
+    // does not tell it from the words around it (WCAG 1.4.1).
     return (
       <Link
         component={RouterLink}
         to={page.path(value.link.id)}
-        underline="hover"
+        underline="always"
       >
         {text}
       </Link>

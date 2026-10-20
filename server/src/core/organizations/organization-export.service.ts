@@ -537,6 +537,11 @@ const GLOSSARY = [
       'action, resource_type, resource_id, payload — in audit_log.csv, what happened, named for the thing and then the event (user.created, invoice.issued), what it happened to, and its details as JSON. The app’s Audit log shows each in words.',
   }),
   t({
+    id: 'organization.export.glossary.invitations',
+    defaultMessage:
+      'In invitations.csv, each invitation: email, the address invited; role_id, the role it grants; locale, the language it is written in; note, the inviter’s message; invited_by, who sent it, a user_id; link, how its latest link went: emailed, copied, or not_sent when the email did not go; expires_at, when that link ends, in UTC; accepted_at, when it was accepted, and membership_id, the membership it made; revoked_at, when it was revoked.',
+  }),
+  t({
     id: 'organization.export.glossary.flags',
     defaultMessage:
       'A column starting is_ holds true or false, such as is_active.',

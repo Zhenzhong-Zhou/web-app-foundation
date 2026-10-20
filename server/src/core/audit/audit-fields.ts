@@ -177,6 +177,14 @@ const EXPORT_WORDS: Record<'downloaded' | 'declined', Translatable> = {
   }),
 };
 
+/**
+ * emailSent: recorded only when an invitation's email did not go
+ * (ADR-077), so it reads "Email not sent".
+ */
+const EMAIL_SENT_WORDS: Record<'false', Translatable> = {
+  false: t({ id: 'audit.value.emailSent.false', defaultMessage: 'not sent' }),
+};
+
 /** gettingStarted */
 const GETTINGSTARTED_WORDS: Record<string, Translatable> = {
   dismissed: t({
@@ -268,6 +276,15 @@ export const AUDIT_FIELDS = {
   name: {
     name: t({ id: 'audit.field.name', defaultMessage: 'Name' }),
     read: 'text',
+  },
+  // The address an invitation went to (ADR-077).
+  email: {
+    name: t({ id: 'audit.field.email', defaultMessage: 'Email address' }),
+    read: 'text',
+  },
+  emailSent: {
+    name: t({ id: 'audit.field.emailSent', defaultMessage: 'Email' }),
+    read: { set: EMAIL_SENT_WORDS },
   },
   number: {
     name: t({ id: 'audit.field.number', defaultMessage: 'Number' }),

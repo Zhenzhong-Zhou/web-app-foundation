@@ -82,6 +82,11 @@ export default tseslint.config(
       'src/core/files/files-purge.service.ts',
       // Every organization's licences, hourly, the same way (ADR-064).
       'src/modules/product-licences/licence-reminders.service.ts',
+      // An invitation read and accepted by its link, before any
+      // organization is known; and every organization's ended ones, swept
+      // hourly (ADR-077). The rest of core/invitations goes through TenantDb.
+      'src/core/invitations/invitation-acceptance.service.ts',
+      'src/core/invitations/invitations-sweep.service.ts',
     ],
     rules: {
       'no-restricted-imports': [

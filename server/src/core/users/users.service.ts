@@ -65,8 +65,9 @@ export class UsersService {
   }
 
   /**
-   * Admin-created membership. ADR-006 defers invitations, so this is how a
-   * second person joins an organization in V1.
+   * A colleague made with a password someone else knows: the demo seed's
+   * alone, whose accounts are meant to be signed into. No route makes one;
+   * a person joins by invitation and chooses their own (ADR-077).
    */
   async create(input: CreateUserDto): Promise<OrganizationMember> {
     // Scoped, so a roleId belonging to another organization simply is not

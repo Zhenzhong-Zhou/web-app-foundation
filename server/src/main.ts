@@ -8,6 +8,7 @@ import type { Env } from './config/env';
 import { AccountDeletionTimer } from './core/auth/account-deletion.timer';
 import { OrganizationDeletionTimer } from './core/auth/organization-deletion.timer';
 import { FilesPurgeTimer } from './core/files/files-purge.timer';
+import { InvitationsSweepTimer } from './core/invitations/invitations-sweep.timer';
 import { LicenceRemindersTimer } from './modules/product-licences/licence-reminders.timer';
 
 async function bootstrap() {
@@ -28,6 +29,7 @@ async function bootstrap() {
     LicenceRemindersTimer,
     OrganizationDeletionTimer,
     AccountDeletionTimer,
+    InvitationsSweepTimer,
   ]) {
     app.get(timer).start();
   }

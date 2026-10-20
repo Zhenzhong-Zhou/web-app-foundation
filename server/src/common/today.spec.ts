@@ -1,7 +1,13 @@
 import { Logger } from '@nestjs/common';
 import type { MockInstance } from 'vitest';
 
-import { canonicalTimeZone, dayIn, todayIn } from './today';
+import {
+  addDays,
+  canonicalTimeZone,
+  dayIn,
+  startOfDayIn,
+  todayIn,
+} from './today';
 
 /**
  * A day is decided in a time zone (ADR-052, ADR-072): the organization's,
@@ -101,6 +107,54 @@ describe('dayIn', () => {
     expect(dayIn('UTC', shipped)).toBe('2026-10-17');
     expect(dayIn('America/Vancouver', shipped)).toBe('2026-10-16');
     expect(dayIn('Asia/Shanghai', new Date(shipped))).toBe('2026-10-17');
+  });
+});
+
+describe('addDays', () => {
+  it('counts calendar days, across a month and a year', () => {
+    expect(addDays('2026-10-19', 7)).toBe('2026-10-26');
+    expect(addDays('2026-10-30', 3)).toBe('2026-11-02');
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
+    expect(addDays('2026-03-01', -1)).toBe('2026-02-28');
+  });
+});
+
+/** Where a day begins, which is where the day before it ends (ADR-077). */
+describe('startOfDayIn', () => {
+  it('is midnight in the zone, as a moment', () => {
+    expect(startOfDayIn('UTC', '2026-10-27').toISOString()).toBe(
+      '2026-10-27T00:00:00.000Z',
+    );
+    // Shanghai is UTC+8 all year.
+    expect(startOfDayIn('Asia/Shanghai', '2026-10-27').toISOString()).toBe(
+      '2026-10-26T16:00:00.000Z',
+    );
+    // Vancouver on daylight time (UTC−7), then on standard time (UTC−8),
+    // in 2025: a change that has happened, as the clock tests above use.
+    expect(startOfDayIn('America/Vancouver', '2025-10-27').toISOString()).toBe(
+      '2025-10-27T07:00:00.000Z',
+    );
+    expect(startOfDayIn('America/Vancouver', '2025-11-27').toISOString()).toBe(
+      '2025-11-27T08:00:00.000Z',
+    );
+  });
+
+  it('holds on the day the clocks change', () => {
+    // Vancouver fell back at 2 am on 2 November 2025; midnight was still
+    // on daylight time.
+    expect(startOfDayIn('America/Vancouver', '2025-11-02').toISOString()).toBe(
+      '2025-11-02T07:00:00.000Z',
+    );
+  });
+
+  it('starts at the first hour there is, where the clocks skip midnight', () => {
+    // Santiago springs forward at midnight on 6 September 2026: 00:00
+    // becomes 01:00, on UTC−3.
+    const start = startOfDayIn('America/Santiago', '2026-09-06');
+    expect(dayIn('America/Santiago', start)).toBe('2026-09-06');
+    expect(dayIn('America/Santiago', new Date(start.getTime() - 1))).toBe(
+      '2026-09-05',
+    );
   });
 });
 

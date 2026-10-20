@@ -1,16 +1,16 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { todayIn } from '../src/common/today';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { auditLog, roles } from '../src/database/schema';
+import { auditLog, roles, users } from '../src/database/schema';
 import {
+  addMember,
   body,
   createE2eApp,
-  PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
 import { authedAgent } from './utils/request';
@@ -162,29 +162,13 @@ describe('Audit (e2e)', () => {
      */
     it('does not snapshot a member name', async () => {
       const alpha = await registerOrganization(app, 'alpha');
+      await addMember(app, alpha, 'viewer@alpha.example.com', 'Viewer');
 
-      const [viewerRole] = await db
-        .select({ id: roles.id })
-        .from(roles)
-        .where(
-          and(
-            eq(roles.organizationId, alpha.organizationId),
-            eq(roles.name, 'Viewer'),
-          ),
-        );
-
-      await alpha.agent
-        .post('/v1/users')
-        .send({
-          email: 'viewer@alpha.example.com',
-          name: 'Viewer',
-          password: PASSWORD,
-          roleId: viewerRole.id,
-        })
-        .expect(201);
-
-      const { entries } = await page(alpha, '?action=user.created');
-      expect(entries[0].resourceLabel).toBeNull();
+      // Nor an invited address: both sides of joining stay unlabelled.
+      for (const action of ['invitation.sent', 'invitation.accepted']) {
+        const { entries } = await page(alpha, `?action=${action}`);
+        expect(entries[0].resourceLabel).toBeNull();
+      }
     });
 
     it('filters by date range', async () => {
@@ -283,31 +267,12 @@ describe('Audit (e2e)', () => {
     it('refuses a Viewer, which lacks audit.view', async () => {
       const alpha = await registerOrganization(app, 'alpha');
 
-      const [viewerRole] = await db
-        .select({ id: roles.id })
-        .from(roles)
-        .where(
-          and(
-            eq(roles.organizationId, alpha.organizationId),
-            eq(roles.name, 'Viewer'),
-          ),
-        );
-
-      await alpha.agent
-        .post('/v1/users')
-        .send({
-          email: 'viewer@alpha.example.com',
-          name: 'Viewer',
-          password: PASSWORD,
-          roleId: viewerRole.id,
-        })
-        .expect(201);
-
-      const viewer = authedAgent(app);
-      await viewer
-        .post('/v1/auth/login')
-        .send({ email: 'viewer@alpha.example.com', password: PASSWORD })
-        .expect(200);
+      const viewer = await addMember(
+        app,
+        alpha,
+        'viewer@alpha.example.com',
+        'Viewer',
+      );
 
       await viewer.get('/v1/audit').expect(403);
     });
@@ -327,19 +292,13 @@ describe('Audit (e2e)', () => {
       const roleId = (name: string) =>
         roleRows.find((role) => role.name === name)!.id;
 
-      const created = body<{ user: { id: string } }>(
-        await alpha.agent
-          .post('/v1/users')
-          .send({
-            email: 'sarah@alpha.example.com',
-            name: 'Sarah',
-            password: PASSWORD,
-            roleId: roleId('Viewer'),
-          })
-          .expect(201),
-      );
+      await addMember(app, alpha, 'sarah@alpha.example.com', 'Viewer');
+      const [sarah] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, 'sarah@alpha.example.com'));
       await alpha.agent
-        .patch(`/v1/users/${created.user.id}`)
+        .patch(`/v1/users/${sarah.id}`)
         .send({ roleId: roleId('Admin') })
         .expect(204);
 

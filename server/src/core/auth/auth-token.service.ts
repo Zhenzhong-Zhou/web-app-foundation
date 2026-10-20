@@ -5,9 +5,14 @@ import { ConfigService } from '@nestjs/config';
 import { and, eq, gt, isNull, lt, or, sql } from 'drizzle-orm';
 
 import type { Env } from '../../config/env';
-import type { Database } from '../../database/database.module';
+import type { Database, Transaction } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
-import { type AuthTokenPurpose, authTokens } from '../../database/schema';
+import { type AccountTokenPurpose, authTokens } from '../../database/schema';
+
+type Executor = Database | Transaction;
+
+/** How long an invitation's spent links stay: the daily limit counts them. */
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface IssuedToken {
   /** The only time the plaintext exists. Send it, never store it. */
@@ -16,7 +21,7 @@ export interface IssuedToken {
 }
 
 /**
- * Single-use tokens for email verification and password reset.
+ * Single-use tokens for email verification, password reset and invitations.
  *
  * Deliberately shaped like SessionService: 32 CSPRNG bytes, SHA-256 stored,
  * plaintext returned once. The reasoning transfers exactly — there is nothing
@@ -24,11 +29,12 @@ export interface IssuedToken {
  * hashing at all is what makes a database leak useless.
  *
  * Uses the unscoped handle: tokens hang off a global identity, not a tenant
- * (ADR-004), and verification runs before any organization is resolved.
+ * (ADR-004), and verification runs before any organization is resolved. An
+ * invitation's is read the same way, by whoever holds the link (ADR-077).
  */
 @Injectable()
 export class AuthTokenService {
-  private readonly ttls: Record<AuthTokenPurpose, number>;
+  private readonly ttls: Record<AccountTokenPurpose, number>;
 
   constructor(
     @Inject(UNSAFE_GLOBAL_DB) private readonly db: Database,
@@ -55,7 +61,10 @@ export class AuthTokenService {
    * old email" is a support question rather than a security one. Requesting a
    * new link is the user saying the old one is not the one they want.
    */
-  async issue(userId: string, purpose: AuthTokenPurpose): Promise<IssuedToken> {
+  async issue(
+    userId: string,
+    purpose: AccountTokenPurpose,
+  ): Promise<IssuedToken> {
     await this.invalidateOutstanding(userId, purpose);
     await this.sweepSpent(userId);
 
@@ -88,7 +97,7 @@ export class AuthTokenService {
    */
   async consume(
     token: string,
-    purpose: AuthTokenPurpose,
+    purpose: AccountTokenPurpose,
   ): Promise<string | null> {
     const [row] = await this.db
       .update(authTokens)
@@ -103,6 +112,8 @@ export class AuthTokenService {
       )
       .returning({ userId: authTokens.userId });
 
+    // An account's purpose, so auth_tokens_owner_check gives it a user:
+    // narrowed here, once, for verification and reset alike.
     return row?.userId ?? null;
   }
 
@@ -113,7 +124,7 @@ export class AuthTokenService {
    */
   async invalidateOutstanding(
     userId: string,
-    purpose: AuthTokenPurpose,
+    purpose: AccountTokenPurpose,
   ): Promise<void> {
     await this.db
       .update(authTokens)
@@ -125,6 +136,104 @@ export class AuthTokenService {
           isNull(authTokens.consumedAt),
         ),
       );
+  }
+
+  /**
+   * An invitation's new link (ADR-077), its live one spent, as a new reset
+   * link spends the last. Written in the invitation's transaction, so the
+   * two are kept or lost together. Its end is the invitation's to decide:
+   * the end of a day in the organization's zone.
+   *
+   * Swept like the others, of the links more than a day old: a day's stay,
+   * spent or not, since they are what the organization's daily limit
+   * counts.
+   */
+  async issueForInvitation(
+    executor: Executor,
+    invitationId: string,
+    expiresAt: Date,
+  ): Promise<IssuedToken> {
+    await this.spendInvitation(invitationId, executor);
+    await executor
+      .delete(authTokens)
+      .where(
+        and(
+          eq(authTokens.invitationId, invitationId),
+          lt(authTokens.createdAt, new Date(Date.now() - DAY_MS)),
+        ),
+      );
+
+    const token = randomBytes(32).toString('base64url');
+
+    await executor.insert(authTokens).values({
+      tokenHash: this.hashToken(token),
+      invitationId,
+      purpose: 'invitation',
+      expiresAt,
+    });
+
+    return { token, expiresAt };
+  }
+
+  /**
+   * The invitation a live link is for, spending nothing: the invitation
+   * page reads it before anyone accepts, so a mail scanner's fetch burns
+   * nothing (ADR-077). Null for anything not live, all alike.
+   */
+  async findInvitation(token: string): Promise<string | null> {
+    const [row] = await this.db
+      .select({ invitationId: authTokens.invitationId })
+      .from(authTokens)
+      .where(this.liveInvitation(token));
+
+    return row?.invitationId ?? null;
+  }
+
+  /**
+   * Validates and spends an invitation's link in one statement, as
+   * consume() does, returning the invitation it is for: two clicks on Join
+   * accept once.
+   */
+  async consumeInvitation(
+    executor: Executor,
+    token: string,
+  ): Promise<string | null> {
+    const [row] = await executor
+      .update(authTokens)
+      .set({ consumedAt: new Date() })
+      .where(this.liveInvitation(token))
+      .returning({ invitationId: authTokens.invitationId });
+
+    return row?.invitationId ?? null;
+  }
+
+  /**
+   * Spends an invitation's live link: replaced by a new one, revoked, or
+   * emailed by a send that failed, so that nobody holds a link the list
+   * does not show (ADR-077).
+   */
+  async spendInvitation(
+    invitationId: string,
+    executor: Executor = this.db,
+  ): Promise<void> {
+    await executor
+      .update(authTokens)
+      .set({ consumedAt: new Date() })
+      .where(
+        and(
+          eq(authTokens.invitationId, invitationId),
+          isNull(authTokens.consumedAt),
+        ),
+      );
+  }
+
+  private liveInvitation(token: string) {
+    return and(
+      eq(authTokens.tokenHash, this.hashToken(token)),
+      eq(authTokens.purpose, 'invitation'),
+      isNull(authTokens.consumedAt),
+      gt(authTokens.expiresAt, new Date()),
+    );
   }
 
   /**

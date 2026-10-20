@@ -7,7 +7,9 @@ import {
   createProduct,
   daysFromNow,
   E2E_PASSWORD,
+  inviteByLink,
   signInAs,
+  uniqueEmail,
 } from './support/api';
 
 /**
@@ -130,8 +132,10 @@ for (const [where, viewport] of [
   ['never scroll sideways on a desktop', null],
   ['reflow at 320px wide (WCAG 1.4.10)', { width: 320, height: 640 }],
 ] as const) {
-  test(`at Larger, the main screens ${where}`, async ({ page }) => {
+  test(`at Larger, the main screens ${where}`, async ({ page, api }) => {
     test.setTimeout(90_000);
+    // Members with someone on Invited, its widest row (ADR-077).
+    await inviteByLink(api, uniqueEmail('larger'));
     if (viewport) await page.setViewportSize(viewport);
     // Larger from the first paint, as a device that chose it before opens.
     await page.addInitScript(() => localStorage.setItem('textSize', 'larger'));
@@ -150,6 +154,25 @@ for (const [where, viewport] of [
     expect(wide).toEqual({});
   });
 }
+
+test('at Larger, the invitation page reflows at 320px wide, signed out', async ({
+  browser,
+  api,
+}) => {
+  const { token } = await inviteByLink(api, uniqueEmail('larger-page'));
+  const context = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+    viewport: { width: 320, height: 640 },
+  });
+  const page = await context.newPage();
+  await page.addInitScript(() => localStorage.setItem('textSize', 'larger'));
+  await page.goto(`/invitation?token=${token}`);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.locator('html')).toHaveCSS('font-size', '20px');
+
+  expect(await overflowing(page)).toEqual([]);
+  await context.close();
+});
 
 /** A phone's width at Larger, from the first paint. */
 async function onAPhoneAtLarger(page: Page): Promise<void> {

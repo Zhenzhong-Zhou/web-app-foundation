@@ -95,8 +95,9 @@ a second organization.
   stock and orders, but has no buttons for what it may not do, and a direct
   URL to a settings page shows "not allowed" rather than an empty page.
 - **MC-107** The last Owner cannot be removed or demoted; the app says why.
-- **MC-109** Add an Admin and sign in as them. They can manage members, but
-  changing or removing the Owner is refused.
+- **MC-109** Invite an Admin, accept in a private window, and sign in as
+  them. They can manage members and invite, but changing or removing the
+  Owner is refused.
 - **MC-108** A second organization, in the second profile, sees none of the
   first's products, partners, orders, lots or audit entries, even by pasting
   a URL from the first.
@@ -498,7 +499,7 @@ folder by folder; these check what is already in place.
       partner's lists and the organization's default;
   - settings: the Organization page's sections and licence policy, tax
       codes with their rates (9,975 % in French), and exchange rates;
-  - members: the list, changing a role and adding a member, with the
+  - members: the list, changing a role and inviting a member, with the
       built-in roles (Owner, Admin, Viewer) named in the language and a
       role the organization named itself shown as named;
   - audit: the audit log with its filters and the History panel on a
@@ -692,7 +693,7 @@ Paper is checked first because it must not change at all.
   summary does. On SO-DEMO-2, with nothing invoiced or returned, no links and
   no warning appear.
 - **MC-1550** On Sign in, Register, Reset password, Account's Change password
-  and Add member's temporary password, each password field has an eye button
+  and the invitation page (ADR-077), each password field has an eye button
   at its end. It starts hidden; pressing it shows the text and the button's
   name becomes "Hide password" (显示密码 / 隐藏密码 in Chinese); pressing again hides
   it. On Change password, showing the new password leaves the current one
@@ -750,9 +751,12 @@ Paper is checked first because it must not change at all.
   to 中文 and to a phone (or a narrow window): the counts sit two by two, cards
   stack, nothing scrolls sideways, and the wording reads naturally. Register a
   new organization: Getting started leads with seven steps; add a location and
-  see its step ticked on Refresh; Skip the team step; Dismiss the card and
-  bring it back with Show Getting started. Sign in as a viewer: no Skip or
-  Dismiss, and only the cards that role may see.
+  see its step ticked on Refresh. The last step reads Invite your team: its
+  Invite someone opens Members with the Invite dialog, and closing it takes
+  `?invite` off the address, so Back and a reload leave it shut (ADR-077).
+  Skip the team step; Dismiss the card and bring it back with Show Getting
+  started. Sign in as a viewer: no Skip or Dismiss, the team step with no
+  button, and only the cards that role may see.
 
 ## 16. Files (ADR-059)
 
@@ -1282,11 +1286,130 @@ Signed in as the demo Owner the seed prints.
 - **MC-2906** *(ADR-076)* The audit log's Action filter names each action
   in the language, never by its code.
 
+## 30. Invitations (ADR-077)
+
+Signed in as the demo Owner the seed prints, on Settings → Members, with
+Mailpit open.
+
+- **MC-3001** *(ADR-077)* Invite: the dialog asks for Email, then the
+  three roles as cards, each with its line saying what it lets a person
+  do, Viewer chosen; Write to them in, starting at your own language; and
+  A note from you, counting to 500. Invite `newcomer@example.com` as
+  Admin, writing to them in 简体中文, with the note `<b>Dock 3</b>`, a line
+  break, then `bring boots`, and Send invitation. A notice says it was
+  sent, and Invited lists it: Admin, Invited by you, today, Emailed ·
+  until the seventh day from now. Mailpit has one email, in Chinese,
+  subject included. It opens 加入 and the organization's name, in words
+  with no image. It names the demo Owner by name and by address, the
+  role as 管理员 with its line saying what an Admin does, and the note
+  under 来自 … 的留言 as typed (the tags shown as text, the line break
+  kept). The link works until the end of its seventh day, named with the
+  organization's time zone, and opens `/invitation?token=…` on the app's
+  address, never the API's; the same address is written out for when the
+  button does not open. It ends 由 … 代 … 发送, naming the app as
+  MAIL_FROM does.
+- **MC-3002** *(ADR-077)* With the account's language set to Français,
+  open Invite: Write to them in starts at Français, and an invitation
+  sent so is French, its role line too.
+- **MC-3003** *(ADR-077)* Invite another address with Copy link instead:
+  the dialog becomes Link copied, the link is on the clipboard and in a
+  field with Copy again, it says the link works once until its last day
+  and who joins by it, as what, and No email was sent. Mailpit has
+  nothing for that address, and Invited reads Link copied · until ….
+  Where the browser does not let the page copy (Safari, until you allow
+  it), the dialog reads Your invitation link instead and asks you to copy
+  the field, which is selected; it never says Link copied.
+- **MC-3004** *(ADR-077)* On an emailed row, Resend: a notice, and a
+  second email. Copy link on it: Link copied says the link in the email no
+  longer works, and opening the first email's link says the invitation
+  has ended. Copy link again: it says the link copied before no longer
+  works. Revoke asks first, then the row goes with a notice; with
+  nobody left, Invited is gone, heading and all.
+- **MC-3005** *(ADR-077)* Invite your own address: Email says you are
+  already a member here, as an Owner. Invite an address already on
+  Invited: Email says when and by whom it was invited and until when its
+  link works, with Resend instead; for one whose link has ended it says
+  it ended, and Resend starts it again. With Members open in a second
+  tab, invite an address there, then the same address here, with no
+  reload: Email says it was already invited, with Resend instead.
+- **MC-3006** *(ADR-077, ADR-076)* With Mailpit stopped, Send invitation:
+  the dialog says Couldn't send the email, with Close, Try again and Copy
+  link. Invited reads Email not sent, in the warning tone, and the audit
+  log's Invitation sent entry reads Email not sent, in 中文 and Français
+  too. Try again with Mailpit still stopped: it says it tried again, and
+  at the next try how many more times.
+- **MC-3007** *(ADR-077)* Sign in as Sarah Chen, an Admin: on Invite the
+  Owner card is disabled and says only an Owner can invite an Owner, and
+  an Owner's invitation on Invited has no Resend, Copy link or Revoke.
+  Inviting that invitation's address says it was already invited, and
+  that only an Owner can resend it, with no Resend instead. As Tom
+  Becker, a Viewer, Members has no Invite and no Invited, and its line
+  says an Owner or an Admin invites new members.
+- **MC-3008** *(ADR-077)* Register a fresh organization and, without
+  confirming its email, Send invitation from Members: the dialog asks you
+  to confirm your own email first, naming it, with Resend confirmation,
+  which sends it again.
+- **MC-3009** *(ADR-077)* At 390 px wide in 中文: Invited's rows are cards,
+  each with 重新发送, 复制链接 and 收回, and 邀请 opens the dialog full screen,
+  a close button before its title and 发送邀请 and 复制链接，自己发送 at its foot.
+  At Larger text (ADR-075), neither Members nor the dialog scrolls
+  sideways.
+
+The invitation page, in a private window unless a check says otherwise:
+
+- **MC-3010** *(ADR-077)* Open MC-3001's link: the page is in 中文, the
+  invitation's language, with the language and text size choices above
+  it. It shows the organization's logo and name, 加入 …, who invited you,
+  by name and by address as the email does, as 管理员 with what an Admin
+  does, the note under 来自 … 的留言, and the address, read-only. The logo is sharp, and the Network tab shows no
+  request to `/api/v1/files`. Type a name, then change the page's
+  language: the name stays, and the page reads in the new one. Change it
+  back and forth a dozen times inside a minute: once the reads are
+  refused, the page stays in its language with the name kept, and says
+  under the language choice that it couldn't change language just now.
+  Give a name and a password, which its button shows as typed, and join:
+  Home opens, as a member, in Chinese.
+- **MC-3011** *(ADR-077)* Leave an organization from Account with a
+  colleague's account, then invite its address: its link says you already
+  have an account, with the address read-only, Password, Forgot your
+  password?, Keep me signed in and Sign in and join, which signs in and
+  joins.
+- **MC-3012** *(ADR-077)* Signed in as someone else, open a link: This
+  invitation is for … names it and you, with Sign out, after which the
+  form shows. Signed in as the address, in no organization: You're signed
+  in as …, with Not you? Sign out, and Join, in the account's own
+  language, never switched to the invitation's.
+- **MC-3013** *(ADR-077)* Signed in as a member of another organization,
+  open a link to that address: You can't join with this account yet,
+  saying why and until when, with Go to your account.
+- **MC-3014** *(ADR-077, ADR-069)* With that account's deletion set on
+  Account, open a link to it: Keep your account to join, naming the
+  deletion day; Keep my account, and Join appears.
+- **MC-3015** *(ADR-077, ADR-070)* A revoked or used link reads This
+  invitation has ended, with Go to sign in. With the organization's
+  deletion scheduled, a link reads … isn't taking new members, naming the
+  day, and shows no form. With the API stopped, a link reads This
+  invitation could not be opened, with Try again, which opens it once the
+  API is back.
+- **MC-3016** *(ADR-077, ADR-075)* At 320 px and Larger text, the page
+  wraps without scrolling sideways.
+- **MC-3017** *(ADR-077)* Signed in as Sarah Chen, an Admin, invite
+  `gone@example.com` with a note, then leave the organization from
+  Account. As the demo Owner, Resend it from Invited: the new email says
+  the organization invited you, in its subject and its first line, with
+  no name or address of Sarah's, and the note comes from the
+  organization. Its link's page says the same.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R21** *(links in an audit entry)* On Records → Audit log, an
+  entry whose detail names something you may open, such as Invitation
+  sent's role: the name is underlined as well as in the accent, before any
+  hover, so it is told from the words beside it without its colour. It
+  opens its page, Members for a role.
 - **MC-R20** *(dialogs on a phone)* In Français, at 320 px with Larger
   text, open Emplacements → Ajouter un emplacement: Ajouter un emplacement
   sits under Annuler at the right, inside the dialog, and the dialog does
@@ -1384,7 +1507,10 @@ first.
   `credit-amounts.ts`: MC-709 and MC-710 are its check.
 - **MC-R06** *(ADR-055)* Signed in with an unconfirmed email, Print an
   invoice: the "Confirm your email address" banner is on screen and not in
-  the PDF, which the server draws from the invoice alone (ADR-071).
+  the PDF, which the server draws from the invoice alone (ADR-071). The
+  demo's own accounts start confirmed, so register one, leave it
+  unconfirmed, and give its address to `npm run seed:demo -- <email>`,
+  which fills it and leaves its address as it is.
 
 ---
 
@@ -1588,3 +1714,14 @@ first.
 - 2026-10-18: the demo's team and their work: Before you start, MC-1903.
 - 2026-10-18: the audit log in words (ADR-076): section 29, and section
   14's audit item.
+- 2026-10-19: invitations (ADR-077), the email: section 30.
+- 2026-10-19: a link in an audit entry is underlined: MC-R21.
+- 2026-10-19: the demo's own accounts start confirmed: MC-R06 rewritten.
+- 2026-10-19: invitations (ADR-077), Members: section 30 rewritten for
+  Invite and Invited.
+- 2026-10-19: invitations (ADR-077), the invitation page: MC-3004 extended,
+  MC-3010 to MC-3016.
+- 2026-10-19: Add member gone (ADR-077): MC-1550 names the invitation
+  page instead.
+- 2026-10-19: Getting started's Invite your team (ADR-077): MC-1559
+  extended.

@@ -5,7 +5,8 @@ import { ERROR_CODES, type ErrorCode } from '../common/error-codes';
 /**
  * What a few codes carry beside the code, for the screen to act on: which
  * series a numbering refusal is about, and the least next number it would
- * accept (ADR-073).
+ * accept (ADR-073); the invitation to resend, when the next link can be
+ * made, and the day an account is to be deleted (ADR-077).
  */
 export class ErrorDetails {
   @ApiPropertyOptional({ type: [String] })
@@ -13,6 +14,17 @@ export class ErrorDetails {
 
   @ApiPropertyOptional()
   lowest?: number;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  invitationId?: string;
+
+  /** A moment, for the screen to show in its reader's time. */
+  @ApiPropertyOptional({ format: 'date-time' })
+  at?: string;
+
+  /** A calendar day, YYYY-MM-DD (ADR-052). */
+  @ApiPropertyOptional({ format: 'date' })
+  day?: string;
 }
 
 /**
