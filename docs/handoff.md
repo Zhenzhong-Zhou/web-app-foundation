@@ -60,18 +60,19 @@ with this one, this one is current.
          orders, production and drafting invoices. Can add and remove
          members.' where is_system and name = 'Admin'`; a fresh one
          needs nothing.
-    2. **ADR-078, registration by invitation**
-       (`adr-078-registration`): drafted. `REGISTRATION`, open or by
-       invitation, production by invitation when unset; the sign-up route
-       refused before it reads anything. An organization invitation from
-       `npm run org:invite`, run on a laptop against production's
-       database, printed for the operator to send; the organization is
-       made when it is accepted, its first Owner unconfirmed until they
-       confirm. An account with no organization starts one by invitation,
-       or from Home where registration is open, and Home stops answering
-       it with an error. Next: the canvas designs (the invitation page's
-       organization kind, By invitation, Home with no organization), then
-       the server. Its migration will be **0069**.
+    2. **ADR-078, registration by invitation** (`adr-078-registration`):
+       drafted and designed. `REGISTRATION`, open or by invitation,
+       production by invitation when unset; the sign-up route refused
+       before it reads anything. An organization invitation from `npm run
+       org:invite`, run on a laptop against production's database, asking
+       each question when run bare and printing the link with a message to
+       send; `OPERATOR_EMAIL`, if set, hears of each acceptance. The
+       organization is made when it is accepted, its first Owner
+       unconfirmed until they confirm. An account with no organization
+       starts one by invitation, or from Home where registration is open,
+       and Home stops answering it with an error. The canvas has its nine
+       boards, under "Registration by invitation (ADR-078)". Next: the
+       server. Its migration will be **0069**.
     3. **A newcomer's first sign-in:** what you can do here, the
        inviter's note, a first-week checklist, a help button with
        ADR-058's user guides. Open decisions, "A newcomer's first

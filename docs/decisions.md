@@ -9272,7 +9272,8 @@ Checked before drafting, as the working agreements ask:
   unverified access should be limited to": the first Owner meets
   ADR-077's `email_unverified`. "Changing your own email address", which
   a mistyped address on a printed link would make the likeliest to fire
-  next, so the command asks before it writes. ADR-077's one person in two
+  next, so the command asks before it writes and the page asks the
+  person whether the address is theirs. ADR-077's one person in two
   organizations and seat limits, and ADR-070's "closed by us" with plans
   and billing, all unchanged. A public demo and the operator's console,
   which this ADR's setting and command serve.
@@ -9338,13 +9339,20 @@ organization it started.
   registration; the account takes the page's language (ADR-077).
 
 **Decision — issued from the command line.** `npm run org:invite` in
-`server/`, with `--email`, `--name` and, optionally, `--language`
-(English when left out). It prints the link and its last day for the
-operator to send as they like, as Copy link hands one back (ADR-077). It
-sends no mail, so the laptop needs only the database's address and
-`CLIENT_URL`, never the mail key, and Mailpit plays no part. Whoever
-holds the production database's credentials is the operator; nothing
-else authorizes the command.
+`server/`. Run with nothing after it, it asks each question in turn: the
+address, the organization's name, the language from the three, then
+`CLIENT_URL` and the database's address when they are not set, so the one
+thing to remember is the command itself. `--email`, `--name` and
+`--language` (English when left out) give the same answers on one line,
+`--help` prints an example, and the Render runbook has a section to copy
+from. It prints the link and its last day for the operator to send as
+they like, as Copy link hands one back (ADR-077), and under them a short
+message in the invitation's language, naming the organization and the
+last day, to paste whole into a chat or an email. The command sends no
+mail, so the laptop needs only the database's address and `CLIENT_URL`,
+never the mail key, and Mailpit plays no part. Whoever holds the
+production database's credentials is the operator; nothing else
+authorizes the command.
 
 - It reads only its own process's environment, never `.env`, so a
   setting left off fails rather than quietly writing to the development
@@ -9363,8 +9371,12 @@ else authorizes the command.
   The operator, who can read the database anyway, is told why.
 - Run again for an address whose invitation is not yet accepted, it
   replaces it: the old link is spent, a new one starts its seven days,
-  and the name and language become the new ones. `--revoke` ends one;
-  `--list` shows those waiting and those accepted in the last 30 days.
+  and the name and language become the new ones. `--revoke` ends one.
+  `--list` shows those waiting; those whose link ended unaccepted, with
+  "run again to send a new link" beside each, so a customer who missed
+  the seven days is not forgotten; and those accepted. Ended and accepted
+  ones are listed for 30 days, as long as the sweep keeps an unaccepted
+  one.
 - It prints in English, on purpose: only the operator reads it. The
   page, the emails and every refusal a person sees are in all three
   languages (ADR-054), `registration_closed` included.
@@ -9387,11 +9399,26 @@ kind of link and the server alone tells the two apart.
   start, for an account with no organization; another address; another
   organization; keep your account first; and ended. The name is fixed on
   the page and changed on Profile afterwards (ADR-061).
+- Under the address: not yours? Don't set it up here; ask whoever sent
+  the link for one to your own address. A mistyped address is caught by
+  the person it was meant for before it becomes an Owner's, since
+  changing an address is not built yet (Open decisions).
 - With no organization yet there is no zone to end a day in, so a link's
   last day is the seventh after today in UTC, and it works until that day
   has ended everywhere, at noon UTC the day after, as ADR-070's cancel
   cutoff does. "Until 26 October" then holds wherever the person is, and
   the page and the command name the day without a zone.
+
+**Decision — the operator hears when one is accepted.** An optional
+setting, `OPERATOR_EMAIL`. When it is set, production emails it as an
+organization invitation is accepted: which organization, set up by whom,
+by name and address, and when. In English, from `MAIL_FROM`, as the
+command speaks English: only the operator reads it. When it is unset,
+nothing is sent, and `--list` is how to find out. A send that fails is
+logged and changes nothing: the organization exists, and the email is a
+courtesy to the operator, not a record. The address is a setting, not one
+a member typed, so the rule on mail to a typed address (Open decisions,
+"What unverified access should be limited to") does not apply.
 
 **Decision — the first Owner starts unconfirmed.** Nothing was emailed,
 so accepting confirms nothing, and the verification email goes out from
@@ -9459,6 +9486,20 @@ deferred item.
   the console.
 - **A log of the operator's actions.** Trigger: the console, or a second
   operator.
+- **Home showing the invitations waiting for an account's address,**
+  member and organization ones alike, to accept without the link. It
+  looks across organizations by address, which nothing else does, and is
+  safe only for a confirmed address, so it needs its own decision.
+  Trigger: the first person who loses a link.
+- **The command as a screen,** the console's Invite an organization
+  (Open decisions). Nothing of the command is thrown away: it is a thin
+  shell around plain functions that issue, replace, revoke and list. The
+  console's form asks what the command asks (the address, the name, the
+  language) and calls the same function to issue; its list is `--list`,
+  its Revoke is `--revoke`. What the console adds is a flag that marks an
+  account as platform staff, two-factor sign-in for it, and routes and
+  pages of their own, apart from any organization. Trigger: that entry's,
+  or typing the command becoming a chore.
 
 **Consequences.**
 
@@ -9469,8 +9510,12 @@ deferred item.
   its invitation, in the arc's check; `account.organization_started`
   added to `account_events`' actions, with the schema test's vocabulary
   check.
-- `REGISTRATION` in `env.ts` and `.env.example`; Render's web service
-  sets `invitation`. The code `registration_closed` in `error-codes.ts`.
+- `REGISTRATION` and the optional `OPERATOR_EMAIL` in `env.ts` and
+  `.env.example`; Render's web service sets `invitation`, and
+  `OPERATOR_EMAIL` when the operator wants the emails. The code
+  `registration_closed` in `error-codes.ts`. One email, to the operator,
+  in English, with an e2e test that it goes when set and not when unset,
+  and that a failed send leaves the acceptance standing.
 - Server, in `core/auth`, `core/invitations` and `core/organizations`:
   the guard on registration; `GET /v1/auth/registration`;
   `POST /v1/invitations/read` returning `organizationInvitation` beside
@@ -9482,7 +9527,8 @@ deferred item.
   the offer, not the organization's. `npm run api` after the routes
   change.
 - `server/src/cli/org-invite.ts` and `npm run org:invite`, with unit
-  tests for its arguments and for refusing to run without its settings.
+  tests for its questions and its arguments, the message it prints in
+  each language, and its refusing to run without its settings.
   The e2e specs issue organization invitations through the same
   functions, and run registration under each setting.
 - Client: the invitation page's organization kind; sign-in without Create
@@ -9632,7 +9678,8 @@ they exist so the reasoning is not rediscovered from scratch.
   and a second factor. Read-mostly: organizations, plan, member count,
   last active, storage, invitations, and the organization invitations
   `npm run org:invite` makes (ADR-078), which the console lists, revokes
-  and sends by email. An organization's data only when one of its Owners
+  and sends by email; its Invite an organization asks what the command
+  asks and calls the same functions. An organization's data only when one of its Owners
   grants access, for a time, with every action in its audit log as
   support; never a silent sign-in as a customer, which customers ask
   about in contracts and privacy law (PIPEDA, PIPL) cares about.
