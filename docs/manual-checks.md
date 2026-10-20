@@ -1404,13 +1404,15 @@ The invitation page, in a private window unless a check says otherwise:
 
 Locally, with the API restarted after each change to the root `.env`.
 
-- **MC-3101** *(ADR-078)* With `REGISTRATION=invitation` in `.env`, fill
-  in the sign-up form and Create account: it is refused, saying new
-  organizations join by invitation, and no account is made (sign in with
-  that address: refused). An address that already has an account is
-  refused the same way, never told it is taken. Set `REGISTRATION=open`
-  and register: it works as before. With the line removed and
-  `NODE_ENV=development`, it is open.
+- **MC-3101** *(ADR-078)* With `REGISTRATION=open`, open `/register`
+  and fill in the form; set `REGISTRATION=invitation`, restart the API,
+  and press Create account: the page turns into Accounts here start from
+  an invitation, with Joining where you work and Starting a new
+  organization, and a screen reader reads that heading out; no account is
+  made (signing in with that address is refused). An address that already has an account is refused the same
+  way, never told it is taken. Set `REGISTRATION=open` again and register:
+  it works as before. With the line removed and `NODE_ENV=development`, it
+  is open.
 
 The command, in `server/`, against the local database, with Mailpit open.
 Neither `CLIENT_URL` nor `DATABASE_URL` is set in the shell: it never reads
@@ -1442,6 +1444,57 @@ Neither `CLIENT_URL` nor `DATABASE_URL` is set in the shell: it never reads
   invitation under Waiting with its last day, and Ended, not accepted and
   Accepted as none. `npm run org:invite -- --revoke --email …` shows the
   invitation and asks; Y prints Revoked, and `--list` no longer shows it.
+
+The pages, in a private window unless a check says otherwise.
+
+- **MC-3106** *(ADR-078)* Open a link from MC-3102 signed out: the page is
+  in the invitation's language, headed Set up …, with a dashed tile of the
+  organization's initials (HH for Harbour Herbs, 海港 for 海港草本有限公司)
+  and A new organization; You'll be its Owner,
+  with what that lets them do; You can change the name later; the address
+  read-only, with the line about a confirmation email and Not your
+  address?. Give a name and a password and Set up: Home opens in the new
+  organization, with Confirm your email address and Getting started at 0
+  of 7. Mailpit has the confirmation email; Settings → Organization →
+  Profile shows this computer's time zone. Members → Invite asks you to
+  confirm your own email first (MC-3008).
+- **MC-3107** *(ADR-078)* With `OPERATOR_EMAIL=you@example.com` in `.env`
+  and the API restarted, accept another organization invitation: Mailpit
+  has "… was set up" to that address, naming who set it up, by name and
+  address, and that their address isn't confirmed yet. With the line
+  empty, no such email.
+- **MC-3108** *(ADR-078)* With a colleague's demo account, Account →
+  Leave, so it belongs to no organization. Issue an organization
+  invitation to its address and open the link signed out: You already have
+  an account…, with Sign in and set it up, which signs in and lands on the
+  new organization's Home as its Owner; Account's recent activity lists
+  Left an organization and Started an organization, in words. Signed in as
+  the invited address while it belongs to an organization, the link reads
+  You can't start an organization with this account yet, with Go to your
+  account; signed in as another address, This invitation is for …, with
+  Sign out. A revoked or replaced link reads This invitation has ended.
+- **MC-3109** *(ADR-078)* As an account with no organization (MC-3108's,
+  before accepting), Home shows Join an organization and Start an
+  organization side by side, and Go to your account: no error. With
+  `REGISTRATION=open`, the Start an organization card asks for the name;
+  its Start an organization button lands on the new organization's Home
+  with Getting started. With `REGISTRATION=invitation`, it says new
+  organizations start from an invitation, with no form; set that while
+  the form is open, and Start an organization turns the card into that
+  sentence, a screen reader reading the card's heading out. With Home
+  open in two tabs, schedule the account's deletion in one; in the other,
+  Start an organization is refused and the deletion banner, with Keep my
+  account, appears.
+- **MC-3110** *(ADR-078)* With `REGISTRATION=invitation`, sign-in has no
+  Create an account: New here? Accounts start from an invitation, with
+  How to get one, which opens Accounts here start from an invitation, with
+  Joining where you work, Starting a new organization and Sign in.
+  `/register` typed in the address bar shows the same page; on a slow
+  connection (DevTools, Slow 4G) it shows the language and text size at
+  once, and a spinner until the page is known. In 中文 at 390 px wide and
+  at Larger text (ADR-075), the organization kind of the invitation page,
+  Accounts here start from an invitation and Home with no organization
+  wrap without scrolling sideways, as on the canvas.
 
 ## Regressions
 
@@ -1770,3 +1823,5 @@ first.
   extended.
 - 2026-10-20: ADR-078, the server: section 31, MC-3101.
 - 2026-10-20: ADR-078, the command: MC-3102 to MC-3105.
+- 2026-10-20: ADR-078, the client: MC-3101 rewritten for the By invitation
+  page; MC-3106 to MC-3110 added.

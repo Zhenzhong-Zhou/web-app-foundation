@@ -70,6 +70,10 @@ function series(prefix: string) {
 }
 
 export const handlers = [
+  // Registration open, as in development and the test suites (ADR-078).
+  http.get(`${BASE}/auth/registration`, () =>
+    HttpResponse.json({ registration: 'open' }),
+  ),
   // Record pages report an opening (ADR-058); nothing to check in most
   // specs, so it is answered here once.
   http.post(`${BASE}/recent`, () => new HttpResponse(null, { status: 204 })),

@@ -3,9 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { HomeResponse } from '../api/types.gen';
+import { browserTimeZone, setOrganizationTimeZone } from '../lib/time-zone';
+import { zoneLabel } from '../lib/time-zone-label';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { HomePage } from './home-page';
@@ -206,5 +208,37 @@ describe('HomePage', () => {
     });
     expect(within(start).queryByRole('button', { name: 'Skip' })).toBeNull();
     expect(within(start).queryByRole('button', { name: 'Dismiss' })).toBeNull();
+  });
+  // ADR-072's watch list: the note shows only on a computer on another clock.
+  describe('the time-zone note', () => {
+    afterEach(() => setOrganizationTimeZone(null));
+
+    it('says which zone dates follow when this computer is elsewhere', async () => {
+      const zone =
+        browserTimeZone() === 'Pacific/Auckland'
+          ? 'America/Vancouver'
+          : 'Pacific/Auckland';
+      setOrganizationTimeZone(zone);
+      serve({ gettingStarted: COMPLETE, cards: [] });
+      renderWithAuth(routed(<HomePage />));
+
+      // The organization's zone, by name, never this computer's.
+      expect(
+        await screen.findByText(
+          `Dates follow the organization’s time zone: ${zoneLabel(zone)}.`,
+        ),
+      ).toBeVisible();
+    });
+
+    it('says nothing when this computer is on the organization’s clock', async () => {
+      setOrganizationTimeZone(browserTimeZone());
+      serve({ gettingStarted: COMPLETE, cards: [] });
+      renderWithAuth(routed(<HomePage />));
+
+      expect(await screen.findByRole('heading', { level: 1 })).toBeVisible();
+      expect(
+        screen.queryByText(/Dates follow the organization’s time zone/),
+      ).not.toBeInTheDocument();
+    });
   });
 });

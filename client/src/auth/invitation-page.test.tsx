@@ -5,7 +5,12 @@ import { useState } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import type { CurrentSession, InvitationPreview } from '../api/types.gen';
+import type {
+  CurrentSession,
+  InvitationPreview,
+  OrganizationInvitationPreview,
+} from '../api/types.gen';
+import { browserTimeZone } from '../lib/time-zone';
 import { server } from '../test/setup';
 import { AuthContext } from './auth-context';
 import { InvitationPage } from './invitation-page';
@@ -39,6 +44,40 @@ const SAM: CurrentSession = {
   permissions: [],
 };
 
+/**
+ * Accepting refused, the account set to be deleted, until Keep my account
+ * clears it; refresh() reads the session as that server holds it.
+ */
+function deletionUntilKept(refusal: string) {
+  let deletionScheduledAt: string | null = '2026-11-18';
+  server.use(
+    http.post('/api/v1/auth/login', () =>
+      HttpResponse.json({ user: SAM.user }),
+    ),
+    http.post('/api/v1/invitations/accept', () =>
+      deletionScheduledAt
+        ? HttpResponse.json(
+            {
+              statusCode: 409,
+              message: refusal,
+              code: 'account_deletion_scheduled',
+              details: { day: deletionScheduledAt },
+            },
+            { status: 409 },
+          )
+        : HttpResponse.json({ user: SAM.user }),
+    ),
+    http.delete('/api/v1/account/deletion', () => {
+      deletionScheduledAt = null;
+      return new HttpResponse(null, { status: 204 });
+    }),
+  );
+  return (): CurrentSession => ({
+    ...SAM,
+    user: { ...SAM.user, deletionScheduledAt },
+  });
+}
+
 function reads(invitation: InvitationPreview | null) {
   server.use(
     http.post('/api/v1/invitations/read', () =>
@@ -49,12 +88,16 @@ function reads(invitation: InvitationPreview | null) {
 
 /**
  * The page at its link, with a session that refresh() sets to `after`,
- * as the real provider reads it again from the server.
+ * as the real provider reads it again from the server; given as a
+ * function, read at each refresh, for a server a test's handler changes.
  */
 function open({
   session = null,
   after = session,
-}: { session?: CurrentSession | null; after?: CurrentSession | null } = {}) {
+}: {
+  session?: CurrentSession | null;
+  after?: CurrentSession | null | (() => CurrentSession | null);
+} = {}) {
   function Auth() {
     const [current, setCurrent] = useState(session);
     return (
@@ -64,7 +107,7 @@ function open({
           loading: false,
           error: null,
           refresh: () => {
-            setCurrent(after);
+            setCurrent(typeof after === 'function' ? after() : after);
             return Promise.resolve();
           },
         }}
@@ -299,6 +342,29 @@ describe('InvitationPage (ADR-077)', () => {
     expect(screen.getByRole('button', { name: 'Join Alpha Co' })).toBeVisible();
   });
 
+  it('drops a refusal carried past Keep my account once the account is kept', async () => {
+    reads(preview({ hasAccount: true }));
+    const after = deletionUntilKept(
+      'Your account is set to be deleted after 2026-11-18. Keep your account, then join.',
+    );
+    const user = userEvent.setup();
+    open({ after });
+
+    await user.type(
+      await screen.findByLabelText(/^Password/),
+      'a-password-of-mine',
+    );
+    await user.click(screen.getByRole('button', { name: 'Sign in and join' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Keep my account' }),
+    );
+
+    expect(
+      await screen.findByRole('button', { name: 'Join Alpha Co' }),
+    ).toBeVisible();
+    expect(screen.queryByText(/set to be deleted/)).not.toBeInTheDocument();
+  });
+
   it('offers Try again when the invitation could not be read', async () => {
     let tries = 0;
     server.use(
@@ -318,6 +384,223 @@ describe('InvitationPage (ADR-077)', () => {
     await user.click(await screen.findByRole('button', { name: 'Try again' }));
     expect(
       await screen.findByRole('button', { name: 'Join Alpha Co' }),
+    ).toBeVisible();
+  });
+});
+
+/** An organization invitation (ADR-078): the same page sets one up. */
+describe('InvitationPage, an organization invitation', () => {
+  function offer(
+    over: Partial<OrganizationInvitationPreview> = {},
+  ): OrganizationInvitationPreview {
+    return {
+      email: 'sam@example.com',
+      organizationName: 'Harbour Herbs',
+      role: {
+        name: 'Owner',
+        description:
+          'Everything, including costs, issuing invoices, settings and closing the organization.',
+      },
+      lastDay: '2026-10-27',
+      hasAccount: false,
+      locale: 'en',
+      ...over,
+    };
+  }
+
+  function offers(organizationInvitation: OrganizationInvitationPreview) {
+    server.use(
+      http.post('/api/v1/invitations/read', () =>
+        HttpResponse.json({ invitation: null, organizationInvitation }),
+      ),
+    );
+  }
+
+  it('sets up a new organization as its Owner, sending this browser’s zone', async () => {
+    offers(offer());
+    let sent: Record<string, unknown> | null = null;
+    server.use(
+      http.post('/api/v1/invitations/accept', async ({ request }) => {
+        sent = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ user: SAM.user });
+      }),
+    );
+    const user = userEvent.setup();
+    open();
+
+    expect(
+      await screen.findByRole('heading', { name: 'Set up Harbour Herbs' }),
+    ).toBeVisible();
+    expect(screen.getByText('A new organization')).toBeVisible();
+    expect(screen.getByText(/Not your address\?/)).toBeVisible();
+
+    await user.type(
+      screen.getByRole('textbox', { name: 'Your name' }),
+      'Chen Jie',
+    );
+    await user.type(
+      screen.getByLabelText(/^Choose a password/),
+      'a-password-of-mine',
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Set up Harbour Herbs' }),
+    );
+
+    expect(await screen.findByText('Home')).toBeVisible();
+    expect(sent).toMatchObject({
+      name: 'Chen Jie',
+      password: 'a-password-of-mine',
+      timeZone: browserTimeZone(),
+    });
+  });
+
+  it('signs an account with this address in, then sets it up in this browser’s zone', async () => {
+    offers(offer({ hasAccount: true }));
+    let signedIn: Record<string, unknown> | null = null;
+    let accepted: Record<string, unknown> | null = null;
+    server.use(
+      http.post('/api/v1/auth/login', async ({ request }) => {
+        signedIn = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ user: SAM.user });
+      }),
+      http.post('/api/v1/invitations/accept', async ({ request }) => {
+        accepted = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ user: SAM.user });
+      }),
+    );
+    const user = userEvent.setup();
+    open({ after: SAM });
+
+    expect(
+      await screen.findByText(/You already have an account with this address/),
+    ).toBeVisible();
+    await user.type(screen.getByLabelText(/^Password/), 'a-password-of-mine');
+    await user.click(
+      screen.getByRole('button', { name: 'Sign in and set it up' }),
+    );
+
+    expect(await screen.findByText('Home')).toBeVisible();
+    expect(signedIn).toMatchObject({
+      email: 'sam@example.com',
+      password: 'a-password-of-mine',
+    });
+    expect(accepted).toEqual({ token: TOKEN, timeZone: browserTimeZone() });
+  });
+
+  it('offers to sign out when signed in as another address', async () => {
+    offers(offer());
+    open({
+      session: { ...SAM, user: { ...SAM.user, email: 'tom@example.com' } },
+    });
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'This invitation is for sam@example.com',
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/You’re signed in as tom@example\.com/),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  });
+
+  it('asks an account set to be deleted to keep it, then offers Set up', async () => {
+    offers(offer());
+    let kept = false;
+    server.use(
+      http.delete('/api/v1/account/deletion', () => {
+        kept = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const user = userEvent.setup();
+    open({
+      session: {
+        ...SAM,
+        user: { ...SAM.user, deletionScheduledAt: '2026-11-18' },
+      },
+      after: SAM,
+    });
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Keep your account to set it up',
+      }),
+    ).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Keep my account' }));
+
+    expect(
+      await screen.findByRole('button', { name: 'Set up Harbour Herbs' }),
+    ).toBeVisible();
+    expect(kept).toBe(true);
+  });
+
+  it('drops a refusal carried past Keep my account once the account is kept', async () => {
+    offers(offer({ hasAccount: true }));
+    const after = deletionUntilKept(
+      'Your account is set to be deleted after 2026-11-18. Keep your account, then set up the organization.',
+    );
+    const user = userEvent.setup();
+    open({ after });
+
+    await user.type(
+      await screen.findByLabelText(/^Password/),
+      'a-password-of-mine',
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Sign in and set it up' }),
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'Keep my account' }),
+    );
+
+    expect(
+      await screen.findByRole('button', { name: 'Set up Harbour Herbs' }),
+    ).toBeVisible();
+    expect(screen.queryByText(/set to be deleted/)).not.toBeInTheDocument();
+  });
+
+  it('tells an account in an organization it cannot start one with it yet', async () => {
+    offers(offer());
+    open({
+      session: {
+        ...SAM,
+        organization: {
+          id: 'org-1',
+          name: 'Alpha Co',
+        } as CurrentSession['organization'],
+      },
+    });
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'You can’t start an organization with this account yet',
+      }),
+    ).toBeVisible();
+  });
+
+  it('reads an ended link as ended, by its code', async () => {
+    offers(offer());
+    server.use(
+      http.post('/api/v1/invitations/accept', () =>
+        HttpResponse.json(
+          {
+            statusCode: 400,
+            message: 'This invitation has ended.',
+            code: 'invitation_ended',
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    open({ session: SAM });
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Set up Harbour Herbs' }),
+    );
+    expect(
+      await screen.findByRole('heading', { name: 'This invitation has ended' }),
     ).toBeVisible();
   });
 });

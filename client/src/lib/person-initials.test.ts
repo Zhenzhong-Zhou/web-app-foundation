@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { colourOf, initialsLang, initialsOf } from './person-initials';
+import {
+  colourOf,
+  initialsLang,
+  initialsOf,
+  organizationInitialsOf,
+} from './person-initials';
 
 describe('initialsOf', () => {
   it('takes the first and last names in a cased script', () => {
@@ -100,6 +105,26 @@ describe('initialsOf without Intl.Segmenter', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe('organizationInitialsOf', () => {
+  it('takes the first two Chinese characters of a name that starts in Chinese', () => {
+    expect(organizationInitialsOf('海港草本有限公司')).toBe('海港');
+    expect(organizationInitialsOf('青禾贸易')).toBe('青禾');
+    expect(organizationInitialsOf('海港 Herbs')).toBe('海港');
+    expect(organizationInitialsOf('海')).toBe('海');
+  });
+
+  it('takes the first letters of the first two words otherwise', () => {
+    expect(organizationInitialsOf('Reid Supply Co.')).toBe('RS');
+    expect(organizationInitialsOf('harbour herbs ltd')).toBe('HH');
+    expect(organizationInitialsOf('Élan Vital')).toBe('ÉV');
+  });
+
+  it('takes one letter for a name of one word, and a question mark for none', () => {
+    expect(organizationInitialsOf('Acme')).toBe('A');
+    expect(organizationInitialsOf('  ')).toBe('?');
   });
 });
 

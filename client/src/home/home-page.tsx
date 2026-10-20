@@ -31,7 +31,9 @@ import { useExpiryDays } from '../lib/use-expiry-days';
 import { rem } from '../theme/rem';
 import { TYPE } from '../theme/tokens';
 import { GettingStarted } from './getting-started';
+import { greeting } from './greeting';
 import { CARDS } from './home-cards';
+import { NoOrganization } from './no-organization';
 import { RecentCard } from './recent-card';
 
 /**
@@ -44,6 +46,14 @@ import { RecentCard } from './recent-card';
  * Read when the page opens, with a refresh, as every list is; not live.
  */
 export function HomePage() {
+  const { session } = useAuth();
+  // An account in no organization, having left one or seen it closed:
+  // what it can do, not the cards' refusal (ADR-078).
+  return session?.organization ? <OrganizationHome /> : <NoOrganization />;
+}
+
+/** Home for a member of the session's organization. */
+function OrganizationHome() {
   const intl = useIntl();
   const { session } = useAuth();
   const can = useCan();
@@ -74,33 +84,6 @@ export function HomePage() {
     await api(path, { method }).catch(() => undefined);
     load();
   }
-
-  const hour = new Date().getHours();
-  const name = session?.user.name ?? '';
-  const greeting =
-    hour < 12
-      ? intl.formatMessage(
-          {
-            id: 'home.greeting.morning',
-            defaultMessage: 'Good morning, {name}',
-          },
-          { name },
-        )
-      : hour < 18
-        ? intl.formatMessage(
-            {
-              id: 'home.greeting.afternoon',
-              defaultMessage: 'Good afternoon, {name}',
-            },
-            { name },
-          )
-        : intl.formatMessage(
-            {
-              id: 'home.greeting.evening',
-              defaultMessage: 'Good evening, {name}',
-            },
-            { name },
-          );
 
   const cards = home?.cards ?? [];
   const count = cards.reduce((sum, card) => sum + card.count, 0);
@@ -184,7 +167,7 @@ export function HomePage() {
         }}
       >
         <Typography variant="h4" component="h1">
-          {greeting}
+          {greeting(intl, session?.user.name ?? '')}
         </Typography>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Typography color="text.secondary">
