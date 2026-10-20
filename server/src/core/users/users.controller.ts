@@ -57,10 +57,14 @@ export class UsersController {
    *
    * Returns the member rather than 204 so the interceptor has a resourceId to
    * read — @Audited's resourceId is given the response only.
+   *
+   * roles.assign, not users.update: changing which role a member holds is a
+   * privilege change, the permission kept apart for it (permissions.ts), and
+   * the one the welcome names whom to ask by (ADR-079).
    */
   @Patch(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @RequirePermissions(PERMISSIONS.USERS_UPDATE)
+  @RequirePermissions(PERMISSIONS.ROLES_ASSIGN)
   @Audited({
     action: AUDIT_ACTIONS.USER_ROLE_CHANGED,
     resourceType: 'user',

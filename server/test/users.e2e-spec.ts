@@ -1,11 +1,18 @@
 import type { INestApplication } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { auditLog, memberships, users } from '../src/database/schema';
+import {
+  auditLog,
+  memberships,
+  permissions,
+  rolePermissions,
+  roles,
+  users,
+} from '../src/database/schema';
 import {
   addMember as invited,
   body,
@@ -354,7 +361,7 @@ describe('Users (e2e)', () => {
       );
       const ownerRoleId = await roleIdNamed(app, alpha.organizationId, 'Owner');
 
-      // ADR-016's gap, closed in the service. An Admin holds users.update, so
+      // ADR-016's gap, closed in the service. An Admin holds roles.assign, so
       // the guard passes — no permission string can express "not above your
       // own level", which is why this check cannot live there.
       await admin.agent
@@ -383,7 +390,7 @@ describe('Users (e2e)', () => {
         .expect(403);
     });
 
-    it('refuses a Viewer, which lacks users.update', async () => {
+    it('refuses a Viewer, which lacks roles.assign', async () => {
       const alpha = await registerOrg('alpha');
       const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
       const member = await addMember(
@@ -397,6 +404,48 @@ describe('Users (e2e)', () => {
         .patch(`/v1/users/${member.id}`)
         .send({ roleId: adminRoleId })
         .expect(403);
+    });
+
+    it('refuses a role that may edit members but not change their roles', async () => {
+      const alpha = await registerOrg('alpha');
+      // users.update is editing another member's details; which role they
+      // hold is roles.assign, a privilege change of its own (permissions.ts).
+      const [office] = await db
+        .insert(roles)
+        .values({
+          organizationId: alpha.organizationId,
+          name: 'Office',
+          isSystem: false,
+        })
+        .returning({ id: roles.id });
+      const rows = await db
+        .select({ id: permissions.id })
+        .from(permissions)
+        .where(inArray(permissions.key, ['users.view', 'users.update']));
+      await db
+        .insert(rolePermissions)
+        .values(
+          rows.map((row) => ({ roleId: office.id, permissionId: row.id })),
+        );
+      const clerk = await addMember(alpha, 'clerk@alpha.example.com', 'Office');
+      const member = await addMember(
+        alpha,
+        'member@alpha.example.com',
+        'Viewer',
+      );
+      const adminRoleId = await roleIdNamed(app, alpha.organizationId, 'Admin');
+
+      await clerk.agent
+        .patch(`/v1/users/${member.id}`)
+        .send({ roleId: adminRoleId })
+        .expect(403);
+
+      const [row] = await db
+        .select()
+        .from(memberships)
+        .where(eq(memberships.userId, member.id));
+
+      expect(row.roleId).toBe(alpha.viewerRoleId);
     });
 
     it('refuses to demote the only Owner', async () => {
