@@ -10,15 +10,16 @@ with this one, this one is current.
 
 - **Next: onboarding, a chain of three** (Bob's priority, 19 October
   2026), one PR each, ADR first, each finished before the next begins.
-  Invitations are built; registration by invitation is next.
+  Invitations are merged; registration by invitation (ADR-078) is
+  being built.
   After them, in this order unless a trigger brings one forward, each
   with its entry in Open decisions: job roles; one person in two
   organizations, then a practice organization (ADR-077, *Deferred*); a
   public demo; plans and billing; the operator's console and support
   access. Not code, and not to slip behind it: Render's free database
   expires on 12 November 2026 (*Still to do, by hand*).
-    1. **ADR-077, invitations** (`adr-077-invitations`): built, server
-       and client; not merged. Invite replaces Add member, by email or a
+    1. **ADR-077, invitations** (`adr-077-invitations`): merged (#143).
+       Invite replaces Add member, by email or a
        copied link, each link working to the end of its seventh day in
        the organization's zone; `POST /v1/users` is gone, and no route
        sets another person's password. Migration **0068**
@@ -59,11 +60,18 @@ with this one, this one is current.
          orders, production and drafting invoices. Can add and remove
          members.' where is_system and name = 'Admin'`; a fresh one
          needs nothing.
-    2. **Registration by invitation (next):** a setting, open or by
-       invitation; an organization invitation from `npm run org:invite`,
-       its first Owner whoever accepts. Open decisions, "Registration:
-       open, or by invitation". It starts with its ADR, and builds on
-       ADR-077's page, link and token.
+    2. **ADR-078, registration by invitation**
+       (`adr-078-registration`): drafted. `REGISTRATION`, open or by
+       invitation, production by invitation when unset; the sign-up route
+       refused before it reads anything. An organization invitation from
+       `npm run org:invite`, run on a laptop against production's
+       database, printed for the operator to send; the organization is
+       made when it is accepted, its first Owner unconfirmed until they
+       confirm. An account with no organization starts one by invitation,
+       or from Home where registration is open, and Home stops answering
+       it with an error. Next: the canvas designs (the invitation page's
+       organization kind, By invitation, Home with no organization), then
+       the server. Its migration will be **0069**.
     3. **A newcomer's first sign-in:** what you can do here, the
        inviter's note, a first-week checklist, a help button with
        ADR-058's user guides. Open decisions, "A newcomer's first
@@ -489,7 +497,8 @@ with this one, this one is current.
   - Client tests still missing: Home's time-zone note, the zone sent at
     registration, the Still on UTC note hidden on a computer in UTC and
     the picker's announcement, the auth provider passing the zone on. Add
-    each when that code is next touched.
+    each when that code is next touched. ADR-078 touches Home and the
+    register page, so it takes the first two.
 - **A browser-compatibility lint rule** (eslint-plugin-compat) set to the
   build target, so code using an API newer than the floor fails ESLint;
   the code review on initials-by-script caught Intl.Segmenter by reading.
