@@ -6839,6 +6839,10 @@ as Chinese anyway.
   most of a Korean team would share one. Trigger: Korean as one of the
   app's languages, or a team that asks.
 
+**Amendment (October 2026) — who is new (ADR-079).** People marks a member
+who joined in the last two weeks, with the day they joined, and its
+summary line says how many did.
+
 ---
 
 ## ADR-064 — Licence expiry reminders: told at 60, 30 and 7 days, and on the day
@@ -9254,6 +9258,12 @@ invitation names no inviter and carries no note, and its link ends when
 its last day has ended everywhere, there being no organization's zone
 yet.
 
+**Amendment (October 2026) — the inviter hears (ADR-079).** When an
+invitation is accepted, its inviter, if still a member, is told in the
+bell, in their own language, and the notification opens the newcomer's
+page on People. The audit log records it as before. The note stays with
+the membership, and the newcomer's welcome shows it again.
+
 ---
 
 ## ADR-078 — Registration: open, or by invitation (amends ADR-006, ADR-070 and ADR-077)
@@ -9631,7 +9641,7 @@ says that inviting waits for it, until they confirm.
 
 ---
 
-## ADR-079 — A newcomer's first sign-in: a welcome on Home, and help on every page (amends ADR-058, ADR-069 and ADR-078)
+## ADR-079 — A newcomer's first sign-in: a welcome on Home, and help on every page (amends ADR-058, ADR-063, ADR-069, ADR-077 and ADR-078)
 
 **Context.** ADR-077 and ADR-078 settled how a person arrives: by a link,
 to an organization that exists or to one they set up. What they meet next
@@ -9705,6 +9715,17 @@ once.
   their card has no note, and Getting started below it is their real list.
 - In the reader's language (ADR-054). Nothing in it lives in a hover
   tooltip, which phones and handhelds do not have.
+- It names the day it goes ("until 3 November"), so it never vanishes
+  unexplained. Its foot says where Help is, beside the bell: that line is
+  the whole introduction to Help, in place of a tour.
+- Dismissing offers Undo for a moment, and says that what you can do here
+  stays on Account.
+- While the card lists Confirm your email address, the banner that asks
+  the same is not shown on Home, so it is not said twice; it stays on
+  every other page.
+- On a phone, what you can do here folds into one row, opened by a tap,
+  below the first week: what to do before what to read, and the card one
+  screen long rather than two. On a computer it is open.
 
 **Decision — what you can do here, from permissions.** One sentence per
 area, for the areas the person may touch: stock and locations; products
@@ -9726,6 +9747,12 @@ refused.
   roles (`roles.assign`), those who joined first first, by name; never the
   reader, and nobody for a reader who may change roles. The names come
   from the server, which alone knows who holds what.
+- Someone who holds every permission reads one line, "You may do
+  everything here, including settings and closing the organization",
+  rather than eight. Still from the permissions, not the role's name: it
+  holds for whoever holds them all.
+- Each name to ask opens that person's page on People (ADR-063), where
+  their work phone and extension are.
 - The same block sits on Account, under the person's role in this
   organization, so it outlasts the card.
 - `PERMISSION_DESCRIPTIONS` stays as it is, English, in the database:
@@ -9733,11 +9760,11 @@ refused.
 
 **Decision — the inviter's note.** The note an inviter wrote (ADR-077)
 shows on the card as typed, plain text, under the inviter's name and photo
-or initials (ADR-063). It is read from the invitation that made the
-membership, which ADR-077 keeps with it for this. Once the inviter has
-left or deleted their account, the note is from the organization, as the
-email and the invitation page already say (ADR-077). No note and no
-inviter for whoever started the organization.
+or initials (ADR-063), the name opening their page on People. It is read
+from the invitation that made the membership, which ADR-077 keeps with it
+for this. Once the inviter has left or deleted their account, the note is
+from the organization, as the email and the invitation page already say
+(ADR-077). No note and no inviter for whoever started the organization.
 
 **Decision — the first week, ticked by what the person does.** Up to five
 items, each a short line with a button to where it is done, each ticked by
@@ -9765,19 +9792,40 @@ proves nothing, and Getting started ticks the same way (ADR-058).
   own two items, confirming and saying who they are: the organization's
   steps are then that member's list, and the same task twice would read as
   two things to do.
+- A done item says what was done, and opens it: "You opened lot
+  NN-2410-07" opens the lot, "Photo added" opens Account.
 - Chosen and ticked on the server, from the member's permissions, and sent
   with Home; the client words each item and links it.
 
 **Decision — help on every page.** One button in the top bar, beside the
 bell, named Help. It opens the guide for the page the person is on, in
-their language: beside the page on a wide screen, so they can follow it
-while they work, and full screen on a phone. While it is open it follows
-them to the next page's guide. At its foot, the guides for every page the
-person can open.
+their language, and while it is open it follows them to the next page's
+guide. At its foot, the guides for every page the person can open, and
+where what they can do here is.
 
-- Learn more on every empty state (`EmptyState`) and on each Getting
-  started step opens the same panel at the right guide, and at the right
-  section of it.
+- It slides over the right of the page, nothing dimmed, so the page still
+  works while they follow the steps. Where the screen is wide enough for
+  the page to keep its full width beside it, it sits beside the page
+  instead, in the space the page does not use. On a phone, full screen
+  with Close. No page ever gets narrower for Help, so no page needs
+  walking again at every width and text size (ADR-075). Esc or Close shuts
+  it.
+- Help in words, with its icon, where the bar has room, which a newcomer
+  finds sooner than a bare icon; the icon alone on a phone, named Help for
+  screen readers. At 320 px with Larger text the organization's mark shows
+  its logo alone, so the bar's six 44 px targets fit (ADR-075), checked on
+  a real phone.
+- Learn more opens the same panel at the right guide and the right
+  section: on every empty state (`EmptyState`), on each Getting started
+  step, and beside a hard setting, at the end of its section's heading or
+  of a field's own help text. The first hard settings: numbering, the
+  licence policy, idle sign-out, costs and exchange rates, and price
+  lists.
+- No "?" on every field. Phones have no hover, so each would be a tap and
+  a popover; each would be one more text in three languages; and a field's
+  help text, about 115 of them, already says what that field needs, always
+  visible and translated. A field that needs more than a line gets Learn
+  more.
 - No tours pinned to the screen: they break with every change of layout,
   and the layout changes. No screenshots or video either: they go stale,
   and would need one per language.
@@ -9817,6 +9865,19 @@ described by its position or colour. English first, written from the
 screens themselves; French and Chinese drafts beside it, beta as the app's
 are (ADR-054), read by someone fluent when one can be found.
 
+**Decision — the inviter hears, and colleagues see who is new.** A
+newcomer's first day goes better when someone greets them, and today only
+the audit log knows they arrived.
+
+- When an invitation is accepted, its inviter, if still a member, is told
+  in the bell (ADR-036), in their own language: "Wang Fang accepted your
+  invitation and joined Northside Naturals as a Viewer". It opens the
+  newcomer's page on People. The bell alone, not email: it is not a
+  security event (ADR-037).
+- People marks whoever joined in the last two weeks, "New · joined 16
+  Oct", and its summary line says how many, so colleagues know whom to
+  greet. The same two weeks as the welcome, from the membership's start.
+
 **Decision — #144 rides along: a session finds its organization again.** A
 session's organization is set only by its own device, so another device of
 the same account keeps one the account has left. ADR-078 makes that a
@@ -9852,6 +9913,9 @@ commit, ahead of this ADR's server, closing #144.
   sentences for three roles: nothing finer once job roles come, and
   nothing for a role an organization makes.
 - **A Markdown library.** Above.
+- **A "?" beside every field.** Above, under Help.
+- **Help always beside the page.** Every page would get narrower when it
+  opens, and each would need walking again at every width and text size.
 
 **Deferred — each with what brings it in.**
 
@@ -9882,19 +9946,24 @@ commit, ahead of this ADR's server, closing #144.
   Home's perf probe covers a newcomer's Home (ADR-051). E2e tests: who
   sees the card and until when, each item ticked by its own act, the
   shorter list while Getting started shows, the note after its inviter has
-  left, dismissing per membership.
+  left, dismissing per membership. The inviter's notification, written when
+  the invitation is accepted, with its e2e test in each language; the
+  People list's response gains when each member joined.
 - #144: the session middleware's repair, with the e2e tests the issue
   lists; the client's read on focus, with its test and the auth provider's
   zone test.
-- Client: Help and its panel; the renderer, the route list, the guide map
-  and the check; Learn more on empty states and Getting started's steps;
-  the welcome card on Home; what you can do here on Account. Designed on
-  the canvas first: the card for a Viewer, an Admin and a founder not yet
-  confirmed, in English and 中文 on a phone; the panel on a computer and on
-  a phone; the top bar with Help at 320 px and Larger text (ADR-075). Unit
-  tests for the phrases, the renderer and the card; Playwright for the
-  panel following the page, a Learn more and the card; the panel and the
-  card in `accessibility.spec`.
+- Client: Help and its panel, over or beside the page; the renderer, the
+  route list, the guide map and the check; Learn more on empty states,
+  Getting started's steps and the first hard settings; the welcome card on
+  Home, with Undo, the banner hidden there while it asks the same, and the
+  phone's fold; what you can do here on Account; New on People. Designed
+  on the canvas: the card for a Viewer, an Admin and a founder not yet
+  confirmed, in English and 中文 on a phone, and its other states; where
+  Help sits on each screen; the panel on a computer and on a phone; Learn
+  more from an empty list, a step and a hard setting; the top bar at four
+  widths; the inviter's bell; People. Unit tests for the phrases, the
+  renderer and the card; Playwright for the panel following the page, a
+  Learn more and the card; the panel and the card in `accessibility.spec`.
 - The guides, about twenty in each of three languages, a commit of their
   own.
 - Docs: manual checks section 32, reading the guides in English and 中文

@@ -85,8 +85,11 @@ with this one, this one is current.
        the top bar opens the page's guide, about twenty in three
        languages, kept with the client and checked by a test. #144 rides
        along, ahead of the server. Migration **0070**
-       (`memberships.welcome_dismissed_at`). Next: the canvas designs,
-       then the build brief, one Claude Code prompt per commit.
+       (`memberships.welcome_dismissed_at`). Designed on the canvas;
+       their review added Help over the page rather than beside it,
+       Learn more beside hard settings instead of a "?" on every field,
+       the inviter told in the bell, and New on People. Next: the build
+       brief, one Claude Code prompt per commit.
 
 - **ADR-076, the audit log in words (`adr-076-audit-in-words`):** no
   migration; server and client. Every screen with an audit entry (the
