@@ -172,6 +172,9 @@ export default defineConfig({
         // freshOrg fixture registers, so the production limit fails the suite
         // rather than the feature.
         THROTTLE_FACTOR: '1000',
+        // Every worker and freshOrg registers, so sign-up is open here
+        // whatever the root .env says (ADR-078).
+        REGISTRATION: 'open',
       },
     },
     {
