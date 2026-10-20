@@ -143,6 +143,10 @@ a second organization.
 - **MC-307** Editing a lot's expiry saves, and the new date shows on
   Inventory and in earliest-expiry-first order. Reopening the edit dialog
   shows the same day that was typed.
+- **MC-310** As a Viewer, a row's actions on Inventory offer History, and
+  Trace lot on a lot's row, and nothing that changes stock. As an Admin,
+  they also offer Move, Ship out, Send sample, Correct the count and, on a
+  lot's row, Edit lot details.
 
 ## 4. Buying
 
@@ -1851,3 +1855,4 @@ first.
 - 2026-10-20: another device's session finds its organization again
   (#144, ADR-079): MC-R22.
 - 2026-10-20: ADR-079, the server: section 32, MC-3201.
+- 2026-10-20: Inventory's row actions for whoever may see stock: MC-310.

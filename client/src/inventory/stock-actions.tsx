@@ -14,15 +14,22 @@ type Choice = MoveMode | 'history' | 'lot' | 'trace';
  * correcting are all uncommon relative to reading the table, and a control
  * for each on every line makes the numbers — the thing people actually came
  * for — harder to scan.
+ *
+ * For everyone who may see stock: History and Trace lot only read, and a
+ * Viewer's first week asks them to look a lot up (ADR-079). What changes
+ * stock is offered only to those who may change it.
  */
 export function StockActions({
   row,
+  canMove,
   canAdjust,
   onSelect,
   onHistory,
   onEditLot,
 }: {
   row: StockRow;
+  /** stock.move: moving, shipping out, sampling and a lot's details. */
+  canMove: boolean;
   canAdjust: boolean;
   onSelect: (mode: MoveMode, row: StockRow) => void;
   onHistory: (row: StockRow) => void;
@@ -74,48 +81,55 @@ export function StockActions({
         onClose={() => setAnchor(null)}
         slotProps={{ transition: { onExited: run } }}
       >
-        <MenuItem
-          onClick={() => {
-            setPending('transfer');
-            setAnchor(null);
-          }}
-        >
-          {intl.formatMessage({
-            id: 'inventory.actions.move',
-            defaultMessage: 'Move',
-          })}
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setPending('ship');
-            setAnchor(null);
-          }}
-        >
-          {intl.formatMessage({
-            id: 'inventory.move.ship.title',
-            defaultMessage: 'Ship out',
-          })}
-        </MenuItem>
+        {canMove && (
+          <MenuItem
+            onClick={() => {
+              setPending('transfer');
+              setAnchor(null);
+            }}
+          >
+            {intl.formatMessage({
+              id: 'inventory.actions.move',
+              defaultMessage: 'Move',
+            })}
+          </MenuItem>
+        )}
+        {canMove && (
+          <MenuItem
+            onClick={() => {
+              setPending('ship');
+              setAnchor(null);
+            }}
+          >
+            {intl.formatMessage({
+              id: 'inventory.move.ship.title',
+              defaultMessage: 'Ship out',
+            })}
+          </MenuItem>
+        )}
         {/* A hand-out: a trade show, a visitor, a bottle opened for a test.
             A posted sample is a sale flagged as one, raised from Orders
             (ADR-042). */}
-        <MenuItem
-          onClick={() => {
-            setPending('sample');
-            setAnchor(null);
-          }}
-        >
-          {intl.formatMessage({
-            id: 'inventory.actions.sendSample',
-            defaultMessage: 'Send sample',
-          })}
-        </MenuItem>
+        {canMove && (
+          <MenuItem
+            onClick={() => {
+              setPending('sample');
+              setAnchor(null);
+            }}
+          >
+            {intl.formatMessage({
+              id: 'inventory.actions.sendSample',
+              defaultMessage: 'Send sample',
+            })}
+          </MenuItem>
+        )}
         {/* stock.adjust, not stock.move. Receiving, shipping, and transferring
             record what happened in the world; an adjustment overrides the
             record itself, and is held by fewer people. The guard refuses it
             server-side either way — this is so the menu does not offer a
-            control that always fails. */}
-        {canAdjust && (
+            control that always fails. It is still a movement, so it needs
+            stock.move as well. */}
+        {canMove && canAdjust && (
           <MenuItem
             onClick={() => {
               setPending('adjust');
@@ -130,7 +144,7 @@ export function StockActions({
         )}
         {/* Only for a lot-tracked row — there is nothing to edit otherwise,
             and the label would be a dead end on most of the warehouse. */}
-        {row.lotId && (
+        {canMove && row.lotId && (
           <MenuItem
             onClick={() => {
               setPending('lot');
