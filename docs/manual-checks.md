@@ -1412,6 +1412,37 @@ Locally, with the API restarted after each change to the root `.env`.
   and register: it works as before. With the line removed and
   `NODE_ENV=development`, it is open.
 
+The command, in `server/`, against the local database, with Mailpit open.
+Neither `CLIENT_URL` nor `DATABASE_URL` is set in the shell: it never reads
+`.env`, so it asks for both.
+
+- **MC-3102** *(ADR-078)* `npm run org:invite`: it asks for the email of
+  the person who sets it up, the organization name, the language (1, 2
+  or 3, English when left empty), the app address (`http://localhost:5173`)
+  and the database (your local `DATABASE_URL`, not shown as you type or
+  paste it). A wrong answer, a mistyped database address too, is said and
+  asked again. Ctrl-D or Ctrl-C at any question ends it: Cancelled.
+  Nothing was written. It shows the
+  database's host and name, the app, the address, the name and the
+  language, and asks before writing: N writes nothing. Y prints
+  Invitation made, the last day (seven days on), Nothing was emailed, the
+  link, and a message to send in the language chosen (in 简体中文 for 3),
+  with the link under it. Mailpit has nothing new.
+- **MC-3103** *(ADR-078)* Run it again for the same address on one line:
+  `CLIENT_URL=http://localhost:5173 npm run org:invite -- --email … --name
+  "… Ltd."`. It asks for the database only, shows the language as
+  English, then says the address already has an invitation until its last
+  day and asks to replace it. Y prints Invitation replaced, with a new
+  link and the message in English.
+- **MC-3104** *(ADR-078)* For the demo Owner's address it refuses, saying
+  the address already belongs to an organization, and writes nothing. A
+  misspelt flag (`--emial`) is refused, pointing at `--help`, which prints
+  each way to run it.
+- **MC-3105** *(ADR-078)* `npm run org:invite -- --list` shows MC-3103's
+  invitation under Waiting with its last day, and Ended, not accepted and
+  Accepted as none. `npm run org:invite -- --revoke --email …` shows the
+  invitation and asks; Y prints Revoked, and `--list` no longer shows it.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -1738,3 +1769,4 @@ first.
 - 2026-10-19: Getting started's Invite your team (ADR-077): MC-1559
   extended.
 - 2026-10-20: ADR-078, the server: section 31, MC-3101.
+- 2026-10-20: ADR-078, the command: MC-3102 to MC-3105.
