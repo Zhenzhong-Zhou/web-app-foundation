@@ -99,20 +99,45 @@ function setVisibility(state: DocumentVisibilityState) {
   });
 }
 
+/**
+ * Spies on what the provider listens for, and returns a wait until it
+ * listens. It adds its listeners from an effect, which can run after the
+ * session is already on screen: a focus or a visibility change before then
+ * goes unheard, and the read a test waits for never starts.
+ */
+function watchListeners(): () => Promise<void> {
+  const onWindow = vi.spyOn(window, 'addEventListener');
+  const onDocument = vi.spyOn(document, 'addEventListener');
+  return () =>
+    waitFor(() => {
+      expect(onWindow).toHaveBeenCalledWith('focus', expect.any(Function));
+      expect(onDocument).toHaveBeenCalledWith(
+        'visibilitychange',
+        expect.any(Function),
+      );
+    });
+}
+
 describe('AuthProvider', () => {
   // ADR-072's watch list: the organization's zone decides its day.
   it('passes the organization’s zone on, as the session changes', async () => {
-    answer(session(ALPHA), session(REID), null);
+    const requests = answer(session(ALPHA), session(REID), null);
+    const listening = watchListeners();
     renderProvider();
 
     expect(await screen.findByText('Alpha Co')).toBeInTheDocument();
     expect(organizationTimeZone()).toBe('Asia/Shanghai');
 
+    // Each step waits for the listener, then the read, then its answer,
+    // never for a time.
+    await listening();
     focusWindow();
+    await waitFor(() => expect(requests).toHaveLength(2));
     expect(await screen.findByText('Reid Supply Co.')).toBeInTheDocument();
     expect(organizationTimeZone()).toBe('America/Toronto');
 
     focusWindow();
+    await waitFor(() => expect(requests).toHaveLength(3));
     expect(await screen.findByText('Signed out')).toBeInTheDocument();
     expect(organizationTimeZone()).toBe(browserTimeZone());
   });
@@ -120,11 +145,14 @@ describe('AuthProvider', () => {
   // #144: another device joined an organization while this one was open.
   it('reads the session again when the window regains focus, in the background', async () => {
     const requests = answer(session(null), session(REID));
+    const listening = watchListeners();
     renderProvider();
     expect(await screen.findByText('No organization')).toBeInTheDocument();
+    await listening();
 
     focusWindow();
 
+    await waitFor(() => expect(requests).toHaveLength(2));
     expect(await screen.findByText('Reid Supply Co.')).toBeInTheDocument();
     expect(requests[0].headers.get('X-Background')).toBeNull();
     expect(requests[1].headers.get('X-Background')).toBe('1');
@@ -132,8 +160,10 @@ describe('AuthProvider', () => {
 
   it('reads once per focus, one read at a time', async () => {
     const requests = answer(session(ALPHA), session(REID));
+    const listening = watchListeners();
     renderProvider();
     await screen.findByText('Alpha Co');
+    await listening();
     const fetches = vi.spyOn(globalThis, 'fetch');
 
     focusWindow();
@@ -149,8 +179,10 @@ describe('AuthProvider', () => {
   // #144 on a phone: a tab coming back from the background gets no focus.
   it('reads the session again when the page becomes visible, one read with the focus beside it', async () => {
     const requests = answer(session(null), session(REID));
+    const listening = watchListeners();
     renderProvider();
     await screen.findByText('No organization');
+    await listening();
     const fetches = vi.spyOn(globalThis, 'fetch');
 
     setVisibility('hidden');
@@ -163,14 +195,26 @@ describe('AuthProvider', () => {
     focusWindow();
     expect(fetches).toHaveBeenCalledTimes(1);
 
+    await waitFor(() => expect(requests).toHaveLength(2));
     expect(await screen.findByText('Reid Supply Co.')).toBeInTheDocument();
     expect(requests[1].headers.get('X-Background')).toBe('1');
   });
 
   it('reads nothing on focus while signed out', async () => {
     answer(null);
-    renderProvider();
+    const listens = vi.spyOn(window, 'addEventListener');
+    const { rerender } = renderProvider();
     await screen.findByText('Signed out');
+    // Signed out, the provider never listens, so there is no listener to
+    // wait for. A render first runs the effects of the one before, so once
+    // this one is done the provider has settled: a focus now is one it
+    // would hear if it listened.
+    rerender(
+      <AuthProvider>
+        <Shown />
+      </AuthProvider>,
+    );
+    expect(listens).not.toHaveBeenCalledWith('focus', expect.any(Function));
     const fetches = vi.spyOn(globalThis, 'fetch');
 
     focusWindow();
@@ -180,11 +224,20 @@ describe('AuthProvider', () => {
 
   it('keeps the page as it was when a read on focus finds no server', async () => {
     const requests = answer(session(ALPHA), 'down', session(REID));
+    const listening = watchListeners();
     renderProvider();
     await screen.findByText('Alpha Co');
+    await listening();
+    const fetches = vi.spyOn(globalThis, 'fetch');
 
     focusWindow();
     await waitFor(() => expect(requests).toHaveLength(2));
+    // The read finds no server: wait for its fetch to fail. The provider
+    // finishes with it in the microtasks that follow, which a timer's turn
+    // drains, and is then free to read again.
+    const read = fetches.mock.results[0];
+    if (read?.type !== 'return') throw new Error('The focus started no read');
+    await act(() => read.value.catch(() => undefined));
     await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
 
     expect(screen.getByText('Alpha Co')).toBeInTheDocument();
