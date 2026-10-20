@@ -11,16 +11,19 @@ import {
 
 import { primaryKey } from './columns';
 import { invitations } from './invitations';
+import { organizationInvitations } from './organization-invitations';
 import { users } from './users';
 
 /**
- * Single-use tokens for email verification, password reset and invitations.
+ * Single-use tokens for email verification, password reset, invitations and
+ * organization invitations.
  *
  * **No organization_id.** Like `users`, these belong to a global identity
  * rather than to a tenant (ADR-004) — a password reset is an account action,
  * and the user may hold memberships in several organizations. An
  * invitation's belongs to the invitation instead (ADR-077), since the person
- * it is for may have no account yet.
+ * it is for may have no account yet, and an organization invitation's to
+ * the organization invitation (ADR-078), for the same reason.
  *
  * One table for every purpose because the columns, the hashing, the expiry
  * check, the single-use rule, and the sweep are identical; only the lifetime
@@ -33,12 +36,16 @@ export const AUTH_TOKEN_PURPOSES = [
   'email_verification',
   'password_reset',
   'invitation',
+  'organization_invitation',
 ] as const;
 
 export type AuthTokenPurpose = (typeof AUTH_TOKEN_PURPOSES)[number];
 
-/** Every purpose but an invitation's belongs to an account. */
-export type AccountTokenPurpose = Exclude<AuthTokenPurpose, 'invitation'>;
+/** Every purpose but the two invitations' belongs to an account. */
+export type AccountTokenPurpose = Exclude<
+  AuthTokenPurpose,
+  'invitation' | 'organization_invitation'
+>;
 
 export const authTokens = pgTable(
   'auth_tokens',
@@ -51,14 +58,19 @@ export const authTokens = pgTable(
     // CSPRNG output with nothing to guess.
     tokenHash: text('token_hash').notNull(),
 
-    // CASCADE per ADR-012: a token exists only to serve one user, or one
-    // invitation. Exactly one of the two, by purpose (the check below).
+    // CASCADE per ADR-012: a token exists only to serve one user, one
+    // invitation or one organization invitation. Exactly one of the three,
+    // by purpose (the check below).
     userId: uuid('user_id').references(() => users.id, {
       onDelete: 'cascade',
     }),
     invitationId: uuid('invitation_id').references(() => invitations.id, {
       onDelete: 'cascade',
     }),
+    organizationInvitationId: uuid('organization_invitation_id').references(
+      () => organizationInvitations.id,
+      { onDelete: 'cascade' },
+    ),
 
     // Checked against AUTH_TOKEN_PURPOSES by the check constraint below.
     // text rather than a pg enum: adding a value to an enum type needs
@@ -85,19 +97,24 @@ export const authTokens = pgTable(
     // An invitation's links, for spending the live one and for the
     // organization's daily count (ADR-077).
     index('auth_tokens_invitation_id_idx').on(t.invitationId),
+    // An organization invitation's links, for spending the live one when
+    // the command runs again or revokes it (ADR-078).
+    index('auth_tokens_organization_invitation_id_idx').on(
+      t.organizationInvitationId,
+    ),
     // purpose separates "verifies an email" from "grants a password change".
     // A typo writing 'password-reset' would create a token no lookup ever
     // matches — silent, and surfacing only as users reporting dead links.
     check(
       'auth_tokens_purpose_check',
-      sql`${t.purpose} IN ('email_verification', 'password_reset', 'invitation')`,
+      sql`${t.purpose} IN ('email_verification', 'password_reset', 'invitation', 'organization_invitation')`,
     ),
     // An exclusive arc, as addresses' owner is (ADR-028): an account's
-    // token or an invitation's, never both and never neither, and the
-    // invitation's exactly when that is its purpose.
+    // token, an invitation's or an organization invitation's, exactly one,
+    // and each invitation's exactly when that is its purpose.
     check(
       'auth_tokens_owner_check',
-      sql`num_nonnulls(${t.userId}, ${t.invitationId}) = 1 and (${t.purpose} = 'invitation') = (${t.invitationId} is not null)`,
+      sql`num_nonnulls(${t.userId}, ${t.invitationId}, ${t.organizationInvitationId}) = 1 and (${t.purpose} = 'invitation') = (${t.invitationId} is not null) and (${t.purpose} = 'organization_invitation') = (${t.organizationInvitationId} is not null)`,
     ),
   ],
 );

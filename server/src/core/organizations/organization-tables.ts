@@ -33,7 +33,11 @@ export const OWNED_THROUGH_PARENT = new Map<string, string>([
   ],
   [
     'auth_tokens',
-    'Not exported: an invitation’s links, credentials kept only as their hash, which go with it (ADR-077)',
+    'Not exported: an invitation’s links, credentials kept only as their hash, which go with it (ADR-077), and those of the organization invitation that started it (ADR-078)',
+  ],
+  [
+    'organization_invitations',
+    'Not exported: the operator’s record of the invitation that started the organization, not the organization’s own (ADR-078)',
   ],
   [
     'sessions',

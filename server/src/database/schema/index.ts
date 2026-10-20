@@ -31,6 +31,7 @@ export * from './notifications';
 export * from './order-lines';
 export * from './order-returns';
 export * from './orders';
+export * from './organization-invitations';
 export * from './organizations';
 export * from './partners';
 export * from './permissions';
