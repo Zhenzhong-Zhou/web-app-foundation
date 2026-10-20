@@ -83,6 +83,11 @@ const NOT_AUDITED = new Map<string, string>([
   ],
   ['RecentController.clear', 'Clearing your own history, as above (ADR-058)'],
   [
+    'HomeController.dismissWelcome',
+    'Your own welcome, dismissed: it changes only what you see, as a recently opened record does (ADR-079)',
+  ],
+  ['HomeController.showWelcome', 'Its Undo, as above (ADR-079)'],
+  [
     'FilesController.uploadLogo',
     'An upload changes nothing until a record uses it; attaching it is that record’s audited save (ADR-059)',
   ],

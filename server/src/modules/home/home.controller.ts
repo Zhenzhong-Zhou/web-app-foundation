@@ -18,6 +18,7 @@ import { PermissionsService } from '../../core/authorization/permissions.service
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import type { HomeResponse } from './dto/home-response.dto';
 import { HomeService } from './home.service';
+import { WelcomeService } from './welcome.service';
 
 /**
  * Home (ADR-058). No permission on the route: each card is gated by its
@@ -28,6 +29,7 @@ export class HomeController {
   constructor(
     private readonly home: HomeService,
     private readonly permissions: PermissionsService,
+    private readonly welcome: WelcomeService,
   ) {}
 
   @Get()
@@ -35,7 +37,24 @@ export class HomeController {
     const held = new Set(
       user.roleId ? await this.permissions.listForRole(user.roleId) : [],
     );
-    return this.home.home(held);
+    return this.home.home(user, held);
+  }
+
+  /**
+   * The welcome's Dismiss, and its Undo (ADR-079): the person's own, on
+   * their membership alone, so no permission; and not audited, since it
+   * changes only what they see, as a recently opened record does.
+   */
+  @Post('welcome/dismiss')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async dismissWelcome(@CurrentUser() user: RequestContext): Promise<void> {
+    await this.welcome.setDismissed(user.userId, true);
+  }
+
+  @Delete('welcome/dismiss')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async showWelcome(@CurrentUser() user: RequestContext): Promise<void> {
+    await this.welcome.setDismissed(user.userId, false);
   }
 
   /**

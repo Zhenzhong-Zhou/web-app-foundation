@@ -12,7 +12,10 @@ import { NestFactory } from '@nestjs/core';
 import type { Pool } from 'pg';
 
 import { AppModule } from '../src/app.module';
-import { ALL_PERMISSIONS } from '../src/core/authorization/permissions';
+import {
+  ALL_PERMISSIONS,
+  SYSTEM_ROLE_PERMISSIONS,
+} from '../src/core/authorization/permissions';
 import { PG_POOL } from '../src/database/database.tokens';
 import type { VolumeManifest } from '../src/database/seed-volume';
 import { runInTenantContext } from '../src/database/tenant-context';
@@ -297,7 +300,7 @@ async function buildProbes(
     // steps, as an owner sees them.
     {
       name: 'home',
-      run: () => home.home(EVERY_PERMISSION),
+      run: () => home.home(org, EVERY_PERMISSION),
     },
     // Recently opened (ADR-058): a person's history, newest first, named.
     {
@@ -349,6 +352,23 @@ async function buildProbes(
     probes.push({ name: 'lot trace', run: () => traces.trace(lotId) });
   }
 
+  // A newcomer's Home (ADR-079): the same, with their welcome, its first
+  // week read from their own audit entries by the actor's index. Only
+  // while they are new: past two weeks it is one read of the membership.
+  const newcomer = await newcomerOf(app, org);
+  if (newcomer) {
+    const admin = new Set(SYSTEM_ROLE_PERMISSIONS.Admin);
+    if (!(await home.home(newcomer, admin)).welcome) {
+      new Logger('PlanCheck').warn(
+        'The volume seed’s newcomer joined over two weeks ago, so their welcome is not explained. Seed again to check it.',
+      );
+    }
+    probes.push({
+      name: 'home: a newcomer',
+      run: () => home.home(newcomer, admin),
+    });
+  }
+
   // Missing it would drop the earliest-expiry-first read from the check
   // without a word, so its absence is a failure, not a skipped row.
   if (!sale) {
@@ -365,6 +385,22 @@ async function buildProbes(
   });
 
   return probes;
+}
+
+/** The volume seed's newcomer, which a seed from before ADR-079 lacks. */
+async function newcomerOf(
+  app: INestApplicationContext,
+  org: VolumeManifest['organizations'][number],
+): Promise<{ userId: string; organizationId: string } | null> {
+  if (!org.newcomerEmail) return null;
+  const { rows } = await app
+    .get<Pool>(PG_POOL)
+    .query<{ id: string }>('select id from users where email = $1', [
+      org.newcomerEmail,
+    ]);
+  return rows[0]
+    ? { userId: rows[0].id, organizationId: org.organizationId }
+    : null;
 }
 
 /** The cursor after `pages` pages, the way a person paging back gets there. */

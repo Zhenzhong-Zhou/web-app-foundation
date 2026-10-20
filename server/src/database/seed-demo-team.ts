@@ -1,5 +1,5 @@
 import type { INestApplicationContext } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { AUDIT_ACTIONS } from '../core/audit/audit-actions';
 import type { RequestContext } from '../core/auth/request-context';
@@ -14,6 +14,14 @@ import { UsersService } from '../core/users/users.service';
 import type { Database } from './database.module';
 import { memberships, users } from './schema';
 import type { Audited } from './seed-demo-audit';
+
+/**
+ * When an account's membership began, for its address confirmed at that
+ * moment: an account the demo makes belongs to its one organization.
+ */
+export function startOf(userId: string) {
+  return sql`(select m.created_at from memberships m where m.user_id = ${userId}::uuid)`;
+}
 
 /** Who the demo was registered as. */
 export interface DemoOwner {
@@ -218,9 +226,10 @@ export async function addTeam(
     );
     team[colleague.key] = { id: member.id, email };
     // Verified, as the Owner is: nobody reads these inboxes (ADR-077).
+    // From the start, as their membership began (ADR-079).
     await db
       .update(users)
-      .set({ emailVerifiedAt: new Date() })
+      .set({ emailVerifiedAt: startOf(member.id) })
       .where(eq(users.id, member.id));
 
     // Their own details, as each would set them on Account; not audited,

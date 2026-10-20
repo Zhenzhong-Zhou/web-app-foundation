@@ -32,8 +32,10 @@ const routed = (element: ReactElement) => (
   <MemoryRouter>{element}</MemoryRouter>
 );
 
-function serve(home: HomeResponse) {
-  server.use(http.get('/api/v1/home', () => HttpResponse.json(home)));
+/** Home for a member past their first two weeks: no welcome (ADR-079). */
+function serve(home: Omit<HomeResponse, 'welcome'>) {
+  const response: HomeResponse = { ...home, welcome: null };
+  server.use(http.get('/api/v1/home', () => HttpResponse.json(response)));
 }
 
 const day = (offset: number) => {

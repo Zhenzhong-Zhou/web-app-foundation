@@ -31,7 +31,7 @@ import { TaxCodesService } from '../modules/tax-codes/tax-codes.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
 import { lots, memberships, productVariants, roles, users } from './schema';
 import { auditor, recordOpeningHistory } from './seed-demo-audit';
-import { addTeam, describeTeam } from './seed-demo-team';
+import { addTeam, describeTeam, startOf } from './seed-demo-team';
 import { addTeamWork } from './seed-demo-team-work';
 import { addVariety, daysFromNow } from './seed-demo-variety';
 import { runInTenantContext } from './tenant-context';
@@ -915,9 +915,12 @@ async function freshAccount(
   if (!user.organizationId) {
     throw new Error('Registration created no organization');
   }
+  // Confirmed from the start, as the membership began (ADR-079): the
+  // welcome lists Confirm your email address only for whoever joined
+  // unconfirmed.
   await db
     .update(users)
-    .set({ emailVerifiedAt: new Date() })
+    .set({ emailVerifiedAt: startOf(user.id) })
     .where(eq(users.id, user.id));
 
   new Logger('SeedDemo').log(

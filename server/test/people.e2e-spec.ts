@@ -166,6 +166,23 @@ describe('People (e2e)', () => {
     ).toBeNull();
   });
 
+  it('says when each member joined: their membership’s start, for New on People (ADR-079)', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const viewer = await addViewer(app, alpha, 'viewer@example.com');
+    const viewerId = await whoAmI(viewer);
+
+    const [membership] = await db
+      .select({ createdAt: memberships.createdAt })
+      .from(memberships)
+      .where(eq(memberships.userId, viewerId));
+    const people = body<(Person & { memberSince: string })[]>(
+      await alpha.agent.get('/v1/people').expect(200),
+    );
+    expect(people.find((person) => person.id === viewerId)?.memberSince).toBe(
+      membership.createdAt.toISOString(),
+    );
+  });
+
   it('shows last active coarse, and exact with the history', async () => {
     const alpha = await registerOrganization(app, 'alpha');
     const viewer = await addViewer(app, alpha, 'viewer@alpha.example.com');

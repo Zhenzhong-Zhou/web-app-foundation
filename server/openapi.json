@@ -404,6 +404,25 @@
       }
     },
     "/v1/account/membership": {
+      "get": {
+        "operationId": "AccountController_membership_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberAccess"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Account"
+        ]
+      },
       "delete": {
         "operationId": "AccountController_leaveOrganization_v1",
         "parameters": [],
@@ -4193,6 +4212,32 @@
                 }
               }
             }
+          }
+        },
+        "tags": [
+          "Home"
+        ]
+      }
+    },
+    "/v1/home/welcome/dismiss": {
+      "post": {
+        "operationId": "HomeController_dismissWelcome_v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Home"
+        ]
+      },
+      "delete": {
+        "operationId": "HomeController_showWelcome_v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
           }
         },
         "tags": [
@@ -8374,6 +8419,72 @@
         },
         "required": [
           "photoFileId"
+        ]
+      },
+      "MemberRole": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description"
+        ]
+      },
+      "Colleague": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "photoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "photoFileId"
+        ]
+      },
+      "MemberAccess": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/MemberRole"
+          },
+          "holdsEverything": {
+            "type": "boolean"
+          },
+          "whomToAsk": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Colleague"
+            }
+          }
+        },
+        "required": [
+          "role",
+          "holdsEverything",
+          "whomToAsk"
         ]
       },
       "DeleteAccountDto": {
@@ -13256,6 +13367,126 @@
           "complete"
         ]
       },
+      "WelcomeDone": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "email",
+              "jobTitle",
+              "invoice",
+              "order",
+              "lot",
+              "product",
+              "run",
+              "photo"
+            ]
+          },
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "words": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "words"
+        ]
+      },
+      "WelcomeItem": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "receiveStock",
+              "raiseOrder",
+              "shipOrder",
+              "planRun",
+              "draftInvoice",
+              "confirmEmail",
+              "sayWhoYouAre",
+              "lookUp",
+              "openOrder"
+            ]
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "what": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WelcomeDone"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "done",
+          "what"
+        ]
+      },
+      "Welcome": {
+        "type": "object",
+        "properties": {
+          "joinedOn": {
+            "type": "string"
+          },
+          "lastDay": {
+            "type": "string"
+          },
+          "founder": {
+            "type": "boolean"
+          },
+          "inviter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Colleague"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "access": {
+            "$ref": "#/components/schemas/MemberAccess"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WelcomeItem"
+            }
+          }
+        },
+        "required": [
+          "joinedOn",
+          "lastDay",
+          "founder",
+          "inviter",
+          "note",
+          "access",
+          "items"
+        ]
+      },
       "HomeRow": {
         "type": "object",
         "properties": {
@@ -13331,6 +13562,16 @@
           "gettingStarted": {
             "$ref": "#/components/schemas/GettingStarted"
           },
+          "welcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Welcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "cards": {
             "type": "array",
             "items": {
@@ -13340,6 +13581,7 @@
         },
         "required": [
           "gettingStarted",
+          "welcome",
           "cards"
         ]
       },

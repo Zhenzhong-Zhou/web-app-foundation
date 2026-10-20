@@ -1,4 +1,5 @@
 {
+  "account.access.noOrganization": "您当前不在任何组织中，因此没有可显示的权限。",
   "account.blocks.lastOwner": "您是 {organization} 唯一的所有者。请先将另一位成员设为所有者。",
   "account.blocks.onlyMember": "您是 {organization} 唯一的成员，离开后它将无人管理。请先添加另一位成员，并将其设为所有者；或者删除该组织，也可以连同您的账户一起删除。",
   "account.leave.noOrganization": "您当前不在任何组织中，因此没有可离开的组织。",
@@ -622,6 +623,8 @@
   "notifications.account.signIn": "您的账户有新的登录",
   "notifications.closedShort.body": "已收货 {fulfilled}，共订购 {ordered}。{reason}",
   "notifications.closedShort.title": "{sku} 将无法全部交付",
+  "notifications.joined.body": "{name}接受了您的邀请，以{role}身份加入 {organization}。",
+  "notifications.joined.title": "{name}加入了",
   "notifications.licence.expired": "许可证 {number}（{authority}）已于 {date} 到期",
   "notifications.licence.expiring": "许可证 {number}（{authority}）将在 {days} 天后到期，即 {date}",
   "notifications.licence.lastDay": "许可证 {number}（{authority}）今天到期（{date}）",

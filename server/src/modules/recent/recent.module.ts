@@ -9,5 +9,8 @@ import { RecentService } from './recent.service';
   imports: [AuthorizationModule],
   controllers: [RecentController],
   providers: [RecentService],
+  // For the welcome on Home, whose lookups are ticked by what was opened
+  // (ADR-079).
+  exports: [RecentService],
 })
 export class RecentModule {}

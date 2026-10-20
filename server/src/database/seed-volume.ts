@@ -3,11 +3,13 @@ import { dirname, resolve } from 'node:path';
 
 import { ConsoleLogger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { AppModule } from '../app.module';
 import { AuthService } from '../core/auth/auth.service';
+import { PasswordService } from '../core/auth/password.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
+import { invitations, memberships, roles, users } from './schema';
 import { runInTenantContext } from './tenant-context';
 import { Random } from './volume/random';
 import { type Scale, SCALES, VOLUMES } from './volume/scale';
@@ -57,6 +59,11 @@ interface Account {
   email: string;
   userId: string;
   organizationId: string;
+  /**
+   * An Admin who joined today, invited by the Owner with a note: whose
+   * Home perf reads as a newcomer's, the welcome and all (ADR-079).
+   */
+  newcomerEmail: string;
 }
 
 interface Options {
@@ -135,6 +142,7 @@ async function seedVolume(): Promise<void> {
         email,
         userId: user.id,
         organizationId: user.organizationId,
+        newcomerEmail: `volume-${options.scale}-${index}-${stamp}-new@example.com`,
       });
     }
 
@@ -173,6 +181,12 @@ async function seedVolume(): Promise<void> {
       (result) => (result as PromiseFulfilledResult<Anchors>).value,
     );
 
+    // Last, so they join after the year the Owner made.
+    const passwordHash = await app.get(PasswordService).hash(PASSWORD);
+    for (const account of accounts) {
+      await addNewcomer(db, account, passwordHash);
+    }
+
     // Fresh statistics, so the plan check and the first perf run see the
     // planner's view of this data rather than of an empty database.
     await db.execute(sql`analyze`);
@@ -209,6 +223,59 @@ async function seedVolume(): Promise<void> {
   } finally {
     await app.close();
   }
+}
+
+/**
+ * The organization's newcomer (ADR-079): an Admin, so the first week has
+ * work for the audit log to tick, who joined today by the Owner's emailed
+ * invitation, confirmed by it. Written as accepting leaves it rather than
+ * through the link, which is not what perf measures.
+ */
+async function addNewcomer(
+  db: Database,
+  account: Account,
+  passwordHash: string,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [admin] = await tx
+      .select({ id: roles.id })
+      .from(roles)
+      .where(
+        and(
+          eq(roles.organizationId, account.organizationId),
+          eq(roles.name, 'Admin'),
+        ),
+      );
+    const [user] = await tx
+      .insert(users)
+      .values({
+        email: account.newcomerEmail,
+        name: 'Volume Newcomer',
+        passwordHash,
+        emailVerifiedAt: sql`now()`,
+      })
+      .returning({ id: users.id });
+    const [membership] = await tx
+      .insert(memberships)
+      .values({
+        userId: user.id,
+        organizationId: account.organizationId,
+        roleId: admin.id,
+      })
+      .returning({ id: memberships.id });
+    await tx.insert(invitations).values({
+      organizationId: account.organizationId,
+      email: account.newcomerEmail,
+      roleId: admin.id,
+      locale: 'en',
+      note: 'Welcome! Start with the Products list, then receive the next delivery.',
+      invitedBy: account.userId,
+      link: 'emailed',
+      expiresAt: sql`now() + interval '7 days'`,
+      membershipId: membership.id,
+      acceptedAt: sql`now()`,
+    });
+  });
 }
 
 function parseOptions(args: string[]): Options | string {

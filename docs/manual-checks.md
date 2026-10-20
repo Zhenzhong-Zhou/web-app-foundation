@@ -1496,6 +1496,17 @@ The pages, in a private window unless a check says otherwise.
   Accounts here start from an invitation and Home with no organization
   wrap without scrolling sideways, as on the canvas.
 
+## 32. A newcomer's first sign-in (ADR-079)
+
+- **MC-3201** *(ADR-079)* As the demo Owner, invite an address from
+  Members → Invite, and accept it from Mailpit in a private window. Back as
+  the Owner, within a minute the bell has … joined, reading … accepted your
+  invitation and joined Demo … as a Viewer; Mailpit has no email about it.
+  With Account's language set to 中文, the same entry reads …加入了 and
+  …接受了您的邀请，以查看者身份加入 Demo …。 As an Admin of the demo team,
+  invite another address, then leave the organization before it is
+  accepted, and accept it: nobody's bell says so.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -1839,3 +1850,4 @@ first.
   page; MC-3106 to MC-3110 added.
 - 2026-10-20: another device's session finds its organization again
   (#144, ADR-079): MC-R22.
+- 2026-10-20: ADR-079, the server: section 32, MC-3201.

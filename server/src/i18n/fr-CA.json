@@ -1,4 +1,5 @@
 {
+  "account.access.noOrganization": "Vous ne travaillez dans aucune organisation, il n’y a donc aucun accès à afficher.",
   "account.blocks.lastOwner": "Vous êtes le seul propriétaire de {organization}. Désignez d’abord un autre membre comme propriétaire.",
   "account.blocks.onlyMember": "Vous êtes le seul membre de {organization}, qui resterait sans personne. Ajoutez d’abord un autre membre et désignez-le comme propriétaire, ou supprimez l’organisation, avec votre compte si vous le souhaitez.",
   "account.leave.noOrganization": "Vous ne travaillez dans aucune organisation, il n’y en a donc aucune à quitter.",
@@ -622,6 +623,8 @@
   "notifications.account.signIn": "Une nouvelle connexion à votre compte",
   "notifications.closedShort.body": "{fulfilled} sur {ordered} reçus. {reason}",
   "notifications.closedShort.title": "{sku} ne sera pas livré en entier",
+  "notifications.joined.body": "{name} a accepté votre invitation et fait maintenant partie de {organization} en tant que {role}.",
+  "notifications.joined.title": "Nouvelle arrivée : {name}",
   "notifications.licence.expired": "La licence {number} ({authority}) a expiré le {date}",
   "notifications.licence.expiring": "La licence {number} ({authority}) expire dans {days, plural, one {# jour} other {# jours}}, le {date}",
   "notifications.licence.lastDay": "La licence {number} ({authority}) expire aujourd’hui, le {date}",

@@ -21,6 +21,9 @@ import { Throttle } from '@nestjs/throttler';
 import { t } from '../../i18n/translate';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import { Audited } from '../audit/audited.decorator';
+import type { MemberAccess } from '../authorization/dto/member-access-response.dto';
+import { MemberAccessService } from '../authorization/member-access.service';
+import { PermissionsService } from '../authorization/permissions.service';
 import type { UploadedBinary } from '../files/files.service';
 import { AccountService } from './account.service';
 import { AccountDeletionService } from './account-deletion.service';
@@ -59,6 +62,8 @@ export class AccountController {
     private readonly photo: AccountPhotoService,
     private readonly deletion: AccountDeletionService,
     private readonly organizationDeletion: OrganizationDeletionService,
+    private readonly permissions: PermissionsService,
+    private readonly access: MemberAccessService,
   ) {}
 
   @Patch('profile')
@@ -154,6 +159,21 @@ export class AccountController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async removePhoto(@CurrentUser() context: RequestContext): Promise<void> {
     await this.photo.remove(context);
+  }
+
+  /**
+   * Your access in the organization this session is working in (ADR-079):
+   * the role, and whom to ask for more, from the same answer as Home's
+   * welcome, so what you may do outlasts the card.
+   */
+  @Get('membership')
+  async membership(
+    @CurrentUser() context: RequestContext,
+  ): Promise<MemberAccess> {
+    const held = new Set(
+      context.roleId ? await this.permissions.listForRole(context.roleId) : [],
+    );
+    return this.access.of(context, held);
   }
 
   /**

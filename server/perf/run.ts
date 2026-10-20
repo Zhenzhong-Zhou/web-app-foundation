@@ -87,7 +87,16 @@ async function main(): Promise<number> {
       manifest.password,
       `organization ${index + 1}`,
     );
-    orgs.push(await discover(session, anchors));
+    // Seeds from before ADR-079 have no newcomer.
+    const newcomer = anchors.newcomerEmail
+      ? await signIn(
+          baseUrl,
+          anchors.newcomerEmail,
+          manifest.password,
+          `organization ${index + 1}'s newcomer`,
+        )
+      : null;
+    orgs.push(await discover(session, anchors, newcomer));
   }
 
   // A tag per run keeps lot codes and references unique across reruns.

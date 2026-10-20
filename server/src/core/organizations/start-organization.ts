@@ -24,6 +24,8 @@ export async function startOrganization(
     timeZone: input.timeZone,
   });
 
+  // Beginning at the transaction's now(), as the organization does: how
+  // the welcome on Home tells the founder (ADR-079).
   await tx.insert(memberships).values({
     userId: input.userId,
     organizationId,

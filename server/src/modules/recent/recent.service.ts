@@ -170,8 +170,11 @@ export class RecentService {
     });
   }
 
-  /** Each kind's records as they are named now, in this organization. */
-  private named(
+  /**
+   * Each kind's records as they are named now, in this organization: also
+   * how the welcome's first week names what was done (ADR-079).
+   */
+  named(
     tx: Transaction,
     organizationId: string,
     kind: RecentKind,

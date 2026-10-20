@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { and, asc, eq, lt, lte, type SQL, sql } from 'drizzle-orm';
 
 import { todayIn } from '../../common/today';
+import type { RequestContext } from '../../core/auth/request-context';
 import type { Permission } from '../../core/authorization/permissions';
 import {
   invoices,
@@ -18,6 +19,7 @@ import { OrdersService } from '../orders/orders.service';
 import { ProductionOrdersService } from '../production-orders/production-orders.service';
 import { ReturnAuthorizationsService } from '../return-authorizations/return-authorizations.service';
 import { StockReadsService, stockRowsOf } from '../stock/stock-reads.service';
+import { WelcomeService } from './welcome.service';
 
 /** The most urgent rows each card shows (ADR-058). */
 export const HOME_ROWS = 5;
@@ -115,7 +117,8 @@ function licencesDue(organizationId: string, today: string) {
  * the card's "See all" link sets, so the five shown are that list's first
  * five; each count uses the same conditions, so "See all 12" opens twelve.
  * The counts are one statement for every card (totals()), the rows a read
- * per card. A card the member may not view is never queried.
+ * per card. A card the member may not view is never queried. The
+ * member's own welcome comes with them (ADR-079).
  */
 @Injectable()
 export class HomeService {
@@ -126,6 +129,7 @@ export class HomeService {
     private readonly invoices: InvoicesService,
     private readonly returns: ReturnAuthorizationsService,
     private readonly runs: ProductionOrdersService,
+    private readonly welcome: WelcomeService,
   ) {}
 
   /**
@@ -135,7 +139,10 @@ export class HomeService {
    * yesterday, and a card's count would then go by another day than its
    * rows.
    */
-  async home(held: ReadonlySet<Permission>) {
+  async home(
+    context: Pick<RequestContext, 'userId' | 'organizationId'>,
+    held: ReadonlySet<Permission>,
+  ) {
     const kinds = CARDS.flatMap(({ kind, permission }) =>
       held.has(permission) ? [kind] : [],
     );
@@ -153,7 +160,12 @@ export class HomeService {
         rows: await this.rows(kind, today, expiringWithin),
       });
     }
-    return { gettingStarted: await this.gettingStarted(), cards };
+    const gettingStarted = await this.gettingStarted();
+    const welcome = await this.welcome.of(context, held, {
+      timeZone,
+      startShows: !gettingStarted.complete && !gettingStarted.dismissed,
+    });
+    return { gettingStarted, welcome, cards };
   }
 
   /**

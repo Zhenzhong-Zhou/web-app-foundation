@@ -36,6 +36,7 @@ import type {
   InvitationLinkStatus,
 } from './dto/invitation-response.dto';
 import { appNameOf, invitationMail } from './invitation-mail';
+import { inviterStillHere } from './inviter';
 import { lastDayOf, linkEnd } from './link-end';
 import { roleWords } from './role-words';
 
@@ -468,16 +469,7 @@ export class InvitationsService {
         })
         .from(invitations)
         .innerJoin(users, eq(users.id, invitations.invitedBy))
-        // The inviter's own membership here, while they hold one: an
-        // invitation is the organization's, and names nobody who has left
-        // or deleted their account (ADR-077).
-        .leftJoin(
-          memberships,
-          and(
-            eq(memberships.userId, invitations.invitedBy),
-            eq(memberships.organizationId, invitations.organizationId),
-          ),
-        )
+        .leftJoin(memberships, inviterStillHere)
         .innerJoin(
           organizations,
           eq(organizations.id, invitations.organizationId),

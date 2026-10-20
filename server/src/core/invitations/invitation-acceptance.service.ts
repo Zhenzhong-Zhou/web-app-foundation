@@ -25,6 +25,7 @@ import { runInTenantContext } from '../../database/tenant-context';
 import { t } from '../../i18n/translate';
 import { AuditService } from '../audit/audit.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
+import { ROLE_NAMES } from '../audit/audit-fields';
 import {
   AccountEventService,
   type EventMeta,
@@ -34,6 +35,7 @@ import { AuthTokenService } from '../auth/auth-token.service';
 import { PasswordService } from '../auth/password.service';
 import type { RequestContext } from '../auth/request-context';
 import { type NewSession, SessionService } from '../auth/session.service';
+import type { SystemRole } from '../authorization/permissions';
 import {
   FILE_STORAGE,
   type FileStorage,
@@ -41,8 +43,11 @@ import {
   ownerOf,
 } from '../files/file-storage';
 import { renderLogoMark } from '../files/images';
+import { NOTIFICATION_TYPES } from '../notifications/notification-types';
+import { NotificationsService } from '../notifications/notifications.service';
 import type { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import type { InvitationPreview } from './dto/invitation-response.dto';
+import { inviterStillHere } from './inviter';
 import { lastDayOf } from './link-end';
 import { roleWords } from './role-words';
 
@@ -96,6 +101,7 @@ export class InvitationAcceptanceService {
     private readonly events: AccountEventService,
     private readonly auth: AuthService,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /**
@@ -137,16 +143,7 @@ export class InvitationAcceptanceService {
         eq(organizations.id, invitations.organizationId),
       )
       .innerJoin(users, eq(users.id, invitations.invitedBy))
-      // The inviter's own membership here, while they hold one: an
-      // invitation is the organization's, and names nobody who has left or
-      // deleted their account (ADR-077).
-      .leftJoin(
-        memberships,
-        and(
-          eq(memberships.userId, invitations.invitedBy),
-          eq(memberships.organizationId, invitations.organizationId),
-        ),
-      )
+      .leftJoin(memberships, inviterStillHere)
       .innerJoin(roles, eq(roles.id, invitations.roleId))
       .where(eq(invitations.id, invitationId));
     if (!row || row.acceptedAt || row.revokedAt) return null;
@@ -250,9 +247,11 @@ export class InvitationAcceptanceService {
 
       await this.join(tx, invitation, token, context.userId);
       if (verifies) {
+        // The transaction's time, the membership's start: confirmed by
+        // joining reads as joined confirmed on the welcome (ADR-079).
         await tx
           .update(users)
-          .set({ emailVerifiedAt: new Date() })
+          .set({ emailVerifiedAt: sql`now()` })
           .where(eq(users.id, context.userId));
       }
     });
@@ -262,6 +261,11 @@ export class InvitationAcceptanceService {
       invitation.organizationId,
     );
     await this.recorded(context.userId, invitation, meta, verifies);
+    await this.tellInviter(
+      context.userId,
+      account?.name ?? context.name,
+      invitation,
+    );
 
     return {
       id: context.userId,
@@ -318,7 +322,8 @@ export class InvitationAcceptanceService {
             name,
             passwordHash,
             locale,
-            emailVerifiedAt: verified ? new Date() : null,
+            // The membership's start, as above.
+            emailVerifiedAt: verified ? sql`now()` : null,
           })
           .returning({
             id: users.id,
@@ -349,6 +354,7 @@ export class InvitationAcceptanceService {
       { keepSignedIn: dto.keepSignedIn ?? true },
     );
     await this.recorded(user.id, invitation, meta, verified);
+    await this.tellInviter(user.id, user.name, invitation);
     if (!verified) {
       await this.auth.sendVerificationEmail(
         user.id,
@@ -512,6 +518,74 @@ export class InvitationAcceptanceService {
       );
     } catch (error) {
       this.logger.error(`Audit write failed: ${String(error)}`);
+    }
+  }
+
+  /**
+   * The inviter hears in the bell, in their own language, that the person
+   * they invited has joined, and opens the newcomer's page on People
+   * (ADR-079); while still a member here, as the email and the invitation
+   * page name them (ADR-077). The bell alone, not email: it is not a
+   * security event (ADR-037). Once the acceptance has committed, and never
+   * failing what has happened.
+   */
+  private async tellInviter(
+    userId: string,
+    name: string,
+    invitation: Live,
+  ): Promise<void> {
+    try {
+      const [facts] = await this.db
+        .select({
+          inviterId: memberships.userId,
+          organizationName: organizations.name,
+          roleName: roles.name,
+          roleIsSystem: roles.isSystem,
+        })
+        .from(invitations)
+        .innerJoin(memberships, inviterStillHere)
+        .innerJoin(users, eq(users.id, invitations.invitedBy))
+        .innerJoin(
+          organizations,
+          eq(organizations.id, invitations.organizationId),
+        )
+        .innerJoin(roles, eq(roles.id, invitations.roleId))
+        .where(and(eq(invitations.id, invitation.id), isNull(users.deletedAt)));
+      if (!facts) return;
+
+      // A built-in role's name in the reader's language, as a message of
+      // its own; a role the organization named, as named.
+      const role =
+        facts.roleIsSystem && facts.roleName in ROLE_NAMES
+          ? ROLE_NAMES[facts.roleName as SystemRole]
+          : facts.roleName;
+
+      await this.notifications.emit([
+        {
+          userId: facts.inviterId,
+          organizationId: invitation.organizationId,
+          type: NOTIFICATION_TYPES.INVITATION_ACCEPTED,
+          title: t(
+            {
+              id: 'notifications.joined.title',
+              defaultMessage: '{name} joined',
+            },
+            { name },
+          ),
+          body: t(
+            {
+              id: 'notifications.joined.body',
+              defaultMessage:
+                '{name} accepted your invitation and joined {organization} as {role, select, Owner {an} Admin {an} other {a}} {role}.',
+            },
+            { name, organization: facts.organizationName, role },
+          ),
+          resourceType: 'user',
+          resourceId: userId,
+        },
+      ]);
+    } catch (error) {
+      this.logger.error(`Telling the inviter failed: ${String(error)}`);
     }
   }
 

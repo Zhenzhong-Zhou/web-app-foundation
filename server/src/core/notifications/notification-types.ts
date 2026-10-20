@@ -16,6 +16,8 @@ export const NOTIFICATION_TYPES = {
   PASSWORD_CHANGED: 'account.password_changed',
   /** Distinct from changed: a reset you did not request is an attack (ADR-022). */
   PASSWORD_RESET: 'account.password_reset',
+  /** Someone you invited has joined (ADR-079): the inviter's alone. */
+  INVITATION_ACCEPTED: 'invitation.accepted',
 } as const;
 
 export type NotificationType =

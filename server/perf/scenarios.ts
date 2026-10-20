@@ -30,6 +30,8 @@ interface Hot {
 /** A signed-in organization and what perf found in it before timing. */
 export interface Org {
   session: Session;
+  /** A member who joined today (ADR-079), whose Home has the welcome. */
+  newcomer: Session | null;
   anchors: Anchors;
   hot: Hot[];
   orderIds: string[];
@@ -80,6 +82,7 @@ function orgOf(orgs: Org[], worker: number): Org {
 export async function discover(
   session: Session,
   anchors: Anchors,
+  newcomer: Session | null,
 ): Promise<Org> {
   const [{ rows, deep }, locations] = await Promise.all([
     everyStockRow(session, '/stock'),
@@ -130,8 +133,23 @@ export async function discover(
   const orders = await walk(session, '/orders?status=all');
   const movements = await walk(session, '/stock/movements');
 
+  // Two weeks after seeding, the newcomer's Home is anyone's: still timed,
+  // but no longer what its name says.
+  if (newcomer) {
+    const { welcome } = await newcomer.json<{ welcome: unknown }>(
+      'GET',
+      '/home',
+    );
+    if (!welcome) {
+      console.warn(
+        `${newcomer.label} joined over two weeks ago, so their Home has no welcome. Seed again to time one.`,
+      );
+    }
+  }
+
   return {
     session,
+    newcomer,
     anchors,
     hot,
     orderIds: orders.ids,
@@ -251,6 +269,17 @@ export function readScenarios(orgs: Org[]): Scenario[] {
       () => `/stock/movements?${lastMonthInstants()}`,
     ),
   ];
+
+  // A newcomer's Home (ADR-079): the cards an Admin sees, and the welcome,
+  // its first week ticked from their own audit entries and what they opened.
+  if (orgs.every((org) => org.newcomer)) {
+    scenarios.push({
+      name: 'GET /home (a newcomer)',
+      kind: 'read',
+      budgetMs: READ_BUDGET_MS,
+      send: (worker) => orgOf(orgs, worker).newcomer!.send('GET', '/home'),
+    });
+  }
 
   if (orgs.every((org) => org.anchors.traceLotId)) {
     scenarios.push(
