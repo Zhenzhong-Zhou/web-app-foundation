@@ -182,7 +182,11 @@ export function NotificationBell() {
           }
           onClick={(event) => void open(event)}
         >
-          <Badge badgeContent={count} color="error" max={99}>
+          {/* Nothing rather than 0: a Badge hiding a 0 still holds the
+              last number it showed, once anything around it renders
+              again, and text in the button that its name does not say
+              fails Label in Name (WCAG 2.5.3). */}
+          <Badge badgeContent={count || undefined} color="error" max={99}>
             <NotificationsNoneIcon />
           </Badge>
         </IconButton>
