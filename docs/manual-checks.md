@@ -927,7 +927,8 @@ await fetch(`${api}/v1/files/product-image`, {
   organization's records. Delete my account: a wrong password is refused;
   the right one closes the dialog, the banner names the day 30 days
   ahead on every page, your other browser is signed out, and an email
-  (Mailpit) says the account will be deleted after that same day. With
+  (Mailpit) says the account will be deleted after that same day, and
+  that Keep my account, in the banner at the top of every page, keeps it. With
   the computer's time zone set to Vancouver, asked for after 17:00, the
   banner and the email still name the same day. With the server stopped,
   Keep my account says it could not reach the server and the banner
@@ -2127,3 +2128,5 @@ first.
   MC-2901 extended.
 - 2026-10-20: the Chinese audit log and exports in the glossary's words:
   MC-2904 extended.
+- 2026-10-20: the deletion email names Keep my account and where it is:
+  MC-2302 extended.

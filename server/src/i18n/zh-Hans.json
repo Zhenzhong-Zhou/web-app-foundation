@@ -553,7 +553,7 @@
   "mail.deletion.blocked.subject": "您的账户未能删除",
   "mail.deletion.cancelled.body": "您的账户删除已取消，账户保持不变。",
   "mail.deletion.cancelled.subject": "您的账户不会被删除",
-  "mail.deletion.scheduled.cancel": "改变主意了，或者这不是您申请的？请登录并在“账户”页面取消删除。如果不是您申请的，请同时更改密码。",
+  "mail.deletion.scheduled.cancel": "改变主意了，或者这不是您申请的？请登录并点击每个页面顶部横幅中的“保留我的账户”。如果不是您申请的，请同时更改密码。",
   "mail.deletion.scheduled.subject": "您的账户将在 {date}之后删除",
   "mail.deletion.scheduled.until": "在此之前，您仍可照常登录和工作，并可在“账户”页面下载您的数据。",
   "mail.deletion.scheduled.when": "您已申请删除账户。账户将在 {date}之后删除，您的其他所有设备均已退出登录。",

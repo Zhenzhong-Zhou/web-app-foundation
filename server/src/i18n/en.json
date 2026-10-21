@@ -553,7 +553,7 @@
   "mail.deletion.blocked.subject": "Your account could not be deleted",
   "mail.deletion.cancelled.body": "The deletion of your account was cancelled, and the account stays as it is.",
   "mail.deletion.cancelled.subject": "Your account will not be deleted",
-  "mail.deletion.scheduled.cancel": "Changed your mind, or did not ask for this? Sign in and cancel the deletion on your Account page. If you did not ask, change your password too.",
+  "mail.deletion.scheduled.cancel": "Changed your mind, or did not ask for this? Sign in and press Keep my account in the banner at the top of every page. If you did not ask, change your password too.",
   "mail.deletion.scheduled.subject": "Your account will be deleted after {date}",
   "mail.deletion.scheduled.until": "Until then you can sign in and work as usual, and download your data from your Account page.",
   "mail.deletion.scheduled.when": "You asked for your account to be deleted. It will be deleted after {date}, and every other device has been signed out.",
