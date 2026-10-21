@@ -67,7 +67,8 @@ above has its creation in History, by the Owner, and what the team did is in
 History as theirs: the **Richmond warehouse**, with zones, an aisle,
 shelves, a fridge and a **Quarantine**; **MAGCAP** in three sizes;
 **PO-DEMO-7** bought in euros, and **PO-DEMO-9** three days late, priced
-from **Lakeshore Packaging 2026**; lot **VC-0301** expired and quarantined;
+from **Lakeshore Packaging 2026**; **PO-DEMO-11** confirmed and waiting to
+be received, melatonin in lots; lot **VC-0301** expired and quarantined;
 **SLEEP-BLEND-01** issued from hand-picked lot **CHA-0522**, and
 **SLEEP-60-01** made in two outputs, 970 of 1000; a draft second version of
 the Calm recipe; **CALM-RUN-03** cancelled; a licence expiring in 6 days and
@@ -1933,14 +1934,14 @@ The pages, in a private window unless a check says otherwise.
   confirmed purchases (Buying, Confirmed). As Tom Becker, who may move
   stock, it opens Inventory as before.
 - **MC-3322** *(ADR-080)* Receiving a lot-tracked line without the
-  catalogue. As the demo Owner, raise and confirm a purchase of 5 kg of
-  MELATONIN, then make a role from the Warehouse template with Receive,
-  ship or transfer stock and See the product catalogue unticked, and give
-  it to a member. As them, with the Network tab open, press Receive on the
-  order's line: Lot number and Expires are asked for, Up to 5.0000 kg still
-  outstanding. names the unit, nothing says the dialog cannot tell whether
-  a lot is needed, and no request is refused. Receive 5 with a lot number:
-  it is recorded, and Trace a lot finds the lot.
+  catalogue. As the demo Owner, edit Warehouse on Settings → Roles: untick
+  See the product catalogue, which unticks Receive, ship or transfer stock
+  with it, and save. As Tom Becker, with the Network tab open, press
+  Receive on PO-DEMO-11's MELATONIN line: Lot number and Expires are asked
+  for, Up to 5.0000 kg still outstanding. names the unit, nothing says the
+  dialog cannot tell whether a lot is needed, and no request is refused.
+  Receive 5 with a lot number: it is recorded, and Trace a lot finds the
+  lot. As the demo Owner, tick both again on Warehouse.
 - **MC-3323** *(ADR-080)* The trace and an order lead only where their
   reader may go. As Tom Becker (Warehouse), trace BF-2609: its receipt's
   order and each customer's order are links, while the run under Went into
@@ -2460,3 +2461,6 @@ first.
   open them: MC-3322 and MC-3323.
 - 2026-10-21: ADR-080, an order's partner as text where its reader may not
   open it: MC-3323 extended.
+- 2026-10-21: ADR-080, the demo's PO-DEMO-11 waiting to be received, so
+  receiving a lot-tracked line without the catalogue is walked as Tom
+  Becker: MC-3322 rewritten.
