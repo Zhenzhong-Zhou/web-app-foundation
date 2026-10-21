@@ -17,7 +17,9 @@ import type { Permission } from '../api/types.gen';
  * one thing each, and an area says its things together: "add and change
  * products, recipes and product licences". A thing the reader may add or
  * change is not also said as seen. The rest are acts of their own,
- * "correct a count". An area's phrases are joined as the reader's language
+ * "correct a count", and acts done to the same thing are said once with
+ * their verbs together, "raise, change, confirm and cancel orders", never
+ * a verb the reader does not hold. An area's phrases are joined as the reader's language
  * joins a list (Intl.ListFormat), and an area they cannot touch is left out.
  */
 
@@ -172,14 +174,6 @@ const ACTS = defineMessages({
     id: 'account.access.act.stockAdjust',
     defaultMessage: 'correct a count',
   },
-  ordersCreate: {
-    id: 'account.access.act.ordersCreate',
-    defaultMessage: 'raise orders',
-  },
-  ordersUpdate: {
-    id: 'account.access.act.ordersUpdate',
-    defaultMessage: 'change, confirm and cancel orders',
-  },
   ordersReceive: {
     id: 'account.access.act.ordersReceive',
     defaultMessage: 'receive what was ordered',
@@ -187,14 +181,6 @@ const ACTS = defineMessages({
   ordersShip: {
     id: 'account.access.act.ordersShip',
     defaultMessage: 'ship what was sold',
-  },
-  productionCreate: {
-    id: 'account.access.act.productionCreate',
-    defaultMessage: 'plan runs',
-  },
-  productionRelease: {
-    id: 'account.access.act.productionRelease',
-    defaultMessage: 'release runs',
   },
   productionComplete: {
     id: 'account.access.act.productionComplete',
@@ -204,38 +190,6 @@ const ACTS = defineMessages({
     id: 'account.access.act.productionOverride',
     defaultMessage:
       'release a run whose licence is not in force, with a reason',
-  },
-  invoicesCreate: {
-    id: 'account.access.act.invoicesCreate',
-    defaultMessage: 'draft invoices',
-  },
-  invoicesUpdate: {
-    id: 'account.access.act.invoicesUpdate',
-    defaultMessage: 'change drafts',
-  },
-  invoicesDelete: {
-    id: 'account.access.act.invoicesDelete',
-    defaultMessage: 'delete drafts',
-  },
-  invoicesIssue: {
-    id: 'account.access.act.invoicesIssue',
-    defaultMessage: 'issue and void invoices',
-  },
-  returnsCreate: {
-    id: 'account.access.act.returnsCreate',
-    defaultMessage: 'authorize returns',
-  },
-  returnsUpdate: {
-    id: 'account.access.act.returnsUpdate',
-    defaultMessage: 'cancel and close returns',
-  },
-  usersCreate: {
-    id: 'account.access.act.usersCreate',
-    defaultMessage: 'invite members',
-  },
-  usersDelete: {
-    id: 'account.access.act.usersDelete',
-    defaultMessage: 'remove members',
   },
   rolesAssign: {
     id: 'account.access.act.rolesAssign',
@@ -251,9 +205,62 @@ const ACTS = defineMessages({
   },
 });
 
+/**
+ * What a few permissions each do to the same thing, said once with their
+ * verbs together: "raise, change, confirm and cancel orders", each verb only
+ * for a permission the reader holds.
+ */
+const ACTED_ON = defineMessages({
+  orders: {
+    id: 'account.access.actedOn.orders',
+    defaultMessage: '{verbs} orders',
+  },
+  runs: { id: 'account.access.actedOn.runs', defaultMessage: '{verbs} runs' },
+  invoices: {
+    id: 'account.access.actedOn.invoices',
+    defaultMessage: '{verbs} invoices',
+  },
+  drafts: {
+    id: 'account.access.actedOn.drafts',
+    defaultMessage: '{verbs} drafts',
+  },
+  returns: {
+    id: 'account.access.actedOn.returns',
+    defaultMessage: '{verbs} returns',
+  },
+  members: {
+    id: 'account.access.actedOn.members',
+    defaultMessage: '{verbs} members',
+  },
+});
+
+type ActedOn = keyof typeof ACTED_ON;
+
+/** The verbs, each joined with the others done to the same thing. */
+const DOING = defineMessages({
+  raise: { id: 'account.access.doing.raise', defaultMessage: 'raise' },
+  change: { id: 'account.access.doing.change', defaultMessage: 'change' },
+  confirm: { id: 'account.access.doing.confirm', defaultMessage: 'confirm' },
+  cancel: { id: 'account.access.doing.cancel', defaultMessage: 'cancel' },
+  plan: { id: 'account.access.doing.plan', defaultMessage: 'plan' },
+  release: { id: 'account.access.doing.release', defaultMessage: 'release' },
+  draft: { id: 'account.access.doing.draft', defaultMessage: 'draft' },
+  issue: { id: 'account.access.doing.issue', defaultMessage: 'issue' },
+  void: { id: 'account.access.doing.void', defaultMessage: 'void' },
+  delete: { id: 'account.access.doing.delete', defaultMessage: 'delete' },
+  authorize: {
+    id: 'account.access.doing.authorize',
+    defaultMessage: 'authorize',
+  },
+  close: { id: 'account.access.doing.close', defaultMessage: 'close' },
+  invite: { id: 'account.access.doing.invite', defaultMessage: 'invite' },
+  remove: { id: 'account.access.doing.remove', defaultMessage: 'remove' },
+});
+
 type Grant =
   | { area: Area; verb: 'see' | 'add' | 'change'; things: readonly Thing[] }
-  | { area: Area; act: MessageDescriptor };
+  | { area: Area; act: MessageDescriptor }
+  | { area: Area; actsOn: ActedOn; verbs: readonly MessageDescriptor[] };
 
 const see = (area: Area, ...things: Thing[]): Grant => ({
   area,
@@ -274,6 +281,11 @@ const act = (area: Area, words: MessageDescriptor): Grant => ({
   area,
   act: words,
 });
+const doing = (
+  area: Area,
+  actsOn: ActedOn,
+  ...verbs: MessageDescriptor[]
+): Grant => ({ area, actsOn, verbs });
 
 /** Every permission's area and words. Acts are said in this order. */
 const GRANTS: Record<Permission, Grant> = {
@@ -295,25 +307,36 @@ const GRANTS: Record<Permission, Grant> = {
   'product_licences.update': change('products', 'licences'),
 
   'orders.view': see('orders', 'orders'),
-  'orders.create': act('orders', ACTS.ordersCreate),
-  'orders.update': act('orders', ACTS.ordersUpdate),
+  'orders.create': doing('orders', 'orders', DOING.raise),
+  'orders.update': doing(
+    'orders',
+    'orders',
+    DOING.change,
+    DOING.confirm,
+    DOING.cancel,
+  ),
   'orders.receive': act('orders', ACTS.ordersReceive),
   'orders.ship': act('orders', ACTS.ordersShip),
 
   'production.view': see('production', 'runs'),
-  'production.create': act('production', ACTS.productionCreate),
-  'production.release': act('production', ACTS.productionRelease),
+  'production.create': doing('production', 'runs', DOING.plan),
+  'production.release': doing('production', 'runs', DOING.release),
   'production.complete': act('production', ACTS.productionComplete),
   'production.override_licence': act('production', ACTS.productionOverride),
 
   'invoices.view': see('invoices', 'invoices', 'creditNotes'),
-  'invoices.create': act('invoices', ACTS.invoicesCreate),
-  'invoices.update': act('invoices', ACTS.invoicesUpdate),
-  'invoices.delete': act('invoices', ACTS.invoicesDelete),
-  'invoices.issue': act('invoices', ACTS.invoicesIssue),
+  'invoices.create': doing('invoices', 'invoices', DOING.draft),
+  'invoices.update': doing('invoices', 'drafts', DOING.change),
+  'invoices.delete': doing('invoices', 'drafts', DOING.delete),
+  'invoices.issue': doing('invoices', 'invoices', DOING.issue, DOING.void),
   'return_authorizations.view': see('invoices', 'returns'),
-  'return_authorizations.create': act('invoices', ACTS.returnsCreate),
-  'return_authorizations.update': act('invoices', ACTS.returnsUpdate),
+  'return_authorizations.create': doing('invoices', 'returns', DOING.authorize),
+  'return_authorizations.update': doing(
+    'invoices',
+    'returns',
+    DOING.cancel,
+    DOING.close,
+  ),
 
   'costs.view': see('costs', 'costs', 'exchangeRates'),
   // It sets exchange rates too (PUT /costs/exchange-rates).
@@ -335,8 +358,8 @@ const GRANTS: Record<Permission, Grant> = {
   'roles.view': see('people', 'people'),
   'organizations.view': see('people', 'settings'),
   'audit.view': see('people', 'auditLog'),
-  'users.create': act('people', ACTS.usersCreate),
-  'users.delete': act('people', ACTS.usersDelete),
+  'users.create': doing('people', 'members', DOING.invite),
+  'users.delete': doing('people', 'members', DOING.remove),
   'roles.assign': act('people', ACTS.rolesAssign),
   'organizations.update': change('people', 'settings'),
   'organizations.export': act('people', ACTS.organizationsExport),
@@ -389,11 +412,32 @@ export function accessAreas(
         ? [intl.formatMessage(verb, { things: intl.formatList(list) })]
         : [];
 
-    const acts = [
-      ...new Set(
-        grants.flatMap((grant) => ('act' in grant ? [grant.act] : [])),
-      ),
-    ].map((words) => intl.formatMessage(words));
+    // Acts in GRANTS' order, those done to one thing said once, at the
+    // first, with every held verb: "raise, change, confirm and cancel
+    // orders".
+    const doings: (MessageDescriptor | ActedOn)[] = [];
+    const verbsOf = new Map<ActedOn, MessageDescriptor[]>();
+    for (const grant of grants) {
+      if ('act' in grant) {
+        if (!doings.includes(grant.act)) doings.push(grant.act);
+      } else if ('actsOn' in grant) {
+        const verbs = verbsOf.get(grant.actsOn);
+        if (verbs) {
+          verbs.push(...grant.verbs);
+        } else {
+          verbsOf.set(grant.actsOn, [...grant.verbs]);
+          doings.push(grant.actsOn);
+        }
+      }
+    }
+    const acts = doings.map((doing) => {
+      if (typeof doing !== 'string') return intl.formatMessage(doing);
+      const actedOn: MessageDescriptor = ACTED_ON[doing];
+      const verbs = (verbsOf.get(doing) ?? []).map((verb) =>
+        intl.formatMessage(verb),
+      );
+      return intl.formatMessage(actedOn, { verbs: intl.formatList(verbs) });
+    });
 
     const phrases = [
       ...said(

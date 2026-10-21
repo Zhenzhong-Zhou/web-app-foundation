@@ -105,21 +105,41 @@ describe('what you can do here', () => {
       ],
       [
         'Orders',
-        'See purchase and sales orders, raise orders, change, confirm and cancel orders, receive what was ordered and ship what was sold.',
+        'See purchase and sales orders, raise, change, confirm and cancel orders, receive what was ordered and ship what was sold.',
       ],
       [
         'Production',
-        'See production runs and what they used, plan runs, release runs and record what runs make.',
+        'See production runs and what they used, plan and release runs and record what runs make.',
       ],
       [
         'Invoices and returns',
-        'See invoices, credit notes and return authorizations, draft invoices, change drafts, delete drafts, authorize returns and cancel and close returns.',
+        'See invoices, credit notes and return authorizations, draft invoices, change and delete drafts and authorize, cancel and close returns.',
       ],
       ['Costs, prices and tax', 'See tax codes and their rates.'],
       ['Partners', 'Add and change customers and suppliers.'],
       [
         'People and the organization',
-        'See who works here, the organization’s settings and the audit log, invite members, remove members and change members’ roles.',
+        'See who works here, the organization’s settings and the audit log, invite and remove members and change members’ roles.',
+      ],
+    ]);
+  });
+
+  it('says the verbs done to one thing once, and only those held', () => {
+    expect(sentences(['orders.view', 'orders.create', 'orders.ship'])).toEqual([
+      [
+        'Orders',
+        'See purchase and sales orders, raise orders and ship what was sold.',
+      ],
+    ]);
+    expect(sentences(['orders.update'])).toEqual([
+      ['Orders', 'Change, confirm and cancel orders.'],
+    ]);
+    expect(
+      sentences(['invoices.view', 'invoices.create', 'invoices.issue']),
+    ).toEqual([
+      [
+        'Invoices and returns',
+        'See invoices and credit notes and draft, issue and void invoices.',
       ],
     ]);
   });
