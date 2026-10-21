@@ -454,6 +454,31 @@ describe('InvitationPage, an organization invitation', () => {
     });
   });
 
+  it('goes on after the Owner’s colon in lower case, in French', async () => {
+    // As the server sends it, in the invitation's language.
+    offers(
+      offer({
+        locale: 'fr-CA',
+        role: {
+          name: 'Propriétaire',
+          description:
+            'Tout, y compris les coûts, l’émission des factures, les paramètres et la fermeture de l’organisation.',
+        },
+      }),
+    );
+    open();
+
+    expect(
+      await screen.findByText(
+        (_, element) =>
+          element?.tagName === 'P' &&
+          /^Vous en serez Propriétaire\s:\stout, y compris les coûts/.test(
+            element.textContent ?? '',
+          ),
+      ),
+    ).toBeVisible();
+  });
+
   it('signs an account with this address in, then sets it up in this browser’s zone', async () => {
     offers(offer({ hasAccount: true }));
     let signedIn: Record<string, unknown> | null = null;

@@ -239,12 +239,18 @@ function NewOrganizationMark({ name }: { name: string }) {
   );
 }
 
-/** As what: the Owner, and what that lets them do. */
+/**
+ * As what: the Owner, and what that lets them do. The role's line stands
+ * alone elsewhere, with a capital; after this colon it goes on in lower
+ * case, as French writes it, and British English too.
+ */
 function OwnerLine({
   invitation,
 }: {
   invitation: OrganizationInvitationPreview;
 }) {
+  const intl = useIntl();
+  const description = invitation.role.description ?? '';
   return (
     <Typography>
       <FormattedMessage
@@ -252,7 +258,9 @@ function OwnerLine({
         defaultMessage="You’ll be its <b>{role}</b>: {description}"
         values={{
           role: invitation.role.name,
-          description: invitation.role.description ?? '',
+          description:
+            description.charAt(0).toLocaleLowerCase(intl.locale) +
+            description.slice(1),
           b: bold,
         }}
       />

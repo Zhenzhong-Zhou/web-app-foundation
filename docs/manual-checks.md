@@ -1461,8 +1461,9 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3106** *(ADR-078)* Open a link from MC-3102 signed out: the page is
   in the invitation's language, headed Set up …, with a dashed tile of the
   organization's initials (HH for Harbour Herbs, 海港 for 海港草本有限公司)
-  and A new organization; You'll be its Owner,
-  with what that lets them do; You can change the name later; the address
+  and A new organization; You'll be its Owner: everything, …, in lower
+  case after the colon (in Français, Vous en serez Propriétaire : tout,
+  …); You can change the name later; the address
   read-only, with the line about a confirmation email and Not your
   address?. Give a name and a password and Set up: Home opens in the new
   organization with its welcome, whose first week starts with Confirm
@@ -2051,3 +2052,5 @@ first.
 - 2026-10-20: Undo stays while focus or the pointer is on it, the welcome's
   and the gallery's: MC-1801 and MC-3207 extended.
 - 2026-10-20: the Admin's line says invite, not add: MC-3001 extended.
+- 2026-10-20: the Owner's line goes on in lower case after its colon:
+  MC-3106 extended.
