@@ -52,11 +52,12 @@ export function HelpProvider({ children }: { children: ReactNode }) {
     (target ?? buttonRef.current)?.focus();
   }, [open]);
 
+  // Safari focuses no button on a click, so what had focus may be <body>,
+  // which is no opener: the button takes it back instead.
   const remember = () => {
+    const active = document.activeElement;
     opener.current =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
+      active instanceof HTMLElement && active !== document.body ? active : null;
   };
 
   const choose = (guide: GuideName, section: string | null) => {

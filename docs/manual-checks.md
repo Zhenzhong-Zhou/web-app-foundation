@@ -1555,7 +1555,8 @@ The pages, in a private window unless a check says otherwise.
   Licences at release (Stock) have it beside their headings, Sign out
   after inactivity (Security) at the end of After's help, and Exchange
   rates, Stock value and Price lists at the end of their introductions.
-  Closing Help puts focus back on the Learn more that opened it.
+  Closing Help puts focus back on the Learn more that opened it; in
+  Safari, which focuses nothing pressed by mouse, on Help.
 - **MC-3206** *(ADR-079)* Reading a guide in 中文: with Account's language
   set to 中文, open 帮助 on 订单, on a computer and on a phone (帮助 · 订单).
   The guide reads in Chinese, 创建订单 and the other sections, bold and
@@ -1978,3 +1979,4 @@ first.
   failed: MC-3208 extended.
 - 2026-10-20: Undo puts focus on the welcome it brings back: MC-3207
   extended.
+- 2026-10-20: closing Help in Safari puts focus on Help: MC-3205 extended.

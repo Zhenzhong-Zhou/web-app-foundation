@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useRef } from 'react';
 import {
@@ -173,6 +173,19 @@ describe('Help', () => {
 
     await userEvent.keyboard('{Escape}');
     expect(learnMore).toHaveFocus();
+  });
+
+  // Safari focuses no button on a click: the press leaves focus on <body>.
+  it('returns focus to the Help button when what opened it took no focus', async () => {
+    renderFrame('/');
+    fireEvent.click(screen.getByRole('button', { name: 'Learn more' }));
+    await within(help()).findByRole('heading', {
+      level: 3,
+      name: 'Add a location',
+    });
+
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getByRole('button', { name: 'Help' })).toHaveFocus();
   });
 
   it('lists the guides for the pages the person can open, and shows one in place', async () => {
