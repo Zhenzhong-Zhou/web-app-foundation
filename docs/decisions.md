@@ -693,6 +693,12 @@ through every organization with no request behind it. Anything with a tenant use
 `TenantDb`, and `TenantDb.transaction()` for a global and a scoped table together. A new
 exception adds its line and its reason to that file, and nothing else lists them.
 
+**Amendment (October 2026) — each permission gates what it says
+(ADR-079).** A member's role is changed with `roles.assign`, and the roles
+list is read with `roles.view`. `users.update`, which then gated nothing,
+was dropped by migration 0071: a seeded permission that gates nothing
+goes, rather than waiting for a feature to need it.
+
 ---
 
 ## ADR-017 — Email verification and password reset
@@ -9641,7 +9647,7 @@ says that inviting waits for it, until they confirm.
 
 ---
 
-## ADR-079 — A newcomer's first sign-in: a welcome on Home, and help on every page (amends ADR-058, ADR-063, ADR-069, ADR-077 and ADR-078)
+## ADR-079 — A newcomer's first sign-in: a welcome on Home, and help on every page (amends ADR-016, ADR-058, ADR-063, ADR-069, ADR-077 and ADR-078)
 
 **Context.** ADR-077 and ADR-078 settled how a person arrives: by a link,
 to an organization that exists or to one they set up. What they meet next
@@ -9973,6 +9979,129 @@ commit, ahead of this ADR's server, closing #144.
   Help, then the guides, then the welcome; the docs last, after the
   reviews. Built by Claude Code, a prompt per commit (handoff, *How code
   is delivered*).
+
+**Amendment (October 2026) — as built.** What building it, its design
+review on the canvas, its reviews and its two walkthroughs settled:
+
+- **Help beside the page on a laptop, reversing "no page ever gets
+  narrower for Help".** Over the page, Help covered what a person needed
+  next on any laptop between about 1280 and 1850 px wide: every list
+  page's top-right action, Getting started's buttons, the welcome's
+  Dismiss, Orders' filters. A focused control could sit under it, which
+  fails WCAG 2.4.11. On a computer the rail now folds while Help is open,
+  and comes back as it was when Help closes, and the page takes the width
+  left beside Help, as long as that leaves it about 720 px. A Playwright
+  test visits every signed-in route at 1280 × 800 with Help open: nothing
+  scrolls sideways, the title row's actions show, and focus moved into the
+  page is never under Help. Below that width, which is Larger text under
+  about 1330 px and windows under about 1140 px, Help still slides over
+  the page, and a control under it can be focused out of sight. Phones,
+  below 600 px, keep Help full screen.
+- **Help's other rules.** The panel is 420 px, in rem, so it grows with
+  the text. It stays above a page's dialog, readable and scrollable by
+  mouse or touch, nothing in it pressable until the dialog closes; the
+  keyboard stays in the dialog, and a screen reader already hears only the
+  dialog. A guide chosen by Learn more or from the foot stays until the
+  page's address changes; a tab's `?tab=` keeps it. Opening Help focuses
+  the guide's title, and a Learn more its section's heading; closing
+  returns focus to whatever opened it; Esc closes it only when focus is
+  inside it. The top bar's Help toggles. The word Help in the welcome
+  card's foot, its icon part of the same button, opens Help, and pressed
+  again keeps it open, as a Learn more does: people pressed it. Every
+  target in the top bar is at least 44 × 44 px at any text size, and below
+  360 px with Larger text the organization's mark shows its initials
+  alone.
+- **The guides.** Twenty-one, in three languages, from 200 to 443 words in
+  English, written before the panel that reads them, the reverse of the
+  build order above. Every section has an id, the same in each language,
+  prefixed `help-` in the page so it never clashes with the page's own.
+  Learn more opens two sections beyond the first table, `invoices#credit`
+  and `price-lists#prices`, and its targets are typed from the guide map,
+  so one naming a section the map lacks does not compile. The signed-in
+  routes are one list, `SIGNED_IN_ROUTES`, which the router and the check
+  both read. Vitest's on-disk module cache does not see a guide just added
+  until `npx vitest --clearCache`; CI starts without one.
+- **No "?" on every field,** as decided: Learn more sits beside numbering,
+  the licence policy, idle sign-out, exchange rates, stock value and price
+  lists.
+- **The card.** It shows through `lastDay`, the joining day plus 14 in the
+  organization's zone, so on 15 calendar days; `joinedOn` is sent for "You
+  joined today". The founder is the membership made in the same
+  transaction as its organization, `memberships.created_at` equal to
+  `organizations.created_at`, since registration, Start an organization
+  and an organization invitation all go through `startOrganization`. Not
+  the oldest membership, which would pass to the next member, and their
+  note with it, if the founder left; not "no invitation behind it", which
+  also describes the demo's team. Joined unconfirmed means the address was
+  confirmed after the membership began, or not yet; both ways of accepting
+  an emailed link now stamp the confirmation with the transaction's time,
+  without which everyone who joined that way read as unconfirmed. The
+  items' keys are `confirmEmail`, `sayWhoYouAre`, `lookUp`, `openOrder`,
+  `receiveStock`, `raiseOrder`, `shipOrder`, `planRun` and `draftInvoice`.
+  Receiving is ticked by `order.line_received` or a receipt among stock
+  movements; a lookup by Recently opened, asked for by record kind, which
+  keeps 30 records, so opening thirty other things un-ticks it. A done
+  item names what was done and opens it, or says Done once the record has
+  gone.
+- **The card on Home.** While Getting started shows, it follows the
+  welcome card directly, before the quick actions, which are then
+  outlined, leaving its first open step the page's one primary button.
+  Dismiss moves focus to Home's greeting, as Getting started's Dismiss now
+  does; Undo comes next in the tab order and stays while focus or the
+  pointer is on it (WCAG 2.2.1), as the product gallery's now does. The
+  confirm banner is hidden on Home while the card lists that item.
+  Progress bars have a grey track, since the pale one read as full at 0.
+- **What you can do here.** One map keyed by the generated `Permission`
+  type. Permissions acting on one thing share its noun ("raise, change,
+  confirm and cancel orders"), only verbs the reader holds are said, and
+  phrases are separated by semicolons (；in Chinese). Whom to ask is sent
+  as an id and a name; deleted accounts are left out and suspended ones
+  are not, as on People. `MemberAccessService`, in `core/authorization`,
+  answers Home and `GET /v1/account/membership` alike.
+- **The inviter.** ADR-077's rule for naming them is one join condition,
+  `core/invitations/inviter.ts`, used by the email, the invitation page,
+  the welcome and the notification. The notification is written after the
+  acceptance commits, its resource the newcomer, so the bell opens their
+  page on People; built-in roles keep their English article, and a role an
+  organization makes is named as it is. People already sent `memberSince`;
+  New is reckoned from it in the organization's zone.
+- **Permissions brought in line with what they gate** (amending ADR-016).
+  Changing a member's role needs `roles.assign`, not `users.update`;
+  `users.update` then gated nothing, and went (migration 0071). The roles
+  list needs `roles.view`, not `users.view`. Add inside on Locations needs
+  `locations.create`. Inventory's row menu shows to whoever may see stock,
+  holding only what they may do. The Admin's stored line says invite, not
+  add (0072), so the export's `roles.csv` says what the screens say.
+- **#144.** The repair, `chooseAgain`, runs before the idle check and on
+  background requests, leaves the old pointer when the account has no
+  membership, and shares `SessionService.firstOrganizationOf` with sign-in
+  and leaving; closing an organization keeps its bulk SQL, with a comment
+  naming the rule. The client reads the session again on focus and when
+  the page becomes visible, one read at a time, sent in the background,
+  and keeps the session it has when nothing changed.
+- **Found on the way.** The root `.env`'s `NODE_ENV=development` reached
+  Vite through `loadEnv('..')`, so every local build shipped development
+  React; a local main chunk is now 453 kB, as CI's always was. MUI's
+  `:focus-visible` warning in the account menu came from its preferences'
+  selects inside menu rows, and each row now stops its select's focus and
+  blur. The bell's badge kept a hidden 0 inside its button's name. Filed:
+  #147, no way to remove a member on screen; #148, refusals with internal
+  or off-glossary wording; #149, copy inconsistencies the guides found;
+  #150, the translation review leaving out the guides; #151, the account
+  menu's preferences out of the keyboard's reach.
+- **Who sees the card once this ships:** everyone who joined in the last
+  two weeks, not only those who join from now on. The demo's team joined
+  months ago, and one colleague, Fatima Haddad, three days before seeding,
+  by the Owner's invitation with a note.
+- **Still open.** Five ADR-077 messages would read "a Accountant" once
+  organizations can make roles: job roles' to fix. The French and Chinese
+  guides, and an Admin's longer sentences, want reading by someone fluent
+  (#150).
+- **Reviewed and walked.** `/simplify`, then `/code-review`, then
+  `/usability-walkthrough` along two journeys: the Chinese bookkeeper as a
+  Viewer, from an emailed invitation to Help on Orders; the French founder
+  on a phone, from an organization invitation to the welcome with Getting
+  started below it.
 
 ---
 

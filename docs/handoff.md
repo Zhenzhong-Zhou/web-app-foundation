@@ -11,9 +11,10 @@ with this one, this one is current.
 - **Next: onboarding, a chain of three** (Bob's priority, 19 October
   2026), one PR each, ADR first, each finished before the next begins.
   Invitations (ADR-077) and registration by invitation (ADR-078) are
-  merged; a newcomer's first sign-in (ADR-079) is being planned, the
-  first feature planned in this chat and built by Claude Code
-  (*Working agreements*, How code is delivered).
+  merged; a newcomer's first sign-in (ADR-079) is built and reviewed in
+  #152, waiting for its walk and merge: the first feature planned in this
+  chat and built by Claude Code (*Working agreements*, How code is
+  delivered).
   After them, in this order unless a trigger brings one forward, each
   with its entry in Open decisions: job roles; one person in two
   organizations, then a practice organization (ADR-077, *Deferred*); a
@@ -78,18 +79,19 @@ with this one, this one is current.
        `REGISTRATION=invitation` and `OPERATOR_EMAIL` since 20 October
        2026, and `npm run org:invite -- --list` ran against production.
     3. **ADR-079, a newcomer's first sign-in** (`adr-079-first-sign-in`):
-       drafted. A welcome card on Home, the member's own for two weeks
-       from joining: what they can do here, from their permissions; the
-       inviter's note; and a first week ticked by what they do, Confirm
-       your email address first for whoever joined unconfirmed. Help in
-       the top bar opens the page's guide, about twenty in three
-       languages, kept with the client and checked by a test. #144 rides
-       along, ahead of the server. Migration **0070**
-       (`memberships.welcome_dismissed_at`). Designed on the canvas;
-       their review added Help over the page rather than beside it,
-       Learn more beside hard settings instead of a "?" on every field,
-       the inviter told in the bell, and New on People. Next: the build
-       brief, one Claude Code prompt per commit.
+       built and reviewed in #152, not merged. A welcome card on Home, the
+       member's own for two weeks from joining: what they can do here, from
+       their permissions; the inviter's note; and a first week ticked by what
+       they do. Help in the top bar and in the card opens the page's guide, 21
+       in three languages, kept with the client and checked by a test; beside
+       the page on a laptop, with the rail folded, and full screen on a phone.
+       Learn more on empty lists, Getting started's steps and the hard
+       settings. Your access on Account; the inviter told in the bell; New on
+       People. #144 fixed. Migrations **0070** to **0072**. Permissions
+       brought in line with what they gate: `users.update` dropped, a role
+       change needs `roles.assign`, the roles list `roles.view`. What building
+       it settled is in ADR-079's as-built amendment. Next: Bob's walk and
+       merge (*Still to do, by hand*), then job roles.
 
 - **ADR-076, the audit log in words (`adr-076-audit-in-words`):** no
   migration; server and client. Every screen with an audit entry (the
@@ -236,9 +238,11 @@ with this one, this one is current.
   merged in #134; `adr-073-numbering` **0067** (numbering, #136);
   `adr-077-invitations` **0068** (invitations, #143);
   `adr-078-registration` **0069** (organization invitations, #146);
-  `adr-079-first-sign-in` adds **0070**. Render holds one row per file in
+  `adr-079-first-sign-in` adds **0070** (the welcome's dismissal),
+  **0071** (`users.update` dropped) and **0072** (the Admin's stored line
+  says invite), in #152. Render holds one row per file in
   `drizzle.__drizzle_migrations` once `main` is deployed there: 70, then
-  71 with ADR-079. After any new migration: `npm run migrate:all`, and
+  73 with ADR-079. After any new migration: `npm run migrate:all`, and
   check its journal time (*Working agreements*, Process).
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
@@ -406,6 +410,13 @@ with this one, this one is current.
 
 ### Still to do, by hand
 
+- **ADR-079, before merging #152:** `npm run migrate:all` (0070 to 0072);
+  walk section 32 of `docs/manual-checks.md` (MC-3201 to MC-3212) and
+  MC-R22, its phone line included; show the 中文 welcome and Help on a phone
+  to someone who reads only Chinese. After it merges: delete `tmp/adr-079`
+  (scratch, but `scripts/verify.sh` lints its Markdown) and the branch;
+  the dev database holds the walkthroughs' records, so `npm run seed:demo`
+  starts clean.
 - **Render's free database expires on 12 November 2026.** Move to a paid
   database, or create a free one again, empty, by the steps in
   `docs/runbooks/render.md`. Before any real customer: a paid database and
@@ -445,8 +456,12 @@ with this one, this one is current.
   write no entry; ADR-073's save is taken as sent, so it is not one of
   them), #138 (a contact with neither an email nor a phone fails with a
   500 rather than saying why), #142 (the client's Content-Security-Policy,
-  its own PR with a short ADR) and #144 (another device's session keeps
-  an organization the account has left, riding along with ADR-079). #131 closes with ADR-073's PR; #41 and #127 closed with
+  its own PR with a short ADR), #144 (another device's session keeps an
+  organization the account has left, fixed in #152), #147 (no way to
+  remove a member on screen), #148 (refusals with internal or
+  off-glossary wording), #149 (copy inconsistencies the guides found),
+  #150 (the translation review leaves out the guides) and #151 (the
+  account menu's preferences can't be opened from the keyboard). #131 closes with ADR-073's PR; #41 and #127 closed with
   ADR-072's. From ADR-070's
   review and its walkthrough in Chinese: #117
   (two one-second windows while a deletion completes), fixed on
@@ -458,6 +473,12 @@ with this one, this one is current.
 
 ### Still to do, in code
 
+- **ADR-079's limits.** Help still slides over the page at Larger text
+  under about 1330 px and in windows under about 1140 px, where a control
+  under it can be focused out of sight (WCAG 2.4.11). Five ADR-077
+  messages would read "a Accountant" once organizations can make roles:
+  job roles' to fix. Vitest's on-disk cache does not see a guide just
+  added until `npx vitest --clearCache`; CI starts without one.
 - **The client has no Content-Security-Policy** (#142). Nothing in the
   repository sets one for the static site, and helmet's covers only the
   API's own responses. One set at Render must allow `data:` images
@@ -517,7 +538,7 @@ with this one, this one is current.
   - Client tests still missing: the Still on UTC note hidden on a
     computer in UTC and the picker's announcement. Add each when that
     code is next touched. ADR-078 added Home's time-zone note, naming the
-    zone, and the zone sent at registration; ADR-079's fix for #144 the
+    zone, and the zone sent at registration; ADR-079's fix for #144, the
     auth provider passing the zone on.
 - **A browser-compatibility lint rule** (eslint-plugin-compat) set to the
   build target, so code using an API newer than the floor fails ESLint;
@@ -1313,6 +1334,15 @@ in ADR-050's amendment.
   amendment and the docs, as mbox files. Until ADR-078 the chat wrote
   the code too, as one mbox per commit, and Claude Code only applied
   them.
+- **The build, as ADR-079 ran it.** The brief and the canvas's boards go
+  in `tmp/adr-NNN/`, ignored by git though `scripts/verify.sh` lints its
+  Markdown. Each prompt is one line: "Read tmp/adr-NNN/brief.md and do
+  step N. End with the summary for the chat." `/clear` between steps,
+  never inside one; a step's follow-ups (an amend, an issue to file) stay
+  in its context, and its summary is pasted into the chat before clearing.
+  The review step runs in two prompts: the reviews and walkthroughs,
+  stopping for Bob's choices, then the fixes, the full verify, the push
+  and the PR.
 - **An mbox is applied from Bob's downloads,** by its full name:
   `git am ~/Downloads/0001-<subject>.mbox`. Downloads land in
   `~/Downloads` itself, not a folder, so each file is named, never a glob.

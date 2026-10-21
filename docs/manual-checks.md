@@ -1683,7 +1683,9 @@ first.
   still shows Reid Supply Co.'s Home. The same when A accepts an
   invitation, or an
   organization invitation from `npm run org:invite`, instead of starting
-  one.
+  one. Then on a phone signed in as B, with the app's tab in the
+  background while A changes organization: bring the tab back, and it
+  catches up without a reload, as a clicked window does.
 - **MC-R21** *(links in an audit entry)* On Records → Audit log, an
   entry whose detail names something you may open, such as Invitation
   sent's role: the name is underlined as well as in the accent, before any
@@ -2057,3 +2059,5 @@ first.
   MC-3106 extended.
 - 2026-10-20: while Getting started shows it follows the welcome, before the
   quick actions: MC-1559 and MC-3209 extended.
+- 2026-10-20: #144 on a phone, a tab brought back from the background:
+  MC-R22 extended.

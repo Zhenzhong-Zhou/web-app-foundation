@@ -165,6 +165,22 @@ as the catalogues word it.
 | Exempt | Exonéré | 免税 | A tax code that charges nothing. |
 | Default sale price list | Liste de prix de vente par défaut | 默认销售价目表 | |
 
+### Help and the welcome
+
+| English | Français (Canada) | 简体中文 | Notes |
+| --- | --- | --- | --- |
+| Help | Aide | 帮助 | The button in the top bar, and the panel it opens (ADR-079). |
+| Guide | Guide | 指南 | A page's help: what it is for, how to work in it, what may be refused. |
+| All guides | Tous les guides | 所有指南 | The list at Help's foot. |
+| Learn more | En savoir plus | 了解更多 | Opens Help at the section a page points to. |
+| Welcome card | Carte de bienvenue | 欢迎卡片 | A newcomer's own card on Home, for their first two weeks. |
+| Your first week | Votre première semaine | 您的第一周 | The welcome's list, ticked by what the person does. |
+| What you can do here | Ce que vous pouvez faire ici | 您在这里可以做什么 | One sentence per area, from the person's permissions. |
+| Your access | Votre accès | 权限 | On Account: Your access at {organization} / Votre accès chez {organization} / 我在 {organization} 的权限. |
+| Dismiss | Masquer | 隐藏 | Takes a card off Home: the welcome, Getting started. |
+| Undo | Annuler | 撤销 | |
+| New (on People) | Nouveau | 新加入 | Someone who joined in the last two weeks. |
+
 ## Writing conventions
 
 - **Apostrophes:** use ’ (U+2019) in translations, never '. An ASCII
