@@ -77,7 +77,8 @@ export interface VolumeManifest {
   seed: number;
   seededAt: string;
   password: string;
-  organizations: (Account & Anchors & { counts: Record<string, number> })[];
+  organizations: (Account &
+    Anchors & { newcomerUserId: string; counts: Record<string, number> })[];
 }
 
 async function seedVolume(): Promise<void> {
@@ -183,8 +184,9 @@ async function seedVolume(): Promise<void> {
 
     // Last, so they join after the year the Owner made.
     const passwordHash = await app.get(PasswordService).hash(PASSWORD);
+    const newcomers: string[] = [];
     for (const account of accounts) {
-      await addNewcomer(db, account, passwordHash);
+      newcomers.push(await addNewcomer(db, account, passwordHash));
     }
 
     // Fresh statistics, so the plan check and the first perf run see the
@@ -204,6 +206,7 @@ async function seedVolume(): Promise<void> {
       organizations: accounts.map((account, index) => ({
         ...account,
         ...anchors[index],
+        newcomerUserId: newcomers[index],
         counts: counts.get(account.organizationId) ?? {},
       })),
     };
@@ -235,8 +238,8 @@ async function addNewcomer(
   db: Database,
   account: Account,
   passwordHash: string,
-): Promise<void> {
-  await db.transaction(async (tx) => {
+): Promise<string> {
+  return db.transaction(async (tx) => {
     const [admin] = await tx
       .select({ id: roles.id })
       .from(roles)
@@ -275,6 +278,7 @@ async function addNewcomer(
       membershipId: membership.id,
       acceptedAt: sql`now()`,
     });
+    return user.id;
   });
 }
 

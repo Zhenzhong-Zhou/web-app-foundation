@@ -31,7 +31,7 @@ interface Hot {
 export interface Org {
   session: Session;
   /** A member who joined today (ADR-079), whose Home has the welcome. */
-  newcomer: Session | null;
+  newcomer: Session;
   anchors: Anchors;
   hot: Hot[];
   orderIds: string[];
@@ -82,7 +82,7 @@ function orgOf(orgs: Org[], worker: number): Org {
 export async function discover(
   session: Session,
   anchors: Anchors,
-  newcomer: Session | null,
+  newcomer: Session,
 ): Promise<Org> {
   const [{ rows, deep }, locations] = await Promise.all([
     everyStockRow(session, '/stock'),
@@ -135,16 +135,11 @@ export async function discover(
 
   // Two weeks after seeding, the newcomer's Home is anyone's: still timed,
   // but no longer what its name says.
-  if (newcomer) {
-    const { welcome } = await newcomer.json<{ welcome: unknown }>(
-      'GET',
-      '/home',
+  const { welcome } = await newcomer.json<{ welcome: unknown }>('GET', '/home');
+  if (!welcome) {
+    console.warn(
+      `${newcomer.label} joined over two weeks ago, so their Home has no welcome. Seed again to time one.`,
     );
-    if (!welcome) {
-      console.warn(
-        `${newcomer.label} joined over two weeks ago, so their Home has no welcome. Seed again to time one.`,
-      );
-    }
   }
 
   return {
@@ -272,14 +267,12 @@ export function readScenarios(orgs: Org[]): Scenario[] {
 
   // A newcomer's Home (ADR-079): the cards an Admin sees, and the welcome,
   // its first week ticked from their own audit entries and what they opened.
-  if (orgs.every((org) => org.newcomer)) {
-    scenarios.push({
-      name: 'GET /home (a newcomer)',
-      kind: 'read',
-      budgetMs: READ_BUDGET_MS,
-      send: (worker) => orgOf(orgs, worker).newcomer!.send('GET', '/home'),
-    });
-  }
+  scenarios.push({
+    name: 'GET /home (a newcomer)',
+    kind: 'read',
+    budgetMs: READ_BUDGET_MS,
+    send: (worker) => orgOf(orgs, worker).newcomer.send('GET', '/home'),
+  });
 
   if (orgs.every((org) => org.anchors.traceLotId)) {
     scenarios.push(
