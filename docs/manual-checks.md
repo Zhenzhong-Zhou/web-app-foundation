@@ -636,7 +636,9 @@ Paper is checked first because it must not change at all.
 - **MC-1532** On INV-000001 the quantity reads 400, and Credit notes is a
   table: CN-000001 linked, its date, its reason wrapping when long, and
   −CA$52.48 right-aligned. Void an invoice: its full credit note shows a red
-  "Voids invoice" chip beside its number.
+  "Voids invoice" chip beside its number. CN-000001's own page reads
+  "Credits invoice" there, « Crédite la facture » in Français and 冲减发票
+  in 中文, never the Credit button's 开具贷项.
 - **MC-1533** CN-000001's lines read 2, not 2.0000. With Voided pressed and
   nothing voided, the list says only "Nothing here."
 - **MC-1534** Returns has a page title with its explanation under it, then its
@@ -2105,3 +2107,5 @@ first.
   Français: MC-2901 extended.
 - 2026-10-20: the audit log's intro says what an arrow means: MC-2901
   extended.
+- 2026-10-20: a credit note's chip says what it does, as Voids invoice
+  does: MC-1532 extended.

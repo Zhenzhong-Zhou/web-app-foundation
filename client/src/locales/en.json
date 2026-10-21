@@ -697,6 +697,7 @@
   "invoices.creditDate": "Credit note date",
   "invoices.creditNote.against": "Credits against <link>{number}</link>. Reason: {reason}",
   "invoices.creditNote.againstOn": "Credits against <link>{number}</link> of {date}. Reason: {reason}",
+  "invoices.creditNote.credits": "Credits invoice",
   "invoices.creditNote.reverses": "Reverses <link>{number}</link>. Reason: {reason}",
   "invoices.creditNote.reversesOn": "Reverses <link>{number}</link> of {date}. Reason: {reason}",
   "invoices.creditNote.voids": "Voids invoice",

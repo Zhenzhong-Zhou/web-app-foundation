@@ -697,6 +697,7 @@
   "invoices.creditDate": "Date de la note de crédit",
   "invoices.creditNote.against": "Crédite <link>{number}</link>. Motif : {reason}",
   "invoices.creditNote.againstOn": "Crédite <link>{number}</link> du {date}. Motif : {reason}",
+  "invoices.creditNote.credits": "Crédite la facture",
   "invoices.creditNote.reverses": "Annule <link>{number}</link>. Motif : {reason}",
   "invoices.creditNote.reversesOn": "Annule <link>{number}</link> du {date}. Motif : {reason}",
   "invoices.creditNote.voids": "Annule la facture",

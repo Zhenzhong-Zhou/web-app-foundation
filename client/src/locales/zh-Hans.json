@@ -697,6 +697,7 @@
   "invoices.creditDate": "贷项通知单日期",
   "invoices.creditNote.against": "冲减 <link>{number}</link>。原因：{reason}",
   "invoices.creditNote.againstOn": "冲减 {date} 的 <link>{number}</link>。原因：{reason}",
+  "invoices.creditNote.credits": "冲减发票",
   "invoices.creditNote.reverses": "作废 <link>{number}</link>。原因：{reason}",
   "invoices.creditNote.reversesOn": "作废 {date} 的 <link>{number}</link>。原因：{reason}",
   "invoices.creditNote.voids": "作废发票",
