@@ -4,6 +4,8 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import { AppModule } from '../app.module';
 import { AuthService } from '../core/auth/auth.service';
+import { rolesOfMembers } from '../core/authorization/member-roles';
+import { holdsOwner } from '../core/authorization/owner';
 import { SYSTEM_ROLES } from '../core/authorization/permissions';
 import { OrganizationsService } from '../core/organizations/organizations.service';
 import { BomsService } from '../modules/boms/boms.service';
@@ -34,7 +36,6 @@ import {
   memberships,
   organizations,
   productVariants,
-  roles,
   users,
 } from './schema';
 import { auditor, recordOpeningHistory } from './seed-demo-audit';
@@ -122,7 +123,7 @@ async function seedDemo(): Promise<void> {
       return;
     }
 
-    if (account.role !== SYSTEM_ROLES.OWNER) {
+    if (!account.isOwner) {
       logger.error(
         `${account.email} has the ${account.role} role, not Owner, in its organization. The demo gives this account the Owner's steps (exchange rates, price lists, issuing invoices): run it with an Owner's email, or without one.`,
       );
@@ -879,6 +880,8 @@ interface DemoAccount {
   email: string;
   /** The account's role in that organization, by name. */
   role: string;
+  /** Whether it is an Owner there, by the one rule for it (ADR-080). */
+  isOwner: boolean;
 }
 
 async function existingAccount(
@@ -889,14 +892,24 @@ async function existingAccount(
     .select({
       userId: users.id,
       organizationId: memberships.organizationId,
-      role: roles.name,
+      membershipId: memberships.id,
+      isOwner: holdsOwner(memberships.id),
     })
     .from(users)
     .innerJoin(memberships, eq(memberships.userId, users.id))
-    .innerJoin(roles, eq(roles.id, memberships.roleId))
     .where(eq(users.email, email));
+  if (!row) return undefined;
 
-  return row && { ...row, email };
+  const held = await rolesOfMembers(db, [row.membershipId]);
+  return {
+    userId: row.userId,
+    organizationId: row.organizationId,
+    email,
+    role: (held.get(row.membershipId) ?? [])
+      .map((role) => role.name)
+      .join(', '),
+    isOwner: row.isOwner,
+  };
 }
 
 /**
@@ -959,6 +972,7 @@ async function freshAccount(
     organizationId: user.organizationId,
     email,
     role: SYSTEM_ROLES.OWNER,
+    isOwner: true,
   };
 }
 

@@ -1,13 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, asc, eq, isNull, ne } from 'drizzle-orm';
 
-import {
-  memberships,
-  permissions,
-  rolePermissions,
-  roles,
-  users,
-} from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { RequestContext } from '../auth/request-context';
@@ -15,7 +7,9 @@ import type {
   MemberAccess,
   MemberRole,
 } from './dto/member-access-response.dto';
+import { rolesOfMembers } from './member-roles';
 import { ALL_PERMISSIONS, type Permission, PERMISSIONS } from './permissions';
+import { PermissionsService } from './permissions.service';
 
 /** The most names "To do more, ask …" gives (ADR-079). */
 const WHOM_TO_ASK = 3;
@@ -30,59 +24,47 @@ const WHOM_TO_ASK = 3;
  */
 @Injectable()
 export class MemberAccessService {
-  constructor(private readonly tenantDb: TenantDb) {}
+  constructor(
+    private readonly tenantDb: TenantDb,
+    private readonly permissions: PermissionsService,
+  ) {}
 
   async of(
-    context: Pick<RequestContext, 'userId' | 'organizationId'>,
+    context: Pick<RequestContext, 'userId' | 'organizationId' | 'membershipId'>,
     held: ReadonlySet<Permission>,
   ): Promise<MemberAccess> {
-    if (!context.organizationId) throw notWorkingHere();
+    const membershipId = context.membershipId;
+    if (!membershipId) throw notWorkingHere();
 
-    const [role] = await this.tenantDb.selectJoined(
-      memberships,
-      roles,
-      eq(roles.id, memberships.roleId),
-      { name: roles.name, description: roles.description },
-      eq(memberships.userId, context.userId),
+    const roles = await this.tenantDb.transaction((tx) =>
+      rolesOfMembers(tx, [membershipId]),
     );
+    const [role] = roles.get(membershipId) ?? [];
     if (!role) throw notWorkingHere();
 
-    return this.given(context.userId, role, held);
+    return this.given(
+      context,
+      { name: role.name, description: role.description },
+      held,
+    );
   }
 
   /** The same, for a caller that has read the member's role already. */
   async given(
-    userId: string,
+    context: Pick<RequestContext, 'userId' | 'organizationId'>,
     role: MemberRole,
     held: ReadonlySet<Permission>,
   ): Promise<MemberAccess> {
+    if (!context.organizationId) throw notWorkingHere();
+
     // Whoever may change roles, those who joined first first: nobody to
     // ask for someone who may change roles themself.
     const whomToAsk = held.has(PERMISSIONS.ROLES_ASSIGN)
       ? []
-      : await this.tenantDb.transaction((tx, organizationId) =>
-          tx
-            .select({ id: users.id, name: users.name })
-            .from(memberships)
-            .innerJoin(users, eq(users.id, memberships.userId))
-            .innerJoin(
-              rolePermissions,
-              eq(rolePermissions.roleId, memberships.roleId),
-            )
-            .innerJoin(
-              permissions,
-              eq(permissions.id, rolePermissions.permissionId),
-            )
-            .where(
-              and(
-                eq(memberships.organizationId, organizationId),
-                eq(permissions.key, PERMISSIONS.ROLES_ASSIGN),
-                ne(memberships.userId, userId),
-                isNull(users.deletedAt),
-              ),
-            )
-            .orderBy(asc(memberships.createdAt), asc(memberships.id))
-            .limit(WHOM_TO_ASK),
+      : await this.permissions.holdersOf(
+          context.organizationId,
+          PERMISSIONS.ROLES_ASSIGN,
+          { except: context.userId, limit: WHOM_TO_ASK },
         );
 
     return {

@@ -17,19 +17,15 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../../database/database.module';
-import {
-  memberships,
-  notifications,
-  permissions,
-  rolePermissions,
-  users,
-} from '../../database/schema';
+import { notifications, users } from '../../database/schema';
 import { t } from '../../i18n/translate';
 import {
   recipientLocale,
   type Translatable,
   translate,
 } from '../../i18n/translate';
+import type { Permission } from '../authorization/permissions';
+import { PermissionsService } from '../authorization/permissions.service';
 import type { NotificationType } from './notification-types';
 
 const DEFAULT_LIMIT = 20;
@@ -87,7 +83,10 @@ function messageOf(text: string | Translatable | undefined) {
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(@Inject(UNSAFE_GLOBAL_DB) private readonly db: Database) {}
+  constructor(
+    @Inject(UNSAFE_GLOBAL_DB) private readonly db: Database,
+    private readonly permissions: PermissionsService,
+  ) {}
 
   /**
    * Writes notifications. Never throws.
@@ -188,36 +187,23 @@ export class NotificationsService {
   }
 
   /**
-   * Everyone in an organization holding a permission.
+   * Everyone in an organization holding a permission, as the one place
+   * that decides answers it (ADR-080), each once whatever roles grant it.
    *
    * Coarse targeting, and it uses data that already exists. By involvement
    * would need created_by to mean "owner", which it means only by accident —
    * it records who typed it in. By subscription is a feature of its own
    * (ADR-036).
-   *
-   * selectDistinct because a user with two roles granting the same permission
-   * would otherwise be told twice.
    */
   async recipientsWith(
     organizationId: string,
-    permissionKey: string,
+    permission: Permission,
   ): Promise<string[]> {
-    const rows = await this.db
-      .selectDistinct({ userId: memberships.userId })
-      .from(memberships)
-      .innerJoin(
-        rolePermissions,
-        eq(rolePermissions.roleId, memberships.roleId),
-      )
-      .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-      .where(
-        and(
-          eq(memberships.organizationId, organizationId),
-          eq(permissions.key, permissionKey),
-        ),
-      );
-
-    return rows.map((row) => row.userId);
+    const holders = await this.permissions.holdersOf(
+      organizationId,
+      permission,
+    );
+    return holders.map((holder) => holder.id);
   }
 
   /**

@@ -38,13 +38,13 @@ export class LicenceOverrideGuard implements CanActivate {
     if (body?.licenceOverride == null) return true;
 
     const ctx = getRequestContext(request);
-    if (!ctx?.roleId)
+    if (!ctx?.membershipId)
       throw new ForbiddenException(
         t({ id: 'production.role', defaultMessage: 'No role' }),
       );
 
     // Resolved per request, never cached (ADR-016).
-    const held = await this.permissions.listForRole(ctx.roleId);
+    const held = await this.permissions.listForMember(ctx.membershipId);
 
     if (!held.includes(PERMISSIONS.PRODUCTION_OVERRIDE_LICENCE)) {
       throw new ForbiddenException(

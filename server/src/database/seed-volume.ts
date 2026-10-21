@@ -8,6 +8,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { AppModule } from '../app.module';
 import { AuthService } from '../core/auth/auth.service';
 import { PasswordService } from '../core/auth/password.service';
+import { giveRoles, nameRoles } from '../core/authorization/member-roles';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
 import { invitations, memberships, roles, users } from './schema';
 import { runInTenantContext } from './tenant-context';
@@ -260,24 +261,32 @@ async function addNewcomer(
       .returning({ id: users.id });
     const [membership] = await tx
       .insert(memberships)
-      .values({
-        userId: user.id,
-        organizationId: account.organizationId,
-        roleId: admin.id,
-      })
+      .values({ userId: user.id, organizationId: account.organizationId })
       .returning({ id: memberships.id });
-    await tx.insert(invitations).values({
-      organizationId: account.organizationId,
-      email: account.newcomerEmail,
-      roleId: admin.id,
-      locale: 'en',
-      note: 'Welcome! Start with the Products list, then receive the next delivery.',
-      invitedBy: account.userId,
-      link: 'emailed',
-      expiresAt: sql`now() + interval '7 days'`,
-      membershipId: membership.id,
-      acceptedAt: sql`now()`,
-    });
+    await giveRoles(
+      tx,
+      { id: membership.id, organizationId: account.organizationId },
+      [admin.id],
+    );
+    const [invitation] = await tx
+      .insert(invitations)
+      .values({
+        organizationId: account.organizationId,
+        email: account.newcomerEmail,
+        locale: 'en',
+        note: 'Welcome! Start with the Products list, then receive the next delivery.',
+        invitedBy: account.userId,
+        link: 'emailed',
+        expiresAt: sql`now() + interval '7 days'`,
+        membershipId: membership.id,
+        acceptedAt: sql`now()`,
+      })
+      .returning({ id: invitations.id });
+    await nameRoles(
+      tx,
+      { id: invitation.id, organizationId: account.organizationId },
+      [admin.id],
+    );
     return user.id;
   });
 }

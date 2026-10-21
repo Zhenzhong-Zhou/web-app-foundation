@@ -146,14 +146,19 @@ export class OrganizationExportService {
             'organization',
             sql`select * from organizations where id = ${organizationId}`,
           );
+          // Each member's role by name, from membership_roles (ADR-080),
+          // which is exported here rather than as a file of its own.
           csv(
             'members',
-            sql`select u.id as user_id, u.name, u.email, r.name as role,
+            sql`select u.id as user_id, u.name, u.email,
+                   (select string_agg(r.name, ', ' order by r.id)
+                    from membership_roles mr
+                    join roles r on r.id = mr.role_id
+                    where mr.membership_id = m.id) as role,
                    m.job_title, m.department, m.location, m.work_phone,
                    m.extension, m.created_at as joined_at
             from memberships m
             join users u on u.id = m.user_id
-            join roles r on r.id = m.role_id
             where m.organization_id = ${organizationId}
             order by m.created_at, m.id`,
           );
@@ -539,7 +544,7 @@ const GLOSSARY = [
   t({
     id: 'organization.export.glossary.invitations',
     defaultMessage:
-      'In invitations.csv, each invitation: email, the address invited; role_id, the role it grants; locale, the language it is written in; note, the inviter’s message; invited_by, who sent it, a user_id; link, how its latest link went: emailed, copied, or not_sent when the email did not go; expires_at, when that link ends, in UTC; accepted_at, when it was accepted, and membership_id, the membership it made; revoked_at, when it was revoked.',
+      'In invitations.csv, each invitation: email, the address invited; locale, the language it is written in; note, the inviter’s message; invited_by, who sent it, a user_id; link, how its latest link went: emailed, copied, or not_sent when the email did not go; expires_at, when that link ends, in UTC; accepted_at, when it was accepted, and membership_id, the membership it made; revoked_at, when it was revoked. The roles each grants are in invitation_roles.csv, by invitation_id and role_id.',
   }),
   t({
     id: 'organization.export.glossary.flags',

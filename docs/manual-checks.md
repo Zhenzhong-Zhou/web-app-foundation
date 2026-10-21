@@ -1687,6 +1687,19 @@ The pages, in a private window unless a check says otherwise.
   there with the card dismissed. As the demo Owner, it reads Owner, its
   line, and You may do everything here, in one line.
 
+## 33. Job roles (ADR-080)
+
+- **MC-3301** *(ADR-080)* Every member keeps the role they held. On a
+  database seeded before migration 0073, note each member's role on
+  Members, then run `npm run migrate:all`: Members shows the same roles,
+  Invited the same, and each member can still do what their role allows (a
+  Viewer opens Orders and has no Raise an order; an Admin invites). As the
+  demo Owner, Download everything: `members.csv` names each member's role
+  as Members does; `invitations.csv` has no `role_id`, and
+  `invitation_roles.csv` names each invitation's role by `invitation_id`
+  and `role_id`, as the README's glossary says, in English, Français and
+  中文.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
@@ -2166,3 +2179,5 @@ first.
 - 2026-10-21: a dialog gives focus back to the button that opened it, and
   an order's summary comes first in a phone's Tab order (#155): MC-R27 and
   MC-R28.
+- 2026-10-21: ADR-080, each member's and invitation's roles in rows of their
+  own: section 33, MC-3301.

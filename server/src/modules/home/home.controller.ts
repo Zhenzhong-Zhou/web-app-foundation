@@ -35,7 +35,7 @@ export class HomeController {
   @Get()
   async get(@CurrentUser() user: RequestContext): Promise<HomeResponse> {
     const held = new Set(
-      user.roleId ? await this.permissions.listForRole(user.roleId) : [],
+      await this.permissions.listForMember(user.membershipId),
     );
     return this.home.home(user, held);
   }

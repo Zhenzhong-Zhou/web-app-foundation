@@ -35,13 +35,13 @@ export class AdjustmentGuard implements CanActivate {
     if (body?.reason !== 'adjustment') return true;
 
     const ctx = getRequestContext(request);
-    if (!ctx?.roleId)
+    if (!ctx?.membershipId)
       throw new ForbiddenException(
         t({ id: 'stock.role', defaultMessage: 'No role' }),
       );
 
     // Resolved per request, never cached (ADR-016).
-    const held = await this.permissions.listForRole(ctx.roleId);
+    const held = await this.permissions.listForMember(ctx.membershipId);
 
     if (!held.includes(PERMISSIONS.STOCK_ADJUST)) {
       throw new ForbiddenException(

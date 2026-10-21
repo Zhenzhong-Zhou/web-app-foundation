@@ -6,6 +6,7 @@ import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import type { RequestContext } from '../../core/auth/request-context';
 import type { MemberRole } from '../../core/authorization/dto/member-access-response.dto';
 import { MemberAccessService } from '../../core/authorization/member-access.service';
+import { rolesOfMembers } from '../../core/authorization/member-roles';
 import type { Permission } from '../../core/authorization/permissions';
 import { inviterStillHere } from '../../core/invitations/inviter';
 import type { Transaction } from '../../database/database.module';
@@ -15,7 +16,6 @@ import {
   organizations,
   productVariants,
   type RecentKind,
-  roles,
   stockMovements,
   users,
 } from '../../database/schema';
@@ -165,7 +165,7 @@ export class WelcomeService {
         held,
       ),
       this.inviter(membership.id),
-      this.access.given(context.userId, membership.role, held),
+      this.access.given(context, membership.role, held),
     ]);
     if (items.every((item) => item.done)) return null;
 
@@ -208,11 +208,9 @@ export class WelcomeService {
           photoFileId: users.photoFileId,
           emailVerifiedAt: users.emailVerifiedAt,
           founder: sql<boolean>`${memberships.createdAt} = ${organizations.createdAt}`,
-          role: { name: roles.name, description: roles.description },
         })
         .from(memberships)
         .innerJoin(users, eq(users.id, memberships.userId))
-        .innerJoin(roles, eq(roles.id, memberships.roleId))
         .innerJoin(
           organizations,
           eq(organizations.id, memberships.organizationId),
@@ -223,7 +221,13 @@ export class WelcomeService {
             eq(memberships.userId, userId),
           ),
         );
-      return row;
+      if (!row) return undefined;
+
+      const [role] = (await rolesOfMembers(tx, [row.id])).get(row.id) ?? [];
+      return {
+        ...row,
+        role: { name: role.name, description: role.description },
+      };
     });
   }
 

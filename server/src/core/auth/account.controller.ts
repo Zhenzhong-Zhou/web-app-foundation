@@ -171,7 +171,7 @@ export class AccountController {
     @CurrentUser() context: RequestContext,
   ): Promise<MemberAccess> {
     const held = new Set(
-      context.roleId ? await this.permissions.listForRole(context.roleId) : [],
+      await this.permissions.listForMember(context.membershipId),
     );
     return this.access.of(context, held);
   }

@@ -87,7 +87,7 @@ export class FilesController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<StreamableFile | undefined> {
     const held = new Set(
-      user.roleId ? await this.permissions.listForRole(user.roleId) : [],
+      await this.permissions.listForMember(user.membershipId),
     );
     const file = await this.files.find(id, query.size ?? 'full', held);
 

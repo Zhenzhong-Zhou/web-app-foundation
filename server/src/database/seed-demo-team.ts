@@ -3,6 +3,7 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import { AUDIT_ACTIONS } from '../core/audit/audit-actions';
 import type { RequestContext } from '../core/auth/request-context';
+import { nameRoles } from '../core/authorization/member-roles';
 import {
   SYSTEM_ROLES,
   type SystemRole,
@@ -278,7 +279,7 @@ export async function addTeam(
           eq(memberships.organizationId, owner.organizationId),
         ),
       )
-      .returning({ id: memberships.id, roleId: memberships.roleId });
+      .returning({ id: memberships.id });
 
     // Verified, as the Owner is: nobody reads these inboxes (ADR-077).
     // From the start, as their membership began (ADR-079).
@@ -292,20 +293,27 @@ export async function addTeam(
     // welcome reads the Owner's note from it.
     if (colleague.invitedWith) {
       const sentAt = daysAgo(colleague.joinedDaysAgo + 1);
-      await db.insert(invitations).values({
-        organizationId: owner.organizationId,
-        email,
-        roleId: membership.roleId,
-        locale: 'en',
-        note: colleague.invitedWith,
-        invitedBy: owner.userId,
-        link: 'emailed',
-        expiresAt: daysAgo(colleague.joinedDaysAgo + 1 - 7),
-        membershipId: membership.id,
-        acceptedAt: joinedAt,
-        createdAt: sentAt,
-        updatedAt: joinedAt,
-      });
+      const [invitation] = await db
+        .insert(invitations)
+        .values({
+          organizationId: owner.organizationId,
+          email,
+          locale: 'en',
+          note: colleague.invitedWith,
+          invitedBy: owner.userId,
+          link: 'emailed',
+          expiresAt: daysAgo(colleague.joinedDaysAgo + 1 - 7),
+          membershipId: membership.id,
+          acceptedAt: joinedAt,
+          createdAt: sentAt,
+          updatedAt: joinedAt,
+        })
+        .returning({ id: invitations.id });
+      await nameRoles(
+        db,
+        { id: invitation.id, organizationId: owner.organizationId },
+        [roleId(colleague.role)],
+      );
     }
 
     // Their own details, as each would set them on Account; not audited,
@@ -337,7 +345,7 @@ export async function addTeam(
     email: owner.email,
     name: 'Demo Owner',
     organizationId: owner.organizationId,
-    roleId: roleId(SYSTEM_ROLES.OWNER),
+    membershipId: await membershipOf(db, owner),
     timeZone: null,
     idleLimitMs: null,
   };
@@ -359,6 +367,20 @@ export async function addTeam(
   }
 
   return team;
+}
+
+/** The Owner's membership, which their request context carries (ADR-080). */
+async function membershipOf(db: Database, owner: DemoOwner): Promise<string> {
+  const [row] = await db
+    .select({ id: memberships.id })
+    .from(memberships)
+    .where(
+      and(
+        eq(memberships.userId, owner.userId),
+        eq(memberships.organizationId, owner.organizationId),
+      ),
+    );
+  return row.id;
 }
 
 /** For the seed's last log line: who can sign in, and as what. */

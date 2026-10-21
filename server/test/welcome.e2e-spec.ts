@@ -23,6 +23,7 @@ import {
   createPartner,
   createVariant,
   customRole,
+  insertMember,
   invitationToken,
   PASSWORD,
   registerOrganization,
@@ -649,7 +650,7 @@ describe('The welcome (e2e)', () => {
           emailVerifiedAt: new Date(),
         })
         .returning({ id: users.id });
-      await db.insert(memberships).values({
+      await insertMember(app, {
         userId: colleague.id,
         organizationId: alpha.organizationId,
         roleId: await roleIdNamed(app, alpha.organizationId, 'Admin'),

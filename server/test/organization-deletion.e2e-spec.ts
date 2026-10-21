@@ -28,7 +28,6 @@ import {
   accountEvents,
   auditLog,
   files,
-  memberships,
   organizations,
   sessions,
   users,
@@ -37,6 +36,7 @@ import {
   addMember,
   body,
   createE2eApp,
+  insertMember,
   longDay,
   PASSWORD,
   registerOrganization,
@@ -850,7 +850,7 @@ describe('Organization deletion (e2e)', () => {
           passwordHash: await app.get(PasswordService).hash(PASSWORD),
         })
         .returning({ id: users.id });
-      await db.insert(memberships).values({
+      await insertMember(app, {
         userId: user.id,
         organizationId: org.organizationId,
         roleId: await roleIdNamed(app, org.organizationId, roleName),

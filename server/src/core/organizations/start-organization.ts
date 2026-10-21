@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 
 import type { Transaction } from '../../database/database.module';
 import { memberships, users } from '../../database/schema';
+import { giveRoles } from '../authorization/member-roles';
 import { provisionOrganization } from './provision-organization';
 import { uniqueSlug } from './slug';
 
@@ -26,11 +27,11 @@ export async function startOrganization(
 
   // Beginning at the transaction's now(), as the organization does: how
   // the welcome on Home tells the founder (ADR-079).
-  await tx.insert(memberships).values({
-    userId: input.userId,
-    organizationId,
-    roleId: roleIds.Owner,
-  });
+  const [membership] = await tx
+    .insert(memberships)
+    .values({ userId: input.userId, organizationId })
+    .returning({ id: memberships.id });
+  await giveRoles(tx, { id: membership.id, organizationId }, [roleIds.Owner]);
 
   return organizationId;
 }

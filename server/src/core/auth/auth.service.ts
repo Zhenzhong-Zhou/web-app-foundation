@@ -25,6 +25,7 @@ import {
 } from '../../i18n/translate';
 import { escapeHtml } from '../../shared/mail/escape-html';
 import { MailService } from '../../shared/mail/mail.service';
+import { rolesOfMembers } from '../authorization/member-roles';
 import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { startOrganization } from '../organizations/start-organization';
@@ -352,8 +353,8 @@ export class AuthService implements OnModuleInit {
     // their organization and their permissions together, one round trip
     // rather than two.
     const organizationId = context.organizationId;
-    const roleId = context.roleId;
-    const [[user], organizationRows, permissions] = await Promise.all([
+    const membershipId = context.membershipId;
+    const [[user], organizationRows, permissions, [role]] = await Promise.all([
       this.db
         .select({
           id: users.id,
@@ -390,7 +391,12 @@ export class AuthService implements OnModuleInit {
             .from(organizations)
             .where(eq(organizations.id, organizationId))
         : Promise.resolve([]),
-      roleId ? this.permissions.listForRole(roleId) : Promise.resolve([]),
+      this.permissions.listForMember(membershipId),
+      membershipId
+        ? rolesOfMembers(this.db, [membershipId]).then(
+            (held) => held.get(membershipId) ?? [],
+          )
+        : Promise.resolve([]),
     ]);
 
     // A valid session pointing at no user should be impossible — sessions
@@ -419,10 +425,10 @@ export class AuthService implements OnModuleInit {
       idleLimitMs: context.idleLimitMs,
     };
 
-    // Both are null together: roleId comes from the membership that produced
+    // Null together: membershipId comes from the membership that produced
     // organizationId, so there is no state where one exists without the other.
     const [organization] = organizationRows;
-    if (!organizationId || !roleId || !organization) {
+    if (!organizationId || !role || !organization) {
       return { ...base, organization: null, permissions: [] };
     }
 
@@ -431,7 +437,7 @@ export class AuthService implements OnModuleInit {
       organization: {
         id: organization.id,
         name: organization.name,
-        roleId,
+        roleId: role.id,
         branding: {
           logoFileId: organization.logoFileId,
           accentColor: organization.accentColor,

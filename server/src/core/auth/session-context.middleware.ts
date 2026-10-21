@@ -122,7 +122,7 @@ export class SessionContextMiddleware implements NestMiddleware {
       email: user.email,
       name: user.name,
       organizationId: membership?.organizationId ?? null,
-      roleId: membership?.roleId ?? null,
+      membershipId: membership?.id ?? null,
       timeZone: membership?.timeZone ?? null,
       idleLimitMs,
       // Captured per request rather than read off the session row: ADR-012
@@ -174,7 +174,6 @@ export class SessionContextMiddleware implements NestMiddleware {
       .select({
         id: memberships.id,
         organizationId: memberships.organizationId,
-        roleId: memberships.roleId,
         lastActiveAt: memberships.lastActiveAt,
         idleSignOutMinutes: organizations.idleSignOutMinutes,
         idleSignOutScope: organizations.idleSignOutScope,

@@ -85,8 +85,6 @@ export class PeopleController {
   }
 
   private async held(user: RequestContext) {
-    return new Set(
-      user.roleId ? await this.permissions.listForRole(user.roleId) : [],
-    );
+    return new Set(await this.permissions.listForMember(user.membershipId));
   }
 }

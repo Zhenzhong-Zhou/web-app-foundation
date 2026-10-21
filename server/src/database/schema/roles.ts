@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   boolean,
   index,
@@ -33,6 +34,8 @@ export const roles = pgTable(
       .references(() => organizations.id, { onDelete: 'cascade' }),
 
     name: text('name').notNull(),
+    // A made role's line (ADR-080). A built-in role's comes from the
+    // catalogues alone, so theirs is null.
     description: text('description'),
 
     // Seeded roles the UI must not let anyone delete — an org with no Owner
@@ -42,7 +45,15 @@ export const roles = pgTable(
     ...timestamps,
   },
   (t) => [
-    uniqueIndex('roles_org_name_key').on(t.organizationId, t.name),
+    // Unique ignoring case (ADR-080): "warehouse" beside "Warehouse" is
+    // the same role to anyone choosing between them.
+    uniqueIndex('roles_org_lower_name_key').on(
+      t.organizationId,
+      sql`lower(${t.name})`,
+    ),
     index('roles_organization_id_idx').on(t.organizationId),
+    // What membership_roles' and invitation_roles' foreign keys name, so a
+    // role is given only in its own organization (ADR-080).
+    uniqueIndex('roles_id_org_key').on(t.id, t.organizationId),
   ],
 );

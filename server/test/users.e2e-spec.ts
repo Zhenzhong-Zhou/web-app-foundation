@@ -13,6 +13,7 @@ import {
   customRole,
   registerOrganization,
   roleIdNamed,
+  roleIdsOf,
 } from './utils/fixtures';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
@@ -353,12 +354,9 @@ describe('Users (e2e)', () => {
         .send({ roleId: adminRoleId })
         .expect(204);
 
-      const [row] = await db
-        .select()
-        .from(memberships)
-        .where(eq(memberships.userId, member.id));
+      const [held] = await roleIdsOf(app, member.id);
 
-      expect(row.roleId).toBe(adminRoleId);
+      expect(held).toBe(adminRoleId);
     });
 
     it('refuses an Admin assigning the Owner role', async () => {
@@ -379,12 +377,9 @@ describe('Users (e2e)', () => {
         .send({ roleId: ownerRoleId })
         .expect(403);
 
-      const [row] = await db
-        .select()
-        .from(memberships)
-        .where(eq(memberships.userId, member.id));
+      const [held] = await roleIdsOf(app, member.id);
 
-      expect(row.roleId).toBe(alpha.viewerRoleId);
+      expect(held).toBe(alpha.viewerRoleId);
     });
 
     it('refuses an Admin demoting an Owner', async () => {
@@ -439,12 +434,9 @@ describe('Users (e2e)', () => {
         .send({ roleId: adminRoleId })
         .expect(403);
 
-      const [row] = await db
-        .select()
-        .from(memberships)
-        .where(eq(memberships.userId, member.id));
+      const [held] = await roleIdsOf(app, member.id);
 
-      expect(row.roleId).toBe(alpha.viewerRoleId);
+      expect(held).toBe(alpha.viewerRoleId);
     });
 
     it('refuses to demote the only Owner', async () => {
@@ -458,12 +450,9 @@ describe('Users (e2e)', () => {
         .send({ roleId: alpha.viewerRoleId })
         .expect(409);
 
-      const [row] = await db
-        .select()
-        .from(memberships)
-        .where(eq(memberships.userId, alpha.ownerId));
+      const [held] = await roleIdsOf(app, alpha.ownerId);
 
-      expect(row.roleId).not.toBe(alpha.viewerRoleId);
+      expect(held).not.toBe(alpha.viewerRoleId);
     });
 
     it('allows demoting an Owner when another remains', async () => {
@@ -475,12 +464,9 @@ describe('Users (e2e)', () => {
         .send({ roleId: alpha.viewerRoleId })
         .expect(204);
 
-      const [row] = await db
-        .select()
-        .from(memberships)
-        .where(eq(memberships.userId, alpha.ownerId));
+      const [held] = await roleIdsOf(app, alpha.ownerId);
 
-      expect(row.roleId).toBe(alpha.viewerRoleId);
+      expect(held).toBe(alpha.viewerRoleId);
     });
 
     it('refuses a role from another organization', async () => {

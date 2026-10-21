@@ -36,11 +36,9 @@ export class UsersController {
   async list(@CurrentUser() user: RequestContext): Promise<Member[]> {
     // Last active as People shows it (ADR-063): roughly for everyone, the
     // time itself only for those who may read the history.
-    const exact =
-      !!user.roleId &&
-      (await this.permissions.listForRole(user.roleId)).includes(
-        PERMISSIONS.AUDIT_VIEW,
-      );
+    const exact = (
+      await this.permissions.listForMember(user.membershipId)
+    ).includes(PERMISSIONS.AUDIT_VIEW);
     const now = new Date();
     return (await this.users.listMembers()).map(
       ({ lastActiveAt, ...member }) => ({

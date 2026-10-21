@@ -25,6 +25,7 @@ import {
   accountEvents,
   auditLog,
   authTokens,
+  membershipRoles,
   memberships,
   organizationInvitations,
   organizations,
@@ -34,6 +35,7 @@ import {
 import {
   body,
   createE2eApp,
+  insertMember,
   PASSWORD,
   registerOrganization,
   roleIdNamed,
@@ -166,7 +168,11 @@ describe('Organization invitations (e2e)', () => {
     const [row] = await db
       .select({ name: roles.name })
       .from(memberships)
-      .innerJoin(roles, eq(roles.id, memberships.roleId))
+      .innerJoin(
+        membershipRoles,
+        eq(membershipRoles.membershipId, memberships.id),
+      )
+      .innerJoin(roles, eq(roles.id, membershipRoles.roleId))
       .where(
         and(
           eq(memberships.userId, userId),
@@ -455,7 +461,7 @@ describe('Organization invitations (e2e)', () => {
       const tom = await noOrganization('tom.reid@example.com');
       const issued = await invite('tom.reid@example.com', 'Reid Supply Co.');
       const other = await registerOrganization(app, 'other');
-      await db.insert(memberships).values({
+      await insertMember(app, {
         userId: tom.id,
         organizationId: other.organizationId,
         roleId: await roleIdNamed(app, other.organizationId, 'Viewer'),
@@ -526,7 +532,7 @@ describe('Organization invitations (e2e)', () => {
         .insert(users)
         .values({ email: 'second@example.com', name: 'Second Owner' })
         .returning({ id: users.id });
-      await db.insert(memberships).values({
+      await insertMember(app, {
         userId: second.id,
         organizationId: owner.organizationId,
         roleId: await roleIdNamed(app, owner.organizationId, 'Owner'),

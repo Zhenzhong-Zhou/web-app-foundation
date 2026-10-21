@@ -28,7 +28,13 @@ import { MailService } from '../../shared/mail/mail.service';
 import { recordContext } from '../audit/audit-context';
 import { AuthTokenService } from '../auth/auth-token.service';
 import type { RequestContext } from '../auth/request-context';
-import { SYSTEM_ROLES } from '../authorization/permissions';
+import {
+  type HeldRole,
+  nameRoles,
+  rolesOfInvitations,
+  rolesOfMembers,
+} from '../authorization/member-roles';
+import { isOwnerRole } from '../authorization/owner';
 import { timeZoneOf } from '../organizations/time-zone';
 import type { CreateInvitationDto } from './dto/create-invitation.dto';
 import type {
@@ -49,7 +55,6 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 interface InvitationRow {
   id: string;
   email: string;
-  roleId: string;
   invitedById: string;
   invitedByName: string;
   createdAt: Date;
@@ -60,7 +65,6 @@ interface InvitationRow {
 const ROW = {
   id: invitations.id,
   email: invitations.email,
-  roleId: invitations.roleId,
   invitedById: invitations.invitedBy,
   invitedByName: users.name,
   createdAt: invitations.createdAt,
@@ -127,9 +131,7 @@ export class InvitationsService {
       pending,
       { orderBy: desc(invitations.id) },
     );
-    const timeZone = requestTimeZone();
-    const now = new Date();
-    return rows.map((row) => viewOf(row, timeZone, now));
+    return this.viewsOf(rows);
   }
 
   /**
@@ -212,7 +214,6 @@ export class InvitationsService {
           .values({
             organizationId,
             email: dto.email,
-            roleId: role.id,
             // The inviter's own language unless they chose another.
             locale:
               dto.locale ?? recipientLocale(inviter?.locale, context.language),
@@ -222,6 +223,7 @@ export class InvitationsService {
             expiresAt: ends,
           })
           .returning({ id: invitations.id });
+        await nameRoles(tx, { id: created.id, organizationId }, [role.id]);
 
         const issued = await this.tokens.issueForInvitation(
           tx,
@@ -453,8 +455,8 @@ export class InvitationsService {
     token: string,
     expiresAt: Date,
   ): Promise<boolean> {
-    const [facts] = await this.tenantDb.transaction((tx) =>
-      tx
+    const [facts, [role]] = await this.tenantDb.transaction(async (tx) => {
+      const [row] = await tx
         .select({
           to: invitations.email,
           locale: invitations.locale,
@@ -463,9 +465,6 @@ export class InvitationsService {
           inviterEmail: users.email,
           inviterMembershipId: memberships.id,
           organizationName: organizations.name,
-          roleName: roles.name,
-          roleDescription: roles.description,
-          roleIsSystem: roles.isSystem,
         })
         .from(invitations)
         .innerJoin(users, eq(users.id, invitations.invitedBy))
@@ -474,14 +473,15 @@ export class InvitationsService {
           organizations,
           eq(organizations.id, invitations.organizationId),
         )
-        .innerJoin(roles, eq(roles.id, invitations.roleId))
         .where(
           and(
             eq(invitations.id, id),
             eq(invitations.organizationId, organizationId),
           ),
-        ),
-    );
+        );
+      const named = await rolesOfInvitations(tx, [id]);
+      return [row, named.get(id) ?? []] as const;
+    });
 
     try {
       await this.mail.send(
@@ -492,14 +492,7 @@ export class InvitationsService {
             ? { name: facts.inviterName, email: facts.inviterEmail }
             : null,
           organizationName: facts.organizationName,
-          role: roleWords(
-            {
-              name: facts.roleName,
-              description: facts.roleDescription,
-              isSystem: facts.roleIsSystem,
-            },
-            facts.locale,
-          ),
+          role: roleWords(role, facts.locale),
           note: facts.note,
           // In the organization's zone (ADR-072), as every page says it.
           timeZone: requestTimeZone(),
@@ -534,14 +527,30 @@ export class InvitationsService {
 
   /** One invitation as Invited lists it. */
   private async view(id: string): Promise<Invitation> {
-    const [row] = await this.tenantDb.selectJoined(
+    const rows = await this.tenantDb.selectJoined(
       invitations,
       users,
       eq(users.id, invitations.invitedBy),
       ROW,
       eq(invitations.id, id),
     );
-    return viewOf(row, requestTimeZone(), new Date());
+    const [view] = await this.viewsOf(rows);
+    return view;
+  }
+
+  /** Invitations as Invited lists them, each with the role it grants. */
+  private async viewsOf(rows: InvitationRow[]): Promise<Invitation[]> {
+    const named = await this.tenantDb.transaction((tx) =>
+      rolesOfInvitations(
+        tx,
+        rows.map((row) => row.id),
+      ),
+    );
+    const timeZone = requestTimeZone();
+    const now = new Date();
+    return rows.map((row) =>
+      viewOf(row, named.get(row.id) ?? [], timeZone, now),
+    );
   }
 }
 
@@ -561,11 +570,7 @@ async function lock(tx: Transaction, organizationId: string): Promise<void> {
  */
 async function pendingIn(tx: Transaction, organizationId: string, id: string) {
   const [invitation] = await tx
-    .select({
-      id: invitations.id,
-      email: invitations.email,
-      roleId: invitations.roleId,
-    })
+    .select({ id: invitations.id, email: invitations.email })
     .from(invitations)
     .where(
       and(
@@ -580,7 +585,8 @@ async function pendingIn(tx: Transaction, organizationId: string, id: string) {
       t({ id: 'invitations.notFound', defaultMessage: 'No such invitation' }),
     );
   }
-  return invitation;
+  const [role] = (await rolesOfInvitations(tx, [id])).get(id) ?? [];
+  return { ...invitation, roleId: role.id };
 }
 
 /**
@@ -597,7 +603,7 @@ async function grantable(
   refusal: Translatable,
 ) {
   const [role] = await tx
-    .select({ id: roles.id, name: roles.name })
+    .select({ id: roles.id, name: roles.name, isSystem: roles.isSystem })
     .from(roles)
     .where(and(eq(roles.id, roleId), eq(roles.organizationId, organizationId)));
   if (!role) {
@@ -606,17 +612,9 @@ async function grantable(
     );
   }
 
-  if (role.name === SYSTEM_ROLES.OWNER) {
-    const [caller] = await tx
-      .select({ name: roles.name })
-      .from(roles)
-      .where(
-        and(
-          eq(roles.id, context.roleId!),
-          eq(roles.organizationId, organizationId),
-        ),
-      );
-    if (caller?.name !== SYSTEM_ROLES.OWNER) {
+  if (isOwnerRole(role)) {
+    const caller = await rolesOfMembers(tx, [context.membershipId!]);
+    if (!(caller.get(context.membershipId!) ?? []).some(isOwnerRole)) {
       throw new ForbiddenException(refusal);
     }
   }
@@ -658,7 +656,12 @@ function alreadyInvited(invited: {
  * no link of it is live; then ended, once its time is up; else the way it
  * went, with its last day.
  */
-function viewOf(row: InvitationRow, timeZone: string, now: Date): Invitation {
+function viewOf(
+  row: InvitationRow,
+  named: HeldRole[],
+  timeZone: string,
+  now: Date,
+): Invitation {
   const status: InvitationLinkStatus =
     row.link === 'not_sent'
       ? 'notSent'
@@ -668,7 +671,7 @@ function viewOf(row: InvitationRow, timeZone: string, now: Date): Invitation {
   return {
     id: row.id,
     email: row.email,
-    roleId: row.roleId,
+    roleId: named[0].id,
     invitedBy: { id: row.invitedById, name: row.invitedByName },
     invitedAt: row.createdAt,
     link: {

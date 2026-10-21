@@ -27,7 +27,7 @@ export class LookupController {
     @Headers('accept-language') acceptLanguage?: string,
   ): Promise<LookupResponse> {
     const held = new Set(
-      user.roleId ? await this.permissions.listForRole(user.roleId) : [],
+      await this.permissions.listForMember(user.membershipId),
     );
     return this.lookups.lookup(query.q, held, localeOf(acceptLanguage));
   }

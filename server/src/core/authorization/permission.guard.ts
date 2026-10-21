@@ -14,27 +14,27 @@ import { PermissionsService } from './permissions.service';
 import { REQUIRED_PERMISSIONS } from './require-permissions.decorator';
 
 /**
- * Checks the current membership's role against the permissions a route
- * declares (ADR-004).
+ * Checks what the current member may do, through all their roles, against
+ * the permissions a route declares (ADR-004, ADR-080).
  *
  * Resolved per request, never cached on the session or the request context. A
  * demoted admin must lose access on their next request, not at session expiry
  * — which is the failure ADR-011's binding rules call out by name.
  *
- * The cost is one indexed join over two small tables (nine permissions, three
- * roles per organization), which Postgres keeps in shared buffers. If it ever
- * shows up in a latency profile, the cache goes on `role_id -> Set<key>` with
- * a short TTL: roles are configuration and change rarely, whereas *which* role
- * a user holds is the thing that changes on demotion — and that lookup stays
- * per request regardless. Caching by user or by session is the unsafe version.
- * In-memory would break across instances the same way the throttler does, so
- * it lands with Redis (ADR-005) or not at all.
+ * The cost is one indexed query from the membership through its roles to
+ * their permissions, in PermissionsService, the one place that decides. If it
+ * ever shows up in a latency profile, the cache goes on `role_id -> Set<key>`
+ * with a short TTL: roles are configuration and change rarely, whereas *which*
+ * roles a member holds is the thing that changes on demotion — and that lookup
+ * stays per request regardless. Caching by user or by session is the unsafe
+ * version. In-memory would break across instances the same way the throttler
+ * does, so it lands with Redis (ADR-005) or not at all.
  *
- * Uses the unscoped handle: `permissions` has no organization_id (it is a
- * fixed catalogue, which is also why reset-db preserves it), and
- * role_permissions is reached through a role id the membership already proved
- * belongs to this organization. This is the second of two exemptions to the
- * ADR-003 rule, alongside core/auth.
+ * Uses the unscoped handle, through PermissionsService: `permissions` has no
+ * organization_id (it is a fixed catalogue, which is also why reset-db
+ * preserves it), and the grants are reached through a membership the session
+ * already proved belongs to this organization. This is the second of two
+ * exemptions to the ADR-003 rule, alongside core/auth.
  */
 @Injectable()
 export class PermissionGuard implements CanActivate {
@@ -60,7 +60,7 @@ export class PermissionGuard implements CanActivate {
     // SessionGuard runs first and rejects both of these, so reaching here
     // means a route was decorated with @RequirePermissions() and @Public()
     // together — a contradiction worth failing on rather than ignoring.
-    if (!requestContext?.roleId) {
+    if (!requestContext?.membershipId) {
       throw new ForbiddenException(
         t({
           id: 'auth.noRole',
@@ -70,7 +70,7 @@ export class PermissionGuard implements CanActivate {
     }
 
     const held = new Set(
-      await this.permissions.listForRole(requestContext.roleId),
+      await this.permissions.listForMember(requestContext.membershipId),
     );
     const missing = required.filter((key) => !held.has(key));
 

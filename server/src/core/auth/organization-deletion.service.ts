@@ -28,14 +28,13 @@ import {
   type FileSize,
   memberships,
   organizations,
-  roles,
   sessions,
   users,
 } from '../../database/schema';
 import { t } from '../../i18n/translate';
 import type { Mail } from '../../shared/mail/mail.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
-import { SYSTEM_ROLES } from '../authorization/permissions';
+import { holdsOwner } from '../authorization/owner';
 import { FILE_STORAGE, type FileStorage, keyOf } from '../files/file-storage';
 import { lastExportOf } from '../organizations/last-export';
 import { AccountService } from './account.service';
@@ -278,12 +277,11 @@ export class OrganizationDeletionService {
           eq(memberships.userId, users.id),
         ),
       )
-      .innerJoin(roles, eq(roles.id, memberships.roleId))
       .where(
         and(
           eq(users.id, context.userId),
           isNotNull(organizations.deletionScheduledAt),
-          eq(roles.name, SYSTEM_ROLES.OWNER),
+          holdsOwner(memberships.id),
         ),
       );
     if (!together) return false;
@@ -675,12 +673,11 @@ async function membersOf(
       email: users.email,
       name: users.name,
       locale: users.locale,
-      isOwner: sql<boolean>`${roles.name} = ${SYSTEM_ROLES.OWNER}`,
+      isOwner: holdsOwner(memberships.id),
       withAccount: sql<boolean>`${users.deletionWithOrganizationId} is not distinct from ${organizationId}::uuid`,
     })
     .from(memberships)
     .innerJoin(users, eq(users.id, memberships.userId))
-    .innerJoin(roles, eq(roles.id, memberships.roleId))
     .where(eq(memberships.organizationId, organizationId))
     .orderBy(memberships.id);
 }

@@ -49,9 +49,7 @@ export class OrganizationController {
   async get(
     @CurrentUser() context: RequestContext,
   ): Promise<OrganizationEnvelope> {
-    const granted = context.roleId
-      ? await this.permissions.listForRole(context.roleId)
-      : [];
+    const granted = await this.permissions.listForMember(context.membershipId);
     return {
       organization: await this.organization.get({
         withLastExport: granted.includes(PERMISSIONS.ORGANIZATIONS_EXPORT),

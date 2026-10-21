@@ -13,7 +13,6 @@ import type { Locale } from '../../common/locales';
 import { primaryKey, timestamps } from './columns';
 import { memberships } from './memberships';
 import { organizations } from './organizations';
-import { roles } from './roles';
 import { users } from './users';
 
 /**
@@ -26,10 +25,10 @@ export const INVITATION_LINKS = ['emailed', 'copied', 'not_sent'] as const;
 export type InvitationLink = (typeof INVITATION_LINKS)[number];
 
 /**
- * An invitation to join an organization (ADR-077): the address, the role
- * it grants and the inviter's note. The link itself is an auth_tokens row
- * of purpose `invitation`, which a token can say nothing beyond; this row
- * holds everything else.
+ * An invitation to join an organization (ADR-077): the address, the roles
+ * it grants (invitation_roles, ADR-080) and the inviter's note. The link
+ * itself is an auth_tokens row of purpose `invitation`, which a token can
+ * say nothing beyond; this row and its roles hold everything else.
  *
  * Pending until accepted or revoked. An accepted one stays with the
  * membership it made, so its note can be read again, and goes with it;
@@ -48,11 +47,7 @@ export const invitations = pgTable(
     // Lowercased by the DTO, as users.email is.
     email: text('email').notNull(),
 
-    // RESTRICT, as memberships' role is: deleting a role must not quietly
-    // change what an invitation grants.
-    roleId: uuid('role_id')
-      .notNull()
-      .references(() => roles.id, { onDelete: 'restrict' }),
+    // The roles it grants are invitation_roles' rows (ADR-080).
 
     /**
      * The language to write to them in (ADR-077): the email's, and the
@@ -98,6 +93,8 @@ export const invitations = pgTable(
       .on(t.organizationId, sql`lower(${t.email})`)
       .where(sql`${t.acceptedAt} is null and ${t.revokedAt} is null`),
     index('invitations_organization_id_idx').on(t.organizationId),
+    // What invitation_roles' foreign key names (ADR-080).
+    uniqueIndex('invitations_id_org_key').on(t.id, t.organizationId),
     index('invitations_membership_id_idx').on(t.membershipId),
     check(
       'invitations_link_check',

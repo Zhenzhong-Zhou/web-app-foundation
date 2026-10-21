@@ -35,14 +35,14 @@ import {
   organizationInvitations,
   organizations,
   recentRecords,
-  roles,
   sessions,
   users,
 } from '../../database/schema';
 import { recipientLocale, t, type Translatable } from '../../i18n/translate';
 import { type Mail, MailService } from '../../shared/mail/mail.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
-import { SYSTEM_ROLES } from '../authorization/permissions';
+import { rolesOfMembers } from '../authorization/member-roles';
+import { holdsOwner } from '../authorization/owner';
 import { AccountService } from './account.service';
 import { AccountEventService, type EventMeta } from './account-event.service';
 import { AccountPhotoService } from './account-photo.service';
@@ -388,9 +388,9 @@ export class AccountDeletionService {
       await Promise.all([
         this.db
           .select({
+            membershipId: memberships.id,
             organizationId: memberships.organizationId,
             organizationName: organizations.name,
-            roleName: roles.name,
             jobTitle: memberships.jobTitle,
             department: memberships.department,
             location: memberships.location,
@@ -403,7 +403,6 @@ export class AccountDeletionService {
             organizations,
             eq(organizations.id, memberships.organizationId),
           )
-          .innerJoin(roles, eq(roles.id, memberships.roleId))
           .where(eq(memberships.userId, userId))
           .orderBy(memberships.createdAt),
         this.account.listSessions(context),
@@ -433,10 +432,25 @@ export class AccountDeletionService {
           .orderBy(desc(recentRecords.openedAt)),
       ]);
 
+    const held = await rolesOfMembers(
+      this.db,
+      membershipRows.map((row) => row.membershipId),
+    );
+
     return {
       exportedAt: new Date(),
       profile,
-      memberships: membershipRows,
+      memberships: membershipRows.map(
+        ({ membershipId, organizationId, organizationName, ...work }) => {
+          const [role] = held.get(membershipId) ?? [];
+          return {
+            organizationId,
+            organizationName,
+            roleName: role.name,
+            ...work,
+          };
+        },
+      ),
       devices,
       accountHistory: history,
       notifications: notificationRows,
@@ -598,7 +612,7 @@ export class AccountDeletionService {
         organizationId: memberships.organizationId,
         organizationName: organizations.name,
         goingToo: sql<boolean>`${organizations.deletionScheduledAt} is not null`,
-        isOwner: sql<boolean>`${roles.name} = ${SYSTEM_ROLES.OWNER}`,
+        isOwner: holdsOwner(memberships.id),
         others: sql<number>`(
           select count(*) from ${memberships} as other
           where other.organization_id = ${memberships.organizationId}
@@ -606,10 +620,9 @@ export class AccountDeletionService {
         )::int`,
         otherOwners: sql<number>`(
           select count(*) from ${memberships} as other
-          join ${roles} as other_role on other_role.id = other.role_id
           where other.organization_id = ${memberships.organizationId}
             and other.user_id <> ${userId}
-            and other_role.name = ${SYSTEM_ROLES.OWNER}
+            and ${holdsOwner(sql`other.id`)}
         )::int`,
       })
       .from(memberships)
@@ -617,7 +630,6 @@ export class AccountDeletionService {
         organizations,
         eq(organizations.id, memberships.organizationId),
       )
-      .innerJoin(roles, eq(roles.id, memberships.roleId))
       .where(eq(memberships.userId, userId));
 
     return rows.flatMap((row): Block[] => {

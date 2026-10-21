@@ -710,7 +710,7 @@
   "organization.export.glossary.flags": "以 is_ 开头的列为 true（是）或 false（否），例如 is_active。",
   "organization.export.glossary.id": "id —— 该记录自身的 ID。其他文件中以 _id 结尾的列保存的就是它：例如 partner_id 是 partners.csv 中的 ID。",
   "organization.export.glossary.intro": "每一行列出一列或一组列，并说明其内容。同名的列在各个文件中含义相同。",
-  "organization.export.glossary.invitations": "在 invitations.csv 中，每一条邀请：email，受邀地址；role_id，授予的角色；locale，邀请所用的语言；note，邀请人的留言；invited_by，发送者，一个 user_id；link，最新链接的发送方式：emailed（邮件发送）、copied（复制）或 not_sent（邮件未能发出）；expires_at，该链接的结束时间（UTC）；accepted_at，接受时间，membership_id，由此建立的成员身份；revoked_at，撤销时间。",
+  "organization.export.glossary.invitations": "在 invitations.csv 中，每一条邀请：email，受邀地址；locale，邀请所用的语言；note，邀请人的留言；invited_by，发送者，一个 user_id；link，最新链接的发送方式：emailed（邮件发送）、copied（复制）或 not_sent（邮件未能发出）；expires_at，该链接的结束时间（UTC）；accepted_at，接受时间，membership_id，由此建立的成员身份；revoked_at，撤销时间。每条邀请授予的角色见 invitation_roles.csv，按 invitation_id 和 role_id 对应。",
   "organization.export.glossary.issued": "issued_at、voided_at、void_reason —— 单据的开具时间、作废时间及作废原因。",
   "organization.export.glossary.language": "language、second_language —— 单据打印所用的语言：en、fr-CA 或 zh-Hans。",
   "organization.export.glossary.lots": "lot_id、code、expires_at —— 一批货物、印在货物上的批号，以及到期日。",

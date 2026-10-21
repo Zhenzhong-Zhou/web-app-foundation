@@ -35,6 +35,7 @@ import {
   PASSWORD,
   registerOrganization,
   roleIdNamed,
+  roleIdsOf,
 } from './utils/fixtures';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
@@ -981,12 +982,12 @@ describe('Invitations (e2e)', () => {
       expect(me.organization?.id).toBe(alpha.organizationId);
 
       const [membership] = await db
-        .select({ roleId: memberships.roleId, id: memberships.id })
+        .select({ id: memberships.id })
         .from(memberships)
         .where(eq(memberships.userId, user.id));
-      expect(membership.roleId).toBe(
+      expect(await roleIdsOf(app, user.id)).toEqual([
         await roleIdNamed(app, alpha.organizationId, 'Admin'),
-      );
+      ]);
       const [accepted] = await db
         .select({
           membershipId: invitations.membershipId,

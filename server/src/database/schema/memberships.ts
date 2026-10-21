@@ -9,7 +9,6 @@ import {
 
 import { primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
-import { roles } from './roles';
 import { users } from './users';
 
 /**
@@ -32,11 +31,7 @@ export const memberships = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
 
-    // RESTRICT, not CASCADE: deleting a role must not silently strip everyone
-    // who held it of their access. Reassign them first.
-    roleId: uuid('role_id')
-      .notNull()
-      .references(() => roles.id, { onDelete: 'restrict' }),
+    // Its roles are membership_roles' rows (ADR-080), one or more.
 
     /**
      * Their details at work (ADR-063), each optional, each set by the person
@@ -73,6 +68,9 @@ export const memberships = pgTable(
     // gives someone two rows and two roles, and permission checks become
     // order-dependent.
     uniqueIndex('memberships_user_org_key').on(t.userId, t.organizationId),
+    // What membership_roles' foreign key names, holding each of a member's
+    // roles to the member's own organization (ADR-080).
+    uniqueIndex('memberships_id_org_key').on(t.id, t.organizationId),
 
     // ADR-003 requires an index on organization_id for every tenant-scoped
     // table. user_id is indexed for "which orgs am I in?" on the org switcher.

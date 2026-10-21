@@ -15,7 +15,12 @@ import { t, type Translatable } from '../../i18n/translate';
 import { recordPrevious } from '../audit/audit-context';
 import { PasswordService } from '../auth/password.service';
 import { RequestContext } from '../auth/request-context';
-import { SYSTEM_ROLES } from '../authorization/permissions';
+import {
+  giveRoles,
+  rolesOfMembers,
+  setRoles,
+} from '../authorization/member-roles';
+import { holdsOwner, isOwnerRole } from '../authorization/owner';
 import type { CreateUserDto } from './dto/create-user.dto';
 
 export interface OrganizationMember {
@@ -46,22 +51,33 @@ export class UsersService {
    * The join is driven from the scoped side, which is what keeps the filter
    * inside TenantDb rather than in this method.
    */
-  listMembers(): Promise<OrganizationMember[]> {
-    return this.tenantDb.selectJoined(
+  async listMembers(): Promise<OrganizationMember[]> {
+    const rows = await this.tenantDb.selectJoined(
       memberships,
       users,
       eq(users.id, memberships.userId),
       {
+        membershipId: memberships.id,
         id: users.id,
         email: users.email,
         name: users.name,
-        roleId: memberships.roleId,
         // Their face beside their name (ADR-063).
         photoFileId: users.photoFileId,
         // Shown coarse, or exact with audit.view (ADR-063), by the route.
         lastActiveAt: memberships.lastActiveAt,
       },
     );
+    const held = await this.tenantDb.transaction((tx) =>
+      rolesOfMembers(
+        tx,
+        rows.map((row) => row.membershipId),
+      ),
+    );
+
+    return rows.map(({ membershipId, ...member }) => {
+      const [role] = held.get(membershipId) ?? [];
+      return { ...member, roleId: role.id };
+    });
   }
 
   /**
@@ -114,11 +130,11 @@ export class UsersService {
             name: users.name,
           });
 
-        await tx.insert(memberships).values({
-          userId: created.id,
-          organizationId,
-          roleId: role.id,
-        });
+        const [membership] = await tx
+          .insert(memberships)
+          .values({ userId: created.id, organizationId })
+          .returning({ id: memberships.id });
+        await giveRoles(tx, { id: membership.id, organizationId }, [role.id]);
 
         return { ...created, roleId: role.id };
       });
@@ -156,17 +172,14 @@ export class UsersService {
         t({ id: 'users.unknownRole', defaultMessage: 'Unknown role' }),
       );
 
-    const { membership, callerRole, targetRole } = await this.loadMember(
+    const { membership, held, callerIsOwner } = await this.loadMember(
       context,
       userId,
     );
 
     // ADR-016's gap, closed here. An Admin promoting someone to Owner would
     // be granting authority the Admin does not hold.
-    if (
-      role.name === SYSTEM_ROLES.OWNER &&
-      callerRole?.name !== SYSTEM_ROLES.OWNER
-    ) {
+    if (isOwnerRole(role) && !callerIsOwner) {
       throw new ForbiddenException(
         t({
           id: 'users.ownerAssign',
@@ -177,8 +190,8 @@ export class UsersService {
 
     // Owner to Owner takes nothing away; an Admin trying it was refused
     // just above.
-    if (role.name !== SYSTEM_ROLES.OWNER) {
-      await this.assertMayTakeOwner(callerRole, targetRole, membership, {
+    if (!isOwnerRole(role)) {
+      await this.assertMayTakeOwner(callerIsOwner, held, {
         notOwner: t({
           id: 'users.ownerChange',
           defaultMessage: "Only an Owner can change an Owner's role",
@@ -190,13 +203,11 @@ export class UsersService {
       });
     }
 
-    await this.tenantDb.update(
-      memberships,
-      { roleId },
-      eq(memberships.id, membership.id),
+    await this.tenantDb.transaction((tx, organizationId) =>
+      setRoles(tx, { id: membership.id, organizationId }, [roleId]),
     );
 
-    recordPrevious({ roleId: membership.roleId });
+    recordPrevious({ roleId: held[0]?.id });
 
     this.logger.log(`Role of ${userId} changed to ${role.name}`);
   }
@@ -224,12 +235,12 @@ export class UsersService {
       );
     }
 
-    const { membership, callerRole, targetRole } = await this.loadMember(
+    const { membership, held, callerIsOwner } = await this.loadMember(
       context,
       userId,
     );
 
-    await this.assertMayTakeOwner(callerRole, targetRole, membership, {
+    await this.assertMayTakeOwner(callerIsOwner, held, {
       notOwner: t({
         id: 'users.ownerRemove',
         defaultMessage: 'Only an Owner can remove an Owner',
@@ -246,8 +257,9 @@ export class UsersService {
   }
 
   /**
-   * A member of the caller's organization, with their role and the caller's.
-   * Scoped, so a member of another organization is simply not found.
+   * A member of the caller's organization, with the roles they hold, and
+   * whether the caller is an Owner. Scoped, so a member of another
+   * organization is simply not found.
    */
   private async loadMember(context: RequestContext, userId: string) {
     const [membership] = await this.tenantDb.select(
@@ -260,17 +272,17 @@ export class UsersService {
         t({ id: 'users.notFound', defaultMessage: 'No such member' }),
       );
 
-    const [callerRole] = await this.tenantDb.select(
-      roles,
-      eq(roles.id, context.roleId!),
+    const heldBy = await this.tenantDb.transaction((tx) =>
+      rolesOfMembers(tx, [membership.id, context.membershipId!]),
     );
 
-    const [targetRole] = await this.tenantDb.select(
-      roles,
-      eq(roles.id, membership.roleId),
-    );
-
-    return { membership, callerRole, targetRole };
+    return {
+      membership,
+      held: heldBy.get(membership.id) ?? [],
+      callerIsOwner: (heldBy.get(context.membershipId!) ?? []).some(
+        isOwnerRole,
+      ),
+    };
   }
 
   /**
@@ -285,20 +297,19 @@ export class UsersService {
    *   organization with no Owner has nobody who can appoint one.
    */
   private async assertMayTakeOwner(
-    callerRole: { name: string } | undefined,
-    targetRole: { name: string } | undefined,
-    membership: { roleId: string },
+    callerIsOwner: boolean,
+    held: { name: string; isSystem: boolean }[],
     refusals: { notOwner: Translatable; lastOwner: Translatable },
   ): Promise<void> {
-    if (targetRole?.name !== SYSTEM_ROLES.OWNER) return;
+    if (!held.some(isOwnerRole)) return;
 
-    if (callerRole?.name !== SYSTEM_ROLES.OWNER) {
+    if (!callerIsOwner) {
       throw new ForbiddenException(refusals.notOwner);
     }
 
     const owners = await this.tenantDb.select(
       memberships,
-      eq(memberships.roleId, membership.roleId),
+      holdsOwner(memberships.id),
     );
 
     if (owners.length <= 1) throw new ConflictException(refusals.lastOwner);
