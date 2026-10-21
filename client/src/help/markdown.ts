@@ -101,6 +101,13 @@ export function parseGuide(source: string): ParsedGuide {
     blocks.push({ type: 'plain', text });
     open = null;
   };
+  // A heading's words are drawn as they are, so Markdown in them would
+  // show its marks.
+  const heading = (words: string, line: number) => {
+    if (STRAY.test(words)) {
+      problems.push(`line ${line}: a heading is words alone: ${words}`);
+    }
+  };
 
   lines.forEach((text, index) => {
     const line = index + 1;
@@ -108,6 +115,7 @@ export function parseGuide(source: string): ParsedGuide {
     if (line === 1) {
       if (text.startsWith('# ') && text.length > 2) {
         title = text.slice(2).trim();
+        heading(title, line);
       } else {
         plain(text, line, 'a guide starts with its # Title');
       }
@@ -132,6 +140,7 @@ export function parseGuide(source: string): ParsedGuide {
         return;
       }
       const [, words, id] = section;
+      heading(words, line);
       if (ids.has(id)) problems.push(`line ${line}: #${id} is used twice`);
       ids.add(id);
       blocks.push({ type: 'section', id, text: words });

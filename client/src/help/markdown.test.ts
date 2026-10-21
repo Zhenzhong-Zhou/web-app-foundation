@@ -161,6 +161,15 @@ describe('parseGuide', () => {
       ]);
     });
 
+    it('Markdown in a heading, whose words are drawn as they are', () => {
+      const parsed = guide('# The **orders**', '', '## Raise `it` {#raise}');
+
+      expect(parsed.problems).toEqual([
+        'line 1: a heading is words alone: The **orders**',
+        'line 3: a heading is words alone: Raise `it`',
+      ]);
+    });
+
     it('an id used twice', () => {
       const parsed = guide('# T', '', '## A {#same}', '', '## B {#same}');
 
