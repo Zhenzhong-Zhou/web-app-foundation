@@ -1587,8 +1587,9 @@ The pages, in a private window unless a check says otherwise.
   a link to … Inviting colleagues waits until you confirm, with Resend the
   link, which then reads Sent, with focus on it (with the server stopped,
   it says Could not reach the server. and stays). What you can do here
-  ends with no one to ask. The yellow banner asking to confirm is not on Home, and is on
-  Orders and every other page. Confirm from Mailpit: Home ticks Confirmed,
+  ends with no one to ask. The yellow banner asking to confirm is not on
+  Home, not even for a moment as Home opens, and is on Orders and every
+  other page. Confirm from Mailpit: Home ticks Confirmed,
   and the banner is gone everywhere. Add a photo on Your account: Say who
   you are reads Photo added, opening Account. Receive stock or raise an
   order: it is ticked, naming what you did as a link to it.
@@ -1980,3 +1981,5 @@ first.
 - 2026-10-20: Undo puts focus on the welcome it brings back: MC-3207
   extended.
 - 2026-10-20: closing Help in Safari puts focus on Help: MC-3205 extended.
+- 2026-10-20: the banner never shows for a moment on Home: MC-3208
+  extended.
