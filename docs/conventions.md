@@ -167,6 +167,9 @@ Pairs currently being watched rather than extracted:
 
 - `AuthenticatedUser` and `CurrentSession.user` share four fields and differ in
   the fifth. Extract the shared fields at the third response shape.
+- The kept notice in `DeletionBanner` and `OrganizationDeletionBanner`: the
+  status that says what a keep or a cancel kept, focused once it shows.
+  Extract at a third banner that keeps something.
 
 Extracted at three: a name's, a new password's and an organization's name's
 limits, which every DTO taking them reads from `common/dto/account-rules.ts` as
