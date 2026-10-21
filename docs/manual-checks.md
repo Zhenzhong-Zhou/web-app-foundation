@@ -934,6 +934,8 @@ await fetch(`${api}/v1/files/product-image`, {
   Keep my account says it could not reach the server and the banner
   stays; with it running, the banner gives way to "Your account will not
   be deleted.", which a screen reader reads, and a second email says so.
+  Delete it again from Account without reloading: the banner is back, with
+  its Keep my account, in place of that line.
   In 中文 the dialog, the banner and the emails are in Chinese.
 - **MC-2303** Request deletion again, then set its day two days back in
   the database (`update users set deletion_scheduled_at = current_date - 2`)
@@ -2137,3 +2139,5 @@ first.
   one item: MC-2402 extended.
 - 2026-10-20: every link in a page's subtitle is underlined, on an invoice
   and an RMA too: MC-R23 rewritten.
+- 2026-10-20: a deletion asked for again shows its banner over the kept line:
+  MC-2302 extended.

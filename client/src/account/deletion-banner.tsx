@@ -19,14 +19,18 @@ export function DeletionBanner() {
   const { submitting, error, submit } = useSubmit(refresh);
   // What a keep kept, said once it is done rather than the banner just
   // going, as the organization's banner does; the focus the button had,
-  // gone with the banner, moves to it.
-  const [kept, setKept] = useState<string | null>(null);
+  // gone with the banner, moves to it. A new object each keep, so a second
+  // keep in the same session moves the focus again.
+  const [kept, setKept] = useState<{ text: string } | null>(null);
   const keptRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (kept) keptRef.current?.focus();
   }, [kept]);
 
-  if (kept) {
+  const due = session?.user.deletionScheduledAt;
+  // Only while nothing is pending: a deletion asked for again since,
+  // from Account, needs its banner and its Keep.
+  if (kept && !due) {
     return (
       <Alert
         ref={keptRef}
@@ -35,12 +39,10 @@ export function DeletionBanner() {
         role="status"
         onClose={() => setKept(null)}
       >
-        {kept}
+        {kept.text}
       </Alert>
     );
   }
-
-  const due = session?.user.deletionScheduledAt;
   if (!due) return null;
   // Deleted with an organization, as its only member (ADR-070). Working in
   // it, its banner says both and keeps both; anywhere else, this one does.
@@ -58,8 +60,8 @@ export function DeletionBanner() {
           onClick={() =>
             void submit(async () => {
               await api('/account/deletion', { method: 'DELETE' });
-              setKept(
-                together
+              setKept({
+                text: together
                   ? intl.formatMessage(
                       {
                         id: 'settings.banner.keptBoth',
@@ -72,7 +74,7 @@ export function DeletionBanner() {
                       id: 'account.deletion.kept',
                       defaultMessage: 'Your account will not be deleted.',
                     }),
-              );
+              });
             })
           }
         >
