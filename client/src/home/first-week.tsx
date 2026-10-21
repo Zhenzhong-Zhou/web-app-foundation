@@ -8,7 +8,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -233,7 +233,12 @@ function Item({
 }) {
   const intl = useIntl();
   const { session } = useAuth();
-  const { sent, sending, resend } = useResendConfirmation();
+  const { sent, sending, error, resend } = useResendConfirmation();
+  // Sent takes the place of the button that had focus, so focus goes to it.
+  const sentRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (sent) sentRef.current?.focus();
+  }, [sent]);
 
   let detail: ReactNode;
   let action: ReactNode = null;
@@ -249,21 +254,36 @@ function Item({
       },
       { email: session?.user.email ?? '', invite: String(canInvite) },
     );
-    // 202 whether or not a message went out, as the banner says it.
-    action = sent ? (
-      <Typography variant="body2" color="text.secondary">
-        {intl.formatMessage({
-          id: 'layout.unverified.sent',
-          defaultMessage: 'Sent',
-        })}
-      </Typography>
-    ) : (
-      <Button variant="outlined" disabled={sending} onClick={resend}>
-        {intl.formatMessage({
-          id: 'home.welcome.resend',
-          defaultMessage: 'Resend the link',
-        })}
-      </Button>
+    // 202 whether or not a message went out, as the banner says it; what
+    // happened is announced, as the banner's alert is.
+    action = (
+      <Box role="status">
+        {sent ? (
+          <Typography
+            ref={sentRef}
+            tabIndex={-1}
+            variant="body2"
+            color="text.secondary"
+          >
+            {intl.formatMessage({
+              id: 'layout.unverified.sent',
+              defaultMessage: 'Sent',
+            })}
+          </Typography>
+        ) : (
+          <Button variant="outlined" disabled={sending} onClick={resend}>
+            {intl.formatMessage({
+              id: 'home.welcome.resend',
+              defaultMessage: 'Resend the link',
+            })}
+          </Button>
+        )}
+        {error && (
+          <Typography variant="body2" color="error" sx={{ mt: 0.5 }}>
+            {error}
+          </Typography>
+        )}
+      </Box>
     );
   } else {
     const hint: MessageDescriptor = HINTS[item.key];

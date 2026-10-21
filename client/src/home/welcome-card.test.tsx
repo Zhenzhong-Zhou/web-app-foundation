@@ -192,8 +192,46 @@ describe('the welcome card', () => {
     await user.click(
       within(region).getByRole('button', { name: 'Resend the link' }),
     );
-    expect(await within(region).findByText('Sent')).toBeVisible();
+    // In place of the button, announced, and where focus was.
+    const sent = await within(region).findByText('Sent');
+    expect(sent).toBeVisible();
+    expect(sent).toHaveFocus();
+    expect(sent.closest('[role="status"]')).not.toBeNull();
     expect(resent).toBe(true);
+  });
+
+  it('says why the link could not be sent again, and keeps Resend', async () => {
+    server.use(
+      http.post('/api/v1/auth/verify-email/resend', () =>
+        HttpResponse.json(
+          { message: 'Too many requests. Try again in a minute.' },
+          { status: 429 },
+        ),
+      ),
+    );
+    serve(
+      welcome({
+        items: [
+          { key: 'confirmEmail', done: false, what: null },
+          { key: 'sayWhoYouAre', done: false, what: null },
+        ],
+      }),
+    );
+    const user = userEvent.setup();
+    renderHome(VIEWER, { emailVerified: false });
+
+    const region = await card();
+    await user.click(
+      within(region).getByRole('button', { name: 'Resend the link' }),
+    );
+    expect(
+      await within(region).findByText(
+        'Too many requests. Try again in a minute.',
+      ),
+    ).toBeVisible();
+    expect(
+      within(region).getByRole('button', { name: 'Resend the link' }),
+    ).toBeEnabled();
   });
 
   it('gives the founder one line, and only their own two items while Getting started shows', async () => {

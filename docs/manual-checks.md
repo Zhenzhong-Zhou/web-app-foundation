@@ -1584,8 +1584,9 @@ The pages, in a private window unless a check says otherwise.
   link: invite as an Admin with Copy link, and open the link in a private
   window. The first week starts with Confirm your email address: We sent
   a link to … Inviting colleagues waits until you confirm, with Resend the
-  link, which then reads Sent. What you can do here ends with no one to
-  ask. The yellow banner asking to confirm is not on Home, and is on
+  link, which then reads Sent, with focus on it (with the server stopped,
+  it says Could not reach the server. and stays). What you can do here
+  ends with no one to ask. The yellow banner asking to confirm is not on Home, and is on
   Orders and every other page. Confirm from Mailpit: Home ticks Confirmed,
   and the banner is gone everywhere. Add a photo on Your account: Say who
   you are reads Photo added, opening Account. Receive stock or raise an
@@ -1973,3 +1974,5 @@ first.
   MC-3204 extended.
 - 2026-10-20: ADR-079, the welcome, your access, the bell and People:
   MC-3201 extended, MC-3207 to MC-3212.
+- 2026-10-20: the first week's Resend the link keeps focus and says why it
+  failed: MC-3208 extended.
