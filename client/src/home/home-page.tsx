@@ -219,6 +219,31 @@ function OrganizationHome() {
         <Typography ref={heading} variant="h4" component="h1" tabIndex={-1}>
           {greeting(intl, session?.user.name ?? '')}
         </Typography>
+        {/* Next after the heading, where Dismiss puts focus, so the next
+            Tab reaches Undo; shown at the foot of the screen all the same,
+            and held there while focus or the pointer is on it. */}
+        <Snackbar
+          open={undoing}
+          autoHideDuration={8000}
+          onClose={(_event, reason) => {
+            // A click elsewhere is somebody carrying on, not dismissing.
+            if (reason !== 'clickaway') setUndoing(false);
+          }}
+          message={intl.formatMessage({
+            id: 'home.welcome.dismissed',
+            defaultMessage:
+              'Welcome card hidden. What you can do here stays on Your account.',
+          })}
+          action={
+            <Button color="inherit" onClick={() => void undoWelcome()}>
+              {intl.formatMessage({
+                id: 'home.welcome.undo',
+                defaultMessage: 'Undo',
+              })}
+            </Button>
+          }
+          slotProps={{ content: { role: 'status' } }}
+        />
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Typography color="text.secondary">
             {intl.formatDate(new Date(), {
@@ -370,29 +395,6 @@ function OrganizationHome() {
             )}
         </>
       )}
-
-      <Snackbar
-        open={undoing}
-        autoHideDuration={8000}
-        onClose={(_event, reason) => {
-          // A click elsewhere is somebody carrying on, not dismissing.
-          if (reason !== 'clickaway') setUndoing(false);
-        }}
-        message={intl.formatMessage({
-          id: 'home.welcome.dismissed',
-          defaultMessage:
-            'Welcome card hidden. What you can do here stays on Your account.',
-        })}
-        action={
-          <Button color="inherit" onClick={() => void undoWelcome()}>
-            {intl.formatMessage({
-              id: 'home.welcome.undo',
-              defaultMessage: 'Undo',
-            })}
-          </Button>
-        }
-        slotProps={{ content: { role: 'status' } }}
-      />
     </Stack>
   );
 }

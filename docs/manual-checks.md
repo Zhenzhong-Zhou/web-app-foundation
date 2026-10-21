@@ -833,8 +833,9 @@ await fetch(`${api}/v1/files/product-image`, {
   the same photo again: "already on this product". Open an image: Esc
   closes, ← → move, double-click zooms; on a phone, swipe and double-tap.
   Use a thumbnail's menu to Make cover and Move left; drag one to the end.
-  Remove one and press Undo: it is back; remove one and wait: after a
-  reload it is gone. The Products list and Inventory show each cover; a
+  Remove one by its menu: focus is on Undo, and the message stays while
+  focus or the pointer is on it, well past five seconds; Enter: it is
+  back. Remove one, Tab away and wait: after a reload it is gone. The Products list and Inventory show each cover; a
   product without one shows the plain tile. At eight, Add images is
   disabled with the reason. A viewer sees the gallery without the menus.
   In 中文 on a phone, the buttons and the hint read naturally.
@@ -1600,8 +1601,10 @@ The pages, in a private window unless a check says otherwise.
   Open a product and come back: Look up is ticked and reads You opened … as a
   link to it. Dismiss: the card goes, focus moves to the greeting at the
   top of Home, and a message says What you can do here stays on Your
-  account, with Undo; Undo brings the card back, focus on its title (Tab
-  moves on from there), and a reload keeps it. Dismiss
+  account, with Undo. Tab once: Undo has focus, and the message stays
+  while it does, or while the pointer is on it, well past its eight
+  seconds. Undo brings the card back, focus on its title (Tab moves on
+  from there), and a reload keeps it. Dismiss
   again and reload: Home as usual. As an Admin of the demo team, invite
   an address with a note and leave the organization before it is
   accepted; once accepted, the card's note reads From Demo … with no
@@ -2045,3 +2048,5 @@ first.
 - 2026-10-20: Help beside the page on a computer, the rail folded while it
   is open: MC-3202 and MC-3203 rewritten.
 - 2026-10-20: progress bars read empty with nothing done: MC-3209 extended.
+- 2026-10-20: Undo stays while focus or the pointer is on it, the welcome's
+  and the gallery's: MC-1801 and MC-3207 extended.

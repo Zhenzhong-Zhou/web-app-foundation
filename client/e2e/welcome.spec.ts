@@ -79,7 +79,14 @@ test('a newcomer accepts with a note, meets their welcome, and the inviter hears
   await expect(hidden).toHaveText(
     /What you can do here stays on Your account\./,
   );
-  await hidden.getByRole('button', { name: 'Undo', exact: true }).click();
+  // From the heading Dismiss put focus on, the next Tab is Undo, which
+  // stays as long as it has focus, past its eight seconds (WCAG 2.2.1).
+  const undo = hidden.getByRole('button', { name: 'Undo', exact: true });
+  await newcomer.keyboard.press('Tab');
+  await expect(undo).toBeFocused();
+  await newcomer.waitForTimeout(9_000);
+  await expect(undo).toBeVisible();
+  await newcomer.keyboard.press('Enter');
   await expect(card).toBeVisible();
   // Undone on the server too, not only on this page.
   await newcomer.reload();

@@ -488,6 +488,10 @@ describe('the welcome card', () => {
       ),
     ).toBeVisible();
 
+    // The next Tab from the heading is Undo, which holds its message while
+    // it has focus.
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Undo' })).toHaveFocus();
     await user.click(screen.getByRole('button', { name: 'Undo' }));
     expect(await card()).toBeVisible();
     expect(writes).toEqual(['dismiss', 'undo']);
