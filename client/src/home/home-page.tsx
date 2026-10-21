@@ -110,13 +110,15 @@ function OrganizationHome() {
 
   const welcome = home?.welcome ?? null;
   // The banner asking the same is not shown here while the card lists it,
-  // nor while Home is still loading the card that may (ADR-079).
+  // nor while Home is still loading the card that may (ADR-079). Someone
+  // confirmed has no banner to cover, and the frame no change to render.
   useCoverUnverifiedBanner(
-    home
-      ? !!welcome?.items.some(
-          (item) => item.key === 'confirmEmail' && !item.done,
-        )
-      : !error,
+    !session?.user.emailVerified &&
+      (home
+        ? !!welcome?.items.some(
+            (item) => item.key === 'confirmEmail' && !item.done,
+          )
+        : !error),
   );
 
   const cards = home?.cards ?? [];
