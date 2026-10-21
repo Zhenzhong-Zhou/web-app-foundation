@@ -14,7 +14,8 @@ import type { Shipment } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
 import { api } from '../lib/api';
-import { formatDate, SEPARATOR } from '../lib/format';
+import { formatDay, SEPARATOR } from '../lib/format';
+import { organizationDayOf } from '../lib/time-zone';
 import { useSubmit } from '../lib/use-submit';
 
 /**
@@ -104,7 +105,9 @@ export function VoidShipmentDialog({
                       id: 'orders.void.recorded',
                       defaultMessage: 'Recorded {date}',
                     },
-                    { date: formatDate(shipment.createdAt) },
+                    // The organization's day, as the Shipments tab heads
+                    // it and its packing slip prints it (ADR-072).
+                    { date: formatDay(organizationDayOf(shipment.createdAt)) },
                   ),
                   shipment.carrier,
                   shipment.trackingNumber,

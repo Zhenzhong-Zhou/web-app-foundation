@@ -1,9 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Shipment } from '../api/types.gen';
+import { setOrganizationTimeZone } from '../lib/time-zone';
 import { server } from '../test/setup';
 import { VoidShipmentDialog } from './void-shipment-dialog';
 
@@ -85,5 +86,27 @@ describe('VoidShipmentDialog', () => {
     );
 
     expect(screen.queryByText(/Voiding reopens it/)).not.toBeInTheDocument();
+  });
+
+  describe('in Vancouver', () => {
+    afterEach(() => setOrganizationTimeZone(null));
+
+    it("names the shipment's day as the Shipments tab heads it (ADR-072)", () => {
+      setOrganizationTimeZone('America/Vancouver');
+      render(
+        <VoidShipmentDialog
+          open
+          orderId="order-1"
+          // 5:30 pm on 16 October in Vancouver, already the 17th in Tokyo,
+          // where the tests run, and in UTC.
+          shipment={{ ...SHIPMENT, createdAt: '2026-10-17T00:30:00.000Z' }}
+          orderClosed={false}
+          onClose={() => undefined}
+          onVoided={() => undefined}
+        />,
+      );
+
+      expect(screen.getByText(/^Recorded Oct 16, 2026/)).toBeVisible();
+    });
   });
 });
