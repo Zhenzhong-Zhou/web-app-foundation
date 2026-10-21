@@ -157,6 +157,32 @@ describe('HomePage', () => {
     await vi.waitFor(() => expect(skipped).toBe(true));
   });
 
+  it('leaves Getting started’s first step the one primary action while it shows', async () => {
+    serve({
+      gettingStarted: {
+        ...COMPLETE,
+        complete: false,
+        steps: { ...COMPLETE.steps, organization: false },
+      },
+      cards: [],
+    });
+    renderWithAuth(routed(<HomePage />), {
+      permissions: ['organizations.update', 'orders.create'],
+    });
+
+    const start = await screen.findByRole('region', {
+      name: 'Getting started',
+    });
+    expect(
+      within(start).getByRole('link', { name: 'Open settings' }),
+    ).toHaveClass('MuiButton-contained');
+    const quick = screen
+      .getAllByRole('link', { name: 'Raise an order' })
+      .filter((link) => !start.contains(link));
+    expect(quick).toHaveLength(1);
+    expect(quick[0]).toHaveClass('MuiButton-outlined');
+  });
+
   it('puts focus on the page’s heading once Getting started is dismissed', async () => {
     let dismissed = false;
     server.use(

@@ -754,7 +754,9 @@ Paper is checked first because it must not change at all.
   Each card's See all opens its list showing the same number of rows. Switch
   to 中文 and to a phone (or a narrow window): the counts sit two by two, cards
   stack, nothing scrolls sideways, and the wording reads naturally. Register a
-  new organization: Getting started leads with seven steps; add a location and
+  new organization: Getting started leads with seven steps, its first open
+  step's button the only filled one on Home, the quick actions above it
+  outlined; add a location and
   see its step ticked on Refresh. The last step reads Invite your team: its
   Invite someone opens Members with the Invite dialog, and closing it takes
   `?invite` off the address, so Back and a reload leave it shut (ADR-077).
@@ -2024,3 +2026,5 @@ first.
 - 2026-10-20: an order's reference reads 参考号 in Chinese: MC-3206 extended.
 - 2026-10-20: the invitation email's link sits under its action with no
   colon: MC-3001 extended.
+- 2026-10-20: while Getting started shows, the quick actions are outlined:
+  MC-1559 extended.

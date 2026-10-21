@@ -305,7 +305,9 @@ function OrganizationHome() {
                   key={item.to + item.label}
                   component={RouterLink}
                   to={item.to}
-                  variant={index === 0 ? 'contained' : 'outlined'}
+                  // While Getting started shows, its first open step is the
+                  // page's one primary action (ADR-058).
+                  variant={index === 0 && !showStart ? 'contained' : 'outlined'}
                 >
                   {item.label}
                 </Button>
