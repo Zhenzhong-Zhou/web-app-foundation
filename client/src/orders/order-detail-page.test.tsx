@@ -477,7 +477,6 @@ describe('OrderDetailPage lines', () => {
       ).not.toBeInTheDocument();
     });
 
-    // A voided invoice no longer bills the shipment; it can be billed again.
     describe('in Vancouver', () => {
       afterEach(() => setOrganizationTimeZone(null));
 
@@ -501,6 +500,7 @@ describe('OrderDetailPage lines', () => {
       });
     });
 
+    // A voided invoice no longer bills the shipment; it can be billed again.
     it('ignores a voided invoice', async () => {
       serveSale([invoice({ status: 'voided' })]);
       renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
