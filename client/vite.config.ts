@@ -88,8 +88,14 @@ function recompileCatalogues(): Plugin {
 const DEFAULT_APP_NAME = 'web-app-foundation';
 
 function appName(mode: string): Plugin {
+  // loadEnv also takes a NODE_ENV it finds in a file as the build's own,
+  // and the root .env has the server's NODE_ENV=development: every local
+  // build then shipped React's development bundle, 250 kB more than CI's.
+  // Only the name is wanted from it.
+  const userNodeEnv = process.env.VITE_USER_NODE_ENV;
   const name =
     loadEnv(mode, '..', 'VITE_APP_NAME').VITE_APP_NAME || DEFAULT_APP_NAME;
+  if (userNodeEnv === undefined) delete process.env.VITE_USER_NODE_ENV;
   const escaped = name
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
