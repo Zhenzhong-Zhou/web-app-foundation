@@ -89,17 +89,17 @@ test('opens Help full screen on a phone, in Chinese, and closes it', async ({
   const button = page.getByRole('button', { name: '帮助', exact: true });
   await button.click();
 
-  const help = page.getByRole('dialog', { name: '帮助 · 订单' });
+  const help = page.getByRole('dialog', { name: '帮助 · 订单', exact: true });
   const box = await help.boundingBox();
   expect(box?.width).toBe(page.viewportSize()?.width);
   await expect(
-    help.getByRole('heading', { level: 2, name: '订单' }),
+    help.getByRole('heading', { level: 2, name: '订单', exact: true }),
   ).toBeFocused();
   await expect(
-    help.getByRole('heading', { level: 3, name: '创建订单' }),
+    help.getByRole('heading', { level: 3, name: '创建订单', exact: true }),
   ).toBeVisible();
 
-  await help.getByRole('button', { name: '关闭帮助' }).click();
+  await help.getByRole('button', { name: '关闭帮助', exact: true }).click();
   await expect(help).toBeHidden();
   await expect(button).toBeFocused();
 });

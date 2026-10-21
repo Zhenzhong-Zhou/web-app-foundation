@@ -46,27 +46,32 @@ test('a newcomer accepts with a note, meets their welcome, and the inviter hears
   await newcomer.getByLabel('Your name').fill('Wang Fang');
   await newcomer.getByLabel(/^Choose a password/).fill(E2E_PASSWORD);
   await newcomer
-    .getByRole('button', { name: `Join ${org.organizationName}` })
+    .getByRole('button', { name: `Join ${org.organizationName}`, exact: true })
     .click();
   await newcomer.waitForURL('/');
 
   const card = newcomer.getByRole('region', {
     name: `Welcome to ${org.organizationName}, Wang Fang`,
+    exact: true,
   });
   await expect(card).toBeVisible();
   await expect(card.getByText(/^You joined today as a Viewer\./)).toBeVisible();
   const note = card.getByRole('figure');
-  await expect(note.getByRole('link', { name: 'E2E Owner' })).toBeVisible();
+  await expect(
+    note.getByRole('link', { name: 'E2E Owner', exact: true }),
+  ).toBeVisible();
   await expect(note.getByText(/On Monday you’ll shadow Li Na\./)).toBeVisible();
   await expect(
-    card.getByRole('heading', { name: 'What you can do here' }),
+    card.getByRole('heading', { name: 'What you can do here', exact: true }),
   ).toBeVisible();
   // The emailed link confirmed the address, so the week starts with Say
   // who you are, and the banner is nowhere.
   await expect(card.getByText('0 of 3 done')).toBeVisible();
   await expect(card.getByText('Confirm your email address')).toHaveCount(0);
 
-  await card.getByRole('button', { name: 'Dismiss the welcome card' }).click();
+  await card
+    .getByRole('button', { name: 'Dismiss the welcome card', exact: true })
+    .click();
   await expect(card).toBeHidden();
   const hidden = newcomer
     .getByRole('status')
@@ -74,7 +79,7 @@ test('a newcomer accepts with a note, meets their welcome, and the inviter hears
   await expect(hidden).toHaveText(
     /What you can do here stays on Your account\./,
   );
-  await hidden.getByRole('button', { name: 'Undo' }).click();
+  await hidden.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(card).toBeVisible();
   // Undone on the server too, not only on this page.
   await newcomer.reload();

@@ -60,8 +60,8 @@ const SCREENS: Screen[] = [
       page.getByRole('button', { name: 'Help', exact: true }).click(),
     ready: (page) =>
       page
-        .getByRole('complementary', { name: 'Help' })
-        .getByRole('heading', { level: 2, name: 'Orders' }),
+        .getByRole('complementary', { name: 'Help', exact: true })
+        .getByRole('heading', { level: 2, name: 'Orders', exact: true }),
   },
   {
     name: 'an order',
