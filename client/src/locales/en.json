@@ -157,6 +157,7 @@
   "audit.action": "Action",
   "audit.allActions": "All actions",
   "audit.from": "From",
+  "audit.fromWhere": "From",
   "audit.history.close": "Close history",
   "audit.history.empty": "No recorded changes.",
   "audit.history.openInLog": "Open in audit log",

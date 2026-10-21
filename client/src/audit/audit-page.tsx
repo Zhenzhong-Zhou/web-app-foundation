@@ -339,9 +339,11 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
                         defaultMessage: 'When',
                       })}
                     </TableCell>
+                    {/* Where the change came from, its address: a word of
+                        its own, since the date filter's From is a day. */}
                     <TableCell>
                       {intl.formatMessage({
-                        id: 'audit.from',
+                        id: 'audit.fromWhere',
                         defaultMessage: 'From',
                       })}
                     </TableCell>

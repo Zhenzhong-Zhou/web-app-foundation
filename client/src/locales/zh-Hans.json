@@ -157,6 +157,7 @@
   "audit.action": "操作",
   "audit.allActions": "所有操作",
   "audit.from": "起始",
+  "audit.fromWhere": "来源",
   "audit.history.close": "关闭历史记录",
   "audit.history.empty": "没有记录的更改。",
   "audit.history.openInLog": "在审计日志中打开",

@@ -1277,7 +1277,9 @@ Signed in as the demo Owner the seed prints.
   by SKU, quantity and resolution, and its order and invoice by number;
   Sarah Chen's role change, Viewer → Admin, the role names in the
   language. The order's number opens the order, and the role opens
-  Members.
+  Members. The last column, where a change came from, is headed 来源 in
+  中文 and Provenance in Français, words of its own rather than the date
+  filter's 起始 and Depuis.
 - **MC-2902** *(ADR-076)* On Tax codes, rename GST to GST 5%. The audit
   log's earlier entries still say GST: a reference keeps the name it had
   when the entry was written.
@@ -2098,3 +2100,5 @@ first.
 - 2026-10-20: the Ship dialog's fields on a phone: MC-R25.
 - 2026-10-20: an order's Items actions wrap on a phone: MC-R18 extended.
 - 2026-10-20: Keep my account says the account is kept: MC-2302 extended.
+- 2026-10-20: the audit log's From column has its own word in 中文 and
+  Français: MC-2901 extended.
