@@ -266,6 +266,25 @@ describe('the welcome card', () => {
     ).toBeVisible();
   });
 
+  it('names a role the organization made as named, with no article', async () => {
+    serve(
+      welcome({
+        access: {
+          role: { name: 'Accountant', description: 'Keeps the books' },
+          holdsEverything: false,
+          whomToAsk: [],
+        },
+      }),
+    );
+    renderHome();
+
+    expect(
+      within(await card()).getByText(
+        'You joined today as Accountant. This card stays on Home for your first two weeks, until November 3.',
+      ),
+    ).toBeVisible();
+  });
+
   it('says in one line that someone invited as an Owner may do everything', async () => {
     serve(
       welcome({

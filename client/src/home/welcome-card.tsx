@@ -74,7 +74,7 @@ export function WelcomeCard({
           {
             id: 'home.welcome.joined.today',
             defaultMessage:
-              'You joined today as {name, select, Owner {an} Admin {an} other {a}} {role}.',
+              'You joined today as {name, select, Owner {an {role}} Admin {an {role}} Viewer {a {role}} other {{role}}}.',
           },
           { name: access.role.name, role },
         )
@@ -82,7 +82,7 @@ export function WelcomeCard({
           {
             id: 'home.welcome.joined',
             defaultMessage:
-              'You joined on {day} as {name, select, Owner {an} Admin {an} other {a}} {role}.',
+              'You joined on {day} as {name, select, Owner {an {role}} Admin {an {role}} Viewer {a {role}} other {{role}}}.',
           },
           {
             day: formatDayMonth(welcome.joinedOn),
