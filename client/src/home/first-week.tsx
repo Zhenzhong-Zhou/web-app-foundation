@@ -93,7 +93,7 @@ const HINTS = defineMessages({
  * What a done item says was done (ADR-079), its record's words a link to
  * it: "You opened lot NN-2410-07".
  */
-const DID = defineMessages({
+const DID: Partial<Record<Key, MessageDescriptor>> = defineMessages({
   lookUp: {
     id: 'home.welcome.did.lookUp',
     defaultMessage:
@@ -354,8 +354,7 @@ function Did({ keyOf, what }: { keyOf: Key; what: WelcomeDone }) {
   }
 
   // A record since deleted: done all the same, with nothing to open.
-  const message: MessageDescriptor | null =
-    keyOf in DID ? DID[keyOf as keyof typeof DID] : null;
+  const message = DID[keyOf];
   if (!what.id || !what.words || !message) {
     return intl.formatMessage({
       id: 'home.welcome.did.gone',
