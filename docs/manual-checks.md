@@ -1704,10 +1704,11 @@ first.
   one) is tinted the pale red of a red chip, its title, count and "1
   overdue" in dark red, easy to read; in dark mode a dark tint with light
   red words. A tile with nothing late is plain.
-- **MC-R23** *(links on an order)* Open an order with an expected day, such
-  as PO-DEMO-9, and a duplicated order: under the number, the partner's name
-  and "duplicated from a previous order" are underlined before any hover, so
-  each is told from the words beside it without its colour.
+- **MC-R23** *(links under a page's title)* Open an order with an expected
+  day, such as PO-DEMO-9, a duplicated order, INV-000001 and an RMA: under
+  the number, every link (the partner's name, "duplicated from a previous
+  order", Order SO-…, the invoice's number) is underlined before any hover,
+  so each is told from the words beside it without its colour.
 - **MC-R22** *(#144)* Locally, with `REGISTRATION=open`, sign in as one
   of the demo's team who is not the last Owner, such as Tom Becker (who
   is then gone from this demo: walk MC-1903 first), in two
@@ -2134,3 +2135,5 @@ first.
   MC-2302 extended.
 - 2026-10-20: what closing still needs reads the download's alternative as
   one item: MC-2402 extended.
+- 2026-10-20: every link in a page's subtitle is underlined, on an invoice
+  and an RMA too: MC-R23 rewritten.

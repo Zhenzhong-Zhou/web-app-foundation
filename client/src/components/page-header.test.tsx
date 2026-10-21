@@ -1,3 +1,4 @@
+import { Link } from '@mui/material';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -124,5 +125,29 @@ describe('PageHeader', () => {
         screen.queryByRole('button', { name: 'Back' }),
       ).not.toBeInTheDocument();
     });
+  });
+
+  /**
+   * The subtitle is a line of words: a link in it, as an order's partner,
+   * is underlined before any hover, so it is told from the words beside it
+   * without its colour (WCAG 1.4.1). The app's links underline on hover.
+   */
+  it('underlines a link in its subtitle', () => {
+    renderHeader({
+      crumbs: [{ label: 'Orders', to: '/orders' }],
+      title: 'SO-000001',
+      subtitle: (
+        <>
+          Sale · expected Oct 17, 2026 ·{' '}
+          <Link href="/partners/p-1" underline="hover">
+            Northside Pharmacy
+          </Link>
+        </>
+      ),
+    });
+
+    expect(
+      screen.getByRole('link', { name: 'Northside Pharmacy' }),
+    ).toHaveStyle({ textDecoration: 'underline' });
   });
 });

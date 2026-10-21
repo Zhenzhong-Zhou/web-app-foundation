@@ -456,15 +456,9 @@ export function OrderDetailPage() {
               .filter(Boolean)
               .join(SEPARATOR)}
             {/* The partner, linked: the one name on the page that leads to
-                its other orders. Then their reference, when they gave one.
-                Each link underlined, being in a line of words, so it is
-                told from them without its colour (WCAG 1.4.1). */}
+                its other orders. Then their reference, when they gave one. */}
             {SEPARATOR}
-            <Link
-              component={RouterLink}
-              to={`/partners/${order.partnerId}`}
-              underline="always"
-            >
+            <Link component={RouterLink} to={`/partners/${order.partnerId}`}>
               {order.partnerName}
             </Link>
             {order.reference && (
@@ -486,7 +480,6 @@ export function OrderDetailPage() {
                   component={RouterLink}
                   to={`/orders/${order.duplicatedFromId}`}
                   color="inherit"
-                  underline="always"
                 >
                   {intl.formatMessage({
                     id: 'orders.subtitle.duplicatedFrom',
