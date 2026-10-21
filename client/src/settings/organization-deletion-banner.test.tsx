@@ -5,7 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { localToday } from '../lib/expiry';
 import { setOrganizationTimeZone } from '../lib/time-zone';
-import { renderWithAuth } from '../test/render-with-auth';
+import {
+  renderWithAuth,
+  renderWithChangingAuth,
+} from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { OrganizationDeletionBanner } from './organization-deletion-banner';
 
@@ -139,14 +142,19 @@ describe('OrganizationDeletionBanner', () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    renderWithAuth(<OrganizationDeletionBanner />, {
-      permissions: OWNER,
-      user: {
-        deletionScheduledAt: day,
-        deletionWithOrganization: { id: 'org-1', name: 'Alpha Co' },
+    renderWithChangingAuth(
+      <OrganizationDeletionBanner />,
+      {
+        permissions: OWNER,
+        user: {
+          deletionScheduledAt: day,
+          deletionWithOrganization: { id: 'org-1', name: 'Alpha Co' },
+        },
+        organization: { deletionScheduledAt: day },
       },
-      organization: { deletionScheduledAt: day },
-    });
+      // As the server says once both are kept.
+      { permissions: OWNER },
+    );
 
     expect(
       screen.getByText(/Your account and Alpha Co will be deleted/),
@@ -154,7 +162,7 @@ describe('OrganizationDeletionBanner', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Keep both' }));
     expect(cancelled).toEqual(['account']);
     // It says what it kept, and takes the focus there.
-    const kept = screen.getByText('Your account and Alpha Co are kept.');
+    const kept = await screen.findByText('Your account and Alpha Co are kept.');
     expect(kept).toBeInTheDocument();
     expect(kept.closest('[role="status"]')).toHaveFocus();
   });
@@ -176,6 +184,39 @@ describe('OrganizationDeletionBanner', () => {
       screen.getByRole('button', { name: 'Cancel deletion' }),
     );
     expect(cancelled).toEqual(['organization']);
+  });
+
+  it('gives way to a closing asked for again, after a cancel', async () => {
+    server.use(
+      http.delete(
+        '/api/v1/organization/deletion',
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+    );
+    const { change } = renderWithChangingAuth(
+      <OrganizationDeletionBanner />,
+      { permissions: OWNER, organization: { deletionScheduledAt: inDays(30) } },
+      { permissions: OWNER },
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Cancel deletion' }),
+    );
+    expect(
+      await screen.findByText('Alpha Co will not be deleted.'),
+    ).toBeVisible();
+
+    // Scheduled again from Profile, as MC-2404 does after MC-2403.
+    change({
+      permissions: OWNER,
+      organization: { deletionScheduledAt: inDays(30) },
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Cancel deletion' }),
+    ).toBeVisible();
+    expect(
+      screen.queryByText('Alpha Co will not be deleted.'),
+    ).not.toBeInTheDocument();
   });
 
   it('comes back the day after it was hidden', () => {

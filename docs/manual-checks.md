@@ -979,7 +979,9 @@ await fetch(`${api}/v1/files/product-image`, {
   … will be deleted after" for every member, once. As a second Owner,
   Cancel deletion: the banner goes for everyone, and every member is
   emailed that it will not be deleted.
-- **MC-2404** Schedule it again, then move the day two days back
+- **MC-2404** Schedule it again, without reloading after MC-2403's
+  cancel: the banner is back, with Cancel deletion, in place of "… will
+  not be deleted.". Then move the day two days back
   (`update organizations set deletion_scheduled_at = current_date - 2`):
   the banner turns red, says it is being deleted, and offers nothing;
   Profile says it can no longer be cancelled. Restart the server, which
@@ -2141,3 +2143,5 @@ first.
   and an RMA too: MC-R23 rewritten.
 - 2026-10-20: a deletion asked for again shows its banner over the kept line:
   MC-2302 extended.
+- 2026-10-20: a closing asked for again shows its banner over the kept line:
+  MC-2404 extended.
