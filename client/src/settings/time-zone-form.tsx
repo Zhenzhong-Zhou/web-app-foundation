@@ -171,7 +171,7 @@ export function TimeZoneForm({
                 {intl.formatMessage(
                   {
                     id: 'settings.org.timeZone.useComputer',
-                    defaultMessage: 'Use this computer’s: {zone}',
+                    defaultMessage: 'Use this device’s: {zone}',
                   },
                   { zone: zoneLabel(computer) },
                 )}
@@ -194,7 +194,7 @@ export function TimeZoneForm({
           option.group === 'computer'
             ? intl.formatMessage({
                 id: 'settings.org.timeZone.group.computer',
-                defaultMessage: 'This computer',
+                defaultMessage: 'This device',
               })
             : intl.formatMessage({
                 id: 'settings.org.timeZone.group.all',

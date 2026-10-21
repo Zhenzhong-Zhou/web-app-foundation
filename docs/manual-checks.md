@@ -1115,17 +1115,17 @@ override, then reload.
   there.
 - **MC-2602** *(ADR-072)* An organization from before ADR-072 is on UTC:
   Time zone shows an amber note, Still on UTC. With the computer in
-  Vancouver, press Use this computer's: Pacific Time (Vancouver): the box
+  Vancouver, press Use this device's: Pacific Time (Vancouver): the box
   fills, the line below says what time it is in Vancouver, and Save time
   zone saves it, saying Time zone saved. The audit log's entry reads Time
   zone: Coordinated Universal Time (UTC) → Pacific Time (Vancouver). Save
   again unchanged: Save is greyed out, and no entry is added.
 - **MC-2603** *(ADR-072)* Finding a zone: type pacific t, then +8: each
   finds its zones, each named with its city, its offset and its standard
-  name, and This computer's zone comes first. After 5 pm in
-  Vancouver, with the organization in Vancouver, choose Shanghai: The
-  organization's today becomes Saturday … appears above Save; choose
-  Vancouver again and it goes. Do not save.
+  name, and This device's zone comes first; on a phone in 中文 the group
+  reads 本设备. After 5 pm in Vancouver, with the organization in
+  Vancouver, choose Shanghai: The organization's today becomes Saturday …
+  appears above Save; choose Vancouver again and it goes. Do not save.
 - **MC-2604** *(ADR-072)* As an Admin or a Viewer, Time zone is read only,
   with the time there and An Owner can change it; no amber note, no Save.
 - **MC-2605** *(ADR-072)* The organization's day, after 5 pm in Vancouver
@@ -1164,8 +1164,8 @@ override, then reload.
 - **MC-2610** *(ADR-072)* A computer on a zone the server does not take:
   in Chrome, override the timezone to Etc/GMT-3 (DevTools → Sensors) and
   register. The account is created, and Profile's Time zone is
-  Coordinated Universal Time (UTC), with no This computer group in the
-  list and no Use this computer's button.
+  Coordinated Universal Time (UTC), with no This device group in the
+  list and no Use this device's button.
 
 ## 27. Each organization's numbering (ADR-073)
 
@@ -2113,3 +2113,5 @@ first.
   does: MC-1532 extended.
 - 2026-10-20: Home's time-zone note leads an Owner to the setting: MC-2606
   extended.
+- 2026-10-20: the zone picker says this device, as Account does: MC-2602,
+  MC-2603 and MC-2610 reworded.
