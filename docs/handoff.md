@@ -1,4 +1,4 @@
-# web-app-foundation — handoff, 19 October 2026
+# web-app-foundation — handoff, 20 October 2026
 
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
@@ -10,8 +10,11 @@ with this one, this one is current.
 
 - **Next: onboarding, a chain of three** (Bob's priority, 19 October
   2026), one PR each, ADR first, each finished before the next begins.
-  Invitations are merged; registration by invitation (ADR-078) is
-  built and reviewed, waiting for its walk and merge.
+  Invitations (ADR-077) and registration by invitation (ADR-078) are
+  merged; a newcomer's first sign-in (ADR-079) is built and reviewed in
+  #152, waiting for its walk and merge: the first feature planned in this
+  chat and built by Claude Code (*Working agreements*, How code is
+  delivered).
   After them, in this order unless a trigger brings one forward, each
   with its entry in Open decisions: job roles; one person in two
   organizations, then a practice organization (ADR-077, *Deferred*); a
@@ -57,11 +60,11 @@ with this one, this one is current.
          emailed through Mailpit. A local database that ran 0068 before
          the Admin role line changed keeps the old line until
          `update roles set description = 'Day-to-day work: stock,
-         orders, production and drafting invoices. Can add and remove
-         members.' where is_system and name = 'Admin'`; a fresh one
-         needs nothing.
+         orders, production and drafting invoices. Can invite and remove
+         members.' where is_system and name = 'Admin'`, the line since
+         0072; a fresh one needs nothing.
     2. **ADR-078, registration by invitation** (`adr-078-registration`):
-       built and reviewed, not merged. Eight commits: the ADR and five
+       merged (#146). Eight commits: the ADR and five
        points from its discussion, the schema (0069), the server, the
        command, the tests, the client, these docs. `REGISTRATION`, open or
        by invitation, production by invitation when unset; the sign-up
@@ -72,12 +75,23 @@ with this one, this one is current.
        invitation is accepted, its first Owner unconfirmed until they
        confirm. An account with no organization starts one by invitation,
        or from Home where registration is open. What building settled is
-       in ADR-078's as-built amendment. Next: walk section 31, merge, then
-       Render's two settings (*Still to do, by hand*).
-    3. **A newcomer's first sign-in:** what you can do here, the
-       inviter's note, a first-week checklist, a help button with
-       ADR-058's user guides. Open decisions, "A newcomer's first
-       sign-in".
+       in ADR-078's as-built amendment. Render's web service has
+       `REGISTRATION=invitation` and `OPERATOR_EMAIL` since 20 October
+       2026, and `npm run org:invite -- --list` ran against production.
+    3. **ADR-079, a newcomer's first sign-in** (`adr-079-first-sign-in`):
+       built and reviewed in #152, not merged. A welcome card on Home, the
+       member's own for two weeks from joining: what they can do here, from
+       their permissions; the inviter's note; and a first week ticked by what
+       they do. Help in the top bar and in the card opens the page's guide, 21
+       in three languages, kept with the client and checked by a test; beside
+       the page on a laptop, with the rail folded, and full screen on a phone.
+       Learn more on empty lists, Getting started's steps and the hard
+       settings. Your access on Account; the inviter told in the bell; New on
+       People. #144 fixed. Migrations **0070** to **0072**. Permissions
+       brought in line with what they gate: `users.update` dropped, a role
+       change needs `roles.assign`, the roles list `roles.view`. What building
+       it settled is in ADR-079's as-built amendment. Next: Bob's walk and
+       merge (*Still to do, by hand*), then job roles.
 
 - **ADR-076, the audit log in words (`adr-076-audit-in-words`):** no
   migration; server and client. Every screen with an audit entry (the
@@ -210,7 +224,7 @@ with this one, this one is current.
   ADR-061 amended, with a `code` beside a refusal's message: conventions.md,
   "Error codes"). Since then, through #124: ADR-067 to ADR-070 below,
   and `deletion-started` (#117).
-- **Migrations:** through **0068** on `main`, 69 files in
+- **Migrations:** through **0069** on `main`, 70 files in
   `server/src/database/migrations/`. 0055 and 0056 are ADR-069's (#114);
   0057 to 0061 are ADR-070's (#116): the deletion day, the reminder, and
   whose account goes with it (0059 put it on the organization, 0060 moved
@@ -223,10 +237,12 @@ with this one, this one is current.
   `adr-072-time-zone` added **0066** (each organization's time zone),
   merged in #134; `adr-073-numbering` **0067** (numbering, #136);
   `adr-077-invitations` **0068** (invitations, #143);
-  `adr-078-registration` adds **0069** (organization invitations); next
-  is **0070**. Render holds one row per file in
-  `drizzle.__drizzle_migrations` once `main` is deployed there: 69, then
-  70 with ADR-078. After any new migration: `npm run migrate:all`, and
+  `adr-078-registration` **0069** (organization invitations, #146);
+  `adr-079-first-sign-in` adds **0070** (the welcome's dismissal),
+  **0071** (`users.update` dropped) and **0072** (the Admin's stored line
+  says invite), in #152. Render holds one row per file in
+  `drizzle.__drizzle_migrations` once `main` is deployed there: 70, then
+  73 with ADR-079. After any new migration: `npm run migrate:all`, and
   check its journal time (*Working agreements*, Process).
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
@@ -381,7 +397,7 @@ with this one, this one is current.
   MC-R09); its recent work read again after its dialogs (#122, MC-R10);
   and a refused password marked on its field, with a way on, under the
   new code `password_incorrect` (#120, MC-R11).
-- **Working agreements** are below, unchanged: one PR per feature, ADR
+- **Working agreements** are below: one PR per feature, ADR
   first; chores ride along; commits authored Zhenzhong Zhou
   <bob0823.zhou@gmail.com>; a file roadmap in every answer that changes
   code; designs on the Claude Design canvas
@@ -389,19 +405,18 @@ with this one, this one is current.
   PR title and description always given, with "Fixes #N" when it does.
   New from this round: when lint reformats a file under `client/e2e/`
   or `src/`, commit it as a fixup, never restore it (CI's format check
-  covers `e2e/`).
+  covers `e2e/`). New from ADR-079: a feature is planned in this chat
+  and built by Claude Code (How code is delivered).
 
 ### Still to do, by hand
 
-- **ADR-078, before merging:** walk section 31 of `docs/manual-checks.md`
-  (MC-3101 to MC-3110), MC-3106 and MC-3109 in 中文 on a phone too, and
-  file the issue Claude Code drafted: another device's session keeps
-  pointing at an organization the account has left (ADR-069's area).
-- **ADR-078, after it merges and deploys:** on Render's web service set
-  `REGISTRATION=invitation` and, to be told of acceptances,
-  `OPERATOR_EMAIL`; check the deploy log; then run `npm run org:invite --
-  --list` against production (`docs/runbooks/render.md`, "Registration
-  and organization invitations") to see it reach the database.
+- **ADR-079, before merging #152:** `npm run migrate:all` (0070 to 0072);
+  walk section 32 of `docs/manual-checks.md` (MC-3201 to MC-3212) and
+  MC-R22, its phone line included; show the 中文 welcome and Help on a phone
+  to someone who reads only Chinese. After it merges: delete `tmp/adr-079`
+  (scratch, but `scripts/verify.sh` lints its Markdown) and the branch;
+  the dev database holds the walkthroughs' records, so `npm run seed:demo`
+  starts clean.
 - **Render's free database expires on 12 November 2026.** Move to a paid
   database, or create a free one again, empty, by the steps in
   `docs/runbooks/render.md`. Before any real customer: a paid database and
@@ -436,10 +451,17 @@ with this one, this one is current.
   differ from its purchase order by a cent), #126 (MUI warns of a select
   with no options while returns load), #128 (a refused PDF opens as raw
   JSON in a new tab), #129 (English left inside translated messages), #130
-  (the client's formatMoney passes amounts through Number()) and #133 (the
+  (the client's formatMoney passes amounts through Number()), #133 (the
   audit log records a field as sent, not as stored, and a few saves that
   write no entry; ADR-073's save is taken as sent, so it is not one of
-  them). #131 closes with ADR-073's PR; #41 and #127 closed with
+  them), #138 (a contact with neither an email nor a phone fails with a
+  500 rather than saying why), #142 (the client's Content-Security-Policy,
+  its own PR with a short ADR), #144 (another device's session keeps an
+  organization the account has left, fixed in #152), #147 (no way to
+  remove a member on screen), #148 (refusals with internal or
+  off-glossary wording), #149 (copy inconsistencies the guides found),
+  #150 (the translation review leaves out the guides) and #151 (the
+  account menu's preferences can't be opened from the keyboard). #131 closes with ADR-073's PR; #41 and #127 closed with
   ADR-072's. From ADR-070's
   review and its walkthrough in Chinese: #117
   (two one-second windows while a deletion completes), fixed on
@@ -451,7 +473,14 @@ with this one, this one is current.
 
 ### Still to do, in code
 
-- **The client has no Content-Security-Policy.** Nothing in the
+- **ADR-079's limits.** Help still slides over the page in windows under
+  about 1140 px, or under about 1265 px at Large text and 1330 px at
+  Larger, where a control under it can be focused out of sight (WCAG
+  2.4.11). Five ADR-077
+  messages would read "a Accountant" once organizations can make roles:
+  job roles' to fix. Vitest's on-disk cache does not see a guide just
+  added until `npx vitest --clearCache`; CI starts without one.
+- **The client has no Content-Security-Policy** (#142). Nothing in the
   repository sets one for the static site, and helmet's covers only the
   API's own responses. One set at Render must allow `data:` images
   (`img-src 'self' data:`), or the invitation page's logo, which comes
@@ -508,10 +537,10 @@ with this one, this one is current.
   - If the time-zone picker feels slow on a phone, build its zone list
     when it opens, not when the section does.
   - Client tests still missing: the Still on UTC note hidden on a
-    computer in UTC and the picker's announcement, the auth provider
-    passing the zone on. Add each when that code is next touched. ADR-078
-    added Home's time-zone note, naming the zone, and the zone sent at
-    registration.
+    computer in UTC and the picker's announcement. Add each when that
+    code is next touched. ADR-078 added Home's time-zone note, naming the
+    zone, and the zone sent at registration; ADR-079's fix for #144, the
+    auth provider passing the zone on.
 - **A browser-compatibility lint rule** (eslint-plugin-compat) set to the
   build target, so code using an API newer than the floor fails ESLint;
   the code review on initials-by-script caught Intl.Segmenter by reading.
@@ -1284,15 +1313,40 @@ in ADR-050's amendment.
   fixes go on the branch until its checks pass, never in a follow-up PR.
   Small chores (a CI line, a lint rule, a docs tidy) ride along in the next
   feature PR rather than getting one of their own.
+- **The three reviews, before the PR is opened** (20 October 2026): every
+  feature branch runs `/simplify`, then `/code-review`, then, for any PR
+  that changes what a person sees, `/usability-walkthrough` as one of its
+  personas (`.claude/skills/usability-walkthrough/personas.md`). Each fix
+  they lead to is its own commit. The PR description names the journey
+  walked and the persona who walked it. `/usability-walkthrough` was
+  missed on several recent PRs, so this branch's step 7 (ADR-079) walks
+  two journeys, to make up for ADR-077 and ADR-078.
 
 ### How code is delivered
 
-- **Big features (an ADR, server, client) are written in a claude.ai chat
-  and delivered as mbox files,** one per commit, numbered (`0001-`,
-  `0002-`, …) so they apply in order, in one folder, for
-  `git am ~/Downloads/<folder>/*.mbox`. Claude Code applies them, runs
-  `scripts/verify.sh`, fixes what fails, and does code review and small
-  changes.
+- **Planned in this chat, built in Claude Code** (from ADR-079, 20
+  October 2026). The claude.ai chat does the check before an ADR (its
+  Deferred lines, the watch lists, Open decisions and the open issues),
+  the decisions for Bob to confirm, the ADR as `0001` (one mbox that
+  tidies the handoff too), the canvas designs, and a build brief: one
+  Claude Code prompt per commit. Claude Code writes the code from each prompt, runs
+  `scripts/verify.sh`, `/simplify` and `/code-review`, and opens the PR.
+  Bob pastes its summaries back into the chat, which writes the as-built
+  amendment and the docs, as mbox files. Until ADR-078 the chat wrote
+  the code too, as one mbox per commit, and Claude Code only applied
+  them.
+- **The build, as ADR-079 ran it.** The brief and the canvas's boards go
+  in `tmp/adr-NNN/`, ignored by git though `scripts/verify.sh` lints its
+  Markdown. Each prompt is one line: "Read tmp/adr-NNN/brief.md and do
+  step N. End with the summary for the chat." `/clear` between steps,
+  never inside one; a step's follow-ups (an amend, an issue to file) stay
+  in its context, and its summary is pasted into the chat before clearing.
+  The review step runs in two prompts: the reviews and walkthroughs,
+  stopping for Bob's choices, then the fixes, the full verify, the push
+  and the PR.
+- **An mbox is applied from Bob's downloads,** by its full name:
+  `git am ~/Downloads/0001-<subject>.mbox`. Downloads land in
+  `~/Downloads` itself, not a folder, so each file is named, never a glob.
 - **Every answer that changes files opens with a roadmap:** a tree or
   relative paths, each marked **new**, **full replacement** or **snippet**.
 - **New files, and changes touching several places or a large chunk of one

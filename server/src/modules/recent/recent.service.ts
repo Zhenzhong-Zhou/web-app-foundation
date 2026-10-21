@@ -34,6 +34,11 @@ export const RECENT_PERMISSION: Record<RecentKind, Permission> = {
   priceList: 'price_lists.view',
 };
 
+/** The kinds someone holding these may see. */
+export function kindsVisibleWith(held: ReadonlySet<Permission>): RecentKind[] {
+  return RECENT_KINDS.filter((kind) => held.has(RECENT_PERMISSION[kind]));
+}
+
 export interface RecentEntry {
   kind: RecentKind;
   id: string;
@@ -98,15 +103,13 @@ export class RecentService {
     });
   }
 
+  /** The latest openings of these kinds, named as each record is now. */
   async list(
     userId: string,
-    held: ReadonlySet<Permission>,
+    kinds: readonly RecentKind[],
     limit: number,
   ): Promise<RecentEntry[]> {
-    const visible = RECENT_KINDS.filter((kind) =>
-      held.has(RECENT_PERMISSION[kind]),
-    );
-    if (visible.length === 0) return [];
+    if (kinds.length === 0) return [];
 
     return this.tenantDb.transaction(async (tx, organizationId) => {
       // Read a few more than asked, since deleted records drop out.
@@ -121,7 +124,7 @@ export class RecentService {
           and(
             eq(recentRecords.organizationId, organizationId),
             eq(recentRecords.userId, userId),
-            inArray(recentRecords.kind, visible),
+            inArray(recentRecords.kind, kinds),
           ),
         )
         .orderBy(desc(recentRecords.openedAt))
@@ -170,8 +173,11 @@ export class RecentService {
     });
   }
 
-  /** Each kind's records as they are named now, in this organization. */
-  private named(
+  /**
+   * Each kind's records as they are named now, in this organization: also
+   * how the welcome's first week names what was done (ADR-079).
+   */
+  named(
     tx: Transaction,
     organizationId: string,
     kind: RecentKind,

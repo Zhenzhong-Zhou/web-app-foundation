@@ -47,6 +47,12 @@ describe('invitationMail', () => {
     );
   });
 
+  it('puts the link under its action, with no colon to write in each language', () => {
+    expect(
+      invitationMail({ ...context, locale: 'zh-Hans', appName: null }).text,
+    ).toContain('接受邀请\nhttps://app.example.com/invitation?token=abc');
+  });
+
   it('names only the organization once the inviter has gone (ADR-077)', () => {
     const mail = invitationMail({
       ...context,

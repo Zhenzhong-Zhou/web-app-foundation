@@ -21,22 +21,28 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 
 import { DeletionBanner } from '../account/deletion-banner';
 import { useAuth } from '../auth/use-auth';
+import { useResendConfirmation } from '../auth/use-resend-confirmation';
 import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { LanguageSelect } from '../components/language-select';
 import { PersonAvatar } from '../components/person-avatar';
 import { TextSizeSelect } from '../components/text-size-select';
 import { NameAndEmail } from '../components/who-and-when';
+import { HelpButton } from '../help/help-button';
+import { HelpFrame } from '../help/help-panel';
+import { HelpProvider } from '../help/help-provider';
+import { useHelp } from '../help/use-help';
 import { api } from '../lib/api';
 import { initialsOf } from '../lib/person-initials';
 import { LookupBox } from '../search/lookup-box';
 import { OrganizationDeletionBanner } from '../settings/organization-deletion-banner';
+import { useTextSize } from '../theme/text-size';
 import { IdleGuard } from './idle-guard';
 import { ACCOUNT_ITEMS } from './navigation';
 import { NotificationBell } from './notification-bell';
@@ -44,6 +50,7 @@ import { OrganizationMark } from './organization-mark';
 import { RAIL_FOLDED_WIDTH, RAIL_WIDTH } from './rail';
 import { SideNav } from './side-nav';
 import { MAIN_CONTENT_ID, SkipLink } from './skip-link';
+import { UnverifiedBannerContext } from './unverified-banner-context';
 
 /**
  * Where the rail appears (ADR-055). Below it the same groups open in a
@@ -59,6 +66,30 @@ const BAR = 'lg' as const;
 
 /** This device's choice of a folded rail. */
 const FOLDED_KEY = 'nav.folded';
+
+/**
+ * A row of the account menu holding a preference's select, a row so the
+ * menu's arrow keys reach it. The select's own focus and blur stop at the
+ * row: a MUI select that loses focus while closed rewrites its blur's
+ * target to { value, name }, for form libraries, and bubbling on to the
+ * row's ButtonBase, that was tested for :focus-visible and failed, which
+ * MUI reports as a browser without it. The row's own focus and blur, its
+ * focus ring among them, are its own and unchanged; the select has its own
+ * ring.
+ */
+function PreferenceItem({ children }: { children: ReactNode }) {
+  return (
+    <MenuItem disableRipple sx={{ '&:hover': { bgcolor: 'transparent' } }}>
+      <Box
+        sx={{ display: 'contents' }}
+        onFocus={(event) => event.stopPropagation()}
+        onBlur={(event) => event.stopPropagation()}
+      >
+        {children}
+      </Box>
+    </MenuItem>
+  );
+}
 
 function storedFolded(): boolean {
   try {
@@ -86,8 +117,19 @@ function rememberFolded(folded: boolean): void {
  * Deliberately not the same component as AuthLayout. Those screens are a
  * centered card on an empty page; this is chrome around content. Merging them
  * behind a prop would be one component pretending to be two.
+ *
+ * Help (ADR-079) holds its state around the frame, so the bar's button, the
+ * panel and a page's Learn more share it.
  */
 export function AppLayout() {
+  return (
+    <HelpProvider>
+      <Frame />
+    </HelpProvider>
+  );
+}
+
+function Frame() {
   const intl = useIntl();
   const location = useLocation();
   const { session, refresh } = useAuth();
@@ -95,6 +137,28 @@ export function AppLayout() {
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [folded, setFolded] = useState(storedFolded);
+  const help = useHelp();
+  const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
+  // While Help is open on a computer, the rail folds to leave the page room
+  // beside it, and opens again once Help closes, unless the person opened
+  // or closed it meanwhile (ADR-079). Their own choice, remembered on this
+  // device, is not touched.
+  const helpOpen = !!help?.open && !phone;
+  const [helpWasOpen, setHelpWasOpen] = useState(helpOpen);
+  const [foldedForHelp, setFoldedForHelp] = useState(false);
+  if (helpWasOpen !== helpOpen) {
+    setHelpWasOpen(helpOpen);
+    if (helpOpen && !folded) {
+      setFolded(true);
+      setFoldedForHelp(true);
+    } else if (!helpOpen && foldedForHelp) {
+      setFolded(false);
+      setFoldedForHelp(false);
+    }
+  }
+  // Whether the page asks to confirm the address itself (ADR-079).
+  const [unverifiedCovered, setUnverifiedCovered] = useState(false);
+  const bar = useRef<HTMLElement>(null);
 
   /**
    * Only to close the drawer when the window grows past the breakpoint with
@@ -103,6 +167,15 @@ export function AppLayout() {
    * paint is already right and nothing flashes while this resolves.
    */
   const wide = useMediaQuery(theme.breakpoints.up(BAR));
+
+  /**
+   * A phone narrower than most, at Larger text (ADR-075): the name would be
+   * cut to a few letters, so the logo or the initials stand alone, and the
+   * bar's six targets keep their 44 px (ADR-079).
+   */
+  const narrow = useMediaQuery('(max-width: 359.95px)', { noSsr: true });
+  const textSize = useTextSize();
+  const tight = narrow && textSize === 'larger';
 
   const orgName =
     session?.organization?.name ??
@@ -114,6 +187,7 @@ export function AppLayout() {
   const toggleFolded = () => {
     rememberFolded(!folded);
     setFolded(!folded);
+    setFoldedForHelp(false);
   };
 
   return (
@@ -182,6 +256,7 @@ export function AppLayout() {
         {/* Sticky and never hidden on scroll: it holds the bell and the
             account, and a bar that comes and goes moves the page. */}
         <AppBar
+          ref={bar}
           position="sticky"
           color="default"
           elevation={0}
@@ -193,7 +268,20 @@ export function AppLayout() {
         >
           {/* No flexWrap. A bar that wraps changes height with the window and
               drags the page with it. */}
-          <Toolbar sx={{ gap: 1, minHeight: { xs: 56 } }}>
+          {/* Closer on a phone, so six targets fit at 320 px (ADR-079).
+              Every target in the bar is a fingertip, 44 px each way, at
+              any text size and with any pointer: the bar is the one place
+              every page shares, and on a phone it is reached with a thumb
+              (ADR-075). Set here, not in the theme, which sizes the rest of
+              the app's controls by the pointer. */}
+          <Toolbar
+            sx={{
+              gap: { xs: 0.5, sm: 1 },
+              minHeight: { xs: 56 },
+              '& > .MuiIconButton-root, & > .MuiButton-root, & > * > .MuiIconButton-root':
+                { minWidth: 44, minHeight: 44 },
+            }}
+          >
             <IconButton
               edge="start"
               aria-label={intl.formatMessage({
@@ -217,10 +305,20 @@ export function AppLayout() {
               underline="none"
               color="inherit"
               title={orgName}
-              sx={{ minWidth: 0, flexShrink: 1 }}
+              sx={[
+                {
+                  minWidth: 44,
+                  minHeight: 44,
+                  flexShrink: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                },
+                tight && { flexShrink: 0, justifyContent: 'center' },
+              ]}
             >
-              <Box sx={{ maxWidth: { xs: '50vw', [BAR]: 320 } }}>
-                <OrganizationMark name={orgName} />
+              {/* minWidth 0, or the name would not shrink to be cut. */}
+              <Box sx={{ maxWidth: { xs: '50vw', [BAR]: 320 }, minWidth: 0 }}>
+                <OrganizationMark name={orgName} initials={tight} />
               </Box>
             </Link>
 
@@ -232,10 +330,14 @@ export function AppLayout() {
                 display: 'flex',
                 justifyContent: { xs: 'flex-end', md: 'center' },
                 minWidth: 0,
+                '& .MuiInputBase-root': { minHeight: 44 },
               }}
             >
               <LookupBox />
             </Box>
+
+            {/* Beside the bell (ADR-079), where the welcome says it is. */}
+            <HelpButton />
 
             <NotificationBell />
 
@@ -328,24 +430,15 @@ export function AppLayout() {
 
               {/* A preference, not a destination — and not a reason to close
                   the menu, unlike everything above it. */}
-              <MenuItem
-                disableRipple
-                sx={{ '&:hover': { bgcolor: 'transparent' } }}
-              >
+              <PreferenceItem>
                 <ColorModeSelect />
-              </MenuItem>
-              <MenuItem
-                disableRipple
-                sx={{ '&:hover': { bgcolor: 'transparent' } }}
-              >
+              </PreferenceItem>
+              <PreferenceItem>
                 <LanguageSelect />
-              </MenuItem>
-              <MenuItem
-                disableRipple
-                sx={{ '&:hover': { bgcolor: 'transparent' } }}
-              >
+              </PreferenceItem>
+              <PreferenceItem>
                 <TextSizeSelect />
-              </MenuItem>
+              </PreferenceItem>
 
               <Divider />
 
@@ -410,27 +503,32 @@ export function AppLayout() {
 
         {/* The page's main landmark (#121), and where the skip link puts
             focus: -1 takes it by script without adding a Tab stop, and its
-            outline is left off because nothing in it is pressed. */}
-        <Container
-          component="main"
-          id={MAIN_CONTENT_ID}
-          tabIndex={-1}
-          maxWidth="lg"
-          sx={{ py: { xs: 2, sm: 4 }, '&:focus': { outline: 'none' } }}
-        >
-          <Stack spacing={3}>
-            <UnverifiedBanner />
-            <DeletionBanner />
-            <OrganizationDeletionBanner />
-            {/* Signs out after inactivity, warning a minute before (ADR-065). */}
-            <IdleGuard />
-            {/* Inside the page so the rail and the bar survive, and reset by
+            outline is left off because nothing in it is pressed. Help sits
+            over the right of it, or beside it (ADR-079). */}
+        <HelpFrame bar={bar}>
+          <Container
+            component="main"
+            id={MAIN_CONTENT_ID}
+            tabIndex={-1}
+            maxWidth="lg"
+            sx={{ py: { xs: 2, sm: 4 }, '&:focus': { outline: 'none' } }}
+          >
+            <Stack spacing={3}>
+              <UnverifiedBanner covered={unverifiedCovered} />
+              <DeletionBanner />
+              <OrganizationDeletionBanner />
+              {/* Signs out after inactivity, warning a minute before (ADR-065). */}
+              <IdleGuard />
+              {/* Inside the page so the rail and the bar survive, and reset by
                 the address, so a person whose page broke can click away. */}
-            <ErrorBoundary resetKey={location.pathname}>
-              <Outlet />
-            </ErrorBoundary>
-          </Stack>
-        </Container>
+              <UnverifiedBannerContext.Provider value={setUnverifiedCovered}>
+                <ErrorBoundary resetKey={location.pathname}>
+                  <Outlet />
+                </ErrorBoundary>
+              </UnverifiedBannerContext.Provider>
+            </Stack>
+          </Container>
+        </HelpFrame>
       </Box>
     </Box>
   );
@@ -440,15 +538,15 @@ export function AppLayout() {
  * ADR-017 chose to let an unverified user in rather than block login, on the
  * grounds that losing a registration to a dead SMTP connection would be
  * absurd. This is the other half of that decision — without a visible prompt,
- * "unverified" is a state with no way out.
+ * "unverified" is a state with no way out. Off while the page asks the same
+ * itself, as Home's welcome does (ADR-079).
  */
-function UnverifiedBanner() {
+function UnverifiedBanner({ covered }: { covered: boolean }) {
   const intl = useIntl();
   const { session } = useAuth();
-  const [sent, setSent] = useState(false);
-  const [sending, setSending] = useState(false);
+  const { sent, sending, resend } = useResendConfirmation();
 
-  if (!session || session.user.emailVerified) return null;
+  if (!session || session.user.emailVerified || covered) return null;
 
   return (
     <Alert
@@ -468,12 +566,7 @@ function UnverifiedBanner() {
             variant="text"
             size="small"
             disabled={sending}
-            onClick={() => {
-              setSending(true);
-              void api('/auth/verify-email/resend', { method: 'POST' })
-                .then(() => setSent(true))
-                .finally(() => setSending(false));
-            }}
+            onClick={resend}
           >
             {intl.formatMessage({
               id: 'layout.unverified.resend',

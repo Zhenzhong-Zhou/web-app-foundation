@@ -9,6 +9,7 @@ import {
   createProduct,
   daysFromNow,
   inviteByLink,
+  joinByLink,
   signInAs,
   uniqueEmail,
 } from './support/api';
@@ -28,11 +29,15 @@ import { verifyEmail } from './support/mail';
  */
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
-/** One row per screen: where it is, and what says it has loaded. */
+/**
+ * One row per screen: where it is, what says it has loaded, and what to
+ * open on it first, if anything.
+ */
 interface Screen {
   name: string;
   path: (seed: Seed) => string;
   ready: (page: Page) => ReturnType<Page['getByRole']>;
+  open?: (page: Page) => Promise<void>;
 }
 
 interface Seed {
@@ -47,6 +52,17 @@ const SCREENS: Screen[] = [
   { name: 'inventory', path: () => '/inventory', ready: heading },
   { name: 'movements', path: () => '/movements', ready: heading },
   { name: 'orders', path: () => '/orders', ready: heading },
+  {
+    // Over the page, which still reads beside it (ADR-079).
+    name: 'Help, open on Orders',
+    path: () => '/orders',
+    open: (page) =>
+      page.getByRole('button', { name: 'Help', exact: true }).click(),
+    ready: (page) =>
+      page
+        .getByRole('complementary', { name: 'Help', exact: true })
+        .getByRole('heading', { level: 2, name: 'Orders', exact: true }),
+  },
   {
     name: 'an order',
     path: (seed) => `/orders/${seed.orderId}`,
@@ -173,6 +189,10 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
       for (const screen of SCREENS) {
         await page.goto(screen.path(data));
+        if (screen.open) {
+          await expect(heading(page)).toBeVisible();
+          await screen.open(page);
+        }
         await expect(screen.ready(page).first()).toBeVisible();
         // Lists fill after their request; axe should see what a person does.
         await page.waitForLoadState('networkidle');
@@ -183,6 +203,31 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
       // All screens at once, so one run reports everything to fix.
       expect(found).toEqual({});
+    });
+
+    test('a newcomer’s Home, with their welcome, meets WCAG 2.2 AA', async ({
+      page,
+      freshOrg,
+    }) => {
+      // A Viewer with a note and colleagues to ask (ADR-079), the card's
+      // fullest state; the founder's is the Home row above.
+      await verifyEmail(freshOrg.api, freshOrg.email);
+      const { token } = await inviteByLink(
+        freshOrg.api,
+        uniqueEmail('a11y-welcome'),
+        'Viewer',
+        { note: 'Bring boots.\nAsk for Li Na.' },
+      );
+      const newcomer = await joinByLink(token, 'E2E Newcomer');
+      await signInAs(page, newcomer);
+      await page.goto('/');
+      await expect(
+        page.getByRole('region', { name: /^Welcome to / }),
+      ).toBeVisible();
+      await page.waitForLoadState('networkidle');
+
+      expect(await violations(page)).toEqual([]);
+      await newcomer.dispose();
     });
 
     test('the invitation page meets WCAG 2.2 AA, signed out', async ({

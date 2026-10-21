@@ -74,6 +74,9 @@ const labels = defineMessages({
   devices: { id: 'layout.menu.devices', defaultMessage: 'Your devices' },
 });
 
+/** The pages' names, which Help's list of guides uses too (ADR-079). */
+export { labels as NAV_LABELS };
+
 /**
  * Every destination, in three groups (ADR-055): the work, in the order it
  * happens; the records that work is done with, and the places to look

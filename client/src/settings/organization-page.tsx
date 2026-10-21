@@ -929,6 +929,7 @@ function LicencePolicyForm({
         id: 'settings.org.licence.title',
         defaultMessage: 'Licences at release',
       })}
+      learnMore={{ guide: 'organization', section: 'licences' }}
       onSubmit={handleSubmit}
       error={error}
       submitting={submitting}

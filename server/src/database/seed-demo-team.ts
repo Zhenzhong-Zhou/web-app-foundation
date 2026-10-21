@@ -1,5 +1,5 @@
 import type { INestApplicationContext } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 import { AUDIT_ACTIONS } from '../core/audit/audit-actions';
 import type { RequestContext } from '../core/auth/request-context';
@@ -12,8 +12,28 @@ import type { WorkDetailsDto } from '../core/people/dto/work-details.dto';
 import { WorkService } from '../core/people/work.service';
 import { UsersService } from '../core/users/users.service';
 import type { Database } from './database.module';
-import { memberships, users } from './schema';
+import { invitations, memberships, users } from './schema';
 import type { Audited } from './seed-demo-audit';
+
+/**
+ * How long ago the demo's own organization was started, its Owner joining
+ * with it (ADR-079): a while, so the demo reads as settled, with no welcome
+ * for the Owner and nobody New but the new hire.
+ */
+export const FOUNDED_DAYS_AGO = 400;
+
+/** That many days before now. */
+export function daysAgo(days: number): Date {
+  return new Date(Date.now() - days * 86_400_000);
+}
+
+/**
+ * When an account's membership began, for its address confirmed at that
+ * moment: an account the demo makes belongs to its one organization.
+ */
+export function startOf(userId: string) {
+  return sql`(select m.created_at from memberships m where m.user_id = ${userId}::uuid)`;
+}
 
 /** Who the demo was registered as. */
 export interface DemoOwner {
@@ -45,6 +65,13 @@ interface Colleague {
   details: WorkDetailsDto;
   /** Hours since they last did something here; null, never signed in. */
   lastActiveHoursAgo: number | null;
+  /** Days since they joined, which People and the welcome go by. */
+  joinedDaysAgo: number;
+  /**
+   * The note the Owner wrote inviting them, for the one who joined by an
+   * invitation the welcome can show (ADR-077, ADR-079).
+   */
+  invitedWith?: string;
 }
 
 const OFFICE = '604-555-0142';
@@ -62,6 +89,12 @@ const OFFICE = '604-555-0142';
  *
  * Sarah joins as a Viewer and is promoted to Admin, so Members and the
  * audit log have a role change, from and to.
+ *
+ * Each joined on a day of their own, months ago, so the demo reads as
+ * settled: a membership begun when the seed runs would greet everyone with
+ * a welcome and mark the whole team New (ADR-079). Fatima alone is new,
+ * three days in, by the Owner's invitation with a note, so a demo still
+ * shows a newcomer's welcome and People's New.
  */
 const COLLEAGUES: Colleague[] = [
   {
@@ -76,6 +109,7 @@ const COLLEAGUES: Colleague[] = [
       extension: '101',
     },
     lastActiveHoursAgo: 3 * 24,
+    joinedDaysAgo: 395,
   },
   {
     key: 'daniel',
@@ -89,6 +123,7 @@ const COLLEAGUES: Colleague[] = [
       extension: '110',
     },
     lastActiveHoursAgo: 0,
+    joinedDaysAgo: 380,
   },
   {
     key: 'lijing',
@@ -102,6 +137,7 @@ const COLLEAGUES: Colleague[] = [
       extension: '120',
     },
     lastActiveHoursAgo: 0,
+    joinedDaysAgo: 350,
   },
   {
     key: 'marc',
@@ -114,6 +150,7 @@ const COLLEAGUES: Colleague[] = [
       extension: '130',
     },
     lastActiveHoursAgo: 0,
+    joinedDaysAgo: 300,
   },
   {
     key: 'jianguo',
@@ -126,6 +163,7 @@ const COLLEAGUES: Colleague[] = [
       workPhone: '604-555-0187',
     },
     lastActiveHoursAgo: 0,
+    joinedDaysAgo: 240,
   },
   {
     key: 'sarah',
@@ -140,6 +178,7 @@ const COLLEAGUES: Colleague[] = [
       extension: '150',
     },
     lastActiveHoursAgo: 0,
+    joinedDaysAgo: 200,
   },
   {
     key: 'chloe',
@@ -152,6 +191,7 @@ const COLLEAGUES: Colleague[] = [
       extension: '160',
     },
     lastActiveHoursAgo: 40 * 24,
+    joinedDaysAgo: 150,
   },
   {
     key: 'tom',
@@ -159,6 +199,7 @@ const COLLEAGUES: Colleague[] = [
     role: SYSTEM_ROLES.VIEWER,
     details: { jobTitle: 'Warehouse associate', department: 'Warehouse' },
     lastActiveHoursAgo: 12 * 24,
+    joinedDaysAgo: 90,
   },
   {
     // The new hire: nothing filled in, never signed in.
@@ -167,6 +208,9 @@ const COLLEAGUES: Colleague[] = [
     role: SYSTEM_ROLES.VIEWER,
     details: {},
     lastActiveHoursAgo: null,
+    joinedDaysAgo: 3,
+    invitedWith:
+      'Welcome, Fatima! Chloé will show you round on Monday morning. Until then, have a look through Products and the open orders.',
   },
 ];
 
@@ -217,20 +261,14 @@ export async function addTeam(
         }),
     );
     team[colleague.key] = { id: member.id, email };
-    // Verified, as the Owner is: nobody reads these inboxes (ADR-077).
-    await db
-      .update(users)
-      .set({ emailVerifiedAt: new Date() })
-      .where(eq(users.id, member.id));
 
-    // Their own details, as each would set them on Account; not audited,
-    // as a change to one's own membership never is (ADR-063).
-    await work.updateDetails(member.id, colleague.details);
-
+    // Joined on their own day, and last active as set above.
+    const joinedAt = daysAgo(colleague.joinedDaysAgo);
     const hours = colleague.lastActiveHoursAgo;
-    await db
+    const [membership] = await db
       .update(memberships)
       .set({
+        createdAt: joinedAt,
         lastActiveAt:
           hours === null ? null : new Date(Date.now() - hours * 3_600_000),
       })
@@ -239,7 +277,40 @@ export async function addTeam(
           eq(memberships.userId, member.id),
           eq(memberships.organizationId, owner.organizationId),
         ),
-      );
+      )
+      .returning({ id: memberships.id, roleId: memberships.roleId });
+
+    // Verified, as the Owner is: nobody reads these inboxes (ADR-077).
+    // From the start, as their membership began (ADR-079).
+    await db
+      .update(users)
+      .set({ emailVerifiedAt: startOf(member.id) })
+      .where(eq(users.id, member.id));
+
+    // The invitation behind the new hire's membership, emailed the day
+    // before she accepted it, as accepting leaves it (ADR-077): the
+    // welcome reads the Owner's note from it.
+    if (colleague.invitedWith) {
+      const sentAt = daysAgo(colleague.joinedDaysAgo + 1);
+      await db.insert(invitations).values({
+        organizationId: owner.organizationId,
+        email,
+        roleId: membership.roleId,
+        locale: 'en',
+        note: colleague.invitedWith,
+        invitedBy: owner.userId,
+        link: 'emailed',
+        expiresAt: daysAgo(colleague.joinedDaysAgo + 1 - 7),
+        membershipId: membership.id,
+        acceptedAt: joinedAt,
+        createdAt: sentAt,
+        updatedAt: joinedAt,
+      });
+    }
+
+    // Their own details, as each would set them on Account; not audited,
+    // as a change to one's own membership never is (ADR-063).
+    await work.updateDetails(member.id, colleague.details);
   }
 
   // The Owner's own details, only where none are set: an existing

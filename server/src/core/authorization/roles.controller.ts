@@ -16,12 +16,12 @@ export class RolesController {
   constructor(private readonly roles: RolesService) {}
 
   /**
-   * Gated on users.view rather than a roles.view of its own: the only reason
-   * to read this list is to populate a member form, so anyone who may see
-   * members may see the role names.
+   * Gated on roles.view, which every built-in role holds: the role names
+   * Members shows beside each member and offers in its forms. It was gated
+   * on users.view, which left roles.view gating nothing.
    */
   @Get()
-  @RequirePermissions('users.view')
+  @RequirePermissions('roles.view')
   list(): Promise<Role[]> {
     return this.roles.listForOrganization();
   }

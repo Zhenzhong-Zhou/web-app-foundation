@@ -49,6 +49,10 @@ const SELF_SERVICE = new Map<string, string>([
   ['AccountController.cancelDeletion', 'As above'],
   ['AccountController.exportData', 'Your own data (ADR-069)'],
   [
+    'AccountController.membership',
+    'Your own access where you work, and whom to ask for more (ADR-079)',
+  ],
+  [
     'OrganizationStartController.start',
     'Starting an organization for your own account, which has none (ADR-078)',
   ],
@@ -66,6 +70,11 @@ const SELF_SERVICE = new Map<string, string>([
   ['NotificationsController.list', 'As above'],
   ['NotificationsController.markRead', 'As above'],
   ['NotificationsController.markAllRead', 'As above'],
+  [
+    'HomeController.dismissWelcome',
+    'Your own welcome, on your own membership (ADR-079)',
+  ],
+  ['HomeController.showWelcome', 'As above'],
 ]);
 
 /**

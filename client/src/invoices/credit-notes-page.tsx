@@ -114,7 +114,7 @@ export function CreditNotesPage() {
             {showSkeleton ? <Skeleton height={48} /> : null}
           </Stack>
         ) : rows?.length === 0 ? (
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'invoices', section: 'credit' }}>
             {search || range.from || range.to
               ? intl.formatMessage({
                   id: 'inventory.noMatch',

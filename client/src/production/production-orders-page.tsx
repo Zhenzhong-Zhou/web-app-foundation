@@ -134,7 +134,7 @@ export function ProductionOrdersPage() {
 
       {items?.length === 0 && (
         <Paper variant="outlined">
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'production', section: 'plan' }}>
             {search || range.from || range.to
               ? intl.formatMessage({
                   id: 'inventory.noMatch',

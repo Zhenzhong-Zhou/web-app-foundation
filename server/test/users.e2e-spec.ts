@@ -10,6 +10,7 @@ import {
   addMember as invited,
   body,
   createE2eApp,
+  customRole,
   registerOrganization,
   roleIdNamed,
 } from './utils/fixtures';
@@ -309,6 +310,22 @@ describe('Users (e2e)', () => {
       ]);
     });
 
+    it('needs roles.view, which every built-in role holds', async () => {
+      const alpha = await registerOrg('alpha');
+      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      await viewer.get('/v1/roles').expect(200);
+
+      // A role that may see members, but not the roles.
+      await customRole(app, alpha.organizationId, 'Directory', ['users.view']);
+      const { agent: reader } = await addMember(
+        alpha,
+        'reader@alpha.example.com',
+        'Directory',
+      );
+      await reader.get('/v1/users').expect(200);
+      await reader.get('/v1/roles').expect(403);
+    });
+
     it('does not show another organization roles', async () => {
       const alpha = await registerOrg('alpha');
       await registerOrg('beta');
@@ -354,7 +371,7 @@ describe('Users (e2e)', () => {
       );
       const ownerRoleId = await roleIdNamed(app, alpha.organizationId, 'Owner');
 
-      // ADR-016's gap, closed in the service. An Admin holds users.update, so
+      // ADR-016's gap, closed in the service. An Admin holds roles.assign, so
       // the guard passes — no permission string can express "not above your
       // own level", which is why this check cannot live there.
       await admin.agent
@@ -383,7 +400,7 @@ describe('Users (e2e)', () => {
         .expect(403);
     });
 
-    it('refuses a Viewer, which lacks users.update', async () => {
+    it('refuses a Viewer, which lacks roles.assign', async () => {
       const alpha = await registerOrg('alpha');
       const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
       const member = await addMember(
@@ -397,6 +414,37 @@ describe('Users (e2e)', () => {
         .patch(`/v1/users/${member.id}`)
         .send({ roleId: adminRoleId })
         .expect(403);
+    });
+
+    it('refuses a role that may invite and remove members but not change their roles', async () => {
+      const alpha = await registerOrg('alpha');
+      // Managing who belongs is not the same as what they may do: which role
+      // a member holds is roles.assign, a privilege change of its own
+      // (permissions.ts).
+      await customRole(app, alpha.organizationId, 'Office', [
+        'users.view',
+        'users.create',
+        'users.delete',
+      ]);
+      const clerk = await addMember(alpha, 'clerk@alpha.example.com', 'Office');
+      const member = await addMember(
+        alpha,
+        'member@alpha.example.com',
+        'Viewer',
+      );
+      const adminRoleId = await roleIdNamed(app, alpha.organizationId, 'Admin');
+
+      await clerk.agent
+        .patch(`/v1/users/${member.id}`)
+        .send({ roleId: adminRoleId })
+        .expect(403);
+
+      const [row] = await db
+        .select()
+        .from(memberships)
+        .where(eq(memberships.userId, member.id));
+
+      expect(row.roleId).toBe(alpha.viewerRoleId);
     });
 
     it('refuses to demote the only Owner', async () => {

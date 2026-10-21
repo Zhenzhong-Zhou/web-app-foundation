@@ -45,7 +45,6 @@ export type CurrentSession = {
   permissions: Array<
     | 'users.view'
     | 'users.create'
-    | 'users.update'
     | 'users.delete'
     | 'roles.view'
     | 'roles.assign'
@@ -190,6 +189,22 @@ export type AccountEvent = {
 
 export type PhotoSet = {
   photoFileId: string;
+};
+
+export type MemberRole = {
+  name: string;
+  description: string | null;
+};
+
+export type Colleague = {
+  id: string;
+  name: string;
+};
+
+export type MemberAccess = {
+  role: MemberRole;
+  holdsEverything: boolean;
+  whomToAsk: Array<Colleague>;
 };
 
 export type DeleteAccountDto = {
@@ -1359,6 +1374,51 @@ export type GettingStarted = {
   complete: boolean;
 };
 
+export type Inviter = {
+  id: string;
+  name: string;
+  photoFileId: string | null;
+};
+
+export type WelcomeDone = {
+  kind:
+    | 'email'
+    | 'jobTitle'
+    | 'invoice'
+    | 'order'
+    | 'lot'
+    | 'product'
+    | 'run'
+    | 'photo';
+  id: string | null;
+  words: string | null;
+};
+
+export type WelcomeItem = {
+  key:
+    | 'receiveStock'
+    | 'raiseOrder'
+    | 'shipOrder'
+    | 'planRun'
+    | 'draftInvoice'
+    | 'confirmEmail'
+    | 'sayWhoYouAre'
+    | 'lookUp'
+    | 'openOrder';
+  done: boolean;
+  what: WelcomeDone | null;
+};
+
+export type Welcome = {
+  joinedOn: string;
+  lastDay: string;
+  founder: boolean;
+  inviter: Inviter | null;
+  note: string | null;
+  access: MemberAccess;
+  items: Array<WelcomeItem>;
+};
+
 export type HomeRow = {
   id: string;
   title: string;
@@ -1384,6 +1444,7 @@ export type HomeCard = {
 
 export type HomeResponse = {
   gettingStarted: GettingStarted;
+  welcome: Welcome | null;
   cards: Array<HomeCard>;
 };
 
@@ -2596,7 +2657,6 @@ export type Readiness = {
 export const Permission = {
   USERS_VIEW: 'users.view',
   USERS_CREATE: 'users.create',
-  USERS_UPDATE: 'users.update',
   USERS_DELETE: 'users.delete',
   ROLES_VIEW: 'roles.view',
   ROLES_ASSIGN: 'roles.assign',
@@ -3043,6 +3103,20 @@ export type AccountControllerLeaveOrganizationV1Responses = {
 
 export type AccountControllerLeaveOrganizationV1Response =
   AccountControllerLeaveOrganizationV1Responses[keyof AccountControllerLeaveOrganizationV1Responses];
+
+export type AccountControllerMembershipV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/account/membership';
+};
+
+export type AccountControllerMembershipV1Responses = {
+  200: MemberAccess;
+};
+
+export type AccountControllerMembershipV1Response =
+  AccountControllerMembershipV1Responses[keyof AccountControllerMembershipV1Responses];
 
 export type AccountControllerCancelDeletionV1Data = {
   body?: never;
@@ -4870,6 +4944,34 @@ export type HomeControllerGetV1Responses = {
 
 export type HomeControllerGetV1Response =
   HomeControllerGetV1Responses[keyof HomeControllerGetV1Responses];
+
+export type HomeControllerShowWelcomeV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/home/welcome/dismiss';
+};
+
+export type HomeControllerShowWelcomeV1Responses = {
+  204: void;
+};
+
+export type HomeControllerShowWelcomeV1Response =
+  HomeControllerShowWelcomeV1Responses[keyof HomeControllerShowWelcomeV1Responses];
+
+export type HomeControllerDismissWelcomeV1Data = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/v1/home/welcome/dismiss';
+};
+
+export type HomeControllerDismissWelcomeV1Responses = {
+  204: void;
+};
+
+export type HomeControllerDismissWelcomeV1Response =
+  HomeControllerDismissWelcomeV1Responses[keyof HomeControllerDismissWelcomeV1Responses];
 
 export type HomeControllerShowV1Data = {
   body?: never;

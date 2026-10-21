@@ -12,6 +12,7 @@ import { type SubmitEvent, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import { SettingsSection } from '../components/settings-section';
+import { LearnMore } from '../help/learn-more';
 import { api } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 import { rem } from '../theme/rem';
@@ -108,10 +109,16 @@ export function IdleSignOutForm({
         })}
         value={after}
         onChange={(event) => setAfter(event.target.value)}
-        helperText={intl.formatMessage({
-          id: 'settings.security.afterHelp',
-          defaultMessage: 'Only real use counts as activity.',
-        })}
+        helperText={
+          <LearnMore
+            target={{ guide: 'organization', section: 'idle-sign-out' }}
+            variant="beside"
+            after={intl.formatMessage({
+              id: 'settings.security.afterHelp',
+              defaultMessage: 'Only real use counts as activity.',
+            })}
+          />
+        }
         sx={{ maxWidth: rem(240) }}
       >
         <MenuItem value="off">

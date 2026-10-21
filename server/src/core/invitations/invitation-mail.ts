@@ -145,7 +145,9 @@ export function invitationMail(context: InvitationMailContext): Mail {
     lead,
     context.role.description,
     context.note && `${from}\n${context.note}`,
-    `${accept}:\n${context.link}`,
+    // The link on the line below says what follows: no colon, which each
+    // language would write its own way (：in Chinese).
+    `${accept}\n${context.link}`,
     expires,
     ignore,
     footer,

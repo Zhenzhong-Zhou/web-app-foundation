@@ -21,6 +21,7 @@ import { useCan } from '../auth/permissions';
 import { EmptyState } from '../components/empty-state';
 import { PageHeader } from '../components/page-header';
 import { StatusChip } from '../components/status-chip';
+import { LearnMore } from '../help/learn-more';
 import { openDialog } from '../lib/open-dialog';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
 import { useResource } from '../lib/use-resource';
@@ -52,11 +53,17 @@ export function PriceListsPage() {
           id: 'layout.menu.priceLists',
           defaultMessage: 'Price lists',
         })}
-        subtitle={intl.formatMessage({
-          id: 'priceLists.intro',
-          defaultMessage:
-            'A line added without a price takes one from its customer’s or supplier’s list, and keeps it. Changing a list never changes an order already written.',
-        })}
+        subtitle={
+          <LearnMore
+            target={{ guide: 'price-lists', section: 'add' }}
+            variant="beside"
+            after={intl.formatMessage({
+              id: 'priceLists.intro',
+              defaultMessage:
+                'A line added without a price takes one from its customer’s or supplier’s list, and keeps it. Changing a list never changes an order already written.',
+            })}
+          />
+        }
         actions={
           <>
             {can('price_lists.create') && (
@@ -79,7 +86,7 @@ export function PriceListsPage() {
             <Skeleton height={120} sx={{ m: 2 }} />
           ) : null
         ) : lists.length === 0 ? (
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'price-lists', section: 'add' }}>
             {intl.formatMessage({
               id: 'priceLists.empty',
               defaultMessage: 'No price lists yet.',

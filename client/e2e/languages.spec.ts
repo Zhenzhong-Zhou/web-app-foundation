@@ -129,8 +129,13 @@ test('switches the screens to French, and the server answers in French', async (
   await signInAs(page, api);
   await page.goto(`/invoices/${invoice.id}`);
 
-  // The frame in French.
-  await expect(page.getByRole('link', { name: 'Factures' })).toBeVisible();
+  // The frame in French: the rail's link, not the breadcrumb's, which the
+  // page adds once the invoice has loaded.
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Principale', exact: true })
+      .getByRole('link', { name: 'Factures', exact: true }),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: 'Émettre' }).click();
   const issue = page.getByRole('dialog');

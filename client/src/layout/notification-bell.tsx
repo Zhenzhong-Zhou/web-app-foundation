@@ -38,6 +38,9 @@ function linkFor(entry: Notification): string | null {
     // Licences have no page of their own: the list, where it is (ADR-064).
     case 'product_licence':
       return '/licences';
+    // Someone the reader invited has joined: their page on People (ADR-079).
+    case 'user':
+      return `/people/${entry.resourceId}`;
     default:
       return null;
   }
@@ -182,7 +185,11 @@ export function NotificationBell() {
           }
           onClick={(event) => void open(event)}
         >
-          <Badge badgeContent={count} color="error" max={99}>
+          {/* Nothing rather than 0: a Badge hiding a 0 still holds the
+              last number it showed, once anything around it renders
+              again, and text in the button that its name does not say
+              fails Label in Name (WCAG 2.5.3). */}
+          <Badge badgeContent={count || undefined} color="error" max={99}>
             <NotificationsNoneIcon />
           </Badge>
         </IconButton>

@@ -451,9 +451,10 @@ export function MembersPage() {
                       </TableCell>
                       <TableCell>
                         {/* Rendered as plain text when the caller lacks
-                          users.update. That is display only — the 403 from
-                          the server is the actual control (ADR-016). */}
-                        {can('users.update') ? (
+                          roles.assign, the permission the server checks.
+                          That is display only — the 403 from the server is
+                          the actual control (ADR-016). */}
+                        {can('roles.assign') ? (
                           // Its own name, as no visible label sits on it:
                           // the column says Role, the row says whose.
                           <Select

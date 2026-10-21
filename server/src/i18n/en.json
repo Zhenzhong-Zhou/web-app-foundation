@@ -1,4 +1,5 @@
 {
+  "account.access.noOrganization": "You are not working in an organization, so there is no access to show.",
   "account.blocks.lastOwner": "You are the only Owner of {organization}. Make another member an Owner first.",
   "account.blocks.onlyMember": "You are the only member of {organization}, so it would be left with no one. Add another member and make them an Owner first, or delete the organization, with your account if you like.",
   "account.leave.noOrganization": "You are not working in an organization, so there is none to leave.",
@@ -622,6 +623,8 @@
   "notifications.account.signIn": "A new sign-in to your account",
   "notifications.closedShort.body": "{fulfilled} of {ordered} received. {reason}",
   "notifications.closedShort.title": "{sku} will not be delivered in full",
+  "notifications.joined.body": "{name} accepted your invitation and joined {organization} as {system, select, Owner {an {role}} Admin {an {role}} Viewer {a {role}} other {{role}}}.",
+  "notifications.joined.title": "{name} joined",
   "notifications.licence.expired": "Licence {number} ({authority}) expired on {date}",
   "notifications.licence.expiring": "Licence {number} ({authority}) expires in {days, plural, one {# day} other {# days}}, on {date}",
   "notifications.licence.lastDay": "Licence {number} ({authority}) expires today, {date}",
@@ -815,7 +818,7 @@
   "rmas.suchInvoice": "No such invoice",
   "rmas.suchReturn": "No such return",
   "rmas.suchReturnAuthorization": "No such return authorization",
-  "roles.description.admin": "Day-to-day work: stock, orders, production and drafting invoices. Can add and remove members.",
+  "roles.description.admin": "Day-to-day work: stock, orders, production and drafting invoices. Can invite and remove members.",
   "roles.description.owner": "Everything, including costs, issuing invoices, settings and closing the organization.",
   "roles.description.viewer": "Looks at orders, stock and invoices, and changes nothing.",
   "stock.adjustmentNeedsExactlyOne": "An adjustment needs exactly one of a source or a destination",

@@ -228,7 +228,7 @@ export function ProductsPage() {
         ) : (
           // The header offers Add product; the empty state only says why
           // the list is empty.
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'products', section: 'add' }}>
             {items?.length
               ? intl.formatMessage({
                   id: 'inventory.noMatch',

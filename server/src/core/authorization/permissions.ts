@@ -19,12 +19,12 @@ import { t, type Translatable } from '../../i18n/translate';
 export const PERMISSIONS = {
   USERS_VIEW: 'users.view',
   USERS_CREATE: 'users.create',
-  USERS_UPDATE: 'users.update',
+  // No users.update: another member's details are theirs alone (ADR-063),
+  // so nothing would gate it (rule 3). Dropped in migration 0071.
   USERS_DELETE: 'users.delete',
 
   ROLES_VIEW: 'roles.view',
-  // Separate from users.update on purpose: renaming someone and making them an
-  // Owner are different risk levels. Role assignment is privilege escalation.
+  // A permission of its own: role assignment is privilege escalation.
   ROLES_ASSIGN: 'roles.assign',
 
   ORGANIZATIONS_VIEW: 'organizations.view',
@@ -121,7 +121,6 @@ export const ALL_PERMISSIONS = Object.values(PERMISSIONS) as Permission[];
 export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'users.view': 'See the list of members',
   'users.create': 'Add a user to the organization',
-  'users.update': 'Edit another member’s details',
   'users.delete': 'Remove or suspend a member',
   'roles.view': 'See roles and the permissions they grant',
   'roles.assign': 'Change which role a member holds',
@@ -218,7 +217,6 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
   [SYSTEM_ROLES.ADMIN]: [
     PERMISSIONS.USERS_VIEW,
     PERMISSIONS.USERS_CREATE,
-    PERMISSIONS.USERS_UPDATE,
     PERMISSIONS.USERS_DELETE,
     PERMISSIONS.ROLES_VIEW,
     PERMISSIONS.ROLES_ASSIGN,
@@ -308,7 +306,7 @@ export const SYSTEM_ROLE_DESCRIPTIONS: Record<SystemRole, Translatable> = {
   [SYSTEM_ROLES.ADMIN]: t({
     id: 'roles.description.admin',
     defaultMessage:
-      'Day-to-day work: stock, orders, production and drafting invoices. Can add and remove members.',
+      'Day-to-day work: stock, orders, production and drafting invoices. Can invite and remove members.',
   }),
   [SYSTEM_ROLES.VIEWER]: t({
     id: 'roles.description.viewer',

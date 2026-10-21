@@ -136,7 +136,7 @@ export function RmasPage() {
             {showSkeleton ? <Skeleton height={48} /> : null}
           </Stack>
         ) : rows?.length === 0 ? (
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'returns', section: 'authorize' }}>
             {search || range.from || range.to
               ? intl.formatMessage({
                   id: 'inventory.noMatch',

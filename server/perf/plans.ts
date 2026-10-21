@@ -12,7 +12,10 @@ import { NestFactory } from '@nestjs/core';
 import type { Pool } from 'pg';
 
 import { AppModule } from '../src/app.module';
-import { ALL_PERMISSIONS } from '../src/core/authorization/permissions';
+import {
+  ALL_PERMISSIONS,
+  SYSTEM_ROLE_PERMISSIONS,
+} from '../src/core/authorization/permissions';
 import { PG_POOL } from '../src/database/database.tokens';
 import type { VolumeManifest } from '../src/database/seed-volume';
 import { runInTenantContext } from '../src/database/tenant-context';
@@ -21,7 +24,10 @@ import { HomeService } from '../src/modules/home/home.service';
 import { InvoicesService } from '../src/modules/invoices/invoices.service';
 import { OrdersService } from '../src/modules/orders/orders.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
-import { RecentService } from '../src/modules/recent/recent.service';
+import {
+  kindsVisibleWith,
+  RecentService,
+} from '../src/modules/recent/recent.service';
 import { LookupService } from '../src/modules/search/lookup.service';
 import { AvailabilityService } from '../src/modules/stock/availability.service';
 import { LotTraceService } from '../src/modules/stock/lot-trace.service';
@@ -297,12 +303,12 @@ async function buildProbes(
     // steps, as an owner sees them.
     {
       name: 'home',
-      run: () => home.home(EVERY_PERMISSION),
+      run: () => home.home(org, EVERY_PERMISSION),
     },
     // Recently opened (ADR-058): a person's history, newest first, named.
     {
       name: 'recently opened',
-      run: () => recent.list(org.userId, EVERY_PERMISSION, 6),
+      run: () => recent.list(org.userId, kindsVisibleWith(EVERY_PERMISSION), 6),
     },
     // Dates and sorting (ADR-057): each sort read through its index on
     // (organization_id, value, id), its page 2 after a (value, id) cursor,
@@ -348,6 +354,24 @@ async function buildProbes(
     const lotId = org.traceLotId;
     probes.push({ name: 'lot trace', run: () => traces.trace(lotId) });
   }
+
+  // A newcomer's Home (ADR-079): the same, with their welcome, its first
+  // week read from their own audit entries by the actor's index. Only
+  // while they are new: past two weeks it is one read of the membership.
+  const newcomer = {
+    userId: org.newcomerUserId,
+    organizationId: org.organizationId,
+  };
+  const admin = new Set(SYSTEM_ROLE_PERMISSIONS.Admin);
+  if (!(await home.home(newcomer, admin)).welcome) {
+    new Logger('PlanCheck').warn(
+      'The volume seed’s newcomer joined over two weeks ago, so their welcome is not explained. Seed again to check it.',
+    );
+  }
+  probes.push({
+    name: 'home: a newcomer',
+    run: () => home.home(newcomer, admin),
+  });
 
   // Missing it would drop the earliest-expiry-first read from the check
   // without a word, so its absence is a failure, not a skipped row.

@@ -10,7 +10,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -18,6 +18,8 @@ import type { HomeCard, HomeResponse, HomeRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { StatusChip } from '../components/status-chip';
+import { UndoSnackbar } from '../components/undo-snackbar';
+import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner';
 import { api } from '../lib/api';
 import { daysUntil } from '../lib/expiry';
 import { formatDay } from '../lib/format';
@@ -35,13 +37,16 @@ import { greeting } from './greeting';
 import { CARDS } from './home-cards';
 import { NoOrganization } from './no-organization';
 import { RecentCard } from './recent-card';
+import { WelcomeCard } from './welcome-card';
 
 /**
  * Home (ADR-058): what needs attention, first. A greeting by the reader's
  * clock, one sentence saying how much needs doing, a row of counts (tinted
  * only when something is late or near expiry), the quick actions, then a
  * card per kind of work the reader's role sees. A new organization gets
- * Getting started instead of a page of zeros.
+ * Getting started instead of a page of zeros. A newcomer's own welcome
+ * leads it for their first two weeks (ADR-079), with Getting started, while
+ * it shows, straight after it and before the counts and quick actions.
  *
  * Read when the page opens, with a refresh, as every list is; not live.
  */
@@ -59,6 +64,16 @@ function OrganizationHome() {
   const can = useCan();
   const [home, setHome] = useState<HomeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The welcome just dismissed, a moment to undo it (ADR-079).
+  const [undoing, setUndoing] = useState(false);
+  const dismissing = useRef<Promise<unknown> | null>(null);
+  // Undo's button goes with its message, so focus goes to the card it
+  // brought back, once it is there.
+  const welcomeHeading = useRef<HTMLHeadingElement>(null);
+  const undone = useRef(false);
+  // A dismissed card takes its Dismiss with it: focus goes to the page's
+  // heading, where the page begins, rather than to nowhere.
+  const heading = useRef<HTMLHeadingElement>(null);
   // The organization's today (ADR-072), so "overdue" is the same for
   // everyone in it, wherever they read it from.
   const today = organizationToday();
@@ -84,6 +99,42 @@ function OrganizationHome() {
     await api(path, { method }).catch(() => undefined);
     load();
   }
+
+  /** Gone at once, with Undo; a failed write brings it back. */
+  function dismissWelcome() {
+    heading.current?.focus();
+    setHome((current) => current && { ...current, welcome: null });
+    setUndoing(true);
+    dismissing.current = api('/home/welcome/dismiss', { method: 'POST' }).catch(
+      load,
+    );
+  }
+
+  async function undoWelcome() {
+    setUndoing(false);
+    undone.current = true;
+    // After the dismissal has landed, so the two cannot cross.
+    await dismissing.current;
+    await act('/home/welcome/dismiss', 'DELETE');
+  }
+
+  const welcome = home?.welcome ?? null;
+  useEffect(() => {
+    if (!welcome || !undone.current) return;
+    undone.current = false;
+    welcomeHeading.current?.focus();
+  }, [welcome]);
+  // The banner asking the same is not shown here while the card lists it,
+  // nor while Home is still loading the card that may (ADR-079). Someone
+  // confirmed has no banner to cover, and the frame no change to render.
+  useCoverUnverifiedBanner(
+    !session?.user.emailVerified &&
+      (home
+        ? !!welcome?.items.some(
+            (item) => item.key === 'confirmEmail' && !item.done,
+          )
+        : !error),
+  );
 
   const cards = home?.cards ?? [];
   const count = cards.reduce((sum, card) => sum + card.count, 0);
@@ -166,9 +217,34 @@ function OrganizationHome() {
           gap: 1,
         }}
       >
-        <Typography variant="h4" component="h1">
+        <Typography ref={heading} variant="h4" component="h1" tabIndex={-1}>
           {greeting(intl, session?.user.name ?? '')}
         </Typography>
+        {/* Next after the heading, where Dismiss puts focus, so the next
+            Tab reaches Undo; shown at the foot of the screen all the same,
+            and held there while focus or the pointer is on it. */}
+        <UndoSnackbar
+          open={undoing}
+          autoHideDuration={8000}
+          onClose={(_event, reason) => {
+            // A click elsewhere is somebody carrying on, not dismissing.
+            if (reason !== 'clickaway') setUndoing(false);
+          }}
+          message={intl.formatMessage({
+            id: 'home.welcome.dismissed',
+            defaultMessage:
+              'Welcome card hidden. What you can do here stays on Your account.',
+          })}
+          action={
+            <Button color="inherit" onClick={() => void undoWelcome()}>
+              {intl.formatMessage({
+                id: 'home.welcome.undo',
+                defaultMessage: 'Undo',
+              })}
+            </Button>
+          }
+          slotProps={{ content: { role: 'status' } }}
+        />
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Typography color="text.secondary">
             {intl.formatDate(new Date(), {
@@ -225,6 +301,32 @@ function OrganizationHome() {
             {summary}
           </Typography>
 
+          {welcome && (
+            <WelcomeCard
+              welcome={welcome}
+              startShows={!!showStart}
+              onDismiss={dismissWelcome}
+              headingRef={welcomeHeading}
+            />
+          )}
+
+          {/* Straight after the welcome, which says the steps are in
+              Getting started, below; the quick actions after both. */}
+          {showStart && started && (
+            <GettingStarted
+              state={started}
+              canManage={can('organizations.update')}
+              canInvite={can('users.create')}
+              onDismiss={() => {
+                heading.current?.focus();
+                void act('/home/getting-started/dismiss', 'POST');
+              }}
+              onSkipTeam={() =>
+                void act('/home/getting-started/skip-team', 'POST')
+              }
+            />
+          )}
+
           {showCards && cards.length > 0 && (
             <Box
               sx={{
@@ -246,7 +348,9 @@ function OrganizationHome() {
                   key={item.to + item.label}
                   component={RouterLink}
                   to={item.to}
-                  variant={index === 0 ? 'contained' : 'outlined'}
+                  // While Getting started shows, its first open step is the
+                  // page's one primary action (ADR-058).
+                  variant={index === 0 && !showStart ? 'contained' : 'outlined'}
                 >
                   {item.label}
                 </Button>
@@ -256,20 +360,6 @@ function OrganizationHome() {
 
           {/* What this person opened last; hidden while empty (ADR-058). */}
           <RecentCard />
-
-          {showStart && started && (
-            <GettingStarted
-              state={started}
-              canManage={can('organizations.update')}
-              canInvite={can('users.create')}
-              onDismiss={() =>
-                void act('/home/getting-started/dismiss', 'POST')
-              }
-              onSkipTeam={() =>
-                void act('/home/getting-started/skip-team', 'POST')
-              }
-            />
-          )}
 
           {/* A column's floor is capped at the row, so on a phone a card is
               as wide as the screen rather than wider (found by

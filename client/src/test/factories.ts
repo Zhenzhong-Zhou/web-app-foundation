@@ -1,4 +1,4 @@
-import type { OrderLine } from '../api/types.gen';
+import type { HomeResponse, OrderLine, Welcome } from '../api/types.gen';
 
 /**
  * An order line for a client test, complete, with whatever the case is about
@@ -32,6 +32,50 @@ export function orderLine(over: Partial<OrderLine> = {}): OrderLine {
     isComplete: false,
     isClosedShort: false,
     closedReason: null,
+    ...over,
+  };
+}
+
+/** Getting started with every step done: Home leads with the cards. */
+export const GETTING_STARTED_DONE: HomeResponse['gettingStarted'] = {
+  steps: {
+    organization: true,
+    location: true,
+    product: true,
+    partner: true,
+    receipt: true,
+    invoice: true,
+    team: true,
+  },
+  teamSkipped: false,
+  dismissed: false,
+  complete: true,
+};
+
+/**
+ * A welcome on Home (ADR-079): Wang Fang, a Viewer who joined on 20
+ * October, invited by Mei Lin with a note, three items open.
+ */
+export function welcome(over: Partial<Welcome> = {}): Welcome {
+  return {
+    joinedOn: '2026-10-20',
+    lastDay: '2026-11-03',
+    founder: false,
+    inviter: { id: 'user-mei', name: 'Mei Lin', photoFileId: null },
+    note: 'Welcome, Wang Fang!\nOn Monday you’ll shadow Li Na.',
+    access: {
+      role: { name: 'Viewer', description: null },
+      holdsEverything: false,
+      whomToAsk: [
+        { id: 'user-mei', name: 'Mei Lin' },
+        { id: 'user-david', name: 'David Park' },
+      ],
+    },
+    items: [
+      { key: 'sayWhoYouAre', done: false, what: null },
+      { key: 'lookUp', done: false, what: null },
+      { key: 'openOrder', done: false, what: null },
+    ],
     ...over,
   };
 }

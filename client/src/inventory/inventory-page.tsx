@@ -486,18 +486,19 @@ export function InventoryPage() {
                       {displayWithUnit(row.quantity, row.unitOfMeasure, intl)}
                     </TableCell>
 
+                    {/* For everyone here: History and Trace lot only
+                      read. The menu holds what this member may do. */}
                     <TableCell padding="checkbox">
-                      {can('stock.move') && (
-                        <StockActions
-                          row={row}
-                          canAdjust={canAdjust}
-                          onSelect={(mode, selected) =>
-                            setMoving({ mode, row: selected })
-                          }
-                          onHistory={setViewing}
-                          onEditLot={setEditingLot}
-                        />
-                      )}
+                      <StockActions
+                        row={row}
+                        canMove={can('stock.move')}
+                        canAdjust={canAdjust}
+                        onSelect={(mode, selected) =>
+                          setMoving({ mode, row: selected })
+                        }
+                        onHistory={setViewing}
+                        onEditLot={setEditingLot}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -505,7 +506,7 @@ export function InventoryPage() {
             </Table>
           </TableContainer>
         ) : (
-          <EmptyState>
+          <EmptyState learnMore={{ guide: 'inventory', section: 'receive' }}>
             {needsCost && !expiring
               ? intl.formatMessage({
                   id: 'inventory.noneNeedsCost',

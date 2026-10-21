@@ -9,14 +9,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { asc, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { DEFAULT_LOCALE, type Locale } from '../../common/locales';
 import type { Env } from '../../config/env';
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { type OrganizationRail, organizations } from '../../database/schema';
-import { memberships, users } from '../../database/schema';
+import { users } from '../../database/schema';
 import {
   recipientLocale,
   t,
@@ -276,20 +276,12 @@ export class AuthService implements OnModuleInit {
       }
     }
 
-    // ADR-004: identity alone is not enough context. Oldest membership wins,
-    // ordered by id because UUIDv7 sorts by creation time (ADR-010) — that is
-    // the organization the user registered with.
-    const [membership] = await this.db
-      .select({ organizationId: memberships.organizationId })
-      .from(memberships)
-      .where(eq(memberships.userId, row.id))
-      .orderBy(asc(memberships.id))
-      .limit(1);
-
-    // Reachable: a user removed from their last organization can still sign in
-    // and be told they belong to none. The guard must treat a null current_org
-    // as "no org-scoped access", not as an error.
-    const currentOrgId = membership?.organizationId ?? null;
+    // ADR-004: identity alone is not enough context. Oldest membership wins.
+    //
+    // Null is reachable: a user removed from their last organization can still
+    // sign in and be told they belong to none. The guard must treat a null
+    // current_org as "no org-scoped access", not as an error.
+    const currentOrgId = await this.sessions.firstOrganizationOf(row.id);
 
     // After the password check, never before — otherwise anyone holding the
     // cookie signs its owner out by posting a wrong password.

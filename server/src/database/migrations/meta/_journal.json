@@ -491,6 +491,27 @@
       "when": 1792481000000,
       "tag": "0069_organization_invitations",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1792521783786,
+      "tag": "0070_membership_welcome",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1792531642677,
+      "tag": "0071_drop_users_update",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1792552992605,
+      "tag": "0072_admin_role_line",
+      "breakpoints": true
     }
   ]
 }

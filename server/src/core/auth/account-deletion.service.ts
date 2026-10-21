@@ -178,17 +178,12 @@ export class AccountDeletionService {
       // the trigger on memberships (migration 0061), as when an Owner
       // removes a member: its own deletion stands, on its own day.
 
-      // The oldest membership left, as signing in picks one.
-      const [next] = await tx
-        .select({ organizationId: memberships.organizationId })
-        .from(memberships)
-        .where(eq(memberships.userId, context.userId))
-        .orderBy(asc(memberships.id))
-        .limit(1);
+      // The organization signing in would pick among those left.
+      const next = await this.sessions.firstOrganizationOf(context.userId, tx);
 
       await tx
         .update(sessions)
-        .set({ currentOrgId: next?.organizationId ?? null })
+        .set({ currentOrgId: next })
         .where(eq(sessions.id, context.sessionId));
     });
 

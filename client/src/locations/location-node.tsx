@@ -23,6 +23,7 @@ export function LocationNode({
   location,
   all,
   depth,
+  canCreate,
   canEdit,
   onEdit,
   onAddChild,
@@ -31,6 +32,8 @@ export function LocationNode({
   location: Location;
   all: Location[];
   depth: number;
+  /** Add inside makes a location, so it needs locations.create. */
+  canCreate: boolean;
   canEdit: boolean;
   onEdit: (location: Location) => void;
   onAddChild: (location: Location) => void;
@@ -124,18 +127,21 @@ export function LocationNode({
           />
         )}
 
+        {canCreate && (
+          <Button
+            variant="text"
+            size="small"
+            onClick={openDialog(() => onAddChild(location))}
+          >
+            {intl.formatMessage({
+              id: 'locations.addInside',
+              defaultMessage: 'Add inside',
+            })}
+          </Button>
+        )}
+
         {canEdit && (
           <>
-            <Button
-              variant="text"
-              size="small"
-              onClick={openDialog(() => onAddChild(location))}
-            >
-              {intl.formatMessage({
-                id: 'locations.addInside',
-                defaultMessage: 'Add inside',
-              })}
-            </Button>
             {isSite && (
               <Button
                 variant="text"
@@ -168,6 +174,7 @@ export function LocationNode({
           location={child}
           all={all}
           depth={depth + 1}
+          canCreate={canCreate}
           canEdit={canEdit}
           onEdit={onEdit}
           onAddChild={onAddChild}

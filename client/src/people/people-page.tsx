@@ -15,10 +15,13 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
 import { PersonAvatar } from '../components/person-avatar';
+import { StatusChip } from '../components/status-chip';
+import { formatDayShort } from '../lib/format';
+import { organizationToday } from '../lib/time-zone';
 import { useResource } from '../lib/use-resource';
 import { roleLabel } from '../members/role-names';
 import { rem } from '../theme/rem';
-import { type Person, phoneLine } from './people-types';
+import { joinedRecently, type Person, phoneLine } from './people-types';
 
 /** One line of a card, cut with an ellipsis, whole on hover. */
 const ONE_LINE = {
@@ -32,12 +35,26 @@ const ONE_LINE = {
  * The organization's people (ADR-063), for finding someone: a card each
  * with the face, name, title, role and work phone. The whole card opens
  * the person's page; the phone calls. Read-only: Members manages them.
+ * Whoever joined in the last two weeks is marked New, and the line under
+ * the title says how many, so colleagues know whom to greet (ADR-079).
  */
 export function PeoplePage() {
   const intl = useIntl();
   const { session } = useAuth();
   const { data: people, error } = useResource<Person[]>('/people');
   const [search, setSearch] = useState('');
+  const today = organizationToday();
+  const joined = useMemo(
+    () =>
+      new Map(
+        (people ?? []).map((person) => [
+          person.id,
+          joinedRecently(person, today),
+        ]),
+      ),
+    [people, today],
+  );
+  const newCount = [...joined.values()].filter(Boolean).length;
 
   const shown = useMemo(() => {
     const wanted = search.trim().toLowerCase();
@@ -58,19 +75,32 @@ export function PeoplePage() {
           defaultMessage: 'People',
         })}
         subtitle={
-          people
-            ? intl.formatMessage(
-                {
-                  id: 'people.count',
-                  defaultMessage:
-                    'Everyone in {organization}, {count, plural, one {# person} other {# people}}.',
-                },
-                {
-                  organization: session?.organization?.name ?? '',
-                  count: people.length,
-                },
-              )
-            : undefined
+          !people
+            ? undefined
+            : newCount > 0
+              ? intl.formatMessage(
+                  {
+                    id: 'people.countWithNew',
+                    defaultMessage:
+                      'Everyone in {organization}, {count, plural, one {# person} other {# people}}. {joined, plural, one {# joined} other {# joined}} in the last two weeks.',
+                  },
+                  {
+                    organization: session?.organization?.name ?? '',
+                    count: people.length,
+                    joined: newCount,
+                  },
+                )
+              : intl.formatMessage(
+                  {
+                    id: 'people.count',
+                    defaultMessage:
+                      'Everyone in {organization}, {count, plural, one {# person} other {# people}}.',
+                  },
+                  {
+                    organization: session?.organization?.name ?? '',
+                    count: people.length,
+                  },
+                )
         }
         actions={
           <TextField
@@ -120,6 +150,7 @@ export function PeoplePage() {
       >
         {shown.map((person) => {
           const phone = phoneLine(person, intl);
+          const joinedOn = joined.get(person.id);
           return (
             <Paper
               key={person.id}
@@ -137,6 +168,25 @@ export function PeoplePage() {
                 '&:hover': { borderColor: 'primary.main' },
               }}
             >
+              {/* The mark's room on every card while anyone has it, so the
+                  faces in a row stay level. */}
+              {newCount > 0 && !joinedOn && <Box sx={{ height: 24 }} />}
+              {joinedOn && (
+                <StatusChip
+                  tone="info"
+                  label={intl.formatMessage(
+                    {
+                      id: 'people.new',
+                      defaultMessage:
+                        '{today, select, true {New · joined today} other {New · joined {day}}}',
+                    },
+                    {
+                      today: String(joinedOn === today),
+                      day: formatDayShort(joinedOn),
+                    },
+                  )}
+                />
+              )}
               <PersonAvatar
                 userId={person.id}
                 name={person.name}

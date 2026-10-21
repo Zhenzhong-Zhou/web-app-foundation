@@ -43,7 +43,7 @@ export function OrderDocuments({ order }: { order: OrderDetail }) {
 
   if (documents.invoices.length === 0 && documents.creditNotes.length === 0) {
     return (
-      <EmptyState>
+      <EmptyState learnMore={{ guide: 'invoices', section: 'issue' }}>
         {intl.formatMessage({
           id: 'orders.documents.empty',
           defaultMessage:

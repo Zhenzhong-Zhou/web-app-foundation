@@ -187,6 +187,26 @@ export function formatDayShort(
   ).format(new Date(value));
 }
 
+/**
+ * A calendar day without its year, in words, "3 November", in a sentence
+ * whose year goes without saying: the welcome's first and last days, two
+ * weeks apart (ADR-079). In UTC.
+ */
+export function formatDayMonth(
+  value: string,
+  locale: string | undefined = current,
+): string {
+  return cached(
+    `dayMonth:${locale}`,
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC',
+      }),
+  ).format(new Date(value));
+}
+
 /** A calendar day in full, "26 October 2026", in a sentence. In UTC. */
 export function formatDayLong(
   value: string,

@@ -2,6 +2,8 @@ import { Button, Paper, Stack, Typography } from '@mui/material';
 import type { ReactNode, SubmitEvent } from 'react';
 import { useIntl } from 'react-intl';
 
+import type { LearnMoreTarget } from '../help/guides';
+import { LearnMore } from '../help/learn-more';
 import { FormError } from './form-error';
 
 /**
@@ -19,6 +21,9 @@ import { FormError } from './form-error';
  *
  * `notice` sits above the error, for what the section needs said before
  * anything else ("Not set yet"), as the sections that have one already did.
+ *
+ * `learnMore`, for a setting that needs more than its own words, opens Help
+ * at its section from the end of the heading (ADR-079).
  */
 export function SettingsSection({
   title,
@@ -29,6 +34,7 @@ export function SettingsSection({
   saveLabel,
   saveDisabled = false,
   notice,
+  learnMore,
   children,
 }: {
   title: string;
@@ -40,6 +46,7 @@ export function SettingsSection({
   saveLabel: string;
   saveDisabled?: boolean;
   notice?: ReactNode;
+  learnMore?: LearnMoreTarget;
   children: ReactNode;
 }) {
   const intl = useIntl();
@@ -48,9 +55,21 @@ export function SettingsSection({
     <Paper variant="outlined" sx={{ p: 2 }}>
       <form onSubmit={onSubmit}>
         <Stack spacing={2}>
-          <Typography variant="subtitle1" component="h2">
-            {title}
-          </Typography>
+          <Stack
+            direction="row"
+            useFlexGap
+            sx={{
+              justifyContent: 'space-between',
+              alignItems: 'baseline',
+              flexWrap: 'wrap',
+              columnGap: 1.5,
+            }}
+          >
+            <Typography variant="subtitle1" component="h2">
+              {title}
+            </Typography>
+            {learnMore && <LearnMore target={learnMore} variant="beside" />}
+          </Stack>
 
           {notice}
 

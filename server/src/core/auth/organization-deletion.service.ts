@@ -436,7 +436,9 @@ export class OrganizationDeletionService {
 
       // Sessions cascade from the organization they work in, and would
       // sign every member out: each moves to the person's next
-      // organization, as leaving does, or to none.
+      // organization, as leaving does, or to none. In one statement for
+      // every member, so it writes SessionService.firstOrganizationOf's
+      // rule itself: the oldest membership, by id. Change both together.
       await tx
         .update(sessions)
         .set({

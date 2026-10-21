@@ -15,7 +15,6 @@ import {
   Menu,
   MenuItem,
   Paper,
-  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
@@ -30,13 +29,17 @@ import {
 import { useIntl } from 'react-intl';
 
 import type { ProductImage } from '../api/types.gen';
+import { UndoSnackbar } from '../components/undo-snackbar';
 import { api, messageFor } from '../lib/api';
 import { rem } from '../theme/rem';
 import { uploadProductImage, type UploadState } from './upload-image';
 
 /** ADR-062's limit, as the server holds it. */
 const MAX_IMAGES = 8;
-/** How long a removal can be undone before it is sent. */
+/**
+ * How long a removal can be undone before it is sent, while neither focus
+ * nor the pointer is on its Undo, which holds it (WCAG 2.2.1).
+ */
 const UNDO_MS = 5000;
 
 interface Upload {
@@ -76,7 +79,7 @@ export function ProductGallery({
   const [dragging, setDragging] = useState<number | null>(null);
   const [dropping, setDropping] = useState(false);
   const [pending, setPending] = useState<ProductImage | null>(null);
-  const timer = useRef<number | undefined>(undefined);
+  const undoButton = useRef<HTMLButtonElement>(null);
   // The removal waiting out its undo, for leaving the page to send.
   const waiting = useRef<ProductImage | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -174,7 +177,6 @@ export function ProductGallery({
   // Leaving the page sends a removal still waiting out its undo.
   useEffect(
     () => () => {
-      window.clearTimeout(timer.current);
       if (waiting.current) commitRemoval(waiting.current);
     },
     [commitRemoval],
@@ -184,20 +186,27 @@ export function ProductGallery({
     const image = images[index];
     // One undo at a time: an earlier removal is sent now.
     if (waiting.current) commitRemoval(waiting.current);
-    window.clearTimeout(timer.current);
     setImages((all) => all.filter((_, at) => at !== index));
     setSelected(0);
     setPending(image);
     waiting.current = image;
-    timer.current = window.setTimeout(() => {
-      commitRemoval(image);
-      waiting.current = null;
-      setPending(null);
-    }, UNDO_MS);
+  }
+
+  // The image's own menu went with it, and focus with the menu: it goes to
+  // Undo, the one thing left to do about the removal, and holds the message
+  // while it is there.
+  useEffect(() => {
+    if (pending) undoButton.current?.focus();
+  }, [pending]);
+
+  /** Its undo has passed: the removal is sent. */
+  function settle() {
+    if (waiting.current) commitRemoval(waiting.current);
+    waiting.current = null;
+    setPending(null);
   }
 
   function undo() {
-    window.clearTimeout(timer.current);
     const image = waiting.current;
     if (image) setImages((all) => [...all, image].sort(byPosition));
     waiting.current = null;
@@ -628,14 +637,22 @@ export function ProductGallery({
         </Menu>
       )}
 
-      <Snackbar
+      {/* Its own timer, held while focus or the pointer is on it and run
+          again once both have left; one per removal. */}
+      <UndoSnackbar
+        key={pending?.fileId}
         open={pending !== null}
+        autoHideDuration={UNDO_MS}
+        onClose={(_event, reason) => {
+          // A click elsewhere is somebody carrying on, not deciding.
+          if (reason !== 'clickaway') settle();
+        }}
         message={intl.formatMessage({
           id: 'products.gallery.removed',
           defaultMessage: 'Image removed',
         })}
         action={
-          <Button color="inherit" onClick={undo}>
+          <Button ref={undoButton} color="inherit" onClick={undo}>
             {intl.formatMessage({
               id: 'products.gallery.undo',
               defaultMessage: 'Undo',

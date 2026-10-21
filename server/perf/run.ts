@@ -87,7 +87,13 @@ async function main(): Promise<number> {
       manifest.password,
       `organization ${index + 1}`,
     );
-    orgs.push(await discover(session, anchors));
+    const newcomer = await signIn(
+      baseUrl,
+      anchors.newcomerEmail,
+      manifest.password,
+      `organization ${index + 1}'s newcomer`,
+    );
+    orgs.push(await discover(session, anchors, newcomer));
   }
 
   // A tag per run keeps lot codes and references unique across reruns.

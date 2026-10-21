@@ -143,6 +143,10 @@ a second organization.
 - **MC-307** Editing a lot's expiry saves, and the new date shows on
   Inventory and in earliest-expiry-first order. Reopening the edit dialog
   shows the same day that was typed.
+- **MC-310** As a Viewer, a row's actions on Inventory offer History, and
+  Trace lot on a lot's row, and nothing that changes stock. As an Admin,
+  they also offer Move, Ship out, Send sample, Correct the count and, on a
+  lot's row, Edit lot details.
 
 ## 4. Buying
 
@@ -750,12 +754,14 @@ Paper is checked first because it must not change at all.
   Each card's See all opens its list showing the same number of rows. Switch
   to 中文 and to a phone (or a narrow window): the counts sit two by two, cards
   stack, nothing scrolls sideways, and the wording reads naturally. Register a
-  new organization: Getting started leads with seven steps; add a location and
+  new organization: Getting started leads with seven steps, straight after
+  the welcome, its first open step's button the only filled one on Home,
+  and the quick actions after it, outlined; add a location and
   see its step ticked on Refresh. The last step reads Invite your team: its
   Invite someone opens Members with the Invite dialog, and closing it takes
   `?invite` off the address, so Back and a reload leave it shut (ADR-077).
-  Skip the team step; Dismiss the card and bring it back with Show Getting
-  started. Sign in as a viewer: no Skip or Dismiss, the team step with no
+  Skip the team step; Dismiss the card (focus moves to the greeting at the
+  top of Home) and bring it back with Show Getting started. Sign in as a viewer: no Skip or Dismiss, the team step with no
   button, and only the cards that role may see.
 
 ## 16. Files (ADR-059)
@@ -827,8 +833,9 @@ await fetch(`${api}/v1/files/product-image`, {
   the same photo again: "already on this product". Open an image: Esc
   closes, ← → move, double-click zooms; on a phone, swipe and double-tap.
   Use a thumbnail's menu to Make cover and Move left; drag one to the end.
-  Remove one and press Undo: it is back; remove one and wait: after a
-  reload it is gone. The Products list and Inventory show each cover; a
+  Remove one by its menu: focus is on Undo, and the message stays while
+  focus or the pointer is on it, well past five seconds, and still once
+  the pointer has passed over it and gone; Enter: it is back. Remove one, Tab away and wait: after a reload it is gone. The Products list and Inventory show each cover; a
   product without one shows the plain tile. At eight, Add images is
   disabled with the reason. A viewer sees the gallery without the menus.
   In 中文 on a phone, the buttons and the hint read naturally.
@@ -1293,7 +1300,7 @@ Mailpit open.
 
 - **MC-3001** *(ADR-077)* Invite: the dialog asks for Email, then the
   three roles as cards, each with its line saying what it lets a person
-  do, Viewer chosen; Write to them in, starting at your own language; and
+  do (the Admin's ends Can invite and remove members), Viewer chosen; Write to them in, starting at your own language; and
   A note from you, counting to 500. Invite `newcomer@example.com` as
   Admin, writing to them in 简体中文, with the note `<b>Dock 3</b>`, a line
   break, then `bring boots`, and Send invitation. A notice says it was
@@ -1306,7 +1313,8 @@ Mailpit open.
   kept). The link works until the end of its seventh day, named with the
   organization's time zone, and opens `/invitation?token=…` on the app's
   address, never the API's; the same address is written out for when the
-  button does not open. It ends 由 … 代 … 发送, naming the app as
+  button does not open, under 接受邀请 with no colon (the plain text, in
+  Mailpit's Text tab). It ends 由 … 代 … 发送, naming the app as
   MAIL_FROM does.
 - **MC-3002** *(ADR-077)* With the account's language set to Français,
   open Invite: Write to them in starts at Français, and an invitation
@@ -1350,7 +1358,8 @@ Mailpit open.
   to confirm your own email first, naming it, with Resend confirmation,
   which sends it again.
 - **MC-3009** *(ADR-077)* At 390 px wide in 中文: Invited's rows are cards,
-  each with 重新发送, 复制链接 and 收回, and 邀请 opens the dialog full screen,
+  each with 重新发送, 复制链接 and 收回, its line ending 有效至 and the last
+  day, and 邀请 opens the dialog full screen,
   a close button before its title and 发送邀请 and 复制链接，自己发送 at its foot.
   At Larger text (ADR-075), neither Members nor the dialog scrolls
   sideways.
@@ -1361,7 +1370,9 @@ The invitation page, in a private window unless a check says otherwise:
   invitation's language, with the language and text size choices above
   it. It shows the organization's logo and name, 加入 …, who invited you,
   by name and by address as the email does, as 管理员 with what an Admin
-  does, the note under 来自 … 的留言, and the address, read-only. The logo is sharp, and the Network tab shows no
+  does, the note under 来自 … 的留言, and the address, read-only; at its
+  foot, 此邀请的有效期到 … 结束, the same last day as the email's. The
+  logo is sharp, and the Network tab shows no
   request to `/api/v1/files`. Type a name, then change the page's
   language: the name stays, and the page reads in the new one. Change it
   back and forth a dozen times inside a minute: once the reads are
@@ -1450,14 +1461,16 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3106** *(ADR-078)* Open a link from MC-3102 signed out: the page is
   in the invitation's language, headed Set up …, with a dashed tile of the
   organization's initials (HH for Harbour Herbs, 海港 for 海港草本有限公司)
-  and A new organization; You'll be its Owner,
-  with what that lets them do; You can change the name later; the address
+  and A new organization; You'll be its Owner: everything, …, in lower
+  case after the colon (in Français, Vous en serez Propriétaire : tout,
+  …); You can change the name later; the address
   read-only, with the line about a confirmation email and Not your
   address?. Give a name and a password and Set up: Home opens in the new
-  organization, with Confirm your email address and Getting started at 0
-  of 7. Mailpit has the confirmation email; Settings → Organization →
-  Profile shows this computer's time zone. Members → Invite asks you to
-  confirm your own email first (MC-3008).
+  organization with its welcome, whose first week starts with Confirm
+  your email address (ADR-079), and Getting started at 0 of 7. Mailpit
+  has the confirmation email; Settings → Organization → Profile shows
+  this computer's time zone. Members → Invite asks you to confirm your
+  own email first (MC-3008).
 - **MC-3107** *(ADR-078)* With `OPERATOR_EMAIL=you@example.com` in `.env`
   and the API restarted, accept another organization invitation: Mailpit
   has "… was set up" to that address, naming who set it up, by name and
@@ -1496,11 +1509,183 @@ The pages, in a private window unless a check says otherwise.
   Accounts here start from an invitation and Home with no organization
   wrap without scrolling sideways, as on the canvas.
 
+## 32. A newcomer's first sign-in (ADR-079)
+
+- **MC-3201** *(ADR-079)* As the demo Owner, invite an address from
+  Members → Invite, and accept it from Mailpit in a private window. Back as
+  the Owner, within a minute the bell has … joined, reading … accepted your
+  invitation and joined Demo … as a Viewer; Mailpit has no email about it.
+  With Account's language set to 中文, the same entry reads …加入了 and
+  …接受了您的邀请，以查看者身份加入 Demo …。 Choosing the entry opens
+  the newcomer's page on People. As an Admin of the demo team, such as
+  Daniel Okafor, invite another address, then leave the organization
+  before it is accepted, and accept it: neither the Admin's bell, signed
+  in with no organization now, nor the Owner's says so. (Whoever leaves
+  is gone from this demo: walk MC-1903 first, or seed again.)
+- **MC-3202** *(ADR-079)* Help on a computer, about 1280 to 1440 px wide,
+  the rail open: the top bar has Help, its icon and the word, between
+  Search and the bell. On Orders, press it: the rail folds to its icons,
+  Help comes in at the right, under the bar, with nothing dimmed, and the
+  page takes the width left beside it; the button shows pressed. Nothing
+  of the page is under Help: Raise an order, at the top right, is in view,
+  nothing scrolls sideways, and Tab through the page reaches every
+  control in view, none of them under Help. The guide is Orders, its
+  title and sections, steps numbered and the permission notes set apart.
+  At its foot, All guides lists Work, Records, Settings and You, only the
+  pages you can open (as a Viewer: no Stock value, Audit log, Exchange
+  rates or Price lists), then What you can do here is on Your account.
+  Choose Inventory in the rail: Help now shows Inventory's guide. Choose
+  Home in All guides: Home's guide shows and the page stays on Inventory.
+  Follow See also in a guide: that page opens, with its own guide. Esc
+  inside Help, or Close, shuts it, focus is back on Help, and the rail
+  opens again with the page at its width. With the rail folded before
+  Help opened, it stays folded after; unfolded while Help is open, it
+  stays as you left it. A guide downloads only when Help shows it
+  (DevTools, Network: the guide's file, `orders.md` locally, arrives as
+  Help opens, and none before). With Help open on Locations, press Add
+  location: the dialog sits in the room beside Help, the page behind it
+  dimmed and Help not; Help scrolls under the mouse or a finger, pressing
+  its links or Close does nothing, and Tab stays in the dialog. With
+  VoiceOver on, Help is not read while the dialog is open. Cancel: Help
+  works again.
+- **MC-3203** *(ADR-079)* Help on a wide screen, about 1900 px: opening
+  Help folds the rail as on a laptop, the page keeps its full width beside
+  Help, and closing Help opens the rail again. In a window about 1100 px
+  wide, or below about 1265 px at Large text and 1330 px at Larger, where
+  the page would keep less than about 720 px beside Help, Help slides over
+  the right of the page instead, with nothing dimmed, and the page beneath still scrolls
+  and works. Narrower than about 1085 px, a dialog the page opens there
+  stays centred, and Help dims with the page.
+- **MC-3204** *(ADR-079)* Help on a phone, about 390 px: the bar shows
+  Help as its icon alone. It opens full screen, headed Help · Orders, with
+  Close, which returns to the page. On a real phone at 320 px wide (or
+  DevTools) with Larger text (ADR-075), the organization shows its logo,
+  or its initials, alone (VoiceOver reads the initials, then the name),
+  and nothing scrolls sideways. At Standard and at Larger, on the phone
+  and on a computer, every control in the bar,
+  the organization and the search box among them, is a full fingertip
+  wide and tall (44 px, DevTools' box model).
+- **MC-3205** *(ADR-079)* Learn more: on a new organization's Home, each
+  Getting started step's hint ends with Learn more, which opens Help at
+  that step's section, scrolled to it and marked for a moment; with the
+  system's Reduce motion on, it jumps there and the mark comes and goes
+  without fading. An empty list, such as Production with no runs, has
+  Learn more beside its words. Organization's Numbering (Documents) and
+  Licences at release (Stock) have it beside their headings, Sign out
+  after inactivity (Security) at the end of After's help, and Exchange
+  rates, Stock value and Price lists at the end of their introductions.
+  Closing Help puts focus back on the Learn more that opened it; in
+  Safari, which focuses nothing pressed by mouse, on Help.
+- **MC-3206** *(ADR-079)* Reading a guide in 中文: with Account's language
+  set to 中文, open 订单, whose list heads its columns 编号 and 参考号, two
+  words for two things, then 帮助, on a computer and on a phone (帮助 ·
+  订单).
+  The guide reads in Chinese, 创建订单 and the other sections, bold and
+  links in place, with no space added between Chinese words; All guides
+  reads 所有指南, grouped 工作, 资料, 设置 and 我. Learn more reads 了解更多,
+  right after the words it follows, with no space before it.
+- **MC-3207** *(ADR-079)* The welcome as a Viewer, on a computer: as the
+  demo Owner, invite an address as a Viewer with a note of two lines, and
+  accept it from Mailpit in a private window. Home leads with Welcome to
+  Demo …, your name, above the counts: You joined today as a Viewer, and
+  the card stays for your first two weeks, until the day fourteen days on.
+  On the left, the note as typed, its line break kept, under the Owner's
+  photo or initials, their name opening their page on People; then What
+  you can do here, a line per area, ending To do more, ask … with each
+  name opening People. On the right, Your first week, 0 of 3 done: Say
+  who you are, Look up a product or a lot and Open an order, each with
+  its button. The foot says Help is at the top, beside the bell, its
+  Help a link with the ? icon before it: pressing the word or the icon
+  opens Help on Home's guide, as the bar's Help does, and the bar's
+  button shows pressed; pressed again, Help stays open on Home's guide;
+  Esc puts focus back on it. VoiceOver reads it as one button, Help.
+  Open a product and come back: Look up is ticked and reads You opened … as a
+  link to it. Dismiss: the card goes, focus moves to the greeting at the
+  top of Home, and a message says What you can do here stays on Your
+  account, with Undo. Tab once: Undo has focus, and the message stays
+  while it does, or while the pointer is on it, well past its eight
+  seconds, and still once the pointer has passed over it and gone. Undo brings the card back, focus on its title (Tab moves on
+  from there), and a reload keeps it. Dismiss
+  again and reload: Home as usual. As an Admin of the demo team, invite
+  an address with a note and leave the organization before it is
+  accepted; once accepted, the card's note reads From Demo … with no
+  name. (Whoever leaves is gone from this demo, as in MC-3201.)
+- **MC-3208** *(ADR-079)* The welcome as an Admin joined by a copied
+  link: invite as an Admin with Copy link, and open the link in a private
+  window. The first week starts with Confirm your email address: We sent
+  a link to … Inviting colleagues waits until you confirm, with Resend the
+  link, which then reads Sent, with focus on it (with the server stopped,
+  it says Could not reach the server. and stays). What you can do here
+  says each thing once with all its verbs, a semicolon between phrases:
+  Orders reads See purchase and sales orders; raise, change, confirm and
+  cancel orders; …, and Invoices and returns … change and delete drafts;
+  authorize, cancel and close returns. With VoiceOver, each phrase is
+  heard apart. It has no To do more, ask … line. The yellow banner asking to
+  confirm is not on Home, not even for a moment as Home opens, and is on
+  Orders and every other page. Confirm from Mailpit: Home ticks
+  Confirmed, and the banner is gone everywhere. Add a photo on Your
+  account: Say who
+  you are reads Photo added, opening Account. Receive stock or raise an
+  order: it is ticked, naming what you did as a link to it.
+- **MC-3209** *(ADR-079)* The welcome for a founder: set up an
+  organization from `npm run org:invite`'s link. Home's card reads You
+  started this organization today, then in one line You may do everything
+  here, including settings and closing the organization, and Setting up
+  the organization is in Getting started, below. Getting started comes
+  straight after the card, before the quick actions, and the card's first
+  week has only Confirm your email address
+  and Say who you are, 0 of 2 done, its bar empty on a grey track, as
+  Getting started's is at 0 of 7.
+  Dismiss Getting started, as its Owner, and reload: the first week grows
+  to the founder's work, Look up, Receive stock and Raise an order.
+- **MC-3210** *(ADR-079)* The welcome in 中文 on a phone, about 390 px,
+  with Account's language set to 中文: as MC-3207's Viewer, the card reads
+  欢迎来到 Demo …，your name, and 您今天以查看者身份加入。这张卡片在首页显示两周，到
+  the day. One column: the note, then 您的第一周 with 已完成 0/3, then one
+  row, 您在这里可以做什么 with how many areas and 点开查看, which opens the
+  areas on a tap and closes them on another; then the foot about 帮助.
+  The card is about a screen long, and nothing scrolls sideways at Larger
+  text either. 隐藏 shows 欢迎卡片已隐藏… with 撤销. As MC-3209's founder,
+  您在这里可以做所有事情 comes first, above 您的第一周, and no row folds.
+- **MC-3211** *(ADR-079)* The demo's newcomer, and People's New. On a
+  freshly seeded demo, the Owner's Home has no welcome, nor has any of the
+  team's but Fatima Haddad's: she joined three days ago by the Owner's
+  invitation. Sign in as her (after MC-1903, which counts on her never
+  having signed in): her Home leads with the welcome, You joined on the
+  day as a Viewer, the Owner's note about Chloé under the Owner's
+  initials, and her first week at 0 of 3. As the demo Owner, People marks
+  Fatima alone New · joined and her day, and the line under the title
+  adds 1 joined in the last two weeks; after MC-3207, the newcomer too,
+  New · joined today, and 2 joined; the faces in a row stay level. In
+  中文, 新加入 · 今天; in Français, Nouveau · depuis aujourd’hui.
+- **MC-3212** *(ADR-079)* Your access on Account: as MC-3207's Viewer,
+  Account has Your access at Demo …, below your details: Viewer, the line
+  Looks at orders, stock and invoices, and changes nothing, then What you
+  can do here as on the card, with To do more, ask … opening People. It is
+  there with the card dismissed. As the demo Owner, it reads Owner, its
+  line, and You may do everything here, in one line.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R22** *(#144)* Locally, with `REGISTRATION=open`, sign in as one
+  of the demo's team who is not the last Owner, such as Tom Becker (who
+  is then gone from this demo: walk MC-1903 first), in two
+  browsers side by side, A and B (or a normal and a private window), both
+  on Home. In A: Account → Leave … (the button names the organization):
+  A's Home offers Join an organization and Start an organization. Click
+  into B: with no reload, it shows the same Home with no organization. In
+  A: Start an organization, named Reid Supply Co.: A lands on its Home
+  with Getting started. Click into B: with no reload, it shows Reid Supply
+  Co.'s Home, as A does, and Start an organization is gone; a reload
+  still shows Reid Supply Co.'s Home. The same when A accepts an
+  invitation, or an
+  organization invitation from `npm run org:invite`, instead of starting
+  one. Then on a phone signed in as B, with the app's tab in the
+  background while A changes organization: bring the tab back, and it
+  catches up without a reload, as a clicked window does.
 - **MC-R21** *(links in an audit entry)* On Records → Audit log, an
   entry whose detail names something you may open, such as Invitation
   sent's role: the name is underlined as well as in the accent, before any
@@ -1825,3 +2010,57 @@ first.
 - 2026-10-20: ADR-078, the command: MC-3102 to MC-3105.
 - 2026-10-20: ADR-078, the client: MC-3101 rewritten for the By invitation
   page; MC-3106 to MC-3110 added.
+- 2026-10-20: another device's session finds its organization again
+  (#144, ADR-079): MC-R22.
+- 2026-10-20: ADR-079, the server: section 32, MC-3201.
+- 2026-10-20: Inventory's row actions for whoever may see stock: MC-310.
+- 2026-10-20: ADR-079, Help: MC-3202 to MC-3206.
+- 2026-10-20: a dialog opened with Help open sits beside it, Help above
+  its dimming: MC-3202 extended.
+- 2026-10-20: every target in the top bar is 44 px at any text size:
+  MC-3204 extended.
+- 2026-10-20: ADR-079, the welcome, your access, the bell and People:
+  MC-3201 extended, MC-3207 to MC-3212.
+- 2026-10-20: the first week's Resend the link keeps focus and says why it
+  failed: MC-3208 extended.
+- 2026-10-20: Undo puts focus on the welcome it brings back: MC-3207
+  extended.
+- 2026-10-20: closing Help in Safari puts focus on Help: MC-3205 extended.
+- 2026-10-20: the banner never shows for a moment on Home: MC-3208
+  extended.
+- 2026-10-20: the organization's initials are read with its name: MC-3204
+  extended.
+- 2026-10-20: section 32 read as walked: MC-3201, MC-3207 to MC-3209 and
+  MC-R22 reworded, and MC-3106 names the welcome.
+- 2026-10-20: the demo's team joined months ago, Fatima Haddad three days
+  ago by an invitation with a note: MC-3211 rewritten.
+- 2026-10-20: dismissing the welcome or Getting started puts focus on
+  Home's greeting: MC-1559 and MC-3207 extended.
+- 2026-10-20: what you can do here says a thing once with its verbs:
+  MC-3208 extended.
+- 2026-10-20: what you can do here sets its phrases apart by semicolons:
+  MC-3208 extended.
+- 2026-10-20: the Chinese invitation and Invited say a link works through
+  its last day: MC-3009 and MC-3010 extended.
+- 2026-10-20: an order's reference reads 参考号 in Chinese: MC-3206 extended.
+- 2026-10-20: the invitation email's link sits under its action with no
+  colon: MC-3001 extended.
+- 2026-10-20: while Getting started shows, the quick actions are outlined:
+  MC-1559 extended.
+- 2026-10-20: the welcome's foot opens Help from its word and icon:
+  MC-3207 extended.
+- 2026-10-20: Help beside the page on a computer, the rail folded while it
+  is open: MC-3202 and MC-3203 rewritten.
+- 2026-10-20: progress bars read empty with nothing done: MC-3209 extended.
+- 2026-10-20: Undo stays while focus or the pointer is on it, the welcome's
+  and the gallery's: MC-1801 and MC-3207 extended.
+- 2026-10-20: the Admin's line says invite, not add: MC-3001 extended.
+- 2026-10-20: the Owner's line goes on in lower case after its colon:
+  MC-3106 extended.
+- 2026-10-20: while Getting started shows it follows the welcome, before the
+  quick actions: MC-1559 and MC-3209 extended.
+- 2026-10-20: #144 on a phone, a tab brought back from the background:
+  MC-R22 extended.
+- 2026-10-20: Undo stays while it has focus once the pointer has passed
+  over it and gone: MC-1801 and MC-3207 extended.
+- 2026-10-20: where Help slides over at Large text: MC-3203 extended.

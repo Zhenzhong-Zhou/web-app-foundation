@@ -560,6 +560,9 @@ Use these rather than writing the thing again on a page:
   counts. Never a column of full-width fields.
 - **`EmptyState`** inside the list's panel when it is empty: the first-time
   message with no filter, "nothing matches" with one.
+- **`UndoSnackbar`** for the message after something that can be undone: its
+  timer waits while focus or the pointer is on it, and runs again only once
+  both have left (WCAG 2.2.1). MUI's `Snackbar` runs again when either does.
 
 A new screen gets a line in SCREENS in client/e2e/accessibility.spec.ts, which
 runs axe for WCAG 2.2 AA in light and dark mode (ADR-055). A violation is

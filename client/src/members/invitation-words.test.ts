@@ -102,7 +102,7 @@ describe('an invitation in words', () => {
     const intl = intlFor('zh-Hans', zh);
     expect(
       linkStatusLabel({ status: 'emailed', lastDay: '2026-10-26' }, intl),
-    ).toBe('已发邮件 · 10月26日前有效');
+    ).toBe('已发邮件 · 有效至10月26日');
     expect(
       invitedByLabel(
         invitation(
