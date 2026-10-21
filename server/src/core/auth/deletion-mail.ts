@@ -89,7 +89,7 @@ export function deletionScheduledMail(
       t({
         id: 'mail.deletion.scheduled.cancel',
         defaultMessage:
-          'Changed your mind, or did not ask for this? Sign in and cancel the deletion on your Account page. If you did not ask, change your password too.',
+          'Changed your mind, or did not ask for this? Sign in and press Keep my account in the banner at the top of every page. If you did not ask, change your password too.',
       }),
     ],
   );

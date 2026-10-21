@@ -11,6 +11,7 @@ import {
   addMember,
   body,
   createE2eApp,
+  createVariant,
   PASSWORD,
   registerOrganization,
 } from './utils/fixtures';
@@ -141,6 +142,51 @@ describe('The audit log in words (e2e)', () => {
     expect(shipment?.value).toEqual({
       text: number,
       link: { kind: 'order', id: orderId },
+    });
+  });
+
+  it('names the item whose list price was set, as a receipt names its line', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const variantId = await createVariant(alpha.agent, {
+      type: 'good',
+      name: 'Focus',
+      variant: { sku: 'FOCUS-60CT' },
+    });
+    const listId = body<{ priceList: { id: string } }>(
+      await alpha.agent
+        .post('/v1/price-lists')
+        .send({ name: 'Wholesale CAD', direction: 'sale', currency: 'CAD' })
+        .expect(201),
+    ).priceList.id;
+    for (const unitPrice of ['24.99', '26.49']) {
+      await alpha.agent
+        .put(`/v1/price-lists/${listId}/items/${variantId}`)
+        .send({ unitPrice })
+        .expect(200);
+    }
+
+    // The row names the list; the details, which of its items changed.
+    const [changed] = await entries(alpha, 'en', '?action=price_list.item_set');
+    expect(changed.details.map((detail) => detail.field)).toEqual([
+      'Unit price',
+      'Item',
+    ]);
+    expect(changed.details[1].value).toEqual({
+      text: 'FOCUS-60CT',
+      link: { kind: 'variant', id: variantId },
+    });
+
+    await alpha.agent
+      .delete(`/v1/price-lists/${listId}/items/${variantId}`)
+      .expect(204);
+    const [removed] = await entries(
+      alpha,
+      'en',
+      '?action=price_list.item_removed',
+    );
+    expect(removed.details[0]).toMatchObject({
+      field: 'Item',
+      value: { text: 'FOCUS-60CT' },
     });
   });
 

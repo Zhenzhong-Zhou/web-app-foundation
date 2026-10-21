@@ -1,5 +1,5 @@
-import { render } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import { act, render } from '@testing-library/react';
+import { type ReactElement, useState } from 'react';
 
 import type { Permission } from '../api/types.gen';
 import {
@@ -23,45 +23,12 @@ import {
 export function renderWithAuth(
   ui: ReactElement,
   {
-    permissions = [] as string[],
-    user = {} as Partial<CurrentSession['user']>,
-    organization = {} as Partial<NonNullable<CurrentSession['organization']>>,
     refresh = () => Promise.resolve(),
-  } = {},
+    ...options
+  }: SessionOptions & { refresh?: () => Promise<void> } = {},
 ) {
   const state: AuthState = {
-    session: {
-      user: {
-        id: 'user-1',
-        email: 'owner@alpha.example.com',
-        name: 'Owner',
-        emailVerified: true,
-        locale: null,
-        ...user,
-      },
-      organization: {
-        id: 'org-1',
-        name: 'Alpha Co',
-        roleId: 'role-owner',
-        branding: {
-          logoFileId: null,
-          accentColor: null,
-          rail: 'dark',
-          logoOnDocuments: true,
-          expiryWarningDays: 90,
-          expiryCriticalDays: 30,
-        },
-        deletionScheduledAt: null,
-        // Scheduled, as the server would say, whenever a spec sets a day.
-        deletionStage: organization.deletionScheduledAt ? 'scheduled' : null,
-        // The organization's zone (ADR-072): UTC until it sets one.
-        timeZone: 'UTC',
-        ...organization,
-      },
-      // Specs list permissions as plain strings; the session holds them
-      // as the server's names (ADR-068).
-      permissions: permissions as Permission[],
-    },
+    session: sessionFor(options),
     loading: false,
     error: null,
     refresh,
@@ -70,4 +37,86 @@ export function renderWithAuth(
   return render(
     <AuthContext.Provider value={state}>{ui}</AuthContext.Provider>,
   );
+}
+
+/**
+ * As renderWithAuth, over a session that changes as the server's does
+ * between reads: `refresh` reads `refreshed`, as after a keep or a cancel,
+ * and `change` sets another, as a deletion asked for from another page.
+ * For a component that outlives one read, such as a banner.
+ */
+export function renderWithChangingAuth(
+  ui: ReactElement,
+  first: SessionOptions,
+  refreshed: SessionOptions,
+) {
+  let set: (options: SessionOptions) => void = () => undefined;
+
+  function Session() {
+    const [options, setOptions] = useState(first);
+    set = setOptions;
+    return (
+      <AuthContext.Provider
+        value={{
+          session: sessionFor(options),
+          loading: false,
+          error: null,
+          refresh: () => {
+            setOptions(refreshed);
+            return Promise.resolve();
+          },
+        }}
+      >
+        {ui}
+      </AuthContext.Provider>
+    );
+  }
+
+  render(<Session />);
+  return { change: (options: SessionOptions) => act(() => set(options)) };
+}
+
+interface SessionOptions {
+  permissions?: string[];
+  user?: Partial<CurrentSession['user']>;
+  organization?: Partial<NonNullable<CurrentSession['organization']>>;
+}
+
+function sessionFor({
+  permissions = [],
+  user = {},
+  organization = {},
+}: SessionOptions): CurrentSession {
+  return {
+    user: {
+      id: 'user-1',
+      email: 'owner@alpha.example.com',
+      name: 'Owner',
+      emailVerified: true,
+      locale: null,
+      ...user,
+    },
+    organization: {
+      id: 'org-1',
+      name: 'Alpha Co',
+      roleId: 'role-owner',
+      branding: {
+        logoFileId: null,
+        accentColor: null,
+        rail: 'dark',
+        logoOnDocuments: true,
+        expiryWarningDays: 90,
+        expiryCriticalDays: 30,
+      },
+      deletionScheduledAt: null,
+      // Scheduled, as the server would say, whenever a spec sets a day.
+      deletionStage: organization.deletionScheduledAt ? 'scheduled' : null,
+      // The organization's zone (ADR-072): UTC until it sets one.
+      timeZone: 'UTC',
+      ...organization,
+    },
+    // Specs list permissions as plain strings; the session holds them
+    // as the server's names (ADR-068).
+    permissions: permissions as Permission[],
+  };
 }

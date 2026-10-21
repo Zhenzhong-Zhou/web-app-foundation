@@ -93,9 +93,11 @@ export function CreditNoteDetailPage() {
                 id: 'invoices.creditNote.voids',
                 defaultMessage: 'Voids invoice',
               })
-            : intl.formatMessage({
-                id: 'invoices.credit',
-                defaultMessage: 'Credit',
+            : // What it does to its invoice, as Voids invoice says;
+              // invoices.credit is the button that makes one.
+              intl.formatMessage({
+                id: 'invoices.creditNote.credits',
+                defaultMessage: 'Credits invoice',
               }),
           color: 'default',
         }}

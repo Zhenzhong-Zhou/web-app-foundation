@@ -131,7 +131,8 @@ export function CloseOrganizationDialog({
     !exportDone &&
       intl.formatMessage({
         id: 'settings.deletion.missing.export',
-        defaultMessage: 'the download, or “I don’t need a copy”',
+        // Its alternative in brackets, so the list reads it as one item.
+        defaultMessage: 'the download (or “I don’t need a copy”)',
       }),
     !nameMatches &&
       intl.formatMessage({

@@ -323,11 +323,14 @@ describe('HomePage', () => {
   describe('the time-zone note', () => {
     afterEach(() => setOrganizationTimeZone(null));
 
+    /** An organization's zone that is not this computer's. */
+    const elsewhere = () =>
+      browserTimeZone() === 'Pacific/Auckland'
+        ? 'America/Vancouver'
+        : 'Pacific/Auckland';
+
     it('says which zone dates follow when this computer is elsewhere', async () => {
-      const zone =
-        browserTimeZone() === 'Pacific/Auckland'
-          ? 'America/Vancouver'
-          : 'Pacific/Auckland';
+      const zone = elsewhere();
       setOrganizationTimeZone(zone);
       serve({ gettingStarted: COMPLETE, cards: [] });
       renderWithAuth(routed(<HomePage />));
@@ -338,6 +341,27 @@ describe('HomePage', () => {
           `Dates follow the organization’s time zone: ${zoneLabel(zone)}.`,
         ),
       ).toBeVisible();
+    });
+
+    it('leads whoever may change the zone to it, and nobody else', async () => {
+      setOrganizationTimeZone(elsewhere());
+      serve({ gettingStarted: COMPLETE, cards: [] });
+      const { unmount } = renderWithAuth(routed(<HomePage />), {
+        permissions: ['organizations.update'],
+      });
+
+      expect(
+        await screen.findByRole('link', { name: 'Change the time zone' }),
+      ).toHaveAttribute('href', '/settings/organization?tab=profile');
+      unmount();
+
+      renderWithAuth(routed(<HomePage />), { permissions: [] });
+      expect(
+        await screen.findByText(/Dates follow the organization’s time zone/),
+      ).toBeVisible();
+      expect(
+        screen.queryByRole('link', { name: 'Change the time zone' }),
+      ).not.toBeInTheDocument();
     });
 
     it('says nothing when this computer is on the organization’s clock', async () => {

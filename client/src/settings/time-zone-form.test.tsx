@@ -92,7 +92,7 @@ describe('TimeZoneForm', () => {
 
     await user.click(
       screen.getByRole('button', {
-        name: 'Use this computer’s: Pacific Time (Vancouver)',
+        name: 'Use this device’s: Pacific Time (Vancouver)',
       }),
     );
 
@@ -136,7 +136,7 @@ describe('TimeZoneForm', () => {
     expect(screen.getByRole('combobox', { name: 'Time zone' })).toBeDisabled();
     expect(screen.getByText('An Owner can change it.')).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: /Use this computer/ }),
+      screen.queryByRole('button', { name: /Use this device/ }),
     ).toBeNull();
   });
 });

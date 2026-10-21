@@ -2,9 +2,10 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import type { OrderDetail } from '../api/types.gen';
+import { setOrganizationTimeZone } from '../lib/time-zone';
 import { orderLine } from '../test/factories';
 import { apiError } from '../test/handlers';
 import { renderWithAuth } from '../test/render-with-auth';
@@ -474,6 +475,29 @@ describe('OrderDetailPage lines', () => {
       expect(
         screen.queryByRole('button', { name: 'Create invoice' }),
       ).not.toBeInTheDocument();
+    });
+
+    describe('in Vancouver', () => {
+      afterEach(() => setOrganizationTimeZone(null));
+
+      it("heads a shipment with the organization's day, as its packing slip prints it (ADR-072)", async () => {
+        setOrganizationTimeZone('America/Vancouver');
+        serveSale();
+        server.use(
+          http.get('/api/v1/orders/:id/shipments', () =>
+            // 5:30 pm on 16 October in Vancouver, already the 17th in Tokyo,
+            // where the tests run, and in UTC.
+            HttpResponse.json([
+              { ...shipment, createdAt: '2026-10-17T00:30:00.000Z' },
+            ]),
+          ),
+        );
+        renderPage(SALE_PERMISSIONS, SHIPMENTS_TAB);
+
+        expect(
+          await screen.findByRole('heading', { name: 'Oct 16, 2026' }),
+        ).toBeInTheDocument();
+      });
     });
 
     // A voided invoice no longer bills the shipment; it can be billed again.

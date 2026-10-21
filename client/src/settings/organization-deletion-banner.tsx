@@ -44,8 +44,9 @@ export function OrganizationDeletionBanner() {
   const exportUrl = useExportUrl();
   const [hidden, setHidden] = useState(readHidden);
   // What a cancel kept, said once it is done rather than the banner just
-  // vanishing (ADR-070, from the walkthrough).
-  const [kept, setKept] = useState<string | null>(null);
+  // vanishing (ADR-070, from the walkthrough). A new object each cancel, so
+  // a second one in the same session moves the focus again.
+  const [kept, setKept] = useState<{ text: string } | null>(null);
   const action = useSubmit(refresh);
   const banner = useRef<HTMLDivElement>(null);
 
@@ -64,7 +65,9 @@ export function OrganizationDeletionBanner() {
     if (kept) banner.current?.focus();
   }, [kept]);
 
-  if (kept) {
+  // Only while nothing is pending: a closing asked for again since needs
+  // its banner and its Cancel.
+  if (kept && !day) {
     return (
       <Alert
         ref={banner}
@@ -73,7 +76,7 @@ export function OrganizationDeletionBanner() {
         role="status"
         onClose={() => setKept(null)}
       >
-        {kept}
+        {kept.text}
       </Alert>
     );
   }
@@ -204,7 +207,7 @@ export function OrganizationDeletionBanner() {
                     together ? '/account/deletion' : '/organization/deletion',
                     { method: 'DELETE' },
                   );
-                  setKept(keptMessage);
+                  setKept({ text: keptMessage });
                 })
               }
             >

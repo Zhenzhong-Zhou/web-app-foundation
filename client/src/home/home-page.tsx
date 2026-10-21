@@ -274,7 +274,13 @@ function OrganizationHome() {
       {differsFromBrowser(zone) && (
         <Typography
           variant="body2"
-          sx={{ mt: -2, display: 'flex', alignItems: 'center', gap: 1 }}
+          sx={{
+            mt: -2,
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1,
+          }}
         >
           <ScheduleIcon fontSize="small" aria-hidden />
           {intl.formatMessage(
@@ -284,6 +290,20 @@ function OrganizationHome() {
                 'Dates follow the organization’s time zone: {zone}.',
             },
             { zone: zoneLabel(zone) },
+          )}
+          {/* Where it is set, for whoever may change it, as Change the
+              days is: a wrong zone shows here first. */}
+          {can('organizations.update') && (
+            <Link
+              component={RouterLink}
+              to="/settings/organization?tab=profile"
+              underline="always"
+            >
+              {intl.formatMessage({
+                id: 'home.timeZoneChange',
+                defaultMessage: 'Change the time zone',
+              })}
+            </Link>
           )}
         </Typography>
       )}
@@ -419,9 +439,11 @@ function CountTile({ card }: { card: HomeCard }) {
         display: 'flex',
         flexDirection: 'column',
         gap: 0.25,
-        bgcolor: tone ? 'error.light' : 'background.paper',
-        color: tone ? 'error.dark' : 'text.primary',
-        borderColor: tone ? 'transparent' : 'divider',
+        // The critical tone's tint and text, as a red chip's, which hold
+        // AA in both modes (tokens.ts).
+        bgcolor: tone ? 'tone.critical.bg' : 'background.paper',
+        color: tone ? 'tone.critical.fg' : 'text.primary',
+        borderColor: tone ? 'tone.critical.border' : 'divider',
       }}
     >
       <Typography variant="body2" sx={{ color: 'inherit' }}>

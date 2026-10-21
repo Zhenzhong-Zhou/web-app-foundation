@@ -472,9 +472,12 @@ function NumberingForm({
     defaultMessage: 'Prints as',
   });
 
-  const prefixField = (key: SeriesKey, fullWidth = false) => (
+  // On a phone each field stands alone, with no table head above it, so
+  // it shows its own label; the table's are its column heads.
+  const prefixField = (key: SeriesKey) => (
     <TextField
       size="small"
+      label={narrow ? PREFIX : undefined}
       value={drafts[key].prefix}
       onChange={(event) =>
         set(key, { prefix: event.target.value.toUpperCase() })
@@ -483,7 +486,7 @@ function NumberingForm({
       error={
         problemOf(key) !== null || refused.has(key) || clash?.includes(key)
       }
-      fullWidth={fullWidth}
+      fullWidth={narrow}
       slotProps={{
         htmlInput: {
           'aria-label': fieldLabel(key, PREFIX),
@@ -498,18 +501,19 @@ function NumberingForm({
           },
         },
       }}
-      sx={fullWidth ? undefined : { width: rem(170) }}
+      sx={narrow ? undefined : { width: rem(170) }}
     />
   );
 
-  const digitsField = (key: SeriesKey, fullWidth = false) => (
+  const digitsField = (key: SeriesKey) => (
     <TextField
       size="small"
       type="number"
+      label={narrow ? DIGITS : undefined}
       value={drafts[key].digits}
       onChange={(event) => set(key, { digits: event.target.value })}
       error={!digitsValid(key)}
-      fullWidth={fullWidth}
+      fullWidth={narrow}
       slotProps={{
         htmlInput: {
           'aria-label': fieldLabel(key, DIGITS),
@@ -520,23 +524,24 @@ function NumberingForm({
           max: 10,
         },
       }}
-      sx={fullWidth ? undefined : { width: rem(80) }}
+      sx={narrow ? undefined : { width: rem(80) }}
     />
   );
 
-  const resetField = (key: SeriesKey, fullWidth = false) => (
+  const resetField = (key: SeriesKey) => (
     <TextField
       select
       size="small"
+      label={narrow ? STARTS_AGAIN : undefined}
       value={drafts[key].reset}
       onChange={(event) =>
         set(key, { reset: event.target.value as NumberingReset })
       }
-      fullWidth={fullWidth}
+      fullWidth={narrow}
       slotProps={{
         htmlInput: { 'aria-label': fieldLabel(key, STARTS_AGAIN) },
       }}
-      sx={fullWidth ? undefined : { width: rem(150) }}
+      sx={narrow ? undefined : { width: rem(150) }}
     >
       {RESETS.map((each) => (
         <MenuItem key={each} value={each}>
@@ -551,6 +556,7 @@ function NumberingForm({
       <TextField
         size="small"
         type="number"
+        label={narrow ? NEXT : undefined}
         value={drafts[key].next ?? String(nextOf(key))}
         onChange={(event) => set(key, { next: event.target.value })}
         error={!nextValid(key) || (refused.has(key) && lowest !== null)}
@@ -867,10 +873,10 @@ function NumberingForm({
                 {(editing === key || !validOf(key)) && (
                   <Stack spacing={2} sx={{ px: 2, pb: 2 }}>
                     {helper(key)}
-                    {prefixField(key, true)}
+                    {prefixField(key)}
                     <Stack direction="row" spacing={2}>
-                      {digitsField(key, true)}
-                      {resetField(key, true)}
+                      {digitsField(key)}
+                      {resetField(key)}
                     </Stack>
                     {nextField(key)}
                   </Stack>

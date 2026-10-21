@@ -370,7 +370,9 @@ folder by folder; these check what is already in place.
   issuing an invoice for a product with no Chinese name is refused naming
   the SKU; after Edit names adds one, it issues, and its printed lines
   show the Chinese name.
-- **MC-1409** On a partner, Document languages: the first offers the
+- **MC-1409** On a partner, Document languages: left alone, the first
+  reads The organization's default and the second Nothing else, never a
+  blank box. The first offers the
   organization's default and each language; the second is greyed out
   until a first is chosen and never offers the first again. Set Français
   then English and save; ship to that partner: the shipment carries
@@ -634,7 +636,9 @@ Paper is checked first because it must not change at all.
 - **MC-1532** On INV-000001 the quantity reads 400, and Credit notes is a
   table: CN-000001 linked, its date, its reason wrapping when long, and
   −CA$52.48 right-aligned. Void an invoice: its full credit note shows a red
-  "Voids invoice" chip beside its number.
+  "Voids invoice" chip beside its number. CN-000001's own page reads
+  "Credits invoice" there, « Crédite la facture » in Français and 冲减发票
+  in 中文, never the Credit button's 开具贷项.
 - **MC-1533** CN-000001's lines read 2, not 2.0000. With Voided pressed and
   nothing voided, the list says only "Nothing here."
 - **MC-1534** Returns has a page title with its explanation under it, then its
@@ -923,11 +927,15 @@ await fetch(`${api}/v1/files/product-image`, {
   organization's records. Delete my account: a wrong password is refused;
   the right one closes the dialog, the banner names the day 30 days
   ahead on every page, your other browser is signed out, and an email
-  (Mailpit) says the account will be deleted after that same day. With
+  (Mailpit) says the account will be deleted after that same day, and
+  that Keep my account, in the banner at the top of every page, keeps it. With
   the computer's time zone set to Vancouver, asked for after 17:00, the
   banner and the email still name the same day. With the server stopped,
   Keep my account says it could not reach the server and the banner
-  stays; with it running, the banner goes, and a second email says so.
+  stays; with it running, the banner gives way to "Your account will not
+  be deleted.", which a screen reader reads, and a second email says so.
+  Delete it again from Account without reloading: the banner is back, with
+  its Keep my account, in place of that line.
   In 中文 the dialog, the banner and the emails are in Chinese.
 - **MC-2303** Request deletion again, then set its day two days back in
   the database (`update users set deletion_scheduled_at = current_date - 2`)
@@ -951,7 +959,9 @@ await fetch(`${api}/v1/files/product-image`, {
   your name download it too: the section names them, not "you". In 中文,
   with the browser left in English, the README reads in Chinese.
 - **MC-2402** Close this organization…: Close organization is off, and
-  the line under it says what is still needed. It stays off until the
+  the line under it says what is still needed, the download with its
+  alternative in brackets, then the name and the password; in 中文
+  还需要：下载全部数据（或勾选“我不需要下载全部数据”）、组织名称和您的密码。 It stays off until the
   export is fresh or "I don't need a copy" is ticked, the name is
   typed exactly, and the password is typed. With the last export moved
   two days back (`update audit_log set created_at = now() - interval
@@ -969,7 +979,9 @@ await fetch(`${api}/v1/files/product-image`, {
   … will be deleted after" for every member, once. As a second Owner,
   Cancel deletion: the banner goes for everyone, and every member is
   emailed that it will not be deleted.
-- **MC-2404** Schedule it again, then move the day two days back
+- **MC-2404** Schedule it again, without reloading after MC-2403's
+  cancel: the banner is back, with Cancel deletion, in place of "… will
+  not be deleted.". Then move the day two days back
   (`update organizations set deletion_scheduled_at = current_date - 2`):
   the banner turns red, says it is being deleted, and offers nothing;
   Profile says it can no longer be cancelled. Restart the server, which
@@ -1109,18 +1121,19 @@ override, then reload.
   Standard Time (Shanghai), UTC+8 now · Asia/Shanghai, and what time it is
   there.
 - **MC-2602** *(ADR-072)* An organization from before ADR-072 is on UTC:
-  Time zone shows an amber note, Still on UTC. With the computer in
-  Vancouver, press Use this computer's: Pacific Time (Vancouver): the box
+  Time zone shows an amber note, Still on UTC. In Français it ends « le
+  soir, dans les Amériques, il est déjà demain en UTC. » With the computer in
+  Vancouver, press Use this device's: Pacific Time (Vancouver): the box
   fills, the line below says what time it is in Vancouver, and Save time
   zone saves it, saying Time zone saved. The audit log's entry reads Time
   zone: Coordinated Universal Time (UTC) → Pacific Time (Vancouver). Save
   again unchanged: Save is greyed out, and no entry is added.
 - **MC-2603** *(ADR-072)* Finding a zone: type pacific t, then +8: each
   finds its zones, each named with its city, its offset and its standard
-  name, and This computer's zone comes first. After 5 pm in
-  Vancouver, with the organization in Vancouver, choose Shanghai: The
-  organization's today becomes Saturday … appears above Save; choose
-  Vancouver again and it goes. Do not save.
+  name, and This device's zone comes first; on a phone in 中文 the group
+  reads 本设备. After 5 pm in Vancouver, with the organization in
+  Vancouver, choose Shanghai: The organization's today becomes Saturday …
+  appears above Save; choose Vancouver again and it goes. Do not save.
 - **MC-2604** *(ADR-072)* As an Admin or a Viewer, Time zone is read only,
   with the time there and An Owner can change it; no amber note, no Save.
 - **MC-2605** *(ADR-072)* The organization's day, after 5 pm in Vancouver
@@ -1131,12 +1144,15 @@ override, then reload.
   when tomorrow's is also entered; This month on a list's date range is
   this month; a CSV export's file name carries today's date. Void an
   issued invoice now: its page and its PDF say Voided with today's date,
-  and the order's Documents tab names its shipment by today's. Issue,
+  and the order's Documents tab names its shipment by today's, as its
+  Shipments tab heads it and its Void dialog says Recorded. Issue,
   Void and Credit open on today's date, and a new exchange rate on today.
 - **MC-2606** *(ADR-072)* Another clock: with the organization in
   Vancouver and the computer set to Shanghai, Home shows Vancouver's date
   and, under it, Dates follow the organization's time zone: Pacific Time
-  (Vancouver). Times on screens, a stock movement's say, are Shanghai's.
+  (Vancouver), then, for an Owner, Change the time zone, which opens
+  Organization → Profile; an Admin or a Viewer has no link. Times on
+  screens, a stock movement's say, are Shanghai's.
   At 9 am on the 1st in Shanghai, still the last evening of the month in
   Vancouver, Stock movements with This month holds the movements made
   this afternoon in Vancouver, though their times read the 1st. Set the
@@ -1156,8 +1172,8 @@ override, then reload.
 - **MC-2610** *(ADR-072)* A computer on a zone the server does not take:
   in Chrome, override the timezone to Etc/GMT-3 (DevTools → Sensors) and
   register. The account is created, and Profile's Time zone is
-  Coordinated Universal Time (UTC), with no This computer group in the
-  list and no Use this computer's button.
+  Coordinated Universal Time (UTC), with no This device group in the
+  list and no Use this device's button.
 
 ## 27. Each organization's numbering (ADR-073)
 
@@ -1215,8 +1231,9 @@ few invoices and orders.
   no fields and no Save.
 - **MC-2710** *(ADR-073)* On a phone (DevTools device toolbar, 390 px),
   each document is a row with its next number; tapping one opens its
-  formats, date buttons and fields. In Chinese, the section reads 编号, with
-  常用格式, 重新编号 and 打印为.
+  formats, date buttons and fields, each labelled on its box: Prefix,
+  Digits, Starts again and Next number. In Chinese, the section reads
+  编号, with 常用格式, 重新编号 and 打印为.
 - **MC-2711** *(ADR-073)* Set purchase orders to PO/{YYYY}/ and make one:
   it is PO/2026/0001, and its PDF downloads as PO_2026_0001.pdf.
 - **MC-2712** *(ADR-073)* History on the Organization page shows Numbering
@@ -1266,13 +1283,17 @@ Any page, signed in, in a browser at its default font size.
 Signed in as the demo Owner the seed prints.
 
 - **MC-2901** *(ADR-076)* Records → Audit log, in English, then 中文 and
-  Français: each entry's action, record type and details read in the
-  language, with no id anywhere. An invoice drafted reads Tax code: GST
+  Français: the intro says a field with an arrow changed from the first
+  value to the second, as Help does, and each entry's action, record type
+  and details read in the language, with no id anywhere. An invoice drafted reads Tax code: GST
   and Shipment: SO-…, the shipment opening its order; an RMA, its lines
   by SKU, quantity and resolution, and its order and invoice by number;
   Sarah Chen's role change, Viewer → Admin, the role names in the
-  language. The order's number opens the order, and the role opens
-  Members.
+  language; a price set on a price list, its unit price and then the item
+  by SKU, as FOCUS-60CT, and the same when an item is taken off a list. The order's number opens the order, and the role opens
+  Members. The last column, where a change came from, is headed 来源 in
+  中文 and Provenance in Français, words of its own rather than the date
+  filter's 起始 and Depuis.
 - **MC-2902** *(ADR-076)* On Tax codes, rename GST to GST 5%. The audit
   log's earlier entries still say GST: a reference keeps the name it had
   when the entry was written.
@@ -1281,8 +1302,9 @@ Signed in as the demo Owner the seed prints.
   showing an id, and each still opens its record where there is one.
 - **MC-2904** *(ADR-076)* Export the audit log in 中文 and open the file:
   By holds the person's name then their email, Action and Record type are
-  in Chinese, Record is the record's name, and Details is one line in
-  words. There is no id column and no id anywhere in the file; a moment in
+  in Chinese, in the screens' words (合作伙伴, 库存变动, 生产订单, and
+  电子邮箱 heading the email), Record is the record's name, and Details is
+  one line in words. There is no id column and no id anywhere in the file; a moment in
   the details reads like When, `2026-10-15 18:54:11`.
 - **MC-2905** *(ADR-076, ADR-072)* Set the organization's time zone to
   China Standard Time (Shanghai). On the audit log, set From to 1 October
@@ -1670,6 +1692,29 @@ The pages, in a private window unless a check says otherwise.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R26** *(French guillemets)* In Français on a phone (390 px), read
+  the note under Numbering, « Imprimé ainsi », and Security's « Rester
+  connecté »: a « never ends a line with its words on the next.
+- **MC-R25** *(shipping on a phone)* At 320 px and 390 px with Larger
+  text, open Ship on SO-DEMO-2, choose the location that holds its lot,
+  and Choose lots: the line's Ship field sits under its words at the
+  right, showing 500.0000 whole; the lot reads FOC-2609-01 on one line,
+  and its own Ship field is wide enough for 500.0000, the table scrolling
+  inside its box to reach it; Carrier and Tracking number sit one under
+  the other, each label whole. At 1280 px each pair sits side by side as
+  before.
+- **MC-R24** *(late on Home)* With something late, such as PO-DEMO-9, Home's
+  To receive (and To ship, Expiring soon or Licences, whichever has a late
+  one) is tinted the pale red of a red chip, its title, count and "1
+  overdue" in dark red, easy to read; in dark mode a dark tint with light
+  red words. A tile with nothing late is plain.
+- **MC-R23** *(links under a page's title)* Open an order with an expected
+  day, such as PO-DEMO-9, a duplicated order, INV-000001 and an RMA: under
+  the number, every link (the partner's name, "duplicated from a previous
+  order", Order SO-…, the invoice's number) is underlined before any hover,
+  so each is told from the words beside it without its colour. Learn more
+  under Exchange rates, Stock value and Price lists keeps its icon and
+  underlines only on hover, as Learn more does everywhere.
 - **MC-R22** *(#144)* Locally, with `REGISTRATION=open`, sign in as one
   of the demo's team who is not the last Owner, such as Tom Becker (who
   is then gone from this demo: walk MC-1903 first), in two
@@ -1705,8 +1750,10 @@ first.
   wrap onto a second line at the right; Account's Change password and Your
   devices wrap; on Organization → Profile, Download everything (ZIP) breaks
   onto two lines inside its button. On Orders, Invoices and Movements the
-  two dates and Period wrap under the search. No page scrolls sideways. At 1280 px, at
-  Standard, every button reads on one line as before.
+  two dates and Period wrap under the search. On a sale that has shipped,
+  such as SO-DEMO-1, Authorize a return and Take a return drop under Items
+  at the right. No page scrolls sideways. At 1280 px, at Standard, every
+  button reads on one line as before.
 - **MC-R17** *(audit log on a phone)* On a phone (DevTools, 390 px), open
   Records → Audit log with a few Numbering changed entries: the action, from
   and to filters wrap onto lines of their own, the page does not scroll
@@ -2064,3 +2111,43 @@ first.
 - 2026-10-20: Undo stays while it has focus once the pointer has passed
   over it and gone: MC-1801 and MC-3207 extended.
 - 2026-10-20: where Help slides over at Large text: MC-3203 extended.
+- 2026-10-20: an order's links under its number are underlined: MC-R23.
+- 2026-10-20: Home's late tiles in the critical tone, readable: MC-R24.
+- 2026-10-20: the Shipments tab heads a shipment with the organization's
+  day: MC-2605 extended.
+- 2026-10-20: a partner's document languages show the default and Nothing
+  else when left alone: MC-1409 extended.
+- 2026-10-20: the numbering's fields labelled on a phone: MC-2710 extended.
+- 2026-10-20: the Ship dialog's fields on a phone: MC-R25.
+- 2026-10-20: an order's Items actions wrap on a phone: MC-R18 extended.
+- 2026-10-20: Keep my account says the account is kept: MC-2302 extended.
+- 2026-10-20: the audit log's From column has its own word in 中文 and
+  Français: MC-2901 extended.
+- 2026-10-20: the audit log's intro says what an arrow means: MC-2901
+  extended.
+- 2026-10-20: a credit note's chip says what it does, as Voids invoice
+  does: MC-1532 extended.
+- 2026-10-20: Home's time-zone note leads an Owner to the setting: MC-2606
+  extended.
+- 2026-10-20: the zone picker says this device, as Account does: MC-2602,
+  MC-2603 and MC-2610 reworded.
+- 2026-10-20: French guillemets hold their words: MC-R26.
+- 2026-10-20: the French Still on UTC note reads plainly: MC-2602 extended.
+- 2026-10-20: a price list's price names its item in the audit log:
+  MC-2901 extended.
+- 2026-10-20: the Chinese audit log and exports in the glossary's words:
+  MC-2904 extended.
+- 2026-10-20: the deletion email names Keep my account and where it is:
+  MC-2302 extended.
+- 2026-10-20: what closing still needs reads the download's alternative as
+  one item: MC-2402 extended.
+- 2026-10-20: every link in a page's subtitle is underlined, on an invoice
+  and an RMA too: MC-R23 rewritten.
+- 2026-10-20: a deletion asked for again shows its banner over the kept line:
+  MC-2302 extended.
+- 2026-10-20: a closing asked for again shows its banner over the kept line:
+  MC-2404 extended.
+- 2026-10-21: Learn more under a page's title keeps its own look: MC-R23
+  extended.
+- 2026-10-21: a shipment's Void dialog names the organization's day:
+  MC-2605 extended.

@@ -329,12 +329,17 @@ export function ShipOrderDialog({
 
               return (
                 <Stack key={line.id} spacing={1}>
+                  {/* The field keeps its width and drops under the words,
+                      at the right, when both no longer fit on a phone. */}
                   <Stack
                     direction="row"
                     spacing={2}
-                    sx={{ alignItems: 'center' }}
+                    useFlexGap
+                    sx={{ alignItems: 'center', flexWrap: 'wrap' }}
                   >
-                    <Typography sx={{ flexGrow: 1 }}>
+                    <Typography
+                      sx={{ flex: '1 1 0', minWidth: `min(${rem(160)}, 100%)` }}
+                    >
                       {line.sku}
                       <Typography
                         component="span"
@@ -377,7 +382,7 @@ export function ShipOrderDialog({
                           ),
                         },
                       }}
-                      sx={{ width: rem(140) }}
+                      sx={{ width: rem(140), ml: 'auto' }}
                     />
                   </Stack>
 
@@ -504,7 +509,10 @@ export function ShipOrderDialog({
                           <TableBody>
                             {entry.lots.map((lot) => (
                               <TableRow key={lot.lotId}>
-                                <TableCell>{lot.code}</TableCell>
+                                {/* On one line, as on the carton. */}
+                                <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                  {lot.code}
+                                </TableCell>
                                 <TableCell>
                                   {lot.expiresAt
                                     ? formatDay(lot.expiresAt)
@@ -546,6 +554,10 @@ export function ShipOrderDialog({
                                         ),
                                       },
                                     }}
+                                    // Room for 12000.0000 at any text size;
+                                    // a narrow table scrolls in its box
+                                    // rather than squeezing the field.
+                                    sx={{ minWidth: rem(120) }}
                                   />
                                 </TableCell>
                               </TableRow>
@@ -588,7 +600,7 @@ export function ShipOrderDialog({
               );
             })}
 
-            <Stack direction="row" spacing={2}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
                 id="ship-carrier"
                 label={intl.formatMessage({

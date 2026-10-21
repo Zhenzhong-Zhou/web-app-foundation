@@ -18,6 +18,15 @@ export interface LanguagePair {
 const NONE = '';
 
 /**
+ * Shows the choice for NONE, the default or Nothing else, which MUI's
+ * Select leaves blank under its label unless asked.
+ */
+const SHOW_NONE = {
+  select: { displayEmpty: true },
+  inputLabel: { shrink: true },
+} as const;
+
+/**
  * The one or two languages a customer's documents print in (ADR-054): the
  * first, then optionally a second for a bilingual sheet. Used for a
  * partner, where the first may be left to the organization's default, and
@@ -56,6 +65,7 @@ export function DocumentLanguageFields({
           defaultMessage: 'Documents print in',
         })}
         value={value.first ?? NONE}
+        slotProps={SHOW_NONE}
         onChange={(event) => {
           const first = isLocale(event.target.value)
             ? event.target.value
@@ -87,6 +97,7 @@ export function DocumentLanguageFields({
           defaultMessage: 'Then also in',
         })}
         value={value.second ?? NONE}
+        slotProps={SHOW_NONE}
         onChange={(event) =>
           onChange({
             ...value,

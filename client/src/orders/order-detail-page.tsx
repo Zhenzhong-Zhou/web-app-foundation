@@ -480,7 +480,6 @@ export function OrderDetailPage() {
                   component={RouterLink}
                   to={`/orders/${order.duplicatedFromId}`}
                   color="inherit"
-                  underline="hover"
                 >
                   {intl.formatMessage({
                     id: 'orders.subtitle.duplicatedFrom',
