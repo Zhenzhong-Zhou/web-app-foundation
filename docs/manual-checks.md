@@ -1114,7 +1114,8 @@ override, then reload.
   Standard Time (Shanghai), UTC+8 now · Asia/Shanghai, and what time it is
   there.
 - **MC-2602** *(ADR-072)* An organization from before ADR-072 is on UTC:
-  Time zone shows an amber note, Still on UTC. With the computer in
+  Time zone shows an amber note, Still on UTC. In Français it ends « le
+  soir, dans les Amériques, il est déjà demain en UTC. » With the computer in
   Vancouver, press Use this device's: Pacific Time (Vancouver): the box
   fills, the line below says what time it is in Vancouver, and Save time
   zone saves it, saying Time zone saved. The audit log's entry reads Time
@@ -2119,3 +2120,4 @@ first.
 - 2026-10-20: the zone picker says this device, as Account does: MC-2602,
   MC-2603 and MC-2610 reworded.
 - 2026-10-20: French guillemets hold their words: MC-R26.
+- 2026-10-20: the French Still on UTC note reads plainly: MC-2602 extended.
