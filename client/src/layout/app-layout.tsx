@@ -37,6 +37,7 @@ import { NameAndEmail } from '../components/who-and-when';
 import { HelpButton } from '../help/help-button';
 import { HelpFrame } from '../help/help-panel';
 import { HelpProvider } from '../help/help-provider';
+import { useHelp } from '../help/use-help';
 import { api } from '../lib/api';
 import { initialsOf } from '../lib/person-initials';
 import { LookupBox } from '../search/lookup-box';
@@ -136,6 +137,25 @@ function Frame() {
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [folded, setFolded] = useState(storedFolded);
+  const help = useHelp();
+  const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
+  // While Help is open on a computer, the rail folds to leave the page room
+  // beside it, and opens again once Help closes, unless the person opened
+  // or closed it meanwhile (ADR-079). Their own choice, remembered on this
+  // device, is not touched.
+  const helpOpen = !!help?.open && !phone;
+  const [helpWasOpen, setHelpWasOpen] = useState(helpOpen);
+  const [foldedForHelp, setFoldedForHelp] = useState(false);
+  if (helpWasOpen !== helpOpen) {
+    setHelpWasOpen(helpOpen);
+    if (helpOpen && !folded) {
+      setFolded(true);
+      setFoldedForHelp(true);
+    } else if (!helpOpen && foldedForHelp) {
+      setFolded(false);
+      setFoldedForHelp(false);
+    }
+  }
   // Whether the page asks to confirm the address itself (ADR-079).
   const [unverifiedCovered, setUnverifiedCovered] = useState(false);
   const bar = useRef<HTMLElement>(null);
@@ -167,6 +187,7 @@ function Frame() {
   const toggleFolded = () => {
     rememberFolded(!folded);
     setFolded(!folded);
+    setFoldedForHelp(false);
   };
 
   return (

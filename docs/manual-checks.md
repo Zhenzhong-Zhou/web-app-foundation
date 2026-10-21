@@ -1520,33 +1520,40 @@ The pages, in a private window unless a check says otherwise.
   before it is accepted, and accept it: neither the Admin's bell, signed
   in with no organization now, nor the Owner's says so. (Whoever leaves
   is gone from this demo: walk MC-1903 first, or seed again.)
-- **MC-3202** *(ADR-079)* Help on a computer, about 1280 to 1440 px wide:
-  the top bar has Help, its icon and the word, between Search and the
-  bell. On Orders, press it: Help slides in over the right of the page,
-  under the bar, with nothing dimmed, and the button shows pressed. The
-  page beneath still scrolls and its controls work. The guide is Orders,
-  its title and sections, steps numbered and the permission notes set
-  apart. At its foot, All guides lists Work, Records, Settings and You,
-  only the pages you can open (as a Viewer: no Stock value, Audit log,
-  Exchange rates or Price lists), then What you can do here is on Your
-  account. Choose Inventory in the rail: Help now shows Inventory's guide.
-  Choose Home in All guides: Home's guide shows and the page stays on
-  Inventory. Follow See also in a guide: that page opens, with its own
-  guide. Esc inside Help, or Close, shuts it, and focus is back on Help. A
-  guide downloads only when Help shows it (DevTools, Network: the guide's
-  file, `orders.md` locally, arrives as Help opens, and none before). With
-  Help open on Locations, open Add location (Tab to it, as Help covers
-  it at this width): the dialog sits in the room beside Help, the page
-  behind it dimmed and Help not; Help scrolls under the mouse or a finger,
-  pressing its links or Close does nothing, and Tab stays in the dialog.
-  With VoiceOver on, Help is not read while the dialog is open. Cancel:
-  Help works again. In a window narrower than about 1085 px, Help dims
-  with the page and the dialog stays centred.
-- **MC-3203** *(ADR-079)* Help on a wide screen, about 1900 px with the
-  rail open or 1700 px folded: opening Help moves the page to the left,
-  at its full width, and Help sits beside it without covering anything;
-  closing Help puts the page back. Just below that width, Help is over
-  the page again, as in MC-3202.
+- **MC-3202** *(ADR-079)* Help on a computer, about 1280 to 1440 px wide,
+  the rail open: the top bar has Help, its icon and the word, between
+  Search and the bell. On Orders, press it: the rail folds to its icons,
+  Help comes in at the right, under the bar, with nothing dimmed, and the
+  page takes the width left beside it; the button shows pressed. Nothing
+  of the page is under Help: Raise an order, at the top right, is in view,
+  nothing scrolls sideways, and Tab through the page reaches every
+  control in view, none of them under Help. The guide is Orders, its
+  title and sections, steps numbered and the permission notes set apart.
+  At its foot, All guides lists Work, Records, Settings and You, only the
+  pages you can open (as a Viewer: no Stock value, Audit log, Exchange
+  rates or Price lists), then What you can do here is on Your account.
+  Choose Inventory in the rail: Help now shows Inventory's guide. Choose
+  Home in All guides: Home's guide shows and the page stays on Inventory.
+  Follow See also in a guide: that page opens, with its own guide. Esc
+  inside Help, or Close, shuts it, focus is back on Help, and the rail
+  opens again with the page at its width. With the rail folded before
+  Help opened, it stays folded after; unfolded while Help is open, it
+  stays as you left it. A guide downloads only when Help shows it
+  (DevTools, Network: the guide's file, `orders.md` locally, arrives as
+  Help opens, and none before). With Help open on Locations, press Add
+  location: the dialog sits in the room beside Help, the page behind it
+  dimmed and Help not; Help scrolls under the mouse or a finger, pressing
+  its links or Close does nothing, and Tab stays in the dialog. With
+  VoiceOver on, Help is not read while the dialog is open. Cancel: Help
+  works again.
+- **MC-3203** *(ADR-079)* Help on a wide screen, about 1900 px: opening
+  Help folds the rail as on a laptop, the page keeps its full width beside
+  Help, and closing Help opens the rail again. In a window about 1100 px
+  wide, or at Larger text below about 1330 px, where the page would keep
+  less than about 720 px beside Help, Help slides over the right of the
+  page instead, with nothing dimmed, and the page beneath still scrolls
+  and works. Narrower than about 1085 px, a dialog the page opens there
+  stays centred, and Help dims with the page.
 - **MC-3204** *(ADR-079)* Help on a phone, about 390 px: the bar shows
   Help as its icon alone. It opens full screen, headed Help · Orders, with
   Close, which returns to the page. On a real phone at 320 px wide (or
@@ -2034,3 +2041,5 @@ first.
   MC-1559 extended.
 - 2026-10-20: the welcome's foot opens Help from its word and icon:
   MC-3207 extended.
+- 2026-10-20: Help beside the page on a computer, the rail folded while it
+  is open: MC-3202 and MC-3203 rewritten.

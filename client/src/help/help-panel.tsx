@@ -48,8 +48,11 @@ import { useHelp } from './use-help';
 /** The panel's width, in rem so it grows with the text (ADR-075). */
 const WIDTH_PX = 420;
 
-/** The page at its widest, as its Container is (`maxWidth="lg"`). */
-const PAGE_MAX = 'lg' as const;
+/**
+ * The least room a page keeps beside Help, about a small laptop's page with
+ * the rail folded: with less, Help slides over the page instead.
+ */
+const PAGE_MIN_PX = 720;
 
 /** A dialog's margin either side of its paper, as MUI draws it. */
 const DIALOG_MARGINS = 64;
@@ -87,11 +90,13 @@ const watchNothing = () => () => undefined;
 const noDialog = () => false;
 
 /**
- * The page, and Help beside it or over it (ADR-079). Help slides over the
- * right of the page with nothing dimmed, so the page still works while the
- * person follows the steps. Where the window leaves the page its full width
- * beside the panel, the page moves over to make room instead and nothing is
- * covered; a page never gets narrower for Help. On a phone, Help is full
+ * The page, and Help beside it or over it (ADR-079). On a computer, Help
+ * sits beside the page, which takes the width left, the rail folded to make
+ * room while Help is open (the frame does that): nothing of the page is
+ * covered, and a control focused in it is never under Help (WCAG 2.4.11).
+ * Where that would leave the page less than about 720 px, Help slides over
+ * the right of the page instead, with nothing dimmed, so the page still
+ * works while the person follows the steps. On a phone, Help is full
  * screen, with Close.
  *
  * The top bar is measured rather than assumed: Help starts under it, at
@@ -144,10 +149,7 @@ export function HelpFrame({
   }, [bar]);
 
   const width = (WIDTH_PX / 16) * rootFontSize();
-  const beside =
-    !!help?.open &&
-    !phone &&
-    size.width >= theme.breakpoints.values[PAGE_MAX] + width;
+  const beside = !!help?.open && !phone && size.width - width >= PAGE_MIN_PX;
   const roomForDialog =
     !!help?.open &&
     !phone &&
