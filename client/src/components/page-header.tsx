@@ -9,7 +9,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, type Ref, useEffect } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 
@@ -49,6 +49,7 @@ export function PageHeader({
   subtitle,
   status,
   actions,
+  headingRef,
 }: {
   /** Ancestors only, nearest last. The current page comes from `title`. */
   crumbs: Crumb[];
@@ -57,6 +58,12 @@ export function PageHeader({
   status?: { label: string; color: ChipProps['color'] };
   /** Buttons as a fragment, not a row of their own, so they wrap here. */
   actions?: ReactNode;
+  /**
+   * For a page that moves focus to its title, where the page begins, once
+   * an action has taken away the button that had it: Remove a member,
+   * Delete a role (ADR-080), as Home does for a card dismissed.
+   */
+  headingRef?: Ref<HTMLHeadingElement>;
 }) {
   const intl = useIntl();
   // The product's name, not a word: it stays as it is in every language.
@@ -169,8 +176,10 @@ export function PageHeader({
           )}
 
           <Typography
+            ref={headingRef}
             variant="h5"
             component="h1"
+            tabIndex={headingRef ? -1 : undefined}
             sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
           >
             {title}

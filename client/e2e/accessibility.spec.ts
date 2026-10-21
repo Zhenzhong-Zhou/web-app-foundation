@@ -10,6 +10,7 @@ import {
   daysFromNow,
   inviteByLink,
   joinByLink,
+  roleIdNamed,
   signInAs,
   uniqueEmail,
 } from './support/api';
@@ -43,6 +44,9 @@ interface Screen {
 interface Seed {
   orderId: string;
   productId: string;
+  /** A role made from the Warehouse template, held by nobody. */
+  roleId: string;
+  viewerId: string;
 }
 
 const heading = (page: Page) => page.getByRole('heading', { level: 1 });
@@ -106,6 +110,25 @@ const SCREENS: Screen[] = [
     ready: heading,
   },
   { name: 'price lists', path: () => '/settings/price-lists', ready: heading },
+  { name: 'roles', path: () => '/settings/roles', ready: heading },
+  {
+    name: 'a made role',
+    path: (seed) => `/settings/roles/${seed.roleId}`,
+    ready: heading,
+  },
+  {
+    name: 'a built-in role',
+    path: (seed) => `/settings/roles/${seed.viewerId}`,
+    ready: (page) => page.getByRole('note'),
+  },
+  {
+    // From a template, so the summary and the boxes are drawn filled.
+    name: 'the role editor',
+    path: () => '/settings/roles/new',
+    open: (page) => page.getByRole('radio', { name: /^Warehouse/ }).check(),
+    ready: (page) =>
+      page.getByRole('complementary', { name: 'What Warehouse can do' }),
+  },
 ];
 
 /**
@@ -165,7 +188,27 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
   });
   expect(confirmed.ok(), await confirmed.text()).toBeTruthy();
 
-  return { orderId: order.id, productId: product.id };
+  const catalogue = (await (await api.get('/v1/roles/catalogue')).json()) as {
+    templates: { key: string; permissions: string[] }[];
+  };
+  const role = await created<{ id: string }>(
+    await api.post('/v1/roles', {
+      data: {
+        name: 'Dock crew',
+        description: 'Receives and ships, and keeps the shelves straight.',
+        permissions: catalogue.templates.find(
+          (each) => each.key === 'warehouse',
+        )?.permissions,
+      },
+    }),
+  );
+
+  return {
+    orderId: order.id,
+    productId: product.id,
+    roleId: role.id,
+    viewerId: await roleIdNamed(api, 'Viewer'),
+  };
 }
 
 /** Every violation, one line each, so a failure reads as a list to fix. */

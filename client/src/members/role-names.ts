@@ -14,6 +14,48 @@ const BUILT_IN = defineMessages({
   Viewer: { id: 'members.role.viewer', defaultMessage: 'Viewer' },
 });
 
+/**
+ * Whether a role is the Owner, which stands alone (ADR-080): it already
+ * holds everything, so whoever holds it holds nothing else. Built in and
+ * named so, never the name alone. What anyone may give is the server's
+ * `mayGive`, never this.
+ */
+export function isOwnerRole(role: { name: string; builtIn: boolean }): boolean {
+  return role.builtIn && role.name === 'Owner';
+}
+
+/**
+ * Whether the reader may give every one of these roles, as the roles list
+ * says of each (ADR-080): so may they resend or revoke an invitation that
+ * names them, or change or remove a member who holds them, the server's
+ * own rule. A role the list lacks is one they may not.
+ */
+export function mayGiveAll(
+  roles: readonly { id: string; mayGive: boolean }[],
+  held: readonly { id: string }[],
+): boolean {
+  const giving = new Map(roles.map((role) => [role.id, role.mayGive]));
+  return held.every((role) => giving.get(role.id) === true);
+}
+
+/**
+ * The roles chosen once `id` is ticked or unticked (ADR-080). Owner
+ * stands alone: ticking it clears the rest, and ticking another clears
+ * it, since Owner already holds everything.
+ */
+export function toggled(
+  roles: readonly { id: string; name: string; builtIn: boolean }[],
+  chosen: readonly string[],
+  id: string,
+  on: boolean,
+): string[] {
+  if (!on) return chosen.filter((each) => each !== id);
+  const role = roles.find((each) => each.id === id);
+  if (role && isOwnerRole(role)) return [id];
+  const owners = new Set(roles.filter(isOwnerRole).map((each) => each.id));
+  return [...chosen.filter((each) => !owners.has(each) && each !== id), id];
+}
+
 export function roleLabel(name: string): string {
   return name in BUILT_IN
     ? intl().formatMessage(BUILT_IN[name as keyof typeof BUILT_IN])

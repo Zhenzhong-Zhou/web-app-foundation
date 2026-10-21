@@ -422,8 +422,8 @@ folder by folder; these check what is already in place.
 - **MC-1413** Signed out, in 简体中文, sign in with a wrong password: the
   banner reads 邮箱或密码错误。请检查后重试。, not English; in Français,
   Courriel ou mot de passe invalide. Vérifiez les deux et réessayez. Signed
-  in, in Français, try to remove yourself from Members: the refusal is
-  French. In 简体中文, ship more than an order has outstanding, cancel an
+  in as the demo Owner, in Français, Move everyone to… on Owner's page,
+  to Admin: the refusal, that ownership is transferred first, is French. In 简体中文, ship more than an order has outstanding, cancel an
   order goods have moved against, and release a run under an expired
   licence: each refusal is Chinese, the statuses in it too (已确认, not
   "confirmed"). A request with a field the server refuses, such as a
@@ -1324,10 +1324,11 @@ Signed in as the demo Owner the seed prints, on Settings → Members, with
 Mailpit open.
 
 - **MC-3001** *(ADR-077)* Invite: the dialog asks for Email, then the
-  three roles as cards, each with its line saying what it lets a person
-  do (the Admin's ends Can invite and remove members), Viewer chosen; Write to them in, starting at your own language; and
-  A note from you, counting to 500. Invite `newcomer@example.com` as
-  Admin, writing to them in 简体中文, with the note `<b>Dock 3</b>`, a line
+  roles as cards to tick, each with its line saying what it lets a person
+  do (the Admin's ends Can invite and remove members), none ticked, since
+  the demo has made roles of its own (MC-3316); Write to them in, starting
+  at your own language; and A note from you, counting to 500. Invite
+  `newcomer@example.com` with Admin ticked alone, writing to them in 简体中文, with the note `<b>Dock 3</b>`, a line
   break, then `bring boots`, and Send invitation. A notice says it was
   sent, and Invited lists it: Admin, Invited by you, today, Emailed ·
   until the seventh day from now. Mailpit has one email, in Chinese,
@@ -1377,7 +1378,7 @@ Mailpit open.
   Inviting that invitation's address says it was already invited, and
   that only an Owner can resend it, with no Resend instead. As Tom
   Becker, who holds Warehouse, Members has no Invite and no Invited, and
-  its line says an Owner or an Admin invites new members.
+  its line says a member can hold several roles, with Roles linked.
 - **MC-3008** *(ADR-077)* Register a fresh organization and, without
   confirming its email, Send invitation from Members: the dialog asks you
   to confirm your own email first, naming it, with Resend confirmation,
@@ -1757,8 +1758,8 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3305** *(ADR-080)* Prices on orders stay with whoever may see
   them. Signed in as Tom Becker (Warehouse), with the Network tab open,
   open SO-DEMO-1: its order response has no `unitPrice`, `lineTotal`,
-  `totals`, `money` or `documents`, and the page shows a dash where a
-  price was. Its pro forma is refused, and PO-DEMO-1's Print and Download
+  `totals`, `money` or `documents`, and the page leaves the prices out
+  (MC-3318). Its pro forma is refused, and PO-DEMO-1's Print and Download
   PDF are refused, while a shipment's packing slip still prints. As
   Fatima Haddad (Sales), SO-DEMO-1 shows its prices, totals and its
   invoices and credits, as it does for a Viewer.
@@ -1769,12 +1770,181 @@ The pages, in a private window unless a check says otherwise.
   Warehouse.; in Français … en tant que Warehouse. Join, and the Owner's
   bell reads … joined … as Warehouse. An Admin or a Viewer invitation still
   reads as an Admin, as a Viewer.
+- **MC-3307** *(ADR-080, #169)* Settings → Roles. On a freshly seeded
+  demo, as the demo Owner, the menu's Settings has Roles beside Members.
+  Roles lists Built in first, Owner, Admin and Viewer, each with its line
+  and how many hold it (Nobody where none does), then Made here, Warehouse
+  and Sales, each with its line and 1 member; Make a role is at the top.
+  At 390 px each role is a card whose name opens it. As Tom Becker
+  (Warehouse) the same lists show, with no Make a role. In Français the
+  built-in three read Propriétaire, Administrateur and Lecteur, while
+  Warehouse and Sales read as named; in 中文 所有者, 管理员 and 查看者. An
+  account with no organization (Leave on Account) has neither Members nor
+  Roles in the menu.
+- **MC-3308** *(ADR-080)* A role's page. As the demo Owner open
+  Warehouse: What Warehouse can do in Your access's sentences, Also told
+  with nothing from this role, and Held by with Tom Becker, the email and
+  every role held side by side, the name opening the page on People; History,
+  Edit, Make a copy, Move everyone to… and Delete above. Open Viewer: Built
+  in beside its name, its line beneath, the note that a built-in role
+  stays as it is and is varied by a copy, and only History, Make a copy
+  and Move everyone to…. As Tom Becker, Warehouse's page has none of
+  these buttons: Warehouse changes no role and reads no audit log. In
+  the audit log, a role named in Member's roles changed opens its page.
+- **MC-3309** *(ADR-080)* Making a role. As the demo Owner, Make a
+  role: Start from offers Warehouse, Sales, Finance, Production and Stock
+  look-up, each with its few words, then A copy of a role and Nothing
+  ticked; nothing is ticked but the three every role holds. Choose
+  Warehouse: its boxes tick, Name reads Warehouse, and What Warehouse can
+  do beside the boxes says what they allow; at 390 px it is below them.
+  Open Orders and tick Raise an order: See prices on orders, See customers
+  and suppliers and See the product catalogue tick with it, and the line
+  above the areas says so; untick See purchase and sales orders and
+  everything that needs it unticks, said the same way. See prices on orders
+  says what leaving it out does; Edit, confirm or cancel an order says it is
+  also told when a line closes short. People and the organization shows
+  its first three ticked and greyed, with why, and no Make a role or Close
+  the organization. Tick all and Clear on Stock and locations each change
+  that area's boxes, and anything elsewhere that needs them. Name it
+  sales: refused under Name, There’s already a role called sales.; admin:
+  Admin is a built-in role. Choose another name. Name it Dock crew, Save
+  role: Dock crew's page, Nobody holds Dock crew. Make a copy on Viewer's
+  page: Start from is A copy of a role, Viewer, its boxes Viewer's, Name
+  Viewer (copy). In Français and 中文 the boxes read in that language, and
+  the summary as Your access would.
+- **MC-3310** *(ADR-080)* Changing a role, and two at once. Edit Dock
+  crew, tick Correct a count, then go to Roles in the menu: Leave without
+  saving? asks first; Stay keeps the change. In another browser, as a
+  second Owner, edit Dock crew and save. Back in the first, Save role:
+  Dock crew was changed, naming who saved it, with Keep editing and
+  Reload; Reload shows theirs, with yours gone. As Tom Becker, the
+  editor's address (`/settings/roles/new`) says Only Owners make and
+  change roles, with Go home.
+- **MC-3311** *(ADR-080)* Move everyone and Delete. On Dock crew's page
+  after giving it to Chloé Tremblay on Members, Delete says Chloé Tremblay
+  holds Dock crew. Move them to another role first., with Close and Move
+  everyone to…; that opens Move everyone from Dock crew, naming Chloé, with
+  only the roles you may give. Move to Viewer: 1 member moved to
+  Viewer, Held by is empty, and focus is on the page's heading, since
+  Move everyone has gone with its dialog. Delete, then Delete role: Roles
+  again, Dock crew gone, and focus on its heading. As Daniel Okafor
+  (Admin), Move everyone on Viewer offers no Owner and no Sales, saying
+  roles that can do more than yours aren’t offered.
+- **MC-3312** *(ADR-080)* Members with several roles. As the demo Owner,
+  Settings → Members: its line says a member can hold several roles, and
+  Roles opens Settings → Roles. Each member's roles stand side by side,
+  a built-in one plain and one made here on the accent's tint (Tom Becker:
+  Warehouse; Fatima Haddad: Sales). Each row has More for … with Change
+  roles, and Remove from the organization on every row but your own. As
+  Chloé Tremblay (Viewer), no row has a menu. At 390 px in 中文 each member
+  is a card, with the face, the name, the address, the roles and
+  「… 的更多操作」, and nothing scrolls sideways at Larger text.
+- **MC-3313** *(ADR-080)* Change roles. As Daniel Okafor (Admin), More for
+  Chloé Tremblay, then Change roles: the dialog lists every role with its
+  line; Owner is off with Only an Owner can make someone an Owner., and
+  Sales off with Your roles don’t include everything Sales can do, so you
+  can’t give it. Tick Warehouse: With these roles, Chloé Tremblay can
+  gains, under Orders, … receive what was ordered; ship what was sold, and
+  untick Viewer: it loses what Viewer alone gave. Untick everything: Choose
+  at least one role., and Save roles is off. Tick Viewer and Warehouse and
+  Save roles: Chloé Tremblay’s roles changed, the row shows both, and focus
+  is back on More for Chloé Tremblay. As the demo Owner, tick Owner for
+  anyone: every other box clears, and the summary reads Everything,
+  including settings and closing the organization.; tick another and
+  Owner clears. In Français and 中文 the same, names of made roles as
+  written.
+- **MC-3314** *(ADR-080)* What you cannot change, said before anything is
+  sent. As Daniel Okafor, More for Fatima Haddad (Sales), then Change roles
+  or Remove from the organization: a dialog says You can’t change Fatima
+  Haddad’s roles (or You can’t remove Fatima Haddad), Your roles don’t
+  include everything Fatima Haddad’s roles can do, so you can’t change
+  their roles or remove them. An Owner can., with Close only; Close gives
+  focus back to More for Fatima Haddad. For Anika Sharma: Anika Sharma is
+  an Owner. Only an Owner can change or remove an Owner.
+- **MC-3315** *(ADR-080, #147)* Remove from the organization. As the demo
+  Owner, More for Sarah Chen, then Remove from the organization: Remove
+  Sarah Chen from … ? says the account stays theirs, their work here keeps
+  their name, they lose access on their next click, and coming back needs a
+  new invitation. Cancel gives focus back to More for Sarah Chen. Remove: a
+  notice says Sarah Chen was removed, the row goes, and focus is on the
+  page's heading, Members, as Home's after a card is dismissed. Signed in
+  as Sarah Chen in another browser, the next click finds no organization.
+  The audit log has Member removed. In Français, Retirer … de …?; in 中文,
+  将 … 从 … 移除？.
+- **MC-3316** *(ADR-080)* Invite with several roles. On the demo, whose
+  Owner has made Warehouse and Sales, Invite starts with no role ticked;
+  Send invitation with none says Choose at least one role. on Roles and
+  sends nothing. Tick Warehouse and Sales and send: Invited reads Warehouse
+  and Sales, and the email … as Warehouse and Sales. Tick Owner: the
+  others clear. On a fresh organization with no role of its own, Invite
+  starts on Viewer as before. As Daniel Okafor, Owner's card is off with
+  Only an Owner can invite an Owner., and Sales's with Your roles don’t
+  include everything Sales can do, so you can’t give it.
+- **MC-3317** *(ADR-080)* An invitation's buttons follow the rule too. As
+  the demo Owner, invite an address as Sales; as Daniel Okafor, its row on
+  Invited has no Resend, Copy link or Revoke, and inviting the same address
+  again says Your roles don’t include everything Sales can do, so you
+  can’t resend this invitation., with no Resend instead. An Owner's
+  invitation still says only an Owner can resend it.
+- **MC-3318** *(ADR-080)* Orders show no prices to whoever may not see
+  them. Signed in as Tom Becker (Warehouse), open PO-DEMO-1: its Items
+  have no Unit price or Total column and no totals beneath them, nothing
+  reads —, and its summary has no Print or Download PDF. Open SO-DEMO-1:
+  no Pro forma invoice, and Invoices and credits is not among its tabs. As
+  Fatima Haddad (Sales), SO-DEMO-1 shows its prices, totals, Pro forma
+  invoice and its invoices and credits, as for a Viewer. At 390 px the
+  same, the Items table no wider than its columns.
+- **MC-3319** *(ADR-080)* A screen asks only for what its reader may
+  read, and says why where a field cannot be filled. With the Network tab
+  open, as Fatima Haddad (Sales): Inventory and Movements open without a
+  refused request and with no Location filter; PO-DEMO-1 opens, and its
+  Edit's Deliver to keeps its site, greyed, with You can’t see the
+  organization’s locations, so you can’t choose one here.; Authorize a
+  return on SO-DEMO-2 says the same under Send back to, with where the
+  goods go instead; Pro forma invoice on SO-DEMO-1 offers No tax alone,
+  with You can’t see tax codes, so this pro forma can only be made without
+  tax., and its Print still opens. As Tom Becker, Send sample from an
+  Inventory row's menu: Given to is greyed, with You can’t see customers
+  and suppliers, so the sample is recorded without whom it went to. As the
+  demo Owner, make a role from the Finance template and give it to a
+  member: as them, on an open RMA, Change under Send back to says it
+  cannot be chosen and Save is greyed, and Raise replacement is not
+  offered (it raises a sale, which Finance may not). Make one from
+  Production and give it: as them, Plan a run lists the items and the
+  places, and Contract manufacturer reads We make it ourselves, greyed,
+  with You can’t see customers and suppliers, so a contract manufacturer
+  can’t be chosen here. Make a role with Release a run but not Plan a run
+  (Production, Plan a run unticked), plan a run with no recipe as the
+  Owner, and as its holder press Release: … attaching one is for whoever
+  may plan runs, which your roles don’t include …, no recipe offered and
+  Release greyed. In Français and 中文 each line reads in that language.
+- **MC-3320** *(ADR-080, #148)* A page you may not open says why in the
+  server's words. As Tom Becker, open a sale's invoice by its address
+  (`/invoices/<id>`, copied as the demo Owner): You don't have access to
+  this, then Your role, Warehouse, doesn’t include “See invoices and
+  credit notes”. … can change your roles., never Your role does not
+  include this. In Français and 中文 the same, in that language.
+- **MC-3321** *(ADR-080)* The first week's Receive for whoever receives
+  only against orders. As the demo Owner, make a role from the Warehouse
+  template with Receive, ship or transfer stock unticked, and invite
+  someone at an address you can read with it alone. As them, on Home's
+  welcome, Receive stock reads Record goods as they arrive, against the
+  purchase order they came on., and its button, Orders, opens the
+  confirmed purchases (Buying, Confirmed). As Tom Becker, who may move
+  stock, it opens Inventory as before.
 
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R29** *(the account menu from the keyboard, #151)* With the keyboard
+  alone, open the account menu and arrow down to Colour mode: Enter opens
+  its choices, the arrow keys move through them and Enter chooses; the
+  menu stays open and focus is back on the row, which a screen reader reads
+  with its new choice. Space on Text size opens it, Escape closes it back
+  to the row, and the arrow keys go on to the next row. Language the same.
+  The console has no :focus-visible warning.
 - **MC-R28** *(an order's summary first on a phone, #155)* At 390 px, open
   SO-DEMO-2, choose Skip to content and Tab on: Ship and the order's own
   actions come before the Items tab and the lines' actions, in the order
@@ -2262,3 +2432,11 @@ first.
 - 2026-10-21: ADR-080, a refusal names who could give what is missing, the
   Owners first, and a release that needs an override names the permission
   in words: MC-3304 rewritten.
+- 2026-10-21: ADR-080, the client: Settings → Roles, a role's page and the
+  editor; Members with several roles, Change roles and Remove (#147);
+  Invite with several roles; orders without their prices; each screen
+  reading only what its reader may; the refusal's own words on the 403
+  page; the first week's Receive for receiving alone; Members and Roles
+  out of the menu with no organization (#169): MC-3307 to MC-3321, and
+  MC-1413, MC-3001, MC-3305 and MC-3007 changed. The account menu's
+  preferences from the keyboard (#151): MC-R29.

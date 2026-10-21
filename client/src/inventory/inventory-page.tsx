@@ -205,6 +205,9 @@ export function InventoryPage() {
   const leaves = locations ? leavesOf(locations) : [];
 
   const canAdjust = can('stock.adjust');
+  // Sales sees stock but not locations (ADR-080): the page asks only for
+  // what its reader may read, and leaves the Location filter out.
+  const canSeeLocations = can('locations.view');
 
   const loadAvailability = useCallback(async () => {
     try {
@@ -231,7 +234,7 @@ export function InventoryPage() {
     let ignore = false;
 
     void Promise.all([
-      api<Location[]>('/locations'),
+      canSeeLocations ? api<Location[]>('/locations') : Promise.resolve(null),
       api<Availability[]>('/stock/availability?promised=true'),
     ])
       .then(([all, promised]) => {
@@ -246,7 +249,7 @@ export function InventoryPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [canSeeLocations]);
 
   return (
     <Stack spacing={3}>
@@ -358,30 +361,32 @@ export function InventoryPage() {
           },
         ]}
       >
-        <TextField
-          id="stock-location"
-          size="small"
-          label={intl.formatMessage({
-            id: 'inventory.location',
-            defaultMessage: 'Location',
-          })}
-          select
-          value={locationId}
-          onChange={(event) => setLocationId(event.target.value)}
-          sx={{ minWidth: rem(200) }}
-        >
-          <MenuItem value="">
-            {intl.formatMessage({
-              id: 'inventory.everywhere',
-              defaultMessage: 'Everywhere',
+        {canSeeLocations && (
+          <TextField
+            id="stock-location"
+            size="small"
+            label={intl.formatMessage({
+              id: 'inventory.location',
+              defaultMessage: 'Location',
             })}
-          </MenuItem>
-          {leaves.map((location) => (
-            <MenuItem key={location.id} value={location.id}>
-              {nameAndCode(location.name, location.code)}
+            select
+            value={locationId}
+            onChange={(event) => setLocationId(event.target.value)}
+            sx={{ minWidth: rem(200) }}
+          >
+            <MenuItem value="">
+              {intl.formatMessage({
+                id: 'inventory.everywhere',
+                defaultMessage: 'Everywhere',
+              })}
             </MenuItem>
-          ))}
-        </TextField>
+            {leaves.map((location) => (
+              <MenuItem key={location.id} value={location.id}>
+                {nameAndCode(location.name, location.code)}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
       </FilterRow>
 
       <Paper variant="outlined">
@@ -648,6 +653,7 @@ export function InventoryPage() {
           mode={moving.mode}
           row={moving.row}
           locations={leaves}
+          canSeePartners={can('partners.view')}
           onClose={() => setMoving(null)}
           onMoved={refresh}
         />

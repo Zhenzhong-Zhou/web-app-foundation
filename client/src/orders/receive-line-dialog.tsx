@@ -40,12 +40,21 @@ export function ReceiveLineDialog({
   orderId,
   line,
   locations,
+  canSeeProducts,
+  canSeeLots,
   onClose,
   onReceived,
 }: {
   orderId: string;
   line: OrderLine | null;
   locations: Location[];
+  /**
+   * products.view, from the page: whether the item tracks lots is the
+   * catalogue's to say, so without it the dialog says it cannot tell.
+   */
+  canSeeProducts: boolean;
+  /** stock.view, from the page: the item's lots already known. */
+  canSeeLots: boolean;
   onClose: () => void;
   onReceived: () => Promise<void>;
 }) {
@@ -66,7 +75,7 @@ export function ReceiveLineDialog({
    * switched to lot tracking after the page loaded would otherwise be
    * received without one, then refused by the server.
    */
-  const { variants } = useVariants(line !== null);
+  const { variants } = useVariants(line !== null && canSeeProducts);
   const variant = variants.find((row) => row.id === line?.variantId);
 
   const { submitting, error, reset, submit } = useSubmit(
@@ -230,10 +239,23 @@ export function ReceiveLineDialog({
             {/* Shown only for a lot-tracked variant, because the server
                 refuses a lot on one that is not — and refuses a movement
                 without one on a variant that is. */}
+            {!canSeeProducts && line && (
+              <Typography variant="body2" color="text.secondary">
+                {intl.formatMessage(
+                  {
+                    id: 'orders.receive.lotsUnknown',
+                    defaultMessage:
+                      'You can’t see products, so this can’t tell whether {sku} needs a lot number. If receiving is refused for want of one, someone who may see products can receive it.',
+                  },
+                  { sku: line.sku },
+                )}
+              </Typography>
+            )}
             {variant?.tracksLots && (
               <LotFields
                 idPrefix="receive-line"
                 variantId={variant.id}
+                knowsLots={canSeeLots}
                 value={{ code: form.lotCode, expiresAt: form.lotExpiresAt }}
                 onChange={(lot) =>
                   setForm((current) => ({

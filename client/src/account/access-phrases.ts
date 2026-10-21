@@ -380,6 +380,17 @@ const GRANTS: Record<Permission, Grant> = {
   'organizations.delete': act('people', ACTS.organizationsDelete),
 };
 
+/**
+ * An area's permissions in the order its sentence says them, what is seen
+ * first: the role editor's sections (ADR-080), so each box sits in the
+ * area whose sentence it changes.
+ */
+export function permissionsIn(area: Area): Permission[] {
+  return (Object.keys(GRANTS) as Permission[]).filter(
+    (permission) => GRANTS[permission].area === area,
+  );
+}
+
 const ORDER = Object.keys(THINGS) as Thing[];
 
 /** One area the reader may touch, and its sentence. */

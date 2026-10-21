@@ -1,4 +1,5 @@
-import { MenuItem, TextField } from '@mui/material';
+import { Box, MenuItem, TextField } from '@mui/material';
+import type { ReactNode } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { ChosenSite, Location } from '../api/types.gen';
@@ -14,6 +15,11 @@ import { addressLine } from './address-line';
  * prints the registered address, which is the moment to fix it in
  * Locations. The empty choice is the caller's to name: none, or a default
  * the server works out.
+ *
+ * `unreadable` for a reader whose roles do not include seeing locations
+ * (ADR-080), whose page never asks for them: the field keeps what is
+ * chosen, cannot be changed, and says why, with what the empty choice
+ * means when it is the one standing.
  */
 export function SiteSelect({
   id,
@@ -24,6 +30,7 @@ export function SiteSelect({
   current = null,
   emptyLabel,
   emptyHelp,
+  unreadable = false,
 }: {
   id: string;
   label: string;
@@ -36,6 +43,7 @@ export function SiteSelect({
   emptyLabel: string;
   /** What the empty choice means, said beneath the field. */
   emptyHelp: string;
+  unreadable?: boolean;
 }) {
   const intl = useIntl();
 
@@ -51,7 +59,23 @@ export function SiteSelect({
 
   const chosen = locations.find((location) => location.id === value);
 
-  function help(): string | undefined {
+  function help(): ReactNode {
+    if (unreadable) {
+      return (
+        <>
+          {intl.formatMessage({
+            id: 'locations.site.unreadable',
+            defaultMessage:
+              'You can’t see the organization’s locations, so you can’t choose one here.',
+          })}
+          {!value && (
+            <Box component="span" sx={{ display: 'block' }}>
+              {emptyHelp}
+            </Box>
+          )}
+        </>
+      );
+    }
     if (!value) return emptyHelp;
     // Not among the sites yet: still loading, or they could not be read.
     // Saying it has no address would be a guess.
@@ -72,6 +96,7 @@ export function SiteSelect({
       fullWidth
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      disabled={unreadable}
       helperText={help()}
       slotProps={{
         select: { displayEmpty: true },

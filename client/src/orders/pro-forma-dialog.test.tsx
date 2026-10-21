@@ -13,7 +13,8 @@ import { ProFormaDialog } from './pro-forma-dialog';
  * The pro forma's dialog (ADR-071) says the server's two refusals before
  * anyone presses Print, and offers no Print while either applies; and a
  * failure to read the tax codes is said, since without them only No tax
- * is offered.
+ * is offered. A reader who may not see tax codes is not sent to ask for
+ * them, and the field says why it offers only No tax (ADR-080).
  */
 
 function sale(over: Partial<OrderDetail> = {}): OrderDetail {
@@ -43,9 +44,14 @@ function sale(over: Partial<OrderDetail> = {}): OrderDetail {
   };
 }
 
-function renderDialog(order: OrderDetail) {
+function renderDialog(order: OrderDetail, canSeeTaxCodes = true) {
   renderWithAuth(
-    <ProFormaDialog open order={order} onClose={() => undefined} />,
+    <ProFormaDialog
+      open
+      order={order}
+      canSeeTaxCodes={canSeeTaxCodes}
+      onClose={() => undefined}
+    />,
   );
 }
 
@@ -105,13 +111,36 @@ describe('ProFormaDialog', () => {
   it('says when the tax codes could not be read', async () => {
     server.use(
       http.get('/api/v1/tax-codes', () =>
-        apiError(403, 'You do not have permission to view tax codes'),
+        apiError(500, 'The tax codes could not be read'),
       ),
     );
     renderDialog(sale());
 
     expect(
-      await screen.findByText('You do not have permission to view tax codes'),
+      await screen.findByText('The tax codes could not be read'),
     ).toBeInTheDocument();
+  });
+
+  it('asks no reader for tax codes they may not see, and says why there is only No tax', async () => {
+    let asked = false;
+    server.use(
+      http.get('/api/v1/tax-codes', () => {
+        asked = true;
+        return HttpResponse.json({ taxCodes: [] });
+      }),
+    );
+    renderDialog(sale(), false);
+
+    expect(
+      await screen.findByText(
+        'You can’t see tax codes, so this pro forma can only be made without tax.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Tax code' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(screen.getByRole('link', { name: 'Print' })).toBeVisible();
+    expect(asked).toBe(false);
   });
 });

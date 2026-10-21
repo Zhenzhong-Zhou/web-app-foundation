@@ -19,6 +19,7 @@ import { useIntl } from 'react-intl';
 import { useNavigate } from 'react-router-dom';
 
 import type { Location, Partner, VariantOption } from '../api/types.gen';
+import { useCan } from '../auth/permissions';
 import { CurrencyField } from '../components/currency-field';
 import { FormError } from '../components/form-error';
 import { UnsavedChangesDialog } from '../components/unsaved-changes-dialog';
@@ -67,6 +68,8 @@ function emptyLine(): LineDraft {
  */
 export function CreateOrderPage() {
   const navigate = useNavigate();
+  const can = useCan();
+  const canSeeLocations = can('locations.view');
 
   const [partners, setPartners] = useState<Partner[]>([]);
   const [variants, setVariants] = useState<VariantOption[]>([]);
@@ -162,8 +165,12 @@ export function CreateOrderPage() {
   }, [intl]);
 
   // Apart from the partners and products: without them the field is not
-  // offered, and the server still delivers to the one site there is.
+  // offered, and the server still delivers to the one site there is. Asked
+  // only by whoever may see locations, which Sales may not (ADR-080); the
+  // order's Edit then says why Deliver to cannot be chosen.
   useEffect(() => {
+    if (!canSeeLocations) return;
+
     let ignore = false;
 
     void api<Location[]>('/locations')
@@ -175,7 +182,7 @@ export function CreateOrderPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [canSeeLocations]);
 
   /**
    * Retired partners are filtered out here and nowhere else.

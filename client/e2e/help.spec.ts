@@ -198,6 +198,8 @@ test('every page keeps its width beside Help at 1280 × 800', async ({
     '/credit-notes/:id': `/credit-notes/${ids.creditNoteId}`,
     '/return-authorizations/:id': `/return-authorizations/${ids.rmaId}`,
     '/production/:id': `/production/${ids.runId}`,
+    '/settings/roles/:id': `/settings/roles/${ids.roleId}`,
+    '/settings/roles/:id/edit': `/settings/roles/${ids.roleId}/edit`,
   };
   await signInAs(page, freshOrg.api);
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -457,7 +459,15 @@ async function seedEveryPage(api: APIRequestContext) {
     }),
   );
 
+  // A role made here, which its page and the editor open (ADR-080).
+  const role = await created<{ id: string }>(
+    await api.post('/v1/roles', {
+      data: { name: 'Dock crew', permissions: ['stock.view'] },
+    }),
+  );
+
   return {
+    roleId: role.id,
     userId: user.id,
     productId: product.id,
     lotId: movement.lotId,

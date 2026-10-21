@@ -74,15 +74,15 @@ describe('AuditDetails', () => {
       `Due date: — → ${formatDay('2026-11-18')}`,
     );
     expect(container.textContent).not.toContain('2026-11-18');
-    // The role links only for a reader who may see Members.
+    // The role links only for a reader who may see the roles.
     expect(screen.getAllByRole('link')).toHaveLength(1);
   });
 
-  it('links a role to Members, and leaves a kind with no page as text', () => {
-    renderDetails(['orders.view', 'users.view']);
+  it('links a role to its page, and leaves a kind with no page as text', () => {
+    renderDetails(['orders.view', 'roles.view']);
     expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
       'href',
-      '/members',
+      '/settings/roles/role-admin',
     );
     expect(screen.queryByRole('link', { name: 'GST' })).toBeNull();
     expect(screen.getByText(/GST/)).toBeInTheDocument();

@@ -51,7 +51,8 @@ function renderPage() {
     { initialEntries: ['/orders/new'] },
   );
   renderWithAuth(<RouterProvider router={router} />, {
-    permissions: ['orders.create'],
+    // Deliver to reads the sites, which only locations.view may (ADR-080).
+    permissions: ['orders.create', 'locations.view'],
   });
 }
 

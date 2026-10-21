@@ -24,6 +24,7 @@ import type { LineHold, OrderDetail, OrderLine } from '../api/types.gen';
 import { StatusChip } from '../components/status-chip';
 import { displayQuantity, formatMoney } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { showsPrices } from './prices';
 import { doneLabel } from './status';
 
 /**
@@ -37,6 +38,8 @@ const PINNED = { position: 'sticky', right: 0, zIndex: 1 } as const;
 
 /**
  * An order's items: the table, what each line can do, and the totals.
+ * Without the order's prices (ADR-080) the price columns and the totals
+ * are left out, not shown empty: the server sent none.
  *
  * What the viewer may do arrives as flags the page has already worked out,
  * each beside its reason there; the section only lays the controls out.
@@ -81,6 +84,7 @@ export function OrderLinesSection({
 }) {
   const intl = useIntl();
   const isDraft = order.status === 'draft';
+  const priced = showsPrices(order);
 
   return (
     <Box>
@@ -216,18 +220,22 @@ export function OrderLinesSection({
                     defaultMessage: 'Outstanding',
                   })}
                 </TableCell>
-                <TableCell align="right">
-                  {intl.formatMessage({
-                    id: 'orders.unitPrice',
-                    defaultMessage: 'Unit price',
-                  })}
-                </TableCell>
-                <TableCell align="right">
-                  {intl.formatMessage({
-                    id: 'orders.lines.total',
-                    defaultMessage: 'Total',
-                  })}
-                </TableCell>
+                {priced && (
+                  <>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'orders.unitPrice',
+                        defaultMessage: 'Unit price',
+                      })}
+                    </TableCell>
+                    <TableCell align="right">
+                      {intl.formatMessage({
+                        id: 'orders.lines.total',
+                        defaultMessage: 'Total',
+                      })}
+                    </TableCell>
+                  </>
+                )}
                 {/* No visible title — the buttons explain themselves —
                     but a screen reader announces the column by name.
                     Pinned to the right edge, as its cells are, so the ⋮
@@ -334,29 +342,39 @@ export function OrderLinesSection({
                     )}
                   </TableCell>
 
-                  <TableCell align="right">
-                    {formatMoney(line.unitPrice ?? null, line.currency ?? null)}
-                    {/* Where a list price came from, so a default is
-                        seen as one that can be changed (ADR-049). */}
-                    {line.priceSource === 'list' && line.priceListName && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        component="div"
-                      >
-                        {intl.formatMessage(
-                          {
-                            id: 'orders.lines.fromList',
-                            defaultMessage: 'from {list}',
-                          },
-                          { list: line.priceListName },
+                  {priced && (
+                    <>
+                      <TableCell align="right">
+                        {formatMoney(
+                          line.unitPrice ?? null,
+                          line.currency ?? null,
                         )}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell align="right">
-                    {formatMoney(line.lineTotal ?? null, line.currency ?? null)}
-                  </TableCell>
+                        {/* Where a list price came from, so a default is
+                            seen as one that can be changed (ADR-049). */}
+                        {line.priceSource === 'list' && line.priceListName && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            component="div"
+                          >
+                            {intl.formatMessage(
+                              {
+                                id: 'orders.lines.fromList',
+                                defaultMessage: 'from {list}',
+                              },
+                              { list: line.priceListName },
+                            )}
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell align="right">
+                        {formatMoney(
+                          line.lineTotal ?? null,
+                          line.currency ?? null,
+                        )}
+                      </TableCell>
+                    </>
+                  )}
 
                   <TableCell
                     align="right"
@@ -383,31 +401,33 @@ export function OrderLinesSection({
 
         {/* Padded to the cells' own inset, so the grand total lines up
             under the Total column rather than touching the frame. */}
-        <Stack sx={{ alignItems: 'flex-end', px: 2, py: 1.5 }} spacing={0.5}>
-          {(order.totals ?? []).map((total) => (
-            <Typography key={total.currency} variant="body2">
-              {formatMoney(total.amount, total.currency)}
-            </Typography>
-          ))}
+        {priced && (
+          <Stack sx={{ alignItems: 'flex-end', px: 2, py: 1.5 }} spacing={0.5}>
+            {(order.totals ?? []).map((total) => (
+              <Typography key={total.currency} variant="body2">
+                {formatMoney(total.amount, total.currency)}
+              </Typography>
+            ))}
 
-          {/* Said rather than shown as a smaller number: a subtotal that
-            silently excludes a line is what somebody reconciles against
-            (ADR-035). */}
-          {!order.totalsComplete && (
-            <Typography variant="caption" color="text.secondary">
-              {order.totals?.length
-                ? intl.formatMessage({
-                    id: 'orders.lines.partialTotal',
-                    defaultMessage:
-                      'Some lines have no price — this is not the full total',
-                  })
-                : intl.formatMessage({
-                    id: 'orders.lines.noPrices',
-                    defaultMessage: 'No prices recorded on this order',
-                  })}
-            </Typography>
-          )}
-        </Stack>
+            {/* Said rather than shown as a smaller number: a subtotal that
+              silently excludes a line is what somebody reconciles against
+              (ADR-035). */}
+            {!order.totalsComplete && (
+              <Typography variant="caption" color="text.secondary">
+                {order.totals?.length
+                  ? intl.formatMessage({
+                      id: 'orders.lines.partialTotal',
+                      defaultMessage:
+                        'Some lines have no price — this is not the full total',
+                    })
+                  : intl.formatMessage({
+                      id: 'orders.lines.noPrices',
+                      defaultMessage: 'No prices recorded on this order',
+                    })}
+              </Typography>
+            )}
+          </Stack>
+        )}
       </Paper>
 
       {/* Returns sit beside shipped rather than reducing what is

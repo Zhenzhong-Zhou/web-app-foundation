@@ -83,3 +83,50 @@ test('on a phone, Tab reaches an order’s summary before its tabs', async ({
   const summary = page.getByRole('complementary', { name: 'Summary' });
   await expect(summary.locator(':focus')).toHaveCount(1);
 });
+
+/**
+ * The account menu's preferences open from the keyboard (#151): Enter or
+ * Space on a row opens its select, and a choice or Escape comes back to
+ * the row, where the arrow keys go on through the menu. The colour mode
+ * and the text size, which this browser keeps: the language would be
+ * saved to the shared owner's account.
+ */
+test('the account menu’s preferences open from the keyboard, and come back to their row', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.getByRole('button', { name: /signed in as/ }).click();
+  const menu = page.getByRole('menu');
+  const rowOf = (name: string) =>
+    menu
+      .getByRole('menuitem')
+      .filter({ has: page.getByRole('combobox', { name, exact: true }) });
+  const listbox = page.getByRole('listbox');
+
+  // Your account, Your devices, then the colour mode.
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(rowOf('Colour mode')).toBeFocused();
+
+  await page.keyboard.press('Enter');
+  await expect(listbox).toBeVisible();
+  // From System, the choice open, to Dark.
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(listbox.getByRole('option', { name: 'Dark' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(listbox).toBeHidden();
+  await expect(rowOf('Colour mode')).toBeFocused();
+  await expect(rowOf('Colour mode')).toContainText('Dark');
+
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(rowOf('Text size')).toBeFocused();
+  await page.keyboard.press(' ');
+  await expect(listbox).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(listbox).toBeHidden();
+  await expect(menu).toBeVisible();
+  await expect(rowOf('Text size')).toBeFocused();
+});

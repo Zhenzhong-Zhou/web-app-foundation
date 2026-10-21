@@ -189,7 +189,9 @@ describe('Help', () => {
   });
 
   it('lists the guides for the pages the person can open, and shows one in place', async () => {
-    renderFrame('/orders', ['orders.view']);
+    // Seeing who works here is every role's (ADR-080), and opens People
+    // and Members.
+    renderFrame('/orders', ['orders.view', 'users.view']);
     await userEvent.click(screen.getByRole('button', { name: 'Help' }));
 
     const all = await within(help()).findByRole('navigation', {
@@ -199,7 +201,13 @@ describe('Help', () => {
       .getAllByRole('button')
       .map((guide) => guide.textContent);
     // Work, Settings and You: no stock, so no Inventory, Movements or Lots.
-    expect(names).toEqual(['Home', 'Orders', 'Members', 'Your account']);
+    expect(names).toEqual([
+      'Home',
+      'Orders',
+      'People',
+      'Members',
+      'Your account',
+    ]);
     expect(within(all).getByRole('button', { name: 'Orders' })).toHaveAttribute(
       'aria-current',
       'true',

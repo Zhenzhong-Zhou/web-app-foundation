@@ -3,6 +3,8 @@ import Select from '@mui/material/Select';
 import { useColorScheme } from '@mui/material/styles';
 import { useIntl } from 'react-intl';
 
+import type { PreferenceControl } from './preference-control';
+
 /**
  * Three options, not a two-way toggle. "System" is a real preference — it
  * follows the OS as it changes through the day — and a binary switch forces
@@ -10,7 +12,12 @@ import { useIntl } from 'react-intl';
  *
  * MUI persists the choice in localStorage, so it survives a reload.
  */
-export function ColorModeSelect() {
+export function ColorModeSelect({
+  control,
+}: {
+  /** Opened by its row, in the account menu (#151). */
+  control?: PreferenceControl;
+} = {}) {
   const intl = useIntl();
   const { mode, setMode } = useColorScheme();
 
@@ -20,6 +27,7 @@ export function ColorModeSelect() {
 
   return (
     <Select
+      {...control}
       size="small"
       value={mode}
       inputProps={{

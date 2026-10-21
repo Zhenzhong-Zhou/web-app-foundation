@@ -112,12 +112,18 @@ export function MoveStockDialog({
   mode,
   row,
   locations,
+  canSeePartners,
   onClose,
   onMoved,
 }: {
   mode: MoveMode;
   row: StockRow | null;
   locations: Location[];
+  /**
+   * partners.view, from the page: a sample's Given to lists partners, which
+   * the dock may not see (ADR-080), and then says why it lists none.
+   */
+  canSeePartners: boolean;
   onClose: () => void;
   onMoved: () => Promise<void>;
 }) {
@@ -144,7 +150,7 @@ export function MoveStockDialog({
   const [recipient, setRecipient] = useState<Partner | null>(null);
 
   useEffect(() => {
-    if (!row || mode !== 'sample') return;
+    if (!row || mode !== 'sample' || !canSeePartners) return;
 
     let ignore = false;
 
@@ -159,7 +165,7 @@ export function MoveStockDialog({
     return () => {
       ignore = true;
     };
-  }, [row, mode]);
+  }, [row, mode, canSeePartners]);
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
@@ -329,6 +335,7 @@ export function MoveStockDialog({
                 }
                 value={recipient}
                 onChange={(_event, value) => setRecipient(value)}
+                disabled={!canSeePartners}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -336,11 +343,19 @@ export function MoveStockDialog({
                       id: 'inventory.move.givenTo',
                       defaultMessage: 'Given to',
                     })}
-                    helperText={intl.formatMessage({
-                      id: 'inventory.move.givenTo.help',
-                      defaultMessage:
-                        'Optional. Recorded so a recall can find it.',
-                    })}
+                    helperText={
+                      canSeePartners
+                        ? intl.formatMessage({
+                            id: 'inventory.move.givenTo.help',
+                            defaultMessage:
+                              'Optional. Recorded so a recall can find it.',
+                          })
+                        : intl.formatMessage({
+                            id: 'inventory.move.givenTo.unreadable',
+                            defaultMessage:
+                              'You can’t see customers and suppliers, so the sample is recorded without whom it went to.',
+                          })
+                    }
                   />
                 )}
               />

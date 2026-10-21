@@ -211,6 +211,7 @@ export function WelcomeCard({
       items={welcome.items}
       canSeeProducts={can('products.view')}
       canInvite={can('users.create')}
+      canMoveStock={can('stock.move')}
     />
   );
   const youCan = (

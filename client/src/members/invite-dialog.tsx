@@ -9,12 +9,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
-  FormLabel,
   IconButton,
   MenuItem,
-  Radio,
-  RadioGroup,
   Stack,
   TextField,
   Typography,
@@ -52,7 +48,8 @@ import {
   type InviteView,
   NOTE_MAX_LENGTH,
 } from './invite-view';
-import { articleOf, roleDescription, roleLabel, roleList } from './role-names';
+import { RoleChoices } from './role-choices';
+import { articleOf, isOwnerRole, mayGiveAll, roleList } from './role-names';
 
 /**
  * Invite someone (ADR-077): an address, a role described by what it lets a
@@ -68,7 +65,6 @@ export function InviteDialog({
   roles,
   members,
   invitations,
-  isOwner,
   onClose,
   onChanged,
 }: {
@@ -78,7 +74,6 @@ export function InviteDialog({
   roles: Role[];
   members: Member[];
   invitations: Invitation[];
-  isOwner: boolean;
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
@@ -104,7 +99,6 @@ export function InviteDialog({
           roles={roles}
           members={members}
           invitations={invitations}
-          isOwner={isOwner}
           onClose={onClose}
           onChanged={onChanged}
           onView={setView}
@@ -183,7 +177,6 @@ function InviteForm({
   roles,
   members,
   invitations,
-  isOwner,
   onClose,
   onChanged,
   onView,
@@ -193,7 +186,6 @@ function InviteForm({
   roles: Role[];
   members: Member[];
   invitations: Invitation[];
-  isOwner: boolean;
   onClose: () => void;
   onChanged: () => Promise<void>;
   onView: (view: InviteView) => void;
@@ -206,16 +198,23 @@ function InviteForm({
   const emailProblemId = `${id}-email-problem`;
   const noteHelpId = `${id}-note-help`;
 
-  const viewer = roles.find((role) => role.name === 'Viewer');
   const [email, setEmail] = useState('');
-  // The least access, raised on purpose (ADR-077).
-  const [roleId, setRoleId] = useState(viewer?.id ?? roles[0]?.id ?? '');
+  // Once the organization has made a role, none, so nobody is given
+  // Viewer by default (ADR-080); until then the least access, raised on
+  // purpose (ADR-077).
+  const made = roles.some((role) => !role.builtIn);
+  const [roleIds, setRoleIds] = useState<string[]>(() => {
+    const viewer = roles.find((role) => role.builtIn && role.name === 'Viewer');
+    return !made && viewer?.mayGive ? [viewer.id] : [];
+  });
+  // Sending with none chosen says so on the roles, and sends nothing.
+  const [unchosen, setUnchosen] = useState(false);
   // The inviter's own language, unless they choose another.
   const [locale, setLocale] = useState(
     isLocale(session?.user.locale) ? session.user.locale : pageLocale,
   );
   const [note, setNote] = useState('');
-  const made = useRef<{ result: CreatedInvitation; copied: boolean } | null>(
+  const sent = useRef<{ result: CreatedInvitation; copied: boolean } | null>(
     null,
   );
 
@@ -223,8 +222,8 @@ function InviteForm({
 
   const { submitting, error, errorCode, errorDetails, reset, submit } =
     useSubmit<CreatedInvitation>(async () => {
-      if (!made.current) return;
-      const { result, copied } = made.current;
+      if (!sent.current) return;
+      const { result, copied } = sent.current;
       await onChanged();
       if (result.link) {
         onView({
@@ -251,13 +250,16 @@ function InviteForm({
     });
 
   function send(delivery: 'email' | 'link') {
+    if (roleIds.length === 0) {
+      setUnchosen(true);
+      return;
+    }
     void submit(async () => {
       const result = await api<CreatedInvitation>('/invitations', {
         method: 'POST',
         body: JSON.stringify({
           email,
-          // One until the dialog offers several (ADR-080).
-          roleIds: [roleId],
+          roleIds,
           locale,
           note: note.trim() || null,
           delivery,
@@ -265,7 +267,7 @@ function InviteForm({
       });
       // Onto the clipboard at once, before the lists are read again: a
       // browser lets a page write to it only so long after the click.
-      made.current = {
+      sent.current = {
         result,
         copied: result.link ? await copyToClipboard(result.link) : false,
       };
@@ -318,12 +320,9 @@ function InviteForm({
   useEffect(() => {
     if (behind) void onChanged();
   }, [behind, onChanged]);
-  // An Owner's invitation is an Owner's to resend (ADR-077), as Invited
-  // shows it.
-  const ownersInvitation =
-    invited !== undefined &&
-    !isOwner &&
-    invited.roles.some((role) => role.builtIn && role.name === 'Owner');
+  // Resent only by someone who may give every role it names (ADR-080),
+  // as Invited shows it: an Owner's, by an Owner (ADR-077).
+  const notYours = invited !== undefined && !mayGiveAll(roles, invited.roles);
 
   const resent = useRef<Invitation | null>(null);
   const resend = useSubmit(async () => {
@@ -448,7 +447,7 @@ function InviteForm({
                 },
               }}
             />
-            {invited && !ownersInvitation && (
+            {invited && !notYours && (
               <Button
                 variant="outlined"
                 sx={{ alignSelf: 'flex-start' }}
@@ -469,13 +468,22 @@ function InviteForm({
                 })}
               </Button>
             )}
-            {ownersInvitation && (
+            {invited && notYours && (
               <Typography variant="body2" color="text.secondary">
-                {intl.formatMessage({
-                  id: 'members.invite.ownersInvitation',
-                  defaultMessage:
-                    'It’s an invitation to join as Owner, which only an Owner can resend.',
-                })}
+                {invited.roles.some(isOwnerRole)
+                  ? intl.formatMessage({
+                      id: 'members.invite.ownersInvitation',
+                      defaultMessage:
+                        'It’s an invitation to join as Owner, which only an Owner can resend.',
+                    })
+                  : intl.formatMessage(
+                      {
+                        id: 'members.invite.beyondInvitation',
+                        defaultMessage:
+                          'Your roles don’t include everything {roles} can do, so you can’t resend this invitation.',
+                      },
+                      { roles: roleList(invited.roles) },
+                    )}
               </Typography>
             )}
             {resend.error && (
@@ -493,11 +501,25 @@ function InviteForm({
             )}
           </Stack>
 
-          <RoleCards
+          <RoleChoices
             roles={roles}
-            value={roleId}
-            isOwner={isOwner}
-            onChange={setRoleId}
+            value={roleIds}
+            onChange={(ids) => {
+              setRoleIds(ids);
+              setUnchosen(false);
+            }}
+            ownerReason={intl.formatMessage({
+              id: 'members.invite.ownerOnly',
+              defaultMessage: 'Only an Owner can invite an Owner.',
+            })}
+            problem={
+              unchosen
+                ? intl.formatMessage({
+                    id: 'members.roles.chooseOne',
+                    defaultMessage: 'Choose at least one role.',
+                  })
+                : null
+            }
           />
 
           <TextField
@@ -611,101 +633,6 @@ function InviteForm({
           </Button>
         </DialogActions>
       )}
-    </Box>
-  );
-}
-
-/**
- * The roles as cards, each with what it lets a person do (ADR-077). An
- * Admin sees Owner disabled, with the reason in its place.
- */
-function RoleCards({
-  roles,
-  value,
-  isOwner,
-  onChange,
-}: {
-  roles: Role[];
-  value: string;
-  isOwner: boolean;
-  onChange: (roleId: string) => void;
-}) {
-  const intl = useIntl();
-  const id = useId();
-  const legendId = `${id}-legend`;
-
-  return (
-    <Box component="fieldset" sx={{ border: 0, m: 0, p: 0, minWidth: 0 }}>
-      <FormLabel
-        component="legend"
-        id={legendId}
-        sx={{ fontWeight: 600, color: 'text.primary', mb: 1 }}
-      >
-        {intl.formatMessage({ id: 'members.role', defaultMessage: 'Role' })}
-      </FormLabel>
-      <RadioGroup
-        aria-labelledby={legendId}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        sx={{ gap: 1 }}
-      >
-        {roles.map((role) => {
-          const locked = role.name === 'Owner' && !isOwner;
-          const lineId = `${id}-${role.id}`;
-          const line = locked
-            ? intl.formatMessage({
-                id: 'members.invite.ownerOnly',
-                defaultMessage: 'Only an Owner can invite an Owner.',
-              })
-            : roleDescription(role.name);
-          const chosen = role.id === value;
-          return (
-            <FormControlLabel
-              key={role.id}
-              value={role.id}
-              disabled={locked}
-              control={
-                <Radio
-                  slotProps={{
-                    input: { 'aria-describedby': line ? lineId : undefined },
-                  }}
-                />
-              }
-              label={
-                <Box component="span" sx={{ display: 'block', py: 0.5 }}>
-                  <Box component="span" sx={{ fontWeight: 600 }}>
-                    {roleLabel(role.name)}
-                  </Box>
-                  {line && (
-                    <Typography
-                      component="span"
-                      id={lineId}
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ display: 'block' }}
-                    >
-                      {line}
-                    </Typography>
-                  )}
-                </Box>
-              }
-              sx={{
-                m: 0,
-                alignItems: 'flex-start',
-                border: chosen ? 2 : 1,
-                borderColor: chosen ? 'primary.main' : 'divider',
-                // The accent, lightly, as a chosen card is drawn (ADR-055).
-                bgcolor: chosen ? 'surface.chosen' : undefined,
-                borderRadius: 1,
-                // Two pixels of border chosen, one otherwise: the text stays put.
-                px: chosen ? 1.25 : 1.375,
-                py: chosen ? 0.375 : 0.5,
-                '& .MuiRadio-root': { mt: 0.25 },
-              }}
-            />
-          );
-        })}
-      </RadioGroup>
     </Box>
   );
 }

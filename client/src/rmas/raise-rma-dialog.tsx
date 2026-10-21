@@ -64,6 +64,7 @@ export function RaiseRmaDialog({
   isSample,
   lines,
   locations,
+  canSeeLocations,
   canViewInvoices,
   onClose,
 }: {
@@ -74,6 +75,8 @@ export function RaiseRmaDialog({
   lines: OrderLine[];
   /** The organization's locations, for Send back to; sites are offered. */
   locations: Location[];
+  /** locations.view, from the page: without it Send back to says why. */
+  canSeeLocations: boolean;
   canViewInvoices: boolean;
   onClose: () => void;
 }) {
@@ -381,6 +384,7 @@ export function RaiseRmaDialog({
                 value={sendBackTo}
                 onChange={setSendBackTo}
                 locations={locations}
+                unreadable={!canSeeLocations}
                 emptyLabel={intl.formatMessage({
                   id: 'rmas.sendBackTo.shippedFrom',
                   defaultMessage: 'Where the goods shipped from',

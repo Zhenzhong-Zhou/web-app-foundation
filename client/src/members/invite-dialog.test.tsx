@@ -17,6 +17,23 @@ const ROLES: Role[] = [
   builtInRole('Viewer'),
 ];
 
+/** A role the organization made, Finance, with what it is for. */
+const FINANCE: Role = {
+  ...builtInRole('Viewer'),
+  id: 'role-finance',
+  name: 'Finance',
+  description: 'Invoices from draft to issued.',
+  builtIn: false,
+};
+
+/** As an Admin reads the roles: no Owner, and no Finance, to give. */
+const ADMINS_ROLES: Role[] = [
+  builtInRole('Owner', { mayGive: false }),
+  builtInRole('Admin'),
+  builtInRole('Viewer'),
+  { ...FINANCE, mayGive: false },
+];
+
 function invitation(over: Partial<Invitation> = {}): Invitation {
   return {
     id: 'inv-1',
@@ -43,15 +60,15 @@ function refusal(status: number, body: Record<string, unknown>) {
  */
 function Members({
   start = { kind: 'form' },
+  roles = ROLES,
   invitations = [],
   next = invitations,
-  isOwner = true,
   onChanged = () => undefined,
 }: {
   start?: InviteView;
+  roles?: Role[];
   invitations?: Invitation[];
   next?: Invitation[];
-  isOwner?: boolean;
   onChanged?: () => void;
 }) {
   const [shown, setShown] = useState(invitations);
@@ -59,10 +76,9 @@ function Members({
     <InviteDialog
       open
       start={start}
-      roles={ROLES}
+      roles={roles}
       members={[]}
       invitations={shown}
-      isOwner={isOwner}
       onClose={() => undefined}
       onChanged={() => {
         onChanged();
@@ -271,12 +287,14 @@ describe('InviteDialog (ADR-077)', () => {
     const user = userEvent.setup();
     renderWithAuth(
       <Members
-        isOwner={false}
+        roles={ADMINS_ROLES}
         invitations={[invitation({ id: 'inv-9', roles: [roleRef('Owner')] })]}
       />,
       { organization: { roles: [roleRef('Admin')] } },
     );
 
+    // None chosen to start with, since the organization has made a role.
+    await user.click(screen.getByRole('checkbox', { name: 'Viewer' }));
     await send(user, 'Send invitation');
     expect(
       await screen.findByText(
@@ -344,5 +362,105 @@ describe('InviteDialog (ADR-077)', () => {
         'The link copied before no longer works. Copying a new link later stops this one working.',
       ),
     ).toBeVisible();
+  });
+
+  it('starts on Viewer until the organization has made a role, then on none', async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderWithAuth(<Members />);
+    expect(screen.getByRole('checkbox', { name: 'Viewer' })).toBeChecked();
+    unmount();
+
+    let sent = false;
+    server.use(
+      http.post('/api/v1/invitations', () => {
+        sent = true;
+        return HttpResponse.json({}, { status: 201 });
+      }),
+    );
+    renderWithAuth(<Members roles={[...ROLES, FINANCE]} />);
+    for (const name of ['Owner', 'Admin', 'Viewer', 'Finance']) {
+      expect(screen.getByRole('checkbox', { name })).not.toBeChecked();
+    }
+
+    await send(user, 'Send invitation');
+    expect(
+      screen.getByRole('group', { name: 'Roles' }),
+    ).toHaveAccessibleDescription('Choose at least one role.');
+    expect(sent).toBe(false);
+  });
+
+  it('sends every role chosen, Owner standing alone', async () => {
+    let body: unknown;
+    server.use(
+      http.post('/api/v1/invitations', async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json(
+          { invitation: invitation(), link: null },
+          { status: 201 },
+        );
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(<Members roles={[...ROLES, FINANCE]} />);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Owner' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Finance' }));
+    expect(screen.getByRole('checkbox', { name: 'Owner' })).not.toBeChecked();
+    await user.click(screen.getByRole('checkbox', { name: 'Viewer' }));
+    await send(user, 'Send invitation');
+
+    await waitFor(() =>
+      expect(body).toMatchObject({ roleIds: ['role-finance', 'role-viewer'] }),
+    );
+  });
+
+  it('disables a role the inviter cannot give, with the reason', () => {
+    renderWithAuth(<Members roles={ADMINS_ROLES} />);
+
+    const owner = screen.getByRole('checkbox', { name: 'Owner' });
+    expect(owner).toBeDisabled();
+    expect(owner).toHaveAccessibleDescription(
+      'An Owner holds no other role. Only an Owner can invite an Owner.',
+    );
+    const finance = screen.getByRole('checkbox', { name: 'Finance' });
+    expect(finance).toBeDisabled();
+    expect(finance).toHaveAccessibleDescription(
+      'Invoices from draft to issued. Your roles don’t include everything Finance can do, so you can’t give it.',
+    );
+  });
+
+  it('offers no Resend on an invitation naming a role the inviter cannot give', async () => {
+    server.use(
+      http.post('/api/v1/invitations', () =>
+        refusal(409, {
+          message: 'That address has already been invited.',
+          code: 'already_invited',
+          details: { invitationId: 'inv-9' },
+        }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(
+      <Members
+        roles={ADMINS_ROLES}
+        invitations={[
+          invitation({
+            id: 'inv-9',
+            roles: [{ id: 'role-finance', name: 'Finance', builtIn: false }],
+          }),
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole('checkbox', { name: 'Viewer' }));
+    await send(user, 'Send invitation');
+    expect(
+      await screen.findByText(
+        'Your roles don’t include everything Finance can do, so you can’t resend this invitation.',
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Resend instead' }),
+    ).not.toBeInTheDocument();
   });
 });

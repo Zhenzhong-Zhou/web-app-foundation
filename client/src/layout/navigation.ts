@@ -2,6 +2,7 @@ import type { SvgIconComponent } from '@mui/icons-material';
 import AccountTreeOutlined from '@mui/icons-material/AccountTreeOutlined';
 import AssessmentOutlined from '@mui/icons-material/AssessmentOutlined';
 import AssignmentReturnOutlined from '@mui/icons-material/AssignmentReturnOutlined';
+import BadgeOutlined from '@mui/icons-material/BadgeOutlined';
 import BusinessOutlined from '@mui/icons-material/BusinessOutlined';
 import CategoryOutlined from '@mui/icons-material/CategoryOutlined';
 import ContactsOutlined from '@mui/icons-material/ContactsOutlined';
@@ -64,6 +65,7 @@ const labels = defineMessages({
     defaultMessage: 'Organization',
   },
   members: { id: 'layout.menu.members', defaultMessage: 'Members' },
+  roles: { id: 'layout.menu.roles', defaultMessage: 'Roles' },
   taxCodes: { id: 'layout.menu.taxCodes', defaultMessage: 'Tax codes' },
   exchangeRates: {
     id: 'layout.menu.exchangeRates',
@@ -192,7 +194,20 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: BusinessOutlined,
         permission: 'organizations.view',
       },
-      { label: labels.members, to: '/members', icon: GroupOutlined },
+      // users.view and roles.view, which every role holds (ADR-080), so
+      // both leave the menu with the organization (#169).
+      {
+        label: labels.members,
+        to: '/members',
+        icon: GroupOutlined,
+        permission: 'users.view',
+      },
+      {
+        label: labels.roles,
+        to: '/settings/roles',
+        icon: BadgeOutlined,
+        permission: 'roles.view',
+      },
       {
         label: labels.taxCodes,
         to: '/settings/tax-codes',

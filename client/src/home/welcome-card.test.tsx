@@ -294,6 +294,33 @@ describe('the welcome card', () => {
     ).toBeEnabled();
   });
 
+  /**
+   * The first week's Receive shows for whoever may receive against an
+   * order (ADR-080). The dock that may not move stock otherwise receives
+   * on the order, so its button opens the confirmed purchases.
+   */
+  it('sends someone who receives only against orders to the confirmed purchases', async () => {
+    serve(
+      welcome({
+        items: [{ key: 'receiveStock', done: false, what: null }],
+      }),
+    );
+    renderHome(['orders.view', 'orders.receive', 'locations.view']);
+
+    const region = await card();
+    expect(
+      within(region).getByText(
+        'Record goods as they arrive, against the purchase order they came on.',
+      ),
+    ).toBeVisible();
+    expect(
+      within(region).getByRole('link', { name: 'Orders' }),
+    ).toHaveAttribute('href', '/orders?direction=purchase&status=confirmed');
+    expect(
+      within(region).queryByRole('link', { name: 'Receive stock' }),
+    ).toBeNull();
+  });
+
   it('gives the founder one line, and only their own two items while Getting started shows', async () => {
     serve(
       welcome({

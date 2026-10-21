@@ -81,6 +81,7 @@ export function ReleaseRunDialog({
   open,
   run,
   canOverrideLicence,
+  canAttachRecipe,
   onClose,
   onReleased,
 }: {
@@ -88,6 +89,12 @@ export function ReleaseRunDialog({
   run: ProductionRun;
   /** production.override_licence, from the page (ADR-050). */
   canOverrideLicence: boolean;
+  /**
+   * production.create, from the page: attaching a recipe to a run planned
+   * without one changes the plan, so a reader who may release but not plan
+   * (ADR-080) is told who can, rather than offered a choice refused.
+   */
+  canAttachRecipe: boolean;
   onClose: () => void;
   onReleased: () => Promise<void> | void;
 }) {
@@ -102,6 +109,7 @@ export function ReleaseRunDialog({
    * end: the run had no edit form.
    */
   const needsRecipe = run.bomId === null;
+  const choosesRecipe = needsRecipe && canAttachRecipe;
   const [recipes, setRecipes] = useState<Bom[]>([]);
   const [bomId, setBomId] = useState('');
   const chosenBom =
@@ -214,7 +222,7 @@ export function ReleaseRunDialog({
   }
 
   useEffect(() => {
-    if (!open || !needsRecipe) return;
+    if (!open || !choosesRecipe) return;
 
     let ignore = false;
 
@@ -228,7 +236,7 @@ export function ReleaseRunDialog({
     return () => {
       ignore = true;
     };
-  }, [open, needsRecipe, run.outputVariantId]);
+  }, [open, choosesRecipe, run.outputVariantId]);
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
@@ -337,7 +345,17 @@ export function ReleaseRunDialog({
           <Stack spacing={2} sx={{ pt: 1 }}>
             {error && <FormError message={error} />}
 
-            {needsRecipe && recipes.length === 0 && (
+            {needsRecipe && !canAttachRecipe && (
+              <Alert severity="info">
+                {intl.formatMessage({
+                  id: 'production.release.recipeNotYours',
+                  defaultMessage:
+                    'This run was planned without a recipe, and attaching one is for whoever may plan runs, which your roles don’t include. Once one of them has attached it, you can release the run.',
+                })}
+              </Alert>
+            )}
+
+            {choosesRecipe && recipes.length === 0 && (
               <Alert severity="warning">
                 {intl.formatMessage({
                   id: 'production.release.noRecipe',
@@ -347,7 +365,7 @@ export function ReleaseRunDialog({
               </Alert>
             )}
 
-            {needsRecipe && recipes.length > 0 && (
+            {choosesRecipe && recipes.length > 0 && (
               <TextField
                 id="release-recipe"
                 label={intl.formatMessage({

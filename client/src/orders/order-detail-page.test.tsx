@@ -666,3 +666,90 @@ describe('OrderDetailPage header', () => {
     expect(screen.getByText(/their reference ACME-77/)).toBeInTheDocument();
   });
 });
+
+/**
+ * Whoever lacks orders.view_prices is sent an order with no line prices,
+ * totals or tax (ADR-080): the page leaves their columns, the totals and
+ * the order's documents out, rather than showing a dash where each was.
+ */
+describe('OrderDetailPage without prices', () => {
+  const WAREHOUSE = ['orders.view', 'orders.receive', 'orders.ship'];
+
+  /** An order as the server sends it to such a reader. */
+  function withoutPrices(over: Partial<OrderDetail> = {}): OrderDetail {
+    const detail = order({ status: 'confirmed', ...over });
+    delete detail.totals;
+    delete detail.totalsComplete;
+    for (const line of detail.lines) {
+      delete line.unitPrice;
+      delete line.currency;
+      delete line.priceSource;
+      delete line.priceListId;
+      delete line.priceListName;
+      delete line.lineTotal;
+    }
+    return detail;
+  }
+
+  it('shows the items without their prices, totals or the purchase order', async () => {
+    serve(withoutPrices());
+    renderPage(WAREHOUSE);
+
+    const row = within(await rowFor('WIDGET-1'));
+    expect(row.getByRole('button', { name: 'Receive' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('columnheader', { name: 'Unit price' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('columnheader', { name: 'Total' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('—')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('No prices recorded on this order'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Print' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Download PDF' })).toBeNull();
+  });
+
+  it('offers no pro forma for a sale', async () => {
+    serve(withoutPrices({ direction: 'sale', number: 'SO-000001' }));
+    renderPage(WAREHOUSE);
+
+    expect(
+      await screen.findByRole('heading', { name: 'SO-000001' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Pro forma invoice' }),
+    ).toBeNull();
+  });
+
+  /**
+   * Sales may raise and change orders but not see locations: the page
+   * opens without asking for them, and Edit's Deliver to says why it
+   * cannot be chosen.
+   */
+  it('opens for a reader who may not see locations, and says why Deliver to is fixed', async () => {
+    const user = userEvent.setup();
+    let askedForLocations = false;
+    serve(order({ status: 'confirmed' }));
+    server.use(
+      http.get('/api/v1/locations', () => {
+        askedForLocations = true;
+        return apiError(403, 'Missing permission');
+      }),
+    );
+    renderPage(['orders.view', 'orders.view_prices', 'orders.update']);
+
+    await user.click(await screen.findByRole('button', { name: 'Edit' }));
+
+    expect(
+      await screen.findByText(
+        'You can’t see the organization’s locations, so you can’t choose one here.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: 'Deliver to' }),
+    ).toHaveAttribute('aria-disabled', 'true');
+    expect(askedForLocations).toBe(false);
+  });
+});

@@ -19,17 +19,21 @@ export type LotInput = { code: string; expiresAt: string };
  * variant that does not track them, and refuses a receipt without one on a
  * variant that does, so the form follows the same rule rather than offering
  * a field that will be rejected. Mounting with the variant is also what
- * fetches its lots once tracking is known.
+ * fetches its lots once tracking is known, for a reader who may see stock:
+ * without it (ADR-080) the code is typed, which it always could be.
  */
 export function LotFields({
   idPrefix,
   variantId,
   value,
   onChange,
+  knowsLots = true,
 }: {
   /** Keeps the two dialogs' field ids apart. */
   idPrefix: string;
   variantId: string;
+  /** stock.view, from the dialog's page: the lots already known. */
+  knowsLots?: boolean;
   value: LotInput;
   onChange: (next: LotInput) => void;
 }) {
@@ -42,6 +46,8 @@ export function LotFields({
    * typeable: this is a prompt, not a constraint.
    */
   useEffect(() => {
+    if (!knowsLots) return;
+
     let ignore = false;
 
     void api<Lot[]>(`/stock/lots?variantId=${variantId}`)
@@ -55,7 +61,7 @@ export function LotFields({
     return () => {
       ignore = true;
     };
-  }, [variantId]);
+  }, [variantId, knowsLots]);
 
   return (
     <>

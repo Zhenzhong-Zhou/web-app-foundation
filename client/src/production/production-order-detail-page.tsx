@@ -509,6 +509,7 @@ export function ProductionOrderDetailPage() {
         open={releasing}
         run={run}
         canOverrideLicence={canOverrideLicence}
+        canAttachRecipe={can('production.create')}
         onClose={() => setReleasing(false)}
         onReleased={reload}
       />

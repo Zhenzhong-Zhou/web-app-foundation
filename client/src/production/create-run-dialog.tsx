@@ -44,13 +44,20 @@ const EMPTY = {
  * The recipe is chosen here rather than at release, because the batch size
  * only means something against a yield — "500" is half a batch of a recipe
  * that makes 1000, and a quarter of one that makes 2000.
+ *
+ * The contract manufacturers are partners, which Production may not see
+ * (ADR-080): they are asked for only by whoever may, and otherwise the
+ * field says why the run is planned as made here.
  */
 export function CreateRunDialog({
   open,
+  canSeePartners,
   onClose,
   onCreated,
 }: {
   open: boolean;
+  /** partners.view, from the page. */
+  canSeePartners: boolean;
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -86,20 +93,27 @@ export function CreateRunDialog({
     void Promise.all([
       api<VariantOption[]>('/products/variants'),
       api<Location[]>('/locations'),
-      api<Partner[]>('/partners'),
     ])
-      .then(([variantRows, locationRows, partnerRows]) => {
+      .then(([variantRows, locationRows]) => {
         if (ignore) return;
         setVariants(variantRows);
         setLocations(locationRows);
-        setPartners(partnerRows);
       })
       .catch(() => undefined);
+
+    // Apart, so the item and the place come even when this does not.
+    if (canSeePartners) {
+      void api<Partner[]>('/partners')
+        .then((partnerRows) => {
+          if (!ignore) setPartners(partnerRows);
+        })
+        .catch(() => undefined);
+    }
 
     return () => {
       ignore = true;
     };
-  }, [open]);
+  }, [open, canSeePartners]);
 
   // Recipes for whatever is being made. Refetched per variant, because a BOM
   // outputs one variant and offering another product's would be nonsense.
@@ -366,6 +380,25 @@ export function CreateRunDialog({
                   ...current,
                   partnerId: event.target.value,
                 }))
+              }
+              disabled={!canSeePartners}
+              helperText={
+                canSeePartners
+                  ? undefined
+                  : intl.formatMessage({
+                      id: 'production.create.partnersUnreadable',
+                      defaultMessage:
+                        'You can’t see customers and suppliers, so a contract manufacturer can’t be chosen here.',
+                    })
+              }
+              // Showing We make it ourselves, the one choice left.
+              slotProps={
+                canSeePartners
+                  ? undefined
+                  : {
+                      select: { displayEmpty: true },
+                      inputLabel: { shrink: true },
+                    }
               }
             >
               <MenuItem value="">

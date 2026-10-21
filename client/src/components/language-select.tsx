@@ -6,6 +6,7 @@ import { useAuth } from '../auth/use-auth';
 import { useLanguage } from '../i18n/use-language';
 import { api } from '../lib/api';
 import { isLocale, pickerName, SUPPORTED_LOCALES } from '../lib/locales';
+import type { PreferenceControl } from './preference-control';
 
 /**
  * The language the app speaks to you (ADR-054): in the account menu beside
@@ -30,10 +31,13 @@ import { isLocale, pickerName, SUPPORTED_LOCALES } from '../lib/locales';
 export function LanguageSelect({
   account = false,
   describedBy,
+  control,
 }: {
   account?: boolean;
   /** The id of a line that says more about the choice. */
   describedBy?: string;
+  /** Opened by its row, in the account menu (#151). */
+  control?: PreferenceControl;
 }) {
   const intl = useIntl();
   const { locale, setLocale } = useLanguage();
@@ -47,6 +51,7 @@ export function LanguageSelect({
 
   return (
     <Select
+      {...control}
       size="small"
       value={chosen}
       displayEmpty
