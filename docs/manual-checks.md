@@ -1310,7 +1310,8 @@ Mailpit open.
   kept). The link works until the end of its seventh day, named with the
   organization's time zone, and opens `/invitation?token=…` on the app's
   address, never the API's; the same address is written out for when the
-  button does not open. It ends 由 … 代 … 发送, naming the app as
+  button does not open, under 接受邀请 with no colon (the plain text, in
+  Mailpit's Text tab). It ends 由 … 代 … 发送, naming the app as
   MAIL_FROM does.
 - **MC-3002** *(ADR-077)* With the account's language set to Français,
   open Invite: Write to them in starts at Français, and an invitation
@@ -2021,3 +2022,5 @@ first.
 - 2026-10-20: the Chinese invitation and Invited say a link works through
   its last day: MC-3009 and MC-3010 extended.
 - 2026-10-20: an order's reference reads 参考号 in Chinese: MC-3206 extended.
+- 2026-10-20: the invitation email's link sits under its action with no
+  colon: MC-3001 extended.
