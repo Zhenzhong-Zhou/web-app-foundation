@@ -1052,7 +1052,7 @@
   "orders.receive.soFar": "已收货 {fulfilled}，共订购 {ordered}。",
   "orders.receive.title": "收货 {sku}",
   "orders.receive.upTo": "最多 {amount}，尚未收货。",
-  "orders.reference": "编号",
+  "orders.reference": "参考号",
   "orders.return.action": "接收退货",
   "orders.return.againstRma": "关联退货授权",
   "orders.return.againstRma.help": "如客户已获授权退回此货物。退货数量将受退货授权的限制。",

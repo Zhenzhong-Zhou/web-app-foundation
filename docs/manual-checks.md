@@ -1565,7 +1565,9 @@ The pages, in a private window unless a check says otherwise.
   Closing Help puts focus back on the Learn more that opened it; in
   Safari, which focuses nothing pressed by mouse, on Help.
 - **MC-3206** *(ADR-079)* Reading a guide in 中文: with Account's language
-  set to 中文, open 帮助 on 订单, on a computer and on a phone (帮助 · 订单).
+  set to 中文, open 订单, whose list heads its columns 编号 and 参考号, two
+  words for two things, then 帮助, on a computer and on a phone (帮助 ·
+  订单).
   The guide reads in Chinese, 创建订单 and the other sections, bold and
   links in place, with no space added between Chinese words; All guides
   reads 所有指南, grouped 工作, 资料, 设置 and 我. Learn more reads 了解更多,
@@ -2018,3 +2020,4 @@ first.
   MC-3208 extended.
 - 2026-10-20: the Chinese invitation and Invited say a link works through
   its last day: MC-3009 and MC-3010 extended.
+- 2026-10-20: an order's reference reads 参考号 in Chinese: MC-3206 extended.
