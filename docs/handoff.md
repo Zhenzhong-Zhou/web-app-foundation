@@ -247,9 +247,9 @@ with this one, this one is current.
 - **ADR-067** (the server's tests on Vitest, then Nest 12 and
   intl-messageformat 12): built and merged (#90, #91). TypeScript 7 waits
   for typescript-eslint and the Nest CLI (ADR-067, *Deferred*); still so
-  on 18 October 2026, with typescript-eslint 8.71.2 accepting `<6.1.0`,
-  the Nest CLI 12.0.8 depending on TypeScript `~6.0.2`, and
-  `@nestjs/swagger` 12.0.2 accepting up to 6.
+  on 20 October 2026, with typescript-eslint 8.72.0 accepting `<6.1.0`,
+  the Nest CLI 12.0.10 depending on TypeScript `~6.0.2`, and
+  `@nestjs/swagger` 12.0.2 accepting up to 6 (ADR-019's table).
 - **ADR-046 amended:** a taxed invoice needs the seller's tax number,
   refused with `organization_tax_number_missing` and linked to Profile
   (`invoice-tax-number`, MC-711). Tax profiles by country are deferred in
