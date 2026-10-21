@@ -1625,7 +1625,7 @@
   "settings.deletion.downloading": "正在下载……下载完成后，这里会显示下载时间。",
   "settings.deletion.exportAgain": "上次下载已超过一天：请重新下载，然后确认。",
   "settings.deletion.members": "成员保留各自的账户，只是不再属于该组织。现在、删除前 7 天、取消时和删除完成时，都会发邮件通知每个人。",
-  "settings.deletion.missing.export": "下载全部数据，或勾选“我不需要下载全部数据”",
+  "settings.deletion.missing.export": "下载全部数据（或勾选“我不需要下载全部数据”）",
   "settings.deletion.missing.name": "组织名称",
   "settings.deletion.missing.password": "您的密码",
   "settings.deletion.name": "组织名称",

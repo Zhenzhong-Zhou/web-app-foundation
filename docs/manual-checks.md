@@ -957,7 +957,9 @@ await fetch(`${api}/v1/files/product-image`, {
   your name download it too: the section names them, not "you". In 中文,
   with the browser left in English, the README reads in Chinese.
 - **MC-2402** Close this organization…: Close organization is off, and
-  the line under it says what is still needed. It stays off until the
+  the line under it says what is still needed, the download with its
+  alternative in brackets, then the name and the password; in 中文
+  还需要：下载全部数据（或勾选“我不需要下载全部数据”）、组织名称和您的密码。 It stays off until the
   export is fresh or "I don't need a copy" is ticked, the name is
   typed exactly, and the password is typed. With the last export moved
   two days back (`update audit_log set created_at = now() - interval
@@ -2130,3 +2132,5 @@ first.
   MC-2904 extended.
 - 2026-10-20: the deletion email names Keep my account and where it is:
   MC-2302 extended.
+- 2026-10-20: what closing still needs reads the download's alternative as
+  one item: MC-2402 extended.

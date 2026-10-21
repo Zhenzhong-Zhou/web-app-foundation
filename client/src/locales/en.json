@@ -1625,7 +1625,7 @@
   "settings.deletion.downloading": "Downloading… The time of the download appears here once it has finished.",
   "settings.deletion.exportAgain": "The last download is more than a day old now: download again, then confirm.",
   "settings.deletion.members": "Members keep their accounts and lose only this membership. Everyone is emailed now, 7 days before, if it’s cancelled, and when it’s done.",
-  "settings.deletion.missing.export": "the download, or “I don’t need a copy”",
+  "settings.deletion.missing.export": "the download (or “I don’t need a copy”)",
   "settings.deletion.missing.name": "the name",
   "settings.deletion.missing.password": "your password",
   "settings.deletion.name": "Organization name",

@@ -1625,7 +1625,7 @@
   "settings.deletion.downloading": "Téléchargement en cours… L’heure du téléchargement s’affichera ici une fois terminé.",
   "settings.deletion.exportAgain": "Le dernier téléchargement date maintenant de plus d’un jour : téléchargez de nouveau, puis confirmez.",
   "settings.deletion.members": "Les membres conservent leur compte et ne perdent que cette adhésion. Chacun reçoit un courriel maintenant, 7 jours avant, en cas d’annulation et une fois terminé.",
-  "settings.deletion.missing.export": "le téléchargement, ou « Je n’ai pas besoin de copie »",
+  "settings.deletion.missing.export": "le téléchargement (ou « Je n’ai pas besoin de copie »)",
   "settings.deletion.missing.name": "le nom",
   "settings.deletion.missing.password": "votre mot de passe",
   "settings.deletion.name": "Nom de l’organisation",
