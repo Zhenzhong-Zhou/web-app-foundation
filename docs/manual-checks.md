@@ -1271,8 +1271,9 @@ Any page, signed in, in a browser at its default font size.
 Signed in as the demo Owner the seed prints.
 
 - **MC-2901** *(ADR-076)* Records → Audit log, in English, then 中文 and
-  Français: each entry's action, record type and details read in the
-  language, with no id anywhere. An invoice drafted reads Tax code: GST
+  Français: the intro says a field with an arrow changed from the first
+  value to the second, as Help does, and each entry's action, record type
+  and details read in the language, with no id anywhere. An invoice drafted reads Tax code: GST
   and Shipment: SO-…, the shipment opening its order; an RMA, its lines
   by SKU, quantity and resolution, and its order and invoice by number;
   Sarah Chen's role change, Viewer → Admin, the role names in the
@@ -2102,3 +2103,5 @@ first.
 - 2026-10-20: Keep my account says the account is kept: MC-2302 extended.
 - 2026-10-20: the audit log's From column has its own word in 中文 and
   Français: MC-2901 extended.
+- 2026-10-20: the audit log's intro says what an arrow means: MC-2901
+  extended.

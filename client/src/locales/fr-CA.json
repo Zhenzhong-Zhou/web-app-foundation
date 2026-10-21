@@ -161,7 +161,7 @@
   "audit.history.close": "Fermer l’historique",
   "audit.history.empty": "Aucune modification enregistrée.",
   "audit.history.openInLog": "Ouvrir dans le journal d’audit",
-  "audit.intro": "Chaque modification faite dans cette organisation, de la plus récente à la plus ancienne. Les entrées sont conservées deux ans et ne peuvent être ni modifiées ni supprimées. Là où une valeur est affichée, c’est la valeur donnée au champ — pas celle qu’il avait avant.",
+  "audit.intro": "Chaque modification faite dans cette organisation, de la plus récente à la plus ancienne. Les entrées sont conservées deux ans et ne peuvent être ni modifiées ni supprimées. Un champ avec une flèche est passé de la première valeur à la seconde; une valeur seule est celle donnée au champ.",
   "audit.noAccess": "Votre rôle ne donne pas accès au journal d’audit.",
   "audit.noMatch": "Rien ne correspond à ces filtres.",
   "audit.onePerson": "Activité d’une seule personne.",

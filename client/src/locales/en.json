@@ -161,7 +161,7 @@
   "audit.history.close": "Close history",
   "audit.history.empty": "No recorded changes.",
   "audit.history.openInLog": "Open in audit log",
-  "audit.intro": "Every change made in this organization, newest first. Entries are kept for two years and cannot be edited or removed. Where a value is shown, it is what the field was set to — not what it was before.",
+  "audit.intro": "Every change made in this organization, newest first. Entries are kept for two years and cannot be edited or removed. A field with an arrow changed from the first value to the second; a value on its own is what the field was set to.",
   "audit.noAccess": "Your role does not include access to the audit log.",
   "audit.noMatch": "Nothing matches these filters.",
   "audit.onePerson": "Showing one person's activity only.",

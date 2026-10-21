@@ -184,7 +184,7 @@ export function AuditPage({ mine = false }: { mine?: boolean }) {
             : intl.formatMessage({
                 id: 'audit.intro',
                 defaultMessage:
-                  'Every change made in this organization, newest first. Entries are kept for two years and cannot be edited or removed. Where a value is shown, it is what the field was set to — not what it was before.',
+                  'Every change made in this organization, newest first. Entries are kept for two years and cannot be edited or removed. A field with an arrow changed from the first value to the second; a value on its own is what the field was set to.',
               })
         }
         actions={
