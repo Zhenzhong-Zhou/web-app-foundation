@@ -1459,9 +1459,10 @@ The pages, in a private window unless a check says otherwise.
   read-only, with the line about a confirmation email and Not your
   address?. Give a name and a password and Set up: Home opens in the new
   organization with its welcome, whose first week starts with Confirm
-  your email address (ADR-079), and Getting started at 0 of 7. Mailpit has the confirmation email; Settings → Organization →
-  Profile shows this computer's time zone. Members → Invite asks you to
-  confirm your own email first (MC-3008).
+  your email address (ADR-079), and Getting started at 0 of 7. Mailpit
+  has the confirmation email; Settings → Organization → Profile shows
+  this computer's time zone. Members → Invite asks you to confirm your
+  own email first (MC-3008).
 - **MC-3107** *(ADR-078)* With `OPERATOR_EMAIL=you@example.com` in `.env`
   and the API restarted, accept another organization invitation: Mailpit
   has "… was set up" to that address, naming who set it up, by name and
