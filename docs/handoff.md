@@ -60,9 +60,9 @@ with this one, this one is current.
          emailed through Mailpit. A local database that ran 0068 before
          the Admin role line changed keeps the old line until
          `update roles set description = 'Day-to-day work: stock,
-         orders, production and drafting invoices. Can add and remove
-         members.' where is_system and name = 'Admin'`; a fresh one
-         needs nothing.
+         orders, production and drafting invoices. Can invite and remove
+         members.' where is_system and name = 'Admin'`, the line since
+         0072; a fresh one needs nothing.
     2. **ADR-078, registration by invitation** (`adr-078-registration`):
        merged (#146). Eight commits: the ADR and five
        points from its discussion, the schema (0069), the server, the
