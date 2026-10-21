@@ -419,9 +419,11 @@ function CountTile({ card }: { card: HomeCard }) {
         display: 'flex',
         flexDirection: 'column',
         gap: 0.25,
-        bgcolor: tone ? 'error.light' : 'background.paper',
-        color: tone ? 'error.dark' : 'text.primary',
-        borderColor: tone ? 'transparent' : 'divider',
+        // The critical tone's tint and text, as a red chip's, which hold
+        // AA in both modes (tokens.ts).
+        bgcolor: tone ? 'tone.critical.bg' : 'background.paper',
+        color: tone ? 'tone.critical.fg' : 'text.primary',
+        borderColor: tone ? 'tone.critical.border' : 'divider',
       }}
     >
       <Typography variant="body2" sx={{ color: 'inherit' }}>

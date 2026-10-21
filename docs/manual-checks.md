@@ -1670,6 +1670,11 @@ The pages, in a private window unless a check says otherwise.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R24** *(late on Home)* With something late, such as PO-DEMO-9, Home's
+  To receive (and To ship, Expiring soon or Licences, whichever has a late
+  one) is tinted the pale red of a red chip, its title, count and "1
+  overdue" in dark red, easy to read; in dark mode a dark tint with light
+  red words. A tile with nothing late is plain.
 - **MC-R23** *(links on an order)* Open an order with an expected day, such
   as PO-DEMO-9, and a duplicated order: under the number, the partner's name
   and "duplicated from a previous order" are underlined before any hover, so
@@ -2069,3 +2074,4 @@ first.
   over it and gone: MC-1801 and MC-3207 extended.
 - 2026-10-20: where Help slides over at Large text: MC-3203 extended.
 - 2026-10-20: an order's links under its number are underlined: MC-R23.
+- 2026-10-20: Home's late tiles in the critical tone, readable: MC-R24.

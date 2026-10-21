@@ -110,9 +110,10 @@ const SCREENS: Screen[] = [
 
 /**
  * Enough for each screen to draw what it draws when in use: a stock row
- * with a lot 20 days from expiry (a red chip), and an order with a line,
- * which opens in tabs beside its summary, expected on a day that has passed,
- * so its subtitle runs on past the partner's link.
+ * with a lot 20 days from expiry (a red chip), and a confirmed order with a
+ * line, which opens in tabs beside its summary, expected on a day that has
+ * passed, so its subtitle runs on past the partner's link and Home's To
+ * receive is tinted late.
  */
 async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
   // Someone on Members' Invited (ADR-077), which needs a verified inviter.
@@ -159,6 +160,10 @@ async function seed(api: APIRequestContext, ownerEmail: string): Promise<Seed> {
       },
     }),
   );
+  const confirmed = await api.patch(`/v1/orders/${order.id}`, {
+    data: { status: 'confirmed' },
+  });
+  expect(confirmed.ok(), await confirmed.text()).toBeTruthy();
 
   return { orderId: order.id, productId: product.id };
 }
