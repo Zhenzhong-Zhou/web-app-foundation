@@ -17,7 +17,11 @@ import { t } from '../../i18n/translate';
 import { ListRecentDto } from './dto/list-recent.dto';
 import type { RecentList } from './dto/recent-response.dto';
 import { RecordOpenedDto } from './dto/record-opened.dto';
-import { RECENT_PERMISSION, RecentService } from './recent.service';
+import {
+  kindsVisibleWith,
+  RECENT_PERMISSION,
+  RecentService,
+} from './recent.service';
 
 /**
  * Recently opened (ADR-058), the person's own. No permission on the
@@ -45,7 +49,7 @@ export class RecentController {
     return {
       recent: await this.recent.list(
         user.userId,
-        await this.held(user),
+        kindsVisibleWith(await this.held(user)),
         query.limit ?? 6,
       ),
     };

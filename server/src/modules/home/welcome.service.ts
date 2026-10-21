@@ -20,7 +20,7 @@ import {
   users,
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
-import { RecentService } from '../recent/recent.service';
+import { kindsVisibleWith, RecentService } from '../recent/recent.service';
 import type {
   Welcome,
   WelcomeDone,
@@ -314,13 +314,13 @@ export class WelcomeService {
           : null;
       case 'lookUp':
       case 'openOrder': {
-        // Recently opened, narrowed by the view permissions it goes by to
-        // the kinds this item is about: products and lots, or orders.
-        const kinds: Permission[] =
-          key === 'lookUp' ? ['products.view', 'stock.view'] : ['orders.view'];
+        // Recently opened, of the kinds this item is about and the person
+        // may still see: products and lots, or orders.
+        const about: RecentKind[] =
+          key === 'lookUp' ? ['product', 'lot'] : ['order'];
         const [entry] = await this.recent.list(
           userId,
-          new Set(kinds.filter((permission) => held.has(permission))),
+          kindsVisibleWith(held).filter((kind) => about.includes(kind)),
           1,
         );
         return entry
