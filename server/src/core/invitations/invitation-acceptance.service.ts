@@ -25,7 +25,6 @@ import { runInTenantContext } from '../../database/tenant-context';
 import { t } from '../../i18n/translate';
 import { AuditService } from '../audit/audit.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
-import { ROLE_NAMES } from '../audit/audit-fields';
 import {
   AccountEventService,
   type EventMeta,
@@ -35,7 +34,6 @@ import { AuthTokenService } from '../auth/auth-token.service';
 import { PasswordService } from '../auth/password.service';
 import type { RequestContext } from '../auth/request-context';
 import { type NewSession, SessionService } from '../auth/session.service';
-import type { SystemRole } from '../authorization/permissions';
 import {
   FILE_STORAGE,
   type FileStorage,
@@ -49,7 +47,7 @@ import type { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import type { InvitationPreview } from './dto/invitation-response.dto';
 import { inviterStillHere } from './inviter';
 import { lastDayOf } from './link-end';
-import { roleWords } from './role-words';
+import { roleName, roleWords } from './role-words';
 
 /**
  * The one refusal every link that is not live gets, all alike (ADR-077),
@@ -553,12 +551,10 @@ export class InvitationAcceptanceService {
         .where(and(eq(invitations.id, invitation.id), isNull(users.deletedAt)));
       if (!facts) return;
 
-      // A built-in role's name in the reader's language, as a message of
-      // its own; a role the organization named, as named.
-      const role =
-        facts.roleIsSystem && facts.roleName in ROLE_NAMES
-          ? ROLE_NAMES[facts.roleName as SystemRole]
-          : facts.roleName;
+      const role = roleName({
+        name: facts.roleName,
+        isSystem: facts.roleIsSystem,
+      });
 
       await this.notifications.emit([
         {
