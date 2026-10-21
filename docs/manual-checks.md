@@ -1458,8 +1458,8 @@ The pages, in a private window unless a check says otherwise.
   with what that lets them do; You can change the name later; the address
   read-only, with the line about a confirmation email and Not your
   address?. Give a name and a password and Set up: Home opens in the new
-  organization, with Confirm your email address and Getting started at 0
-  of 7. Mailpit has the confirmation email; Settings → Organization →
+  organization with its welcome, whose first week starts with Confirm
+  your email address (ADR-079), and Getting started at 0 of 7. Mailpit has the confirmation email; Settings → Organization →
   Profile shows this computer's time zone. Members → Invite asks you to
   confirm your own email first (MC-3008).
 - **MC-3107** *(ADR-078)* With `OPERATOR_EMAIL=you@example.com` in `.env`
@@ -1508,9 +1508,11 @@ The pages, in a private window unless a check says otherwise.
   invitation and joined Demo … as a Viewer; Mailpit has no email about it.
   With Account's language set to 中文, the same entry reads …加入了 and
   …接受了您的邀请，以查看者身份加入 Demo …。 Choosing the entry opens
-  the newcomer's page on People. As an Admin of the demo team,
-  invite another address, then leave the organization before it is
-  accepted, and accept it: nobody's bell says so.
+  the newcomer's page on People. As an Admin of the demo team, such as
+  Daniel Okafor, invite another address, then leave the organization
+  before it is accepted, and accept it: neither the Admin's bell, signed
+  in with no organization now, nor the Owner's says so. (Whoever leaves
+  is gone from this demo: walk MC-1903 first, or seed again.)
 - **MC-3202** *(ADR-079)* Help on a computer, about 1280 to 1440 px wide:
   the top bar has Help, its icon and the word, between Search and the
   bell. On Orders, press it: Help slides in over the right of the page,
@@ -1578,17 +1580,18 @@ The pages, in a private window unless a check says otherwise.
   product and come back: Look up is ticked and reads You opened … as a
   link to it. Dismiss: the card goes, and a message says What you can do
   here stays on Your account, with Undo; Undo brings the card back, focus
-  on its title (Tab moves on from there), and a reload keeps it. Dismiss again and reload: Home as usual. As an Admin
-  of the demo team, invite an address with a note and leave the
-  organization before it is accepted; once accepted, the card's note
-  reads From Demo … with no name.
+  on its title (Tab moves on from there), and a reload keeps it. Dismiss
+  again and reload: Home as usual. As an Admin of the demo team, invite
+  an address with a note and leave the organization before it is
+  accepted; once accepted, the card's note reads From Demo … with no
+  name. (Whoever leaves is gone from this demo, as in MC-3201.)
 - **MC-3208** *(ADR-079)* The welcome as an Admin joined by a copied
   link: invite as an Admin with Copy link, and open the link in a private
   window. The first week starts with Confirm your email address: We sent
   a link to … Inviting colleagues waits until you confirm, with Resend the
   link, which then reads Sent, with focus on it (with the server stopped,
   it says Could not reach the server. and stays). What you can do here
-  ends with no one to ask. The yellow banner asking to confirm is not on
+  has no To do more, ask … line. The yellow banner asking to confirm is not on
   Home, not even for a moment as Home opens, and is on Orders and every
   other page. Confirm from Mailpit: Home ticks Confirmed,
   and the banner is gone everywhere. Add a photo on Your account: Say who
@@ -1598,8 +1601,9 @@ The pages, in a private window unless a check says otherwise.
   organization from `npm run org:invite`'s link. Home's card reads You
   started this organization today, then in one line You may do everything
   here, including settings and closing the organization, and Setting up
-  the organization is in Getting started, below, above Getting started.
-  Its first week has only Confirm your email address and Say who you are.
+  the organization is in Getting started, below. The card sits above
+  Getting started, and its first week has only Confirm your email address
+  and Say who you are.
   Dismiss Getting started, as its Owner, and reload: the first week grows
   to the founder's work, Look up, Receive stock and Raise an order.
 - **MC-3210** *(ADR-079)* The welcome in 中文 on a phone, about 390 px,
@@ -1631,7 +1635,8 @@ Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
 - **MC-R22** *(#144)* Locally, with `REGISTRATION=open`, sign in as one
-  of the demo's team who is not the last Owner, such as Tom Becker, in two
+  of the demo's team who is not the last Owner, such as Tom Becker (who
+  is then gone from this demo: walk MC-1903 first), in two
   browsers side by side, A and B (or a normal and a private window), both
   on Home. In A: Account → Leave … (the button names the organization):
   A's Home offers Join an organization and Start an organization. Click
@@ -1639,7 +1644,8 @@ first.
   A: Start an organization, named Reid Supply Co.: A lands on its Home
   with Getting started. Click into B: with no reload, it shows Reid Supply
   Co.'s Home, as A does, and Start an organization is gone; a reload
-  still shows it. The same when A accepts an invitation, or an
+  still shows Reid Supply Co.'s Home. The same when A accepts an
+  invitation, or an
   organization invitation from `npm run org:invite`, instead of starting
   one.
 - **MC-R21** *(links in an audit entry)* On Records → Audit log, an
@@ -1986,3 +1992,5 @@ first.
   extended.
 - 2026-10-20: the organization's initials are read with its name: MC-3204
   extended.
+- 2026-10-20: section 32 read as walked: MC-3201, MC-3207 to MC-3209 and
+  MC-R22 reworded, and MC-3106 names the welcome.
