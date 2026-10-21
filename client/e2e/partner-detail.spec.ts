@@ -66,7 +66,8 @@ test('moves the default when a second address claims it', async ({
    * first in the same transaction — if that ever regressed, this page would
    * show two Default chips or the second save would fail outright.
    */
-  await expect(page.getByText('Default')).toHaveCount(1);
+  // Exactly: Document languages, below, reads The organization’s default.
+  await expect(page.getByText('Default', { exact: true })).toHaveCount(1);
 
   const warehouse = page.locator('div').filter({ hasText: /^Warehouse/ });
   await expect(warehouse.first()).toContainText('Default');
