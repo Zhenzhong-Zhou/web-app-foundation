@@ -1635,7 +1635,7 @@
   "roles.editor.tickAll": "Tout cocher",
   "roles.editor.tickAllOf": "Tout cocher : {area}",
   "roles.editor.unsaved": "{named, select, yes {Vos modifications à {role} ne sont pas encore enregistrées.} other {Le rôle que vous créez n’est pas encore enregistré.}}",
-  "roles.editor.viewPrices": "Sans cette autorisation, les commandes n’affichent aucun prix et leurs PDF ne s’ouvrent pas. Les bordereaux d’expédition n’affichent jamais de prix.",
+  "roles.editor.viewPrices": "Sans cette permission, les commandes n’affichent aucun prix et leurs PDF ne s’ouvrent pas. Les bordereaux d’expédition n’affichent jamais de prix.",
   "roles.heldBy.count": "{count, plural, =0 {Personne} one {# membre} other {# membres}}",
   "roles.holders.heading": "Détenu par <muted>{count}</muted>",
   "roles.holders.none": "Personne ne détient {role}.",

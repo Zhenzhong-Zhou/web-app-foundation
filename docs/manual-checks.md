@@ -1948,6 +1948,17 @@ The pages, in a private window unless a check says otherwise.
   and each customer under Who received it read as text: nothing links to a
   page that would refuse the reader. Open PO-DEMO-1: the supplier under its
   number reads as text too. As the demo Owner, every one is a link.
+- **MC-3324** *(ADR-080)* The Roles and Members guides. As the demo Owner,
+  open Settings → Roles and press Help: the guide is Roles, from What a
+  role is to If something is refused, and Make a role, a role's page and
+  its Edit open the same guide. All guides lists Members and Roles apart
+  under Settings. Members' guide has Invite someone, Change roles and
+  Remove someone, and Words you’ll meet names Made role and Permission;
+  its links open Roles and Your account. Your account's guide says Your
+  access shows your roles, each with its line. In Français, Rôles reads
+  Partir de, Entrepôt and Ventes, a no-break space before each colon; in
+  中文, 角色 reads 从哪里开始, 仓库 and 销售, with Warehouse as a name that
+  stays as written.
 
 ## Regressions
 
@@ -2464,3 +2475,6 @@ first.
 - 2026-10-21: ADR-080, the demo's PO-DEMO-11 waiting to be received, so
   receiving a lot-tracked line without the catalogue is walked as Tom
   Becker: MC-3322 rewritten.
+- 2026-10-21: ADR-080, the guides: Roles, new, and Members and Your
+  account changed, in three languages; the glossary's permission, made
+  role, Move everyone to… and Remove from the organization: MC-3324.

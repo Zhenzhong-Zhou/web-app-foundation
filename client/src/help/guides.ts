@@ -44,17 +44,19 @@ export const GUIDES = {
     sections: [],
   },
   members: {
-    // Roles' own guide comes with the guides (ADR-080's build, step 7);
-    // until then Help opens Members' on the roles' pages.
+    routes: ['/members'],
+    label: NAV_LABELS.members,
+    sections: ['invite'],
+  },
+  roles: {
     routes: [
-      '/members',
       '/settings/roles',
       '/settings/roles/new',
       '/settings/roles/:id',
       '/settings/roles/:id/edit',
     ],
-    label: NAV_LABELS.members,
-    sections: ['invite'],
+    label: NAV_LABELS.roles,
+    sections: [],
   },
   'audit-log': {
     routes: ['/audit'],
