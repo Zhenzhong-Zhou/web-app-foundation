@@ -84,7 +84,11 @@ export function OrderLinesSection({
 
   return (
     <Box>
-      <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 1 }}>
+      <Stack
+        direction="row"
+        useFlexGap
+        sx={{ alignItems: 'center', flexWrap: 'wrap', columnGap: 2, mb: 1 }}
+      >
         <Typography variant="h6" component="h2" sx={{ flexGrow: 1 }}>
           {intl.formatMessage({
             id: 'orders.items',
@@ -92,46 +96,60 @@ export function OrderLinesSection({
           })}
         </Typography>
 
-        {/* Draft only: adding to an order the supplier has already been sent
+        {/* The actions as one group: where they do not fit beside the
+            heading, as on a phone, they drop under it at the right and
+            wrap among themselves (conventions.md, Responsive layout). */}
+        <Stack
+          direction="row"
+          useFlexGap
+          sx={{
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+            columnGap: 2,
+            ml: 'auto',
+          }}
+        >
+          {/* Draft only: adding to an order the supplier has already been sent
             is a new agreement, not a correction (ADR-033). */}
-        {canUpdate && isDraft && (
-          <Button
-            variant="text"
-            disabled={working}
-            onClick={openDialog(onAddLine)}
-          >
-            {intl.formatMessage({
-              id: 'orders.lines.add',
-              defaultMessage: 'Add item',
-            })}
-          </Button>
-        )}
+          {canUpdate && isDraft && (
+            <Button
+              variant="text"
+              disabled={working}
+              onClick={openDialog(onAddLine)}
+            >
+              {intl.formatMessage({
+                id: 'orders.lines.add',
+                defaultMessage: 'Add item',
+              })}
+            </Button>
+          )}
 
-        {authorizable && (
-          <Button
-            variant="text"
-            disabled={working}
-            onClick={openDialog(onAuthorize)}
-          >
-            {intl.formatMessage({
-              id: 'orders.lines.authorizeReturn',
-              defaultMessage: 'Authorize a return',
-            })}
-          </Button>
-        )}
+          {authorizable && (
+            <Button
+              variant="text"
+              disabled={working}
+              onClick={openDialog(onAuthorize)}
+            >
+              {intl.formatMessage({
+                id: 'orders.lines.authorizeReturn',
+                defaultMessage: 'Authorize a return',
+              })}
+            </Button>
+          )}
 
-        {returnable && (
-          <Button
-            variant="text"
-            disabled={working}
-            onClick={openDialog(onTakeReturn)}
-          >
-            {intl.formatMessage({
-              id: 'orders.lines.takeReturn',
-              defaultMessage: 'Take a return',
-            })}
-          </Button>
-        )}
+          {returnable && (
+            <Button
+              variant="text"
+              disabled={working}
+              onClick={openDialog(onTakeReturn)}
+            >
+              {intl.formatMessage({
+                id: 'orders.lines.takeReturn',
+                defaultMessage: 'Take a return',
+              })}
+            </Button>
+          )}
+        </Stack>
       </Stack>
 
       <Paper variant="outlined">

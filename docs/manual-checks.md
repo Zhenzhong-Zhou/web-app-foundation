@@ -1726,8 +1726,10 @@ first.
   wrap onto a second line at the right; Account's Change password and Your
   devices wrap; on Organization → Profile, Download everything (ZIP) breaks
   onto two lines inside its button. On Orders, Invoices and Movements the
-  two dates and Period wrap under the search. No page scrolls sideways. At 1280 px, at
-  Standard, every button reads on one line as before.
+  two dates and Period wrap under the search. On a sale that has shipped,
+  such as SO-DEMO-1, Authorize a return and Take a return drop under Items
+  at the right. No page scrolls sideways. At 1280 px, at Standard, every
+  button reads on one line as before.
 - **MC-R17** *(audit log on a phone)* On a phone (DevTools, 390 px), open
   Records → Audit log with a few Numbering changed entries: the action, from
   and to filters wrap onto lines of their own, the page does not scroll
@@ -2093,3 +2095,4 @@ first.
   else when left alone: MC-1409 extended.
 - 2026-10-20: the numbering's fields labelled on a phone: MC-2710 extended.
 - 2026-10-20: the Ship dialog's fields on a phone: MC-R25.
+- 2026-10-20: an order's Items actions wrap on a phone: MC-R18 extended.
