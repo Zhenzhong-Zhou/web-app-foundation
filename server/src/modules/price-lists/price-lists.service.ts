@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { and, asc, eq, sql } from 'drizzle-orm';
 
-import { recordPrevious } from '../../core/audit/audit-context';
+import { recordContext, recordPrevious } from '../../core/audit/audit-context';
 import { isUniqueViolation } from '../../database/errors';
 import {
   priceListItems,
@@ -210,6 +210,9 @@ export class PriceListsService {
         );
 
       recordPrevious({ unitPrice: existing?.unitPrice ?? null });
+      // Which item, for the audit row: the path names it, the body only a
+      // price, and the row's record is the list (ADR-076).
+      recordContext({ variantId });
 
       const [item] = await tx
         .insert(priceListItems)
@@ -258,6 +261,7 @@ export class PriceListsService {
         );
 
       recordPrevious({ unitPrice: removed.unitPrice });
+      recordContext({ variantId });
 
       this.logger.log(`Price list ${priceListId}: ${variantId} removed`);
     });

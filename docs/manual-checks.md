@@ -1282,7 +1282,8 @@ Signed in as the demo Owner the seed prints.
   and Shipment: SO-…, the shipment opening its order; an RMA, its lines
   by SKU, quantity and resolution, and its order and invoice by number;
   Sarah Chen's role change, Viewer → Admin, the role names in the
-  language. The order's number opens the order, and the role opens
+  language; a price set on a price list, its unit price and then the item
+  by SKU, as FOCUS-60CT, and the same when an item is taken off a list. The order's number opens the order, and the role opens
   Members. The last column, where a change came from, is headed 来源 in
   中文 and Provenance in Français, words of its own rather than the date
   filter's 起始 and Depuis.
@@ -2121,3 +2122,5 @@ first.
   MC-2603 and MC-2610 reworded.
 - 2026-10-20: French guillemets hold their words: MC-R26.
 - 2026-10-20: the French Still on UTC note reads plainly: MC-2602 extended.
+- 2026-10-20: a price list's price names its item in the audit log:
+  MC-2901 extended.
