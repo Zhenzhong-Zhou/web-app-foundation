@@ -45,7 +45,7 @@ const DAY = 24 * 60 * 60 * 1000;
 interface Invitation {
   id: string;
   email: string;
-  roleId: string;
+  roles: { id: string; name: string; builtIn: boolean }[];
   invitedBy: { id: string; name: string };
   invitedAt: string;
   link: { status: string; lastDay: string | null };
@@ -59,7 +59,11 @@ interface Preview {
     deletionScheduledAt: string | null;
   };
   inviter: { name: string; email: string } | null;
-  role: { name: string; description: string | null };
+  roles: {
+    name: string;
+    description: string | null;
+    system: string | null;
+  }[];
   note: string | null;
   lastDay: string;
   hasAccount: boolean;
@@ -132,7 +136,7 @@ describe('Invitations (e2e)', () => {
       .post('/v1/invitations')
       .send({
         email,
-        roleId: await roleIdNamed(app, owner.organizationId, role),
+        roleIds: [await roleIdNamed(app, owner.organizationId, role)],
         ...extra,
       })
       .expect(201);
@@ -194,7 +198,7 @@ describe('Invitations (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'pat@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(403);
       await viewer.post(`/v1/invitations/${sent.id}/resend`).expect(403);
@@ -220,7 +224,13 @@ describe('Invitations (e2e)', () => {
       expect(sent).toEqual({
         id: sent.id,
         email: 'sam@example.com',
-        roleId: await roleIdNamed(app, alpha.organizationId, 'Admin'),
+        roles: [
+          {
+            id: await roleIdNamed(app, alpha.organizationId, 'Admin'),
+            name: 'Admin',
+            builtIn: true,
+          },
+        ],
         invitedBy: { id: alpha.userId, name: 'Owner' },
         invitedAt: sent.invitedAt,
         link: {
@@ -267,7 +277,7 @@ describe('Invitations (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'sam@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
           delivery: 'link',
         })
         .expect(201);
@@ -290,10 +300,12 @@ describe('Invitations (e2e)', () => {
         action: 'invitation.link_copied',
         payload: {
           email: 'sam@example.com',
-          roleId: {
-            id: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
-            label: 'Viewer',
-          },
+          roleIds: [
+            {
+              id: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+              label: 'Viewer',
+            },
+          ],
         },
       });
 
@@ -302,7 +314,7 @@ describe('Invitations (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'pat@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(201);
       expect(body<{ link: string | null }>(emailed).link).toBeNull();
@@ -325,14 +337,14 @@ describe('Invitations (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'sam@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(201);
       await admin
         .post('/v1/invitations')
         .send({
           email: 'pat@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Owner'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Owner')],
         })
         .expect(403);
 
@@ -358,7 +370,7 @@ describe('Invitations (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'sam@example.com',
-          roleId: await roleIdNamed(app, beta.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, beta.organizationId, 'Viewer')],
         })
         .expect(400);
     });
@@ -372,7 +384,7 @@ describe('Invitations (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: alpha.email,
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(409);
       expect(body<Refusal>(member).code).toBe('already_a_member');
@@ -381,7 +393,7 @@ describe('Invitations (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'SAM@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Admin'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Admin')],
         })
         .expect(409);
       expect(body<Refusal>(again)).toMatchObject({
@@ -402,7 +414,7 @@ describe('Invitations (e2e)', () => {
             .post('/v1/invitations')
             .send({
               email,
-              roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+              roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
             })
             .expect(409),
         );
@@ -442,7 +454,7 @@ describe('Invitations (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'sam@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(403);
       expect(body<Refusal>(res).code).toBe('email_unverified');
@@ -465,7 +477,7 @@ describe('Invitations (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'pat@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(409);
       await alpha.agent.post(`/v1/invitations/${sent.id}/resend`).expect(409);
@@ -500,7 +512,7 @@ describe('Invitations (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'person50@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(409);
       await alpha.agent.post(`/v1/invitations/${first.id}/resend`).expect(409);
@@ -594,7 +606,7 @@ describe('Invitations (e2e)', () => {
         .set('X-Forwarded-Host', 'evil.example')
         .send({
           email: 'sam@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(201);
 
@@ -661,13 +673,13 @@ describe('Invitations (e2e)', () => {
       const fromMei = body<{ invitation: Invitation }>(
         await inviters.left
           .post('/v1/invitations')
-          .send({ email: 'sam@example.com', roleId: viewer, note: 'Boots' })
+          .send({ email: 'sam@example.com', roleIds: [viewer], note: 'Boots' })
           .expect(201),
       ).invitation;
       const fromJo = body<{ invitation: Invitation }>(
         await inviters.deleted
           .post('/v1/invitations')
-          .send({ email: 'pat@example.com', roleId: viewer })
+          .send({ email: 'pat@example.com', roleIds: [viewer] })
           .expect(201),
       ).invitation;
 
@@ -737,11 +749,14 @@ describe('Invitations (e2e)', () => {
           deletionScheduledAt: null,
         },
         inviter: { name: 'Owner', email: alpha.email },
-        role: {
-          name: 'Admin',
-          description:
-            'Day-to-day work: stock, orders, production and drafting invoices. Can invite and remove members.',
-        },
+        roles: [
+          {
+            name: 'Admin',
+            description:
+              'Day-to-day work: stock, orders, production and drafting invoices. Can invite and remove members.',
+            system: 'Admin',
+          },
+        ],
         note: 'You will receive deliveries at the North site',
         lastDay: sent.link.lastDay!,
         hasAccount: false,
@@ -761,10 +776,13 @@ describe('Invitations (e2e)', () => {
         invitationToken(app, 'sam@example.com'),
         'fr-CA',
       );
-      expect(preview?.role).toEqual({
-        name: french['audit.value.role.viewer'],
-        description: french['roles.description.viewer'],
-      });
+      expect(preview?.roles).toEqual([
+        {
+          name: french['audit.value.role.viewer'],
+          description: french['roles.description.viewer'],
+          system: 'Viewer',
+        },
+      ]);
     });
 
     it('says whether the address has an account', async () => {
@@ -1249,7 +1267,7 @@ describe('Invitations (e2e)', () => {
         .from(auditLog)
         .where(eq(auditLog.organizationId, alpha.organizationId))
         .orderBy(auditLog.id);
-      const named = { id: viewer, label: 'Viewer' };
+      const named = [{ id: viewer, label: 'Viewer' }];
       expect(
         rows.filter((row) => row.action.startsWith('invitation.')),
       ).toEqual([
@@ -1257,31 +1275,31 @@ describe('Invitations (e2e)', () => {
           action: 'invitation.sent',
           actorId: alpha.userId,
           resourceId: sent.id,
-          payload: { email: 'sam@example.com', roleId: named },
+          payload: { email: 'sam@example.com', roleIds: named },
         },
         {
           action: 'invitation.resent',
           actorId: alpha.userId,
           resourceId: sent.id,
-          payload: { email: 'sam@example.com', roleId: named },
+          payload: { email: 'sam@example.com', roleIds: named },
         },
         {
           action: 'invitation.link_copied',
           actorId: alpha.userId,
           resourceId: sent.id,
-          payload: { email: 'sam@example.com', roleId: named },
+          payload: { email: 'sam@example.com', roleIds: named },
         },
         {
           action: 'invitation.sent',
           actorId: alpha.userId,
           resourceId: revoked.id,
-          payload: { email: 'pat@example.com', roleId: named },
+          payload: { email: 'pat@example.com', roleIds: named },
         },
         {
           action: 'invitation.revoked',
           actorId: alpha.userId,
           resourceId: revoked.id,
-          payload: { email: 'pat@example.com', roleId: named },
+          payload: { email: 'pat@example.com', roleIds: named },
         },
       ]);
     });
@@ -1312,10 +1330,12 @@ describe('Invitations (e2e)', () => {
         resourceType: 'invitation',
         resourceId: sent.id,
         payload: {
-          roleId: {
-            id: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
-            label: 'Viewer',
-          },
+          roleIds: [
+            {
+              id: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+              label: 'Viewer',
+            },
+          ],
         },
       });
 

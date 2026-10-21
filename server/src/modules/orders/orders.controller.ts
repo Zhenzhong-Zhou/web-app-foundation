@@ -22,6 +22,7 @@ import { Audited } from '../../core/audit/audited.decorator';
 import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PERMISSIONS } from '../../core/authorization/permissions';
+import { PermissionsService } from '../../core/authorization/permissions.service';
 import { RequirePermissions } from '../../core/authorization/require-permissions.decorator';
 import { localeOf } from '../../i18n/translate';
 import { CloseLineDto } from './dto/close-line.dto';
@@ -42,7 +43,7 @@ import { ORDER_COLUMNS } from './order-exports';
 import { OrderLifecycleService } from './order-lifecycle.service';
 import { OrderLinesService } from './order-lines.service';
 import { OrderReceiptsService } from './order-receipts.service';
-import { OrdersService } from './orders.service';
+import { type OrderSight, OrdersService, sightOf } from './orders.service';
 
 @Controller({ path: 'orders', version: '1' })
 export class OrdersController {
@@ -51,7 +52,15 @@ export class OrdersController {
     private readonly lifecycle: OrderLifecycleService,
     private readonly lines: OrderLinesService,
     private readonly receipts: OrderReceiptsService,
+    private readonly permissions: PermissionsService,
   ) {}
+
+  /** What of an order's money the reader may see (ADR-080). */
+  private async sight(user: RequestContext): Promise<OrderSight> {
+    return sightOf(
+      new Set(await this.permissions.listForMember(user.membershipId)),
+    );
+  }
 
   /**
    * Query rather than body, so a filtered list is a URL someone can bookmark
@@ -89,10 +98,17 @@ export class OrdersController {
     );
   }
 
+  /**
+   * Its prices, totals and tax only with orders.view_prices, and its
+   * invoices and credit notes only with invoices.view (ADR-080).
+   */
   @Get(':id')
   @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
-  find(@Param('id', ParseUUIDPipe) id: string): Promise<OrderDetail> {
-    return this.orders.findById(id);
+  async find(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: RequestContext,
+  ): Promise<OrderDetail> {
+    return this.orders.findById(id, await this.sight(user));
   }
 
   @Post()
@@ -108,7 +124,9 @@ export class OrdersController {
     @CurrentUser() user: RequestContext,
   ): Promise<OrderEnvelope> {
     const created = await this.lifecycle.create(dto, user.userId);
-    return { order: await this.orders.findById(created.id) };
+    return {
+      order: await this.orders.findById(created.id, await this.sight(user)),
+    };
   }
 
   /**
@@ -133,7 +151,9 @@ export class OrdersController {
     @CurrentUser() user: RequestContext,
   ): Promise<OrderEnvelope> {
     const copy = await this.lifecycle.duplicate(id, dto, user.userId);
-    return { order: await this.orders.findById(copy.id) };
+    return {
+      order: await this.orders.findById(copy.id, await this.sight(user)),
+    };
   }
 
   /**
@@ -174,11 +194,12 @@ export class OrdersController {
   async addLine(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddOrderLineDto,
+    @CurrentUser() user: RequestContext,
   ): Promise<AddedOrderLineEnvelope> {
     const added = await this.lines.addLine(id, dto);
     // As the order's detail shows it, so one line has one shape, with the
     // notice when the list had no price.
-    const order = await this.orders.findById(id);
+    const order = await this.orders.findById(id, await this.sight(user));
     const line = order.lines.find((each) => each.id === added.id);
     if (!line) throw new Error(`Line ${added.id} is not on order ${id}`);
     return {

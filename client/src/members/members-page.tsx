@@ -42,7 +42,7 @@ import { refusalLabel } from './invitation-words';
 import { InviteDialog } from './invite-dialog';
 import { copyToClipboard, type InviteView } from './invite-view';
 import { InvitedSection } from './invited-section';
-import { roleLabel } from './role-names';
+import { roleLabel, roleList } from './role-names';
 
 const FORM: InviteView = { kind: 'form' };
 
@@ -122,8 +122,9 @@ export function MembersPage() {
   }, [read]);
 
   const isOwner =
-    roles.find((role) => role.id === session?.organization?.roleId)?.name ===
-    'Owner';
+    session?.organization?.roles.some(
+      (role) => role.builtIn && role.name === 'Owner',
+    ) ?? false;
 
   function openInvite(start: InviteView) {
     setInvite((current) => ({ start, key: current.key + 1 }));
@@ -209,7 +210,8 @@ export function MembersPage() {
     try {
       await api(`/users/${memberId}`, {
         method: 'PATCH',
-        body: JSON.stringify({ roleId }),
+        // One until Change roles offers several (ADR-080).
+        body: JSON.stringify({ roleIds: [roleId] }),
       });
 
       // Re-read rather than patching the row locally: the server is the only
@@ -226,15 +228,6 @@ export function MembersPage() {
       setSaving(null);
     }
   }
-
-  const roleName = (roleId: string) =>
-    roleLabel(
-      roles.find((role) => role.id === roleId)?.name ??
-        intl.formatMessage({
-          id: 'members.role.unknown',
-          defaultMessage: 'Unknown',
-        }),
-    );
 
   return (
     // Heading draws immediately; only the table holds space and fills in.
@@ -324,7 +317,6 @@ export function MembersPage() {
       {invitations.length > 0 && (
         <InvitedSection
           invitations={invitations}
-          roles={roles}
           isOwner={isOwner}
           selfId={session?.user.id}
           busy={rowBusy}
@@ -468,7 +460,7 @@ export function MembersPage() {
                                 { name: member.name || member.email },
                               ),
                             }}
-                            value={member.roleId}
+                            value={member.roles[0]?.id ?? ''}
                             disabled={saving !== null}
                             onChange={(event) =>
                               void changeRole(member.id, event.target.value)
@@ -481,7 +473,7 @@ export function MembersPage() {
                             ))}
                           </Select>
                         ) : (
-                          roleName(member.roleId)
+                          roleList(member.roles)
                         )}
 
                         {/* Not disabled: an Owner may legitimately demote

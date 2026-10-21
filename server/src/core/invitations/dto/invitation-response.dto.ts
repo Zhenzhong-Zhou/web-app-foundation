@@ -1,4 +1,6 @@
 import type { Locale } from '../../../common/locales';
+import type { RoleRef } from '../../authorization/dto/role-response.dto';
+import type { SystemRole } from '../../authorization/permissions';
 
 /**
  * Invitations as the API returns them (ADR-068, ADR-077), described for the
@@ -31,7 +33,11 @@ export class InvitationLinkState {
 export class Invitation {
   id!: string;
   email!: string;
-  roleId!: string;
+  /**
+   * The roles it gives, the built-in one first (ADR-080); none once those
+   * it named were deleted after its link ended.
+   */
+  roles!: RoleRef[];
   invitedBy!: InvitationSender;
   invitedAt!: Date;
   link!: InvitationLinkState;
@@ -81,10 +87,20 @@ export class InvitationInviter {
   email!: string;
 }
 
-/** The role it grants, in words, in the request's language. */
+/** A role it grants, in words, in the request's language. */
 export class InvitationRole {
   name!: string;
   description!: string | null;
+}
+
+/**
+ * A role an invitation to join grants (ADR-080), with which built-in role
+ * it is, for the article a sentence gives it: "as an Admin", but "as
+ * Warehouse lead".
+ */
+export class InvitedRole extends InvitationRole {
+  /** Owner, Admin or Viewer by its stored name; null for a made role. */
+  system!: SystemRole | null;
 }
 
 /** An invitation as its page shows it, and nothing more. */
@@ -98,7 +114,8 @@ export class InvitationPreview {
    * organization alone (ADR-077).
    */
   inviter!: InvitationInviter | null;
-  role!: InvitationRole;
+  /** Every role it grants, the built-in one first (ADR-080). */
+  roles!: InvitedRole[];
   note!: string | null;
   /** The link's last day, YYYY-MM-DD in the organization's zone. */
   lastDay!: string;

@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -13,7 +12,6 @@ import {
 import { CurrentUser } from '../../core/auth/current-user.decorator';
 import type { RequestContext } from '../../core/auth/request-context';
 import { PermissionsService } from '../../core/authorization/permissions.service';
-import { t } from '../../i18n/translate';
 import { ListRecentDto } from './dto/list-recent.dto';
 import type { RecentList } from './dto/recent-response.dto';
 import { RecordOpenedDto } from './dto/record-opened.dto';
@@ -60,16 +58,10 @@ export class RecentController {
     @CurrentUser() user: RequestContext,
     @Body() dto: RecordOpenedDto,
   ): Promise<void> {
-    if (!(await this.held(user)).has(RECENT_PERMISSION[dto.kind])) {
-      throw new ForbiddenException(
-        t(
-          {
-            id: 'auth.missingPermission',
-            defaultMessage: 'Missing permission: {permissions}',
-          },
-          { permissions: RECENT_PERMISSION[dto.kind] },
-        ),
-      );
+    const held = await this.held(user);
+    const needed = RECENT_PERMISSION[dto.kind];
+    if (!held.has(needed)) {
+      throw await this.permissions.refusal(user, held, [needed]);
     }
     await this.recent.record(user.userId, dto.kind, dto.id);
   }

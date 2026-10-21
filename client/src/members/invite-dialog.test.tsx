@@ -5,22 +5,23 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Invitation, Role } from '../api/types.gen';
+import { builtInRole, roleRef } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { InviteDialog } from './invite-dialog';
 import type { InviteView } from './invite-view';
 
 const ROLES: Role[] = [
-  { id: 'role-owner', name: 'Owner' },
-  { id: 'role-admin', name: 'Admin' },
-  { id: 'role-viewer', name: 'Viewer' },
+  builtInRole('Owner'),
+  builtInRole('Admin'),
+  builtInRole('Viewer'),
 ];
 
 function invitation(over: Partial<Invitation> = {}): Invitation {
   return {
     id: 'inv-1',
     email: 'sam@example.com',
-    roleId: 'role-viewer',
+    roles: [roleRef('Viewer')],
     invitedBy: { id: 'user-2', name: 'Mei Lin' },
     invitedAt: '2026-10-19T09:00:00.000Z',
     link: { status: 'emailed', lastDay: '2026-10-26' },
@@ -271,9 +272,9 @@ describe('InviteDialog (ADR-077)', () => {
     renderWithAuth(
       <Members
         isOwner={false}
-        invitations={[invitation({ id: 'inv-9', roleId: 'role-owner' })]}
+        invitations={[invitation({ id: 'inv-9', roles: [roleRef('Owner')] })]}
       />,
-      { organization: { roleId: 'role-admin' } },
+      { organization: { roles: [roleRef('Admin')] } },
     );
 
     await send(user, 'Send invitation');

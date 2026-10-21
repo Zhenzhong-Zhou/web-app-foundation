@@ -106,7 +106,7 @@ describe('The welcome (e2e)', () => {
       .post('/v1/invitations')
       .send({
         email,
-        roleId: await roleIdNamed(app, inviter.organizationId, role),
+        roleIds: [await roleIdNamed(app, inviter.organizationId, role)],
         ...(options.note ? { note: options.note } : {}),
         ...(options.copied ? { delivery: 'link' } : {}),
       })
@@ -603,7 +603,7 @@ describe('The welcome (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'pat@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(201);
       await pat.agent
@@ -626,7 +626,7 @@ describe('The welcome (e2e)', () => {
         note: null,
         access: { holdsEverything: true, whomToAsk: [] },
       });
-      expect(card?.access.role.name).toBe('Owner');
+      expect(card?.access.roles.map((role) => role.name)).toEqual(['Owner']);
       // Registered unconfirmed (ADR-078).
       expect(keys(card)).toEqual(['confirmEmail', 'sayWhoYouAre']);
 
@@ -729,7 +729,7 @@ describe('The welcome (e2e)', () => {
         'Ben Ode',
       ]);
       expect(access).toMatchObject({
-        role: { name: 'Viewer' },
+        roles: [{ name: 'Viewer' }],
         holdsEverything: false,
       });
 
@@ -764,7 +764,7 @@ describe('The welcome (e2e)', () => {
           await partner.agent.get('/v1/account/membership').expect(200),
         ),
       ).toMatchObject({
-        role: { name: 'Partner' },
+        roles: [{ name: 'Partner' }],
         holdsEverything: true,
         whomToAsk: [],
       });
@@ -869,7 +869,7 @@ describe('The welcome (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'pat@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(201);
       await mei.agent.delete('/v1/account/membership').expect(204);

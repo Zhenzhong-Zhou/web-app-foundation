@@ -108,6 +108,10 @@ export const ACTION_NAMES: Record<AuditAction, Translatable> = {
     id: 'audit.action.memberRemoved',
     defaultMessage: 'Member removed',
   }),
+  'member.roles_changed': t({
+    id: 'audit.action.memberRolesChanged',
+    defaultMessage: 'Member’s roles changed',
+  }),
   'order.created': t({
     id: 'audit.action.orderCreated',
     defaultMessage: 'Order created',
@@ -304,6 +308,18 @@ export const ACTION_NAMES: Record<AuditAction, Translatable> = {
     id: 'audit.action.returnAuthorizationUpdated',
     defaultMessage: 'Return authorization updated',
   }),
+  'role.created': t({
+    id: 'audit.action.roleCreated',
+    defaultMessage: 'Role made',
+  }),
+  'role.deleted': t({
+    id: 'audit.action.roleDeleted',
+    defaultMessage: 'Role deleted',
+  }),
+  'role.updated': t({
+    id: 'audit.action.roleUpdated',
+    defaultMessage: 'Role changed',
+  }),
   'stock.lot_updated': t({
     id: 'audit.action.stockLotUpdated',
     defaultMessage: 'Lot updated',
@@ -384,6 +400,7 @@ export const RESOURCE_TYPE_NAMES: Record<string, Translatable> = {
     defaultMessage: 'Exchange rate',
   }),
   price_list: t({ id: 'audit.type.priceList', defaultMessage: 'Price list' }),
+  role: t({ id: 'audit.type.role', defaultMessage: 'Role' }),
   user: t({ id: 'audit.type.user', defaultMessage: 'Member' }),
   invitation: t({ id: 'audit.type.invitation', defaultMessage: 'Invitation' }),
   audit: t({ id: 'audit.type.audit', defaultMessage: 'Audit log' }),

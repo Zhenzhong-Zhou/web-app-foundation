@@ -6,7 +6,7 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { roles, users } from '../src/database/schema';
+import { auditLog, roles, users } from '../src/database/schema';
 import {
   addMember,
   body,
@@ -81,7 +81,7 @@ describe('The audit log in words (e2e)', () => {
       .where(eq(users.email, 'sarah@alpha.example.com'));
     await alpha.agent
       .patch(`/v1/users/${sarah.id}`)
-      .send({ roleId: await roleId('Admin') })
+      .send({ roleIds: [await roleId('Admin')] })
       .expect(204);
     return {
       alpha,
@@ -102,14 +102,18 @@ describe('The audit log in words (e2e)', () => {
     return body<{ entries: Entry[] }>(res).entries;
   }
 
-  it('words a role change in the reader’s language, linked by id', async () => {
+  it('words a change of roles in the reader’s language, linked by id', async () => {
     const { alpha, viewerId, adminId } = await promoted();
 
-    const [english] = await entries(alpha, 'en', '?action=user.role_changed');
-    expect(english.actionName).not.toBe('user.role_changed');
+    const [english] = await entries(
+      alpha,
+      'en',
+      '?action=member.roles_changed',
+    );
+    expect(english.actionName).toBe('Member’s roles changed');
     expect(english.details).toEqual([
       {
-        field: 'Role',
+        field: 'Roles',
         changed: true,
         from: { text: 'Viewer', link: { kind: 'role', id: viewerId } },
         value: { text: 'Admin', link: { kind: 'role', id: adminId } },
@@ -119,11 +123,40 @@ describe('The audit log in words (e2e)', () => {
     const [chinese] = await entries(
       alpha,
       'zh-Hans',
-      '?action=user.role_changed',
+      '?action=member.roles_changed',
     );
     expect(chinese.details[0].field).toBe('角色');
     expect(chinese.details[0].from?.text).toBe('查看者');
     expect(chinese.details[0].value?.text).toBe('管理员');
+  });
+
+  // ADR-080: a member's one role before several, as its entry was kept.
+  it('still words an old change of one role as it did', async () => {
+    const { alpha, viewerId, adminId } = await promoted();
+    await db.insert(auditLog).values({
+      organizationId: alpha.organizationId,
+      actorId: alpha.userId,
+      action: 'user.role_changed',
+      resourceType: 'user',
+      resourceId: alpha.userId,
+      payload: {
+        roleId: {
+          from: { id: viewerId, label: 'Viewer' },
+          to: { id: adminId, label: 'Admin' },
+        },
+      },
+    });
+
+    const [french] = await entries(alpha, 'fr-CA', '?action=user.role_changed');
+    expect(french.actionName).toBe('A changé le rôle d’un membre');
+    expect(french.details).toEqual([
+      {
+        field: 'Rôle',
+        changed: true,
+        from: { text: 'Lecteur', link: { kind: 'role', id: viewerId } },
+        value: { text: 'Administrateur', link: { kind: 'role', id: adminId } },
+      },
+    ]);
   });
 
   it('links an invoice draft’s shipment to its order', async () => {
@@ -265,8 +298,10 @@ describe('The audit log in words (e2e)', () => {
       .set('Accept-Language', 'en')
       .expect(200);
     const actions = body<{ action: string; name: string }[]>(res);
-    const changed = actions.find((each) => each.action === 'user.role_changed');
+    const changed = actions.find(
+      (each) => each.action === 'member.roles_changed',
+    );
     expect(changed?.name).toMatch(/\S/);
-    expect(changed?.name).not.toBe('user.role_changed');
+    expect(changed?.name).not.toBe('member.roles_changed');
   });
 });

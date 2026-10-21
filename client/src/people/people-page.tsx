@@ -222,7 +222,9 @@ export function PeoplePage() {
                   {person.jobTitle}
                 </Typography>
               )}
-              <Chip size="small" label={roleLabel(person.roleName)} />
+              {person.roles.map((role) => (
+                <Chip key={role.id} size="small" label={roleLabel(role.name)} />
+              ))}
               {phone && (
                 <Link
                   href={`tel:${(person.workPhone ?? '').replace(/[^0-9+]/g, '')}${person.extension ? `,${person.extension}` : ''}`}

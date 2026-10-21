@@ -5,6 +5,7 @@ import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
 import { pagedBy } from '../../common/sorted-page';
+import type { Permission } from '../../core/authorization/permissions';
 import {
   creditNoteLines,
   creditNotes,
@@ -33,6 +34,25 @@ import type {
 } from './dto/order-response.dto';
 
 const DEFAULT_LIMIT = 25;
+
+/**
+ * What of an order's money a reader may see (ADR-080): its line prices,
+ * totals and tax with orders.view_prices; what it has billed and given
+ * back, and the invoices and credit notes themselves, with invoices.view,
+ * as the invoices are. The server sends none of what they may not, rather
+ * than the screen hiding it.
+ */
+export interface OrderSight {
+  prices: boolean;
+  invoices: boolean;
+}
+
+export function sightOf(held: ReadonlySet<Permission>): OrderSight {
+  return {
+    prices: held.has('orders.view_prices'),
+    invoices: held.has('invoices.view'),
+  };
+}
 
 /** Draft and confirmed: the documents somebody still has to do something about. */
 const OPEN_STATUSES = ['draft', 'confirmed'] as const;
@@ -179,7 +199,7 @@ export class OrdersService {
    * means parsing them into doubles (ADR-025) — Postgres knows the answer and
    * a boolean survives the trip intact.
    */
-  async findById(orderId: string): Promise<OrderDetail> {
+  async findById(orderId: string, sight: OrderSight): Promise<OrderDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [order] = await tx
         .select({
@@ -582,6 +602,8 @@ export class OrdersService {
         returnCount,
         deliverToId,
         deliverToName,
+        totals,
+        totalsComplete,
         ...rest
       } = order;
       const sale = order.direction === 'sale' && !order.isSample;
@@ -594,29 +616,59 @@ export class OrdersService {
           deliverToId && deliverToName
             ? { id: deliverToId, name: deliverToName }
             : null,
-        money: sale
+        ...(sight.prices ? { totals, totalsComplete } : {}),
+        ...(sight.invoices
           ? {
-              // One currency per sale (ADR-046 amendment): the totals' one.
-              currency: order.totals[0]?.currency ?? null,
-              invoiced,
-              credited,
-              netInvoiced,
-              notInvoiced,
+              money: sale
+                ? {
+                    // One currency per sale (ADR-046 amendment): the
+                    // totals' one.
+                    currency: totals[0]?.currency ?? null,
+                    invoiced,
+                    credited,
+                    netInvoiced,
+                    // The lines' prices, not yet billed.
+                    ...(sight.prices ? { notInvoiced } : {}),
+                  }
+                : null,
+              documents: sale
+                ? { invoices: invoiceRows, creditNotes: creditRows }
+                : null,
             }
-          : null,
+          : {}),
         unsettledReturns: sale ? unsettledReturns : 0,
         counts: {
           shipments: shipmentCount,
           voidedShipments: voidedShipmentCount,
           returns: returnCount,
-          documents: invoiceRows.length + creditRows.length,
+          ...(sight.invoices
+            ? { documents: invoiceRows.length + creditRows.length }
+            : {}),
         },
-        documents: sale
-          ? { invoices: invoiceRows, creditNotes: creditRows }
-          : null,
         lines: lines.map(
-          ({ productName, variantName, quantityUnsettled, ...line }) => ({
+          ({
+            productName,
+            variantName,
+            quantityUnsettled,
+            unitPrice,
+            currency,
+            priceSource,
+            priceListId,
+            priceListName,
+            lineTotal,
+            ...line
+          }) => ({
             ...line,
+            ...(sight.prices
+              ? {
+                  unitPrice,
+                  currency,
+                  priceSource,
+                  priceListId,
+                  priceListName,
+                  lineTotal,
+                }
+              : {}),
             quantityUnsettled: sale ? quantityUnsettled : '0.0000',
             description: itemName(productName, variantName),
           }),

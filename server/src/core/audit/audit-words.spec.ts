@@ -48,6 +48,8 @@ function samplesOf(spec: FieldSpec): unknown[] {
       return ['America/Vancouver'];
     case 'action':
       return [AUDIT_ACTIONS.ORDER_CREATED];
+    case 'permission':
+      return [['orders.view', 'orders.view_prices']];
     case 'text':
       return ['Spring catalogue', '12.5000', ID];
   }

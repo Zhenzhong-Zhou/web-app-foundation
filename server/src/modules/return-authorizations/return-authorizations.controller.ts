@@ -156,11 +156,16 @@ export class ReturnAuthorizationsController {
   /**
    * A draft sale at zero for the lines resolved as replace. Customer
    * service's act, as the RMA is; the order is then confirmed and shipped
-   * as any sale, by whoever does that.
+   * as any sale, by whoever does that. It raises an order, so it also
+   * needs orders.create, which a role holding only the RMA's update need
+   * not (ADR-080).
    */
   @Post(':id/replacement')
   @HttpCode(HttpStatus.CREATED)
-  @RequirePermissions(PERMISSIONS.RETURN_AUTHORIZATIONS_UPDATE)
+  @RequirePermissions(
+    PERMISSIONS.RETURN_AUTHORIZATIONS_UPDATE,
+    PERMISSIONS.ORDERS_CREATE,
+  )
   @Audited({
     action: AUDIT_ACTIONS.RETURN_AUTHORIZATION_REPLACEMENT_RAISED,
     resourceType: 'return_authorization',

@@ -1,10 +1,7 @@
 import type { Locale } from '../../common/locales';
 import { type Translatable, translate } from '../../i18n/translate';
 import { ROLE_NAMES } from '../audit/audit-fields';
-import {
-  SYSTEM_ROLE_DESCRIPTIONS,
-  type SystemRole,
-} from '../authorization/permissions';
+import { SYSTEM_ROLE_DESCRIPTIONS, type SystemRole } from './permissions';
 
 /** A built-in role, by its stored name; null for one an organization made. */
 export function systemRoleOf(role: {
@@ -14,6 +11,18 @@ export function systemRoleOf(role: {
   return role.isSystem && role.name in SYSTEM_ROLE_DESCRIPTIONS
     ? (role.name as SystemRole)
     : null;
+}
+
+/**
+ * What a sentence naming these roles chooses its article by (ADR-080):
+ * the built-in role, when it names that one alone, never its words; a
+ * made role, or several, take none: "as an Admin", "as Warehouse lead",
+ * "as Warehouse and Sales".
+ */
+export function systemOf(
+  roles: readonly { name: string; isSystem: boolean }[],
+): SystemRole | 'other' {
+  return (roles.length === 1 && systemRoleOf(roles[0])) || 'other';
 }
 
 /**

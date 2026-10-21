@@ -441,15 +441,12 @@ export class AccountDeletionService {
       exportedAt: new Date(),
       profile,
       memberships: membershipRows.map(
-        ({ membershipId, organizationId, organizationName, ...work }) => {
-          const [role] = held.get(membershipId) ?? [];
-          return {
-            organizationId,
-            organizationName,
-            roleName: role.name,
-            ...work,
-          };
-        },
+        ({ membershipId, organizationId, organizationName, ...work }) => ({
+          organizationId,
+          organizationName,
+          roleNames: (held.get(membershipId) ?? []).map((role) => role.name),
+          ...work,
+        }),
       ),
       devices,
       accountHistory: history,

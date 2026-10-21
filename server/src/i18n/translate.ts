@@ -35,9 +35,10 @@ import chinese from './zh-Hans.json';
  */
 
 /**
- * A value a message can carry: data; a list of data, joined the way the
- * language joins a list ("CAD and USD", "CAD et USD", "CAD和USD"); or a
- * whole message of its own, rendered in the same language as the sentence
+ * A value a message can carry: data; a list, joined the way the language
+ * joins a list ("CAD and USD", "CAD et USD", "CAD和USD"), whose items may
+ * be messages of their own, as a built-in role's name is; or a whole
+ * message of its own, rendered in the same language as the sentence
  * around it.
  */
 export type MessageValue =
@@ -46,7 +47,7 @@ export type MessageValue =
   | boolean
   | null
   | undefined
-  | readonly string[]
+  | readonly (string | Translatable)[]
   | Translatable;
 
 /**
@@ -81,19 +82,21 @@ function render(
     formatters.set(key, formatter);
   }
   // A nested message in the same language as the sentence it sits in.
+  const nested = (value: Translatable) =>
+    locale === DEFAULT_LOCALE ? value.message : translate(value, locale);
+  const flatten = (value: MessageValue) => {
+    if (isTranslatable(value)) return nested(value);
+    if (Array.isArray(value)) {
+      return new Intl.ListFormat(locale, { type: 'conjunction' }).format(
+        (value as readonly (string | Translatable)[]).map((item) =>
+          isTranslatable(item) ? nested(item) : item,
+        ),
+      );
+    }
+    return value as string | number | boolean | null | undefined;
+  };
   const flat = Object.fromEntries(
-    Object.entries(values ?? {}).map(([key, value]) => [
-      key,
-      isTranslatable(value)
-        ? locale === DEFAULT_LOCALE
-          ? value.message
-          : translate(value, locale)
-        : Array.isArray(value)
-          ? new Intl.ListFormat(locale, { type: 'conjunction' }).format(
-              value as string[],
-            )
-          : value,
-    ]),
+    Object.entries(values ?? {}).map(([key, value]) => [key, flatten(value)]),
   );
   return String(formatter.format(flat));
 }

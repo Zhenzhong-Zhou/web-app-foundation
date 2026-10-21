@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuditModule } from '../audit/audit.module';
 import { MemberAccessService } from './member-access.service';
 import { PermissionGuard } from './permission.guard';
 import { PermissionsService } from './permissions.service';
@@ -13,6 +14,8 @@ import { RolesService } from './roles.service';
  * answers "may they".
  */
 @Module({
+  // AuditService for Move everyone, which writes an entry per member.
+  imports: [AuditModule],
   controllers: [RolesController],
   // MemberAccessService for Home's welcome and Account (ADR-079).
   providers: [

@@ -92,6 +92,29 @@ describe('values', () => {
     expect(translate(mixed, 'zh-Hans')).toContain('CAD和USD');
   });
 
+  // ADR-080: a member's roles, a built-in one translated, a made one as
+  // named, in one list.
+  it('joins a list whose items are messages of their own', () => {
+    const viewer = t({
+      id: 'audit.value.role.viewer',
+      defaultMessage: 'Viewer',
+    });
+    const refused = t(
+      {
+        id: 'roles.cannotGive',
+        defaultMessage:
+          'Your roles don’t include everything {roles} can do, so you can’t give {count, plural, one {it} other {them}}.',
+      },
+      { roles: [viewer, 'Warehouse lead'], count: 2 },
+    );
+
+    expect(refused.message).toBe(
+      'Your roles don’t include everything Viewer and Warehouse lead can do, so you can’t give them.',
+    );
+    expect(translate(refused, 'fr-CA')).toContain('Lecteur et Warehouse lead');
+    expect(translate(refused, 'zh-Hans')).toContain('查看者和Warehouse lead');
+  });
+
   it('words a verb with spaces in every language, the English unchanged', () => {
     const refused = t(
       {

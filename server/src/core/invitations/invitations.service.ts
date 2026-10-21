@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -18,7 +17,6 @@ import {
   invitations,
   memberships,
   organizations,
-  roles,
   users,
 } from '../../database/schema';
 import { requestTimeZone } from '../../database/tenant-context';
@@ -29,12 +27,20 @@ import { recordContext } from '../audit/audit-context';
 import { AuthTokenService } from '../auth/auth-token.service';
 import type { RequestContext } from '../auth/request-context';
 import {
+  beyond,
+  cannotGive,
+  giverHolds,
+  type GrantingRole,
+  includesOwner,
+  rolesToGive,
+} from '../authorization/giving';
+import {
   type HeldRole,
   nameRoles,
+  roleRef,
   rolesOfInvitations,
-  rolesOfMembers,
 } from '../authorization/member-roles';
-import { isOwnerRole } from '../authorization/owner';
+import { roleName, roleWords, systemRoleOf } from '../authorization/role-words';
 import { timeZoneOf } from '../organizations/time-zone';
 import type { CreateInvitationDto } from './dto/create-invitation.dto';
 import type {
@@ -44,7 +50,6 @@ import type {
 import { appNameOf, invitationMail } from './invitation-mail';
 import { inviterStillHere } from './inviter';
 import { lastDayOf, linkEnd } from './link-end';
-import { roleWords } from './role-words';
 
 /** Links an organization may issue in 24 hours, resends included (ADR-077). */
 const DAILY_LINKS = 50;
@@ -81,12 +86,26 @@ const OWNER_INVITE = t({
   defaultMessage: 'Only an Owner can invite someone as Owner',
 });
 
-/** Who may act on an Owner's invitation once made: an Owner (ADR-077). */
-const OWNER_INVITATION = t({
-  id: 'invitations.ownerInvitation',
-  defaultMessage:
-    'Only an Owner can resend, copy or revoke an invitation to join as Owner',
-});
+/**
+ * Who may act on an invitation once made: whoever may give every role it
+ * names (ADR-080); on an Owner's, an Owner, in ADR-077's words.
+ */
+const ON_AN_INVITATION = {
+  owner: t({
+    id: 'invitations.ownerInvitation',
+    defaultMessage:
+      'Only an Owner can resend, copy or revoke an invitation to join as Owner',
+  }),
+  beyond: (roles: readonly GrantingRole[]) =>
+    t(
+      {
+        id: 'invitations.cannotActOn',
+        defaultMessage:
+          'Your roles don’t include everything {roles} can do, so you can’t resend, copy or revoke this invitation.',
+      },
+      { roles: roles.map(roleName) },
+    ),
+};
 
 /**
  * Inviting, as the inviter does it on Members (ADR-077): invite, list,
@@ -144,15 +163,15 @@ export class InvitationsService {
   ): Promise<{ invitation: Invitation; link: string | null }> {
     const copied = dto.delivery === 'link';
 
-    const { id, roleId, token, expiresAt, organizationId } =
+    const { id, roleIds, token, expiresAt, organizationId } =
       await this.tenantDb.transaction(async (tx, organizationId) => {
         await lock(tx, organizationId);
-        const role = await grantable(
+        const given = await grantable(
           tx,
           organizationId,
           context,
-          dto.roleId,
-          OWNER_INVITE,
+          dto.roleIds,
+          { owner: OWNER_INVITE, beyond: cannotGive },
         );
         await this.mayIssue(tx, organizationId, context);
 
@@ -223,17 +242,26 @@ export class InvitationsService {
             expiresAt: ends,
           })
           .returning({ id: invitations.id });
-        await nameRoles(tx, { id: created.id, organizationId }, [role.id]);
+        await nameRoles(
+          tx,
+          { id: created.id, organizationId },
+          given.map((role) => role.id),
+        );
 
         const issued = await this.tokens.issueForInvitation(
           tx,
           created.id,
           ends,
         );
-        return { id: created.id, roleId: role.id, organizationId, ...issued };
+        return {
+          id: created.id,
+          roleIds: given.map((role) => role.id),
+          organizationId,
+          ...issued,
+        };
       });
 
-    recordContext({ email: dto.email, roleId });
+    recordContext({ email: dto.email, roleIds });
     if (copied) {
       return { invitation: await this.view(id), link: this.linkOf(token) };
     }
@@ -251,7 +279,7 @@ export class InvitationsService {
       'emailed',
     );
 
-    recordContext({ email: invitation.email, roleId: invitation.roleId });
+    recordContext({ email: invitation.email, roleIds: invitation.roleIds });
     if (!(await this.email(invitation.id, organizationId, token, expiresAt))) {
       recordContext({ emailSent: false });
     }
@@ -269,7 +297,7 @@ export class InvitationsService {
   ): Promise<{ invitation: Invitation; link: string }> {
     const { invitation, token } = await this.reissue(context, id, 'copied');
 
-    recordContext({ email: invitation.email, roleId: invitation.roleId });
+    recordContext({ email: invitation.email, roleIds: invitation.roleIds });
     return {
       invitation: await this.view(invitation.id),
       link: this.linkOf(token),
@@ -289,8 +317,8 @@ export class InvitationsService {
           tx,
           organizationId,
           context,
-          held.roleId,
-          OWNER_INVITATION,
+          held.roleIds,
+          ON_AN_INVITATION,
         );
 
         await tx
@@ -307,7 +335,7 @@ export class InvitationsService {
       },
     );
 
-    recordContext({ email: invitation.email, roleId: invitation.roleId });
+    recordContext({ email: invitation.email, roleIds: invitation.roleIds });
   }
 
   /**
@@ -318,12 +346,23 @@ export class InvitationsService {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       await lock(tx, organizationId);
       const invitation = await pendingIn(tx, organizationId, id);
+      // Its roles deleted while its link had ended (ADR-080): nothing to
+      // join as, so no new link.
+      if (invitation.roleIds.length === 0) {
+        throw new ConflictException(
+          t({
+            id: 'invitations.noRoles',
+            defaultMessage:
+              'The roles this invitation named have been deleted. Revoke it, and invite them again.',
+          }),
+        );
+      }
       await grantable(
         tx,
         organizationId,
         context,
-        invitation.roleId,
-        OWNER_INVITATION,
+        invitation.roleIds,
+        ON_AN_INVITATION,
       );
       await this.mayIssue(tx, organizationId, context);
       await this.withinDailyLimit(tx, organizationId);
@@ -455,7 +494,7 @@ export class InvitationsService {
     token: string,
     expiresAt: Date,
   ): Promise<boolean> {
-    const [facts, [role]] = await this.tenantDb.transaction(async (tx) => {
+    const [facts, named] = await this.tenantDb.transaction(async (tx) => {
       const [row] = await tx
         .select({
           to: invitations.email,
@@ -492,7 +531,10 @@ export class InvitationsService {
             ? { name: facts.inviterName, email: facts.inviterEmail }
             : null,
           organizationName: facts.organizationName,
-          role: roleWords(role, facts.locale),
+          roles: named.map((role) => ({
+            ...roleWords(role, facts.locale),
+            system: systemRoleOf(role),
+          })),
           note: facts.note,
           // In the organization's zone (ADR-072), as every page says it.
           timeZone: requestTimeZone(),
@@ -566,7 +608,8 @@ async function lock(tx: Transaction, organizationId: string): Promise<void> {
 
 /**
  * A pending invitation of this organization's, held for the rest of the
- * transaction so an acceptance cannot slip in beside it, or 404.
+ * transaction so an acceptance cannot slip in beside it, or 404; with the
+ * roles it names, none once they were deleted after its link ended.
  */
 async function pendingIn(tx: Transaction, organizationId: string, id: string) {
   const [invitation] = await tx
@@ -585,40 +628,34 @@ async function pendingIn(tx: Transaction, organizationId: string, id: string) {
       t({ id: 'invitations.notFound', defaultMessage: 'No such invitation' }),
     );
   }
-  const [role] = (await rolesOfInvitations(tx, [id])).get(id) ?? [];
-  return { ...invitation, roleId: role.id };
+  const named = (await rolesOfInvitations(tx, [id])).get(id) ?? [];
+  return { ...invitation, roleIds: named.map((role) => role.id) };
 }
 
 /**
- * The role an invitation grants, if this organization has it and the
- * caller may act on an invitation to it. An Admin acts on no Owner's
+ * The roles an invitation grants, if this organization has each and the
+ * caller may give them all (ADR-080): one or more, Owner alone, and only
+ * what the caller's roles hold together. An Admin acts on no Owner's
  * invitation, as on no Owner (ADR-016): neither invites one, issues its
- * link again, nor revokes it, and is told which (`refusal`).
+ * link again, nor revokes it, and is told which (`refusals.owner`).
  */
 async function grantable(
   tx: Transaction,
   organizationId: string,
   context: RequestContext,
-  roleId: string,
-  refusal: Translatable,
-) {
-  const [role] = await tx
-    .select({ id: roles.id, name: roles.name, isSystem: roles.isSystem })
-    .from(roles)
-    .where(and(eq(roles.id, roleId), eq(roles.organizationId, organizationId)));
-  if (!role) {
-    throw new BadRequestException(
-      t({ id: 'users.unknownRole', defaultMessage: 'Unknown role' }),
-    );
+  roleIds: readonly string[],
+  refusals: {
+    owner: Translatable;
+    beyond: (roles: readonly GrantingRole[]) => Translatable;
+  },
+): Promise<GrantingRole[]> {
+  const given = await rolesToGive(tx, organizationId, roleIds);
+  const outside = beyond(await giverHolds(tx, context.membershipId!), given);
+  if (includesOwner(outside)) throw new ForbiddenException(refusals.owner);
+  if (outside.length > 0) {
+    throw new ForbiddenException(refusals.beyond(outside));
   }
-
-  if (isOwnerRole(role)) {
-    const caller = await rolesOfMembers(tx, [context.membershipId!]);
-    if (!(caller.get(context.membershipId!) ?? []).some(isOwnerRole)) {
-      throw new ForbiddenException(refusal);
-    }
-  }
-  return role;
+  return given;
 }
 
 /**
@@ -671,7 +708,7 @@ function viewOf(
   return {
     id: row.id,
     email: row.email,
-    roleId: named[0].id,
+    roles: named.map(roleRef),
     invitedBy: { id: row.invitedById, name: row.invitedByName },
     invitedAt: row.createdAt,
     link: {

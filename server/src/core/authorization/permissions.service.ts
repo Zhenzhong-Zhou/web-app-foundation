@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, exists, isNull, ne, type SQL } from 'drizzle-orm';
 
 import type { Database } from '../../database/database.module';
@@ -10,7 +10,14 @@ import {
   rolePermissions,
   users,
 } from '../../database/schema';
-import type { Permission } from './permissions';
+import { t } from '../../i18n/translate';
+import type { RequestContext } from '../auth/request-context';
+import { grantsOfMember, rolesOfMembers } from './member-roles';
+import { type Permission, PERMISSIONS, quotedLine } from './permissions';
+import { roleName } from './role-words';
+
+/** The most names "To do more, ask …" gives (ADR-079). */
+const WHOM_TO_ASK = 3;
 
 /** A member who holds a permission, as whoever is told or asked names them. */
 export interface Holder {
@@ -45,18 +52,7 @@ export class PermissionsService {
    */
   async listForMember(membershipId: string | null): Promise<Permission[]> {
     if (!membershipId) return [];
-
-    const rows = await this.db
-      .selectDistinct({ key: permissions.key })
-      .from(membershipRoles)
-      .innerJoin(
-        rolePermissions,
-        eq(rolePermissions.roleId, membershipRoles.roleId),
-      )
-      .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
-      .where(eq(membershipRoles.membershipId, membershipId));
-
-    return rows.map((row) => row.key as Permission);
+    return grantsOfMember(this.db, membershipId);
   }
 
   /**
@@ -102,5 +98,79 @@ export class PermissionsService {
       .orderBy(asc(memberships.createdAt), asc(memberships.id));
 
     return options.limit ? query.limit(options.limit) : query;
+  }
+
+  /**
+   * Whom to ask for more (ADR-079): whoever may change roles, those who
+   * joined first first, never the reader; nobody for a reader who may
+   * change roles themself.
+   */
+  whomToAsk(
+    context: Pick<RequestContext, 'userId'> & { organizationId: string },
+    held: ReadonlySet<Permission>,
+  ): Promise<Holder[]> {
+    if (held.has(PERMISSIONS.ROLES_ASSIGN)) return Promise.resolve([]);
+    return this.holdersOf(context.organizationId, PERMISSIONS.ROLES_ASSIGN, {
+      except: context.userId,
+      limit: WHOM_TO_ASK,
+    });
+  }
+
+  /**
+   * The refusal of something the reader's roles don't reach (#148,
+   * ADR-080), in their language: their roles by name, what is missing in
+   * each permission's own line, and whom to ask, in place of the bare
+   * keys. The guard's, and that of a route that gates what it returns.
+   */
+  async refusal(
+    context: Pick<RequestContext, 'userId' | 'organizationId' | 'membershipId'>,
+    held: ReadonlySet<Permission>,
+    missing: readonly Permission[],
+  ): Promise<ForbiddenException> {
+    const membershipId = context.membershipId;
+    const none: Promise<never[]> = Promise.resolve([]);
+    const [roles, askers] = await Promise.all([
+      membershipId
+        ? rolesOfMembers(this.db, [membershipId]).then(
+            (of) => of.get(membershipId) ?? [],
+          )
+        : none,
+      context.organizationId
+        ? this.whomToAsk(
+            { userId: context.userId, organizationId: context.organizationId },
+            held,
+          )
+        : none,
+    ]);
+
+    const lacking = t(
+      {
+        id: 'auth.missingPermission',
+        defaultMessage:
+          '{roleCount, plural, one {Your role, {roles}, doesn’t include {permissions}.} other {None of your roles, {roles}, includes {permissions}.}}',
+      },
+      {
+        roleCount: roles.length,
+        roles: roles.map(roleName),
+        permissions: missing.map(quotedLine),
+      },
+    );
+    if (askers.length === 0) return new ForbiddenException(lacking);
+
+    return new ForbiddenException(
+      t(
+        {
+          id: 'auth.missingPermission.ask',
+          defaultMessage:
+            // A plural for the languages whose verb agrees with the names.
+            '{lacking} {count, plural, other {{names} can change your roles.}}',
+        },
+        {
+          lacking,
+          count: askers.length,
+          names: askers.map((asker) => asker.name),
+        },
+      ),
+    );
   }
 }

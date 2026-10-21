@@ -75,19 +75,10 @@ export class PermissionGuard implements CanActivate {
     const missing = required.filter((key) => !held.has(key));
 
     if (missing.length > 0) {
-      // Names the missing permission. The caller is already authenticated, so
-      // telling them which grant they lack is useful rather than a disclosure —
-      // they can ask an admin for it by name instead of filing "it says 403".
-      // The keys as the API names them: an integrator reads these.
-      throw new ForbiddenException(
-        t(
-          {
-            id: 'auth.missingPermission',
-            defaultMessage: 'Missing permission: {permissions}',
-          },
-          { permissions: missing.join(', ') },
-        ),
-      );
+      // Says, in the reader's words, which of their roles lack what, and
+      // whom to ask (#148): they are authenticated, so this is useful
+      // rather than a disclosure, and it beats "it says 403".
+      throw await this.permissions.refusal(requestContext, held, missing);
     }
 
     return true;

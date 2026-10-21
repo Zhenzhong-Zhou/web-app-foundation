@@ -4,6 +4,7 @@ import { escapeHtml } from '../../shared/mail/escape-html';
 import type { Mail } from '../../shared/mail/mail.service';
 import { zoneLabel } from '../audit/audit-words';
 import { dayOf } from '../auth/deletion-mail';
+import type { SystemRole } from '../authorization/permissions';
 
 /** An invitation as its email tells it, in the language it carries. */
 export interface InvitationMailContext {
@@ -16,8 +17,15 @@ export interface InvitationMailContext {
    */
   inviter: { name: string; email: string } | null;
   organizationName: string;
-  /** The role in words, in the invitation's language. */
-  role: { name: string; description: string | null };
+  /**
+   * The roles in words, in the invitation's language, each with which
+   * built-in role it is, for the lead's article (ADR-080).
+   */
+  roles: {
+    name: string;
+    description: string | null;
+    system: SystemRole | null;
+  }[];
   note: string | null;
   /** The organization's zone, which the last day is in (ADR-072). */
   timeZone: string;
@@ -60,24 +68,44 @@ export function invitationMail(context: InvitationMailContext): Mail {
       { organization },
     ),
   );
+  // The article by which built-in role it names alone, never by its
+  // words; a made role, or several, take none (ADR-080).
+  const roles = context.roles.map((role) => role.name);
+  const system =
+    (context.roles.length === 1 && context.roles[0].system) || 'other';
   const lead = say(
     context.inviter
       ? t(
           {
             id: 'mail.invitation.lead',
-            // The article from the role's name: an Owner, an Admin, a Viewer.
             defaultMessage:
-              '{inviter} ({email}) invited you to join as {role, select, Owner {an} Admin {an} other {a}} {role}.',
+              '{inviter} ({email}) invited you to join as {system, select, Owner {an {roles}} Admin {an {roles}} Viewer {a {roles}} other {{roles}}}.',
           },
-          { inviter, email: context.inviter.email, role: context.role.name },
+          { inviter, email: context.inviter.email, roles, system },
         )
       : t(
           {
             id: 'mail.invitation.leadOrganization',
             defaultMessage:
-              '{organization} invited you to join as {role, select, Owner {an} Admin {an} other {a}} {role}.',
+              '{organization} invited you to join as {system, select, Owner {an {roles}} Admin {an {roles}} Viewer {a {roles}} other {{roles}}}.',
           },
-          { organization, role: context.role.name },
+          { organization, roles, system },
+        ),
+  );
+  // What each role is for: its line alone for one role, and beside its
+  // name for several, so each line says whose it is.
+  const described = context.roles.filter((role) => role.description);
+  const lines = described.map((role) =>
+    context.roles.length === 1
+      ? role.description!
+      : say(
+          t(
+            {
+              id: 'mail.invitation.roleLine',
+              defaultMessage: '{role}: {description}',
+            },
+            { role: role.name, description: role.description },
+          ),
         ),
   );
   const from = say(
@@ -143,7 +171,7 @@ export function invitationMail(context: InvitationMailContext): Mail {
   const text = [
     heading,
     lead,
-    context.role.description,
+    ...lines,
     context.note && `${from}\n${context.note}`,
     // The link on the line below says what follows: no colon, which each
     // language would write its own way (：in Chinese).
@@ -161,8 +189,7 @@ export function invitationMail(context: InvitationMailContext): Mail {
   const html = [
     `<h1>${escapeHtml(heading)}</h1>`,
     `<p>${escapeHtml(lead)}</p>`,
-    context.role.description &&
-      `<p>${escapeHtml(context.role.description)}</p>`,
+    ...lines.map((line) => `<p>${escapeHtml(line)}</p>`),
     note,
     `<p><a href="${context.link}">${escapeHtml(accept)}</a></p>`,
     `<p>${escapeHtml(expires)}</p>`,

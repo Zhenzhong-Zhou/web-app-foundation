@@ -126,7 +126,7 @@ export function OrderSummary({
 
   const done = order.lines.filter((line) => line.isComplete).length;
   const money = order.money;
-  const total = order.totals[0];
+  const total = order.totals?.[0];
 
   const quantities = order.quantities;
   const sale = order.direction === 'sale';
@@ -345,7 +345,7 @@ export function OrderSummary({
               defaultMessage: 'Not yet invoiced, before tax',
             })}
           >
-            {formatMoney(money.notInvoiced, money.currency)}
+            {formatMoney(money.notInvoiced ?? null, money.currency)}
           </Fact>
           {onShowDocuments && (
             <Link

@@ -5,6 +5,7 @@ import { AUDIT_ACTIONS } from '../core/audit/audit-actions';
 import type { RequestContext } from '../core/auth/request-context';
 import { nameRoles } from '../core/authorization/member-roles';
 import {
+  ROLE_TEMPLATES,
   SYSTEM_ROLES,
   type SystemRole,
 } from '../core/authorization/permissions';
@@ -12,6 +13,7 @@ import { RolesService } from '../core/authorization/roles.service';
 import type { WorkDetailsDto } from '../core/people/dto/work-details.dto';
 import { WorkService } from '../core/people/work.service';
 import { UsersService } from '../core/users/users.service';
+import { translate } from '../i18n/translate';
 import type { Database } from './database.module';
 import { invitations, memberships, users } from './schema';
 import type { Audited } from './seed-demo-audit';
@@ -57,10 +59,22 @@ export type TeamKey =
 
 export type Team = Record<TeamKey, { id: string; email: string }>;
 
+/**
+ * The two roles the Owner made from templates (ADR-080), each held by one
+ * of the team, with the line the Owner wrote for it.
+ */
+const MADE_ROLES = {
+  warehouse: 'Receives and ships against orders, and moves stock. No prices.',
+  sales: 'Looks after customers and raises their orders.',
+} as const;
+
+type MadeRole = keyof typeof MADE_ROLES;
+
 interface Colleague {
   key: TeamKey;
   name: string;
-  role: SystemRole;
+  /** A built-in role, or one of the two the Owner made. */
+  role: SystemRole | MadeRole;
   /** The role the Owner gave them later, so the log has a role change. */
   promotedTo?: SystemRole;
   details: WorkDetailsDto;
@@ -89,7 +103,10 @@ const OFFICE = '604-555-0142';
  * (ADR-063), and the seed makes none.
  *
  * Sarah joins as a Viewer and is promoted to Admin, so Members and the
- * audit log have a role change, from and to.
+ * audit log have a role change, from and to. Tom and Fatima hold the two
+ * roles the Owner made from templates, Warehouse and Sales (ADR-080), so
+ * Settings → Roles shows made roles held, and the new hire's welcome
+ * names a made role.
  *
  * Each joined on a day of their own, months ago, so the demo reads as
  * settled: a membership begun when the seed runs would greet everyone with
@@ -197,7 +214,7 @@ const COLLEAGUES: Colleague[] = [
   {
     key: 'tom',
     name: 'Tom Becker',
-    role: SYSTEM_ROLES.VIEWER,
+    role: 'warehouse',
     details: { jobTitle: 'Warehouse associate', department: 'Warehouse' },
     lastActiveHoursAgo: 12 * 24,
     joinedDaysAgo: 90,
@@ -206,7 +223,7 @@ const COLLEAGUES: Colleague[] = [
     // The new hire: nothing filled in, never signed in.
     key: 'fatima',
     name: 'Fatima Haddad',
-    role: SYSTEM_ROLES.VIEWER,
+    role: 'sales',
     details: {},
     lastActiveHoursAgo: null,
     joinedDaysAgo: 3,
@@ -233,12 +250,30 @@ export async function addTeam(
 ): Promise<Team> {
   const accounts = app.get(UsersService);
   const work = app.get(WorkService);
+  const roles = app.get(RolesService);
 
-  const roleRows = await app.get(RolesService).listForOrganization();
-  const roleId = (name: SystemRole) => {
-    const role = roleRows.find((row) => row.name === name);
-    if (!role) throw new Error(`The organization has no ${name} role`);
-    return role.id;
+  /**
+   * The Owner's request context, for the services that read the caller
+   * from one: this one has no session behind it.
+   */
+  const ownerContext: RequestContext = {
+    sessionId: 'seed-demo',
+    userId: owner.userId,
+    email: owner.email,
+    name: 'Demo Owner',
+    organizationId: owner.organizationId,
+    membershipId: await membershipOf(db, owner),
+    timeZone: null,
+    idleLimitMs: null,
+  };
+
+  const roleRows = await roles.list({ held: new Set(), locale: 'en' });
+  const made = await makeRoles(audited, roles, ownerContext, roleRows);
+  const roleId = (role: SystemRole | MadeRole) => {
+    if (role in made) return made[role as MadeRole];
+    const row = roleRows.find((each) => each.builtIn && each.name === role);
+    if (!row) throw new Error(`The organization has no ${role} role`);
+    return row.id;
   };
 
   const suffix = owner.organizationId.slice(-8);
@@ -334,39 +369,67 @@ export async function addTeam(
     });
   }
 
-  /**
-   * Sarah took on the sales desk, so the Owner made her an Admin. Through
-   * updateRole, which reads the caller from a request context: this one is
-   * the Owner's, with no session behind it.
-   */
-  const ownerContext: RequestContext = {
-    sessionId: 'seed-demo',
-    userId: owner.userId,
-    email: owner.email,
-    name: 'Demo Owner',
-    organizationId: owner.organizationId,
-    membershipId: await membershipOf(db, owner),
-    timeZone: null,
-    idleLimitMs: null,
-  };
+  // Sarah took on the sales desk, so the Owner made her an Admin.
   for (const colleague of COLLEAGUES) {
     if (!colleague.promotedTo) continue;
     const { id } = team[colleague.key];
-    const promoted = roleId(colleague.promotedTo);
+    const promoted = [roleId(colleague.promotedTo)];
     await audited(
       owner.userId,
       {
-        action: AUDIT_ACTIONS.USER_ROLE_CHANGED,
+        action: AUDIT_ACTIONS.MEMBER_ROLES_CHANGED,
         type: 'user',
         id,
-        body: { roleId: promoted },
-        fields: ['roleId'],
+        body: { roleIds: promoted },
+        fields: ['roleIds'],
       },
-      () => accounts.updateRole(ownerContext, id, promoted),
+      () => accounts.updateRoles(ownerContext, id, promoted),
     );
   }
 
   return team;
+}
+
+/**
+ * Warehouse and Sales, made by the Owner from their templates and named
+ * as the templates are in English, or the organization's own of those
+ * names when it has them already.
+ */
+async function makeRoles(
+  audited: Audited,
+  roles: RolesService,
+  owner: RequestContext,
+  existing: { id: string; name: string }[],
+): Promise<Record<MadeRole, string>> {
+  const made = {} as Record<MadeRole, string>;
+  for (const [key, description] of Object.entries(MADE_ROLES) as [
+    MadeRole,
+    string,
+  ][]) {
+    const name = translate(ROLE_TEMPLATES[key].name, 'en');
+    const found = existing.find(
+      (role) => role.name.toLowerCase() === name.toLowerCase(),
+    );
+    const body = {
+      name,
+      description,
+      permissions: [...ROLE_TEMPLATES[key].permissions],
+    };
+    made[key] =
+      found?.id ??
+      (await audited(
+        owner.userId,
+        {
+          action: AUDIT_ACTIONS.ROLE_CREATED,
+          type: 'role',
+          id: (id) => id,
+          body,
+          fields: ['name', 'description'],
+        },
+        () => roles.create(body, owner),
+      ));
+  }
+  return made;
 }
 
 /** The Owner's membership, which their request context carries (ADR-080). */
@@ -387,7 +450,14 @@ async function membershipOf(db: Database, owner: DemoOwner): Promise<string> {
 export function describeTeam(team: Team, password: string): string {
   const lines = COLLEAGUES.map(
     (colleague) =>
-      `  ${colleague.name} (${colleague.promotedTo ?? colleague.role}): ${team[colleague.key].email}`,
+      `  ${colleague.name} (${roleNameOf(colleague.promotedTo ?? colleague.role)}): ${team[colleague.key].email}`,
   );
   return [`Team, each with password ${password}:`, ...lines].join('\n');
+}
+
+/** A colleague's role as the log line names it. */
+function roleNameOf(role: SystemRole | MadeRole): string {
+  return role in MADE_ROLES
+    ? translate(ROLE_TEMPLATES[role as MadeRole].name, 'en')
+    : role;
 }

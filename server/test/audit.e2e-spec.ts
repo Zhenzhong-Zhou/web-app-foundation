@@ -299,14 +299,14 @@ describe('Audit (e2e)', () => {
         .where(eq(users.email, 'sarah@alpha.example.com'));
       await alpha.agent
         .patch(`/v1/users/${sarah.id}`)
-        .send({ roleId: roleId('Admin') })
+        .send({ roleIds: [roleId('Admin')] })
         .expect(204);
 
-      const { entries } = await page(alpha, '?action=user.role_changed');
+      const { entries } = await page(alpha, '?action=member.roles_changed');
       expect(entries[0].payload).toEqual({
-        roleId: {
-          from: { id: roleId('Viewer'), label: 'Viewer' },
-          to: { id: roleId('Admin'), label: 'Admin' },
+        roleIds: {
+          from: [{ id: roleId('Viewer'), label: 'Viewer' }],
+          to: [{ id: roleId('Admin'), label: 'Admin' }],
         },
       });
     });

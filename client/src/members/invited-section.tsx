@@ -20,7 +20,7 @@ import {
 import { type ReactNode, useId, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 
-import type { Invitation, Role } from '../api/types.gen';
+import type { Invitation } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { StatusChip } from '../components/status-chip';
 import { api } from '../lib/api';
@@ -28,7 +28,7 @@ import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { useSubmit } from '../lib/use-submit';
 import { STATUS_TONES } from '../theme/status';
 import { invitedByLabel, linkStatusLabel } from './invitation-words';
-import { roleLabel } from './role-names';
+import { roleList } from './role-names';
 
 /** Read by a screen reader, not drawn: the actions column's header. */
 const HIDDEN = {
@@ -58,7 +58,6 @@ export interface InvitedActions {
  */
 export function InvitedSection({
   invitations,
-  roles,
   isOwner,
   selfId,
   busy,
@@ -66,7 +65,6 @@ export function InvitedSection({
   onRevoked,
 }: {
   invitations: Invitation[];
-  roles: Role[];
   isOwner: boolean;
   selfId: string | undefined;
   /** The invitation a row action is working on, its buttons held. */
@@ -80,11 +78,10 @@ export function InvitedSection({
   const headingId = useId();
   const [revoking, setRevoking] = useState<Invitation | null>(null);
 
-  const roleName = (invitation: Invitation) =>
-    roleLabel(roles.find((role) => role.id === invitation.roleId)?.name ?? '');
+  const roleName = (invitation: Invitation) => roleList(invitation.roles);
   const ownersOnly = (invitation: Invitation) =>
     !isOwner &&
-    roles.find((role) => role.id === invitation.roleId)?.name === 'Owner';
+    invitation.roles.some((role) => role.builtIn && role.name === 'Owner');
 
   const buttons = (invitation: Invitation) =>
     ownersOnly(invitation) ? null : (

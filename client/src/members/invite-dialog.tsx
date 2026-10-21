@@ -52,7 +52,7 @@ import {
   type InviteView,
   NOTE_MAX_LENGTH,
 } from './invite-view';
-import { roleDescription, roleLabel } from './role-names';
+import { articleOf, roleDescription, roleLabel, roleList } from './role-names';
 
 /**
  * Invite someone (ADR-077): an address, a role described by what it lets a
@@ -115,7 +115,6 @@ export function InviteDialog({
           titleId={titleId}
           phone={phone}
           view={view}
-          roles={roles}
           onClose={onClose}
         />
       )}
@@ -257,7 +256,8 @@ function InviteForm({
         method: 'POST',
         body: JSON.stringify({
           email,
-          roleId,
+          // One until the dialog offers several (ADR-080).
+          roleIds: [roleId],
           locale,
           note: note.trim() || null,
           delivery,
@@ -291,13 +291,12 @@ function InviteForm({
         {
           id: 'members.invite.alreadyMember',
           defaultMessage:
-            '{name} is already a member here, as {role, select, Owner {an} Admin {an} other {a}} {role}.',
+            '{name} is already a member here, as {system, select, Owner {an {roles}} Admin {an {roles}} Viewer {a {roles}} other {{roles}}}.',
         },
         {
           name: member.name,
-          role: roleLabel(
-            roles.find((role) => role.id === member.roleId)?.name ?? '',
-          ),
+          roles: roleList(member.roles),
+          system: articleOf(member.roles),
         },
       )
     : invited
@@ -324,7 +323,7 @@ function InviteForm({
   const ownersInvitation =
     invited !== undefined &&
     !isOwner &&
-    roles.find((role) => role.id === invited.roleId)?.name === 'Owner';
+    invited.roles.some((role) => role.builtIn && role.name === 'Owner');
 
   const resent = useRef<Invitation | null>(null);
   const resend = useSubmit(async () => {
@@ -719,13 +718,11 @@ function LinkCopied({
   titleId,
   phone,
   view,
-  roles,
   onClose,
 }: {
   titleId: string;
   phone: boolean;
   view: Extract<InviteView, { kind: 'copied' }>;
-  roles: Role[];
   onClose: () => void;
 }) {
   const intl = useIntl();
@@ -814,17 +811,15 @@ function LinkCopied({
               {
                 id: 'members.invite.copied.works',
                 defaultMessage:
-                  'It works once, until {date}. Send it only to them: whoever opens it first joins as {email}, {role, select, Owner {an} Admin {an} other {a}} {role}.',
+                  'It works once, until {date}. Send it only to them: whoever opens it first joins as {email}, {system, select, Owner {an {roles}} Admin {an {roles}} Viewer {a {roles}} other {{roles}}}.',
               },
               {
                 date: invitation.link.lastDay
                   ? formatDayLong(invitation.link.lastDay)
                   : '',
                 email: invitation.email,
-                role: roleLabel(
-                  roles.find((role) => role.id === invitation.roleId)?.name ??
-                    '',
-                ),
+                roles: roleList(invitation.roles),
+                system: articleOf(invitation.roles),
               },
             )}
           </Typography>

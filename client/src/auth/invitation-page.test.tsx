@@ -22,7 +22,9 @@ function preview(over: Partial<InvitationPreview> = {}): InvitationPreview {
     email: 'sam@example.com',
     organization: { name: 'Alpha Co', logo: null, deletionScheduledAt: null },
     inviter: { name: 'Mei Lin', email: 'mei.lin@example.com' },
-    role: { name: 'Viewer', description: 'Looks at orders.' },
+    roles: [
+      { name: 'Viewer', description: 'Looks at orders.', system: 'Viewer' },
+    ],
     note: 'Bring boots',
     lastDay: '2026-10-26',
     hasAccount: false,
@@ -155,6 +157,33 @@ describe('InvitationPage (ADR-077)', () => {
     ).toBeVisible();
     expect(screen.getByText('From Alpha Co')).toBeVisible();
     expect(screen.queryByText(/Mei Lin/)).not.toBeInTheDocument();
+  });
+
+  // ADR-080: a made role takes no article, several read as a list, each
+  // line beside its role's name.
+  it('names made roles bare, and several as a list with their lines', async () => {
+    reads(
+      preview({
+        roles: [
+          {
+            name: 'Warehouse',
+            description: 'Receives and ships.',
+            system: null,
+          },
+          { name: 'Sales', description: null, system: null },
+        ],
+      }),
+    );
+    open();
+
+    expect(
+      await screen.findByText(
+        sentence(
+          'Mei Lin (mei.lin@example.com) invited you as Warehouse and Sales.',
+        ),
+      ),
+    ).toBeVisible();
+    expect(screen.getByText('Warehouse: Receives and ships.')).toBeVisible();
   });
 
   it('reads an ended link as ended, by its code', async () => {

@@ -134,7 +134,7 @@ test.describe('invitations', () => {
     const email = uniqueEmail('row');
     await created(
       await org.api.post('/v1/invitations', {
-        data: { email, roleId: await roleIdNamed(org.api, 'Viewer') },
+        data: { email, roleIds: [await roleIdNamed(org.api, 'Viewer')] },
       }),
     );
     await signInAs(page, org.api);
@@ -177,7 +177,10 @@ test.describe('invitations', () => {
     const invited = uniqueEmail('again');
     await created(
       await org.api.post('/v1/invitations', {
-        data: { email: invited, roleId: await roleIdNamed(org.api, 'Viewer') },
+        data: {
+          email: invited,
+          roleIds: [await roleIdNamed(org.api, 'Viewer')],
+        },
       }),
     );
     await signInAs(page, org.api);

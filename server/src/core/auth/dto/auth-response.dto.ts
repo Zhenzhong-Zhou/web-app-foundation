@@ -1,6 +1,7 @@
 import type { Locale } from '../../../common/locales';
 import type { RegistrationMode } from '../../../common/registration';
 import type { OrganizationRail } from '../../../database/schema';
+import type { RoleRef } from '../../authorization/dto/role-response.dto';
 import type { Permission } from '../../authorization/permissions';
 
 /**
@@ -52,11 +53,12 @@ export class OrganizationBranding {
 /** Where an organization's pending deletion stands (ADR-070, amended). */
 export type DeletionStage = 'scheduled' | 'lastWeek' | 'underWay';
 
-/** The organization the session is working in, and the role it holds. */
+/** The organization the session is working in, and the roles it holds. */
 export class SessionOrganization {
   id!: string;
   name!: string;
-  roleId!: string;
+  /** Every role the member holds there, the built-in one first (ADR-080). */
+  roles!: RoleRef[];
   branding!: OrganizationBranding;
   /**
    * The deletion day, YYYY-MM-DD, while one is pending (ADR-070): every

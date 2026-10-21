@@ -4,7 +4,6 @@ import type { Readable } from 'node:stream';
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -25,7 +24,9 @@ import {
 } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
+import type { RequestContext } from '../auth/request-context';
 import type { Permission } from '../authorization/permissions';
+import { PermissionsService } from '../authorization/permissions.service';
 import { dispositionOf } from './content-disposition';
 import { KIND_RULES } from './file-kinds';
 import { FILE_STORAGE, type FileStorage, keyOf, ownerOf } from './file-storage';
@@ -76,6 +77,7 @@ export class FilesService {
   constructor(
     private readonly tenantDb: TenantDb,
     @Inject(FILE_STORAGE) private readonly storage: FileStorage,
+    private readonly permissions: PermissionsService,
     config: ConfigService<Env, true>,
   ) {
     this.limitBytes = config.get('FILES_ORG_LIMIT_BYTES', { infer: true });
@@ -233,13 +235,21 @@ export class FilesService {
 
   /**
    * One size of a file, if this organization has it, it is not released,
-   * and the member may see what it is for. Another organization's file is
-   * simply not there, as for any record.
+   * and the member may see what it is for, refused in their words when
+   * not (ADR-080). Another organization's file is simply not there, as
+   * for any record. No reader for a file that asks no permission, as the
+   * organization's logo on a document.
    */
   async find(
     id: string,
     size: FileSize,
-    held: ReadonlySet<Permission>,
+    reader?: {
+      context: Pick<
+        RequestContext,
+        'userId' | 'organizationId' | 'membershipId'
+      >;
+      held: ReadonlySet<Permission>;
+    },
   ): Promise<Servable> {
     const row = await this.tenantDb.transaction(async (tx, organizationId) => {
       const [found] = await tx
@@ -261,16 +271,11 @@ export class FilesService {
     }
 
     const view = KIND_RULES[row.kind as OrganizationFileKind].view;
-    if (view && !held.has(view)) {
-      throw new ForbiddenException(
-        t(
-          {
-            id: 'auth.missingPermission',
-            defaultMessage: 'Missing permission: {permissions}',
-          },
-          { permissions: view },
-        ),
-      );
+    if (view && !reader) {
+      throw new Error(`File ${row.id} asks ${view}, and no reader was given`);
+    }
+    if (view && reader && !reader.held.has(view)) {
+      throw await this.permissions.refusal(reader.context, reader.held, [view]);
     }
 
     // A logo has only `full`; any size asked of it is that.

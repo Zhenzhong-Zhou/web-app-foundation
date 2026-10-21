@@ -11,8 +11,17 @@
  */
 export const AUDIT_ACTIONS = {
   USER_CREATED: 'user.created',
-  /** A privilege change. "Who granted this" is the question the log answers. */
+  /**
+   * A member's one role changed, before ADR-080. No longer written, and
+   * kept so those entries read as they did and can still be found.
+   */
   USER_ROLE_CHANGED: 'user.role_changed',
+  /**
+   * A member's roles changed, from which to which (ADR-080): a privilege
+   * change, and "who granted this" is the question the log answers. Move
+   * everyone writes one for each member it moves.
+   */
+  MEMBER_ROLES_CHANGED: 'member.roles_changed',
   /** Membership removed. The account still exists — see ADR-012 for deletion. */
   MEMBER_REMOVED: 'member.removed',
   /** A member left of their own accord; the account still exists (ADR-069). */
@@ -33,6 +42,15 @@ export const AUDIT_ACTIONS = {
   INVITATION_REVOKED: 'invitation.revoked',
   /** Its actor is the new member, who exists once they accept. */
   INVITATION_ACCEPTED: 'invitation.accepted',
+
+  /**
+   * A role an organization made (ADR-080): its name and what it grants;
+   * changed, its name and line from and to and the permissions added and
+   * removed; deleted, with what it granted, which the log keeps.
+   */
+  ROLE_CREATED: 'role.created',
+  ROLE_UPDATED: 'role.updated',
+  ROLE_DELETED: 'role.deleted',
 
   PRODUCT_CREATED: 'product.created',
   PRODUCT_UPDATED: 'product.updated',

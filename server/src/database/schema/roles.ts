@@ -10,6 +10,7 @@ import {
 
 import { primaryKey, timestamps } from './columns';
 import { organizations } from './organizations';
+import { users } from './users';
 
 /**
  * Roles are per-organization, not global.
@@ -41,6 +42,13 @@ export const roles = pgTable(
     // Seeded roles the UI must not let anyone delete — an org with no Owner
     // is unrecoverable.
     isSystem: boolean('is_system').notNull().default(false),
+
+    // Who saved a made role last, with updated_at: a save made after
+    // someone else's is refused naming them (ADR-080). Null on a built-in
+    // role, which nobody saves.
+    updatedBy: uuid('updated_by').references(() => users.id, {
+      onDelete: 'restrict',
+    }),
 
     ...timestamps,
   },

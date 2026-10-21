@@ -1,4 +1,5 @@
 import type { AuditRecord } from '../../audit/dto/audit-response.dto';
+import type { RoleRef } from '../../authorization/dto/role-response.dto';
 import type { ActiveSince } from '../people.service';
 
 /**
@@ -12,8 +13,8 @@ export class Person {
   name!: string;
   email!: string;
   photoFileId!: string | null;
-  roleId!: string;
-  roleName!: string;
+  /** Every role they hold, the built-in one first (ADR-080). */
+  roles!: RoleRef[];
   jobTitle!: string | null;
   department!: string | null;
   location!: string | null;

@@ -53,13 +53,17 @@ export class OrderLine {
   /** On returns with no RMA yet (ADR-047). Zero on a purchase or sample. */
   quantityUnsettled!: string;
   quantityOutstanding!: string;
-  unitPrice!: string | null;
-  currency!: string | null;
+  /**
+   * The price and what it came to, absent for a reader without
+   * orders.view_prices (ADR-080), as are the four fields below.
+   */
+  unitPrice?: string | null;
+  currency?: string | null;
   /** Where the price came from (ADR-049): a list, typed, or not yet priced. */
-  priceSource!: 'list' | 'manual' | null;
-  priceListId!: string | null;
-  priceListName!: string | null;
-  lineTotal!: string | null;
+  priceSource?: 'list' | 'manual' | null;
+  priceListId?: string | null;
+  priceListName?: string | null;
+  lineTotal?: string | null;
   isComplete!: boolean;
   /** No more is coming (ADR-034). The quantities stay as they were. */
   isClosedShort!: boolean;
@@ -78,7 +82,11 @@ export class OrderMoney {
   invoiced!: string;
   credited!: string;
   netInvoiced!: string;
-  notInvoiced!: string;
+  /**
+   * The lines' prices not yet billed: absent for a reader without
+   * orders.view_prices (ADR-080).
+   */
+  notInvoiced?: string;
 }
 
 /** How many records each of an order's tabs holds. */
@@ -86,7 +94,8 @@ export class OrderCounts {
   shipments!: number;
   voidedShipments!: number;
   returns!: number;
-  documents!: number;
+  /** Invoices and credit notes: absent without invoices.view (ADR-080). */
+  documents?: number;
 }
 
 /** An order's quantities summed, when every line counts in one unit. */
@@ -153,17 +162,21 @@ export class OrderDetail {
    * address.
    */
   deliverTo!: ChosenSite | null;
-  totals!: OrderTotal[];
-  totalsComplete!: boolean;
-  /** Null on a purchase or a sample: neither is invoiced here. */
-  money!: OrderMoney | null;
+  /** Absent, with totalsComplete, without orders.view_prices (ADR-080). */
+  totals?: OrderTotal[];
+  totalsComplete?: boolean;
+  /**
+   * Null on a purchase or a sample: neither is invoiced here. Absent, as
+   * documents are, for a reader without invoices.view (ADR-080).
+   */
+  money?: OrderMoney | null;
   /** Returns received with no RMA, nobody yet deciding what they settle. */
   unsettledReturns!: number;
   counts!: OrderCounts;
   /** Null when the lines count in different units. */
   quantities!: OrderQuantities | null;
   /** A sale's invoices and credit notes; null on a purchase or sample. */
-  documents!: OrderDocuments | null;
+  documents?: OrderDocuments | null;
   lines!: OrderLine[];
 }
 

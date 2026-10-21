@@ -573,7 +573,7 @@ const GLOSSARY = [
   t({
     id: 'organization.export.glossary.roles',
     defaultMessage:
-      'In roles.csv, each role: name, as the organization named it, the three built in under their English names, Owner, Admin and Viewer; description, what it is for, a built-in role’s in the language of this README. What each role may do is in role_permissions.csv.',
+      'In roles.csv, each role: name, as the organization named it, the three built in under their English names, Owner, Admin and Viewer; description, what it is for, a built-in role’s in the language of this README; updated_by, who saved a role the organization made last, a user_id. What each role may do is in role_permissions.csv.',
   }),
   t({
     id: 'organization.export.glossary.flags',

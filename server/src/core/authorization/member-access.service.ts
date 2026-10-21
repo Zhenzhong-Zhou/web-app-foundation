@@ -7,12 +7,9 @@ import type {
   MemberAccess,
   MemberRole,
 } from './dto/member-access-response.dto';
-import { rolesOfMembers } from './member-roles';
-import { ALL_PERMISSIONS, type Permission, PERMISSIONS } from './permissions';
+import { type HeldRole, rolesOfMembers } from './member-roles';
+import { ALL_PERMISSIONS, type Permission } from './permissions';
 import { PermissionsService } from './permissions.service';
-
-/** The most names "To do more, ask …" gives (ADR-079). */
-const WHOM_TO_ASK = 3;
 
 /**
  * What a member may do here, and whom to ask for more (ADR-079): one
@@ -36,43 +33,40 @@ export class MemberAccessService {
     const membershipId = context.membershipId;
     if (!membershipId) throw notWorkingHere();
 
-    const roles = await this.tenantDb.transaction((tx) =>
-      rolesOfMembers(tx, [membershipId]),
-    );
-    const [role] = roles.get(membershipId) ?? [];
-    if (!role) throw notWorkingHere();
+    const roles =
+      (
+        await this.tenantDb.transaction((tx) =>
+          rolesOfMembers(tx, [membershipId]),
+        )
+      ).get(membershipId) ?? [];
+    if (roles.length === 0) throw notWorkingHere();
 
-    return this.given(
-      context,
-      { name: role.name, description: role.description },
-      held,
-    );
+    return this.given(context, roles.map(memberRole), held);
   }
 
-  /** The same, for a caller that has read the member's role already. */
+  /** The same, for a caller that has read the member's roles already. */
   async given(
     context: Pick<RequestContext, 'userId' | 'organizationId'>,
-    role: MemberRole,
+    roles: MemberRole[],
     held: ReadonlySet<Permission>,
   ): Promise<MemberAccess> {
-    if (!context.organizationId) throw notWorkingHere();
-
-    // Whoever may change roles, those who joined first first: nobody to
-    // ask for someone who may change roles themself.
-    const whomToAsk = held.has(PERMISSIONS.ROLES_ASSIGN)
-      ? []
-      : await this.permissions.holdersOf(
-          context.organizationId,
-          PERMISSIONS.ROLES_ASSIGN,
-          { except: context.userId, limit: WHOM_TO_ASK },
-        );
+    const organizationId = context.organizationId;
+    if (!organizationId) throw notWorkingHere();
 
     return {
-      role,
+      roles,
       holdsEverything: ALL_PERMISSIONS.every((key) => held.has(key)),
-      whomToAsk,
+      whomToAsk: await this.permissions.whomToAsk(
+        { userId: context.userId, organizationId },
+        held,
+      ),
     };
   }
+}
+
+/** A role as the welcome and Your access say it. */
+export function memberRole(role: HeldRole): MemberRole {
+  return { name: role.name, description: role.description };
 }
 
 function notWorkingHere(): NotFoundException {

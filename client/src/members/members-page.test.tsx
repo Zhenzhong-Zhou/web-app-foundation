@@ -4,20 +4,18 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import type { Member, Role } from '../api/types.gen';
+import { builtInRole, roleRef } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { MembersPage } from './members-page';
 
-const ROLES: Role[] = [
-  { id: 'role-owner', name: 'Owner' },
-  { id: 'role-viewer', name: 'Viewer' },
-];
+const ROLES: Role[] = [builtInRole('Owner'), builtInRole('Viewer')];
 
 const SAM: Member = {
   id: 'user-2',
   email: 'sam@alpha.example.com',
   name: 'Sam',
-  roleId: 'role-viewer',
+  roles: [roleRef('Viewer')],
   active: 'today',
 };
 

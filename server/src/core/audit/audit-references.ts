@@ -19,6 +19,7 @@ export const REFERENCE_KINDS = {
   shipmentId: 'shipment',
   returnId: 'order_return',
   roleId: 'role',
+  roleIds: 'role',
   deliverToId: 'location',
   sendBackToId: 'location',
   defaultSalePriceListId: 'price_list',

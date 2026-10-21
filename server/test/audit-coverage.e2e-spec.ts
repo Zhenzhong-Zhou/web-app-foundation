@@ -109,6 +109,10 @@ const NOT_AUDITED = new Map<string, string>([
     'An invitation to join is audited by the service, with the new member as its actor: the route is public, and the actor exists only once it has run (ADR-077). An organization invitation is not: the organization it starts begins with an empty log, as after registration (ADR-078)',
   ],
   [
+    'RolesController.move',
+    'Audited by the route, one entry for each member moved, so each person’s history says what happened to them (ADR-080)',
+  ],
+  [
     'InvoicesController.previewCredit',
     'Computes a credit and stores nothing — a POST only because it carries a body (ADR-047)',
   ],

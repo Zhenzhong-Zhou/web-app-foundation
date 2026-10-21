@@ -1,4 +1,7 @@
 import {
+  ArrayMinSize,
+  ArrayUnique,
+  IsArray,
   IsEmail,
   IsIn,
   IsOptional,
@@ -20,10 +23,13 @@ export class CreateInvitationDto {
   @MaxLength(254) // RFC 5321 maximum
   email!: string;
 
-  // Chosen, never defaulted here: the dialog starts at Viewer, the least
-  // access, and the inviter raises it on purpose (ADR-077).
-  @IsUUID()
-  roleId!: string;
+  // Chosen, never defaulted here: one or more, Owner alone, each one the
+  // inviter may give (ADR-080).
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayUnique()
+  @IsUUID('all', { each: true })
+  roleIds!: string[];
 
   /**
    * The language to write to them in (ADR-077): the email's, and the

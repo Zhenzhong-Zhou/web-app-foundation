@@ -30,7 +30,7 @@ test('a newcomer accepts with a note, meets their welcome, and the inviter hears
     await org.api.post('/v1/invitations', {
       data: {
         email,
-        roleId: await roleIdNamed(org.api, 'Viewer'),
+        roleIds: [await roleIdNamed(org.api, 'Viewer')],
         note: 'On Monday you’ll shadow Li Na.\nLook up each lot as it comes in.',
       },
     }),

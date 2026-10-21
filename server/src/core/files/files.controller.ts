@@ -89,7 +89,10 @@ export class FilesController {
     const held = new Set(
       await this.permissions.listForMember(user.membershipId),
     );
-    const file = await this.files.find(id, query.size ?? 'full', held);
+    const file = await this.files.find(id, query.size ?? 'full', {
+      context: user,
+      held,
+    });
 
     response.setHeader('Cache-Control', 'private, max-age=31536000, immutable');
     response.setHeader('ETag', file.etag);

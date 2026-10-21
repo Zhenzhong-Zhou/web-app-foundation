@@ -5,7 +5,10 @@ import { addDays, dayIn, todayIn } from '../../common/today';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import type { RequestContext } from '../../core/auth/request-context';
 import type { MemberRole } from '../../core/authorization/dto/member-access-response.dto';
-import { MemberAccessService } from '../../core/authorization/member-access.service';
+import {
+  MemberAccessService,
+  memberRole,
+} from '../../core/authorization/member-access.service';
 import { rolesOfMembers } from '../../core/authorization/member-roles';
 import type { Permission } from '../../core/authorization/permissions';
 import { inviterStillHere } from '../../core/invitations/inviter';
@@ -66,7 +69,12 @@ const WORK: {
     key: 'lookUp',
     may: (held) => held.has('products.view') || held.has('stock.view'),
   },
-  { key: 'receiveStock', may: (held) => held.has('stock.move') },
+  // Against an order too (ADR-080): its button then opens the confirmed
+  // purchases, for someone who may not move stock otherwise.
+  {
+    key: 'receiveStock',
+    may: (held) => held.has('stock.move') || held.has('orders.receive'),
+  },
   { key: 'raiseOrder', may: (held) => held.has('orders.create') },
   { key: 'shipOrder', may: (held) => held.has('orders.ship') },
   { key: 'planRun', may: (held) => held.has('production.create') },
@@ -119,7 +127,7 @@ interface Membership {
   photoFileId: string | null;
   emailVerifiedAt: Date | null;
   founder: boolean;
-  role: MemberRole;
+  roles: MemberRole[];
 }
 
 /**
@@ -165,7 +173,7 @@ export class WelcomeService {
         held,
       ),
       this.inviter(membership.id),
-      this.access.given(context, membership.role, held),
+      this.access.given(context, membership.roles, held),
     ]);
     if (items.every((item) => item.done)) return null;
 
@@ -223,11 +231,8 @@ export class WelcomeService {
         );
       if (!row) return undefined;
 
-      const [role] = (await rolesOfMembers(tx, [row.id])).get(row.id) ?? [];
-      return {
-        ...row,
-        role: { name: role.name, description: role.description },
-      };
+      const held = (await rolesOfMembers(tx, [row.id])).get(row.id) ?? [];
+      return { ...row, roles: held.map(memberRole) };
     });
   }
 

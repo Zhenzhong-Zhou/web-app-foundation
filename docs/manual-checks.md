@@ -60,8 +60,9 @@ one example among them.
 Around those, a team of nine, whose addresses the seed prints; each signs in
 with the demo password. **Anika Sharma** is a second Owner; **Daniel
 Okafor**, **李静**, **Marc-André Gagnon**, **王建国** and **Sarah Chen** are
-Admins, Sarah promoted from Viewer; **Chloé Tremblay**, **Tom Becker** and
-**Fatima Haddad** are Viewers, and Fatima has never signed in. Each record
+Admins, Sarah promoted from Viewer; **Chloé Tremblay** is a Viewer; **Tom
+Becker** holds **Warehouse** and **Fatima Haddad** **Sales**, two roles the
+Owner made from templates (ADR-080), and Fatima has never signed in. Each record
 above has its creation in History, by the Owner, and what the team did is in
 History as theirs: the **Richmond warehouse**, with zones, an aisle,
 shelves, a fridge and a **Quarantine**; **MAGCAP** in three sizes;
@@ -868,9 +869,11 @@ await fetch(`${api}/v1/files/product-image`, {
   to your circle in the top bar: its label follows the page's language,
   English here, as ADR-063's amendment says. Put your own name back.
 - **MC-1903** *(seed:demo)* Members lists ten people, each with a face and a
-  role, Sarah Chen an Admin, and the audit log filtered to Changed a
-  member's role has one entry, by the Owner. On People, Fatima Haddad's card
-  shows only her name and role. Open each colleague's page: as the Owner,
+  role, Sarah Chen an Admin, Tom Becker Warehouse and Fatima Haddad Sales,
+  and the audit log filtered to Member’s roles changed has one entry, by the
+  Owner, Sarah from Viewer to Admin; filtered to Role made, two, Warehouse
+  and Sales, each with what it grants in words. On People, Fatima Haddad's
+  card shows only her name and role. Open each colleague's page: as the Owner,
   last active is today for Daniel Okafor, 李静, Marc-André Gagnon, 王建国 and
   Sarah Chen, three days ago for Anika Sharma, twelve for Tom Becker and
   forty for Chloé Tremblay, and Fatima has never signed in. SO-DEMO-7's
@@ -1373,8 +1376,8 @@ Mailpit open.
   an Owner's invitation on Invited has no Resend, Copy link or Revoke.
   Inviting that invitation's address says it was already invited, and
   that only an Owner can resend it, with no Resend instead. As Tom
-  Becker, a Viewer, Members has no Invite and no Invited, and its line
-  says an Owner or an Admin invites new members.
+  Becker, who holds Warehouse, Members has no Invite and no Invited, and
+  its line says an Owner or an Admin invites new members.
 - **MC-3008** *(ADR-077)* Register a fresh organization and, without
   confirming its email, Send invitation from Members: the dialog asks you
   to confirm your own email first, naming it, with Resend confirmation,
@@ -1674,8 +1677,9 @@ The pages, in a private window unless a check says otherwise.
   team's but Fatima Haddad's: she joined three days ago by the Owner's
   invitation. Sign in as her (after MC-1903, which counts on her never
   having signed in): her Home leads with the welcome, You joined on the
-  day as a Viewer, the Owner's note about Chloé under the Owner's
-  initials, and her first week at 0 of 3. As the demo Owner, People marks
+  day as Sales, with no article, the Owner's note about Chloé under the
+  Owner's initials, and her first week at 0 of 4: say who you are, look
+  something up, raise an order and draft an invoice. As the demo Owner, People marks
   Fatima alone New · joined and her day, and the line under the title
   adds 1 joined in the last two weeks; after MC-3207, the newcomer too,
   New · joined today, and 2 joined; the faces in a row stay level. In
@@ -1711,6 +1715,41 @@ The pages, in a private window unless a check says otherwise.
   shows them in French, and the README's glossary says so;
   `role_permissions.csv` lists `orders.view_prices` under all three, and
   `roles.create`, `roles.update` and `roles.delete` under Owner alone.
+- **MC-3303** *(ADR-080)* Giving only what you hold. On a freshly seeded
+  demo, sign in as Daniel Okafor, an Admin, and on Members change Chloé
+  Tremblay's role to Sales: refused, Your roles don’t include everything
+  Sales can do, so you can’t give it (Sales sees price lists, which Admin
+  does not), and Chloé stays a Viewer. Change Fatima Haddad's to Viewer:
+  Your roles don’t include everything Fatima Haddad’s roles can do, so you
+  can’t change their roles. Change Tom Becker's to Owner: Only an Owner can
+  assign the Owner role, as before. In Français, Vos rôles n’incluent pas
+  toutes les permissions de Sales; …; in 中文, 您的角色不包含Sales的全部权限，….
+  As the demo Owner the same changes are made, each one entry under
+  Member’s roles changed, from and to.
+- **MC-3304** *(ADR-080, #148)* A refusal says, in your words, what your
+  roles don't include and whom to ask. Signed in as Tom Becker
+  (Warehouse), with the Network tab open, go to `/costs`: the page says
+  you don't have access, and the refused request's message reads Your
+  role, Warehouse, doesn’t include “See what stock, lots and batches cost,
+  and exchange rates”, then the first three who may change roles, those
+  who joined first first, can change your roles, never Missing permission:
+  costs.view. With the app in Français, « … », … peut / peuvent modifier
+  vos rôles; in 中文, 您的角色（Warehouse）不包含“…”。… 可以更改您的角色。
+- **MC-3305** *(ADR-080)* Prices on orders stay with whoever may see
+  them. Signed in as Tom Becker (Warehouse), with the Network tab open,
+  open SO-DEMO-1: its order response has no `unitPrice`, `lineTotal`,
+  `totals`, `money` or `documents`, and the page shows a dash where a
+  price was. Its pro forma is refused, and PO-DEMO-1's Print and Download
+  PDF are refused, while a shipment's packing slip still prints. As
+  Fatima Haddad (Sales), SO-DEMO-1 shows its prices, totals and its
+  invoices and credits, as it does for a Viewer.
+- **MC-3306** *(ADR-080)* A made role reads without an article. As the
+  demo Owner, Invite someone at an address you can read with the Warehouse
+  card: the email says … invited you to join as Warehouse., with
+  Warehouse's line beneath, and the invitation's page … invited you as
+  Warehouse.; in Français … en tant que Warehouse. Join, and the Owner's
+  bell reads … joined … as Warehouse. An Admin or a Viewer invitation still
+  reads as an Admin, as a Viewer.
 
 ## Regressions
 
@@ -2195,3 +2234,7 @@ first.
   own: section 33, MC-3301.
 - 2026-10-21: ADR-080, the permissions and their words, prices on orders
   for the built-in roles and their lines in the export: MC-3302.
+- 2026-10-21: ADR-080, the server: the demo's Tom Becker and Fatima Haddad
+  hold the made roles Warehouse and Sales, giving only what you hold, the
+  refusal in words, prices on orders, and a made role without an article:
+  MC-1903, MC-3007 and MC-3211 changed, MC-3303 to MC-3306.

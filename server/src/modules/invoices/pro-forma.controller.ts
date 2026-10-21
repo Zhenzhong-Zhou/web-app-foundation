@@ -36,7 +36,8 @@ export class ProFormaController {
   ) {}
 
   /**
-   * Under orders.view, which already shows the order's prices. A GET that
+   * Under orders.view and orders.view_prices, which show the order's
+   * prices (ADR-080): a pro forma is nothing else. A GET that
    * writes one thing: the audit entry each pro forma made leaves, with its
    * total, the trail of what was sent (ADR-071). Recorded once the PDF is
    * drawn and before it is sent, so a refusal records nothing and nobody
@@ -44,7 +45,7 @@ export class ProFormaController {
    * this route records its own, as the export does.
    */
   @Get()
-  @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
+  @RequirePermissions(PERMISSIONS.ORDERS_VIEW, PERMISSIONS.ORDERS_VIEW_PRICES)
   @PdfResponse()
   @ApiQuery({ name: 'taxCodeId', required: false, type: String })
   async pdf(

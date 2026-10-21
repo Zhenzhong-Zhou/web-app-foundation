@@ -510,7 +510,9 @@ describe('Account deletion (e2e)', () => {
       // is now the organization's only member.
       await owner.agent
         .patch(`/v1/users/${memberId}`)
-        .send({ roleId: await roleIdNamed(app, owner.organizationId, 'Owner') })
+        .send({
+          roleIds: [await roleIdNamed(app, owner.organizationId, 'Owner')],
+        })
         .expect(204);
       await owner.agent.delete('/v1/account/membership').expect(204);
       await due(memberId);

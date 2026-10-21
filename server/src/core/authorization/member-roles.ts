@@ -1,7 +1,15 @@
 import { and, asc, eq, inArray, notInArray } from 'drizzle-orm';
 
 import type { Database, Transaction } from '../../database/database.module';
-import { invitationRoles, membershipRoles, roles } from '../../database/schema';
+import {
+  invitationRoles,
+  membershipRoles,
+  permissions,
+  rolePermissions,
+  roles,
+} from '../../database/schema';
+import type { RoleRef } from './dto/role-response.dto';
+import type { Permission } from './permissions';
 
 type Executor = Database | Transaction;
 
@@ -12,6 +20,15 @@ export interface HeldRole {
   /** A made role's line; null for a built-in role, worded by its key. */
   description: string | null;
   isSystem: boolean;
+}
+
+/** A role beside a member or an invitation, as the API sends it. */
+export function roleRef(role: {
+  id: string;
+  name: string;
+  isSystem: boolean;
+}): RoleRef {
+  return { id: role.id, name: role.name, builtIn: role.isSystem };
 }
 
 /**
@@ -116,6 +133,52 @@ export async function nameRoles(
       roleId,
     })),
   );
+}
+
+/**
+ * Everything a membership's roles grant together: what the member may do
+ * (ADR-080). One indexed query from the membership through its roles to
+ * their permissions, on whichever handle the caller holds, so a check made
+ * under a lock reads inside it.
+ */
+export async function grantsOfMember(
+  executor: Executor,
+  membershipId: string,
+): Promise<Permission[]> {
+  const rows = await executor
+    .selectDistinct({ key: permissions.key })
+    .from(membershipRoles)
+    .innerJoin(
+      rolePermissions,
+      eq(rolePermissions.roleId, membershipRoles.roleId),
+    )
+    .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
+    .where(eq(membershipRoles.membershipId, membershipId));
+  return rows.map((row) => row.key as Permission);
+}
+
+/**
+ * What each role grants, by role id, every id present: the ids come from
+ * a query already scoped to the organization, as rolesOfMembers' do.
+ */
+export async function grantsOf(
+  executor: Executor,
+  roleIds: readonly string[],
+): Promise<Map<string, Permission[]>> {
+  const granted = new Map<string, Permission[]>(
+    roleIds.map((roleId) => [roleId, []]),
+  );
+  if (roleIds.length === 0) return granted;
+
+  const rows = await executor
+    .select({ roleId: rolePermissions.roleId, key: permissions.key })
+    .from(rolePermissions)
+    .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
+    .where(inArray(rolePermissions.roleId, [...roleIds]));
+  for (const { roleId, key } of rows) {
+    granted.get(roleId)?.push(key as Permission);
+  }
+  return granted;
 }
 
 const ROLE = {

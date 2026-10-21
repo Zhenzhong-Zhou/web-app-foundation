@@ -24,7 +24,7 @@ import { guideFor } from '../help/guides';
 import { useHelp } from '../help/use-help';
 import { formatDayMonth } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
-import { roleLabel } from '../members/role-names';
+import { articleOf, roleList } from '../members/role-names';
 import { FirstWeek } from './first-week';
 
 /**
@@ -61,7 +61,10 @@ export function WelcomeCard({
   const { access } = welcome;
 
   const today = welcome.joinedOn === organizationToday();
-  const role = roleLabel(access.role.name);
+  // Every role they hold, as a list; the article only for a built-in one
+  // held alone (ADR-080).
+  const role = roleList(access.roles);
+  const name = articleOf(access.roles);
 
   const who = welcome.founder
     ? today
@@ -83,7 +86,7 @@ export function WelcomeCard({
             defaultMessage:
               'You joined today as {name, select, Owner {an {role}} Admin {an {role}} Viewer {a {role}} other {{role}}}.',
           },
-          { name: access.role.name, role },
+          { name, role },
         )
       : intl.formatMessage(
           {
@@ -93,7 +96,7 @@ export function WelcomeCard({
           },
           {
             day: formatDayMonth(welcome.joinedOn),
-            name: access.role.name,
+            name,
             role,
           },
         );

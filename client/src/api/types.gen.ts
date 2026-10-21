@@ -20,6 +20,12 @@ export type SessionUser = {
   deletionWithOrganization?: DeletionOrganization | null;
 };
 
+export type RoleRef = {
+  id: string;
+  name: string;
+  builtIn: boolean;
+};
+
 export type OrganizationBranding = {
   logoFileId: string | null;
   accentColor: string | null;
@@ -32,7 +38,7 @@ export type OrganizationBranding = {
 export type SessionOrganization = {
   id: string;
   name: string;
-  roleId: string;
+  roles: Array<RoleRef>;
   branding: OrganizationBranding;
   deletionScheduledAt: string | null;
   deletionStage: 'scheduled' | 'lastWeek' | 'underWay' | null;
@@ -206,7 +212,7 @@ export type Colleague = {
 };
 
 export type MemberAccess = {
-  role: MemberRole;
+  roles: Array<MemberRole>;
   holdsEverything: boolean;
   whomToAsk: Array<Colleague>;
 };
@@ -232,7 +238,7 @@ export type ExportedProfile = {
 export type ExportedMembership = {
   organizationId: string;
   organizationName: string;
-  roleName: string;
+  roleNames: Array<string>;
   jobTitle: string | null;
   department: string | null;
   location: string | null;
@@ -287,50 +293,478 @@ export type StartOrganizationDto = {
 export type Role = {
   id: string;
   name: string;
+  description: string | null;
+  builtIn: boolean;
+  permissions: Array<
+    | 'users.view'
+    | 'users.create'
+    | 'users.delete'
+    | 'roles.view'
+    | 'roles.assign'
+    | 'roles.create'
+    | 'roles.update'
+    | 'roles.delete'
+    | 'organizations.view'
+    | 'organizations.update'
+    | 'organizations.export'
+    | 'organizations.delete'
+    | 'audit.view'
+    | 'products.view'
+    | 'products.create'
+    | 'products.update'
+    | 'product_licences.view'
+    | 'product_licences.create'
+    | 'product_licences.update'
+    | 'tax_codes.view'
+    | 'tax_codes.create'
+    | 'tax_codes.update'
+    | 'invoices.view'
+    | 'invoices.create'
+    | 'invoices.update'
+    | 'invoices.delete'
+    | 'invoices.issue'
+    | 'return_authorizations.view'
+    | 'return_authorizations.create'
+    | 'return_authorizations.update'
+    | 'locations.view'
+    | 'locations.create'
+    | 'locations.update'
+    | 'stock.view'
+    | 'stock.move'
+    | 'stock.adjust'
+    | 'costs.view'
+    | 'costs.update'
+    | 'price_lists.view'
+    | 'price_lists.create'
+    | 'price_lists.update'
+    | 'partners.view'
+    | 'partners.create'
+    | 'partners.update'
+    | 'orders.view'
+    | 'orders.view_prices'
+    | 'orders.create'
+    | 'orders.update'
+    | 'orders.receive'
+    | 'orders.ship'
+    | 'boms.view'
+    | 'boms.create'
+    | 'boms.update'
+    | 'production.view'
+    | 'production.create'
+    | 'production.release'
+    | 'production.complete'
+    | 'production.override_licence'
+  >;
+  holderCount: number;
+  mayGive: boolean;
 };
 
-export type StoredFileSize = {
-  width: number;
-  height: number;
-  bytes: number;
+export type CataloguePermission = {
+  key:
+    | 'users.view'
+    | 'users.create'
+    | 'users.delete'
+    | 'roles.view'
+    | 'roles.assign'
+    | 'roles.create'
+    | 'roles.update'
+    | 'roles.delete'
+    | 'organizations.view'
+    | 'organizations.update'
+    | 'organizations.export'
+    | 'organizations.delete'
+    | 'audit.view'
+    | 'products.view'
+    | 'products.create'
+    | 'products.update'
+    | 'product_licences.view'
+    | 'product_licences.create'
+    | 'product_licences.update'
+    | 'tax_codes.view'
+    | 'tax_codes.create'
+    | 'tax_codes.update'
+    | 'invoices.view'
+    | 'invoices.create'
+    | 'invoices.update'
+    | 'invoices.delete'
+    | 'invoices.issue'
+    | 'return_authorizations.view'
+    | 'return_authorizations.create'
+    | 'return_authorizations.update'
+    | 'locations.view'
+    | 'locations.create'
+    | 'locations.update'
+    | 'stock.view'
+    | 'stock.move'
+    | 'stock.adjust'
+    | 'costs.view'
+    | 'costs.update'
+    | 'price_lists.view'
+    | 'price_lists.create'
+    | 'price_lists.update'
+    | 'partners.view'
+    | 'partners.create'
+    | 'partners.update'
+    | 'orders.view'
+    | 'orders.view_prices'
+    | 'orders.create'
+    | 'orders.update'
+    | 'orders.receive'
+    | 'orders.ship'
+    | 'boms.view'
+    | 'boms.create'
+    | 'boms.update'
+    | 'production.view'
+    | 'production.create'
+    | 'production.release'
+    | 'production.complete'
+    | 'production.override_licence';
+  line: string;
+  note: string | null;
+  needs: Array<
+    | 'users.view'
+    | 'users.create'
+    | 'users.delete'
+    | 'roles.view'
+    | 'roles.assign'
+    | 'roles.create'
+    | 'roles.update'
+    | 'roles.delete'
+    | 'organizations.view'
+    | 'organizations.update'
+    | 'organizations.export'
+    | 'organizations.delete'
+    | 'audit.view'
+    | 'products.view'
+    | 'products.create'
+    | 'products.update'
+    | 'product_licences.view'
+    | 'product_licences.create'
+    | 'product_licences.update'
+    | 'tax_codes.view'
+    | 'tax_codes.create'
+    | 'tax_codes.update'
+    | 'invoices.view'
+    | 'invoices.create'
+    | 'invoices.update'
+    | 'invoices.delete'
+    | 'invoices.issue'
+    | 'return_authorizations.view'
+    | 'return_authorizations.create'
+    | 'return_authorizations.update'
+    | 'locations.view'
+    | 'locations.create'
+    | 'locations.update'
+    | 'stock.view'
+    | 'stock.move'
+    | 'stock.adjust'
+    | 'costs.view'
+    | 'costs.update'
+    | 'price_lists.view'
+    | 'price_lists.create'
+    | 'price_lists.update'
+    | 'partners.view'
+    | 'partners.create'
+    | 'partners.update'
+    | 'orders.view'
+    | 'orders.view_prices'
+    | 'orders.create'
+    | 'orders.update'
+    | 'orders.receive'
+    | 'orders.ship'
+    | 'boms.view'
+    | 'boms.create'
+    | 'boms.update'
+    | 'production.view'
+    | 'production.create'
+    | 'production.release'
+    | 'production.complete'
+    | 'production.override_licence'
+  >;
+  offered: boolean;
+  locked: boolean;
 };
 
-export type FileSizes = {
-  thumb?: StoredFileSize;
-  display?: StoredFileSize;
-  full?: StoredFileSize;
+export type RoleTemplate = {
+  key: 'production' | 'warehouse' | 'sales' | 'finance' | 'stock_lookup';
+  name: string;
+  permissions: Array<
+    | 'users.view'
+    | 'users.create'
+    | 'users.delete'
+    | 'roles.view'
+    | 'roles.assign'
+    | 'roles.create'
+    | 'roles.update'
+    | 'roles.delete'
+    | 'organizations.view'
+    | 'organizations.update'
+    | 'organizations.export'
+    | 'organizations.delete'
+    | 'audit.view'
+    | 'products.view'
+    | 'products.create'
+    | 'products.update'
+    | 'product_licences.view'
+    | 'product_licences.create'
+    | 'product_licences.update'
+    | 'tax_codes.view'
+    | 'tax_codes.create'
+    | 'tax_codes.update'
+    | 'invoices.view'
+    | 'invoices.create'
+    | 'invoices.update'
+    | 'invoices.delete'
+    | 'invoices.issue'
+    | 'return_authorizations.view'
+    | 'return_authorizations.create'
+    | 'return_authorizations.update'
+    | 'locations.view'
+    | 'locations.create'
+    | 'locations.update'
+    | 'stock.view'
+    | 'stock.move'
+    | 'stock.adjust'
+    | 'costs.view'
+    | 'costs.update'
+    | 'price_lists.view'
+    | 'price_lists.create'
+    | 'price_lists.update'
+    | 'partners.view'
+    | 'partners.create'
+    | 'partners.update'
+    | 'orders.view'
+    | 'orders.view_prices'
+    | 'orders.create'
+    | 'orders.update'
+    | 'orders.receive'
+    | 'orders.ship'
+    | 'boms.view'
+    | 'boms.create'
+    | 'boms.update'
+    | 'production.view'
+    | 'production.create'
+    | 'production.release'
+    | 'production.complete'
+    | 'production.override_licence'
+  >;
 };
 
-export type StoredFile = {
+export type RoleCatalogue = {
+  permissions: Array<CataloguePermission>;
+  templates: Array<RoleTemplate>;
+};
+
+export type RoleHolder = {
   id: string;
-  kind: 'logo' | 'product_image' | 'avatar';
-  contentType: string;
-  sizes: FileSizes;
-  createdAt: string;
+  name: string;
+  photoFileId: string | null;
 };
 
-export type UploadedFileEnvelope = {
-  file: StoredFile;
-};
-
-export type UnreadCount = {
-  count: number;
-};
-
-export type Notification = {
+export type RoleDetail = {
   id: string;
-  type: string;
-  title: string;
-  body: string | null;
-  resourceType: string | null;
-  resourceId: string | null;
-  readAt: string | null;
-  createdAt: string;
+  name: string;
+  description: string | null;
+  builtIn: boolean;
+  permissions: Array<
+    | 'users.view'
+    | 'users.create'
+    | 'users.delete'
+    | 'roles.view'
+    | 'roles.assign'
+    | 'roles.create'
+    | 'roles.update'
+    | 'roles.delete'
+    | 'organizations.view'
+    | 'organizations.update'
+    | 'organizations.export'
+    | 'organizations.delete'
+    | 'audit.view'
+    | 'products.view'
+    | 'products.create'
+    | 'products.update'
+    | 'product_licences.view'
+    | 'product_licences.create'
+    | 'product_licences.update'
+    | 'tax_codes.view'
+    | 'tax_codes.create'
+    | 'tax_codes.update'
+    | 'invoices.view'
+    | 'invoices.create'
+    | 'invoices.update'
+    | 'invoices.delete'
+    | 'invoices.issue'
+    | 'return_authorizations.view'
+    | 'return_authorizations.create'
+    | 'return_authorizations.update'
+    | 'locations.view'
+    | 'locations.create'
+    | 'locations.update'
+    | 'stock.view'
+    | 'stock.move'
+    | 'stock.adjust'
+    | 'costs.view'
+    | 'costs.update'
+    | 'price_lists.view'
+    | 'price_lists.create'
+    | 'price_lists.update'
+    | 'partners.view'
+    | 'partners.create'
+    | 'partners.update'
+    | 'orders.view'
+    | 'orders.view_prices'
+    | 'orders.create'
+    | 'orders.update'
+    | 'orders.receive'
+    | 'orders.ship'
+    | 'boms.view'
+    | 'boms.create'
+    | 'boms.update'
+    | 'production.view'
+    | 'production.create'
+    | 'production.release'
+    | 'production.complete'
+    | 'production.override_licence'
+  >;
+  holderCount: number;
+  mayGive: boolean;
+  holders: Array<RoleHolder>;
+  updatedAt: string;
 };
 
-export type NotificationPage = {
-  entries: Array<Notification>;
-  nextCursor: string | null;
+export type CreateRoleDto = {
+  name: string;
+  description?: string | null;
+  permissions: Array<
+    | 'users.view'
+    | 'users.create'
+    | 'users.delete'
+    | 'roles.view'
+    | 'roles.assign'
+    | 'roles.create'
+    | 'roles.update'
+    | 'roles.delete'
+    | 'organizations.view'
+    | 'organizations.update'
+    | 'organizations.export'
+    | 'organizations.delete'
+    | 'audit.view'
+    | 'products.view'
+    | 'products.create'
+    | 'products.update'
+    | 'product_licences.view'
+    | 'product_licences.create'
+    | 'product_licences.update'
+    | 'tax_codes.view'
+    | 'tax_codes.create'
+    | 'tax_codes.update'
+    | 'invoices.view'
+    | 'invoices.create'
+    | 'invoices.update'
+    | 'invoices.delete'
+    | 'invoices.issue'
+    | 'return_authorizations.view'
+    | 'return_authorizations.create'
+    | 'return_authorizations.update'
+    | 'locations.view'
+    | 'locations.create'
+    | 'locations.update'
+    | 'stock.view'
+    | 'stock.move'
+    | 'stock.adjust'
+    | 'costs.view'
+    | 'costs.update'
+    | 'price_lists.view'
+    | 'price_lists.create'
+    | 'price_lists.update'
+    | 'partners.view'
+    | 'partners.create'
+    | 'partners.update'
+    | 'orders.view'
+    | 'orders.view_prices'
+    | 'orders.create'
+    | 'orders.update'
+    | 'orders.receive'
+    | 'orders.ship'
+    | 'boms.view'
+    | 'boms.create'
+    | 'boms.update'
+    | 'production.view'
+    | 'production.create'
+    | 'production.release'
+    | 'production.complete'
+    | 'production.override_licence'
+  >;
+};
+
+export type UpdateRoleDto = {
+  name: string;
+  description?: string | null;
+  permissions: Array<
+    | 'users.view'
+    | 'users.create'
+    | 'users.delete'
+    | 'roles.view'
+    | 'roles.assign'
+    | 'roles.create'
+    | 'roles.update'
+    | 'roles.delete'
+    | 'organizations.view'
+    | 'organizations.update'
+    | 'organizations.export'
+    | 'organizations.delete'
+    | 'audit.view'
+    | 'products.view'
+    | 'products.create'
+    | 'products.update'
+    | 'product_licences.view'
+    | 'product_licences.create'
+    | 'product_licences.update'
+    | 'tax_codes.view'
+    | 'tax_codes.create'
+    | 'tax_codes.update'
+    | 'invoices.view'
+    | 'invoices.create'
+    | 'invoices.update'
+    | 'invoices.delete'
+    | 'invoices.issue'
+    | 'return_authorizations.view'
+    | 'return_authorizations.create'
+    | 'return_authorizations.update'
+    | 'locations.view'
+    | 'locations.create'
+    | 'locations.update'
+    | 'stock.view'
+    | 'stock.move'
+    | 'stock.adjust'
+    | 'costs.view'
+    | 'costs.update'
+    | 'price_lists.view'
+    | 'price_lists.create'
+    | 'price_lists.update'
+    | 'partners.view'
+    | 'partners.create'
+    | 'partners.update'
+    | 'orders.view'
+    | 'orders.view_prices'
+    | 'orders.create'
+    | 'orders.update'
+    | 'orders.receive'
+    | 'orders.ship'
+    | 'boms.view'
+    | 'boms.create'
+    | 'boms.update'
+    | 'production.view'
+    | 'production.create'
+    | 'production.release'
+    | 'production.complete'
+    | 'production.override_licence'
+  >;
+  updatedAt: string;
+};
+
+export type MoveRoleDto = {
+  toRoleId: string;
 };
 
 export type AuditLink = {
@@ -395,13 +829,56 @@ export type AuditActionName = {
   name: string;
 };
 
+export type StoredFileSize = {
+  width: number;
+  height: number;
+  bytes: number;
+};
+
+export type FileSizes = {
+  thumb?: StoredFileSize;
+  display?: StoredFileSize;
+  full?: StoredFileSize;
+};
+
+export type StoredFile = {
+  id: string;
+  kind: 'logo' | 'product_image' | 'avatar';
+  contentType: string;
+  sizes: FileSizes;
+  createdAt: string;
+};
+
+export type UploadedFileEnvelope = {
+  file: StoredFile;
+};
+
+export type UnreadCount = {
+  count: number;
+};
+
+export type Notification = {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  resourceType: string | null;
+  resourceId: string | null;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export type NotificationPage = {
+  entries: Array<Notification>;
+  nextCursor: string | null;
+};
+
 export type Person = {
   id: string;
   name: string;
   email: string;
   photoFileId: string | null;
-  roleId: string;
-  roleName: string;
+  roles: Array<RoleRef>;
   jobTitle: string | null;
   department: string | null;
   location: string | null;
@@ -417,8 +894,7 @@ export type PersonDetail = {
   name: string;
   email: string;
   photoFileId: string | null;
-  roleId: string;
-  roleName: string;
+  roles: Array<RoleRef>;
   jobTitle: string | null;
   department: string | null;
   location: string | null;
@@ -450,14 +926,14 @@ export type Member = {
   id: string;
   email: string;
   name: string;
-  roleId: string;
+  roles: Array<RoleRef>;
   photoFileId?: string | null;
   active: 'never' | 'month' | 'today' | 'week' | 'older';
   lastActiveAt?: string | null;
 };
 
 export type UpdateUserDto = {
-  roleId: string;
+  roleIds: Array<string>;
 };
 
 export type InvitationSender = {
@@ -473,7 +949,7 @@ export type InvitationLinkState = {
 export type Invitation = {
   id: string;
   email: string;
-  roleId: string;
+  roles: Array<RoleRef>;
   invitedBy: InvitationSender;
   invitedAt: string;
   link: InvitationLinkState;
@@ -481,7 +957,7 @@ export type Invitation = {
 
 export type CreateInvitationDto = {
   email: string;
-  roleId: string;
+  roleIds: Array<string>;
   locale?: 'en' | 'fr-CA' | 'zh-Hans';
   note?: string | null;
   delivery?: 'email' | 'link';
@@ -516,7 +992,8 @@ export type InvitationInviter = {
   email: string;
 };
 
-export type InvitationRole = {
+export type InvitedRole = {
+  system: 'Admin' | 'Owner' | 'Viewer' | null;
   name: string;
   description: string | null;
 };
@@ -525,11 +1002,16 @@ export type InvitationPreview = {
   email: string;
   organization: InvitationOrganization;
   inviter: InvitationInviter | null;
-  role: InvitationRole;
+  roles: Array<InvitedRole>;
   note: string | null;
   lastDay: string;
   hasAccount: boolean;
   locale: 'en' | 'fr-CA' | 'zh-Hans';
+};
+
+export type InvitationRole = {
+  name: string;
+  description: string | null;
 };
 
 export type OrganizationInvitationPreview = {
@@ -1488,14 +1970,14 @@ export type OrderMoney = {
   invoiced: string;
   credited: string;
   netInvoiced: string;
-  notInvoiced: string;
+  notInvoiced?: string;
 };
 
 export type OrderCounts = {
   shipments: number;
   voidedShipments: number;
   returns: number;
-  documents: number;
+  documents?: number;
 };
 
 export type OrderQuantities = {
@@ -1545,12 +2027,12 @@ export type OrderLine = {
   quantityCredited: string;
   quantityUnsettled: string;
   quantityOutstanding: string;
-  unitPrice: string | null;
-  currency: string | null;
-  priceSource: 'list' | 'manual' | null;
-  priceListId: string | null;
-  priceListName: string | null;
-  lineTotal: string | null;
+  unitPrice?: string | null;
+  currency?: string | null;
+  priceSource?: 'list' | 'manual' | null;
+  priceListId?: string | null;
+  priceListName?: string | null;
+  lineTotal?: string | null;
   isComplete: boolean;
   isClosedShort: boolean;
   closedReason: string | null;
@@ -1570,13 +2052,13 @@ export type OrderDetail = {
   expectedAt: string | null;
   note: string | null;
   deliverTo: ChosenSite | null;
-  totals: Array<OrderTotal>;
-  totalsComplete: boolean;
-  money: OrderMoney | null;
+  totals?: Array<OrderTotal>;
+  totalsComplete?: boolean;
+  money?: OrderMoney | null;
   unsettledReturns: number;
   counts: OrderCounts;
   quantities: OrderQuantities | null;
-  documents: OrderDocuments | null;
+  documents?: OrderDocuments | null;
   lines: Array<OrderLine>;
 };
 
@@ -1633,12 +2115,12 @@ export type AddedOrderLine = {
   quantityCredited: string;
   quantityUnsettled: string;
   quantityOutstanding: string;
-  unitPrice: string | null;
-  currency: string | null;
-  priceSource: 'list' | 'manual' | null;
-  priceListId: string | null;
-  priceListName: string | null;
-  lineTotal: string | null;
+  unitPrice?: string | null;
+  currency?: string | null;
+  priceSource?: 'list' | 'manual' | null;
+  priceListId?: string | null;
+  priceListName?: string | null;
+  lineTotal?: string | null;
   isComplete: boolean;
   isClosedShort: boolean;
   closedReason: string | null;
@@ -2732,6 +3214,7 @@ export type Locale = (typeof Locale)[keyof typeof Locale];
 export const AuditAction = {
   USER_CREATED: 'user.created',
   USER_ROLE_CHANGED: 'user.role_changed',
+  MEMBER_ROLES_CHANGED: 'member.roles_changed',
   MEMBER_REMOVED: 'member.removed',
   MEMBER_LEFT: 'member.left',
   USER_ACCOUNT_DELETED: 'user.account_deleted',
@@ -2740,6 +3223,9 @@ export const AuditAction = {
   INVITATION_LINK_COPIED: 'invitation.link_copied',
   INVITATION_REVOKED: 'invitation.revoked',
   INVITATION_ACCEPTED: 'invitation.accepted',
+  ROLE_CREATED: 'role.created',
+  ROLE_UPDATED: 'role.updated',
+  ROLE_DELETED: 'role.deleted',
   PRODUCT_CREATED: 'product.created',
   PRODUCT_UPDATED: 'product.updated',
   PRODUCT_VARIANT_ADDED: 'product.variant_added',
@@ -2836,6 +3322,9 @@ export const ErrorCode = {
   ACCOUNT_DELETION_SCHEDULED: 'account_deletion_scheduled',
   INVITATION_ENDED: 'invitation_ended',
   REGISTRATION_CLOSED: 'registration_closed',
+  ROLE_CHANGED: 'role_changed',
+  ROLE_HELD: 'role_held',
+  PERMISSION_REQUIRES: 'permission_requires',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -3240,6 +3729,9 @@ export type OrganizationStartControllerStartV1Response =
 
 export type RolesControllerListV1Data = {
   body?: never;
+  headers: {
+    'accept-language': string;
+  };
   path?: never;
   query?: never;
   url: '/v1/roles';
@@ -3251,6 +3743,352 @@ export type RolesControllerListV1Responses = {
 
 export type RolesControllerListV1Response =
   RolesControllerListV1Responses[keyof RolesControllerListV1Responses];
+
+export type RolesControllerCreateV1Data = {
+  body: CreateRoleDto;
+  headers: {
+    'accept-language': string;
+  };
+  path?: never;
+  query?: never;
+  url: '/v1/roles';
+};
+
+export type RolesControllerCreateV1Responses = {
+  201: RoleDetail;
+};
+
+export type RolesControllerCreateV1Response =
+  RolesControllerCreateV1Responses[keyof RolesControllerCreateV1Responses];
+
+export type RolesControllerCatalogueV1Data = {
+  body?: never;
+  headers: {
+    'accept-language': string;
+  };
+  path?: never;
+  query?: never;
+  url: '/v1/roles/catalogue';
+};
+
+export type RolesControllerCatalogueV1Responses = {
+  200: RoleCatalogue;
+};
+
+export type RolesControllerCatalogueV1Response =
+  RolesControllerCatalogueV1Responses[keyof RolesControllerCatalogueV1Responses];
+
+export type RolesControllerRemoveV1Data = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/roles/{id}';
+};
+
+export type RolesControllerRemoveV1Responses = {
+  204: void;
+};
+
+export type RolesControllerRemoveV1Response =
+  RolesControllerRemoveV1Responses[keyof RolesControllerRemoveV1Responses];
+
+export type RolesControllerFindV1Data = {
+  body?: never;
+  headers: {
+    'accept-language': string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/roles/{id}';
+};
+
+export type RolesControllerFindV1Responses = {
+  200: RoleDetail;
+};
+
+export type RolesControllerFindV1Response =
+  RolesControllerFindV1Responses[keyof RolesControllerFindV1Responses];
+
+export type RolesControllerUpdateV1Data = {
+  body: UpdateRoleDto;
+  headers: {
+    'accept-language': string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/roles/{id}';
+};
+
+export type RolesControllerUpdateV1Responses = {
+  200: RoleDetail;
+};
+
+export type RolesControllerUpdateV1Response =
+  RolesControllerUpdateV1Responses[keyof RolesControllerUpdateV1Responses];
+
+export type RolesControllerMoveV1Data = {
+  body: MoveRoleDto;
+  headers: {
+    'accept-language': string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/v1/roles/{id}/move';
+};
+
+export type RolesControllerMoveV1Responses = {
+  200: RoleDetail;
+};
+
+export type RolesControllerMoveV1Response =
+  RolesControllerMoveV1Responses[keyof RolesControllerMoveV1Responses];
+
+export type AuditControllerListV1Data = {
+  body?: never;
+  headers: {
+    'accept-language': string;
+  };
+  path?: never;
+  query?: {
+    actorId?: string;
+    action?:
+      | 'user.created'
+      | 'user.role_changed'
+      | 'member.roles_changed'
+      | 'member.removed'
+      | 'member.left'
+      | 'user.account_deleted'
+      | 'invitation.sent'
+      | 'invitation.resent'
+      | 'invitation.link_copied'
+      | 'invitation.revoked'
+      | 'invitation.accepted'
+      | 'role.created'
+      | 'role.updated'
+      | 'role.deleted'
+      | 'product.created'
+      | 'product.updated'
+      | 'product.variant_added'
+      | 'product.variant_updated'
+      | 'location.created'
+      | 'location.updated'
+      | 'stock.movement_recorded'
+      | 'partner.created'
+      | 'partner.updated'
+      | 'order.created'
+      | 'order.updated'
+      | 'order.line_received'
+      | 'order.shipped'
+      | 'order.shipment_voided'
+      | 'order.return_received'
+      | 'order.line_added'
+      | 'order.line_updated'
+      | 'order.line_removed'
+      | 'order.line_closed_short'
+      | 'order.line_reopened'
+      | 'order.line_list_priced'
+      | 'partner.address.created'
+      | 'partner.address.updated'
+      | 'partner.address.retired'
+      | 'partner.contact.created'
+      | 'partner.contact.updated'
+      | 'partner.contact.retired'
+      | 'stock.lot_updated'
+      | 'stock_valuation.cost_set'
+      | 'exchange_rate.set'
+      | 'product_licence.created'
+      | 'product_licence.updated'
+      | 'bom.created'
+      | 'bom.updated'
+      | 'bom.line_added'
+      | 'bom.line_updated'
+      | 'bom.line_removed'
+      | 'bom.promoted'
+      | 'bom.archived'
+      | 'production_order.created'
+      | 'production_order.updated'
+      | 'production_order.released'
+      | 'production_order.output_recorded'
+      | 'production_order.closed'
+      | 'production_order.cancelled'
+      | 'organization.updated'
+      | 'organization.address_updated'
+      | 'organization.numbering_updated'
+      | 'organization.exported'
+      | 'organization.deletion_scheduled'
+      | 'organization.deletion_cancelled'
+      | 'tax_code.created'
+      | 'tax_code.updated'
+      | 'invoice.created'
+      | 'invoice.updated'
+      | 'invoice.line_updated'
+      | 'invoice.deleted'
+      | 'invoice.issued'
+      | 'invoice.voided'
+      | 'credit_note.issued'
+      | 'order.pro_forma_made'
+      | 'return_authorization.created'
+      | 'return_authorization.cancelled'
+      | 'return_authorization.closed'
+      | 'return_authorization.updated'
+      | 'return_authorization.return_linked'
+      | 'return_authorization.replacement_raised'
+      | 'price_list.created'
+      | 'price_list.updated'
+      | 'price_list.item_set'
+      | 'price_list.item_removed'
+      | 'list.exported';
+    resourceId?: string;
+    from?: string;
+    until?: string;
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/audit';
+};
+
+export type AuditControllerListV1Responses = {
+  200: AuditPage;
+};
+
+export type AuditControllerListV1Response =
+  AuditControllerListV1Responses[keyof AuditControllerListV1Responses];
+
+export type AuditControllerExportAuditV1Data = {
+  body?: never;
+  headers: {
+    'accept-language': string;
+  };
+  path?: never;
+  query?: {
+    actorId?: string;
+    action?:
+      | 'user.created'
+      | 'user.role_changed'
+      | 'member.roles_changed'
+      | 'member.removed'
+      | 'member.left'
+      | 'user.account_deleted'
+      | 'invitation.sent'
+      | 'invitation.resent'
+      | 'invitation.link_copied'
+      | 'invitation.revoked'
+      | 'invitation.accepted'
+      | 'role.created'
+      | 'role.updated'
+      | 'role.deleted'
+      | 'product.created'
+      | 'product.updated'
+      | 'product.variant_added'
+      | 'product.variant_updated'
+      | 'location.created'
+      | 'location.updated'
+      | 'stock.movement_recorded'
+      | 'partner.created'
+      | 'partner.updated'
+      | 'order.created'
+      | 'order.updated'
+      | 'order.line_received'
+      | 'order.shipped'
+      | 'order.shipment_voided'
+      | 'order.return_received'
+      | 'order.line_added'
+      | 'order.line_updated'
+      | 'order.line_removed'
+      | 'order.line_closed_short'
+      | 'order.line_reopened'
+      | 'order.line_list_priced'
+      | 'partner.address.created'
+      | 'partner.address.updated'
+      | 'partner.address.retired'
+      | 'partner.contact.created'
+      | 'partner.contact.updated'
+      | 'partner.contact.retired'
+      | 'stock.lot_updated'
+      | 'stock_valuation.cost_set'
+      | 'exchange_rate.set'
+      | 'product_licence.created'
+      | 'product_licence.updated'
+      | 'bom.created'
+      | 'bom.updated'
+      | 'bom.line_added'
+      | 'bom.line_updated'
+      | 'bom.line_removed'
+      | 'bom.promoted'
+      | 'bom.archived'
+      | 'production_order.created'
+      | 'production_order.updated'
+      | 'production_order.released'
+      | 'production_order.output_recorded'
+      | 'production_order.closed'
+      | 'production_order.cancelled'
+      | 'organization.updated'
+      | 'organization.address_updated'
+      | 'organization.numbering_updated'
+      | 'organization.exported'
+      | 'organization.deletion_scheduled'
+      | 'organization.deletion_cancelled'
+      | 'tax_code.created'
+      | 'tax_code.updated'
+      | 'invoice.created'
+      | 'invoice.updated'
+      | 'invoice.line_updated'
+      | 'invoice.deleted'
+      | 'invoice.issued'
+      | 'invoice.voided'
+      | 'credit_note.issued'
+      | 'order.pro_forma_made'
+      | 'return_authorization.created'
+      | 'return_authorization.cancelled'
+      | 'return_authorization.closed'
+      | 'return_authorization.updated'
+      | 'return_authorization.return_linked'
+      | 'return_authorization.replacement_raised'
+      | 'price_list.created'
+      | 'price_list.updated'
+      | 'price_list.item_set'
+      | 'price_list.item_removed'
+      | 'list.exported';
+    resourceId?: string;
+    from?: string;
+    until?: string;
+    before?: string;
+    limit?: number;
+  };
+  url: '/v1/audit/export';
+};
+
+export type AuditControllerExportAuditV1Responses = {
+  200: string;
+};
+
+export type AuditControllerExportAuditV1Response =
+  AuditControllerExportAuditV1Responses[keyof AuditControllerExportAuditV1Responses];
+
+export type AuditControllerListActionsV1Data = {
+  body?: never;
+  headers: {
+    'accept-language': string;
+  };
+  path?: never;
+  query?: never;
+  url: '/v1/audit/actions';
+};
+
+export type AuditControllerListActionsV1Responses = {
+  200: Array<AuditActionName>;
+};
+
+export type AuditControllerListActionsV1Response =
+  AuditControllerListActionsV1Responses[keyof AuditControllerListActionsV1Responses];
 
 export type FilesControllerUploadLogoV1Data = {
   body?: never;
@@ -3359,237 +4197,6 @@ export type NotificationsControllerMarkAllReadV1Responses = {
 export type NotificationsControllerMarkAllReadV1Response =
   NotificationsControllerMarkAllReadV1Responses[keyof NotificationsControllerMarkAllReadV1Responses];
 
-export type AuditControllerListV1Data = {
-  body?: never;
-  headers: {
-    'accept-language': string;
-  };
-  path?: never;
-  query?: {
-    actorId?: string;
-    action?:
-      | 'user.created'
-      | 'user.role_changed'
-      | 'member.removed'
-      | 'member.left'
-      | 'user.account_deleted'
-      | 'invitation.sent'
-      | 'invitation.resent'
-      | 'invitation.link_copied'
-      | 'invitation.revoked'
-      | 'invitation.accepted'
-      | 'product.created'
-      | 'product.updated'
-      | 'product.variant_added'
-      | 'product.variant_updated'
-      | 'location.created'
-      | 'location.updated'
-      | 'stock.movement_recorded'
-      | 'partner.created'
-      | 'partner.updated'
-      | 'order.created'
-      | 'order.updated'
-      | 'order.line_received'
-      | 'order.shipped'
-      | 'order.shipment_voided'
-      | 'order.return_received'
-      | 'order.line_added'
-      | 'order.line_updated'
-      | 'order.line_removed'
-      | 'order.line_closed_short'
-      | 'order.line_reopened'
-      | 'order.line_list_priced'
-      | 'partner.address.created'
-      | 'partner.address.updated'
-      | 'partner.address.retired'
-      | 'partner.contact.created'
-      | 'partner.contact.updated'
-      | 'partner.contact.retired'
-      | 'stock.lot_updated'
-      | 'stock_valuation.cost_set'
-      | 'exchange_rate.set'
-      | 'product_licence.created'
-      | 'product_licence.updated'
-      | 'bom.created'
-      | 'bom.updated'
-      | 'bom.line_added'
-      | 'bom.line_updated'
-      | 'bom.line_removed'
-      | 'bom.promoted'
-      | 'bom.archived'
-      | 'production_order.created'
-      | 'production_order.updated'
-      | 'production_order.released'
-      | 'production_order.output_recorded'
-      | 'production_order.closed'
-      | 'production_order.cancelled'
-      | 'organization.updated'
-      | 'organization.address_updated'
-      | 'organization.numbering_updated'
-      | 'organization.exported'
-      | 'organization.deletion_scheduled'
-      | 'organization.deletion_cancelled'
-      | 'tax_code.created'
-      | 'tax_code.updated'
-      | 'invoice.created'
-      | 'invoice.updated'
-      | 'invoice.line_updated'
-      | 'invoice.deleted'
-      | 'invoice.issued'
-      | 'invoice.voided'
-      | 'credit_note.issued'
-      | 'order.pro_forma_made'
-      | 'return_authorization.created'
-      | 'return_authorization.cancelled'
-      | 'return_authorization.closed'
-      | 'return_authorization.updated'
-      | 'return_authorization.return_linked'
-      | 'return_authorization.replacement_raised'
-      | 'price_list.created'
-      | 'price_list.updated'
-      | 'price_list.item_set'
-      | 'price_list.item_removed'
-      | 'list.exported';
-    resourceId?: string;
-    from?: string;
-    until?: string;
-    before?: string;
-    limit?: number;
-  };
-  url: '/v1/audit';
-};
-
-export type AuditControllerListV1Responses = {
-  200: AuditPage;
-};
-
-export type AuditControllerListV1Response =
-  AuditControllerListV1Responses[keyof AuditControllerListV1Responses];
-
-export type AuditControllerExportAuditV1Data = {
-  body?: never;
-  headers: {
-    'accept-language': string;
-  };
-  path?: never;
-  query?: {
-    actorId?: string;
-    action?:
-      | 'user.created'
-      | 'user.role_changed'
-      | 'member.removed'
-      | 'member.left'
-      | 'user.account_deleted'
-      | 'invitation.sent'
-      | 'invitation.resent'
-      | 'invitation.link_copied'
-      | 'invitation.revoked'
-      | 'invitation.accepted'
-      | 'product.created'
-      | 'product.updated'
-      | 'product.variant_added'
-      | 'product.variant_updated'
-      | 'location.created'
-      | 'location.updated'
-      | 'stock.movement_recorded'
-      | 'partner.created'
-      | 'partner.updated'
-      | 'order.created'
-      | 'order.updated'
-      | 'order.line_received'
-      | 'order.shipped'
-      | 'order.shipment_voided'
-      | 'order.return_received'
-      | 'order.line_added'
-      | 'order.line_updated'
-      | 'order.line_removed'
-      | 'order.line_closed_short'
-      | 'order.line_reopened'
-      | 'order.line_list_priced'
-      | 'partner.address.created'
-      | 'partner.address.updated'
-      | 'partner.address.retired'
-      | 'partner.contact.created'
-      | 'partner.contact.updated'
-      | 'partner.contact.retired'
-      | 'stock.lot_updated'
-      | 'stock_valuation.cost_set'
-      | 'exchange_rate.set'
-      | 'product_licence.created'
-      | 'product_licence.updated'
-      | 'bom.created'
-      | 'bom.updated'
-      | 'bom.line_added'
-      | 'bom.line_updated'
-      | 'bom.line_removed'
-      | 'bom.promoted'
-      | 'bom.archived'
-      | 'production_order.created'
-      | 'production_order.updated'
-      | 'production_order.released'
-      | 'production_order.output_recorded'
-      | 'production_order.closed'
-      | 'production_order.cancelled'
-      | 'organization.updated'
-      | 'organization.address_updated'
-      | 'organization.numbering_updated'
-      | 'organization.exported'
-      | 'organization.deletion_scheduled'
-      | 'organization.deletion_cancelled'
-      | 'tax_code.created'
-      | 'tax_code.updated'
-      | 'invoice.created'
-      | 'invoice.updated'
-      | 'invoice.line_updated'
-      | 'invoice.deleted'
-      | 'invoice.issued'
-      | 'invoice.voided'
-      | 'credit_note.issued'
-      | 'order.pro_forma_made'
-      | 'return_authorization.created'
-      | 'return_authorization.cancelled'
-      | 'return_authorization.closed'
-      | 'return_authorization.updated'
-      | 'return_authorization.return_linked'
-      | 'return_authorization.replacement_raised'
-      | 'price_list.created'
-      | 'price_list.updated'
-      | 'price_list.item_set'
-      | 'price_list.item_removed'
-      | 'list.exported';
-    resourceId?: string;
-    from?: string;
-    until?: string;
-    before?: string;
-    limit?: number;
-  };
-  url: '/v1/audit/export';
-};
-
-export type AuditControllerExportAuditV1Responses = {
-  200: string;
-};
-
-export type AuditControllerExportAuditV1Response =
-  AuditControllerExportAuditV1Responses[keyof AuditControllerExportAuditV1Responses];
-
-export type AuditControllerListActionsV1Data = {
-  body?: never;
-  headers: {
-    'accept-language': string;
-  };
-  path?: never;
-  query?: never;
-  url: '/v1/audit/actions';
-};
-
-export type AuditControllerListActionsV1Responses = {
-  200: Array<AuditActionName>;
-};
-
-export type AuditControllerListActionsV1Response =
-  AuditControllerListActionsV1Responses[keyof AuditControllerListActionsV1Responses];
-
 export type PeopleControllerListV1Data = {
   body?: never;
   path?: never;
@@ -3678,6 +4285,7 @@ export type WorkControllerActivityV1Data = {
     action?:
       | 'user.created'
       | 'user.role_changed'
+      | 'member.roles_changed'
       | 'member.removed'
       | 'member.left'
       | 'user.account_deleted'
@@ -3686,6 +4294,9 @@ export type WorkControllerActivityV1Data = {
       | 'invitation.link_copied'
       | 'invitation.revoked'
       | 'invitation.accepted'
+      | 'role.created'
+      | 'role.updated'
+      | 'role.deleted'
       | 'product.created'
       | 'product.updated'
       | 'product.variant_added'
@@ -3785,6 +4396,7 @@ export type WorkControllerExportActivityV1Data = {
     action?:
       | 'user.created'
       | 'user.role_changed'
+      | 'member.roles_changed'
       | 'member.removed'
       | 'member.left'
       | 'user.account_deleted'
@@ -3793,6 +4405,9 @@ export type WorkControllerExportActivityV1Data = {
       | 'invitation.link_copied'
       | 'invitation.revoked'
       | 'invitation.accepted'
+      | 'role.created'
+      | 'role.updated'
+      | 'role.deleted'
       | 'product.created'
       | 'product.updated'
       | 'product.variant_added'

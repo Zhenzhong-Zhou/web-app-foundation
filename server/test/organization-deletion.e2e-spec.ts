@@ -227,6 +227,7 @@ describe('Organization deletion (e2e)', () => {
         'name',
         'description',
         'is_system',
+        'updated_by',
         'created_at',
         'updated_at',
       ]);
@@ -1098,7 +1099,7 @@ describe('Organization deletion (e2e)', () => {
       await second
         .patch(`/v1/users/${alpha.userId}`)
         .send({
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(204);
 

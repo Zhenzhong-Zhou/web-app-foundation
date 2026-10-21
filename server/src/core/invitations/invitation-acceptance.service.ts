@@ -35,6 +35,12 @@ import type { RequestContext } from '../auth/request-context';
 import { type NewSession, SessionService } from '../auth/session.service';
 import { giveRoles, rolesOfInvitations } from '../authorization/member-roles';
 import {
+  roleName,
+  roleWords,
+  systemOf,
+  systemRoleOf,
+} from '../authorization/role-words';
+import {
   FILE_STORAGE,
   type FileStorage,
   keyOf,
@@ -47,7 +53,6 @@ import type { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import type { InvitationPreview } from './dto/invitation-response.dto';
 import { inviterStillHere } from './inviter';
 import { lastDayOf } from './link-end';
-import { roleName, roleWords, systemRoleOf } from './role-words';
 
 /**
  * The one refusal every link that is not live gets, all alike (ADR-077),
@@ -143,7 +148,7 @@ export class InvitationAcceptanceService {
       .where(eq(invitations.id, invitationId));
     if (!row || row.acceptedAt || row.revokedAt) return null;
 
-    const [role] =
+    const named =
       (await rolesOfInvitations(this.db, [invitationId])).get(invitationId) ??
       [];
 
@@ -164,7 +169,10 @@ export class InvitationAcceptanceService {
       inviter: row.inviterMembershipId
         ? { name: row.inviterName, email: row.inviterEmail }
         : null,
-      role: roleWords(role, locale),
+      roles: named.map((role) => ({
+        ...roleWords(role, locale),
+        system: systemRoleOf(role),
+      })),
       note: row.note,
       lastDay: lastDayOf(row.timeZone, row.expiresAt),
       hasAccount: account !== undefined,
@@ -509,7 +517,7 @@ export class InvitationAcceptanceService {
             action: AUDIT_ACTIONS.INVITATION_ACCEPTED,
             resourceType: 'invitation',
             resourceId: invitation.id,
-            payload: { roleId: invitation.roleIds[0] },
+            payload: { roleIds: invitation.roleIds },
             ip: meta.ip,
             userAgent: meta.userAgent,
           }),
@@ -548,7 +556,7 @@ export class InvitationAcceptanceService {
         .where(and(eq(invitations.id, invitation.id), isNull(users.deletedAt)));
       if (!facts) return;
 
-      const [role] =
+      const named =
         (await rolesOfInvitations(this.db, [invitation.id])).get(
           invitation.id,
         ) ?? [];
@@ -569,15 +577,13 @@ export class InvitationAcceptanceService {
             {
               id: 'notifications.joined.body',
               defaultMessage:
-                '{name} accepted your invitation and joined {organization} as {system, select, Owner {an {role}} Admin {an {role}} Viewer {a {role}} other {{role}}}.',
+                '{name} accepted your invitation and joined {organization} as {system, select, Owner {an {roles}} Admin {an {roles}} Viewer {a {roles}} other {{roles}}}.',
             },
             {
               name,
               organization: facts.organizationName,
-              role: roleName(role),
-              // The article goes by which built-in role it is, never by
-              // its words; a role an organization named takes none.
-              system: systemRoleOf(role) ?? 'other',
+              roles: named.map(roleName),
+              system: systemOf(named),
             },
           ),
           resourceType: 'user',

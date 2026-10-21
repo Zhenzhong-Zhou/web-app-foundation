@@ -1,4 +1,10 @@
-import type { HomeResponse, OrderLine, Welcome } from '../api/types.gen';
+import type {
+  HomeResponse,
+  OrderLine,
+  Role,
+  RoleRef,
+  Welcome,
+} from '../api/types.gen';
 
 /**
  * An order line for a client test, complete, with whatever the case is about
@@ -64,7 +70,7 @@ export function welcome(over: Partial<Welcome> = {}): Welcome {
     inviter: { id: 'user-mei', name: 'Mei Lin', photoFileId: null },
     note: 'Welcome, Wang Fang!\nOn Monday you’ll shadow Li Na.',
     access: {
-      role: { name: 'Viewer', description: null },
+      roles: [{ name: 'Viewer', description: null }],
       holdsEverything: false,
       whomToAsk: [
         { id: 'user-mei', name: 'Mei Lin' },
@@ -78,4 +84,26 @@ export function welcome(over: Partial<Welcome> = {}): Welcome {
     ],
     ...over,
   };
+}
+
+/** A built-in role as GET /roles lists it (ADR-080), the reader able to give it. */
+export function builtInRole(
+  name: 'Owner' | 'Admin' | 'Viewer',
+  over: Partial<Role> = {},
+): Role {
+  return {
+    id: `role-${name.toLowerCase()}`,
+    name,
+    description: null,
+    builtIn: true,
+    permissions: [],
+    holderCount: 0,
+    mayGive: true,
+    ...over,
+  };
+}
+
+/** The same role beside a member or an invitation. */
+export function roleRef(name: 'Owner' | 'Admin' | 'Viewer'): RoleRef {
+  return { id: `role-${name.toLowerCase()}`, name, builtIn: true };
 }

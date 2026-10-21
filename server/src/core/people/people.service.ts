@@ -9,7 +9,8 @@ import { files, memberships, users } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { type AuditRecord, AuditService } from '../audit/audit.service';
-import { rolesOfMembers } from '../authorization/member-roles';
+import type { RoleRef } from '../authorization/dto/role-response.dto';
+import { roleRef, rolesOfMembers } from '../authorization/member-roles';
 import type { Permission } from '../authorization/permissions';
 import { FILE_STORAGE, type FileStorage, keyOf } from '../files/file-storage';
 
@@ -25,8 +26,7 @@ export interface Person {
   name: string;
   email: string;
   photoFileId: string | null;
-  roleId: string;
-  roleName: string;
+  roles: RoleRef[];
   jobTitle: string | null;
   department: string | null;
   location: string | null;
@@ -176,19 +176,19 @@ const PERSON_COLUMNS = {
 
 type PersonRow = Omit<Person, 'active'> & { lastActiveAt: Date | null };
 
-/** Each person's role beside them, read where the roles are (ADR-080). */
+/** Each person's roles beside them, read where the roles are (ADR-080). */
 async function withRoles(
   tx: Transaction,
-  rows: (Omit<PersonRow, 'roleId' | 'roleName'> & { membershipId: string })[],
+  rows: (Omit<PersonRow, 'roles'> & { membershipId: string })[],
 ): Promise<PersonRow[]> {
   const held = await rolesOfMembers(
     tx,
     rows.map((row) => row.membershipId),
   );
-  return rows.map(({ membershipId, ...row }) => {
-    const [role] = held.get(membershipId) ?? [];
-    return { ...row, roleId: role.id, roleName: role.name };
-  });
+  return rows.map(({ membershipId, ...row }) => ({
+    ...row,
+    roles: (held.get(membershipId) ?? []).map(roleRef),
+  }));
 }
 
 /** As the caller may see it: the exact time only with audit.view. */

@@ -335,7 +335,7 @@ export function OrderLinesSection({
                   </TableCell>
 
                   <TableCell align="right">
-                    {formatMoney(line.unitPrice, line.currency)}
+                    {formatMoney(line.unitPrice ?? null, line.currency ?? null)}
                     {/* Where a list price came from, so a default is
                         seen as one that can be changed (ADR-049). */}
                     {line.priceSource === 'list' && line.priceListName && (
@@ -355,7 +355,7 @@ export function OrderLinesSection({
                     )}
                   </TableCell>
                   <TableCell align="right">
-                    {formatMoney(line.lineTotal, line.currency)}
+                    {formatMoney(line.lineTotal ?? null, line.currency ?? null)}
                   </TableCell>
 
                   <TableCell
@@ -384,7 +384,7 @@ export function OrderLinesSection({
         {/* Padded to the cells' own inset, so the grand total lines up
             under the Total column rather than touching the frame. */}
         <Stack sx={{ alignItems: 'flex-end', px: 2, py: 1.5 }} spacing={0.5}>
-          {order.totals.map((total) => (
+          {(order.totals ?? []).map((total) => (
             <Typography key={total.currency} variant="body2">
               {formatMoney(total.amount, total.currency)}
             </Typography>
@@ -395,7 +395,7 @@ export function OrderLinesSection({
             (ADR-035). */}
           {!order.totalsComplete && (
             <Typography variant="caption" color="text.secondary">
-              {order.totals.length
+              {order.totals?.length
                 ? intl.formatMessage({
                     id: 'orders.lines.partialTotal',
                     defaultMessage:

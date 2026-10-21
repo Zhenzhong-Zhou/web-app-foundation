@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Invitation } from '../api/types.gen';
 import { setFormatLocale } from '../lib/format';
 import { setOrganizationTimeZone } from '../lib/time-zone';
+import { roleRef } from '../test/factories';
 import en from '../locales/en.json';
 import zh from '../locales/zh-Hans.json';
 import {
@@ -18,7 +19,7 @@ const intlFor = (locale: string, messages: Record<string, string>) =>
 const invitation = (link: Invitation['link'], invitedAt: string) => ({
   id: 'inv-1',
   email: 'wang.fang@example.com',
-  roleId: 'role-viewer',
+  roles: [roleRef('Viewer')],
   invitedBy: { id: 'user-mei', name: 'Mei Lin' },
   invitedAt,
   link,

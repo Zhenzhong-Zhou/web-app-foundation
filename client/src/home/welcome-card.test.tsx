@@ -189,7 +189,7 @@ describe('the welcome card', () => {
         inviter: null,
         note: null,
         access: {
-          role: { name: 'Admin', description: null },
+          roles: [{ name: 'Admin', description: null }],
           holdsEverything: false,
           whomToAsk: [],
         },
@@ -301,7 +301,7 @@ describe('the welcome card', () => {
         inviter: null,
         note: null,
         access: {
-          role: { name: 'Owner', description: null },
+          roles: [{ name: 'Owner', description: null }],
           holdsEverything: true,
           whomToAsk: [],
         },
@@ -407,7 +407,7 @@ describe('the welcome card', () => {
     serve(
       welcome({
         access: {
-          role: { name: 'Accountant', description: 'Keeps the books' },
+          roles: [{ name: 'Accountant', description: 'Keeps the books' }],
           holdsEverything: false,
           whomToAsk: [],
         },
@@ -426,7 +426,7 @@ describe('the welcome card', () => {
     serve(
       welcome({
         access: {
-          role: { name: 'Owner', description: null },
+          roles: [{ name: 'Owner', description: null }],
           holdsEverything: true,
           whomToAsk: [],
         },

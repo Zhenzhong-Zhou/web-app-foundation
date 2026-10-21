@@ -32,7 +32,8 @@ export class ExportedProfile {
 export class ExportedMembership {
   organizationId!: string;
   organizationName!: string;
-  roleName!: string;
+  /** Every role held there, as named (ADR-080). */
+  roleNames!: string[];
   jobTitle!: string | null;
   department!: string | null;
   location!: string | null;

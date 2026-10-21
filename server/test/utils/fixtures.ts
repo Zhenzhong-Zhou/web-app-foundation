@@ -248,7 +248,7 @@ export async function addMember(
     .post('/v1/invitations')
     .send({
       email,
-      roleId: await roleIdNamed(app, owner.organizationId, roleName),
+      roleIds: [await roleIdNamed(app, owner.organizationId, roleName)],
     })
     .expect(201);
 

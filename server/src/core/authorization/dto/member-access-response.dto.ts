@@ -5,8 +5,8 @@
  */
 
 /**
- * The member's role as stored: a built-in role's name and line are worded
- * by the client, as on People and Members (ADR-054); a role an
+ * A role the member holds, as stored: a built-in role's name and line are
+ * worded by the client, as on People and Members (ADR-054); a role an
  * organization made shows as it named and described it.
  */
 export class MemberRole {
@@ -22,7 +22,8 @@ export class Colleague {
 
 /** GET /account/membership, and the welcome's own. */
 export class MemberAccess {
-  role!: MemberRole;
+  /** Every role they hold, the built-in one first (ADR-080). */
+  roles!: MemberRole[];
   /**
    * Holds every permission there is, whatever the role is called: the
    * client then says it in one line rather than an area at a time.

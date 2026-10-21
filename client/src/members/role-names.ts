@@ -21,6 +21,29 @@ export function roleLabel(name: string): string {
 }
 
 /**
+ * A member's or an invitation's roles as the reader's language lists
+ * them (ADR-080): "Warehouse and Sales", "Entrepôt et Ventes", "仓库和销售",
+ * a built-in one in that language.
+ */
+export function roleList(roles: readonly { name: string }[]): string {
+  return intl().formatList(
+    roles.map((role) => roleLabel(role.name)),
+    { type: 'conjunction' },
+  );
+}
+
+/**
+ * What a sentence naming these roles chooses its article by (ADR-080):
+ * the built-in role it names alone, never its words; a made role, or
+ * several, take none: "as an Admin", "as Warehouse lead".
+ */
+export function articleOf(roles: readonly { name: string }[]): string {
+  return roles.length === 1 && roles[0].name in BUILT_IN
+    ? roles[0].name
+    : 'other';
+}
+
+/**
  * What each built-in role lets a person do, in a line a newcomer
  * understands (ADR-077): the server's SYSTEM_ROLE_DESCRIPTIONS, said the
  * same way on the Invite dialog. A role an organization made has none.

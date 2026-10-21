@@ -380,6 +380,17 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, Translatable> = {
 };
 
 /**
+ * A permission's line, quoted as each language quotes, where a sentence
+ * names it: the refusal, the editor's own refusals and the audit log.
+ */
+export function quotedLine(key: Permission): Translatable {
+  return t(
+    { id: 'permissions.quoted', defaultMessage: '“{line}”' },
+    { line: PERMISSION_DESCRIPTIONS[key] },
+  );
+}
+
+/**
  * What each permission needs held with it (ADR-080). The editor ticks a
  * permission's needs with it and unticks whatever needs one cleared, and
  * the server refuses a role that lacks one. Each change needs its view,
@@ -415,7 +426,9 @@ export const PERMISSION_NEEDS: Partial<
   'invoices.update': ['invoices.view', 'tax_codes.view'],
   'invoices.delete': ['invoices.view'],
   'invoices.issue': ['invoices.view'],
-  // The order it is raised against, and the return linked to it.
+  // The order it is raised against, and the return linked to it. Raising a
+  // replacement makes a sale, so that route also requires orders.create;
+  // not a need here, since cancelling and closing make none.
   'return_authorizations.create': ['return_authorizations.view', 'orders.view'],
   'return_authorizations.update': ['return_authorizations.view', 'orders.view'],
   'locations.create': ['locations.view'],
@@ -730,9 +743,11 @@ export const ROLE_TEMPLATES = {
   },
 } satisfies Record<string, RoleTemplate>;
 
+export type RoleTemplateKey = keyof typeof ROLE_TEMPLATES;
+
 /**
- * Known gap (ADR-004), closed elsewhere: nothing here prevents an Admin
- * assigning the Owner role. Permission strings cannot express "not above your
- * own level", so that rule lives in UsersService.updateRole() rather than in
- * the guard.
+ * Known gap (ADR-004), closed elsewhere: nothing here prevents giving a role
+ * that grants more than the giver holds. Permission strings cannot express
+ * "not above your own level", so that rule, giving only what you hold
+ * (ADR-080), lives in giving.ts rather than in the guard.
  */

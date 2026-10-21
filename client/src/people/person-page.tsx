@@ -148,7 +148,9 @@ export function PersonPage() {
             </Typography>
           )}
           <Box>
-            <Chip size="small" label={roleLabel(person.roleName)} />
+            {person.roles.map((role) => (
+              <Chip key={role.id} size="small" label={roleLabel(role.name)} />
+            ))}
           </Box>
           {!filledIn && (
             <Typography color="text.secondary" sx={{ pt: 1 }}>

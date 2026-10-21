@@ -350,11 +350,11 @@ function Invitation({
         >
           <FormattedMessage
             id="invitation.keep.body"
-            defaultMessage="Your account is set to be deleted after <b>{date}</b>. Keep it, then join {organization} as {role, select, Owner {an} Admin {an} other {a}} {role}."
+            defaultMessage="Your account is set to be deleted after <b>{date}</b>. Keep it, then join {organization} as {system, select, Owner {an {roles}} Admin {an {roles}} Viewer {a {roles}} other {{roles}}}."
             values={{
               date: formatDayLong(session.user.deletionScheduledAt),
               organization,
-              role: invitation.role.name,
+              ...invitedAs(invitation, intl),
               b: bold,
             }}
           />
@@ -445,7 +445,8 @@ function OrganizationMark({ invitation }: { invitation: InvitationPreview }) {
  */
 function InvitationHeader({ invitation }: { invitation: InvitationPreview }) {
   const intl = useIntl();
-  const { inviter, role, note } = invitation;
+  const { inviter, roles, note } = invitation;
+  const as = invitedAs(invitation, intl);
   const organization = invitation.organization.name;
 
   return (
@@ -455,25 +456,37 @@ function InvitationHeader({ invitation }: { invitation: InvitationPreview }) {
           {inviter ? (
             <FormattedMessage
               id="invitation.invitedYou"
-              defaultMessage="{inviter} ({email}) invited you as {role, select, Owner {an} Admin {an} other {a}} <b>{role}</b>."
+              defaultMessage="{inviter} ({email}) invited you as {system, select, Owner {an <b>{roles}</b>} Admin {an <b>{roles}</b>} Viewer {a <b>{roles}</b>} other {<b>{roles}</b>}}."
               values={{
                 inviter: inviter.name,
                 email: inviter.email,
-                role: role.name,
+                ...as,
                 b: bold,
               }}
             />
           ) : (
             <FormattedMessage
               id="invitation.invitedYouOrganization"
-              defaultMessage="{organization} invited you as {role, select, Owner {an} Admin {an} other {a}} <b>{role}</b>."
-              values={{ organization, role: role.name, b: bold }}
+              defaultMessage="{organization} invited you as {system, select, Owner {an <b>{roles}</b>} Admin {an <b>{roles}</b>} Viewer {a <b>{roles}</b>} other {<b>{roles}</b>}}."
+              values={{ organization, ...as, b: bold }}
             />
           )}
         </Typography>
-        {role.description && (
-          <Typography color="text.secondary">{role.description}</Typography>
-        )}
+        {roles
+          .filter((role) => role.description)
+          .map((role) => (
+            <Typography key={role.name} color="text.secondary">
+              {roles.length === 1
+                ? role.description
+                : intl.formatMessage(
+                    {
+                      id: 'invitation.roleLine',
+                      defaultMessage: '{role}: {description}',
+                    },
+                    { role: role.name, description: role.description },
+                  )}
+            </Typography>
+          ))}
       </Box>
       {note && (
         <Paper
@@ -495,6 +508,25 @@ function InvitationHeader({ invitation }: { invitation: InvitationPreview }) {
       )}
     </>
   );
+}
+
+/**
+ * The roles an invitation grants, as its sentences name them (ADR-080):
+ * listed in the page's language, the server having worded each, and the
+ * built-in role its article goes by when it names that one alone.
+ */
+function invitedAs(
+  invitation: InvitationPreview,
+  intl: ReturnType<typeof useIntl>,
+): { roles: string; system: string } {
+  const { roles } = invitation;
+  return {
+    roles: intl.formatList(
+      roles.map((role) => role.name),
+      { type: 'conjunction' },
+    ),
+    system: (roles.length === 1 && roles[0].system) || 'other',
+  };
 }
 
 /** The link's last day, and what happens if they do nothing. */

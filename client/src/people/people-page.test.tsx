@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Person } from '../api/types.gen';
 import { setOrganizationTimeZone } from '../lib/time-zone';
+import { roleRef } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { PeoplePage } from './people-page';
@@ -14,8 +15,7 @@ const person = (id: string, name: string, memberSince: string): Person => ({
   name,
   email: `${id}@alpha.example`,
   photoFileId: null,
-  roleId: 'role-viewer',
-  roleName: 'Viewer',
+  roles: [roleRef('Viewer')],
   jobTitle: null,
   department: null,
   location: null,
