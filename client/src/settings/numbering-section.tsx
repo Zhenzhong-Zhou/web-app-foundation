@@ -474,7 +474,7 @@ function NumberingForm({
 
   // On a phone each field stands alone, with no table head above it, so
   // it shows its own label; the table's are its column heads.
-  const prefixField = (key: SeriesKey, narrow = false) => (
+  const prefixField = (key: SeriesKey) => (
     <TextField
       size="small"
       label={narrow ? PREFIX : undefined}
@@ -505,7 +505,7 @@ function NumberingForm({
     />
   );
 
-  const digitsField = (key: SeriesKey, narrow = false) => (
+  const digitsField = (key: SeriesKey) => (
     <TextField
       size="small"
       type="number"
@@ -528,7 +528,7 @@ function NumberingForm({
     />
   );
 
-  const resetField = (key: SeriesKey, narrow = false) => (
+  const resetField = (key: SeriesKey) => (
     <TextField
       select
       size="small"
@@ -551,7 +551,7 @@ function NumberingForm({
     </TextField>
   );
 
-  const nextField = (key: SeriesKey, narrow = false) => (
+  const nextField = (key: SeriesKey) => (
     <Stack spacing={0.5}>
       <TextField
         size="small"
@@ -873,12 +873,12 @@ function NumberingForm({
                 {(editing === key || !validOf(key)) && (
                   <Stack spacing={2} sx={{ px: 2, pb: 2 }}>
                     {helper(key)}
-                    {prefixField(key, true)}
+                    {prefixField(key)}
                     <Stack direction="row" spacing={2}>
-                      {digitsField(key, true)}
-                      {resetField(key, true)}
+                      {digitsField(key)}
+                      {resetField(key)}
                     </Stack>
-                    {nextField(key, true)}
+                    {nextField(key)}
                   </Stack>
                 )}
               </Box>
