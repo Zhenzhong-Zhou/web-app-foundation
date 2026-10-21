@@ -2023,6 +2023,8 @@ export type OrderLine = {
   variantId: string;
   sku: string;
   description: string;
+  tracksLots: boolean;
+  unitOfMeasure: string;
   quantityOrdered: string;
   quantityFulfilled: string;
   quantityReturned: string;
@@ -2111,6 +2113,8 @@ export type AddedOrderLine = {
   variantId: string;
   sku: string;
   description: string;
+  tracksLots: boolean;
+  unitOfMeasure: string;
   quantityOrdered: string;
   quantityFulfilled: string;
   quantityReturned: string;

@@ -1083,7 +1083,6 @@
   "orders.proForma.unpriced": "Chaque article doit d’abord avoir un prix. {skus} {count, plural, one {n’en a} other {n’en ont}} pas : {count, plural, one {chiffrez-le} other {chiffrez-les}} dans l’onglet Articles.",
   "orders.raise": "Créer une commande",
   "orders.raised": "Commande créée",
-  "orders.receive.lotsUnknown": "Vous ne pouvez pas voir les produits, on ne peut donc pas savoir ici si {sku} exige un numéro de lot. Si la réception est refusée faute d’en avoir un, quelqu’un qui peut voir les produits peut la faire.",
   "orders.receive.note.help": "Dommage, un compte incomplet, tout ce que le registre devrait indiquer.",
   "orders.receive.soFar": "{fulfilled} sur {ordered} reçus jusqu’ici.",
   "orders.receive.title": "Recevoir {sku}",

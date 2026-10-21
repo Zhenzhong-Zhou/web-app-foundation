@@ -17,6 +17,7 @@ import chinese from '../src/i18n/zh-Hans.json';
 import {
   body,
   createE2eApp,
+  createLocation,
   createPartner,
   createVariant,
   invitationToken,
@@ -1066,6 +1067,62 @@ describe('Roles (e2e)', () => {
         welcome: { items: { key: string }[] } | null;
       }>(await sam.agent.get('/v1/home').expect(200));
       expect(welcome?.items.map((item) => item.key)).toContain('receiveStock');
+    });
+  });
+
+  describe('receiving without the catalogue', () => {
+    it('reads from the line whether it tracks lots, and its unit, and receives a lot without products.view', async () => {
+      const alpha = await organization('alpha');
+      const supplier = await createPartner(alpha.agent, { name: 'Supplier' });
+      const variant = await createVariant(alpha.agent, {
+        type: 'good',
+        name: 'Fish oil',
+        variant: { sku: 'OIL', unitOfMeasure: 'kg', tracksLots: true },
+      });
+      const into = await createLocation(alpha.agent, {
+        type: 'site',
+        name: 'Main',
+      });
+      const order = body<{ order: { id: string; lines: { id: string }[] } }>(
+        await alpha.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: supplier,
+            direction: 'purchase',
+            lines: [{ variantId: variant, quantityOrdered: '10' }],
+          })
+          .expect(201),
+      ).order;
+      await alpha.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+
+      const receiver = await make(alpha, 'Receiving', [
+        'orders.view',
+        'orders.receive',
+        'locations.view',
+      ]);
+      const sam = await join(
+        alpha,
+        'sam@example.com',
+        [receiver.id],
+        'Sam Lee',
+      );
+      await sam.agent.get(`/v1/products`).expect(403);
+
+      const read = body<{
+        lines: { tracksLots: boolean; unitOfMeasure: string }[];
+      }>(await sam.agent.get(`/v1/orders/${order.id}`).expect(200));
+      expect(read.lines[0]).toMatchObject({
+        tracksLots: true,
+        unitOfMeasure: 'kg',
+      });
+
+      await sam.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: into, quantity: '4', lot: { code: 'OIL-0425' } })
+        .expect(201);
     });
   });
 

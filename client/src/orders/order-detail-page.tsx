@@ -677,7 +677,6 @@ export function OrderDetailPage() {
         orderId={order.id}
         line={receiving}
         locations={leaves}
-        canSeeProducts={can('products.view')}
         canSeeLots={can('stock.view')}
         onClose={() => setReceiving(null)}
         onReceived={load}

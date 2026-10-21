@@ -44,6 +44,13 @@ export class OrderLine {
   /** Snapshotted when the order was raised (ADR-023). */
   sku!: string;
   description!: string;
+  /**
+   * The item's, read live as receiving needs them (ADR-080): whether a
+   * receipt names a lot, and what its quantities count in. On the line, so
+   * receiving asks nothing of the catalogue (products.view).
+   */
+  tracksLots!: boolean;
+  unitOfMeasure!: string;
   quantityOrdered!: string;
   quantityFulfilled!: string;
   /** Customer returns, beside fulfilled rather than subtracted (ADR-043). */

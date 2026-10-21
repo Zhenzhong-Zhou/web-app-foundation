@@ -412,6 +412,9 @@ export class OrdersService {
           sku: orderLines.sku,
           productName: products.name,
           variantName: productVariants.name,
+          // Live, not snapshotted: a receipt follows the item as it is now.
+          tracksLots: productVariants.tracksLots,
+          unitOfMeasure: productVariants.unitOfMeasure,
           quantityOrdered: orderLines.quantityOrdered,
           quantityFulfilled: orderLines.quantityFulfilled,
           quantityReturned: orderLines.quantityReturned,

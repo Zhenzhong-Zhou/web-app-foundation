@@ -14954,6 +14954,12 @@
           "description": {
             "type": "string"
           },
+          "tracksLots": {
+            "type": "boolean"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
           "quantityOrdered": {
             "type": "string"
           },
@@ -15031,6 +15037,8 @@
           "variantId",
           "sku",
           "description",
+          "tracksLots",
+          "unitOfMeasure",
           "quantityOrdered",
           "quantityFulfilled",
           "quantityReturned",
@@ -15348,6 +15356,12 @@
           "description": {
             "type": "string"
           },
+          "tracksLots": {
+            "type": "boolean"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
           "quantityOrdered": {
             "type": "string"
           },
@@ -15428,6 +15442,8 @@
           "variantId",
           "sku",
           "description",
+          "tracksLots",
+          "unitOfMeasure",
           "quantityOrdered",
           "quantityFulfilled",
           "quantityReturned",

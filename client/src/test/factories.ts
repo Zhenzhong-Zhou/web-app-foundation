@@ -23,6 +23,8 @@ export function orderLine(over: Partial<OrderLine> = {}): OrderLine {
     variantId: 'variant-plain',
     sku: `WIDGET-${id.slice(-1)}`,
     description: `Widget ${id.slice(-1)}`,
+    tracksLots: false,
+    unitOfMeasure: 'each',
     quantityOrdered: '40.0000',
     quantityFulfilled: '0.0000',
     quantityOutstanding: '40.0000',

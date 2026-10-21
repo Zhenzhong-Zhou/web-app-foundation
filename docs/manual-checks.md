@@ -1932,6 +1932,20 @@ The pages, in a private window unless a check says otherwise.
   purchase order they came on., and its button, Orders, opens the
   confirmed purchases (Buying, Confirmed). As Tom Becker, who may move
   stock, it opens Inventory as before.
+- **MC-3322** *(ADR-080)* Receiving a lot-tracked line without the
+  catalogue. As the demo Owner, raise and confirm a purchase of 5 kg of
+  MELATONIN, then make a role from the Warehouse template with Receive,
+  ship or transfer stock and See the product catalogue unticked, and give
+  it to a member. As them, with the Network tab open, press Receive on the
+  order's line: Lot number and Expires are asked for, Up to 5.0000 kg still
+  outstanding. names the unit, nothing says the dialog cannot tell whether
+  a lot is needed, and no request is refused. Receive 5 with a lot number:
+  it is recorded, and Trace a lot finds the lot.
+- **MC-3323** *(ADR-080)* The trace leads only where its reader may go.
+  As Tom Becker (Warehouse), trace BF-2609: its receipt's order and each
+  customer's order are links, while the run under Went into and each
+  customer under Who received it read as text: nothing links to a page
+  that would refuse the reader. As the demo Owner, every one is a link.
 
 ## Regressions
 
@@ -2440,3 +2454,6 @@ first.
   out of the menu with no organization (#169): MC-3307 to MC-3321, and
   MC-1413, MC-3001, MC-3305 and MC-3007 changed. The account menu's
   preferences from the keyboard (#151): MC-R29.
+- 2026-10-21: ADR-080, a lot-tracked line received without seeing products,
+  and a trace's partners, orders and runs as text where its reader may not
+  open them: MC-3322 and MC-3323.

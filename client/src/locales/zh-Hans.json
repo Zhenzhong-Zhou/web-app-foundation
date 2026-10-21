@@ -1083,7 +1083,6 @@
   "orders.proForma.unpriced": "每个物品都需要先定价。{skus}（共 {count} 个）没有价格：请在“物品”标签页中定价。",
   "orders.raise": "创建订单",
   "orders.raised": "订单已创建",
-  "orders.receive.lotsUnknown": "您无法查看产品，因此这里无法判断 {sku} 是否需要批号。如果因缺少批号而被拒绝收货，可以请能查看产品的人来收货。",
   "orders.receive.note.help": "损坏、数量不足，或任何需要记入账目的情况。",
   "orders.receive.soFar": "已收货 {fulfilled}，共订购 {ordered}。",
   "orders.receive.title": "收货 {sku}",

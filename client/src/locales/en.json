@@ -1083,7 +1083,6 @@
   "orders.proForma.unpriced": "Every item needs a price first. {skus} {count, plural, one {has} other {have}} none: price {count, plural, one {it} other {them}} on the Items tab.",
   "orders.raise": "Raise an order",
   "orders.raised": "Order raised",
-  "orders.receive.lotsUnknown": "You can’t see products, so this can’t tell whether {sku} needs a lot number. If receiving is refused for want of one, someone who may see products can receive it.",
   "orders.receive.note.help": "Damage, a short count, anything the ledger should say.",
   "orders.receive.soFar": "{fulfilled} of {ordered} received so far.",
   "orders.receive.title": "Receive {sku}",
