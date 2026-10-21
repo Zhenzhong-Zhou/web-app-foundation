@@ -323,11 +323,14 @@ describe('HomePage', () => {
   describe('the time-zone note', () => {
     afterEach(() => setOrganizationTimeZone(null));
 
+    /** An organization's zone that is not this computer's. */
+    const elsewhere = () =>
+      browserTimeZone() === 'Pacific/Auckland'
+        ? 'America/Vancouver'
+        : 'Pacific/Auckland';
+
     it('says which zone dates follow when this computer is elsewhere', async () => {
-      const zone =
-        browserTimeZone() === 'Pacific/Auckland'
-          ? 'America/Vancouver'
-          : 'Pacific/Auckland';
+      const zone = elsewhere();
       setOrganizationTimeZone(zone);
       serve({ gettingStarted: COMPLETE, cards: [] });
       renderWithAuth(routed(<HomePage />));
@@ -341,11 +344,7 @@ describe('HomePage', () => {
     });
 
     it('leads whoever may change the zone to it, and nobody else', async () => {
-      setOrganizationTimeZone(
-        browserTimeZone() === 'Pacific/Auckland'
-          ? 'America/Vancouver'
-          : 'Pacific/Auckland',
-      );
+      setOrganizationTimeZone(elsewhere());
       serve({ gettingStarted: COMPLETE, cards: [] });
       const { unmount } = renderWithAuth(routed(<HomePage />), {
         permissions: ['organizations.update'],
