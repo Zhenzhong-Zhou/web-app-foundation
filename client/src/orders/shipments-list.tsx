@@ -14,8 +14,9 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import type { InvoicePage, InvoiceSummary, Shipment } from '../api/types.gen';
 import { api, ApiError, apiUrl, messageFor } from '../lib/api';
-import { formatDate, SEPARATOR } from '../lib/format';
+import { formatDate, formatDay, SEPARATOR } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
+import { organizationDayOf } from '../lib/time-zone';
 import { LotItemsTable } from './lot-items-table';
 import { VoidShipmentDialog } from './void-shipment-dialog';
 
@@ -167,7 +168,9 @@ export function ShipmentsList({
             <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline' }}>
               <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
                 {[
-                  formatDate(shipment.createdAt),
+                  // The organization's day, as its packing slip prints it
+                  // (ADR-072), not the day it already is where the reader is.
+                  formatDay(organizationDayOf(shipment.createdAt)),
                   shipment.carrier,
                   shipment.trackingNumber,
                 ]

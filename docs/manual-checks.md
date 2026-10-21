@@ -1131,7 +1131,8 @@ override, then reload.
   when tomorrow's is also entered; This month on a list's date range is
   this month; a CSV export's file name carries today's date. Void an
   issued invoice now: its page and its PDF say Voided with today's date,
-  and the order's Documents tab names its shipment by today's. Issue,
+  and the order's Documents tab names its shipment by today's, as its
+  Shipments tab heads it. Issue,
   Void and Credit open on today's date, and a new exchange rate on today.
 - **MC-2606** *(ADR-072)* Another clock: with the organization in
   Vancouver and the computer set to Shanghai, Home shows Vancouver's date
@@ -2075,3 +2076,5 @@ first.
 - 2026-10-20: where Help slides over at Large text: MC-3203 extended.
 - 2026-10-20: an order's links under its number are underlined: MC-R23.
 - 2026-10-20: Home's late tiles in the critical tone, readable: MC-R24.
+- 2026-10-20: the Shipments tab heads a shipment with the organization's
+  day: MC-2605 extended.
