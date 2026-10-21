@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NUMBERING } from '../test/handlers';
 import { server } from '../test/setup';
@@ -270,5 +270,39 @@ describe('NumberingSection', () => {
       screen.queryByRole('button', { name: 'Save numbering' }),
     ).not.toBeInTheDocument();
     expect(screen.getByText('An Owner can change it.')).toBeInTheDocument();
+  });
+
+  describe('on a phone', () => {
+    beforeEach(() => {
+      // Every width query matches, as at 390 px; jsdom has no matchMedia.
+      vi.stubGlobal('matchMedia', (query: string) => ({
+        matches: query.includes('max-width'),
+        media: query,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }));
+    });
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('labels each field of the row it opens, as the table heads them', async () => {
+      serve();
+      const user = userEvent.setup();
+      render(<NumberingSection readOnly={false} />);
+
+      await user.click(
+        await screen.findByRole('button', { name: /^Invoices/ }),
+      );
+
+      for (const label of ['Prefix', 'Digits', 'Starts again', 'Next number']) {
+        // Each field's own label, as MUI draws it: a <label>, or for the
+        // select a div, since a select is not a labelable element.
+        expect(
+          screen.getByText(label, { selector: '.MuiInputLabel-root' }),
+        ).toBeVisible();
+      }
+      expect(
+        screen.getByRole('textbox', { name: 'Invoices: Prefix' }),
+      ).toHaveValue('INV-');
+    });
   });
 });

@@ -1218,8 +1218,9 @@ few invoices and orders.
   no fields and no Save.
 - **MC-2710** *(ADR-073)* On a phone (DevTools device toolbar, 390 px),
   each document is a row with its next number; tapping one opens its
-  formats, date buttons and fields. In Chinese, the section reads 编号, with
-  常用格式, 重新编号 and 打印为.
+  formats, date buttons and fields, each labelled on its box: Prefix,
+  Digits, Starts again and Next number. In Chinese, the section reads
+  编号, with 常用格式, 重新编号 and 打印为.
 - **MC-2711** *(ADR-073)* Set purchase orders to PO/{YYYY}/ and make one:
   it is PO/2026/0001, and its PDF downloads as PO_2026_0001.pdf.
 - **MC-2712** *(ADR-073)* History on the Organization page shows Numbering
@@ -2082,3 +2083,4 @@ first.
   day: MC-2605 extended.
 - 2026-10-20: a partner's document languages show the default and Nothing
   else when left alone: MC-1409 extended.
+- 2026-10-20: the numbering's fields labelled on a phone: MC-2710 extended.
