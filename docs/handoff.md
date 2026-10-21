@@ -12,8 +12,8 @@ with this one, this one is current.
   and built by Claude Code as ADR-079 was (*Working agreements*, How code
   is delivered). Roles an organization makes, from a template or a copy,
   several to a member and added together; the built-in three fixed; a role
-  given only by someone whose roles hold all it grants; Settings → Roles;
-  migration **0073**. #155 goes first; #147, #151, and parts of #148 and
+  given only by someone whose roles hold all it grants; prices on orders a
+  permission of their own; Settings → Roles; migration **0073**. #155 goes first; #147, #151, and parts of #148 and
   #169 ride along. Next for it: the canvas designs, then the build brief in
   `tmp/adr-080/`, one Claude Code prompt per commit.
   After it, in this order unless a trigger brings one forward, each with

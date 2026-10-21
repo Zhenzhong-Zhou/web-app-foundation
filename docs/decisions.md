@@ -10124,18 +10124,20 @@ review on the canvas, its reviews and its two walkthroughs settled:
 
 ---
 
-## ADR-080 — Job roles: roles an organization makes, several to a member (amends ADR-004, ADR-016, ADR-070, ADR-077 and ADR-079)
+## ADR-080 — Job roles: roles an organization makes, several to a member (amends ADR-004, ADR-016, ADR-035, ADR-070, ADR-071, ADR-077 and ADR-079)
 
 **Context.** Three roles cannot say what a small firm's people do. A
 receiver who manages nobody needs Admin, which also invites and removes
 members and corrects counts. Someone who should see stock and orders gets
 Viewer, which reads nearly everything: recipes, every customer and supplier
 with their contacts, and the prices bought and sold at on orders and
-invoices; only costs, price lists and the audit log are kept from it. And
-the permissions left Owner-only "until an organization widens it
-deliberately", issuing invoices (ADR-046), costs (ADR-048), price lists
-(ADR-049) and the licence override (ADR-050), have had no way to be widened
-short of making someone an Owner.
+invoices; only costs, price lists and the audit log are kept from it.
+Whoever may see an order sees its prices too, what is paid to suppliers and
+charged to customers, which the dock needs no more than a temp does. And the
+permissions left Owner-only "until an organization widens it deliberately",
+issuing invoices (ADR-046), costs (ADR-048), price lists (ADR-049) and the
+licence override (ADR-050), have had no way to be widened short of making
+someone an Owner.
 
 In a small firm one person often does two jobs: the dock and the sales
 calls, the books and the purchasing. What is built has to say that without a
@@ -10182,23 +10184,25 @@ Checked before drafting, as the working agreements ask:
 Discussed with Bob before drafting: whether Viewer is too broad (for some
 people it is, which is what roles are for); whether the built-in roles
 should be editable instead; one role to a member or several; inheritance,
-departments and attributes; and whether this is what the industry does.
-NIST's role model, which most of the industry builds on, lets a user hold
-many roles. OWASP asks that every request pass one access check, made by one
-routine, and prefers attributes and relationships to roles where they fit.
-This ADR is the role model, with room for both.
+departments and attributes; whether this is what the industry does; and,
+after the design review, prices on orders. NIST's role model, which most of
+the industry builds on, lets a user hold many roles. OWASP asks that every
+request pass one access check, made by one routine, and prefers attributes
+and relationships to roles where they fit. This ADR is the role model, with
+room for both.
 
 **Decision — roles an organization makes, from a template or a copy.** An
 Owner makes a role from three things: a name, an optional line saying what
-it is for, and the permissions it grants. Making one starts from one of four
-templates, Warehouse, Sales, Finance and Production, or from a copy of any
-role the organization has, a built-in one included. A template only ticks
-boxes. It is defined once, in `permissions.ts`, beside the permissions it
-names, and a test holds each to what its permissions need and to nothing
-Owners keep. The role made is stored as named, in whatever language its
-maker wrote, and is never translated (ADR-054): a role named 仓库 reads 仓库 to
-an English reader too, and the Roles guide says to name roles in the
-language the team reads.
+it is for, and the permissions it grants. Making one starts from one of five
+templates, Warehouse, Sales, Finance, Production and Stock look-up, the
+narrowest, for someone who only needs to find things; or from a copy of any
+role the organization has, a built-in one included, which every role's page
+offers as Make a copy. A template only ticks boxes. It is defined once, in
+`permissions.ts`, beside the permissions it names, and a test holds each to
+what its permissions need and to nothing Owners keep. The role made is
+stored as named, in whatever language its maker wrote, and is never
+translated (ADR-054): a role named 仓库 reads 仓库 to an English reader too, and
+the Roles guide says to name roles in the language the team reads.
 
 **Decision — the built-in three stay as they are.** Owner, Admin and Viewer
 cannot be renamed, edited or deleted. Their names and lines are the app's
@@ -10216,6 +10220,22 @@ vary a built-in role, copy it. Two things make the copy as quick as an edit:
 - **Invite starts with no role chosen** once the organization has made a
   role of its own, so nobody is given Viewer by default (amends ADR-077,
   where Invite starts on Viewer).
+
+**Decision — prices on orders, a permission of their own.** Seeing an order
+has meant seeing its prices, so a role that receives and ships would show
+the dock what the organization pays its suppliers. `orders.view_prices`, See
+prices on orders, now holds them: an order's line prices, its totals and its
+tax, in its page, in the orders list and wherever else an order's money
+reaches a reader. Without it the server sends none of them, rather than the
+screen hiding them, and refuses the purchase order's and the pro forma
+invoice's PDFs; the packing slip never had prices (ADR-071). Raising,
+changing, confirming and cancelling an order need it, since they set prices.
+Owner, Admin and Viewer hold it, so nothing changes for them; each made role
+chooses, and the Warehouse, Production and Stock look-up templates leave it
+out. A new permission is Owner-only (ADR-004), but this one is split from
+what Admin and Viewer already held, so it goes to them. Invoices are prices
+by nature and keep `invoices.view`; costs keep `costs.view` (amends ADR-035
+and ADR-071).
 
 **Decision — several roles to a member, added together.** A member holds one
 or more roles, and may do whatever any of them allows. Wang works the dock
@@ -10252,6 +10272,8 @@ each a checkbox with its own line.
   organization's settings without asking.
 - **What the role can do** stands beside the boxes, in the words its holder
   will read on Your access, and follows each tick.
+- **Tick all and Clear** on each area, and leaving with changes not saved
+  asks first.
 - **Who is told.** Three notifications go to whoever holds a permission: a
   licence expiring, to whoever may change licences or release production; an
   order line closed short, to whoever may change orders; a production
@@ -10300,11 +10322,22 @@ log keeps what it granted. The refusal says how many hold the role, and
 offers Move everyone.
 
 **Decision — Members, and removing a member (#147).** Each member's roles
-show side by side, with a way to change them. Each row's menu gains Remove
-from the organization, `DELETE /v1/users/:id`, which has had no screen. Its
-dialog says the account stays theirs, their work keeps their name, and their
-access ends on their next click. Both follow the rule that only what you
-hold can be given.
+show side by side. Change roles is a dialog of checkboxes, and under them
+what the member could do with the roles ticked, in Your access's sentences,
+following each tick: with roles added together, the clearest way to see what
+someone will be able to do. Each row's menu gains Remove from the
+organization, `DELETE /v1/users/:id`, which has had no screen. Its dialog
+says the account stays theirs, their work keeps their name, and their access
+ends on their next click. Both follow the rule that only what you hold can
+be given.
+
+**Decision — held when two act at once.** The last Owner is counted under a
+lock, so two Owners demoting or removing each other at the same moment
+cannot leave none, as counting without one could (`users.service.ts`). A
+role saved after someone else changed it is refused with `role_changed`,
+naming who, rather than overwriting what they did. A member keeps at least
+one role. Move everyone writes one audit entry for each member it moves, so
+each person's history says what happened to them.
 
 **Decision — words and records.**
 
@@ -10345,7 +10378,7 @@ may follow (Deferred) without touching what reads it:
 - **The client asks `useCan`,** never a role's name.
 
 The answer is still worked out on every request (ADR-016): one indexed query
-from the membership through its roles to their permissions. Sixty
+from the membership through its roles to their permissions. Sixty-one
 permissions and a few roles each take well under a millisecond, and a change
 to a role reaches its holders on their next click.
 
@@ -10371,6 +10404,8 @@ to a role reaches its holders on their next click.
   edited role no longer does, the seed would put back what an Owner removed,
   and a new permission for Admin or Viewer would have to skip the edited
   ones. A copy and Move everyone give the same result.
+- **Hiding prices on the screen alone.** The response would still carry
+  them, and anyone opening the browser's tools could read them.
 - **More built-in roles in every organization** (Warehouse, Sales, Finance).
   Each needs a translated name and line and a backfill into every
   organization, and an organization still could not say "sales, who also
@@ -10431,33 +10466,40 @@ to a role reaches its holders on their next click.
   One migration does it at today's sizes; on large live tables the procedure
   would be expand and contract (ADR-052).
 - Permissions: `roles.create`, `roles.update` and `roles.delete`,
-  Owner-only, 60 in all. Each permission's line in three languages, what it
-  needs, and the notification it brings; the four templates.
+  Owner-only; `orders.view_prices`, held by the three built-in roles; 61 in
+  all. Each permission's line in three languages, what it needs, and the
+  notification it brings; the five templates, each written out in the build
+  brief for Bob to review.
 - Server: `GET /v1/roles` gains each role's line, whether it is built in,
   its permissions, how many hold it and whether the reader may give it; `GET
   /v1/roles/catalogue`, each permission's line, what it needs and whether it
   is offered or locked, and the templates named in the reader's language;
   `GET /v1/roles/:id` with its holders; `POST /v1/roles`, `PATCH
   /v1/roles/:id`, `DELETE /v1/roles/:id` and `POST /v1/roles/:id/move`.
-  `PATCH /v1/users/:id` and `POST /v1/invitations` take `roleIds`. The
-  request context carries the membership, not a role. One authorization
-  service and its lint rule; the rule that only what you hold can be given,
-  wherever a role is given or a member changed; the audit actions and their
-  declared keys; members' roles and the built-in lines in the export, with
-  the README's glossary of its columns; the seven messages; the refusal in
-  words. `npm run api` after the routes change. E2e tests for each refusal,
-  roles added together, Move everyone, deleting, and a made role's holder
-  refused in each language.
+  `PATCH /v1/users/:id` and `POST /v1/invitations` take `roleIds`. Order
+  responses without prices for whoever lacks `orders.view_prices`, and their
+  PDFs refused. The request context carries the membership, not a role. One
+  authorization service and its lint rule; the rule that only what you hold
+  can be given, wherever a role is given or a member changed; the audit
+  actions and their declared keys; members' roles and the built-in lines in
+  the export, with the README's glossary of its columns; the seven messages;
+  the refusal in words. `npm run api` after the routes change. E2e tests for
+  each refusal, roles added together, Move everyone, deleting, a made role's
+  holder refused in each language, an order read without its prices, and two
+  Owners demoting each other at once. The access query timed on
+  `seed:volume` within ADR-051's budget.
 - Client: Settings → Roles, a role's page and the editor; Members' roles and
   Remove; Invite with several roles and none chosen; the first week's
   Receive; `openDialog` giving focus back; the account menu from the
   keyboard; the menu with no organization. Designed on the canvas first:
-  Roles, a role's page, the editor on a computer and a phone in English and
-  中文, Move everyone, deleting, Members with several roles and the Remove
-  dialog, and Invite's cards with a made role and one that cannot be given.
-  Unit tests for the editor's needs and the role list; Playwright for making
-  a role from a template, giving it, and its holder's Home; the new pages in
-  `accessibility.spec`.
+  Roles, a role's page and a built-in one's, the editor on a computer and a
+  phone in English and 中文, Move everyone, deleting, Members with several
+  roles and the Remove dialog, Invite's cards with a made role and one that
+  cannot be given, and an order without its prices. Order pages and lists
+  without prices. Unit tests for the editor's needs and the role list;
+  Playwright for making a role from a template, giving it, and its holder's
+  Home; for each template, its holder opening every page in the menu without
+  a raw refusal; the new pages in `accessibility.spec`.
 - The guides: Roles, new, and Members, changed, in three languages, a commit
   of their own; the glossary's permission, made role, Move everyone to… and
   Remove from the organization.
