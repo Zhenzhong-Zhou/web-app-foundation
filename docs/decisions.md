@@ -855,10 +855,10 @@ behaviour the change leaves intact.
 
 **Currently blocked, and by what.**
 
-| Upgrade             | Blocked by                                                                                                                    | Unblocks when                                                                   |
-|---------------------|-------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| `@nestjs/*` 11 → 12 | `@nestjs/throttler@6.5.0` peers at `^11.0.0`                                                                                  | throttler publishes a range including `^12.0.0`                                 |
-| `typescript` 6 → 7  | `typescript-eslint@8.69` peers at `typescript <6.1.0`; the Go port's support for `emitDecoratorMetadata`, which Nest requires | both are satisfied — verify the decorator support explicitly, not by assumption |
+| Upgrade             | Blocked by                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Unblocks when                                                                                                                                                     |
+|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `@nestjs/*` 11 → 12 | `@nestjs/throttler@6.5.0` peers at `^11.0.0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Cleared by ADR-067: throttler 6.7.1 accepts `^12.0.0`, and the server runs Nest 12                                                                                |
+| `typescript` 6 → 7  | As of 20 October 2026: `typescript-eslint@8.72.0` peers at `<6.1.0` ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)); `@nestjs/cli@12.0.10` depends on `~6.0.2` ([nest-cli#3479](https://github.com/nestjs/nest-cli/issues/3479)); `@nestjs/swagger@12.0.2` peers at `^5.5.0 \|\| ^6.0.0` ([swagger#4002](https://github.com/nestjs/swagger/pull/4002)), and its plugin is a transformer inside `nest build`; the Go port's support for `emitDecoratorMetadata`, which Nest requires | Realistically TypeScript 7.1 stable, whose API those tools need, plus new releases of all three — then verify the decorator support explicitly, not by assumption |
 
 Being on a supported release line is the goal; being on the newest major is
 not. `11.2.3` is current for the 11 line, and a non-empty `npm outdated` is not
@@ -874,6 +874,14 @@ with intl-messageformat 12, now waits on the server's tests leaving
 Jest, which ADR-067 decides. TypeScript 7 is also held by ts-jest (`<7`,
 gone with ADR-067) and by the Nest CLI, which needs TypeScript 7.1's
 programmatic API.
+
+*Amended (20 October 2026):* the table's TypeScript row brought up to
+date, and the Nest row kept, marked cleared. The client's one override,
+`js-yaml` 4.3.2 under `@hey-api/json-schema-ref-parser` (commit
+7a24f8d6), is not the kind this rules out: the ref-parser pins js-yaml at
+exactly 4.2.0, which has three high advisories, and the override takes a
+patched release of the same major, so it hides no peer conflict. It goes
+once the ref-parser's own dependency is 4.3.2 or later.
 
 ---
 
@@ -7141,6 +7149,13 @@ yet. Its triggers are under *Deferred*.
   `require(esm)` loads both packages. Trigger: a dependency that uses
   top-level await, which `require(esm)` cannot load.
 - **Reaching TypeScript 7 now with `--legacy-peer-deps`.** ADR-019.
+- **TypeScript 7.0 beside 6, by renaming packages**, as Microsoft's
+  7.0 announcement suggests: `typescript` aliased to
+  `npm:@typescript/typescript6`, so the tools keep 6.0's API, and 7.0's
+  `tsc` installed under another name. It overrides no peer range, but a
+  tool asking for `typescript` gets another package under that name, and
+  two compilers check the code. It would need its own amendment to
+  ADR-019. *(Added 20 October 2026.)*
 
 **Deferred — each with what brings it in.**
 
@@ -7148,8 +7163,12 @@ yet. Its triggers are under *Deferred*.
   ADR-019, once typescript-eslint's peer range includes 7. The server
   also needs the Nest CLI to support it (TypeScript 7.1's API) and an e2e
   boot showing TypeScript 7 still emits decorator metadata, checked
-  explicitly rather than assumed. The client has no decorators and needs
-  only the first.
+  explicitly rather than assumed. The client has no decorators, but needs
+  more than the first: `@hey-api/openapi-ts` and
+  `@formatjs/ts-transformer` (under `eslint-plugin-formatjs`) load
+  TypeScript's API when they run, and 7.0 ships none, so the client's
+  half of `npm run api` and ESLint would break on 7.0, though both
+  packages' ranges admit it. *(Corrected 20 October 2026.)*
 
 *Amended while building (October 2026):*
 
