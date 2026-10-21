@@ -44,7 +44,13 @@ interface RoleResponse {
 }
 
 interface RoleDetailResponse extends RoleResponse {
-  holders: { id: string; name: string; photoFileId: string | null }[];
+  holders: {
+    id: string;
+    name: string;
+    email: string;
+    photoFileId: string | null;
+    roles: { id: string; name: string; builtIn: boolean }[];
+  }[];
   updatedAt: string;
 }
 
@@ -243,15 +249,32 @@ describe('Roles (e2e)', () => {
       ]);
     });
 
-    it('shows a role’s page with who holds it', async () => {
+    it('shows a role’s page with who holds it, and every role each holds', async () => {
       const alpha = await organization('alpha');
       const viewer = await builtIn(alpha, 'Viewer');
-      await join(alpha, 'sam@example.com', [viewer], 'Sam Lee');
+      const lead = await make(alpha, 'Warehouse lead', template('warehouse'));
+      const sam = await join(
+        alpha,
+        'sam@example.com',
+        [viewer, lead.id],
+        'Sam Lee',
+      );
 
       const page = body<RoleDetailResponse>(
         await alpha.agent.get(`/v1/roles/${viewer}`).expect(200),
       );
-      expect(page.holders.map((holder) => holder.name)).toEqual(['Sam Lee']);
+      expect(page.holders).toEqual([
+        {
+          id: sam.id,
+          name: 'Sam Lee',
+          email: 'sam@example.com',
+          photoFileId: null,
+          roles: [
+            { id: viewer, name: 'Viewer', builtIn: true },
+            { id: lead.id, name: 'Warehouse lead', builtIn: false },
+          ],
+        },
+      ]);
       expect(page.holderCount).toBe(1);
     });
   });
@@ -319,6 +342,8 @@ describe('Roles (e2e)', () => {
       expect(taken.message).toBe(
         'There’s already a role called warehouse LEAD.',
       );
+      // The editor marks its Name field by the code.
+      expect(taken.code).toBe('role_name_unavailable');
       // A built-in role's name in any of the app's languages, any case.
       for (const name of ['admin', 'Propriétaire', '查看者']) {
         const refused = body<Refusal>(
@@ -330,6 +355,7 @@ describe('Roles (e2e)', () => {
         expect(refused.message).toBe(
           `${name} is a built-in role. Choose another name.`,
         );
+        expect(refused.code).toBe('role_name_unavailable');
       }
 
       await alpha.agent

@@ -9435,17 +9435,28 @@
           "name": {
             "type": "string"
           },
+          "email": {
+            "type": "string"
+          },
           "photoFileId": {
             "type": [
               "string",
               "null"
             ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleRef"
+            }
           }
         },
         "required": [
           "id",
           "name",
-          "photoFileId"
+          "email",
+          "photoFileId",
+          "roles"
         ]
       },
       "RoleDetail": {
@@ -19888,7 +19899,8 @@
           "registration_closed",
           "role_changed",
           "role_held",
-          "permission_requires"
+          "permission_requires",
+          "role_name_unavailable"
         ]
       },
       "ApiVocabulary": {

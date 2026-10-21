@@ -43,8 +43,12 @@ export class Role {
 export class RoleHolder {
   id!: string;
   name!: string;
+  /** As Members shows it, to every member (ADR-063). */
+  email!: string;
   /** Their photo; null shows their initials. */
   photoFileId!: string | null;
+  /** Every role they hold, this one among them, the built-in one first. */
+  roles!: RoleRef[];
 }
 
 /** A role's page: the role, who holds it, and the version saved last. */

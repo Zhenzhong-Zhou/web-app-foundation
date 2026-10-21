@@ -113,6 +113,12 @@ export const ERROR_CODES = {
    * so this reaches a screen only out of step with the catalogue.
    */
   permissionRequires: 'permission_requires',
+  /**
+   * A made role's name is another role's, ignoring case, or reads as a
+   * built-in role in one of the app's languages (ADR-080): the editor
+   * marks the Name field, and the message says which.
+   */
+  roleNameUnavailable: 'role_name_unavailable',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

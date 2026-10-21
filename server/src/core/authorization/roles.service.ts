@@ -54,7 +54,7 @@ import {
   includesOwner,
   lockOwners,
 } from './giving';
-import { grantsOf, rolesOfMembers, setRoles } from './member-roles';
+import { grantsOf, roleRef, rolesOfMembers, setRoles } from './member-roles';
 import { isOwnerRole } from './owner';
 import {
   ALL_PERMISSIONS,
@@ -136,10 +136,12 @@ export class RolesService {
     return this.db.transaction(async (tx, organizationId) => {
       const row = await roleIn(tx, organizationId, roleId);
       const [summary] = await this.summaries(tx, organizationId, [row], reader);
-      const holders = await tx
+      const rows = await tx
         .select({
+          membershipId: memberships.id,
           id: users.id,
           name: users.name,
+          email: users.email,
           photoFileId: users.photoFileId,
         })
         .from(membershipRoles)
@@ -155,6 +157,14 @@ export class RolesService {
           ),
         )
         .orderBy(asc(users.name), asc(users.id));
+      const held = await rolesOfMembers(
+        tx,
+        rows.map((holder) => holder.membershipId),
+      );
+      const holders = rows.map(({ membershipId, ...holder }) => ({
+        ...holder,
+        roles: (held.get(membershipId) ?? []).map(roleRef),
+      }));
       return { ...summary, holders, updatedAt: row.updatedAt };
     });
   }
@@ -659,12 +669,15 @@ async function assertNameFree(
 ): Promise<void> {
   if (BUILT_IN_NAMES.has(name.toLocaleLowerCase())) {
     throw new ConflictException(
-      t(
-        {
-          id: 'roles.nameBuiltIn',
-          defaultMessage: '{name} is a built-in role. Choose another name.',
-        },
-        { name },
+      withCode(
+        t(
+          {
+            id: 'roles.nameBuiltIn',
+            defaultMessage: '{name} is a built-in role. Choose another name.',
+          },
+          { name },
+        ),
+        ERROR_CODES.roleNameUnavailable,
       ),
     );
   }
@@ -683,12 +696,15 @@ async function assertNameFree(
 
 function nameTaken(name: string): ConflictException {
   return new ConflictException(
-    t(
-      {
-        id: 'roles.nameTaken',
-        defaultMessage: 'There’s already a role called {name}.',
-      },
-      { name },
+    withCode(
+      t(
+        {
+          id: 'roles.nameTaken',
+          defaultMessage: 'There’s already a role called {name}.',
+        },
+        { name },
+      ),
+      ERROR_CODES.roleNameUnavailable,
     ),
   );
 }

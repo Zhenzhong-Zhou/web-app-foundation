@@ -558,7 +558,9 @@ export type RoleCatalogue = {
 export type RoleHolder = {
   id: string;
   name: string;
+  email: string;
   photoFileId: string | null;
+  roles: Array<RoleRef>;
 };
 
 export type RoleDetail = {
@@ -3325,6 +3327,7 @@ export const ErrorCode = {
   ROLE_CHANGED: 'role_changed',
   ROLE_HELD: 'role_held',
   PERMISSION_REQUIRES: 'permission_requires',
+  ROLE_NAME_UNAVAILABLE: 'role_name_unavailable',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
