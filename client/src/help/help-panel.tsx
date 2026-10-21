@@ -82,6 +82,10 @@ function subscribeToDialogs(onChange: () => void): () => void {
 const dialogShown = () =>
   document.querySelector('body > .MuiDialog-root') !== null;
 
+/** While Help is closed: nothing to watch, and no dialog to make room for. */
+const watchNothing = () => () => undefined;
+const noDialog = () => false;
+
 /**
  * The page, and Help beside it or over it (ADR-079). Help slides over the
  * right of the page with nothing dimmed, so the page still works while the
@@ -117,7 +121,12 @@ export function HelpFrame({
   // A new text size changes the panel's width in px: render again for it.
   useTextSize();
   const [size, setSize] = useState({ height: 56, width: 0, viewport: 0 });
-  const dialog = useSyncExternalStore(subscribeToDialogs, dialogShown);
+  // Watched only while Help is open: every tooltip, menu and snackbar
+  // mounts at the end of <body> too.
+  const dialog = useSyncExternalStore(
+    help?.open ? subscribeToDialogs : watchNothing,
+    help?.open ? dialogShown : noDialog,
+  );
 
   useEffect(() => {
     const element = bar.current;
