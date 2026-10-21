@@ -834,8 +834,8 @@ await fetch(`${api}/v1/files/product-image`, {
   closes, ← → move, double-click zooms; on a phone, swipe and double-tap.
   Use a thumbnail's menu to Make cover and Move left; drag one to the end.
   Remove one by its menu: focus is on Undo, and the message stays while
-  focus or the pointer is on it, well past five seconds; Enter: it is
-  back. Remove one, Tab away and wait: after a reload it is gone. The Products list and Inventory show each cover; a
+  focus or the pointer is on it, well past five seconds, and still once
+  the pointer has passed over it and gone; Enter: it is back. Remove one, Tab away and wait: after a reload it is gone. The Products list and Inventory show each cover; a
   product without one shows the plain tile. At eight, Add images is
   disabled with the reason. A viewer sees the gallery without the menus.
   In 中文 on a phone, the buttons and the hint read naturally.
@@ -1604,7 +1604,7 @@ The pages, in a private window unless a check says otherwise.
   top of Home, and a message says What you can do here stays on Your
   account, with Undo. Tab once: Undo has focus, and the message stays
   while it does, or while the pointer is on it, well past its eight
-  seconds. Undo brings the card back, focus on its title (Tab moves on
+  seconds, and still once the pointer has passed over it and gone. Undo brings the card back, focus on its title (Tab moves on
   from there), and a reload keeps it. Dismiss
   again and reload: Home as usual. As an Admin of the demo team, invite
   an address with a note and leave the organization before it is
@@ -2061,3 +2061,5 @@ first.
   quick actions: MC-1559 and MC-3209 extended.
 - 2026-10-20: #144 on a phone, a tab brought back from the background:
   MC-R22 extended.
+- 2026-10-20: Undo stays while it has focus once the pointer has passed
+  over it and gone: MC-1801 and MC-3207 extended.

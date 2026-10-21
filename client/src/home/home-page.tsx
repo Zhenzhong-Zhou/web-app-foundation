@@ -7,7 +7,6 @@ import {
   Link,
   Paper,
   Skeleton,
-  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
@@ -19,6 +18,7 @@ import type { HomeCard, HomeResponse, HomeRow } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { StatusChip } from '../components/status-chip';
+import { UndoSnackbar } from '../components/undo-snackbar';
 import { useCoverUnverifiedBanner } from '../layout/use-cover-unverified-banner';
 import { api } from '../lib/api';
 import { daysUntil } from '../lib/expiry';
@@ -223,7 +223,7 @@ function OrganizationHome() {
         {/* Next after the heading, where Dismiss puts focus, so the next
             Tab reaches Undo; shown at the foot of the screen all the same,
             and held there while focus or the pointer is on it. */}
-        <Snackbar
+        <UndoSnackbar
           open={undoing}
           autoHideDuration={8000}
           onClose={(_event, reason) => {

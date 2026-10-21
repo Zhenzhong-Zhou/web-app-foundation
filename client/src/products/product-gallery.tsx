@@ -15,7 +15,6 @@ import {
   Menu,
   MenuItem,
   Paper,
-  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
@@ -30,6 +29,7 @@ import {
 import { useIntl } from 'react-intl';
 
 import type { ProductImage } from '../api/types.gen';
+import { UndoSnackbar } from '../components/undo-snackbar';
 import { api, messageFor } from '../lib/api';
 import { rem } from '../theme/rem';
 import { uploadProductImage, type UploadState } from './upload-image';
@@ -193,12 +193,10 @@ export function ProductGallery({
   }
 
   // The image's own menu went with it, and focus with the menu: it goes to
-  // Undo, the one thing left to do about the removal. A task later, once
-  // the message has started its timer, so that focus holds it.
+  // Undo, the one thing left to do about the removal, and holds the message
+  // while it is there.
   useEffect(() => {
-    if (!pending) return;
-    const id = window.setTimeout(() => undoButton.current?.focus());
-    return () => window.clearTimeout(id);
+    if (pending) undoButton.current?.focus();
   }, [pending]);
 
   /** Its undo has passed: the removal is sent. */
@@ -639,9 +637,9 @@ export function ProductGallery({
         </Menu>
       )}
 
-      {/* Its own timer, which MUI holds while focus or the pointer is on
-          it and runs again once both have left; one per removal. */}
-      <Snackbar
+      {/* Its own timer, held while focus or the pointer is on it and run
+          again once both have left; one per removal. */}
+      <UndoSnackbar
         key={pending?.fileId}
         open={pending !== null}
         autoHideDuration={UNDO_MS}
