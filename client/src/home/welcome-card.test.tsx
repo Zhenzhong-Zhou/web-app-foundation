@@ -4,26 +4,12 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { HomeResponse, Welcome } from '../api/types.gen';
+import type { Welcome } from '../api/types.gen';
 import { setOrganizationTimeZone } from '../lib/time-zone';
+import { GETTING_STARTED_DONE, welcome } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { HomePage } from './home-page';
-
-const COMPLETE: HomeResponse['gettingStarted'] = {
-  steps: {
-    organization: true,
-    location: true,
-    product: true,
-    partner: true,
-    receipt: true,
-    invoice: true,
-    team: true,
-  },
-  teamSkipped: false,
-  dismissed: false,
-  complete: true,
-};
 
 const VIEWER = [
   'users.view',
@@ -34,30 +20,7 @@ const VIEWER = [
   'orders.view',
 ];
 
-/** Wang Fang, a Viewer who joined today, invited by Mei Lin with a note. */
-const welcome = (over: Partial<Welcome> = {}): Welcome => ({
-  joinedOn: '2026-10-20',
-  lastDay: '2026-11-03',
-  founder: false,
-  inviter: { id: 'user-mei', name: 'Mei Lin', photoFileId: null },
-  note: 'Welcome, Wang Fang!\nOn Monday you’ll shadow Li Na.',
-  access: {
-    role: { id: 'role-viewer', name: 'Viewer', description: null },
-    holdsEverything: false,
-    whomToAsk: [
-      { id: 'user-mei', name: 'Mei Lin', photoFileId: null },
-      { id: 'user-david', name: 'David Park', photoFileId: null },
-    ],
-  },
-  items: [
-    { key: 'sayWhoYouAre', done: false, what: null },
-    { key: 'lookUp', done: false, what: null },
-    { key: 'openOrder', done: false, what: null },
-  ],
-  ...over,
-});
-
-function serve(card: Welcome | null, start = COMPLETE) {
+function serve(card: Welcome | null, start = GETTING_STARTED_DONE) {
   server.use(
     http.get('/api/v1/home', () =>
       HttpResponse.json({ gettingStarted: start, welcome: card, cards: [] }),
@@ -254,8 +217,8 @@ describe('the welcome card', () => {
         ],
       }),
       {
-        ...COMPLETE,
-        steps: { ...COMPLETE.steps, team: false },
+        ...GETTING_STARTED_DONE,
+        steps: { ...GETTING_STARTED_DONE.steps, team: false },
         complete: false,
       },
     );
@@ -334,7 +297,7 @@ describe('the welcome card', () => {
     server.use(
       http.get('/api/v1/home', () =>
         HttpResponse.json({
-          gettingStarted: COMPLETE,
+          gettingStarted: GETTING_STARTED_DONE,
           welcome: dismissed ? null : welcome(),
           cards: [],
         }),
