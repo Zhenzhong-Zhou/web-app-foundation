@@ -89,7 +89,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * time, and only while signed in. In the background, as the bell's poll
    * is (ADR-063): coming back to a window is not activity. A read that
    * fails leaves the page as it was; the boot screen's Try again is for a
-   * page that never loaded.
+   * page that never loaded. One that finds nothing changed, as most do,
+   * keeps the session it had, so nothing reading it renders again.
    */
   const signedIn = state.session !== null;
   useEffect(() => {
@@ -103,7 +104,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void resolveSession({ background: true }).then((resolved) => {
         reading = false;
         // Signed out meanwhile: the late answer is not this page's.
-        if (live && !resolved.error) setState({ ...resolved, loading: false });
+        if (!live || resolved.error) return;
+        setState((current) =>
+          JSON.stringify(current.session) === JSON.stringify(resolved.session)
+            ? current
+            : { ...resolved, loading: false },
+        );
       });
     };
     const onVisible = () => {

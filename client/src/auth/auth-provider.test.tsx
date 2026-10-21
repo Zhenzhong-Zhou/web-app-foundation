@@ -222,6 +222,37 @@ describe('AuthProvider', () => {
     expect(fetches).not.toHaveBeenCalled();
   });
 
+  it('keeps the session it had when a read on focus finds nothing changed', async () => {
+    const requests = answer(session(ALPHA));
+    const listening = watchListeners();
+    const seen: (CurrentSession | null)[] = [];
+    function Watch() {
+      const { session: current, loading } = useAuth();
+      if (!loading) seen.push(current);
+      return null;
+    }
+    render(
+      <AuthProvider>
+        <Watch />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(seen).not.toHaveLength(0));
+    await listening();
+    const renders = seen.length;
+    const fetches = vi.spyOn(globalThis, 'fetch');
+
+    focusWindow();
+    await waitFor(() => expect(requests).toHaveLength(2));
+    // As below: the read's answer, then the microtasks that finish with it.
+    const read = fetches.mock.results[0];
+    if (read?.type !== 'return') throw new Error('The focus started no read');
+    await act(() => read.value.then(() => undefined));
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+
+    // Nothing reading the session rendered again.
+    expect(seen).toHaveLength(renders);
+  });
+
   it('keeps the page as it was when a read on focus finds no server', async () => {
     const requests = answer(session(ALPHA), 'down', session(REID));
     const listening = watchListeners();
