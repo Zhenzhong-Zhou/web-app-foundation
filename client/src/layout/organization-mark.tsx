@@ -13,7 +13,9 @@ const PLATE = { bgcolor: '#FFFFFF', borderRadius: 1, px: 1, py: 0.5 };
  * parent's width, so the caller sets how wide the corner may grow.
  *
  * `initials`, where the name would be cut to a few letters: the
- * organization's initials in its place (ADR-079); a logo stays a logo.
+ * organization's initials in its place (ADR-079); a logo stays a logo. The
+ * name follows them for a screen reader, so the link is named for the
+ * organization and still by what it shows (WCAG 2.5.3).
  */
 export function OrganizationMark({
   name,
@@ -29,8 +31,13 @@ export function OrganizationMark({
   if (!branding?.logoFileId && initials) {
     const short = organizationInitialsOf(name);
     return (
-      <Typography variant="h6" component="div" lang={initialsLang(short)}>
-        {short}
+      <Typography variant="h6" component="div">
+        <span lang={initialsLang(short)}>{short}</span>
+        {/* Placed out of sight, it is a block of its own, which a name
+            is read with a space before. */}
+        <Box component="span" sx={{ position: 'absolute', left: -9999 }}>
+          {name}
+        </Box>
       </Typography>
     );
   }

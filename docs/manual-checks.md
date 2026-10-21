@@ -1542,8 +1542,9 @@ The pages, in a private window unless a check says otherwise.
   Help as its icon alone. It opens full screen, headed Help · Orders, with
   Close, which returns to the page. On a real phone at 320 px wide (or
   DevTools) with Larger text (ADR-075), the organization shows its logo,
-  or its initials, alone, and nothing scrolls sideways. At Standard and
-  at Larger, on the phone and on a computer, every control in the bar,
+  or its initials, alone (VoiceOver reads the initials, then the name),
+  and nothing scrolls sideways. At Standard and at Larger, on the phone
+  and on a computer, every control in the bar,
   the organization and the search box among them, is a full fingertip
   wide and tall (44 px, DevTools' box model).
 - **MC-3205** *(ADR-079)* Learn more: on a new organization's Home, each
@@ -1982,4 +1983,6 @@ first.
   extended.
 - 2026-10-20: closing Help in Safari puts focus on Help: MC-3205 extended.
 - 2026-10-20: the banner never shows for a moment on Home: MC-3208
+  extended.
+- 2026-10-20: the organization's initials are read with its name: MC-3204
   extended.

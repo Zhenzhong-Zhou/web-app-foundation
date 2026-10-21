@@ -283,7 +283,11 @@ for (const size of ['standard', 'larger'] as const) {
       // initials stand alone, so Help beside the bell leaves every target
       // its 44px (ADR-079).
       if (phone && size === 'larger') {
-        await expect(mark).toHaveText(/^[A-Z0-9]{1,2}$/);
+        await expect(mark.locator('span').first()).toHaveText(
+          /^[A-Z0-9]{1,2}$/,
+        );
+        // Named for the organization, after the initials it shows.
+        await expect(mark).toHaveAccessibleName(/^[A-Z0-9]{1,2} \S/);
       }
 
       const targets = phone
