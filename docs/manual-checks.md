@@ -1295,8 +1295,9 @@ Signed in as the demo Owner the seed prints.
   showing an id, and each still opens its record where there is one.
 - **MC-2904** *(ADR-076)* Export the audit log in 中文 and open the file:
   By holds the person's name then their email, Action and Record type are
-  in Chinese, Record is the record's name, and Details is one line in
-  words. There is no id column and no id anywhere in the file; a moment in
+  in Chinese, in the screens' words (合作伙伴, 库存变动, 生产订单, and
+  电子邮箱 heading the email), Record is the record's name, and Details is
+  one line in words. There is no id column and no id anywhere in the file; a moment in
   the details reads like When, `2026-10-15 18:54:11`.
 - **MC-2905** *(ADR-076, ADR-072)* Set the organization's time zone to
   China Standard Time (Shanghai). On the audit log, set From to 1 October
@@ -2124,3 +2125,5 @@ first.
 - 2026-10-20: the French Still on UTC note reads plainly: MC-2602 extended.
 - 2026-10-20: a price list's price names its item in the audit log:
   MC-2901 extended.
+- 2026-10-20: the Chinese audit log and exports in the glossary's words:
+  MC-2904 extended.
