@@ -474,11 +474,16 @@ export function OrderDetailPage() {
               .filter(Boolean)
               .join(SEPARATOR)}
             {/* The partner, linked: the one name on the page that leads to
-                its other orders. Then their reference, when they gave one. */}
+                its other orders, and text for whoever may not open it
+                (ADR-080). Then their reference, when they gave one. */}
             {SEPARATOR}
-            <Link component={RouterLink} to={`/partners/${order.partnerId}`}>
-              {order.partnerName}
-            </Link>
+            {can('partners.view') ? (
+              <Link component={RouterLink} to={`/partners/${order.partnerId}`}>
+                {order.partnerName}
+              </Link>
+            ) : (
+              order.partnerName
+            )}
             {order.reference && (
               <>
                 {SEPARATOR}

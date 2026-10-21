@@ -654,7 +654,7 @@ describe('OrderDetailPage prices', () => {
 describe('OrderDetailPage header', () => {
   it('heads the page with our number, the partner and their reference beneath (ADR-071)', async () => {
     serve(order({ reference: 'ACME-77' }));
-    renderPage();
+    renderPage([...ALL, 'partners.view']);
 
     expect(
       await screen.findByRole('heading', { name: 'PO-000001' }),
@@ -664,6 +664,20 @@ describe('OrderDetailPage header', () => {
       '/partners/partner-1',
     );
     expect(screen.getByText(/their reference ACME-77/)).toBeInTheDocument();
+  });
+
+  // Warehouse's reader (ADR-080): the partner's page would refuse them.
+  it('names the partner as text for whoever may not open it', async () => {
+    serve(order());
+    renderPage(['orders.view', 'orders.receive']);
+
+    expect(
+      await screen.findByRole('heading', { name: 'PO-000001' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Acme Supplies' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/Acme Supplies/)).toBeInTheDocument();
   });
 });
 

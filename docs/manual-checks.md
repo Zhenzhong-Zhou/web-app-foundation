@@ -1941,11 +1941,12 @@ The pages, in a private window unless a check says otherwise.
   outstanding. names the unit, nothing says the dialog cannot tell whether
   a lot is needed, and no request is refused. Receive 5 with a lot number:
   it is recorded, and Trace a lot finds the lot.
-- **MC-3323** *(ADR-080)* The trace leads only where its reader may go.
-  As Tom Becker (Warehouse), trace BF-2609: its receipt's order and each
-  customer's order are links, while the run under Went into and each
-  customer under Who received it read as text: nothing links to a page
-  that would refuse the reader. As the demo Owner, every one is a link.
+- **MC-3323** *(ADR-080)* The trace and an order lead only where their
+  reader may go. As Tom Becker (Warehouse), trace BF-2609: its receipt's
+  order and each customer's order are links, while the run under Went into
+  and each customer under Who received it read as text: nothing links to a
+  page that would refuse the reader. Open PO-DEMO-1: the supplier under its
+  number reads as text too. As the demo Owner, every one is a link.
 
 ## Regressions
 
@@ -2457,3 +2458,5 @@ first.
 - 2026-10-21: ADR-080, a lot-tracked line received without seeing products,
   and a trace's partners, orders and runs as text where its reader may not
   open them: MC-3322 and MC-3323.
+- 2026-10-21: ADR-080, an order's partner as text where its reader may not
+  open it: MC-3323 extended.
