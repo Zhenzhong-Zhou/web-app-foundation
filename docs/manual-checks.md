@@ -1354,7 +1354,8 @@ Mailpit open.
   to confirm your own email first, naming it, with Resend confirmation,
   which sends it again.
 - **MC-3009** *(ADR-077)* At 390 px wide in 中文: Invited's rows are cards,
-  each with 重新发送, 复制链接 and 收回, and 邀请 opens the dialog full screen,
+  each with 重新发送, 复制链接 and 收回, its line ending 有效至 and the last
+  day, and 邀请 opens the dialog full screen,
   a close button before its title and 发送邀请 and 复制链接，自己发送 at its foot.
   At Larger text (ADR-075), neither Members nor the dialog scrolls
   sideways.
@@ -1365,7 +1366,9 @@ The invitation page, in a private window unless a check says otherwise:
   invitation's language, with the language and text size choices above
   it. It shows the organization's logo and name, 加入 …, who invited you,
   by name and by address as the email does, as 管理员 with what an Admin
-  does, the note under 来自 … 的留言, and the address, read-only. The logo is sharp, and the Network tab shows no
+  does, the note under 来自 … 的留言, and the address, read-only; at its
+  foot, 此邀请的有效期到 … 结束, the same last day as the email's. The
+  logo is sharp, and the Network tab shows no
   request to `/api/v1/files`. Type a name, then change the page's
   language: the name stays, and the page reads in the new one. Change it
   back and forth a dozen times inside a minute: once the reads are
@@ -2013,3 +2016,5 @@ first.
   MC-3208 extended.
 - 2026-10-20: what you can do here sets its phrases apart by semicolons:
   MC-3208 extended.
+- 2026-10-20: the Chinese invitation and Invited say a link works through
+  its last day: MC-3009 and MC-3010 extended.
