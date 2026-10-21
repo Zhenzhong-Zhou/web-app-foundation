@@ -192,7 +192,6 @@ export type PhotoSet = {
 };
 
 export type MemberRole = {
-  id: string;
   name: string;
   description: string | null;
 };
@@ -200,7 +199,6 @@ export type MemberRole = {
 export type Colleague = {
   id: string;
   name: string;
-  photoFileId: string | null;
 };
 
 export type MemberAccess = {
@@ -1376,6 +1374,12 @@ export type GettingStarted = {
   complete: boolean;
 };
 
+export type Inviter = {
+  id: string;
+  name: string;
+  photoFileId: string | null;
+};
+
 export type WelcomeDone = {
   kind:
     | 'email'
@@ -1409,7 +1413,7 @@ export type Welcome = {
   joinedOn: string;
   lastDay: string;
   founder: boolean;
-  inviter: Colleague | null;
+  inviter: Inviter | null;
   note: string | null;
   access: MemberAccess;
   items: Array<WelcomeItem>;

@@ -72,9 +72,9 @@ describe('AccountPage', () => {
 
   it('shows your access here: the role, its line, what you can do and whom to ask (ADR-079)', async () => {
     const access: MemberAccess = {
-      role: { id: 'role-viewer', name: 'Viewer', description: null },
+      role: { name: 'Viewer', description: null },
       holdsEverything: false,
-      whomToAsk: [{ id: 'user-mei', name: 'Mei Lin', photoFileId: null }],
+      whomToAsk: [{ id: 'user-mei', name: 'Mei Lin' }],
     };
     server.use(
       http.get('/api/v1/account/activity', () =>

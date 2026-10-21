@@ -1,7 +1,4 @@
-import type {
-  Colleague,
-  MemberAccess,
-} from '../../../core/authorization/dto/member-access-response.dto';
+import type { MemberAccess } from '../../../core/authorization/dto/member-access-response.dto';
 import type { HomeKind } from '../home.service';
 import type { WelcomeDoneKind, WelcomeItemKey } from '../welcome.service';
 
@@ -71,6 +68,13 @@ export class WelcomeItem {
 }
 
 /** The newcomer's welcome (ADR-079), while it shows. */
+/** Who invited the reader, under whose photo or initials their note shows. */
+export class Inviter {
+  id!: string;
+  name!: string;
+  photoFileId!: string | null;
+}
+
 export class Welcome {
   /** The day the membership began, YYYY-MM-DD in the organization's zone. */
   joinedOn!: string;
@@ -82,7 +86,7 @@ export class Welcome {
    * Who invited them, while still a member here; null once they have left
    * or deleted their account, and for a membership no invitation made.
    */
-  inviter!: Colleague | null;
+  inviter!: Inviter | null;
   /** The inviter's note as typed, plain text; the organization's once they are gone. */
   note!: string | null;
   access!: MemberAccess;

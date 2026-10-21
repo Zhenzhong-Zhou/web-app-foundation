@@ -10,7 +10,6 @@
  * organization made shows as it named and described it.
  */
 export class MemberRole {
-  id!: string;
   name!: string;
   description!: string | null;
 }
@@ -19,7 +18,6 @@ export class MemberRole {
 export class Colleague {
   id!: string;
   name!: string;
-  photoFileId!: string | null;
 }
 
 /** GET /account/membership, and the welcome's own. */

@@ -42,7 +42,7 @@ export class MemberAccessService {
       memberships,
       roles,
       eq(roles.id, memberships.roleId),
-      { id: roles.id, name: roles.name, description: roles.description },
+      { name: roles.name, description: roles.description },
       eq(memberships.userId, context.userId),
     );
     if (!role) throw notWorkingHere();
@@ -62,11 +62,7 @@ export class MemberAccessService {
       ? []
       : await this.tenantDb.transaction((tx, organizationId) =>
           tx
-            .select({
-              id: users.id,
-              name: users.name,
-              photoFileId: users.photoFileId,
-            })
+            .select({ id: users.id, name: users.name })
             .from(memberships)
             .innerJoin(users, eq(users.id, memberships.userId))
             .innerJoin(

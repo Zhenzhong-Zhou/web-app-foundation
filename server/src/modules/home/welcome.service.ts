@@ -208,11 +208,7 @@ export class WelcomeService {
           photoFileId: users.photoFileId,
           emailVerifiedAt: users.emailVerifiedAt,
           founder: sql<boolean>`${memberships.createdAt} = ${organizations.createdAt}`,
-          role: {
-            id: roles.id,
-            name: roles.name,
-            description: roles.description,
-          },
+          role: { name: roles.name, description: roles.description },
         })
         .from(memberships)
         .innerJoin(users, eq(users.id, memberships.userId))

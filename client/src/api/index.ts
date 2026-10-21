@@ -305,6 +305,7 @@ export {
   type InvitationsControllerRevokeV1Responses,
   type InvitationSender,
   type InvitationTokenDto,
+  type Inviter,
   type InvoiceAmounts,
   type InvoiceAmountsLine,
   type InvoiceCreditNote,

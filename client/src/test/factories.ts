@@ -64,11 +64,11 @@ export function welcome(over: Partial<Welcome> = {}): Welcome {
     inviter: { id: 'user-mei', name: 'Mei Lin', photoFileId: null },
     note: 'Welcome, Wang Fang!\nOn Monday you’ll shadow Li Na.',
     access: {
-      role: { id: 'role-viewer', name: 'Viewer', description: null },
+      role: { name: 'Viewer', description: null },
       holdsEverything: false,
       whomToAsk: [
-        { id: 'user-mei', name: 'Mei Lin', photoFileId: null },
-        { id: 'user-david', name: 'David Park', photoFileId: null },
+        { id: 'user-mei', name: 'Mei Lin' },
+        { id: 'user-david', name: 'David Park' },
       ],
     },
     items: [

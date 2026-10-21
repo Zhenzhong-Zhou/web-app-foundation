@@ -8423,9 +8423,6 @@
       "MemberRole": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
           "name": {
             "type": "string"
           },
@@ -8437,7 +8434,6 @@
           }
         },
         "required": [
-          "id",
           "name",
           "description"
         ]
@@ -8450,18 +8446,11 @@
           },
           "name": {
             "type": "string"
-          },
-          "photoFileId": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [
           "id",
-          "name",
-          "photoFileId"
+          "name"
         ]
       },
       "MemberAccess": {
@@ -13366,6 +13355,28 @@
           "complete"
         ]
       },
+      "Inviter": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "photoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "photoFileId"
+        ]
+      },
       "WelcomeDone": {
         "type": "object",
         "properties": {
@@ -13453,7 +13464,7 @@
           "inviter": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Colleague"
+                "$ref": "#/components/schemas/Inviter"
               },
               {
                 "type": "null"
