@@ -1575,8 +1575,8 @@ The pages, in a private window unless a check says otherwise.
   its button. The foot says Help is at the top, beside the bell. Open a
   product and come back: Look up is ticked and reads You opened … as a
   link to it. Dismiss: the card goes, and a message says What you can do
-  here stays on Your account, with Undo; Undo brings the card back, and
-  a reload keeps it. Dismiss again and reload: Home as usual. As an Admin
+  here stays on Your account, with Undo; Undo brings the card back, focus
+  on its title (Tab moves on from there), and a reload keeps it. Dismiss again and reload: Home as usual. As an Admin
   of the demo team, invite an address with a note and leave the
   organization before it is accepted; once accepted, the card's note
   reads From Demo … with no name.
@@ -1976,3 +1976,5 @@ first.
   MC-3201 extended, MC-3207 to MC-3212.
 - 2026-10-20: the first week's Resend the link keeps focus and says why it
   failed: MC-3208 extended.
+- 2026-10-20: Undo puts focus on the welcome it brings back: MC-3207
+  extended.

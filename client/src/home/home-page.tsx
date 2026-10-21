@@ -66,6 +66,10 @@ function OrganizationHome() {
   // The welcome just dismissed, a moment to undo it (ADR-079).
   const [undoing, setUndoing] = useState(false);
   const dismissing = useRef<Promise<unknown> | null>(null);
+  // Undo's button goes with its message, so focus goes to the card it
+  // brought back, once it is there.
+  const welcomeHeading = useRef<HTMLHeadingElement>(null);
+  const undone = useRef(false);
   // The organization's today (ADR-072), so "overdue" is the same for
   // everyone in it, wherever they read it from.
   const today = organizationToday();
@@ -103,12 +107,18 @@ function OrganizationHome() {
 
   async function undoWelcome() {
     setUndoing(false);
+    undone.current = true;
     // After the dismissal has landed, so the two cannot cross.
     await dismissing.current;
     await act('/home/welcome/dismiss', 'DELETE');
   }
 
   const welcome = home?.welcome ?? null;
+  useEffect(() => {
+    if (!welcome || !undone.current) return;
+    undone.current = false;
+    welcomeHeading.current?.focus();
+  }, [welcome]);
   // The banner asking the same is not shown here while the card lists it,
   // nor while Home is still loading the card that may (ADR-079). Someone
   // confirmed has no banner to cover, and the frame no change to render.
@@ -266,6 +276,7 @@ function OrganizationHome() {
               welcome={welcome}
               startShows={!!showStart}
               onDismiss={dismissWelcome}
+              headingRef={welcomeHeading}
             />
           )}
 

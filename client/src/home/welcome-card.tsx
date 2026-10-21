@@ -11,7 +11,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -40,10 +40,13 @@ export function WelcomeCard({
   welcome,
   startShows,
   onDismiss,
+  headingRef,
 }: {
   welcome: Welcome;
   startShows: boolean;
   onDismiss: () => void;
+  /** The title, for Home to move focus to when Undo brings the card back. */
+  headingRef?: RefObject<HTMLHeadingElement | null>;
 }) {
   const intl = useIntl();
   const theme = useTheme();
@@ -226,7 +229,13 @@ export function WelcomeCard({
         }}
       >
         <Box sx={{ minWidth: 0 }}>
-          <Typography variant="h5" component="h2" id="welcome-title">
+          <Typography
+            ref={headingRef}
+            variant="h5"
+            component="h2"
+            id="welcome-title"
+            tabIndex={-1}
+          >
             {intl.formatMessage(
               {
                 id: 'home.welcome.title',

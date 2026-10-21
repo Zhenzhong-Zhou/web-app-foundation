@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
@@ -390,6 +390,14 @@ describe('the welcome card', () => {
     await user.click(screen.getByRole('button', { name: 'Undo' }));
     expect(await card()).toBeVisible();
     expect(writes).toEqual(['dismiss', 'undo']);
+    // Undo went with its message: focus is on the card it brought back.
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', {
+          name: 'Welcome to Alpha Co, Wang Fang',
+        }),
+      ).toHaveFocus(),
+    );
   });
 
   describe('on a phone', () => {
