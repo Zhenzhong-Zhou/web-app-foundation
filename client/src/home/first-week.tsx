@@ -8,14 +8,14 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { type ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
 import { defineMessages, type MessageDescriptor, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { WelcomeDone, WelcomeItem } from '../api/types.gen';
 import { useAuth } from '../auth/use-auth';
+import { useResendConfirmation } from '../auth/use-resend-confirmation';
 import { NAV_LABELS } from '../layout/navigation';
-import { api } from '../lib/api';
 import { RECENT_PATHS } from '../lib/recent';
 
 type Key = WelcomeItem['key'];
@@ -233,8 +233,7 @@ function Item({
 }) {
   const intl = useIntl();
   const { session } = useAuth();
-  const [sent, setSent] = useState(false);
-  const [sending, setSending] = useState(false);
+  const { sent, sending, resend } = useResendConfirmation();
 
   let detail: ReactNode;
   let action: ReactNode = null;
@@ -259,16 +258,7 @@ function Item({
         })}
       </Typography>
     ) : (
-      <Button
-        variant="outlined"
-        disabled={sending}
-        onClick={() => {
-          setSending(true);
-          void api('/auth/verify-email/resend', { method: 'POST' })
-            .then(() => setSent(true))
-            .finally(() => setSending(false));
-        }}
-      >
+      <Button variant="outlined" disabled={sending} onClick={resend}>
         {intl.formatMessage({
           id: 'home.welcome.resend',
           defaultMessage: 'Resend the link',

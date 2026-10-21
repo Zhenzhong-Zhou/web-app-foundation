@@ -27,6 +27,7 @@ import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 
 import { DeletionBanner } from '../account/deletion-banner';
 import { useAuth } from '../auth/use-auth';
+import { useResendConfirmation } from '../auth/use-resend-confirmation';
 import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { LanguageSelect } from '../components/language-select';
@@ -507,8 +508,7 @@ function Frame() {
 function UnverifiedBanner({ covered }: { covered: boolean }) {
   const intl = useIntl();
   const { session } = useAuth();
-  const [sent, setSent] = useState(false);
-  const [sending, setSending] = useState(false);
+  const { sent, sending, resend } = useResendConfirmation();
 
   if (!session || session.user.emailVerified || covered) return null;
 
@@ -530,12 +530,7 @@ function UnverifiedBanner({ covered }: { covered: boolean }) {
             variant="text"
             size="small"
             disabled={sending}
-            onClick={() => {
-              setSending(true);
-              void api('/auth/verify-email/resend', { method: 'POST' })
-                .then(() => setSent(true))
-                .finally(() => setSending(false));
-            }}
+            onClick={resend}
           >
             {intl.formatMessage({
               id: 'layout.unverified.resend',
