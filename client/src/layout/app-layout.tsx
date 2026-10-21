@@ -21,7 +21,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
 
@@ -65,6 +65,30 @@ const BAR = 'lg' as const;
 
 /** This device's choice of a folded rail. */
 const FOLDED_KEY = 'nav.folded';
+
+/**
+ * A row of the account menu holding a preference's select, a row so the
+ * menu's arrow keys reach it. The select's own focus and blur stop at the
+ * row: a MUI select that loses focus while closed rewrites its blur's
+ * target to { value, name }, for form libraries, and bubbling on to the
+ * row's ButtonBase, that was tested for :focus-visible and failed, which
+ * MUI reports as a browser without it. The row's own focus and blur, its
+ * focus ring among them, are its own and unchanged; the select has its own
+ * ring.
+ */
+function PreferenceItem({ children }: { children: ReactNode }) {
+  return (
+    <MenuItem disableRipple sx={{ '&:hover': { bgcolor: 'transparent' } }}>
+      <Box
+        sx={{ display: 'contents' }}
+        onFocus={(event) => event.stopPropagation()}
+        onBlur={(event) => event.stopPropagation()}
+      >
+        {children}
+      </Box>
+    </MenuItem>
+  );
+}
 
 function storedFolded(): boolean {
   try {
@@ -385,24 +409,15 @@ function Frame() {
 
               {/* A preference, not a destination — and not a reason to close
                   the menu, unlike everything above it. */}
-              <MenuItem
-                disableRipple
-                sx={{ '&:hover': { bgcolor: 'transparent' } }}
-              >
+              <PreferenceItem>
                 <ColorModeSelect />
-              </MenuItem>
-              <MenuItem
-                disableRipple
-                sx={{ '&:hover': { bgcolor: 'transparent' } }}
-              >
+              </PreferenceItem>
+              <PreferenceItem>
                 <LanguageSelect />
-              </MenuItem>
-              <MenuItem
-                disableRipple
-                sx={{ '&:hover': { bgcolor: 'transparent' } }}
-              >
+              </PreferenceItem>
+              <PreferenceItem>
                 <TextSizeSelect />
-              </MenuItem>
+              </PreferenceItem>
 
               <Divider />
 

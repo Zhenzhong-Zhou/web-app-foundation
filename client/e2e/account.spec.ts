@@ -168,3 +168,38 @@ test('lists the current device and will not sign it out', async ({
       .getByRole('button', { name: 'Sign out' }),
   ).toHaveCount(0);
 });
+
+/**
+ * The account menu's preferences are selects in rows the arrow keys reach.
+ * A MUI select that loses focus while closed rewrites its blur's target, and
+ * that once bubbled on to its row's ButtonBase, which MUI then reported in
+ * the console as a browser without :focus-visible.
+ */
+test('moves between the account menu’s preferences with no warning', async ({
+  page,
+  freshOrg,
+}) => {
+  const warnings: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'warning') warnings.push(message.text());
+  });
+  await signInAs(page, freshOrg.api);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+  await page.getByRole('button', { name: /signed in as/ }).click();
+  const menu = page.getByRole('menu');
+  for (const name of ['Colour mode', 'Language', 'Text size']) {
+    await menu.getByRole('combobox', { name, exact: true }).click();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('listbox')).toBeHidden();
+  }
+  // Out of the last one, and out of the menu.
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeHidden();
+
+  expect(warnings.filter((text) => text.includes(':focus-visible'))).toEqual(
+    [],
+  );
+});
