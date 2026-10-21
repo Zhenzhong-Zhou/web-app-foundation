@@ -8,13 +8,26 @@ import {
   Routes,
   useLocation,
 } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { renderWithAuth } from '../test/render-with-auth';
 import { HelpButton } from './help-button';
 import { HelpFrame } from './help-panel';
 import { HelpProvider } from './help-provider';
 import { LearnMore } from './learn-more';
+
+/** How many guide loads to fail before they work again, as offline. */
+const failing = vi.hoisted(() => ({ loads: 0 }));
+vi.mock('./guides', async (original) => {
+  const actual = await original<typeof import('./guides')>();
+  return {
+    ...actual,
+    loadGuide: (...args: Parameters<typeof actual.loadGuide>) =>
+      failing.loads-- > 0
+        ? Promise.reject(new Error('Failed to fetch'))
+        : actual.loadGuide(...args),
+  };
+});
 
 function Where() {
   const location = useLocation();
@@ -97,6 +110,25 @@ describe('Help', () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByText('The inventory page')).toBeInTheDocument();
+  });
+
+  it('says when a guide could not be opened, and Try again opens it', async () => {
+    failing.loads = 1;
+    renderFrame('/orders');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Help' }));
+    expect(
+      await within(help()).findByText(
+        'This guide could not be opened. Check your connection, then try again.',
+      ),
+    ).toBeVisible();
+
+    await userEvent.click(
+      within(help()).getByRole('button', { name: 'Try again' }),
+    );
+    expect(
+      await within(help()).findByRole('heading', { level: 2, name: 'Orders' }),
+    ).toBeVisible();
   });
 
   it('closes on Esc and on Close, and focus goes back to the button', async () => {

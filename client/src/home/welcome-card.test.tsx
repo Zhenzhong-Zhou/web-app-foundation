@@ -304,6 +304,32 @@ describe('the welcome card', () => {
     ).toBeVisible();
   });
 
+  it('says Done, opening nothing, for an item whose record has since gone', async () => {
+    serve(
+      welcome({
+        items: [
+          { key: 'sayWhoYouAre', done: false, what: null },
+          {
+            key: 'lookUp',
+            done: true,
+            what: { kind: 'lot', id: null, words: null },
+          },
+          { key: 'openOrder', done: false, what: null },
+        ],
+      }),
+    );
+    renderHome();
+
+    const region = await card();
+    const item = within(region)
+      .getByText('Look up a product or a lot', { exact: false })
+      .closest('li');
+    if (!item) throw new Error('No item for the lookup');
+    expect(within(item).getByText('Done')).toBeVisible();
+    expect(within(item).queryByRole('link')).toBeNull();
+    expect(within(region).getByText('1 of 3 done')).toBeVisible();
+  });
+
   it('names a role the organization made as named, with no article', async () => {
     serve(
       welcome({
