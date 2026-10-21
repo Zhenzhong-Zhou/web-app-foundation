@@ -596,7 +596,9 @@ with this one, this one is current.
   shared scanners, handhelds or kiosks; a maximum session length
   (ADR-065).
 - TypeScript 7, once typescript-eslint and @nestjs/swagger accept it and
-  the Nest CLI builds with it (today below 6.1.0, up to 6, and ~6.0.2;
+  the Nest CLI builds with it (on 21 October 2026, typescript-eslint
+  8.72.0 accepts `>=4.8.4 <6.1.0`, @nestjs/swagger 12.0.2
+  `^5.5.0 || ^6.0.0`, and the Nest CLI 12.0.10 depends on `~6.0.2`;
   ADR-067).
 
 ## Where things stand
