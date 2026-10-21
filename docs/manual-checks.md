@@ -1551,9 +1551,9 @@ The pages, in a private window unless a check says otherwise.
 - **MC-3203** *(ADR-079)* Help on a wide screen, about 1900 px: opening
   Help folds the rail as on a laptop, the page keeps its full width beside
   Help, and closing Help opens the rail again. In a window about 1100 px
-  wide, or at Larger text below about 1330 px, where the page would keep
-  less than about 720 px beside Help, Help slides over the right of the
-  page instead, with nothing dimmed, and the page beneath still scrolls
+  wide, or below about 1265 px at Large text and 1330 px at Larger, where
+  the page would keep less than about 720 px beside Help, Help slides over
+  the right of the page instead, with nothing dimmed, and the page beneath still scrolls
   and works. Narrower than about 1085 px, a dialog the page opens there
   stays centred, and Help dims with the page.
 - **MC-3204** *(ADR-079)* Help on a phone, about 390 px: the bar shows
@@ -2063,3 +2063,4 @@ first.
   MC-R22 extended.
 - 2026-10-20: Undo stays while it has focus once the pointer has passed
   over it and gone: MC-1801 and MC-3207 extended.
+- 2026-10-20: where Help slides over at Large text: MC-3203 extended.

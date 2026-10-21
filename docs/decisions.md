@@ -9993,10 +9993,10 @@ review on the canvas, its reviews and its two walkthroughs settled:
   left beside Help, as long as that leaves it about 720 px. A Playwright
   test visits every signed-in route at 1280 × 800 with Help open: nothing
   scrolls sideways, the title row's actions show, and focus moved into the
-  page is never under Help. Below that width, which is Larger text under
-  about 1330 px and windows under about 1140 px, Help still slides over
-  the page, and a control under it can be focused out of sight. Phones,
-  below 600 px, keep Help full screen.
+  page is never under Help. Below that width, which is windows under
+  about 1140 px, or under about 1265 px at Large text and 1330 px at
+  Larger, Help still slides over the page, and a control under it can be
+  focused out of sight. Phones, below 600 px, keep Help full screen.
 - **Help's other rules.** The panel is 420 px, in rem, so it grows with
   the text. It stays above a page's dialog, readable and scrollable by
   mouse or touch, nothing in it pressable until the dialog closes; the

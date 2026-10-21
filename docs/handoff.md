@@ -473,9 +473,10 @@ with this one, this one is current.
 
 ### Still to do, in code
 
-- **ADR-079's limits.** Help still slides over the page at Larger text
-  under about 1330 px and in windows under about 1140 px, where a control
-  under it can be focused out of sight (WCAG 2.4.11). Five ADR-077
+- **ADR-079's limits.** Help still slides over the page in windows under
+  about 1140 px, or under about 1265 px at Large text and 1330 px at
+  Larger, where a control under it can be focused out of sight (WCAG
+  2.4.11). Five ADR-077
   messages would read "a Accountant" once organizations can make roles:
   job roles' to fix. Vitest's on-disk cache does not see a guide just
   added until `npx vitest --clearCache`; CI starts without one.
