@@ -100,6 +100,7 @@
   "account.deletion.explain.what": "届时，您的姓名、邮箱、照片和历史记录将被删除。您在各组织中所做的工作会保留，显示为“Deleted User”。您的其他所有设备会立即退出登录，您还会收到一封注明日期的邮件。",
   "account.deletion.explain.when": "您的账户将在 30 天后删除。在此之前，您仍可照常登录和工作，并可通过每个页面上的提示横幅保留账户。",
   "account.deletion.keep": "保留我的账户",
+  "account.deletion.kept": "您的账户不会被删除。",
   "account.deletion.password": "您的密码",
   "account.deletion.pending": "您的账户将在 {date}之后删除。可通过任意页面顶部的提示横幅保留账户。",
   "account.deletion.title": "删除您的账户？",

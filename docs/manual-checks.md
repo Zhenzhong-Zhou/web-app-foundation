@@ -929,7 +929,8 @@ await fetch(`${api}/v1/files/product-image`, {
   the computer's time zone set to Vancouver, asked for after 17:00, the
   banner and the email still name the same day. With the server stopped,
   Keep my account says it could not reach the server and the banner
-  stays; with it running, the banner goes, and a second email says so.
+  stays; with it running, the banner gives way to "Your account will not
+  be deleted.", which a screen reader reads, and a second email says so.
   In 中文 the dialog, the banner and the emails are in Chinese.
 - **MC-2303** Request deletion again, then set its day two days back in
   the database (`update users set deletion_scheduled_at = current_date - 2`)
@@ -2096,3 +2097,4 @@ first.
 - 2026-10-20: the numbering's fields labelled on a phone: MC-2710 extended.
 - 2026-10-20: the Ship dialog's fields on a phone: MC-R25.
 - 2026-10-20: an order's Items actions wrap on a phone: MC-R18 extended.
+- 2026-10-20: Keep my account says the account is kept: MC-2302 extended.

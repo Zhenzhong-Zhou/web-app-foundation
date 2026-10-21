@@ -1,4 +1,5 @@
 import { Alert, Box, Button } from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import { useAuth } from '../auth/use-auth';
@@ -16,6 +17,28 @@ export function DeletionBanner() {
   const intl = useIntl();
   const { session, refresh } = useAuth();
   const { submitting, error, submit } = useSubmit(refresh);
+  // What a keep kept, said once it is done rather than the banner just
+  // going, as the organization's banner does; the focus the button had,
+  // gone with the banner, moves to it.
+  const [kept, setKept] = useState<string | null>(null);
+  const keptRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (kept) keptRef.current?.focus();
+  }, [kept]);
+
+  if (kept) {
+    return (
+      <Alert
+        ref={keptRef}
+        tabIndex={-1}
+        severity="success"
+        role="status"
+        onClose={() => setKept(null)}
+      >
+        {kept}
+      </Alert>
+    );
+  }
 
   const due = session?.user.deletionScheduledAt;
   if (!due) return null;
@@ -33,7 +56,24 @@ export function DeletionBanner() {
           size="small"
           disabled={submitting}
           onClick={() =>
-            void submit(() => api('/account/deletion', { method: 'DELETE' }))
+            void submit(async () => {
+              await api('/account/deletion', { method: 'DELETE' });
+              setKept(
+                together
+                  ? intl.formatMessage(
+                      {
+                        id: 'settings.banner.keptBoth',
+                        defaultMessage:
+                          'Your account and {organization} are kept.',
+                      },
+                      { organization: together.name },
+                    )
+                  : intl.formatMessage({
+                      id: 'account.deletion.kept',
+                      defaultMessage: 'Your account will not be deleted.',
+                    }),
+              );
+            })
           }
         >
           {together

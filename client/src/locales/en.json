@@ -100,6 +100,7 @@
   "account.deletion.explain.what": "Then your name, email, photo and history are removed. What you did in each organization stays, under Deleted User. Every other device is signed out now, and you will get an email with the date.",
   "account.deletion.explain.when": "Your account will be deleted 30 days from now. Until then you can sign in and work as usual, and keep your account from the banner on every page.",
   "account.deletion.keep": "Keep my account",
+  "account.deletion.kept": "Your account will not be deleted.",
   "account.deletion.password": "Your password",
   "account.deletion.pending": "Your account will be deleted after {date}. Keep it from the banner at the top of any page.",
   "account.deletion.title": "Delete your account?",

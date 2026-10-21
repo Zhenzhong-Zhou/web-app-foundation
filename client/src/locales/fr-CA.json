@@ -100,6 +100,7 @@
   "account.deletion.explain.what": "Ensuite, votre nom, votre adresse courriel, votre photo et votre historique sont supprimés. Ce que vous avez fait dans chaque organisation reste, sous le nom « Deleted User ». Tous vos autres appareils sont déconnectés dès maintenant, et vous recevrez un courriel avec la date.",
   "account.deletion.explain.when": "Votre compte sera supprimé dans 30 jours. D’ici là, vous pouvez vous connecter et travailler comme d’habitude, et conserver votre compte depuis le bandeau affiché sur chaque page.",
   "account.deletion.keep": "Conserver mon compte",
+  "account.deletion.kept": "Votre compte ne sera pas supprimé.",
   "account.deletion.password": "Votre mot de passe",
   "account.deletion.pending": "Votre compte sera supprimé après le {date}. Vous pouvez le conserver depuis le bandeau en haut de chaque page.",
   "account.deletion.title": "Supprimer votre compte?",
