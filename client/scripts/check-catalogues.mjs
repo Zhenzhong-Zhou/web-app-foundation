@@ -13,6 +13,8 @@
  *    the same placeholders as its English: a `{name}` dropped or renamed is
  *    a sentence that prints with a hole in it.
  * 4. Every message parses as ICU.
+ * 5. French guillemets hold their words with a no-break space, « like
+ *    this », so a narrow screen never leaves « at the end of a line.
  *
  * What it cannot see is a translation gone stale after its English changed;
  * ADR-054 has that commit list the keys in the handoff instead.
@@ -145,6 +147,15 @@ for (const locale of OTHERS) {
       );
     }
   }
+}
+
+// 5. French guillemets, held to their words.
+const french = read(path.join(LOCALES, 'fr-CA.json'));
+const loose = Object.keys(french).filter((id) => /« | »/.test(french[id]));
+if (loose.length > 0) {
+  problems.push(
+    `fr-CA guillemets take a no-break space (U+00A0) inside, not a space: ${loose.join(', ')}`,
+  );
 }
 
 if (problems.length > 0) {

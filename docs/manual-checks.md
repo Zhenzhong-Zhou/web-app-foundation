@@ -1682,6 +1682,9 @@ The pages, in a private window unless a check says otherwise.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R26** *(French guillemets)* In Français on a phone (390 px), read
+  the note under Numbering, « Imprimé ainsi », and Security's « Rester
+  connecté »: a « never ends a line with its words on the next.
 - **MC-R25** *(shipping on a phone)* At 320 px and 390 px with Larger
   text, open Ship on SO-DEMO-2, choose the location that holds its lot,
   and Choose lots: the line's Ship field sits under its words at the
@@ -2115,3 +2118,4 @@ first.
   extended.
 - 2026-10-20: the zone picker says this device, as Account does: MC-2602,
   MC-2603 and MC-2610 reworded.
+- 2026-10-20: French guillemets hold their words: MC-R26.
