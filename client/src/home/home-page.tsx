@@ -45,7 +45,8 @@ import { WelcomeCard } from './welcome-card';
  * only when something is late or near expiry), the quick actions, then a
  * card per kind of work the reader's role sees. A new organization gets
  * Getting started instead of a page of zeros. A newcomer's own welcome
- * leads it for their first two weeks (ADR-079).
+ * leads it for their first two weeks (ADR-079), with Getting started, while
+ * it shows, straight after it and before the counts and quick actions.
  *
  * Read when the page opens, with a refresh, as every list is; not live.
  */
@@ -309,6 +310,23 @@ function OrganizationHome() {
             />
           )}
 
+          {/* Straight after the welcome, which says the steps are in
+              Getting started, below; the quick actions after both. */}
+          {showStart && started && (
+            <GettingStarted
+              state={started}
+              canManage={can('organizations.update')}
+              canInvite={can('users.create')}
+              onDismiss={() => {
+                heading.current?.focus();
+                void act('/home/getting-started/dismiss', 'POST');
+              }}
+              onSkipTeam={() =>
+                void act('/home/getting-started/skip-team', 'POST')
+              }
+            />
+          )}
+
           {showCards && cards.length > 0 && (
             <Box
               sx={{
@@ -342,21 +360,6 @@ function OrganizationHome() {
 
           {/* What this person opened last; hidden while empty (ADR-058). */}
           <RecentCard />
-
-          {showStart && started && (
-            <GettingStarted
-              state={started}
-              canManage={can('organizations.update')}
-              canInvite={can('users.create')}
-              onDismiss={() => {
-                heading.current?.focus();
-                void act('/home/getting-started/dismiss', 'POST');
-              }}
-              onSkipTeam={() =>
-                void act('/home/getting-started/skip-team', 'POST')
-              }
-            />
-          )}
 
           {/* A column's floor is capped at the row, so on a phone a card is
               as wide as the screen rather than wider (found by

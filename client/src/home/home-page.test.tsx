@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { HomeResponse } from '../api/types.gen';
 import { browserTimeZone, setOrganizationTimeZone } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
+import { GETTING_STARTED_DONE, welcome } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { HomePage } from './home-page';
@@ -181,6 +182,54 @@ describe('HomePage', () => {
       .filter((link) => !start.contains(link));
     expect(quick).toHaveLength(1);
     expect(quick[0]).toHaveClass('MuiButton-outlined');
+  });
+
+  it('puts Getting started straight after the welcome, the quick actions after both, while it shows', async () => {
+    const respond = (start: HomeResponse['gettingStarted']) =>
+      server.use(
+        http.get('/api/v1/home', () =>
+          HttpResponse.json({
+            gettingStarted: start,
+            welcome: welcome({ founder: true, inviter: null, note: null }),
+            cards: [],
+          }),
+        ),
+      );
+    const follows = (first: Element, then: Element) =>
+      !!(
+        first.compareDocumentPosition(then) & Node.DOCUMENT_POSITION_FOLLOWING
+      );
+
+    respond({
+      ...COMPLETE,
+      complete: false,
+      steps: { ...COMPLETE.steps, location: false },
+    });
+    const { unmount } = renderWithAuth(routed(<HomePage />), {
+      permissions: ['organizations.update', 'orders.create'],
+    });
+    const card = await screen.findByRole('region', { name: /^Welcome to/ });
+    const start = screen.getByRole('region', { name: 'Getting started' });
+    const raise = screen
+      .getAllByRole('link', { name: 'Raise an order' })
+      .find((link) => !start.contains(link))!;
+    expect(follows(card, start)).toBe(true);
+    expect(follows(start, raise)).toBe(true);
+    unmount();
+
+    // Without Getting started, Home is as it was: the welcome, then the
+    // quick actions.
+    respond(GETTING_STARTED_DONE);
+    renderWithAuth(routed(<HomePage />), {
+      permissions: ['organizations.update', 'orders.create'],
+    });
+    const alone = await screen.findByRole('region', { name: /^Welcome to/ });
+    expect(
+      screen.queryByRole('region', { name: 'Getting started' }),
+    ).toBeNull();
+    expect(
+      follows(alone, screen.getByRole('link', { name: 'Raise an order' })),
+    ).toBe(true);
   });
 
   it('puts focus on the page’s heading once Getting started is dismissed', async () => {

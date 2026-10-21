@@ -754,9 +754,9 @@ Paper is checked first because it must not change at all.
   Each card's See all opens its list showing the same number of rows. Switch
   to 中文 and to a phone (or a narrow window): the counts sit two by two, cards
   stack, nothing scrolls sideways, and the wording reads naturally. Register a
-  new organization: Getting started leads with seven steps, its first open
-  step's button the only filled one on Home, the quick actions above it
-  outlined; add a location and
+  new organization: Getting started leads with seven steps, straight after
+  the welcome, its first open step's button the only filled one on Home,
+  and the quick actions after it, outlined; add a location and
   see its step ticked on Refresh. The last step reads Invite your team: its
   Invite someone opens Members with the Invite dialog, and closing it takes
   `?invite` off the address, so Back and a reload leave it shut (ADR-077).
@@ -1631,8 +1631,9 @@ The pages, in a private window unless a check says otherwise.
   organization from `npm run org:invite`'s link. Home's card reads You
   started this organization today, then in one line You may do everything
   here, including settings and closing the organization, and Setting up
-  the organization is in Getting started, below. The card sits above
-  Getting started, and its first week has only Confirm your email address
+  the organization is in Getting started, below. Getting started comes
+  straight after the card, before the quick actions, and the card's first
+  week has only Confirm your email address
   and Say who you are, 0 of 2 done, its bar empty on a grey track, as
   Getting started's is at 0 of 7.
   Dismiss Getting started, as its Owner, and reload: the first week grows
@@ -2054,3 +2055,5 @@ first.
 - 2026-10-20: the Admin's line says invite, not add: MC-3001 extended.
 - 2026-10-20: the Owner's line goes on in lower case after its colon:
   MC-3106 extended.
+- 2026-10-20: while Getting started shows it follows the welcome, before the
+  quick actions: MC-1559 and MC-3209 extended.
