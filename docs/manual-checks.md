@@ -1615,13 +1615,17 @@ The pages, in a private window unless a check says otherwise.
   The card is about a screen long, and nothing scrolls sideways at Larger
   text either. 隐藏 shows 欢迎卡片已隐藏… with 撤销. As MC-3209's founder,
   您在这里可以做所有事情 comes first, above 您的第一周, and no row folds.
-- **MC-3211** *(ADR-079)* People's New: as the demo Owner, after MC-3207,
-  People marks the newcomer New · joined today, and whoever joined in the
-  last two weeks New · joined and the day; the faces in a row stay level.
-  The line under the title adds how many joined in the last two weeks.
-  The demo's team joined when the seed ran, so within two weeks of
-  seeding they are marked too; from the fifteenth day only newcomers are.
-  In 中文, 新加入 · 今天; in Français, Nouveau · depuis aujourd’hui.
+- **MC-3211** *(ADR-079)* The demo's newcomer, and People's New. On a
+  freshly seeded demo, the Owner's Home has no welcome, nor has any of the
+  team's but Fatima Haddad's: she joined three days ago by the Owner's
+  invitation. Sign in as her (after MC-1903, which counts on her never
+  having signed in): her Home leads with the welcome, You joined on the
+  day as a Viewer, the Owner's note about Chloé under the Owner's
+  initials, and her first week at 0 of 3. As the demo Owner, People marks
+  Fatima alone New · joined and her day, and the line under the title
+  adds 1 joined in the last two weeks; after MC-3207, the newcomer too,
+  New · joined today, and 2 joined; the faces in a row stay level. In
+  中文, 新加入 · 今天; in Français, Nouveau · depuis aujourd’hui.
 - **MC-3212** *(ADR-079)* Your access on Account: as MC-3207's Viewer,
   Account has Your access at Demo …, below your details: Viewer, the line
   Looks at orders, stock and invoices, and changes nothing, then What you
@@ -1994,3 +1998,5 @@ first.
   extended.
 - 2026-10-20: section 32 read as walked: MC-3201, MC-3207 to MC-3209 and
   MC-R22 reworded, and MC-3106 names the welcome.
+- 2026-10-20: the demo's team joined months ago, Fatima Haddad three days
+  ago by an invitation with a note: MC-3211 rewritten.

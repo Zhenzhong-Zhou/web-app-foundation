@@ -29,9 +29,22 @@ import { ReturnAuthorizationsService } from '../modules/return-authorizations/re
 import { StockService } from '../modules/stock/stock.service';
 import { TaxCodesService } from '../modules/tax-codes/tax-codes.service';
 import { type Database, UNSAFE_GLOBAL_DB } from './database.module';
-import { lots, memberships, productVariants, roles, users } from './schema';
+import {
+  lots,
+  memberships,
+  organizations,
+  productVariants,
+  roles,
+  users,
+} from './schema';
 import { auditor, recordOpeningHistory } from './seed-demo-audit';
-import { addTeam, describeTeam, startOf } from './seed-demo-team';
+import {
+  addTeam,
+  daysAgo,
+  describeTeam,
+  FOUNDED_DAYS_AGO,
+  startOf,
+} from './seed-demo-team';
 import { addTeamWork } from './seed-demo-team-work';
 import { addVariety, daysFromNow } from './seed-demo-variety';
 import { runInTenantContext } from './tenant-context';
@@ -915,6 +928,20 @@ async function freshAccount(
   if (!user.organizationId) {
     throw new Error('Registration created no organization');
   }
+  // Started a while ago, so the demo reads as settled: no welcome for its
+  // Owner (ADR-079). The organization and its first membership begin at
+  // the same moment, as registering makes them, which is what makes the
+  // Owner its founder.
+  const founded = daysAgo(FOUNDED_DAYS_AGO);
+  await db
+    .update(organizations)
+    .set({ createdAt: founded })
+    .where(eq(organizations.id, user.organizationId));
+  await db
+    .update(memberships)
+    .set({ createdAt: founded })
+    .where(eq(memberships.userId, user.id));
+
   // Confirmed from the start, as the membership began (ADR-079): the
   // welcome lists Confirm your email address only for whoever joined
   // unconfirmed.
