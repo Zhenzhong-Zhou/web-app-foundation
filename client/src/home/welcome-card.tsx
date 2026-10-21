@@ -20,6 +20,7 @@ import type { Welcome } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { PersonAvatar } from '../components/person-avatar';
+import { formatDayMonth } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { roleLabel } from '../members/role-names';
 import { FirstWeek } from './first-week';
@@ -52,9 +53,6 @@ export function WelcomeCard({
   const organization = session?.organization?.name ?? '';
   const { access } = welcome;
 
-  // A calendar day, in UTC so it comes back exactly (formatDay).
-  const day = (value: string) =>
-    intl.formatDate(value, { day: 'numeric', month: 'long', timeZone: 'UTC' });
   const today = welcome.joinedOn === organizationToday();
   const role = roleLabel(access.role.name);
 
@@ -69,7 +67,7 @@ export function WelcomeCard({
             id: 'home.welcome.started',
             defaultMessage: 'You started this organization on {day}.',
           },
-          { day: day(welcome.joinedOn) },
+          { day: formatDayMonth(welcome.joinedOn) },
         )
     : today
       ? intl.formatMessage(
@@ -86,7 +84,11 @@ export function WelcomeCard({
             defaultMessage:
               'You joined on {day} as {name, select, Owner {an} Admin {an} other {a}} {role}.',
           },
-          { day: day(welcome.joinedOn), name: access.role.name, role },
+          {
+            day: formatDayMonth(welcome.joinedOn),
+            name: access.role.name,
+            role,
+          },
         );
   const until = today
     ? intl.formatMessage(
@@ -95,14 +97,14 @@ export function WelcomeCard({
           defaultMessage:
             'This card stays on Home for your first two weeks, until {day}.',
         },
-        { day: day(welcome.lastDay) },
+        { day: formatDayMonth(welcome.lastDay) },
       )
     : intl.formatMessage(
         {
           id: 'home.welcome.until',
           defaultMessage: 'This card stays on Home until {day}.',
         },
-        { day: day(welcome.lastDay) },
+        { day: formatDayMonth(welcome.lastDay) },
       );
 
   const note = welcome.note && (
