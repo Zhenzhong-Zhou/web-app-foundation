@@ -88,3 +88,8 @@ Karpathy's observations on LLM coding pitfalls
   `docs/conventions.md` and `docs/principles.md`.
 - `/usability-walkthrough`: walks a task through the running app as a
   persona and reports what gets in the way.
+
+Every feature branch runs `/simplify`, then `/code-review`, then, for any
+PR that changes what a person sees, `/usability-walkthrough` as one of
+its personas (`.claude/skills/usability-walkthrough/personas.md`), before
+the PR is opened. Each fix they lead to is its own commit.

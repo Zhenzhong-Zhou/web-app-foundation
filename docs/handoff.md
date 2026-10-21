@@ -1291,6 +1291,14 @@ in ADR-050's amendment.
   fixes go on the branch until its checks pass, never in a follow-up PR.
   Small chores (a CI line, a lint rule, a docs tidy) ride along in the next
   feature PR rather than getting one of their own.
+- **The three reviews, before the PR is opened** (20 October 2026): every
+  feature branch runs `/simplify`, then `/code-review`, then, for any PR
+  that changes what a person sees, `/usability-walkthrough` as one of its
+  personas (`.claude/skills/usability-walkthrough/personas.md`). Each fix
+  they lead to is its own commit. The PR description names the journey
+  walked and the persona who walked it. `/usability-walkthrough` was
+  missed on several recent PRs, so this branch's step 7 (ADR-079) walks
+  two journeys, to make up for ADR-077 and ADR-078.
 
 ### How code is delivered
 
