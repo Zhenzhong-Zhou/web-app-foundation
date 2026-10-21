@@ -370,7 +370,9 @@ folder by folder; these check what is already in place.
   issuing an invoice for a product with no Chinese name is refused naming
   the SKU; after Edit names adds one, it issues, and its printed lines
   show the Chinese name.
-- **MC-1409** On a partner, Document languages: the first offers the
+- **MC-1409** On a partner, Document languages: left alone, the first
+  reads The organization's default and the second Nothing else, never a
+  blank box. The first offers the
   organization's default and each language; the second is greyed out
   until a first is chosen and never offers the first again. Set Français
   then English and save; ship to that partner: the shipment carries
@@ -2078,3 +2080,5 @@ first.
 - 2026-10-20: Home's late tiles in the critical tone, readable: MC-R24.
 - 2026-10-20: the Shipments tab heads a shipment with the organization's
   day: MC-2605 extended.
+- 2026-10-20: a partner's document languages show the default and Nothing
+  else when left alone: MC-1409 extended.
