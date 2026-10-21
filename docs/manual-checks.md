@@ -1593,10 +1593,11 @@ The pages, in a private window unless a check says otherwise.
   a link to … Inviting colleagues waits until you confirm, with Resend the
   link, which then reads Sent, with focus on it (with the server stopped,
   it says Could not reach the server. and stays). What you can do here
-  says each thing once with all its verbs: Orders reads See purchase and
-  sales orders, raise, change, confirm and cancel orders, …, and Invoices
-  and returns … change and delete drafts and authorize, cancel and close
-  returns; it has no To do more, ask … line. The yellow banner asking to
+  says each thing once with all its verbs, a semicolon between phrases:
+  Orders reads See purchase and sales orders; raise, change, confirm and
+  cancel orders; …, and Invoices and returns … change and delete drafts;
+  authorize, cancel and close returns. With VoiceOver, each phrase is
+  heard apart. It has no To do more, ask … line. The yellow banner asking to
   confirm is not on Home, not even for a moment as Home opens, and is on
   Orders and every other page. Confirm from Mailpit: Home ticks
   Confirmed, and the banner is gone everywhere. Add a photo on Your
@@ -2009,4 +2010,6 @@ first.
 - 2026-10-20: dismissing the welcome or Getting started puts focus on
   Home's greeting: MC-1559 and MC-3207 extended.
 - 2026-10-20: what you can do here says a thing once with its verbs:
+  MC-3208 extended.
+- 2026-10-20: what you can do here sets its phrases apart by semicolons:
   MC-3208 extended.

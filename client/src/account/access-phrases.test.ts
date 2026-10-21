@@ -97,7 +97,7 @@ describe('what you can do here', () => {
     expect(sentences(ADMIN)).toEqual([
       [
         'Stock and locations',
-        'See what is on hand and each lot’s history, receive, ship and move stock, correct a count and add and change locations.',
+        'See what is on hand and each lot’s history; receive, ship and move stock; correct a count; add and change locations.',
       ],
       [
         'Products and licences',
@@ -105,30 +105,30 @@ describe('what you can do here', () => {
       ],
       [
         'Orders',
-        'See purchase and sales orders, raise, change, confirm and cancel orders, receive what was ordered and ship what was sold.',
+        'See purchase and sales orders; raise, change, confirm and cancel orders; receive what was ordered; ship what was sold.',
       ],
       [
         'Production',
-        'See production runs and what they used, plan and release runs and record what runs make.',
+        'See production runs and what they used; plan and release runs; record what runs make.',
       ],
       [
         'Invoices and returns',
-        'See invoices, credit notes and return authorizations, draft invoices, change and delete drafts and authorize, cancel and close returns.',
+        'See invoices, credit notes and return authorizations; draft invoices; change and delete drafts; authorize, cancel and close returns.',
       ],
       ['Costs, prices and tax', 'See tax codes and their rates.'],
       ['Partners', 'Add and change customers and suppliers.'],
       [
         'People and the organization',
-        'See who works here, the organization’s settings and the audit log, invite and remove members and change members’ roles.',
+        'See who works here, the organization’s settings and the audit log; invite and remove members; change members’ roles.',
       ],
     ]);
   });
 
-  it('says the verbs done to one thing once, and only those held', () => {
+  it('says the verbs done to one thing once, and only those held, each phrase apart', () => {
     expect(sentences(['orders.view', 'orders.create', 'orders.ship'])).toEqual([
       [
         'Orders',
-        'See purchase and sales orders, raise orders and ship what was sold.',
+        'See purchase and sales orders; raise orders; ship what was sold.',
       ],
     ]);
     expect(sentences(['orders.update'])).toEqual([
@@ -139,7 +139,7 @@ describe('what you can do here', () => {
     ).toEqual([
       [
         'Invoices and returns',
-        'See invoices and credit notes and draft, issue and void invoices.',
+        'See invoices and credit notes; draft, issue and void invoices.',
       ],
     ]);
   });

@@ -25,6 +25,7 @@
   "account.access.area.products": "Produits et licences",
   "account.access.area.stock": "Stock et emplacements",
   "account.access.ask": "Pour en faire plus, demandez à {names}.",
+  "account.access.between": "{before}; {after}",
   "account.access.change": "modifier {things}",
   "account.access.doing.authorize": "autoriser",
   "account.access.doing.cancel": "annuler",

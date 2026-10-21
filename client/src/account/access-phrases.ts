@@ -464,7 +464,15 @@ export function accessAreas(
     ];
     if (phrases.length === 0) return [];
 
-    const joined = intl.formatList(phrases);
+    // Phrase from phrase by a semicolon, not by the list's commas and
+    // "and", which inside a list of lists run together when read aloud:
+    // "correct a count; add and change locations".
+    const joined = phrases.reduce((before, after) =>
+      intl.formatMessage(
+        { id: 'account.access.between', defaultMessage: '{before}; {after}' },
+        { before, after },
+      ),
+    );
     return [
       {
         area,

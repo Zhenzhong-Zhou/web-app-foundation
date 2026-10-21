@@ -25,6 +25,7 @@
   "account.access.area.products": "产品和许可证",
   "account.access.area.stock": "库存和库位",
   "account.access.ask": "需要做更多，请联系 {names}。",
+  "account.access.between": "{before}；{after}",
   "account.access.change": "修改{things}",
   "account.access.doing.authorize": "授权",
   "account.access.doing.cancel": "取消",
