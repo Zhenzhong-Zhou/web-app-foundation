@@ -173,17 +173,11 @@ export class WelcomeService {
 
   /** Dismiss, for this membership alone; Undo brings it back. */
   async setDismissed(userId: string, dismissed: boolean): Promise<void> {
-    await this.tenantDb.transaction(async (tx, organizationId) => {
-      await tx
-        .update(memberships)
-        .set({ welcomeDismissedAt: dismissed ? new Date() : null })
-        .where(
-          and(
-            eq(memberships.organizationId, organizationId),
-            eq(memberships.userId, userId),
-          ),
-        );
-    });
+    await this.tenantDb.update(
+      memberships,
+      { welcomeDismissedAt: dismissed ? new Date() : null },
+      eq(memberships.userId, userId),
+    );
   }
 
   /**
