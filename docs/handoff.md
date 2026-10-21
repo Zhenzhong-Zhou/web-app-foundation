@@ -3,24 +3,27 @@
 Paste this into the new chat. Re-sync Project knowledge from `main` first, so
 the new session reads current code.
 
-## Now, 20 October 2026: read this first
+## Now, 21 October 2026: read this first
 
 The sections after this one are the longer history; where they disagree
 with this one, this one is current.
 
-- **Next: onboarding, a chain of three** (Bob's priority, 19 October
-  2026), one PR each, ADR first, each finished before the next begins.
-  Invitations (ADR-077) and registration by invitation (ADR-078) are
-  merged; a newcomer's first sign-in (ADR-079) is built and reviewed in
-  #152, waiting for its walk and merge: the first feature planned in this
-  chat and built by Claude Code (*Working agreements*, How code is
-  delivered).
-  After them, in this order unless a trigger brings one forward, each
-  with its entry in Open decisions: job roles; one person in two
-  organizations, then a practice organization (ADR-077, *Deferred*); a
-  public demo; plans and billing; the operator's console and support
-  access. Not code, and not to slip behind it: Render's free database
-  expires on 12 November 2026 (*Still to do, by hand*).
+- **Next: job roles, ADR-080** (`adr-080-job-roles`), planned in this chat
+  and built by Claude Code as ADR-079 was (*Working agreements*, How code
+  is delivered). Roles an organization makes, from a template or a copy,
+  several to a member and added together; the built-in three fixed; a role
+  given only by someone whose roles hold all it grants; Settings → Roles;
+  migration **0073**. #155 goes first; #147, #151, and parts of #148 and
+  #169 ride along. Next for it: the canvas designs, then the build brief in
+  `tmp/adr-080/`, one Claude Code prompt per commit.
+  After it, in this order unless a trigger brings one forward, each with
+  its entry in Open decisions: one person in two organizations, then a
+  practice organization (ADR-077, *Deferred*); a public demo; plans and
+  billing; the operator's console and support access. Not code, and not
+  to slip behind it: Render's free database expires on 12 November 2026
+  (*Still to do, by hand*).
+- **Onboarding, a chain of three** (Bob's priority, 19 October 2026), one
+  PR each, ADR first: done with ADR-079's merge (#152).
     1. **ADR-077, invitations** (`adr-077-invitations`): merged (#143).
        Invite replaces Add member, by email or a
        copied link, each link working to the end of its seventh day in
@@ -79,7 +82,7 @@ with this one, this one is current.
        `REGISTRATION=invitation` and `OPERATOR_EMAIL` since 20 October
        2026, and `npm run org:invite -- --list` ran against production.
     3. **ADR-079, a newcomer's first sign-in** (`adr-079-first-sign-in`):
-       built and reviewed in #152, not merged. A welcome card on Home, the
+       merged (#152). A welcome card on Home, the
        member's own for two weeks from joining: what they can do here, from
        their permissions; the inviter's note; and a first week ticked by what
        they do. Help in the top bar and in the card opens the page's guide, 21
@@ -90,8 +93,7 @@ with this one, this one is current.
        People. #144 fixed. Migrations **0070** to **0072**. Permissions
        brought in line with what they gate: `users.update` dropped, a role
        change needs `roles.assign`, the roles list `roles.view`. What building
-       it settled is in ADR-079's as-built amendment. Next: Bob's walk and
-       merge (*Still to do, by hand*), then job roles.
+       it settled is in ADR-079's as-built amendment.
 
 - **ADR-076, the audit log in words (`adr-076-audit-in-words`):** no
   migration; server and client. Every screen with an audit entry (the
@@ -410,13 +412,11 @@ with this one, this one is current.
 
 ### Still to do, by hand
 
-- **ADR-079, before merging #152:** `npm run migrate:all` (0070 to 0072);
-  walk section 32 of `docs/manual-checks.md` (MC-3201 to MC-3212) and
-  MC-R22, its phone line included; show the 中文 welcome and Help on a phone
-  to someone who reads only Chinese. After it merges: delete `tmp/adr-079`
-  (scratch, but `scripts/verify.sh` lints its Markdown) and the branch;
-  the dev database holds the walkthroughs' records, so `npm run seed:demo`
-  starts clean.
+- **ADR-080:** the canvas designs, then the build brief in `tmp/adr-080/`;
+  `npm run migrate:all` once 0073 lands. Delete `tmp/adr-079` if it is
+  still there (scratch, but `scripts/verify.sh` lints its Markdown). Show
+  the 中文 welcome and Help on a phone to someone who reads only Chinese,
+  if that has not been done since #152.
 - **Render's free database expires on 12 November 2026.** Move to a paid
   database, or create a free one again, empty, by the steps in
   `docs/runbooks/render.md`. Before any real customer: a paid database and
@@ -442,17 +442,14 @@ with this one, this one is current.
   MC-1602 (an upload in R2, the nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
   MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
   photos and 同事 on a phone.
-- **`walkthroughs-older`, before merging:** the walkthroughs owed by
-  ADR-069 to ADR-076 ran on it (20 October 2026), each as a persona: the
-  PDFs and the audit log as the novice bookkeeper in Chinese; the time
-  zone and the numbering as the owner in French on a phone; Larger text
-  and Orders as the warehouse worker on a phone; leaving, deleting and
-  closing as the novice bookkeeper in Chinese. Walk the checks its fixes
-  added or extended: MC-R18, MC-R23 to MC-R26, MC-1409, MC-1532,
-  MC-2302, MC-2402, MC-2404, MC-2602, MC-2603, MC-2605, MC-2606,
-  MC-2610, MC-2710, MC-2901 and MC-2904. Still by hand: show the close
-  dialog to someone who reads only Chinese (MC-2406). The dev database
-  holds the walks' demo organizations.
+- **The walkthroughs owed by ADR-069 to ADR-076:** done in #172 (20
+  October 2026), each as a persona: the PDFs and the audit log as the
+  novice bookkeeper in Chinese; the time zone and the numbering as the
+  owner in French on a phone; Larger text and Orders as the warehouse
+  worker on a phone; leaving, deleting and closing as the novice
+  bookkeeper in Chinese. Its fixes are merged, the rest filed as #154 to
+  #171. Still by hand: show the close dialog to someone who reads only
+  Chinese (MC-2406).
 - **Open issues:** #16 (licence status for suspended, cancelled and
   superseded), #18 (site licences), #25 (what the customer kept), #33 (one
   hook for Load more keyset paging), #125 (an order page's totals can
@@ -464,8 +461,7 @@ with this one, this one is current.
   write no entry; ADR-073's save is taken as sent, so it is not one of
   them), #138 (a contact with neither an email nor a phone fails with a
   500 rather than saying why), #142 (the client's Content-Security-Policy,
-  its own PR with a short ADR), #144 (another device's session keeps an
-  organization the account has left, fixed in #152), #147 (no way to
+  its own PR with a short ADR), #147 (no way to
   remove a member on screen), #148 (refusals with internal or
   off-glossary wording), #149 (copy inconsistencies the guides found),
   #150 (the translation review leaves out the guides) and #151 (the
@@ -486,7 +482,9 @@ with this one, this one is current.
   #169 (with no organization: Members, the bell, Account's words), #170
   (touch targets under 44 px) and #171 (the credit note's info box, the
   shipment's heading); and comments on #129, #133, #148 and #149, two of
-  whose items the branch fixes. #131 closes with ADR-073's PR; #41 and #127 closed with
+  whose items the branch fixes. ADR-080 takes #155 first, and #147, #151,
+  #148's permission refusal and #169's menu along with it. #144 closed
+  with #152. #131 closes with ADR-073's PR; #41 and #127 closed with
   ADR-072's. From ADR-070's
   review and its walkthrough in Chinese: #117
   (two one-second windows while a deletion completes), fixed on
@@ -501,9 +499,7 @@ with this one, this one is current.
 - **ADR-079's limits.** Help still slides over the page in windows under
   about 1140 px, or under about 1265 px at Large text and 1330 px at
   Larger, where a control under it can be focused out of sight (WCAG
-  2.4.11). Five ADR-077
-  messages would read "a Accountant" once organizations can make roles:
-  job roles' to fix. Vitest's on-disk cache does not see a guide just
+  2.4.11). Vitest's on-disk cache does not see a guide just
   added until `npx vitest --clearCache`; CI starts without one.
 - **The client has no Content-Security-Policy** (#142). Nothing in the
   repository sets one for the static site, and helmet's covers only the
@@ -516,7 +512,17 @@ with this one, this one is current.
   instead. CLAUDE.md says a write returns the detail its read returns,
   while conventions.md says a write that returns the resource returns the
   same detail class, and the settings writes return 204: make the two
-  agree.
+  agree. ADR-080's role routes follow CLAUDE.md, and its docs commit makes
+  the two agree.
+- **From #172's reviews, not its PR's.** To file as issues: MUI's derived
+  `error.light`, `error.dark` and `success.dark` below contrast (the
+  status page's icon discs at about 2.2–2.5:1, `success.dark` on Home's
+  dark panel at 4.30:1); and the Returns list heading each return with the
+  reader's day, not the organization's (ADR-072). Refactors, each when its
+  screen is next touched: a shared select that draws its empty choice
+  ("Everywhere", "All actions", "Top level") in words rather than as a
+  blank box, about nine of them; and a shared heading row whose actions
+  wrap, the order's Items row being the third copy made by hand.
 - **The typo lookup** sits at 270 ms of its 300 ms budget; one query per
   pass if it ever fails.
 - **An MUI warning,** logged twice by the Playwright run: "children must
@@ -573,6 +579,10 @@ with this one, this one is current.
 
 ### Deferred, each waiting for its trigger (in the ADRs)
 
+- Roles: attributes, a scope on a member's role or a condition on using a
+  permission; one record shared with a customer or a supplier (a portal);
+  non-Owners editing roles; a bell when your roles change; a made role's
+  name in two languages; caching what a member may do (ADR-080).
 - Time zones: a member's own zone for showing times; a zone per site; a
   receipt's rate day after a change of zone (ADR-072).
 
