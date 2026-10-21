@@ -1,22 +1,16 @@
 import type { INestApplication } from '@nestjs/common';
-import { eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import {
-  auditLog,
-  memberships,
-  permissions,
-  rolePermissions,
-  roles,
-  users,
-} from '../src/database/schema';
+import { auditLog, memberships, users } from '../src/database/schema';
 import {
   addMember as invited,
   body,
   createE2eApp,
+  customRole,
   registerOrganization,
   roleIdNamed,
 } from './utils/fixtures';
@@ -411,29 +405,11 @@ describe('Users (e2e)', () => {
       // Managing who belongs is not the same as what they may do: which role
       // a member holds is roles.assign, a privilege change of its own
       // (permissions.ts).
-      const [office] = await db
-        .insert(roles)
-        .values({
-          organizationId: alpha.organizationId,
-          name: 'Office',
-          isSystem: false,
-        })
-        .returning({ id: roles.id });
-      const rows = await db
-        .select({ id: permissions.id })
-        .from(permissions)
-        .where(
-          inArray(permissions.key, [
-            'users.view',
-            'users.create',
-            'users.delete',
-          ]),
-        );
-      await db
-        .insert(rolePermissions)
-        .values(
-          rows.map((row) => ({ roleId: office.id, permissionId: row.id })),
-        );
+      await customRole(app, alpha.organizationId, 'Office', [
+        'users.view',
+        'users.create',
+        'users.delete',
+      ]);
       const clerk = await addMember(alpha, 'clerk@alpha.example.com', 'Office');
       const member = await addMember(
         alpha,

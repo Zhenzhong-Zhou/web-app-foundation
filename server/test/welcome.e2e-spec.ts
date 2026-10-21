@@ -1,8 +1,9 @@
 import type { INestApplication } from '@nestjs/common';
-import { and, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 
 import { addDays, todayIn } from '../src/common/today';
 import { PasswordService } from '../src/core/auth/password.service';
+import type { MemberAccess } from '../src/core/authorization/dto/member-access-response.dto';
 import { ALL_PERMISSIONS } from '../src/core/authorization/permissions';
 import {
   type Database,
@@ -12,17 +13,16 @@ import {
   memberships,
   notifications,
   organizations,
-  permissions,
-  rolePermissions,
-  roles,
   users,
 } from '../src/database/schema';
+import type { Welcome } from '../src/modules/home/dto/home-response.dto';
 import {
   body,
   createE2eApp,
   createLocation,
   createPartner,
   createVariant,
+  customRole,
   invitationToken,
   PASSWORD,
   registerOrganization,
@@ -31,34 +31,6 @@ import {
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
 import { resetDatabase } from './utils/reset-db';
-
-interface Colleague {
-  id: string;
-  name: string;
-  photoFileId: string | null;
-}
-
-interface Access {
-  role: { id: string; name: string; description: string | null };
-  holdsEverything: boolean;
-  whomToAsk: Colleague[];
-}
-
-interface Done {
-  kind: string;
-  id: string | null;
-  words: string | null;
-}
-
-interface Welcome {
-  joinedOn: string;
-  lastDay: string;
-  founder: boolean;
-  inviter: Colleague | null;
-  note: string | null;
-  access: Access;
-  items: { key: string; done: boolean; what: Done | null }[];
-}
 
 interface Notification {
   type: string;
@@ -178,25 +150,6 @@ describe('The welcome (e2e)', () => {
       .update(users)
       .set({ emailVerifiedAt: at })
       .where(and(eq(users.id, userId), isNotNull(users.emailVerifiedAt)));
-  }
-
-  /** A role of the organization's own, holding exactly these. */
-  async function customRole(
-    organizationId: string,
-    name: string,
-    keys: readonly string[],
-  ) {
-    const [role] = await db
-      .insert(roles)
-      .values({ organizationId, name, isSystem: false })
-      .returning({ id: roles.id });
-    const rows = await db
-      .select({ id: permissions.id })
-      .from(permissions)
-      .where(inArray(permissions.key, [...keys]));
-    await db
-      .insert(rolePermissions)
-      .values(rows.map((row) => ({ roleId: role.id, permissionId: row.id })));
   }
 
   describe('who sees it, and until when', () => {
@@ -371,7 +324,7 @@ describe('The welcome (e2e)', () => {
 
     it('ticks shipping, planning a run and drafting an invoice each by its own entry, naming what was done', async () => {
       const alpha = await organization('alpha');
-      await customRole(alpha.organizationId, 'Dispatch', [
+      await customRole(app, alpha.organizationId, 'Dispatch', [
         'orders.view',
         'orders.ship',
         'production.create',
@@ -703,7 +656,9 @@ describe('The welcome (e2e)', () => {
 
       // Account's is the same answer.
       expect(
-        body<Access>(await sam.agent.get('/v1/account/membership').expect(200)),
+        body<MemberAccess>(
+          await sam.agent.get('/v1/account/membership').expect(200),
+        ),
       ).toEqual(access);
 
       // Someone who may change roles asks nobody, the Owner included.
@@ -712,7 +667,7 @@ describe('The welcome (e2e)', () => {
         whomToAsk: [],
       });
       expect(
-        body<Access>(
+        body<MemberAccess>(
           await alpha.agent.get('/v1/account/membership').expect(200),
         ),
       ).toMatchObject({ holdsEverything: true, whomToAsk: [] });
@@ -720,13 +675,13 @@ describe('The welcome (e2e)', () => {
 
     it('says whoever holds every permission may do everything, whatever the role is called', async () => {
       const alpha = await organization('alpha');
-      await customRole(alpha.organizationId, 'Partner', ALL_PERMISSIONS);
+      await customRole(app, alpha.organizationId, 'Partner', ALL_PERMISSIONS);
       const partner = await join(alpha, 'jo@example.com', 'Partner', {
         name: 'Jo Park',
       });
 
       expect(
-        body<Access>(
+        body<MemberAccess>(
           await partner.agent.get('/v1/account/membership').expect(200),
         ),
       ).toMatchObject({

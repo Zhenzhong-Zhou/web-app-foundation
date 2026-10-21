@@ -1,12 +1,17 @@
 import type { INestApplication } from '@nestjs/common';
 import { ThrottlerStorage } from '@nestjs/throttler';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../../src/database/database.module';
-import { roles, users } from '../../src/database/schema';
+import {
+  permissions,
+  rolePermissions,
+  roles,
+  users,
+} from '../../src/database/schema';
 import { MailService } from '../../src/shared/mail/mail.service';
 import {
   createTestApp,
@@ -144,6 +149,32 @@ export async function roleIdNamed(
     .from(roles)
     .where(and(eq(roles.organizationId, organizationId), eq(roles.name, name)));
 
+  return role.id;
+}
+
+/**
+ * A role of the organization's own, holding exactly these permissions.
+ * Inserted directly, since no route makes a role: a spec that needs one
+ * tests what it allows, not how it was made.
+ */
+export async function customRole(
+  app: INestApplication,
+  organizationId: string,
+  name: string,
+  keys: readonly string[],
+): Promise<string> {
+  const db = app.get<Database>(UNSAFE_GLOBAL_DB);
+  const [role] = await db
+    .insert(roles)
+    .values({ organizationId, name, isSystem: false })
+    .returning({ id: roles.id });
+  const rows = await db
+    .select({ id: permissions.id })
+    .from(permissions)
+    .where(inArray(permissions.key, [...keys]));
+  await db
+    .insert(rolePermissions)
+    .values(rows.map((row) => ({ roleId: role.id, permissionId: row.id })));
   return role.id;
 }
 
