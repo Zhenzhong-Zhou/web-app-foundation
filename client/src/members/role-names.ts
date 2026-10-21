@@ -34,7 +34,7 @@ const DESCRIPTIONS = defineMessages({
   Admin: {
     id: 'members.role.admin.description',
     defaultMessage:
-      'Day-to-day work: stock, orders, production and drafting invoices. Can add and remove members.',
+      'Day-to-day work: stock, orders, production and drafting invoices. Can invite and remove members.',
   },
   Viewer: {
     id: 'members.role.viewer.description',

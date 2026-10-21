@@ -928,7 +928,7 @@
   "members.lead.noInvite": "Chaque personne ici se connecte avec son propre courriel et son mot de passe. Un propriétaire ou un administrateur invite les nouveaux membres.",
   "members.role": "Rôle",
   "members.role.admin": "Administrateur",
-  "members.role.admin.description": "Le travail courant : stock, commandes, production et brouillons de factures. Peut ajouter et retirer des membres.",
+  "members.role.admin.description": "Le travail courant : stock, commandes, production et brouillons de factures. Peut inviter et retirer des membres.",
   "members.role.owner": "Propriétaire",
   "members.role.owner.description": "Tout, y compris les coûts, l’émission des factures, les paramètres et la fermeture de l’organisation.",
   "members.role.unknown": "Inconnu",

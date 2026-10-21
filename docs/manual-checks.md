@@ -1300,7 +1300,7 @@ Mailpit open.
 
 - **MC-3001** *(ADR-077)* Invite: the dialog asks for Email, then the
   three roles as cards, each with its line saying what it lets a person
-  do, Viewer chosen; Write to them in, starting at your own language; and
+  do (the Admin's ends Can invite and remove members), Viewer chosen; Write to them in, starting at your own language; and
   A note from you, counting to 500. Invite `newcomer@example.com` as
   Admin, writing to them in 简体中文, with the note `<b>Dock 3</b>`, a line
   break, then `bring boots`, and Send invitation. A notice says it was
@@ -2050,3 +2050,4 @@ first.
 - 2026-10-20: progress bars read empty with nothing done: MC-3209 extended.
 - 2026-10-20: Undo stays while focus or the pointer is on it, the welcome's
   and the gallery's: MC-1801 and MC-3207 extended.
+- 2026-10-20: the Admin's line says invite, not add: MC-3001 extended.

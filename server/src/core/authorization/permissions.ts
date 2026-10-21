@@ -306,7 +306,7 @@ export const SYSTEM_ROLE_DESCRIPTIONS: Record<SystemRole, Translatable> = {
   [SYSTEM_ROLES.ADMIN]: t({
     id: 'roles.description.admin',
     defaultMessage:
-      'Day-to-day work: stock, orders, production and drafting invoices. Can add and remove members.',
+      'Day-to-day work: stock, orders, production and drafting invoices. Can invite and remove members.',
   }),
   [SYSTEM_ROLES.VIEWER]: t({
     id: 'roles.description.viewer',

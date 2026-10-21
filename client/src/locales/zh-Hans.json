@@ -928,7 +928,7 @@
   "members.lead.noInvite": "每个人都用自己的邮箱和密码登录。新成员由所有者或管理员邀请。",
   "members.role": "角色",
   "members.role.admin": "管理员",
-  "members.role.admin.description": "日常工作：库存、订单、生产和起草发票。可以添加和移除成员。",
+  "members.role.admin.description": "日常工作：库存、订单、生产和起草发票。可以邀请和移除成员。",
   "members.role.owner": "所有者",
   "members.role.owner.description": "全部权限，包括成本、开具发票、设置和关闭组织。",
   "members.role.unknown": "未知",

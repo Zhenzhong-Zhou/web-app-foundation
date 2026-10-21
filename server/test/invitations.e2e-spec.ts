@@ -552,7 +552,7 @@ describe('Invitations (e2e)', () => {
         `Owner（${alpha.email}）邀请您以管理员身份加入。`,
       );
       expect(email.text).toContain(
-        '日常工作：库存、订单、生产和起草发票。可以添加和移除成员。',
+        '日常工作：库存、订单、生产和起草发票。可以邀请和移除成员。',
       );
       expect(email.text).toContain(
         '来自 Owner 的留言\n<b>Dock 3</b>\nbring boots',
@@ -740,7 +740,7 @@ describe('Invitations (e2e)', () => {
         role: {
           name: 'Admin',
           description:
-            'Day-to-day work: stock, orders, production and drafting invoices. Can add and remove members.',
+            'Day-to-day work: stock, orders, production and drafting invoices. Can invite and remove members.',
         },
         note: 'You will receive deliveries at the North site',
         lastDay: sent.link.lastDay!,

@@ -928,7 +928,7 @@
   "members.lead.noInvite": "Everyone here signs in with their own email and password. An Owner or an Admin invites new members.",
   "members.role": "Role",
   "members.role.admin": "Admin",
-  "members.role.admin.description": "Day-to-day work: stock, orders, production and drafting invoices. Can add and remove members.",
+  "members.role.admin.description": "Day-to-day work: stock, orders, production and drafting invoices. Can invite and remove members.",
   "members.role.owner": "Owner",
   "members.role.owner.description": "Everything, including costs, issuing invoices, settings and closing the organization.",
   "members.role.unknown": "Unknown",

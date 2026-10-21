@@ -505,6 +505,13 @@
       "when": 1792531642677,
       "tag": "0071_drop_users_update",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1792552992605,
+      "tag": "0072_admin_role_line",
+      "breakpoints": true
     }
   ]
 }

@@ -818,7 +818,7 @@
   "rmas.suchInvoice": "No such invoice",
   "rmas.suchReturn": "No such return",
   "rmas.suchReturnAuthorization": "No such return authorization",
-  "roles.description.admin": "Day-to-day work: stock, orders, production and drafting invoices. Can add and remove members.",
+  "roles.description.admin": "Day-to-day work: stock, orders, production and drafting invoices. Can invite and remove members.",
   "roles.description.owner": "Everything, including costs, issuing invoices, settings and closing the organization.",
   "roles.description.viewer": "Looks at orders, stock and invoices, and changes nothing.",
   "stock.adjustmentNeedsExactlyOne": "An adjustment needs exactly one of a source or a destination",

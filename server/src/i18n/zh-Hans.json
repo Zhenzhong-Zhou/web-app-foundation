@@ -818,7 +818,7 @@
   "rmas.suchInvoice": "未找到该发票",
   "rmas.suchReturn": "未找到该退货",
   "rmas.suchReturnAuthorization": "未找到该退货授权",
-  "roles.description.admin": "日常工作：库存、订单、生产和起草发票。可以添加和移除成员。",
+  "roles.description.admin": "日常工作：库存、订单、生产和起草发票。可以邀请和移除成员。",
   "roles.description.owner": "全部权限，包括成本、开具发票、设置和关闭组织。",
   "roles.description.viewer": "查看订单、库存和发票，不做任何修改。",
   "stock.adjustmentNeedsExactlyOne": "调整只能有来源或目标其中之一",
