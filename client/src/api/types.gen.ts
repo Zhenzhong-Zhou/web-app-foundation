@@ -48,6 +48,9 @@ export type CurrentSession = {
     | 'users.delete'
     | 'roles.view'
     | 'roles.assign'
+    | 'roles.create'
+    | 'roles.update'
+    | 'roles.delete'
     | 'organizations.view'
     | 'organizations.update'
     | 'organizations.export'
@@ -85,6 +88,7 @@ export type CurrentSession = {
     | 'partners.create'
     | 'partners.update'
     | 'orders.view'
+    | 'orders.view_prices'
     | 'orders.create'
     | 'orders.update'
     | 'orders.receive'
@@ -2660,6 +2664,9 @@ export const Permission = {
   USERS_DELETE: 'users.delete',
   ROLES_VIEW: 'roles.view',
   ROLES_ASSIGN: 'roles.assign',
+  ROLES_CREATE: 'roles.create',
+  ROLES_UPDATE: 'roles.update',
+  ROLES_DELETE: 'roles.delete',
   ORGANIZATIONS_VIEW: 'organizations.view',
   ORGANIZATIONS_UPDATE: 'organizations.update',
   ORGANIZATIONS_EXPORT: 'organizations.export',
@@ -2697,6 +2704,7 @@ export const Permission = {
   PARTNERS_CREATE: 'partners.create',
   PARTNERS_UPDATE: 'partners.update',
   ORDERS_VIEW: 'orders.view',
+  ORDERS_VIEW_PRICES: 'orders.view_prices',
   ORDERS_CREATE: 'orders.create',
   ORDERS_UPDATE: 'orders.update',
   ORDERS_RECEIVE: 'orders.receive',

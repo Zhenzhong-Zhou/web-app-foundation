@@ -25,6 +25,7 @@ const VIEWER: Permission[] = [
   'production.view',
   'partners.view',
   'orders.view',
+  'orders.view_prices',
 ];
 
 const ADMIN: Permission[] = [
@@ -78,7 +79,7 @@ describe('what you can do here', () => {
         'Products and licences',
         'See the catalogue, recipes and product licences.',
       ],
-      ['Orders', 'See purchase and sales orders.'],
+      ['Orders', 'See purchase and sales orders and their prices.'],
       ['Production', 'See production runs and what they used.'],
       [
         'Invoices and returns',
@@ -105,7 +106,7 @@ describe('what you can do here', () => {
       ],
       [
         'Orders',
-        'See purchase and sales orders; raise, change, confirm and cancel orders; receive what was ordered; ship what was sold.',
+        'See purchase and sales orders and their prices; raise, change, confirm and cancel orders; receive what was ordered; ship what was sold.',
       ],
       [
         'Production',
@@ -140,6 +141,14 @@ describe('what you can do here', () => {
       [
         'Invoices and returns',
         'See invoices and credit notes; draft, issue and void invoices.',
+      ],
+    ]);
+    expect(
+      sentences(['roles.view', 'roles.create', 'roles.update', 'roles.delete']),
+    ).toEqual([
+      [
+        'People and the organization',
+        'See who works here; make, change and delete roles.',
       ],
     ]);
   });

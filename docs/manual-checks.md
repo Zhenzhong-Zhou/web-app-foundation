@@ -1699,6 +1699,18 @@ The pages, in a private window unless a check says otherwise.
   `invitation_roles.csv` names each invitation's role by `invitation_id`
   and `role_id`, as the README's glossary says, in English, Français and
   中文.
+- **MC-3302** *(ADR-080)* Prices on orders, a permission of their own now,
+  change nothing for the built-in roles. Run `npm run seed` in `server/`,
+  which gives them to every Admin and Viewer. Signed in as a Viewer of the
+  demo team, Account → Your access reads, under Orders, See purchase and
+  sales orders and their prices; as an Admin, … and their prices; raise,
+  change, confirm and cancel orders; …; in Français … et leurs prix, in
+  中文 …和订单价格. Both still see every price on an order and in the
+  orders list. As the demo Owner, Download everything with the app in
+  Français: `roles.csv` gives Owner, Admin and Viewer the lines Invite
+  shows them in French, and the README's glossary says so;
+  `role_permissions.csv` lists `orders.view_prices` under all three, and
+  `roles.create`, `roles.update` and `roles.delete` under Owner alone.
 
 ## Regressions
 
@@ -2181,3 +2193,5 @@ first.
   MC-R28.
 - 2026-10-21: ADR-080, each member's and invitation's roles in rows of their
   own: section 33, MC-3301.
+- 2026-10-21: ADR-080, the permissions and their words, prices on orders
+  for the built-in roles and their lines in the export: MC-3302.

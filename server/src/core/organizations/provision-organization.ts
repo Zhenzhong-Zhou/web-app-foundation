@@ -11,7 +11,6 @@ import {
   roles,
 } from '../../database/schema';
 import {
-  SYSTEM_ROLE_DESCRIPTIONS,
   SYSTEM_ROLE_PERMISSIONS,
   SYSTEM_ROLES,
   type SystemRole,
@@ -53,9 +52,9 @@ export async function provisionOrganization(
     .values(
       Object.values(SYSTEM_ROLES).map((name) => ({
         organizationId: organization.id,
+        // In English: the screens translate it by key. No line: a built-in
+        // role's comes from the catalogues alone (ADR-080).
         name,
-        // In English, as the name is: the screens translate both by key.
-        description: SYSTEM_ROLE_DESCRIPTIONS[name].message,
         // Seeded roles the UI must not allow deleting: an org with no Owner
         // cannot be recovered.
         isSystem: true,

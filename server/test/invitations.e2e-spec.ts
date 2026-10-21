@@ -9,7 +9,6 @@ import {
   AccountDeletionService,
   deletionDayFor,
 } from '../src/core/auth/account-deletion.service';
-import { SYSTEM_ROLE_DESCRIPTIONS } from '../src/core/authorization/permissions';
 import { InvitationsSweepService } from '../src/core/invitations/invitations-sweep.service';
 import { lastDayOf } from '../src/core/invitations/link-end';
 import {
@@ -1406,7 +1405,7 @@ describe('Invitations (e2e)', () => {
     });
   });
 
-  it('describes each system role by what it lets a person do', async () => {
+  it('stores no line for a system role, whose words are the catalogues’ (ADR-080)', async () => {
     const alpha = await organization('alpha');
 
     const rows = await db
@@ -1415,10 +1414,6 @@ describe('Invitations (e2e)', () => {
       .where(eq(roles.organizationId, alpha.organizationId));
     expect(
       Object.fromEntries(rows.map((row) => [row.name, row.description])),
-    ).toEqual({
-      Owner: SYSTEM_ROLE_DESCRIPTIONS.Owner.message,
-      Admin: SYSTEM_ROLE_DESCRIPTIONS.Admin.message,
-      Viewer: SYSTEM_ROLE_DESCRIPTIONS.Viewer.message,
-    });
+    ).toEqual({ Owner: null, Admin: null, Viewer: null });
   });
 });

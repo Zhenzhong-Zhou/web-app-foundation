@@ -29,13 +29,16 @@ import {
   auditLog,
   files,
   organizations,
+  roles,
   sessions,
   users,
 } from '../src/database/schema';
+import french from '../src/i18n/fr-CA.json';
 import {
   addMember,
   body,
   createE2eApp,
+  customRole,
   insertMember,
   longDay,
   PASSWORD,
@@ -198,6 +201,46 @@ describe('Organization deletion (e2e)', () => {
       const kept = [...zip.keys()].filter((name) => name.startsWith('files/'));
       expect(kept).toEqual([`files/${logo.id}-${logo.original_name}`]);
       expect(zip.get(kept[0])!.length).toBeGreaterThan(0);
+    });
+
+    it('writes a built-in role’s line in its language, and a made role’s as written (ADR-080)', async () => {
+      const alpha = await registerOrganization(app, 'alpha');
+      const made = await customRole(app, alpha.organizationId, '仓库', [
+        'stock.view',
+      ]);
+      await db
+        .update(roles)
+        .set({ description: 'The dock' })
+        .where(eq(roles.id, made));
+
+      const res = await alpha.agent
+        .get('/v1/organization/export?locale=fr-CA')
+        .responseType('blob')
+        .expect(200);
+      const zip = readZip(res.body as Buffer);
+
+      const rows = readCsv(zip.get('roles.csv')!);
+      // Every column as stored, but the line.
+      expect(Object.keys(rows[0])).toEqual([
+        'id',
+        'organization_id',
+        'name',
+        'description',
+        'is_system',
+        'created_at',
+        'updated_at',
+      ]);
+      expect(
+        Object.fromEntries(rows.map((row) => [row.name, row.description])),
+      ).toEqual({
+        Owner: french['roles.description.owner'],
+        Admin: french['roles.description.admin'],
+        Viewer: french['roles.description.viewer'],
+        仓库: 'The dock',
+      });
+      expect(zip.get('README.txt')!.toString('utf8')).toContain(
+        french['organization.export.glossary.roles'],
+      );
     });
 
     it('fails one download, not the server, on a file it cannot read', async () => {
