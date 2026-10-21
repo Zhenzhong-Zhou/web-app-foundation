@@ -7,7 +7,7 @@ import {
 } from '../authorization/permissions';
 
 /** A built-in role, by its stored name; null for one an organization made. */
-function systemRoleOf(role: {
+export function systemRoleOf(role: {
   name: string;
   isSystem: boolean;
 }): SystemRole | null {

@@ -47,7 +47,7 @@ import type { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import type { InvitationPreview } from './dto/invitation-response.dto';
 import { inviterStillHere } from './inviter';
 import { lastDayOf } from './link-end';
-import { roleName, roleWords } from './role-words';
+import { roleName, roleWords, systemRoleOf } from './role-words';
 
 /**
  * The one refusal every link that is not live gets, all alike (ADR-077),
@@ -551,10 +551,7 @@ export class InvitationAcceptanceService {
         .where(and(eq(invitations.id, invitation.id), isNull(users.deletedAt)));
       if (!facts) return;
 
-      const role = roleName({
-        name: facts.roleName,
-        isSystem: facts.roleIsSystem,
-      });
+      const role = { name: facts.roleName, isSystem: facts.roleIsSystem };
 
       await this.notifications.emit([
         {
@@ -572,9 +569,16 @@ export class InvitationAcceptanceService {
             {
               id: 'notifications.joined.body',
               defaultMessage:
-                '{name} accepted your invitation and joined {organization} as {role, select, Owner {an} Admin {an} other {a}} {role}.',
+                '{name} accepted your invitation and joined {organization} as {system, select, Owner {an {role}} Admin {an {role}} Viewer {a {role}} other {{role}}}.',
             },
-            { name, organization: facts.organizationName, role },
+            {
+              name,
+              organization: facts.organizationName,
+              role: roleName(role),
+              // The article goes by which built-in role it is, never by
+              // its words; a role an organization named takes none.
+              system: systemRoleOf(role) ?? 'other',
+            },
           ),
           resourceType: 'user',
           resourceId: userId,

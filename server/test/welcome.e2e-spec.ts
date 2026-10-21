@@ -767,6 +767,20 @@ describe('The welcome (e2e)', () => {
       ).toEqual([]);
     });
 
+    it('says a built-in role with its article, and a role the organization named as named', async () => {
+      const alpha = await organization('alpha');
+      await customRole(app, alpha.organizationId, 'Office', ['users.view']);
+      await join(alpha, 'mei@example.com', 'Admin', { name: 'Mei Lin' });
+      await join(alpha, 'pat@example.com', 'Office', { name: 'Pat Kim' });
+
+      expect(
+        (await listIn(alpha.agent, 'en')).map((entry) => entry.body),
+      ).toEqual([
+        'Pat Kim accepted your invitation and joined alpha Co as Office.',
+        'Mei Lin accepted your invitation and joined alpha Co as an Admin.',
+      ]);
+    });
+
     it('tells nobody once the inviter has left', async () => {
       const alpha = await organization('alpha');
       const mei = await join(alpha, 'mei@example.com', 'Admin', {
