@@ -44,16 +44,15 @@ export class LicenceOverrideGuard implements CanActivate {
       );
 
     // Resolved per request, never cached (ADR-016).
-    const held = await this.permissions.listForMember(ctx.membershipId);
+    const held = new Set(
+      await this.permissions.listForMember(ctx.membershipId),
+    );
 
-    if (!held.includes(PERMISSIONS.PRODUCTION_OVERRIDE_LICENCE)) {
-      throw new ForbiddenException(
-        t({
-          id: 'production.releasingUnderLicencePolicy',
-          defaultMessage:
-            'Releasing under a licence the policy refuses needs production.override_licence',
-        }),
-      );
+    if (!held.has(PERMISSIONS.PRODUCTION_OVERRIDE_LICENCE)) {
+      // In the reader's words, as the route's own guard refuses (#148).
+      throw await this.permissions.refusal(ctx, held, [
+        PERMISSIONS.PRODUCTION_OVERRIDE_LICENCE,
+      ]);
     }
 
     return true;

@@ -118,8 +118,9 @@ export function includesOwner(
 /**
  * The organization's lock on who is Owner, held to the end of the
  * transaction: every change that could take Owner from someone counts the
- * Owners under it, so two Owners demoting or removing each other at once
- * cannot leave none (ADR-080), as counting without it could.
+ * Owners under it, leaving and deleting an account too, so two Owners
+ * demoting, removing or leaving at once cannot leave none (ADR-080), as
+ * counting without it could.
  */
 export async function lockOwners(
   tx: Transaction,

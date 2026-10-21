@@ -421,7 +421,12 @@ describe('Licence at release (e2e)', () => {
         'Admin',
       );
 
-      await release(admin, s, OVERRIDE).expect(403);
+      const refused = await release(admin, s, OVERRIDE).expect(403);
+      // In their words (#148); an Admin may change roles, so is told of
+      // nobody to ask.
+      expect(message(refused)).toBe(
+        'Your role, Admin, doesn’t include “Release a run under an expired or not-yet-in-force licence, with a reason”.',
+      );
       await release(admin, s).expect(409);
       await expectNothingReleased(org.agent, s.runId);
     });

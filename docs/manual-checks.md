@@ -1735,6 +1735,14 @@ The pages, in a private window unless a check says otherwise.
   who joined first first, can change your roles, never Missing permission:
   costs.view. With the app in Français, « … », … peut / peuvent modifier
   vos rôles; in 中文, 您的角色（Warehouse）不包含“…”。… 可以更改您的角色。
+  Correcting a count is refused the same way: as Daniel Okafor (Admin),
+  open Correct the count on an Inventory row and fill it in, then, as the
+  demo Owner in another browser, change Daniel's role to Warehouse on
+  Members. Save correction is refused with Your role, Warehouse, doesn’t
+  include “Correct a count when the system is wrong”, then whom to ask,
+  never Correcting a count needs stock.adjust. Change Daniel back to
+  Admin. A release sent with a licence override by a role without it is
+  refused in the same words.
 - **MC-3305** *(ADR-080)* Prices on orders stay with whoever may see
   them. Signed in as Tom Becker (Warehouse), with the Network tab open,
   open SO-DEMO-1: its order response has no `unitPrice`, `lineTotal`,
@@ -2238,3 +2246,5 @@ first.
   hold the made roles Warehouse and Sales, giving only what you hold, the
   refusal in words, prices on orders, and a made role without an article:
   MC-1903, MC-3007 and MC-3211 changed, MC-3303 to MC-3306.
+- 2026-10-21: ADR-080, correcting a count and a licence override refused
+  in words: MC-3304 extended.

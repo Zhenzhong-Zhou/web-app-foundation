@@ -41,15 +41,15 @@ export class AdjustmentGuard implements CanActivate {
       );
 
     // Resolved per request, never cached (ADR-016).
-    const held = await this.permissions.listForMember(ctx.membershipId);
+    const held = new Set(
+      await this.permissions.listForMember(ctx.membershipId),
+    );
 
-    if (!held.includes(PERMISSIONS.STOCK_ADJUST)) {
-      throw new ForbiddenException(
-        t({
-          id: 'stock.correctingCountNeedsStock',
-          defaultMessage: 'Correcting a count needs stock.adjust',
-        }),
-      );
+    if (!held.has(PERMISSIONS.STOCK_ADJUST)) {
+      // In the reader's words, as the route's own guard refuses (#148).
+      throw await this.permissions.refusal(ctx, held, [
+        PERMISSIONS.STOCK_ADJUST,
+      ]);
     }
 
     return true;

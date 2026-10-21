@@ -34,6 +34,7 @@ import {
   PASSWORD,
   registerOrganization,
   roleIdNamed,
+  roleIdsOf,
 } from './utils/fixtures';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
@@ -226,6 +227,42 @@ describe('Account deletion (e2e)', () => {
         .from(memberships)
         .where(eq(memberships.organizationId, owner.organizationId));
       expect(remaining).toHaveLength(1);
+    });
+
+    /**
+     * Leaving counts the Owners under the last-Owner rule's own lock
+     * (ADR-080): one Owner leaving as the other steps down would otherwise
+     * each see the other still Owner, and leave none. The membership rows
+     * are held, as above, until both requests are waiting on a lock.
+     */
+    it('keeps an Owner when one Owner leaves as the other steps down', async () => {
+      const { owner, member, memberId } = await team('Owner');
+      const ownerRole = await roleIdNamed(app, owner.organizationId, 'Owner');
+      const viewer = await roleIdNamed(app, owner.organizationId, 'Viewer');
+      await owner.agent.get('/v1/auth/me').expect(200);
+      await member.get('/v1/auth/me').expect(200);
+
+      let acting!: Promise<{ status: number }[]>;
+      await db.transaction(async (tx) => {
+        await tx
+          .select({ id: memberships.id })
+          .from(memberships)
+          .where(eq(memberships.organizationId, owner.organizationId))
+          .for('update');
+        acting = Promise.all([
+          owner.agent.delete('/v1/account/membership'),
+          member.patch(`/v1/users/${memberId}`).send({ roleIds: [viewer] }),
+        ]);
+        await waitingOnLocks(2);
+      });
+      const results = await acting;
+
+      expect(results.map((res) => res.status).sort()).toEqual([204, 409]);
+      const owners = [
+        ...(await roleIdsOf(app, owner.userId)),
+        ...(await roleIdsOf(app, memberId)),
+      ].filter((id) => id === ownerRole);
+      expect(owners).toHaveLength(1);
     });
   });
 

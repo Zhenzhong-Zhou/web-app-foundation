@@ -41,6 +41,7 @@ import {
 import { recipientLocale, t, type Translatable } from '../../i18n/translate';
 import { type Mail, MailService } from '../../shared/mail/mail.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
+import { lockOwners } from '../authorization/giving';
 import { rolesOfMembers } from '../authorization/member-roles';
 import { holdsOwner } from '../authorization/owner';
 import { AccountService } from './account.service';
@@ -719,18 +720,24 @@ export class AccountDeletionService {
  * only for another such lock, not for writes that merely refer to the
  * organization; in id order, so two holders of the same set cannot
  * deadlock.
+ *
+ * Then each one's lock on who is Owner, in the same order, so the Owners
+ * are counted under the last-Owner rule's own lock (ADR-080): an Owner
+ * leaving as another steps down or is removed would otherwise each see
+ * the other still Owner, and leave none.
  */
 async function lockOrganizations(
   tx: Transaction,
   organizationIds: string[],
 ): Promise<void> {
   if (organizationIds.length === 0) return;
-  await tx
+  const locked = await tx
     .select({ id: organizations.id })
     .from(organizations)
     .where(inArray(organizations.id, organizationIds))
     .orderBy(asc(organizations.id))
     .for('no key update');
+  for (const { id } of locked) await lockOwners(tx, id);
 }
 
 /** The refusal for a block: why, and what to do next (ADR-069). */
