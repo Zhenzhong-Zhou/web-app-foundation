@@ -364,6 +364,19 @@ describe('the welcome card', () => {
     ).toBeVisible();
   });
 
+  it('draws its progress empty with nothing done, on a grey track', async () => {
+    serve(welcome());
+    renderHome();
+
+    const region = await card();
+    expect(within(region).getByText('0 of 3 done')).toBeVisible();
+    const track = region.querySelector('.MuiLinearProgress-root');
+    const bar = region.querySelector('.MuiLinearProgress-bar');
+    // Not a pale shade of the bar's green, which read as a full bar.
+    expect(track).toHaveStyle({ backgroundColor: 'rgba(0, 0, 0, 0.08)' });
+    expect(bar).toHaveStyle({ transform: 'translateX(-100%)' });
+  });
+
   it('says Done, opening nothing, for an item whose record has since gone', async () => {
     serve(
       welcome({

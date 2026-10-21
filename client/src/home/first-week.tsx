@@ -206,7 +206,9 @@ export function FirstWeek({
         value={(done / items.length) * 100}
         color="success"
         aria-hidden
-        sx={{ height: 8, borderRadius: 4 }}
+        // A grey track: MUI's is a pale shade of the bar, which reads as
+        // full with nothing done.
+        sx={{ height: 8, borderRadius: 4, bgcolor: 'action.selected' }}
       />
       <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
         {items.map((item) => (

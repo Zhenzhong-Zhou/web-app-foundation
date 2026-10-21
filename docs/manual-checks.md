@@ -1629,7 +1629,8 @@ The pages, in a private window unless a check says otherwise.
   here, including settings and closing the organization, and Setting up
   the organization is in Getting started, below. The card sits above
   Getting started, and its first week has only Confirm your email address
-  and Say who you are.
+  and Say who you are, 0 of 2 done, its bar empty on a grey track, as
+  Getting started's is at 0 of 7.
   Dismiss Getting started, as its Owner, and reload: the first week grows
   to the founder's work, Look up, Receive stock and Raise an order.
 - **MC-3210** *(ADR-079)* The welcome in 中文 on a phone, about 390 px,
@@ -2043,3 +2044,4 @@ first.
   MC-3207 extended.
 - 2026-10-20: Help beside the page on a computer, the rail folded while it
   is open: MC-3202 and MC-3203 rewritten.
+- 2026-10-20: progress bars read empty with nothing done: MC-3209 extended.

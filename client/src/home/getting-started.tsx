@@ -227,7 +227,13 @@ export function GettingStarted({
         value={(done / STEPS.length) * 100}
         color="success"
         aria-hidden
-        sx={{ my: 1.5, height: 8, borderRadius: 4 }}
+        // A grey track, as the welcome's first week has (first-week.tsx).
+        sx={{
+          my: 1.5,
+          height: 8,
+          borderRadius: 4,
+          bgcolor: 'action.selected',
+        }}
       />
       {STEPS.map(({ key, meta }) => {
         const finished = doneOf(key);
