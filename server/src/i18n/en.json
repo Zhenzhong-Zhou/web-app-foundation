@@ -837,7 +837,7 @@
   "production.licence.expired": "{name} expired on {day}, so this run cannot be released under it",
   "production.licence.laterDate": "a later date",
   "production.licence.missing": "This recipe carries no licence, and this organization requires one to release a run",
-  "production.licence.needsOverride": "{refusal} without an override — someone holding production.override_licence can release it with a reason",
+  "production.licence.needsOverride": "{refusal} without an override — someone whose roles include {permission} can release it",
   "production.licence.notInForce": "{name} is not in force until {day}, so this run cannot be released under it",
   "production.licence.unknownDate": "an unknown date",
   "production.licence.withdrawn": "{name} has been withdrawn, so nothing can be made under it",

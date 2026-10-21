@@ -369,9 +369,9 @@ describe('Roles (e2e)', () => {
           .send({ name: 'Packers', permissions: [] })
           .expect(403),
       );
-      // An Admin may change roles, so is told of nobody to ask.
+      // An Admin may change roles, but not give what their roles lack.
       expect(refused.message).toBe(
-        'Your role, Admin, doesn’t include “Make a role”.',
+        'Your role, Admin, doesn’t include “Make a role”. Owner can change your roles.',
       );
     });
 
@@ -779,6 +779,79 @@ describe('Roles (e2e)', () => {
       );
       expect(recent.message).toBe(
         'None of your roles, Packers and Sales, includes “See production runs and what they consumed”. Owner can change your roles.',
+      );
+    });
+
+    it('names up to three who could give what is lacking, the Owners first, never the reader', async () => {
+      const alpha = await organization('alpha');
+      const packers = await make(alpha, 'Packers', template('stock_lookup'));
+      // Everything Packers holds, costs and changing roles: could give it.
+      const leads = await make(alpha, 'Leads', [
+        ...template('stock_lookup'),
+        'costs.view',
+        'roles.assign',
+      ]);
+      // Costs and changing roles, but not all Packers holds, so could not
+      // change a packer's roles at all.
+      const bookkeepers = await make(alpha, 'Bookkeepers', [
+        ...template('finance'),
+        'roles.assign',
+      ]);
+      // Costs, without changing roles.
+      const costing = await make(alpha, 'Costing', [
+        ...template('stock_lookup'),
+        'costs.view',
+      ]);
+
+      const packer = await join(
+        alpha,
+        'sam@example.com',
+        [packers.id],
+        'Sam Lee',
+      );
+      await join(alpha, 'ada@example.com', [leads.id], 'Ada Byrne');
+      const admin = await join(
+        alpha,
+        'ben@example.com',
+        [await builtIn(alpha, 'Admin')],
+        'Ben Cole',
+      );
+      await join(alpha, 'dee@example.com', [bookkeepers.id], 'Dee Park');
+      await join(alpha, 'cy@example.com', [costing.id], 'Cy Wu');
+      // An Owner who joined after Ada, named before her; and a second lead,
+      // past the three.
+      await join(
+        alpha,
+        'olu@example.com',
+        [await builtIn(alpha, 'Owner')],
+        'Olu Ade',
+      );
+      await join(alpha, 'eve@example.com', [leads.id], 'Eve Moss');
+
+      const refused = (agent: Agent, language = 'en') =>
+        agent
+          .get('/v1/costs/valuation')
+          .set('Accept-Language', language)
+          .expect(403)
+          .then((res) => body<Refusal>(res).message);
+      const costs =
+        '“See what stock, lots and batches cost, and exchange rates”';
+
+      expect(await refused(packer.agent)).toBe(
+        `Your role, Packers, doesn’t include ${costs}. Owner, Olu Ade, and Ada Byrne can change your roles.`,
+      );
+      expect(await refused(packer.agent, 'fr-CA')).toBe(
+        `Votre rôle, Packers, ne comprend pas «\u00a0${french['permissions.costs.view']}\u00a0». Owner, Olu Ade et Ada Byrne peuvent modifier vos rôles.`,
+      );
+      expect(await refused(packer.agent, 'zh-Hans')).toBe(
+        `您的角色（Packers）不包含“${chinese['permissions.costs.view']}”。Owner、Olu Ade和Ada Byrne 可以更改您的角色。`,
+      );
+
+      // An Admin may change roles, and is told of the Owners, who can give
+      // it: not Ada, whose Leads holds less than Admin does, and never the
+      // Admin themself.
+      expect(await refused(admin.agent)).toBe(
+        `Your role, Admin, doesn’t include ${costs}. Owner and Olu Ade can change your roles.`,
       );
     });
   });

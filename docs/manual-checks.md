@@ -1727,22 +1727,33 @@ The pages, in a private window unless a check says otherwise.
   As the demo Owner the same changes are made, each one entry under
   Member’s roles changed, from and to.
 - **MC-3304** *(ADR-080, #148)* A refusal says, in your words, what your
-  roles don't include and whom to ask. Signed in as Tom Becker
+  roles don't include and who could give it. Signed in as Tom Becker
   (Warehouse), with the Network tab open, go to `/costs`: the page says
   you don't have access, and the refused request's message reads Your
   role, Warehouse, doesn’t include “See what stock, lots and batches cost,
-  and exchange rates”, then the first three who may change roles, those
-  who joined first first, can change your roles, never Missing permission:
-  costs.view. With the app in Français, « … », … peut / peuvent modifier
-  vos rôles; in 中文, 您的角色（Warehouse）不包含“…”。… 可以更改您的角色。
-  Correcting a count is refused the same way: as Daniel Okafor (Admin),
+  and exchange rates”. Demo Owner and Anika Sharma can change your roles.,
+  never Missing permission: costs.view. Up to three are named, the Owners
+  first, then whoever may change roles and holds both what you lack and
+  everything your roles do, those who joined first first; no Admin here,
+  since Admin lacks costs. As Daniel Okafor (Admin), who may change roles
+  but not give costs, the same address names the same two. With the app
+  in Français, « … », … peut / peuvent modifier vos rôles; in 中文,
+  您的角色（Warehouse）不包含“…”。… 可以更改您的角色。 Correcting a count
+  is refused the same way: as Daniel,
   open Correct the count on an Inventory row and fill it in, then, as the
   demo Owner in another browser, change Daniel's role to Warehouse on
   Members. Save correction is refused with Your role, Warehouse, doesn’t
-  include “Correct a count when the system is wrong”, then whom to ask,
-  never Correcting a count needs stock.adjust. Change Daniel back to
-  Admin. A release sent with a licence override by a role without it is
-  refused in the same words.
+  include “Correct a count when the system is wrong”. Demo Owner, Anika
+  Sharma, and 李静 can change your roles. (an Admin holds all Warehouse
+  does, and the reader is never named), never Correcting a count needs
+  stock.adjust. Change Daniel back to Admin. A release sent with a
+  licence override by a role without it is refused in the same words. As
+  the demo Owner, open Release on a planned run whose recipe's licence is
+  current and pick a source, then, in another tab, set that licence's
+  Valid until to yesterday, and press Release: refused, … without an
+  override — someone whose roles include “Release a run under an expired
+  or not-yet-in-force licence, with a reason” can release it, never
+  production.override_licence.
 - **MC-3305** *(ADR-080)* Prices on orders stay with whoever may see
   them. Signed in as Tom Becker (Warehouse), with the Network tab open,
   open SO-DEMO-1: its order response has no `unitPrice`, `lineTotal`,
@@ -2248,3 +2259,6 @@ first.
   MC-1903, MC-3007 and MC-3211 changed, MC-3303 to MC-3306.
 - 2026-10-21: ADR-080, correcting a count and a licence override refused
   in words: MC-3304 extended.
+- 2026-10-21: ADR-080, a refusal names who could give what is missing, the
+  Owners first, and a release that needs an override names the permission
+  in words: MC-3304 rewritten.

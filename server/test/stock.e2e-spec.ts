@@ -139,9 +139,9 @@ describe('Stock (e2e)', () => {
 
   /**
    * A role with stock.move but not stock.adjust, which no seeded role has.
-   * Inserted directly because roles are read-only over HTTP — the API has no
-   * way to make one, and this is testing the guard rather than role
-   * management.
+   * Inserted directly, holding these two alone: POST /v1/roles would add
+   * the three every role holds and refuse stock.move without what it needs
+   * (ADR-080), and this is testing the guard rather than role management.
    */
   async function moverRole(organizationId: string) {
     const [role] = await db

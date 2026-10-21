@@ -2,6 +2,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
 import { todayIn } from '../../common/today';
+import { PERMISSIONS, quotedLine } from '../../core/authorization/permissions';
 import type { Transaction } from '../../database/database.module';
 import {
   organizations,
@@ -146,10 +147,14 @@ export function settleLicence(
           {
             id: 'production.licence.needsOverride',
             defaultMessage:
-              '{refusal} without an override — someone holding production.override_licence can release it with a reason',
+              '{refusal} without an override — someone whose roles include {permission} can release it',
           },
-          // A sentence of its own, rendered in the same language.
-          { refusal: refusal(check) },
+          // A sentence of its own, rendered in the same language, and the
+          // permission in its own line, never its key (#148).
+          {
+            refusal: refusal(check),
+            permission: quotedLine(PERMISSIONS.PRODUCTION_OVERRIDE_LICENCE),
+          },
         ),
       );
     }

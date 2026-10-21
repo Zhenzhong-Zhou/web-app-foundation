@@ -837,7 +837,7 @@
   "production.licence.expired": "{name} 已于 {day} 过期，因此不能依据它下达此生产订单",
   "production.licence.laterDate": "以后的某个日期",
   "production.licence.missing": "此配方没有许可证，而本组织要求下达生产订单前必须有许可证",
-  "production.licence.needsOverride": "{refusal}，且没有例外批准——持有 production.override_licence 的人可以填写原因后下达",
+  "production.licence.needsOverride": "{refusal}，且没有例外批准——角色包含{permission}的人可以下达",
   "production.licence.notInForce": "{name} 在 {day} 之前尚未生效，因此不能依据它下达此生产订单",
   "production.licence.unknownDate": "未知日期",
   "production.licence.withdrawn": "{name} 已被撤销，因此不能依据它生产任何产品",

@@ -837,7 +837,7 @@
   "production.licence.expired": "{name} a expiré le {day}; cet ordre ne peut donc pas être lancé sous cette licence",
   "production.licence.laterDate": "une date ultérieure",
   "production.licence.missing": "Cette recette ne porte aucune licence, et cette organisation en exige une pour lancer un ordre",
-  "production.licence.needsOverride": "{refusal}, sans dérogation — une personne détenant production.override_licence peut le lancer avec un motif",
+  "production.licence.needsOverride": "{refusal}, sans dérogation — une personne dont les rôles comprennent {permission} peut le lancer",
   "production.licence.notInForce": "{name} n’est pas en vigueur avant le {day}; cet ordre ne peut donc pas être lancé sous cette licence",
   "production.licence.unknownDate": "une date inconnue",
   "production.licence.withdrawn": "{name} a été retirée; rien ne peut donc être fabriqué sous cette licence",

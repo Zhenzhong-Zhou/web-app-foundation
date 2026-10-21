@@ -1,5 +1,18 @@
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, exists, isNull, ne, type SQL } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  countDistinct,
+  desc,
+  eq,
+  exists,
+  inArray,
+  isNull,
+  ne,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm';
 
 import type { Database } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
@@ -13,10 +26,11 @@ import {
 import { t } from '../../i18n/translate';
 import type { RequestContext } from '../auth/request-context';
 import { grantsOfMember, rolesOfMembers } from './member-roles';
+import { holdsOwner } from './owner';
 import { type Permission, PERMISSIONS, quotedLine } from './permissions';
 import { roleName } from './role-words';
 
-/** The most names "To do more, ask …" gives (ADR-079). */
+/** The most names "To do more, ask …" and a refusal give (ADR-079). */
 const WHOM_TO_ASK = 3;
 
 /** A member who holds a permission, as whoever is told or asked names them. */
@@ -117,10 +131,64 @@ export class PermissionsService {
   }
 
   /**
+   * Whom a refusal names (ADR-080): up to three who could give the reader
+   * what they lack, the Owners first, then those who joined first, never
+   * the reader. Giving it takes roles.assign and what is lacking, and
+   * changing the reader's roles at all takes everything those roles
+   * already grant (giving.ts), so a refused Admin is told of the Owners
+   * rather than of the other Admins, who lack it too. An Owner always
+   * can, so is found as an Owner rather than by their grants: when nobody
+   * else qualifies, the Owners are named.
+   */
+  private whoCanGive(
+    context: Pick<RequestContext, 'userId'> & { organizationId: string },
+    held: ReadonlySet<Permission>,
+    missing: readonly Permission[],
+  ): Promise<Holder[]> {
+    const needed = [
+      ...new Set([PERMISSIONS.ROLES_ASSIGN, ...held, ...missing]),
+    ];
+    const granted = this.db
+      .select({ count: countDistinct(permissions.key) })
+      .from(membershipRoles)
+      .innerJoin(
+        rolePermissions,
+        eq(rolePermissions.roleId, membershipRoles.roleId),
+      )
+      .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
+      .where(
+        and(
+          eq(membershipRoles.membershipId, memberships.id),
+          inArray(permissions.key, needed),
+        ),
+      );
+
+    return this.db
+      .select({ id: users.id, name: users.name })
+      .from(memberships)
+      .innerJoin(users, eq(users.id, memberships.userId))
+      .where(
+        and(
+          eq(memberships.organizationId, context.organizationId),
+          isNull(users.deletedAt),
+          ne(memberships.userId, context.userId),
+          or(holdsOwner(memberships.id), sql`${granted} = ${needed.length}`),
+        ),
+      )
+      .orderBy(
+        desc(holdsOwner(memberships.id)),
+        asc(memberships.createdAt),
+        asc(memberships.id),
+      )
+      .limit(WHOM_TO_ASK);
+  }
+
+  /**
    * The refusal of something the reader's roles don't reach (#148,
    * ADR-080), in their language: their roles by name, what is missing in
-   * each permission's own line, and whom to ask, in place of the bare
-   * keys. The guard's, and that of a route that gates what it returns.
+   * each permission's own line, and who could give it, in place of the
+   * bare keys. The guard's, and that of a route that gates what it
+   * returns.
    */
   async refusal(
     context: Pick<RequestContext, 'userId' | 'organizationId' | 'membershipId'>,
@@ -136,9 +204,10 @@ export class PermissionsService {
           )
         : none,
       context.organizationId
-        ? this.whomToAsk(
+        ? this.whoCanGive(
             { userId: context.userId, organizationId: context.organizationId },
             held,
+            missing,
           )
         : none,
     ]);
