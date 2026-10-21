@@ -141,6 +141,9 @@ describe('PageHeader', () => {
           Sale · expected Oct 17, 2026 ·{' '}
           <Link href="/partners/p-1" underline="hover">
             Northside Pharmacy
+          </Link>{' '}
+          <Link component="button" underline="hover">
+            Learn more
           </Link>
         </>
       ),
@@ -149,5 +152,9 @@ describe('PageHeader', () => {
     expect(
       screen.getByRole('link', { name: 'Northside Pharmacy' }),
     ).toHaveStyle({ textDecoration: 'underline' });
+    // A button drawn as a link, as Learn more is, keeps its own look.
+    expect(screen.getByRole('button', { name: 'Learn more' })).not.toHaveStyle({
+      textDecoration: 'underline',
+    });
   });
 });

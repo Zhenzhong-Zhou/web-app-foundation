@@ -206,12 +206,13 @@ export function PageHeader({
 
       {/* A line of words: a link in it, such as an order's partner, is
           underlined before any hover, so it is told from them without its
-          colour (WCAG 1.4.1). */}
+          colour (WCAG 1.4.1). Links only: Learn more, a button with Help's
+          icon, keeps its own look. */}
       {subtitle && (
         <Typography
           variant="body2"
           color="text.secondary"
-          sx={{ '& .MuiLink-root': { textDecoration: 'underline' } }}
+          sx={{ '& a.MuiLink-root': { textDecoration: 'underline' } }}
         >
           {subtitle}
         </Typography>

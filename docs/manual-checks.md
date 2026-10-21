@@ -1712,7 +1712,9 @@ first.
   day, such as PO-DEMO-9, a duplicated order, INV-000001 and an RMA: under
   the number, every link (the partner's name, "duplicated from a previous
   order", Order SO-…, the invoice's number) is underlined before any hover,
-  so each is told from the words beside it without its colour.
+  so each is told from the words beside it without its colour. Learn more
+  under Exchange rates, Stock value and Price lists keeps its icon and
+  underlines only on hover, as Learn more does everywhere.
 - **MC-R22** *(#144)* Locally, with `REGISTRATION=open`, sign in as one
   of the demo's team who is not the last Owner, such as Tom Becker (who
   is then gone from this demo: walk MC-1903 first), in two
@@ -2145,3 +2147,5 @@ first.
   MC-2302 extended.
 - 2026-10-20: a closing asked for again shows its banner over the kept line:
   MC-2404 extended.
+- 2026-10-21: Learn more under a page's title keeps its own look: MC-R23
+  extended.
