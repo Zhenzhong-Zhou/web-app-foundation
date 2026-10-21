@@ -432,6 +432,84 @@ describe('The welcome (e2e)', () => {
       });
     });
 
+    it('names a receipt with no lot by its product, receiving against an order by the order, and a lookup by the product opened', async () => {
+      const alpha = await organization('alpha');
+      const li = await join(alpha, 'li@example.com', 'Admin', {
+        name: 'Li Na',
+      });
+      const shelf = await createLocation(alpha.agent, {
+        type: 'site',
+        name: 'Shelf',
+      });
+      const product = body<{
+        product: { id: string; variants: { id: string }[] };
+      }>(
+        await alpha.agent
+          .post('/v1/products')
+          .send({
+            type: 'good',
+            name: 'Focus 60ct',
+            variant: { sku: 'FOCUS-60' },
+          })
+          .expect(201),
+      ).product;
+      const variantId = product.variants[0].id;
+
+      // A receipt on its own, of something that keeps no lots.
+      await li.agent
+        .post('/v1/stock/movements')
+        .send({
+          variantId,
+          toLocationId: shelf,
+          quantity: '10',
+          reason: 'receipt',
+        })
+        .expect(201);
+      expect(item(await welcome(li.agent), 'receiveStock')?.what).toEqual({
+        kind: 'product',
+        id: product.id,
+        words: 'Focus 60ct',
+      });
+
+      // Then against a confirmed purchase: the latest receipt names it.
+      const order = body<{
+        order: { id: string; number: string; lines: { id: string }[] };
+      }>(
+        await alpha.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: await createPartner(alpha.agent, { name: 'Supplier' }),
+            direction: 'purchase',
+            lines: [{ variantId, quantityOrdered: '5' }],
+          })
+          .expect(201),
+      ).order;
+      await alpha.agent
+        .patch(`/v1/orders/${order.id}`)
+        .send({ status: 'confirmed' })
+        .expect(204);
+      await li.agent
+        .post(`/v1/orders/${order.id}/lines/${order.lines[0].id}/receipts`)
+        .send({ toLocationId: shelf, quantity: '5' })
+        .expect(201);
+      expect(item(await welcome(li.agent), 'receiveStock')?.what).toEqual({
+        kind: 'order',
+        id: order.id,
+        words: order.number,
+      });
+
+      // Opening a product looks it up.
+      await li.agent
+        .post('/v1/recent')
+        .send({ kind: 'product', id: product.id })
+        .expect(204);
+      expect(item(await welcome(li.agent), 'lookUp')?.what).toEqual({
+        kind: 'product',
+        id: product.id,
+        words: 'Focus 60ct',
+      });
+    });
+
     it('gives someone who may do none of the five Open an order after the lookup, each ticked by opening one', async () => {
       const alpha = await organization('alpha');
       const sam = await join(alpha, 'sam@example.com');
