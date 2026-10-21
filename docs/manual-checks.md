@@ -1674,6 +1674,14 @@ The pages, in a private window unless a check says otherwise.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R25** *(shipping on a phone)* At 320 px and 390 px with Larger
+  text, open Ship on SO-DEMO-2, choose the location that holds its lot,
+  and Choose lots: the line's Ship field sits under its words at the
+  right, showing 500.0000 whole; the lot reads FOC-2609-01 on one line,
+  and its own Ship field is wide enough for 500.0000, the table scrolling
+  inside its box to reach it; Carrier and Tracking number sit one under
+  the other, each label whole. At 1280 px each pair sits side by side as
+  before.
 - **MC-R24** *(late on Home)* With something late, such as PO-DEMO-9, Home's
   To receive (and To ship, Expiring soon or Licences, whichever has a late
   one) is tinted the pale red of a red chip, its title, count and "1
@@ -2084,3 +2092,4 @@ first.
 - 2026-10-20: a partner's document languages show the default and Nothing
   else when left alone: MC-1409 extended.
 - 2026-10-20: the numbering's fields labelled on a phone: MC-2710 extended.
+- 2026-10-20: the Ship dialog's fields on a phone: MC-R25.
