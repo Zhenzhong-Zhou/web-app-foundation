@@ -330,8 +330,8 @@ const GRANTS: Record<Permission, Grant> = {
   'partners.update': change('partners', 'partners'),
 
   'users.view': see('people', 'people'),
-  // Nothing reads it apart from users.view (roles.controller.ts), so it
-  // says what users.view says.
+  // The role names Members shows beside each member (roles.controller.ts),
+  // which no screen shows on their own: it says what users.view says.
   'roles.view': see('people', 'people'),
   'organizations.view': see('people', 'settings'),
   'audit.view': see('people', 'auditLog'),

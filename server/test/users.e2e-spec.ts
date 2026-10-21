@@ -310,6 +310,22 @@ describe('Users (e2e)', () => {
       ]);
     });
 
+    it('needs roles.view, which every built-in role holds', async () => {
+      const alpha = await registerOrg('alpha');
+      const viewer = await addViewer(alpha, 'viewer@alpha.example.com');
+      await viewer.get('/v1/roles').expect(200);
+
+      // A role that may see members, but not the roles.
+      await customRole(app, alpha.organizationId, 'Directory', ['users.view']);
+      const { agent: reader } = await addMember(
+        alpha,
+        'reader@alpha.example.com',
+        'Directory',
+      );
+      await reader.get('/v1/users').expect(200);
+      await reader.get('/v1/roles').expect(403);
+    });
+
     it('does not show another organization roles', async () => {
       const alpha = await registerOrg('alpha');
       await registerOrg('beta');
