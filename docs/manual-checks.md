@@ -1692,6 +1692,18 @@ The pages, in a private window unless a check says otherwise.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R28** *(an order's summary first on a phone, #155)* At 390 px, open
+  SO-DEMO-2, choose Skip to content and Tab on: Ship and the order's own
+  actions come before the Items tab and the lines' actions, in the order
+  they are seen. At 1280 px the tabs and lines come first and the summary
+  at the right after them, as before.
+- **MC-R27** *(focus back from a dialog, #155)* With the keyboard alone, at
+  1280 px and at 390 px: on Products, Add product, then Escape; on
+  SO-DEMO-2, Ship, then Cancel; on PO-DEMO-9, a line's Receive, then
+  Escape; on Account, Delete my account, then Cancel; on a product, History,
+  then Escape. Each time focus is back on the button that opened it, with
+  its ring, and Enter opens it again; a screen reader names that button,
+  not the page from the top.
 - **MC-R26** *(French guillemets)* In Français on a phone (390 px), read
   the note under Numbering, « Imprimé ainsi », and Security's « Rester
   connecté »: a « never ends a line with its words on the next.
@@ -2151,3 +2163,6 @@ first.
   extended.
 - 2026-10-21: a shipment's Void dialog names the organization's day:
   MC-2605 extended.
+- 2026-10-21: a dialog gives focus back to the button that opened it, and
+  an order's summary comes first in a phone's Tab order (#155): MC-R27 and
+  MC-R28.
