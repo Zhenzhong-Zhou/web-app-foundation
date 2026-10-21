@@ -260,15 +260,15 @@ const see = (area: Area, ...things: Thing[]): Grant => ({
   verb: 'see',
   things,
 });
-const add = (area: Area, thing: Thing): Grant => ({
+const add = (area: Area, ...things: Thing[]): Grant => ({
   area,
   verb: 'add',
-  things: [thing],
+  things,
 });
-const change = (area: Area, thing: Thing): Grant => ({
+const change = (area: Area, ...things: Thing[]): Grant => ({
   area,
   verb: 'change',
-  things: [thing],
+  things,
 });
 const act = (area: Area, words: MessageDescriptor): Grant => ({
   area,
@@ -316,7 +316,8 @@ const GRANTS: Record<Permission, Grant> = {
   'return_authorizations.update': act('invoices', ACTS.returnsUpdate),
 
   'costs.view': see('costs', 'costs', 'exchangeRates'),
-  'costs.update': change('costs', 'costs'),
+  // It sets exchange rates too (PUT /costs/exchange-rates).
+  'costs.update': change('costs', 'costs', 'exchangeRates'),
   'price_lists.view': see('costs', 'priceLists'),
   'price_lists.create': add('costs', 'priceLists'),
   'price_lists.update': change('costs', 'priceLists'),

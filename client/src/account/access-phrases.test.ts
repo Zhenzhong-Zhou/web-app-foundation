@@ -131,6 +131,10 @@ describe('what you can do here', () => {
     expect(sentences(['price_lists.view', 'price_lists.update'])).toEqual([
       ['Costs, prices and tax', 'Change price lists.'],
     ]);
+    // Changing costs sets exchange rates too, so both are said as changed.
+    expect(sentences(['costs.view', 'costs.update'])).toEqual([
+      ['Costs, prices and tax', 'Change costs and exchange rates.'],
+    ]);
   });
 
   it('leaves out every area out of reach', () => {
