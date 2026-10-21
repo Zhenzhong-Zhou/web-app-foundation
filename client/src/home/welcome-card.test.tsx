@@ -1,10 +1,14 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
+import { useRef } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Welcome } from '../api/types.gen';
+import { HelpButton } from '../help/help-button';
+import { HelpFrame } from '../help/help-panel';
+import { HelpProvider } from '../help/help-provider';
 import { setOrganizationTimeZone } from '../lib/time-zone';
 import { GETTING_STARTED_DONE, welcome } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
@@ -40,6 +44,21 @@ function renderHome(
       permissions,
       user: { name: 'Wang Fang', email: 'wang.fang@alpha.example', ...user },
     },
+  );
+}
+
+/** Home inside Help's part of the frame: the bar's button, and the panel. */
+function HomeWithHelp() {
+  const bar = useRef<HTMLElement>(null);
+  return (
+    <HelpProvider>
+      <header ref={bar}>
+        <HelpButton />
+      </header>
+      <HelpFrame bar={bar}>
+        <HomePage />
+      </HelpFrame>
+    </HelpProvider>
   );
 }
 
@@ -112,6 +131,47 @@ describe('the welcome card', () => {
     expect(
       within(region).getByText(/at the top, beside the bell/),
     ).toBeVisible();
+  });
+
+  it('opens Help on Home’s guide from the Help in its foot, as the bar’s does', async () => {
+    serve(welcome());
+    const user = userEvent.setup();
+    renderWithAuth(
+      <MemoryRouter>
+        <HomeWithHelp />
+      </MemoryRouter>,
+      {
+        permissions: VIEWER,
+        user: { name: 'Wang Fang', email: 'wang.fang@alpha.example' },
+      },
+    );
+
+    const region = await card();
+    // The word and its icon, one button named Help, in the sentence that
+    // still says where the bar's Help is.
+    const inCard = within(region).getByRole('button', { name: 'Help' });
+    expect(inCard.querySelector('svg')).not.toBeNull();
+    expect(inCard.closest('p')).toHaveTextContent(
+      'Every page has Help at the top, beside the bell. It explains the page you’re on.',
+    );
+
+    await user.click(inCard);
+    const help = screen.getByRole('complementary', { name: 'Help' });
+    expect(
+      await within(help).findByRole('heading', { level: 2, name: 'Home' }),
+    ).toHaveFocus();
+    expect(
+      within(screen.getByRole('banner')).getByRole('button', { name: 'Help' }),
+    ).toHaveAttribute('aria-expanded', 'true');
+
+    // Pressed again while open, it keeps Home's guide open.
+    await user.click(inCard);
+    expect(
+      screen.getByRole('complementary', { name: 'Help' }),
+    ).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    expect(inCard).toHaveFocus();
   });
 
   it('asks an Admin who joined unconfirmed to confirm first, with Resend, and links what is done', async () => {

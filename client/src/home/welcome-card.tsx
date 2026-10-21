@@ -13,13 +13,15 @@ import {
 import { useTheme } from '@mui/material/styles';
 import type { ReactNode, RefObject } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 
 import { WhatYouCanDo } from '../account/what-you-can-do';
 import type { Welcome } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { PersonAvatar } from '../components/person-avatar';
+import { guideFor } from '../help/guides';
+import { useHelp } from '../help/use-help';
 import { formatDayMonth } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { roleLabel } from '../members/role-names';
@@ -53,6 +55,8 @@ export function WelcomeCard({
   const phone = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true });
   const { session } = useAuth();
   const can = useCan();
+  const help = useHelp();
+  const { pathname } = useLocation();
   const organization = session?.organization?.name ?? '';
   const { access } = welcome;
 
@@ -302,24 +306,45 @@ export function WelcomeCard({
         </Box>
       )}
 
-      <Typography
-        sx={{
-          display: 'flex',
-          gap: 1.25,
-          alignItems: 'center',
-          borderTop: 1,
-          borderColor: 'divider',
-          pt: 1.75,
-        }}
-      >
-        <HelpOutlineOutlined color="primary" aria-hidden />
-        <span>
-          <FormattedMessage
-            id="home.welcome.help"
-            defaultMessage="Every page has <b>Help</b> at the top, beside the bell. It explains the page you’re on."
-            values={{ b: (chunks: ReactNode[]) => <strong>{chunks}</strong> }}
-          />
-        </span>
+      <Typography sx={{ borderTop: 1, borderColor: 'divider', pt: 1.75 }}>
+        <FormattedMessage
+          id="home.welcome.help"
+          defaultMessage="Every page has <b>Help</b> at the top, beside the bell. It explains the page you’re on."
+          values={{
+            // The word and its icon are one button, which opens Help on
+            // this page's guide as the bar's does; already open, it brings
+            // that guide back rather than closing it.
+            b: (chunks: ReactNode[]) =>
+              help ? (
+                <Link
+                  component="button"
+                  type="button"
+                  underline="always"
+                  onClick={() => {
+                    const guide = guideFor(pathname);
+                    if (!help.open) help.toggle();
+                    else if (guide) help.show(guide);
+                  }}
+                  sx={{
+                    font: 'inherit',
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    verticalAlign: 'bottom',
+                  }}
+                >
+                  <HelpOutlineOutlined
+                    aria-hidden
+                    sx={{ fontSize: '1.15em' }}
+                  />
+                  {chunks}
+                </Link>
+              ) : (
+                <strong>{chunks}</strong>
+              ),
+          }}
+        />
       </Typography>
     </Paper>
   );

@@ -1585,8 +1585,12 @@ The pages, in a private window unless a check says otherwise.
   you can do here, a line per area, ending To do more, ask … with each
   name opening People. On the right, Your first week, 0 of 3 done: Say
   who you are, Look up a product or a lot and Open an order, each with
-  its button. The foot says Help is at the top, beside the bell. Open a
-  product and come back: Look up is ticked and reads You opened … as a
+  its button. The foot says Help is at the top, beside the bell, its
+  Help a link with the ? icon before it: pressing the word or the icon
+  opens Help on Home's guide, as the bar's Help does, and the bar's
+  button shows pressed; pressed again, Help stays open on Home's guide;
+  Esc puts focus back on it. VoiceOver reads it as one button, Help.
+  Open a product and come back: Look up is ticked and reads You opened … as a
   link to it. Dismiss: the card goes, focus moves to the greeting at the
   top of Home, and a message says What you can do here stays on Your
   account, with Undo; Undo brings the card back, focus on its title (Tab
@@ -2028,3 +2032,5 @@ first.
   colon: MC-3001 extended.
 - 2026-10-20: while Getting started shows, the quick actions are outlined:
   MC-1559 extended.
+- 2026-10-20: the welcome's foot opens Help from its word and icon:
+  MC-3207 extended.
