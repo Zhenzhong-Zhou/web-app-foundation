@@ -1670,6 +1670,10 @@ The pages, in a private window unless a check says otherwise.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R23** *(links on an order)* Open an order with an expected day, such
+  as PO-DEMO-9, and a duplicated order: under the number, the partner's name
+  and "duplicated from a previous order" are underlined before any hover, so
+  each is told from the words beside it without its colour.
 - **MC-R22** *(#144)* Locally, with `REGISTRATION=open`, sign in as one
   of the demo's team who is not the last Owner, such as Tom Becker (who
   is then gone from this demo: walk MC-1903 first), in two
@@ -2064,3 +2068,4 @@ first.
 - 2026-10-20: Undo stays while it has focus once the pointer has passed
   over it and gone: MC-1801 and MC-3207 extended.
 - 2026-10-20: where Help slides over at Large text: MC-3203 extended.
+- 2026-10-20: an order's links under its number are underlined: MC-R23.
