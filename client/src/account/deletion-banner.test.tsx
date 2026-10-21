@@ -1,54 +1,26 @@
-import { act, render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { AuthContext } from '../auth/auth-context';
+import { renderWithChangingAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
 import { DeletionBanner } from './deletion-banner';
 
 /**
- * The banner over a session the test changes as the server would: a keep's
+ * The banner over a session that changes as the server's does: a keep's
  * refresh clears the day, and deleting again from Account sets one.
  */
-function renderBanner(initial: string) {
-  let setDue: (due: string | null) => void = () => undefined;
-
-  function Session() {
-    const [due, set] = useState<string | null>(initial);
-    setDue = set;
-    return (
-      <AuthContext.Provider
-        value={{
-          session: {
-            user: {
-              id: 'user-1',
-              email: 'owner@alpha.example.com',
-              name: 'Owner',
-              emailVerified: true,
-              locale: null,
-              deletionScheduledAt: due,
-              deletionWithOrganization: null,
-            },
-            organization: null,
-            permissions: [],
-          },
-          loading: false,
-          error: null,
-          refresh: () => {
-            set(null);
-            return Promise.resolve();
-          },
-        }}
-      >
-        <DeletionBanner />
-      </AuthContext.Provider>
-    );
-  }
-
-  render(<Session />);
-  return { deleteAgain: (day: string) => act(() => setDue(day)) };
+function renderBanner(day: string) {
+  const due = (deletionScheduledAt: string | null) => ({
+    user: { deletionScheduledAt, deletionWithOrganization: null },
+  });
+  const { change } = renderWithChangingAuth(
+    <DeletionBanner />,
+    due(day),
+    due(null),
+  );
+  return { deleteAgain: (again: string) => change(due(again)) };
 }
 
 /** The account's own deletion (ADR-069), on every page until kept. */
