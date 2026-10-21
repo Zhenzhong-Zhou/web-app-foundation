@@ -12,6 +12,7 @@ import { FormattedMessage, useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
 import type { MemberAccess } from '../api/types.gen';
+import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { rem } from '../theme/rem';
 import { accessAreas } from './access-phrases';
@@ -19,7 +20,8 @@ import { accessAreas } from './access-phrases';
 /**
  * What you can do here (ADR-079): a sentence per area the reader may
  * touch, from the session's permissions, and whom to ask for more, each
- * name opening their page on People. One line for whoever holds every
+ * name opening their page on People for whoever may open People, and
+ * plain for anyone else. One line for whoever holds every
  * permission. The welcome on Home and Your access on Account both show it.
  *
  * `folded`, on a phone's welcome: one row that opens on a tap, so the card
@@ -34,6 +36,7 @@ export function WhatYouCanDo({
 }) {
   const intl = useIntl();
   const { session } = useAuth();
+  const can = useCan();
   const [open, setOpen] = useState(false);
   const listId = useId();
 
@@ -92,16 +95,20 @@ export function WhatYouCanDo({
             },
             {
               names: intl.formatList(
-                access.whomToAsk.map((person) => (
-                  <Link
-                    key={person.id}
-                    component={RouterLink}
-                    to={`/people/${person.id}`}
-                    underline="always"
-                  >
-                    {person.name}
-                  </Link>
-                )),
+                access.whomToAsk.map((person) =>
+                  can('users.view') ? (
+                    <Link
+                      key={person.id}
+                      component={RouterLink}
+                      to={`/people/${person.id}`}
+                      underline="always"
+                    >
+                      {person.name}
+                    </Link>
+                  ) : (
+                    <span key={person.id}>{person.name}</span>
+                  ),
+                ),
                 { type: 'disjunction' },
               ),
             },

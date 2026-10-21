@@ -153,15 +153,19 @@ export function WelcomeCard({
               defaultMessage="<link>{name}</link> wrote"
               values={{
                 name: welcome.inviter.name,
-                link: (chunks: ReactNode[]) => (
-                  <Link
-                    component={RouterLink}
-                    to={`/people/${welcome.inviter?.id}`}
-                    underline="always"
-                  >
-                    {chunks}
-                  </Link>
-                ),
+                // Their page on People, for whoever may open it.
+                link: (chunks: ReactNode[]) =>
+                  can('users.view') ? (
+                    <Link
+                      component={RouterLink}
+                      to={`/people/${welcome.inviter?.id}`}
+                      underline="always"
+                    >
+                      {chunks}
+                    </Link>
+                  ) : (
+                    chunks
+                  ),
               }}
             />
           ) : (
