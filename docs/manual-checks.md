@@ -1142,7 +1142,9 @@ override, then reload.
 - **MC-2606** *(ADR-072)* Another clock: with the organization in
   Vancouver and the computer set to Shanghai, Home shows Vancouver's date
   and, under it, Dates follow the organization's time zone: Pacific Time
-  (Vancouver). Times on screens, a stock movement's say, are Shanghai's.
+  (Vancouver), then, for an Owner, Change the time zone, which opens
+  Organization → Profile; an Admin or a Viewer has no link. Times on
+  screens, a stock movement's say, are Shanghai's.
   At 9 am on the 1st in Shanghai, still the last evening of the month in
   Vancouver, Stock movements with This month holds the movements made
   this afternoon in Vancouver, though their times read the 1st. Set the
@@ -2109,3 +2111,5 @@ first.
   extended.
 - 2026-10-20: a credit note's chip says what it does, as Voids invoice
   does: MC-1532 extended.
+- 2026-10-20: Home's time-zone note leads an Owner to the setting: MC-2606
+  extended.

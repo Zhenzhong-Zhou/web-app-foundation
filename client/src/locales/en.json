@@ -436,6 +436,7 @@
   "home.summary.late": "{count, plural, one {# thing needs attention} other {# things need attention}}, {late, plural, one {# of them overdue} other {# of them overdue}}.",
   "home.summary.none": "Nothing needs attention today.",
   "home.summary.start": "Seven steps get your organization ready to work. Each is ticked when it is done.",
+  "home.timeZoneChange": "Change the time zone",
   "home.timeZoneNote": "Dates follow the organization’s time zone: {zone}.",
   "home.welcome.confirmEmail": "Confirm your email address",
   "home.welcome.confirmEmail.hint": "We sent a link to {email}.{invite, select, true { Inviting colleagues waits until you confirm.} other {}}",

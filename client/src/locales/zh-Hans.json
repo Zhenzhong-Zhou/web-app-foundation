@@ -436,6 +436,7 @@
   "home.summary.late": "有 {count} 项需要处理，其中 {late} 项已逾期。",
   "home.summary.none": "今天没有需要处理的事项。",
   "home.summary.start": "七个步骤让您的组织准备就绪，每完成一步会自动打勾。",
+  "home.timeZoneChange": "更改时区",
   "home.timeZoneNote": "日期以组织的时区为准：{zone}。",
   "home.welcome.confirmEmail": "确认您的电子邮箱",
   "home.welcome.confirmEmail.hint": "确认链接已发到 {email}。{invite, select, true {确认之前，不能邀请同事。} other {}}",

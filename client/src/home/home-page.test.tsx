@@ -340,6 +340,31 @@ describe('HomePage', () => {
       ).toBeVisible();
     });
 
+    it('leads whoever may change the zone to it, and nobody else', async () => {
+      setOrganizationTimeZone(
+        browserTimeZone() === 'Pacific/Auckland'
+          ? 'America/Vancouver'
+          : 'Pacific/Auckland',
+      );
+      serve({ gettingStarted: COMPLETE, cards: [] });
+      const { unmount } = renderWithAuth(routed(<HomePage />), {
+        permissions: ['organizations.update'],
+      });
+
+      expect(
+        await screen.findByRole('link', { name: 'Change the time zone' }),
+      ).toHaveAttribute('href', '/settings/organization?tab=profile');
+      unmount();
+
+      renderWithAuth(routed(<HomePage />), { permissions: [] });
+      expect(
+        await screen.findByText(/Dates follow the organization’s time zone/),
+      ).toBeVisible();
+      expect(
+        screen.queryByRole('link', { name: 'Change the time zone' }),
+      ).not.toBeInTheDocument();
+    });
+
     it('says nothing when this computer is on the organization’s clock', async () => {
       setOrganizationTimeZone(browserTimeZone());
       serve({ gettingStarted: COMPLETE, cards: [] });

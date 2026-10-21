@@ -436,6 +436,7 @@
   "home.summary.late": "{count, plural, one {# élément demande votre attention} other {# éléments demandent votre attention}}, {late, plural, one {dont # en retard} other {dont # en retard}}.",
   "home.summary.none": "Rien ne demande votre attention aujourd’hui.",
   "home.summary.start": "Sept étapes préparent votre organisation au travail. Chacune est cochée une fois faite.",
+  "home.timeZoneChange": "Changer le fuseau horaire",
   "home.timeZoneNote": "Les dates suivent le fuseau horaire de l’organisation : {zone}.",
   "home.welcome.confirmEmail": "Confirmez votre adresse courriel",
   "home.welcome.confirmEmail.hint": "Nous avons envoyé un lien à {email}.{invite, select, true { Vous pourrez inviter des collègues une fois l’adresse confirmée.} other {}}",
