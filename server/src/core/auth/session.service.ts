@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { and, asc, eq, gt, lt, ne, sql } from 'drizzle-orm';
 
 import type { Env } from '../../config/env';
-import type { Database } from '../../database/database.module';
+import type { Database, Transaction } from '../../database/database.module';
 import { UNSAFE_GLOBAL_DB } from '../../database/database.tokens';
 import { memberships, sessions } from '../../database/schema';
 
@@ -232,11 +232,15 @@ export class SessionService {
    * The organization a session works in when nothing else says which
    * (ADR-004): the oldest membership, ordered by id because UUIDv7 sorts by
    * creation time (ADR-010), which is the organization the person joined
-   * first. Signing in picks it, and so does the session middleware when a
-   * session's own no longer resolves (#144). Null for an account in none.
+   * first. Signing in picks it, leaving moves to it, and the session
+   * middleware picks it when a session's own no longer resolves (#144).
+   * Null for an account in none.
    */
-  async firstOrganizationOf(userId: string): Promise<string | null> {
-    const [membership] = await this.db
+  async firstOrganizationOf(
+    userId: string,
+    executor: Database | Transaction = this.db,
+  ): Promise<string | null> {
+    const [membership] = await executor
       .select({ organizationId: memberships.organizationId })
       .from(memberships)
       .where(eq(memberships.userId, userId))
