@@ -442,9 +442,17 @@ with this one, this one is current.
   MC-1602 (an upload in R2, the nightly copy), MC-1701 to MC-1703, MC-1801, MC-1901, MC-2001, MC-2101,
   MC-2201, and the older MC-1558 and MC-1559. Show Bob's mom 品牌, product
   photos and 同事 on a phone.
-- **Try `/usability-walkthrough`** on the deletion flows (ADR-069 and
-  ADR-070), as the novice bookkeeper reading Chinese, and show the
-  close dialog to someone who reads only Chinese (MC-2406).
+- **`walkthroughs-older`, before merging:** the walkthroughs owed by
+  ADR-069 to ADR-076 ran on it (20 October 2026), each as a persona: the
+  PDFs and the audit log as the novice bookkeeper in Chinese; the time
+  zone and the numbering as the owner in French on a phone; Larger text
+  and Orders as the warehouse worker on a phone; leaving, deleting and
+  closing as the novice bookkeeper in Chinese. Walk the checks its fixes
+  added or extended: MC-R18, MC-R23 to MC-R26, MC-1409, MC-1532,
+  MC-2302, MC-2402, MC-2404, MC-2602, MC-2603, MC-2605, MC-2606,
+  MC-2610, MC-2710, MC-2901 and MC-2904. Still by hand: show the close
+  dialog to someone who reads only Chinese (MC-2406). The dev database
+  holds the walks' demo organizations.
 - **Open issues:** #16 (licence status for suspended, cancelled and
   superseded), #18 (site licences), #25 (what the customer kept), #33 (one
   hook for Load more keyset paging), #125 (an order page's totals can
@@ -461,7 +469,24 @@ with this one, this one is current.
   remove a member on screen), #148 (refusals with internal or
   off-glossary wording), #149 (copy inconsistencies the guides found),
   #150 (the translation review leaves out the guides) and #151 (the
-  account menu's preferences can't be opened from the keyboard). #131 closes with ADR-073's PR; #41 and #127 closed with
+  account menu's preferences can't be opened from the keyboard). From
+  `walkthroughs-older`'s walks: #154 (the lookup finds no settings, and
+  invoices only by number), #155 (focus falls to the page when a dialog
+  closes or a section saves), #156 (Ship suggests more than can ship, and
+  no on-hand per location), #157 (receiving: prefilled or blind counts, a
+  decision), #158 (Close order is the filled button while goods are due),
+  #159 (order tables on a phone), #160 (four places in dialogs, a
+  decision), #161 (the packing slip and the document actions, ADR-071
+  follow-ups), #162 (untagged PDFs), #163 (Home's To ship lists fully
+  shipped sales), #164 (issuing: the number it will get, Prints as on a
+  phone, the billing-address form), #165 (the zone picker by city), #166
+  (whose zone the audit log's times are in), #167 (a product's list
+  prices in its History, product names, the action filter's order), #168
+  (closing: 30 or 31 days, Deleted User in Chinese, buttons on a phone),
+  #169 (with no organization: Members, the bell, Account's words), #170
+  (touch targets under 44 px) and #171 (the credit note's info box, the
+  shipment's heading); and comments on #129, #133, #148 and #149, two of
+  whose items the branch fixes. #131 closes with ADR-073's PR; #41 and #127 closed with
   ADR-072's. From ADR-070's
   review and its walkthrough in Chinese: #117
   (two one-second windows while a deletion completes), fixed on
