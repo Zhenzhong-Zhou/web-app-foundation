@@ -11,7 +11,10 @@ import {
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { RequestContext } from '../auth/request-context';
-import type { MemberAccess } from './dto/member-access-response.dto';
+import type {
+  MemberAccess,
+  MemberRole,
+} from './dto/member-access-response.dto';
 import { ALL_PERMISSIONS, type Permission, PERMISSIONS } from './permissions';
 
 /** The most names "To do more, ask …" gives (ADR-079). */
@@ -35,28 +38,30 @@ export class MemberAccessService {
   ): Promise<MemberAccess> {
     if (!context.organizationId) throw notWorkingHere();
 
-    return this.tenantDb.transaction(async (tx, organizationId) => {
-      const [role] = await tx
-        .select({
-          id: roles.id,
-          name: roles.name,
-          description: roles.description,
-        })
-        .from(memberships)
-        .innerJoin(roles, eq(roles.id, memberships.roleId))
-        .where(
-          and(
-            eq(memberships.organizationId, organizationId),
-            eq(memberships.userId, context.userId),
-          ),
-        );
-      if (!role) throw notWorkingHere();
+    const [role] = await this.tenantDb.selectJoined(
+      memberships,
+      roles,
+      eq(roles.id, memberships.roleId),
+      { id: roles.id, name: roles.name, description: roles.description },
+      eq(memberships.userId, context.userId),
+    );
+    if (!role) throw notWorkingHere();
 
-      // Whoever may change roles, those who joined first first: nobody to
-      // ask for someone who may change roles themself.
-      const whomToAsk = held.has(PERMISSIONS.ROLES_ASSIGN)
-        ? []
-        : await tx
+    return this.given(context.userId, role, held);
+  }
+
+  /** The same, for a caller that has read the member's role already. */
+  async given(
+    userId: string,
+    role: MemberRole,
+    held: ReadonlySet<Permission>,
+  ): Promise<MemberAccess> {
+    // Whoever may change roles, those who joined first first: nobody to
+    // ask for someone who may change roles themself.
+    const whomToAsk = held.has(PERMISSIONS.ROLES_ASSIGN)
+      ? []
+      : await this.tenantDb.transaction((tx, organizationId) =>
+          tx
             .select({
               id: users.id,
               name: users.name,
@@ -76,19 +81,19 @@ export class MemberAccessService {
               and(
                 eq(memberships.organizationId, organizationId),
                 eq(permissions.key, PERMISSIONS.ROLES_ASSIGN),
-                ne(memberships.userId, context.userId),
+                ne(memberships.userId, userId),
                 isNull(users.deletedAt),
               ),
             )
             .orderBy(asc(memberships.createdAt), asc(memberships.id))
-            .limit(WHOM_TO_ASK);
+            .limit(WHOM_TO_ASK),
+        );
 
-      return {
-        role,
-        holdsEverything: ALL_PERMISSIONS.every((key) => held.has(key)),
-        whomToAsk,
-      };
-    });
+    return {
+      role,
+      holdsEverything: ALL_PERMISSIONS.every((key) => held.has(key)),
+      whomToAsk,
+    };
   }
 }
 

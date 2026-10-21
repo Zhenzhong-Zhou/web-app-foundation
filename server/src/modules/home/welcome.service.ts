@@ -4,6 +4,7 @@ import { and, eq, type SQL, sql } from 'drizzle-orm';
 import { addDays, dayIn, todayIn } from '../../common/today';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import type { RequestContext } from '../../core/auth/request-context';
+import type { MemberRole } from '../../core/authorization/dto/member-access-response.dto';
 import { MemberAccessService } from '../../core/authorization/member-access.service';
 import type { Permission } from '../../core/authorization/permissions';
 import { inviterStillHere } from '../../core/invitations/inviter';
@@ -14,6 +15,7 @@ import {
   organizations,
   productVariants,
   type RecentKind,
+  roles,
   stockMovements,
   users,
 } from '../../database/schema';
@@ -117,6 +119,7 @@ interface Membership {
   photoFileId: string | null;
   emailVerifiedAt: Date | null;
   founder: boolean;
+  role: MemberRole;
 }
 
 /**
@@ -126,7 +129,8 @@ interface Membership {
  * have done here since joining, never by hand.
  *
  * A member past their two weeks, or who dismissed it, costs Home one read
- * of their membership; the rest is read only while the card shows.
+ * of their membership; the rest is read only while the card shows, the
+ * items, the inviter and whom to ask side by side.
  */
 @Injectable()
 export class WelcomeService {
@@ -153,20 +157,24 @@ export class WelcomeService {
     const lastDay = addDays(joinedOn, WELCOME_DAYS);
     if (todayIn(options.timeZone) > lastDay) return null;
 
-    const items = await this.items(
-      context.userId,
-      membership,
-      chosen(held, membership, options.startShows),
-      held,
-    );
+    const [items, inviter, access] = await Promise.all([
+      this.items(
+        context.userId,
+        membership,
+        chosen(held, membership, options.startShows),
+        held,
+      ),
+      this.inviter(membership.id),
+      this.access.given(context.userId, membership.role, held),
+    ]);
     if (items.every((item) => item.done)) return null;
 
     return {
       joinedOn,
       lastDay,
       founder: membership.founder,
-      ...(await this.inviter(membership.id)),
-      access: await this.access.of(context, held),
+      ...inviter,
+      access,
       items,
     };
   }
@@ -200,9 +208,15 @@ export class WelcomeService {
           photoFileId: users.photoFileId,
           emailVerifiedAt: users.emailVerifiedAt,
           founder: sql<boolean>`${memberships.createdAt} = ${organizations.createdAt}`,
+          role: {
+            id: roles.id,
+            name: roles.name,
+            description: roles.description,
+          },
         })
         .from(memberships)
         .innerJoin(users, eq(users.id, memberships.userId))
+        .innerJoin(roles, eq(roles.id, memberships.roleId))
         .innerJoin(
           organizations,
           eq(organizations.id, memberships.organizationId),
@@ -264,20 +278,16 @@ export class WelcomeService {
     keys: WelcomeItemKey[],
     held: ReadonlySet<Permission>,
   ): Promise<WelcomeItem[]> {
-    const acts = await this.acts(
-      userId,
-      membership.createdAt,
-      keys.filter(isAct),
-    );
+    const acts = this.acts(userId, membership.createdAt, keys.filter(isAct));
 
-    const items: WelcomeItem[] = [];
-    for (const key of keys) {
-      const what = isAct(key)
-        ? (acts.get(key) ?? null)
-        : await this.own(userId, key, membership, held);
-      items.push({ key, done: what !== null, what });
-    }
-    return items;
+    return Promise.all(
+      keys.map(async (key) => {
+        const what = isAct(key)
+          ? ((await acts).get(key) ?? null)
+          : await this.own(userId, key, membership, held);
+        return { key, done: what !== null, what };
+      }),
+    );
   }
 
   /**
