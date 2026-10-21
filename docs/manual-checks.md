@@ -758,8 +758,8 @@ Paper is checked first because it must not change at all.
   see its step ticked on Refresh. The last step reads Invite your team: its
   Invite someone opens Members with the Invite dialog, and closing it takes
   `?invite` off the address, so Back and a reload leave it shut (ADR-077).
-  Skip the team step; Dismiss the card and bring it back with Show Getting
-  started. Sign in as a viewer: no Skip or Dismiss, the team step with no
+  Skip the team step; Dismiss the card (focus moves to the greeting at the
+  top of Home) and bring it back with Show Getting started. Sign in as a viewer: no Skip or Dismiss, the team step with no
   button, and only the cards that role may see.
 
 ## 16. Files (ADR-059)
@@ -1578,9 +1578,10 @@ The pages, in a private window unless a check says otherwise.
   who you are, Look up a product or a lot and Open an order, each with
   its button. The foot says Help is at the top, beside the bell. Open a
   product and come back: Look up is ticked and reads You opened … as a
-  link to it. Dismiss: the card goes, and a message says What you can do
-  here stays on Your account, with Undo; Undo brings the card back, focus
-  on its title (Tab moves on from there), and a reload keeps it. Dismiss
+  link to it. Dismiss: the card goes, focus moves to the greeting at the
+  top of Home, and a message says What you can do here stays on Your
+  account, with Undo; Undo brings the card back, focus on its title (Tab
+  moves on from there), and a reload keeps it. Dismiss
   again and reload: Home as usual. As an Admin of the demo team, invite
   an address with a note and leave the organization before it is
   accepted; once accepted, the card's note reads From Demo … with no
@@ -2000,3 +2001,5 @@ first.
   MC-R22 reworded, and MC-3106 names the welcome.
 - 2026-10-20: the demo's team joined months ago, Fatima Haddad three days
   ago by an invitation with a note: MC-3211 rewritten.
+- 2026-10-20: dismissing the welcome or Getting started puts focus on
+  Home's greeting: MC-1559 and MC-3207 extended.

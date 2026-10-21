@@ -157,6 +157,39 @@ describe('HomePage', () => {
     await vi.waitFor(() => expect(skipped).toBe(true));
   });
 
+  it('puts focus on the page’s heading once Getting started is dismissed', async () => {
+    let dismissed = false;
+    server.use(
+      http.get('/api/v1/home', () =>
+        HttpResponse.json({
+          gettingStarted: { ...COMPLETE, complete: false, dismissed },
+          welcome: null,
+          cards: [],
+        }),
+      ),
+      http.post('/api/v1/home/getting-started/dismiss', () => {
+        dismissed = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithAuth(routed(<HomePage />), {
+      permissions: ['organizations.update'],
+    });
+
+    const start = await screen.findByRole('region', {
+      name: 'Getting started',
+    });
+    await user.click(within(start).getByRole('button', { name: 'Dismiss' }));
+
+    await vi.waitFor(() =>
+      expect(
+        screen.queryByRole('region', { name: 'Getting started' }),
+      ).toBeNull(),
+    );
+    expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
+  });
+
   it('offers Invite someone on the team step to those who may invite, opening the dialog', async () => {
     const team = {
       gettingStarted: {

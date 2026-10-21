@@ -70,6 +70,9 @@ function OrganizationHome() {
   // brought back, once it is there.
   const welcomeHeading = useRef<HTMLHeadingElement>(null);
   const undone = useRef(false);
+  // A dismissed card takes its Dismiss with it: focus goes to the page's
+  // heading, where the page begins, rather than to nowhere.
+  const heading = useRef<HTMLHeadingElement>(null);
   // The organization's today (ADR-072), so "overdue" is the same for
   // everyone in it, wherever they read it from.
   const today = organizationToday();
@@ -98,6 +101,7 @@ function OrganizationHome() {
 
   /** Gone at once, with Undo; a failed write brings it back. */
   function dismissWelcome() {
+    heading.current?.focus();
     setHome((current) => current && { ...current, welcome: null });
     setUndoing(true);
     dismissing.current = api('/home/welcome/dismiss', { method: 'POST' }).catch(
@@ -212,7 +216,7 @@ function OrganizationHome() {
           gap: 1,
         }}
       >
-        <Typography variant="h4" component="h1">
+        <Typography ref={heading} variant="h4" component="h1" tabIndex={-1}>
           {greeting(intl, session?.user.name ?? '')}
         </Typography>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
@@ -317,9 +321,10 @@ function OrganizationHome() {
               state={started}
               canManage={can('organizations.update')}
               canInvite={can('users.create')}
-              onDismiss={() =>
-                void act('/home/getting-started/dismiss', 'POST')
-              }
+              onDismiss={() => {
+                heading.current?.focus();
+                void act('/home/getting-started/dismiss', 'POST');
+              }}
               onSkipTeam={() =>
                 void act('/home/getting-started/skip-team', 'POST')
               }

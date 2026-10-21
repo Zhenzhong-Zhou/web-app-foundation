@@ -407,6 +407,8 @@ describe('the welcome card', () => {
     expect(
       screen.queryByRole('region', { name: 'Welcome to Alpha Co, Wang Fang' }),
     ).toBeNull();
+    // Dismiss went with the card: focus is on the page's heading.
+    expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
     expect(
       await screen.findByText(
         'Welcome card hidden. What you can do here stays on Your account.',
