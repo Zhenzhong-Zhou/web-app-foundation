@@ -481,32 +481,47 @@ export const NEVER_OFFERED: readonly Permission[] = [
   PERMISSIONS.ORGANIZATIONS_DELETE,
 ];
 
-const LICENCE_EXPIRING = t({
-  id: 'permissions.note.licenceExpiring',
-  defaultMessage:
-    'Also told when a licence is about to expire, and when it does.',
-});
-
 /**
  * Who is told (ADR-080). Three notifications go to whoever holds a
- * permission, so a made role changes who that is, and the permission's
- * line in the editor says so: the licence reminders
- * (licence-reminders.service.ts), a line closed short
- * (order-lines.service.ts) and a run off its plan
- * (production-close.service.ts).
+ * permission, so a made role changes who that is: named here once, for
+ * the services that send them (licence-reminders.service.ts,
+ * order-lines.service.ts, production-close.service.ts) and for the
+ * line each of those permissions has in the editor (PERMISSION_NOTES).
  */
-export const PERMISSION_NOTES: Partial<Record<Permission, Translatable>> = {
-  'product_licences.update': LICENCE_EXPIRING,
-  'production.release': LICENCE_EXPIRING,
-  'orders.update': t({
+export const TOLD = {
+  licenceExpiring: [
+    PERMISSIONS.PRODUCT_LICENCES_UPDATE,
+    PERMISSIONS.PRODUCTION_RELEASE,
+  ],
+  closedShort: [PERMISSIONS.ORDERS_UPDATE],
+  variance: [PERMISSIONS.PRODUCTION_COMPLETE],
+} as const satisfies Record<string, readonly Permission[]>;
+
+const TOLD_NOTES: Record<keyof typeof TOLD, Translatable> = {
+  licenceExpiring: t({
+    id: 'permissions.note.licenceExpiring',
+    defaultMessage:
+      'Also told when a licence is about to expire, and when it does.',
+  }),
+  closedShort: t({
     id: 'permissions.note.closedShort',
     defaultMessage: 'Also told when an order line closes short.',
   }),
-  'production.complete': t({
+  variance: t({
     id: 'permissions.note.variance',
     defaultMessage: 'Also told when a run closes off its plan.',
   }),
 };
+
+/** A told permission's line in the editor: "Also told when …". */
+export const PERMISSION_NOTES: Partial<Record<Permission, Translatable>> =
+  Object.fromEntries(
+    (
+      Object.entries(TOLD) as [keyof typeof TOLD, readonly Permission[]][]
+    ).flatMap(([told, keys]) =>
+      keys.map((key): [Permission, Translatable] => [key, TOLD_NOTES[told]]),
+    ),
+  );
 
 export const SYSTEM_ROLES = {
   OWNER: 'Owner',
@@ -639,7 +654,7 @@ export const SYSTEM_ROLE_DESCRIPTIONS: Record<SystemRole, Translatable> = {
   }),
 };
 
-export interface RoleTemplate {
+interface RoleTemplate {
   name: Translatable;
   permissions: readonly Permission[];
 }

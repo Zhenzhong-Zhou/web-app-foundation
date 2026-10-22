@@ -92,11 +92,14 @@ export class PermissionsService {
   }
 
   /**
-   * Everyone in an organization who may do this, through any of their
-   * roles, each once, those who joined first first: whoever is told of
-   * something.
+   * Everyone in an organization who may do any of these, through any of
+   * their roles, each once, those who joined first first: whoever is told
+   * of something.
    */
-  holdersOf(organizationId: string, permission: Permission): Promise<Holder[]> {
+  holdersOf(
+    organizationId: string,
+    anyOf: readonly Permission[],
+  ): Promise<Holder[]> {
     return this.db
       .select({ id: users.id, name: users.name })
       .from(memberships)
@@ -120,7 +123,7 @@ export class PermissionsService {
               .where(
                 and(
                   eq(membershipRoles.membershipId, memberships.id),
-                  eq(permissions.key, permission),
+                  inArray(permissions.key, [...anyOf]),
                 ),
               ),
           ),

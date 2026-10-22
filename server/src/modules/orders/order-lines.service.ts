@@ -8,7 +8,7 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import { readableQuantity } from '../../common/readable-quantity';
 import { recordPrevious } from '../../core/audit/audit-context';
-import { PERMISSIONS } from '../../core/authorization/permissions';
+import { TOLD } from '../../core/authorization/permissions';
 import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { isUniqueViolation } from '../../database/errors';
@@ -388,7 +388,7 @@ export class OrderLinesService {
      */
     const recipients = await this.notifications.recipientsWith(
       organizationId,
-      PERMISSIONS.ORDERS_UPDATE,
+      TOLD.closedShort,
     );
 
     await this.notifications.emit(

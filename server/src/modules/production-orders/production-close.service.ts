@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
 
 import { readableQuantity } from '../../common/readable-quantity';
-import { PERMISSIONS } from '../../core/authorization/permissions';
+import { TOLD } from '../../core/authorization/permissions';
 import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import { productionOrderLines, productionOrders } from '../../database/schema';
@@ -271,7 +271,7 @@ export class ProductionCloseService {
       if (variances.length > 0 || outputVariance) {
         const recipients = await this.notifications.recipientsWith(
           organizationId,
-          PERMISSIONS.PRODUCTION_COMPLETE,
+          TOLD.variance,
         );
 
         // The yield leads when it is off, because it is the run's own result;

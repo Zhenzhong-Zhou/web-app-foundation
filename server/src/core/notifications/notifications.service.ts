@@ -187,8 +187,9 @@ export class NotificationsService {
   }
 
   /**
-   * Everyone in an organization holding a permission, as the one place
-   * that decides answers it (ADR-080), each once whatever roles grant it.
+   * Everyone in an organization holding any of a notification's
+   * permissions (TOLD), as the one place that decides answers it
+   * (ADR-080), each once whatever roles grant it.
    *
    * Coarse targeting, and it uses data that already exists. By involvement
    * would need created_by to mean "owner", which it means only by accident —
@@ -197,12 +198,9 @@ export class NotificationsService {
    */
   async recipientsWith(
     organizationId: string,
-    permission: Permission,
+    told: readonly Permission[],
   ): Promise<string[]> {
-    const holders = await this.permissions.holdersOf(
-      organizationId,
-      permission,
-    );
+    const holders = await this.permissions.holdersOf(organizationId, told);
     return holders.map((holder) => holder.id);
   }
 
