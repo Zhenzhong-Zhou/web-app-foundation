@@ -969,7 +969,7 @@
   "members.roles.cannotGive": "您的角色不包含{role}的全部权限，所以您不能授予这个角色。所有者可以。",
   "members.roles.chooseOne": "请至少选择一个角色。",
   "members.roles.ownerAlone": "所有者不同时持有其他角色。",
-  "members.you": "你",
+  "members.you": "您",
   "orders.action.cancel": "取消订单",
   "orders.action.close": "关闭订单",
   "orders.action.confirm": "确认",

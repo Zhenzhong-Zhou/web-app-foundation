@@ -1993,8 +1993,9 @@ first.
 
 - **MC-R31** *(your own row on Members)* With VoiceOver, on Members at
   1280 px and at 390 px, your own row reads your name, then you, as two
-  words (Anika Sharma you, in Français Anika Sharma vous), never run
-  together; the mark sits a little apart from the name, as before.
+  words (Anika Sharma you, in Français Anika Sharma vous, in 中文 李静 您,
+  addressing you as every Chinese screen does), never run together; the
+  mark sits a little apart from the name, as before.
 - **MC-R30** *(lists in British English)* With the browser's language set
   to English (United States) and the app in English, a list of three reads
   with no comma before its "and", while dates keep the American order. As
@@ -2530,3 +2531,4 @@ first.
 - 2026-10-21: the words that still gave a member one role: MC-3326.
 - 2026-10-21: your own row on Members reads your name and you apart:
   MC-R31.
+- 2026-10-21: Members marks your row 您 in Chinese: MC-R31 extended.
