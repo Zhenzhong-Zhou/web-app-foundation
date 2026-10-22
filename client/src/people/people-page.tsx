@@ -1,7 +1,6 @@
 import {
   Alert,
   Box,
-  Chip,
   Link,
   Paper,
   Stack,
@@ -19,7 +18,7 @@ import { StatusChip } from '../components/status-chip';
 import { formatDayShort } from '../lib/format';
 import { organizationToday } from '../lib/time-zone';
 import { useResource } from '../lib/use-resource';
-import { roleLabel } from '../members/role-names';
+import { RoleChips } from '../roles/role-chips';
 import { rem } from '../theme/rem';
 import { joinedRecently, type Person, phoneLine } from './people-types';
 
@@ -222,9 +221,7 @@ export function PeoplePage() {
                   {person.jobTitle}
                 </Typography>
               )}
-              {person.roles.map((role) => (
-                <Chip key={role.id} size="small" label={roleLabel(role.name)} />
-              ))}
+              <RoleChips roles={person.roles} />
               {phone && (
                 <Link
                   href={`tel:${(person.workPhone ?? '').replace(/[^0-9+]/g, '')}${person.extension ? `,${person.extension}` : ''}`}

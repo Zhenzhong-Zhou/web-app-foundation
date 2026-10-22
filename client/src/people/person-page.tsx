@@ -1,6 +1,5 @@
 import {
   Box,
-  Chip,
   Link,
   List,
   ListItem,
@@ -17,7 +16,7 @@ import { PersonAvatar } from '../components/person-avatar';
 import { LoadFailure } from '../errors/load-failure';
 import { relativeTime, SEPARATOR } from '../lib/format';
 import { useResource } from '../lib/use-resource';
-import { roleLabel } from '../members/role-names';
+import { RoleChips } from '../roles/role-chips';
 import { rem } from '../theme/rem';
 import { activeLabel, type PersonDetail, phoneLine } from './people-types';
 
@@ -147,11 +146,7 @@ export function PersonPage() {
               {person.jobTitle}
             </Typography>
           )}
-          <Box>
-            {person.roles.map((role) => (
-              <Chip key={role.id} size="small" label={roleLabel(role.name)} />
-            ))}
-          </Box>
+          <RoleChips roles={person.roles} />
           {!filledIn && (
             <Typography color="text.secondary" sx={{ pt: 1 }}>
               {intl.formatMessage(

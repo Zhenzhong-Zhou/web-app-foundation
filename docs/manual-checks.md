@@ -1985,6 +1985,12 @@ The pages, in a private window unless a check says otherwise.
   (`/audit`): Your roles don’t include the audit log.; in Français Vos
   rôles ne donnent pas accès au journal d’audit. On a new organization,
   Getting started's Invite your team says each with their roles.
+- **MC-3327** *(ADR-080)* People shows roles as Members does. As the demo
+  Owner, give Tom Becker Sales as well as Warehouse, then open People: his
+  card has Warehouse and Sales side by side, on the accent's tint as made
+  roles are on Members, and Chloé Tremblay's Viewer plain; at 390 px they
+  wrap under his name rather than widen the card. Tom's own page shows
+  the same two, a little apart.
 
 ## Regressions
 
@@ -2549,3 +2555,4 @@ first.
 - 2026-10-21: the time zone's French colon held to its words: MC-R26
   extended.
 - 2026-10-21: the menu on a phone is a dialog with a name: MC-R34.
+- 2026-10-21: People's roles drawn as Members' are: MC-3327.
