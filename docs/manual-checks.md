@@ -1822,7 +1822,9 @@ The pages, in a private window unless a check says otherwise.
   Becker, who changes no roles, the page says Nobody holds … alone. Make a
   copy on Viewer's page: Start from is A copy of a role, Viewer, its boxes
   Viewer's, Name Viewer (copy). In Français and 中文 the boxes read in that
-  language, and the summary as Your access would.
+  language, and the summary as Your access would. A role named toString,
+  given to someone, reads toString on Roles, Members, Invite and People,
+  and every one of those pages opens.
 - **MC-3310** *(ADR-080)* Changing a role, and two at once. Edit Dock
   crew, tick Correct a count, then go to Roles in the menu: Leave without
   saving? asks first; Stay keeps the change. In another browser, as a
@@ -2567,3 +2569,5 @@ first.
 - 2026-10-21: the audit log needs prices on orders: MC-3309 extended.
 - 2026-10-21: focus comes back from a dialog keyed by whether it is open,
   as Ship's and Receive's are: MC-R27 extended.
+- 2026-10-21: a role named like an object's own key reads as named:
+  MC-3309 extended.

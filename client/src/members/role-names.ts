@@ -56,8 +56,12 @@ export function toggled(
   return [...chosen.filter((each) => !owners.has(each) && each !== id), id];
 }
 
+/**
+ * A role's name in the reader's language. Its own key, never `in`: a role
+ * an Owner names toString or constructor is a name like any other.
+ */
 export function roleLabel(name: string): string {
-  return name in BUILT_IN
+  return Object.hasOwn(BUILT_IN, name)
     ? intl().formatMessage(BUILT_IN[name as keyof typeof BUILT_IN])
     : name;
 }
@@ -80,7 +84,7 @@ export function roleList(roles: readonly { name: string }[]): string {
  * several, take none: "as an Admin", "as Warehouse lead".
  */
 export function articleOf(roles: readonly { name: string }[]): string {
-  return roles.length === 1 && roles[0].name in BUILT_IN
+  return roles.length === 1 && Object.hasOwn(BUILT_IN, roles[0].name)
     ? roles[0].name
     : 'other';
 }
@@ -108,7 +112,7 @@ const DESCRIPTIONS = defineMessages({
 });
 
 export function roleDescription(name: string): string | null {
-  return name in DESCRIPTIONS
+  return Object.hasOwn(DESCRIPTIONS, name)
     ? intl().formatMessage(DESCRIPTIONS[name as keyof typeof DESCRIPTIONS])
     : null;
 }
