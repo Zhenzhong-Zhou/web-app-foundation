@@ -11,7 +11,12 @@ import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
-import { invitationRoles, roles, users } from '../src/database/schema';
+import {
+  invitationRoles,
+  invitations,
+  roles,
+  users,
+} from '../src/database/schema';
 import french from '../src/i18n/fr-CA.json';
 import chinese from '../src/i18n/zh-Hans.json';
 import {
@@ -760,6 +765,53 @@ describe('Roles (e2e)', () => {
         .send({ toRoleId: viewer })
         .expect(409);
     });
+
+    it('moves nobody when a holder’s roles do more than the mover’s, nor to the role itself', async () => {
+      const alpha = await organization('alpha');
+      const viewer = await builtIn(alpha, 'Viewer');
+      const warehouse = await make(alpha, 'Warehouse', template('warehouse'));
+      const finance = await make(alpha, 'Finance', template('finance'));
+      await join(alpha, 'sam@example.com', [viewer], 'Sam Lee');
+      const mei = await join(
+        alpha,
+        'mei@example.com',
+        [viewer, finance.id],
+        'Mei Lin',
+      );
+      const admin = await join(
+        alpha,
+        'ana@example.com',
+        [await builtIn(alpha, 'Admin')],
+        'Ana Ruiz',
+      );
+
+      // Finance issues invoices and sees costs, which Admin does not.
+      const refused = body<Refusal>(
+        await admin.agent
+          .post(`/v1/roles/${viewer}/move`)
+          .send({ toRoleId: warehouse.id })
+          .expect(403),
+      );
+      expect(refused.message).toBe(
+        'Mei Lin holds roles that can do more than yours, so you can’t move them.',
+      );
+      expect((await roleIdsOf(app, mei.id)).sort()).toEqual(
+        [viewer, finance.id].sort(),
+      );
+      expect(await audit(alpha, '?action=member.roles_changed')).toHaveLength(
+        0,
+      );
+
+      const same = body<Refusal>(
+        await alpha.agent
+          .post(`/v1/roles/${viewer}/move`)
+          .send({ toRoleId: viewer })
+          .expect(400),
+      );
+      expect(same.message).toBe(
+        'They already hold Viewer. Choose another role to move them to.',
+      );
+    });
   });
 
   describe('a refusal in words (#148)', () => {
@@ -995,6 +1047,54 @@ describe('Roles (e2e)', () => {
   });
 
   describe('inviting with several roles', () => {
+    it('acts on an invitation only for whoever may give its roles, and renews none whose roles were deleted', async () => {
+      const alpha = await organization('alpha');
+      const finance = await make(alpha, 'Finance', template('finance'));
+      const admin = await join(
+        alpha,
+        'ana@example.com',
+        [await builtIn(alpha, 'Admin')],
+        'Ana Ruiz',
+      );
+      const invite = async (email: string, roleId: string) =>
+        body<{ invitation: { id: string } }>(
+          await alpha.agent
+            .post('/v1/invitations')
+            .send({ email, roleIds: [roleId] })
+            .expect(201),
+        ).invitation.id;
+
+      // Finance issues invoices and sees costs, which Admin does not.
+      const mei = await invite('mei@example.com', finance.id);
+      for (const request of [
+        () => admin.agent.post(`/v1/invitations/${mei}/resend`),
+        () => admin.agent.post(`/v1/invitations/${mei}/link`),
+        () => admin.agent.delete(`/v1/invitations/${mei}`),
+      ]) {
+        expect(body<Refusal>(await request().expect(403)).message).toBe(
+          'Your roles don’t include everything Finance can do, so you can’t resend, copy or revoke this invitation.',
+        );
+      }
+
+      // Its link ended, and its only role deleted, which an ended
+      // invitation lets go of: nothing to join as.
+      const packers = await make(alpha, 'Packers', template('stock_lookup'));
+      const pat = await invite('pat@example.com', packers.id);
+      await db
+        .update(invitations)
+        .set({ expiresAt: new Date(Date.now() - 86_400_000) })
+        .where(eq(invitations.id, pat));
+      await alpha.agent.delete(`/v1/roles/${packers.id}`).expect(204);
+      expect(
+        body<Refusal>(
+          await alpha.agent.post(`/v1/invitations/${pat}/resend`).expect(409),
+        ).message,
+      ).toBe(
+        'The roles this invitation named have been deleted. Revoke it, and invite them again.',
+      );
+      await alpha.agent.delete(`/v1/invitations/${pat}`).expect(204);
+    });
+
     it('names them as a list in the email, on its page and in the bell, and gives them all', async () => {
       const alpha = await organization('alpha');
       const warehouse = await make(alpha, 'Warehouse', template('warehouse'));
