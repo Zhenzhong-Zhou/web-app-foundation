@@ -8,6 +8,7 @@ import {
 } from '../src/database/database.module';
 import {
   accountEvents,
+  membershipRoles,
   memberships,
   organizations,
   roles,
@@ -177,7 +178,11 @@ describe('Registration (e2e)', () => {
       const [owner] = await db
         .select({ role: roles.name, timeZone: organizations.timeZone })
         .from(memberships)
-        .innerJoin(roles, eq(roles.id, memberships.roleId))
+        .innerJoin(
+          membershipRoles,
+          eq(membershipRoles.membershipId, memberships.id),
+        )
+        .innerJoin(roles, eq(roles.id, membershipRoles.roleId))
         .innerJoin(
           organizations,
           eq(organizations.id, memberships.organizationId),

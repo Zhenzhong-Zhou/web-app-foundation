@@ -199,7 +199,8 @@ export function LotSearchPage() {
  * it or anything made from it.
  *
  * Every lot, run and order on the page links onward, so following a chain is
- * clicking rather than searching. Nothing here is editable: it is a reading of
+ * clicking rather than searching; a partner, order or run the reader may not
+ * open reads as text (ADR-080). Nothing here is editable: it is a reading of
  * the ledger, and correcting anything is done where the movement was made.
  */
 export function LotTracePage() {
@@ -241,6 +242,11 @@ export function LotTracePage() {
   }
   if (!trace) return showSkeleton ? <Skeleton height={320} /> : null;
 
+  const opens: Opens = {
+    partners: can('partners.view'),
+    orders: can('orders.view'),
+    runs: can('production.view'),
+  };
   const unknown = trace.recipients.filter((row) => !row.partnerName);
   // A recipient's order with no reference of its own.
   const orderWord = intl.formatMessage({
@@ -354,6 +360,7 @@ export function LotTracePage() {
                     source: (
                       <SourceText
                         source={source}
+                        opens={opens}
                         linkToLicences={can('product_licences.view')}
                       />
                     ),
@@ -379,6 +386,7 @@ export function LotTracePage() {
       >
         <RelatedTable
           rows={trace.madeFrom}
+          opens={opens}
           empty={intl.formatMessage({
             id: 'inventory.trace.madeFrom.empty',
             defaultMessage: 'Not made in a run here — received, not produced.',
@@ -394,6 +402,7 @@ export function LotTracePage() {
       >
         <RelatedTable
           rows={trace.wentInto}
+          opens={opens}
           empty={intl.formatMessage({
             id: 'inventory.trace.wentInto.empty',
             defaultMessage: 'Not used in any run.',
@@ -462,9 +471,9 @@ export function LotTracePage() {
             ]}
             rows={trace.recipients.map((row) => [
               row.partnerId ? (
-                <Link component={RouterLink} to={`/partners/${row.partnerId}`}>
+                <Onward to={`/partners/${row.partnerId}`} open={opens.partners}>
                   {row.partnerName}
-                </Link>
+                </Onward>
               ) : (
                 <Typography component="span" color="text.secondary">
                   {intl.formatMessage({
@@ -474,7 +483,7 @@ export function LotTracePage() {
                 </Typography>
               ),
               row.orderId ? (
-                <Link component={RouterLink} to={`/orders/${row.orderId}`}>
+                <Onward to={`/orders/${row.orderId}`} open={opens.orders}>
                   {row.isSampleOrder
                     ? intl.formatMessage(
                         {
@@ -484,7 +493,7 @@ export function LotTracePage() {
                         { reference: row.orderNumber ?? orderWord },
                       )
                     : (row.orderNumber ?? orderWord)}
-                </Link>
+                </Onward>
               ) : (
                 NO_VALUE
               ),
@@ -507,9 +516,11 @@ export function LotTracePage() {
 
 function RelatedTable({
   rows,
+  opens,
   empty,
 }: {
   rows: LotTrace['madeFrom'];
+  opens: Opens;
   empty: string;
 }) {
   const intl = useIntl();
@@ -536,13 +547,13 @@ function RelatedTable({
         </Link>,
         row.sku,
         String(row.depth),
-        <Link component={RouterLink} to={`/production/${row.runId}`}>
+        <Onward to={`/production/${row.runId}`} open={opens.runs}>
           {row.runReference ??
             intl.formatMessage({
               id: 'inventory.trace.run',
               defaultMessage: 'Run',
             })}
-        </Link>,
+        </Onward>,
       ])}
       alignRight={[2]}
     />
@@ -558,9 +569,11 @@ function RelatedTable({
  */
 function SourceText({
   source,
+  opens,
   linkToLicences,
 }: {
   source: LotTrace['sources'][number];
+  opens: Opens;
   linkToLicences: boolean;
 }) {
   const intl = useIntl();
@@ -573,13 +586,13 @@ function SourceText({
         defaultMessage: 'without a reference',
       });
     const run = (chunks: ReactNode[]) => (
-      <Link
+      <Onward
         underline="always"
-        component={RouterLink}
         to={`/production/${source.runId!}`}
+        open={opens.runs}
       >
         {chunks}
-      </Link>
+      </Onward>
     );
 
     return source.licenceNumber ? (
@@ -617,13 +630,13 @@ function SourceText({
               defaultMessage: 'an order',
             }),
           order: (chunks: ReactNode[]) => (
-            <Link
+            <Onward
               underline="always"
-              component={RouterLink}
               to={`/orders/${source.orderId}`}
+              open={opens.orders}
             >
               {chunks}
-            </Link>
+            </Onward>
           ),
         }}
       />
@@ -637,6 +650,34 @@ function SourceText({
         defaultMessage: 'Received with no order on record',
       })}
     </>
+  );
+}
+
+/** Which of the pages a trace leads to the reader may open (ADR-080). */
+type Opens = { partners: boolean; orders: boolean; runs: boolean };
+
+/**
+ * A partner, order or run, as a link for whoever may open it and as its
+ * words alone for whoever may not: a link that leads only to a refusal
+ * promises what the page cannot give.
+ */
+function Onward({
+  to,
+  open,
+  underline,
+  children,
+}: {
+  to: string;
+  open: boolean;
+  underline?: 'always';
+  children: ReactNode;
+}) {
+  if (!open) return <>{children}</>;
+
+  return (
+    <Link component={RouterLink} to={to} underline={underline}>
+      {children}
+    </Link>
   );
 }
 

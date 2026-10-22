@@ -14,6 +14,10 @@ export const NOT_EXPORTED = new Map<string, string>([
     'memberships',
     'Exported as members.csv, joined to each member’s name, email and role',
   ],
+  [
+    'membership_roles',
+    'Exported in members.csv, as each member’s role by name (ADR-080)',
+  ],
   ['notifications', 'Each member’s own, in their personal export (ADR-069)'],
   ['recent_records', 'Each member’s own, in their personal export (ADR-069)'],
 ]);

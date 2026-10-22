@@ -6,6 +6,7 @@ import {
 } from '@mui/material/styles';
 
 import type { Locale } from '../lib/locales';
+import { returnFocus } from '../lib/open-dialog';
 import { type Brand, DEFAULT_BRAND } from './brand-store';
 import { rem } from './rem';
 import {
@@ -255,8 +256,17 @@ const optionsFor = (brand: Brand): ThemeOptions => ({
         rounded: { borderRadius: RADIUS.panel },
       },
     },
+    /**
+     * Focus goes back to the button that opened a dialog or a drawer once it
+     * has closed (lib/open-dialog.ts, #155). A dialog passing its own
+     * transition onExited would replace this one; none does.
+     */
     MuiDialog: {
+      defaultProps: { slotProps: { transition: returnFocus } },
       styleOverrides: { paper: { borderRadius: RADIUS.dialog } },
+    },
+    MuiDrawer: {
+      defaultProps: { slotProps: { transition: returnFocus } },
     },
     /**
      * A dialog's buttons wrap onto a second line at the right when the row

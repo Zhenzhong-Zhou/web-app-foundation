@@ -22,7 +22,6 @@ import {
   toApiDecimal,
 } from '../lib/format';
 import { useSubmit } from '../lib/use-submit';
-import { useVariants } from '../lib/use-variants';
 import { withUnit } from '../products/units';
 
 /**
@@ -40,12 +39,15 @@ export function ReceiveLineDialog({
   orderId,
   line,
   locations,
+  canSeeLots,
   onClose,
   onReceived,
 }: {
   orderId: string;
   line: OrderLine | null;
   locations: Location[];
+  /** stock.view, from the page: the item's lots already known. */
+  canSeeLots: boolean;
   onClose: () => void;
   onReceived: () => Promise<void>;
 }) {
@@ -59,15 +61,6 @@ export function ReceiveLineDialog({
     lotExpiresAt: '',
     note: '',
   });
-
-  /**
-   * Fetched on open for the same reason as AddOrderLineDialog, and it matters
-   * more here: tracksLots decides whether the lot field shows, and a variant
-   * switched to lot tracking after the page loaded would otherwise be
-   * received without one, then refused by the server.
-   */
-  const { variants } = useVariants(line !== null);
-  const variant = variants.find((row) => row.id === line?.variantId);
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
@@ -112,7 +105,7 @@ export function ReceiveLineDialog({
           quantity,
           // The lot is created with the movement — it arrives printed on the
           // box, not registered in advance.
-          lot: variant?.tracksLots
+          lot: line.tracksLots
             ? {
                 code: form.lotCode,
                 // As typed, YYYY-MM-DD (ADR-052).
@@ -215,13 +208,11 @@ export function ReceiveLineDialog({
                       defaultMessage: 'Up to {amount} still outstanding.',
                     },
                     {
-                      amount: variant
-                        ? withUnit(
-                            line.quantityOutstanding,
-                            variant.unitOfMeasure,
-                            intl,
-                          )
-                        : formatQuantity(line.quantityOutstanding),
+                      amount: withUnit(
+                        line.quantityOutstanding,
+                        line.unitOfMeasure,
+                        intl,
+                      ),
                     },
                   ))
               }
@@ -229,11 +220,14 @@ export function ReceiveLineDialog({
 
             {/* Shown only for a lot-tracked variant, because the server
                 refuses a lot on one that is not — and refuses a movement
-                without one on a variant that is. */}
-            {variant?.tracksLots && (
+                without one on a variant that is. The line says which, so
+                receiving asks nothing of the catalogue (ADR-080), and a
+                variant's tracking never changes once it is made. */}
+            {line?.tracksLots && (
               <LotFields
                 idPrefix="receive-line"
-                variantId={variant.id}
+                variantId={line.variantId}
+                knowsLots={canSeeLots}
                 value={{ code: form.lotCode, expiresAt: form.lotExpiresAt }}
                 onChange={(lot) =>
                   setForm((current) => ({

@@ -44,6 +44,7 @@ import { OrderDocuments } from './order-documents';
 import { OrderLinesSection } from './order-lines-section';
 import { OrderStatusActions } from './order-status-actions';
 import { OrderSummary } from './order-summary';
+import { showsPrices } from './prices';
 import { ProFormaDialog } from './pro-forma-dialog';
 import { ReceiveLineDialog } from './receive-line-dialog';
 import { ReturnOrderDialog } from './return-order-dialog';
@@ -125,6 +126,9 @@ export function OrderDetailPage() {
   const canViewInvoices = can('invoices.view');
   const canInvoice = can('invoices.create');
   const canAuthorize = can('return_authorizations.create');
+  // Asked for only by whoever may read them (ADR-080): Sales and Finance
+  // may not, and Deliver to and Send back to then say so.
+  const canSeeLocations = can('locations.view');
   const loading = order === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 
@@ -143,14 +147,9 @@ export function OrderDetailPage() {
   useEffect(() => {
     let ignore = false;
 
-    void Promise.all([
-      api<OrderDetail>(`/orders/${id}`),
-      api<Location[]>('/locations'),
-    ])
-      .then(([detail, locationRows]) => {
-        if (ignore) return;
-        setOrder(detail);
-        setLocations(locationRows);
+    void api<OrderDetail>(`/orders/${id}`)
+      .then((detail) => {
+        if (!ignore) setOrder(detail);
       })
       .catch((caught: unknown) => {
         if (ignore) return;
@@ -162,6 +161,24 @@ export function OrderDetailPage() {
       ignore = true;
     };
   }, [id]);
+
+  // Apart from the order, so a reader who may not see locations still
+  // opens it. Silent: a failure here is one the order's own read shows.
+  useEffect(() => {
+    if (!canSeeLocations) return;
+
+    let ignore = false;
+
+    void api<Location[]>('/locations')
+      .then((rows) => {
+        if (!ignore) setLocations(rows);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      ignore = true;
+    };
+  }, [canSeeLocations]);
 
   useEffect(() => {
     if (!order || order.direction !== 'sale' || order.status !== 'confirmed') {
@@ -367,8 +384,9 @@ export function OrderDetailPage() {
       </Box>
       {/* The order's own document (ADR-071): a purchase order to send the
           supplier, or a sale's pro forma. A sample has no prices and a
-          cancelled sale nothing to value, so neither is offered one. */}
-      {order.direction === 'purchase' ? (
+          cancelled sale nothing to value, so neither is offered one; nor is
+          a reader the order's prices were not sent to (ADR-080). */}
+      {!showsPrices(order) ? null : order.direction === 'purchase' ? (
         <Box
           sx={{
             display: 'grid',
@@ -456,11 +474,16 @@ export function OrderDetailPage() {
               .filter(Boolean)
               .join(SEPARATOR)}
             {/* The partner, linked: the one name on the page that leads to
-                its other orders. Then their reference, when they gave one. */}
+                its other orders, and text for whoever may not open it
+                (ADR-080). Then their reference, when they gave one. */}
             {SEPARATOR}
-            <Link component={RouterLink} to={`/partners/${order.partnerId}`}>
-              {order.partnerName}
-            </Link>
+            {can('partners.view') ? (
+              <Link component={RouterLink} to={`/partners/${order.partnerId}`}>
+                {order.partnerName}
+              </Link>
+            ) : (
+              order.partnerName
+            )}
             {order.reference && (
               <>
                 {SEPARATOR}
@@ -649,6 +672,7 @@ export function OrderDetailPage() {
         open={editing}
         order={order}
         locations={locations}
+        canSeeLocations={canSeeLocations}
         onClose={() => setEditing(false)}
         onSaved={load}
       />
@@ -658,6 +682,7 @@ export function OrderDetailPage() {
         orderId={order.id}
         line={receiving}
         locations={leaves}
+        canSeeLots={can('stock.view')}
         onClose={() => setReceiving(null)}
         onReceived={load}
       />
@@ -676,6 +701,7 @@ export function OrderDetailPage() {
         key={makingProForma ? `pro-forma-${order.id}` : 'pro-forma-closed'}
         open={makingProForma}
         order={order}
+        canSeeTaxCodes={can('tax_codes.view')}
         onClose={() => setMakingProForma(false)}
       />
 
@@ -743,6 +769,7 @@ export function OrderDetailPage() {
         isSample={order.isSample}
         lines={order.lines}
         locations={locations}
+        canSeeLocations={canSeeLocations}
         canViewInvoices={canViewInvoices}
         onClose={() => setAuthorizing(false)}
       />

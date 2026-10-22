@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuthorizationModule } from '../authorization/authorization.module';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 
@@ -14,6 +15,8 @@ import { NotificationsService } from './notifications.service';
  * than by tenant, and an account notification has no organization at all.
  */
 @Module({
+  // For PermissionsService: who holds a permission, and so is told.
+  imports: [AuthorizationModule],
   controllers: [NotificationsController],
   providers: [NotificationsService],
   exports: [NotificationsService],

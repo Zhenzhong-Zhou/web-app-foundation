@@ -18,7 +18,6 @@ import {
   invitations,
   memberships,
   organizations,
-  roles,
   users,
 } from '../../database/schema';
 import { runInTenantContext } from '../../database/tenant-context';
@@ -34,6 +33,13 @@ import { AuthTokenService } from '../auth/auth-token.service';
 import { PasswordService } from '../auth/password.service';
 import type { RequestContext } from '../auth/request-context';
 import { type NewSession, SessionService } from '../auth/session.service';
+import { giveRoles, rolesOfInvitation } from '../authorization/member-roles';
+import {
+  roleName,
+  roleWords,
+  systemOf,
+  systemRoleOf,
+} from '../authorization/role-words';
 import {
   FILE_STORAGE,
   type FileStorage,
@@ -47,7 +53,6 @@ import type { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import type { InvitationPreview } from './dto/invitation-response.dto';
 import { inviterStillHere } from './inviter';
 import { lastDayOf } from './link-end';
-import { roleName, roleWords, systemRoleOf } from './role-words';
 
 /**
  * The one refusal every link that is not live gets, all alike (ADR-077),
@@ -71,7 +76,8 @@ interface Live {
   id: string;
   organizationId: string;
   email: string;
-  roleId: string;
+  /** The roles it grants, which joining gives (ADR-080). */
+  roleIds: string[];
   locale: Locale;
   link: string;
   organizationDeleting: boolean;
@@ -131,9 +137,6 @@ export class InvitationAcceptanceService {
         inviterName: users.name,
         inviterEmail: users.email,
         inviterMembershipId: memberships.id,
-        roleName: roles.name,
-        roleDescription: roles.description,
-        roleIsSystem: roles.isSystem,
       })
       .from(invitations)
       .innerJoin(
@@ -142,9 +145,10 @@ export class InvitationAcceptanceService {
       )
       .innerJoin(users, eq(users.id, invitations.invitedBy))
       .leftJoin(memberships, inviterStillHere)
-      .innerJoin(roles, eq(roles.id, invitations.roleId))
       .where(eq(invitations.id, invitationId));
     if (!row || row.acceptedAt || row.revokedAt) return null;
+
+    const named = await rolesOfInvitation(this.db, invitationId);
 
     const [account] = await this.db
       .select({ id: users.id })
@@ -163,14 +167,10 @@ export class InvitationAcceptanceService {
       inviter: row.inviterMembershipId
         ? { name: row.inviterName, email: row.inviterEmail }
         : null,
-      role: roleWords(
-        {
-          name: row.roleName,
-          description: row.roleDescription,
-          isSystem: row.roleIsSystem,
-        },
-        locale,
-      ),
+      roles: named.map((role) => ({
+        ...roleWords(role, locale),
+        system: systemRoleOf(role),
+      })),
       note: row.note,
       lastDay: lastDayOf(row.timeZone, row.expiresAt),
       hasAccount: account !== undefined,
@@ -377,7 +377,6 @@ export class InvitationAcceptanceService {
             id: invitations.id,
             organizationId: invitations.organizationId,
             email: invitations.email,
-            roleId: invitations.roleId,
             locale: invitations.locale,
             link: invitations.link,
             acceptedAt: invitations.acceptedAt,
@@ -392,7 +391,13 @@ export class InvitationAcceptanceService {
           .where(eq(invitations.id, invitationId))
       : [];
     if (!row || row.acceptedAt || row.revokedAt) throw ended();
-    return { ...row, organizationDeleting: row.deletionScheduledAt !== null };
+
+    const named = await rolesOfInvitation(this.db, row.id);
+    return {
+      ...row,
+      roleIds: named.map((role) => role.id),
+      organizationDeleting: row.deletionScheduledAt !== null,
+    };
   }
 
   /**
@@ -425,12 +430,13 @@ export class InvitationAcceptanceService {
 
     const [membership] = await tx
       .insert(memberships)
-      .values({
-        userId,
-        organizationId: invitation.organizationId,
-        roleId: invitation.roleId,
-      })
+      .values({ userId, organizationId: invitation.organizationId })
       .returning({ id: memberships.id });
+    await giveRoles(
+      tx,
+      { id: membership.id, organizationId: invitation.organizationId },
+      invitation.roleIds,
+    );
 
     await tx
       .update(invitations)
@@ -509,7 +515,7 @@ export class InvitationAcceptanceService {
             action: AUDIT_ACTIONS.INVITATION_ACCEPTED,
             resourceType: 'invitation',
             resourceId: invitation.id,
-            payload: { roleId: invitation.roleId },
+            payload: { roleIds: invitation.roleIds },
             ip: meta.ip,
             userAgent: meta.userAgent,
           }),
@@ -537,8 +543,6 @@ export class InvitationAcceptanceService {
         .select({
           inviterId: memberships.userId,
           organizationName: organizations.name,
-          roleName: roles.name,
-          roleIsSystem: roles.isSystem,
         })
         .from(invitations)
         .innerJoin(memberships, inviterStillHere)
@@ -547,11 +551,10 @@ export class InvitationAcceptanceService {
           organizations,
           eq(organizations.id, invitations.organizationId),
         )
-        .innerJoin(roles, eq(roles.id, invitations.roleId))
         .where(and(eq(invitations.id, invitation.id), isNull(users.deletedAt)));
       if (!facts) return;
 
-      const role = { name: facts.roleName, isSystem: facts.roleIsSystem };
+      const named = await rolesOfInvitation(this.db, invitation.id);
 
       await this.notifications.emit([
         {
@@ -574,10 +577,12 @@ export class InvitationAcceptanceService {
             {
               name,
               organization: facts.organizationName,
-              role: roleName(role),
-              // The article goes by which built-in role it is, never by
-              // its words; a role an organization named takes none.
-              system: systemRoleOf(role) ?? 'other',
+              // Stored and worded again on each read (ADR-036), so the
+              // placeholder keeps its name from before ADR-080, when it
+              // held one role, and now holds the list: a row stored then
+              // still reads.
+              role: named.map(roleName),
+              system: systemOf(named),
             },
           ),
           resourceType: 'user',

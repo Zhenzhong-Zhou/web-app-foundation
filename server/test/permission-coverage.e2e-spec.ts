@@ -1,6 +1,10 @@
 import type { INestApplication } from '@nestjs/common';
 
 import { IS_PUBLIC } from '../src/core/auth/public.decorator';
+import {
+  ALL_PERMISSIONS,
+  type Permission,
+} from '../src/core/authorization/permissions';
 import { REQUIRED_PERMISSIONS } from '../src/core/authorization/require-permissions.decorator';
 import {
   type Controller,
@@ -108,6 +112,22 @@ const GATED_INSIDE = new Map<string, string>([
 const ALLOWED = new Map([...SELF_SERVICE, ...GATED_INSIDE]);
 
 /**
+ * Permissions no route declares, checked by a guard of the route's own
+ * beside the one it declares, each with its reason: whether they apply
+ * depends on the request's body.
+ */
+const CHECKED_INSIDE = new Map<Permission, string>([
+  [
+    'stock.adjust',
+    'AdjustmentGuard, on a movement whose reason is an adjustment; the route declares stock.move',
+  ],
+  [
+    'production.override_licence',
+    'LicenceOverrideGuard, on a release with an override (ADR-050); the route declares production.release',
+  ],
+]);
+
+/**
  * The guard reads the handler first and falls back to the class, so a
  * controller marked `@Public()` once covers every route in it. This reads
  * the same way, or a class-level decorator would be reported as missing.
@@ -151,6 +171,32 @@ describe('permission coverage', () => {
 
     // Named rather than counted: a failure should say which route to fix.
     expect(open.sort()).toEqual([]);
+  });
+
+  /**
+   * permissions.ts, rule 3: never seed a permission nothing gates, since
+   * an ungated one is a box in the role editor that does nothing (ADR-080).
+   * Every permission is declared by some route, or checked inside one.
+   */
+  it('gates something with every permission', () => {
+    const declaredKeys = new Set(
+      routesOf(app).flatMap(
+        (route) =>
+          (declared(REQUIRED_PERMISSIONS, route.handler, route.controller) ??
+            []) as Permission[],
+      ),
+    );
+
+    const idle = ALL_PERMISSIONS.filter(
+      (key) => !declaredKeys.has(key) && !CHECKED_INSIDE.has(key),
+    );
+    expect(idle).toEqual([]);
+
+    // And the list holds no permission a route has since declared.
+    const stale = [...CHECKED_INSIDE.keys()].filter((key) =>
+      declaredKeys.has(key),
+    );
+    expect(stale).toEqual([]);
   });
 
   /**

@@ -48,6 +48,16 @@ export const GUIDES = {
     label: NAV_LABELS.members,
     sections: ['invite'],
   },
+  roles: {
+    routes: [
+      '/settings/roles',
+      '/settings/roles/new',
+      '/settings/roles/:id',
+      '/settings/roles/:id/edit',
+    ],
+    label: NAV_LABELS.roles,
+    sections: [],
+  },
   'audit-log': {
     routes: ['/audit'],
     label: NAV_LABELS.auditLog,

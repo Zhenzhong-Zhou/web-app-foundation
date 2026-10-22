@@ -10,6 +10,7 @@ import {
   type TextSize,
   useTextSize,
 } from '../theme/text-size';
+import type { PreferenceControl } from './preference-control';
 
 const NAMES = defineMessages<TextSize>({
   standard: {
@@ -29,12 +30,18 @@ const NAMES = defineMessages<TextSize>({
  * option is drawn at the size it would give, in em against the size now,
  * so the choice is seen before it is made.
  */
-export function TextSizeSelect() {
+export function TextSizeSelect({
+  control,
+}: {
+  /** Opened by its row, in the account menu (#151). */
+  control?: PreferenceControl;
+} = {}) {
   const intl = useIntl();
   const size = useTextSize();
 
   return (
     <Select
+      {...control}
       size="small"
       value={size}
       inputProps={{

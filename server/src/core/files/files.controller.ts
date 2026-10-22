@@ -20,7 +20,6 @@ import { t } from '../../i18n/translate';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { RequestContext } from '../auth/request-context';
 import { PERMISSIONS } from '../authorization/permissions';
-import { PermissionsService } from '../authorization/permissions.service';
 import { RequirePermissions } from '../authorization/require-permissions.decorator';
 import type { UploadedFileEnvelope } from './dto/file-response.dto';
 import { ReadFileDto } from './dto/read-file.dto';
@@ -48,10 +47,7 @@ function receive(kind: OrganizationFileKind) {
  */
 @Controller({ path: 'files', version: '1' })
 export class FilesController {
-  constructor(
-    private readonly files: FilesService,
-    private readonly permissions: PermissionsService,
-  ) {}
+  constructor(private readonly files: FilesService) {}
 
   @Post('logo')
   @RequirePermissions(PERMISSIONS.ORGANIZATIONS_UPDATE)
@@ -86,10 +82,7 @@ export class FilesController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ): Promise<StreamableFile | undefined> {
-    const held = new Set(
-      user.roleId ? await this.permissions.listForRole(user.roleId) : [],
-    );
-    const file = await this.files.find(id, query.size ?? 'full', held);
+    const file = await this.files.find(id, query.size ?? 'full', user);
 
     response.setHeader('Cache-Control', 'private, max-age=31536000, immutable');
     response.setHeader('ETag', file.etag);

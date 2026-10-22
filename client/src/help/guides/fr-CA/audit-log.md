@@ -30,6 +30,6 @@ Chaque personne peut voir ce qu’elle a fait elle-même : **Voir tout votre tr
 
 ## Si quelque chose est refusé {#refused}
 
-- Sans accès, la page dit que votre rôle ne donne pas accès au journal d’audit. Demandez à quelqu’un qui peut changer les rôles.
+- Sans accès, la page dit que vos rôles ne donnent pas accès au journal d’audit. Demandez à quelqu’un qui peut changer les rôles.
 
 Voir aussi [Personnes](/people).

@@ -4,7 +4,7 @@ Votre compte réunit ce qui est à vous plutôt qu’à l’organisation : votr
 
 ## Votre accès {#your-access}
 
-Votre accès dans l’organisation montre votre rôle, une ligne qui dit à quoi il sert, et ce que vous pouvez faire ici, domaine par domaine. Il se termine par les personnes à qui demander davantage : jusqu’à trois personnes qui peuvent changer les rôles, chaque nom ouvrant sa page dans [Personnes](/people). Une personne qui peut tout faire le lit en une ligne.
+Votre accès dans l’organisation montre vos rôles, chacun avec une ligne qui dit à quoi il sert, et ce que vous pouvez faire ici avec eux tous, domaine par domaine. Il se termine par les personnes à qui demander davantage : jusqu’à trois personnes qui peuvent changer les rôles, chaque nom ouvrant sa page dans [Personnes](/people). Une personne qui peut tout faire le lit en une ligne.
 
 ## Dites qui vous êtes {#profile}
 

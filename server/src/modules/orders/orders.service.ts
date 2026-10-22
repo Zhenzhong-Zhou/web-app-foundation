@@ -5,6 +5,7 @@ import { calendarRange } from '../../common/date-range';
 import { pageOf } from '../../common/keyset';
 import { codeMatches, searchTerms } from '../../common/search';
 import { pagedBy } from '../../common/sorted-page';
+import type { Permission } from '../../core/authorization/permissions';
 import {
   creditNoteLines,
   creditNotes,
@@ -33,6 +34,25 @@ import type {
 } from './dto/order-response.dto';
 
 const DEFAULT_LIMIT = 25;
+
+/**
+ * What of an order's money a reader may see (ADR-080): its line prices,
+ * totals and tax with orders.view_prices; what it has billed and given
+ * back, and the invoices and credit notes themselves, with invoices.view,
+ * as the invoices are. The server sends none of what they may not, rather
+ * than the screen hiding it.
+ */
+export interface OrderSight {
+  prices: boolean;
+  invoices: boolean;
+}
+
+export function sightOf(held: ReadonlySet<Permission>): OrderSight {
+  return {
+    prices: held.has('orders.view_prices'),
+    invoices: held.has('invoices.view'),
+  };
+}
 
 /** Draft and confirmed: the documents somebody still has to do something about. */
 const OPEN_STATUSES = ['draft', 'confirmed'] as const;
@@ -179,7 +199,7 @@ export class OrdersService {
    * means parsing them into doubles (ADR-025) — Postgres knows the answer and
    * a boolean survives the trip intact.
    */
-  async findById(orderId: string): Promise<OrderDetail> {
+  async findById(orderId: string, sight: OrderSight): Promise<OrderDetail> {
     return this.tenantDb.transaction(async (tx, organizationId) => {
       const [order] = await tx
         .select({
@@ -392,6 +412,9 @@ export class OrdersService {
           sku: orderLines.sku,
           productName: products.name,
           variantName: productVariants.name,
+          // Live, not snapshotted: a receipt follows the item as it is now.
+          tracksLots: productVariants.tracksLots,
+          unitOfMeasure: productVariants.unitOfMeasure,
           quantityOrdered: orderLines.quantityOrdered,
           quantityFulfilled: orderLines.quantityFulfilled,
           quantityReturned: orderLines.quantityReturned,
@@ -506,64 +529,64 @@ export class OrdersService {
        * A sale's invoices and credit notes (ADR-055), for its "Invoices and
        * credits" tab: what was billed and given back, as documents, each
        * with what it covered. Drafts included, marked as such; a credit
-       * note is always issued.
+       * note is always issued. Read only for whoever is sent them.
        */
-      const invoiceRows =
-        order.direction === 'sale' && !order.isSample
-          ? await tx
-              .select({
-                id: invoices.id,
-                number: invoices.number,
-                status: invoices.status,
-                date: invoices.invoiceDate,
-                total: invoices.total,
-                currency: invoices.currency,
-                shippedAt: shipments.createdAt,
-                quantity: sql<string>`coalesce((
+      const documented =
+        sight.invoices && order.direction === 'sale' && !order.isSample;
+      const invoiceRows = documented
+        ? await tx
+            .select({
+              id: invoices.id,
+              number: invoices.number,
+              status: invoices.status,
+              date: invoices.invoiceDate,
+              total: invoices.total,
+              currency: invoices.currency,
+              shippedAt: shipments.createdAt,
+              quantity: sql<string>`coalesce((
                   select sum(${invoiceLines.quantity})
                   from ${invoiceLines}
                   where ${invoiceLines.invoiceId} = ${invoices.id}
                 ), 0)::numeric(18,4)::text`,
-              })
-              .from(invoices)
-              .innerJoin(shipments, eq(shipments.id, invoices.shipmentId))
-              .where(
-                and(
-                  eq(invoices.orderId, orderId),
-                  eq(invoices.organizationId, organizationId),
-                ),
-              )
-              .orderBy(invoices.createdAt)
-          : [];
+            })
+            .from(invoices)
+            .innerJoin(shipments, eq(shipments.id, invoices.shipmentId))
+            .where(
+              and(
+                eq(invoices.orderId, orderId),
+                eq(invoices.organizationId, organizationId),
+              ),
+            )
+            .orderBy(invoices.createdAt)
+        : [];
 
-      const creditRows =
-        order.direction === 'sale' && !order.isSample
-          ? await tx
-              .select({
-                id: creditNotes.id,
-                number: creditNotes.number,
-                date: creditNotes.creditDate,
-                total: creditNotes.total,
-                currency: creditNotes.currency,
-                reason: creditNotes.reason,
-                isVoid: creditNotes.isVoid,
-                invoiceNumber: invoices.number,
-                quantity: sql<string>`coalesce((
+      const creditRows = documented
+        ? await tx
+            .select({
+              id: creditNotes.id,
+              number: creditNotes.number,
+              date: creditNotes.creditDate,
+              total: creditNotes.total,
+              currency: creditNotes.currency,
+              reason: creditNotes.reason,
+              isVoid: creditNotes.isVoid,
+              invoiceNumber: invoices.number,
+              quantity: sql<string>`coalesce((
                   select sum(${creditNoteLines.quantity})
                   from ${creditNoteLines}
                   where ${creditNoteLines.creditNoteId} = ${creditNotes.id}
                 ), 0)::numeric(18,4)::text`,
-              })
-              .from(creditNotes)
-              .innerJoin(invoices, eq(invoices.id, creditNotes.invoiceId))
-              .where(
-                and(
-                  eq(invoices.orderId, orderId),
-                  eq(creditNotes.organizationId, organizationId),
-                ),
-              )
-              .orderBy(creditNotes.createdAt)
-          : [];
+            })
+            .from(creditNotes)
+            .innerJoin(invoices, eq(invoices.id, creditNotes.invoiceId))
+            .where(
+              and(
+                eq(invoices.orderId, orderId),
+                eq(creditNotes.organizationId, organizationId),
+              ),
+            )
+            .orderBy(creditNotes.createdAt)
+        : [];
 
       /**
        * Money and settling are a sale's (ADR-055). A purchase records no
@@ -582,6 +605,8 @@ export class OrdersService {
         returnCount,
         deliverToId,
         deliverToName,
+        totals,
+        totalsComplete,
         ...rest
       } = order;
       const sale = order.direction === 'sale' && !order.isSample;
@@ -594,29 +619,59 @@ export class OrdersService {
           deliverToId && deliverToName
             ? { id: deliverToId, name: deliverToName }
             : null,
-        money: sale
+        ...(sight.prices ? { totals, totalsComplete } : {}),
+        ...(sight.invoices
           ? {
-              // One currency per sale (ADR-046 amendment): the totals' one.
-              currency: order.totals[0]?.currency ?? null,
-              invoiced,
-              credited,
-              netInvoiced,
-              notInvoiced,
+              money: sale
+                ? {
+                    // One currency per sale (ADR-046 amendment): the
+                    // totals' one.
+                    currency: totals[0]?.currency ?? null,
+                    invoiced,
+                    credited,
+                    netInvoiced,
+                    // The lines' prices, not yet billed.
+                    ...(sight.prices ? { notInvoiced } : {}),
+                  }
+                : null,
+              documents: sale
+                ? { invoices: invoiceRows, creditNotes: creditRows }
+                : null,
             }
-          : null,
+          : {}),
         unsettledReturns: sale ? unsettledReturns : 0,
         counts: {
           shipments: shipmentCount,
           voidedShipments: voidedShipmentCount,
           returns: returnCount,
-          documents: invoiceRows.length + creditRows.length,
+          ...(sight.invoices
+            ? { documents: invoiceRows.length + creditRows.length }
+            : {}),
         },
-        documents: sale
-          ? { invoices: invoiceRows, creditNotes: creditRows }
-          : null,
         lines: lines.map(
-          ({ productName, variantName, quantityUnsettled, ...line }) => ({
+          ({
+            productName,
+            variantName,
+            quantityUnsettled,
+            unitPrice,
+            currency,
+            priceSource,
+            priceListId,
+            priceListName,
+            lineTotal,
+            ...line
+          }) => ({
             ...line,
+            ...(sight.prices
+              ? {
+                  unitPrice,
+                  currency,
+                  priceSource,
+                  priceListId,
+                  priceListName,
+                  lineTotal,
+                }
+              : {}),
             quantityUnsettled: sale ? quantityUnsettled : '0.0000',
             description: itemName(productName, variantName),
           }),

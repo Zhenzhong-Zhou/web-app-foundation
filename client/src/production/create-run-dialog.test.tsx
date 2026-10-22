@@ -57,6 +57,7 @@ describe('CreateRunDialog', () => {
     renderWithAuth(
       <CreateRunDialog
         open
+        canSeePartners
         onClose={() => undefined}
         onCreated={() => undefined}
       />,
@@ -72,5 +73,49 @@ describe('CreateRunDialog', () => {
 
     await expect.poll(() => sent.length).toBe(1);
     expect(sent[0].bomId).toBe('bom-active');
+  });
+
+  /**
+   * Production may not see partners (ADR-080): the dialog does not ask,
+   * so the item and the place still come, and the manufacturer's field
+   * says why it offers only making it here.
+   */
+  it('plans without asking for partners the reader may not see', async () => {
+    let askedForPartners = false;
+    server.use(
+      http.get('/api/v1/products/variants', () => HttpResponse.json([VARIANT])),
+      http.get('/api/v1/locations', () =>
+        HttpResponse.json([
+          { id: 'loc-wip', name: 'WIP', type: 'bin', parentId: null },
+        ]),
+      ),
+      http.get('/api/v1/partners', () => {
+        askedForPartners = true;
+        return HttpResponse.json([]);
+      }),
+    );
+
+    renderWithAuth(
+      <CreateRunDialog
+        open
+        canSeePartners={false}
+        onClose={() => undefined}
+        onCreated={() => undefined}
+      />,
+    );
+
+    expect(
+      await screen.findByText(
+        'You can’t see customers and suppliers, so a contract manufacturer can’t be chosen here.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: 'Contract manufacturer' }),
+    ).toHaveTextContent('We make it ourselves');
+    await userEvent.click(screen.getByLabelText(/Made at/));
+    expect(
+      await screen.findByRole('option', { name: 'WIP' }),
+    ).toBeInTheDocument();
+    expect(askedForPartners).toBe(false);
   });
 });

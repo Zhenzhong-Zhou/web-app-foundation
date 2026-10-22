@@ -20,6 +20,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import type { Location, Movement, VariantOption } from '../api/types.gen';
+import { useCan } from '../auth/permissions';
 import { DateRangeFilter } from '../components/date-range-filter';
 import { ExportButton } from '../components/export-button';
 import { LoadMoreButton } from '../components/load-more-button';
@@ -61,6 +62,10 @@ const PAGE_SIZE = 25;
  */
 export function MovementsPage() {
   const intl = useIntl();
+  const can = useCan();
+  // Sales sees stock but not locations (ADR-080): without them the page
+  // does not ask, and leaves the Location filter out.
+  const canSeeLocations = can('locations.view');
   const [variants, setVariants] = useState<VariantOption[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
 
@@ -98,7 +103,7 @@ export function MovementsPage() {
 
     void Promise.all([
       api<VariantOption[]>('/products/variants'),
-      api<Location[]>('/locations'),
+      canSeeLocations ? api<Location[]>('/locations') : Promise.resolve([]),
     ])
       .then(([variantRows, locationRows]) => {
         if (ignore) return;
@@ -112,7 +117,7 @@ export function MovementsPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [canSeeLocations]);
 
   // Stock sits only at leaves (ADR-024), so nothing else can appear in a row.
   const leaves = leavesOf(locations);
@@ -167,28 +172,30 @@ export function MovementsPage() {
           )}
         />
 
-        <TextField
-          select
-          label={intl.formatMessage({
-            id: 'inventory.location',
-            defaultMessage: 'Location',
-          })}
-          value={locationId}
-          onChange={(event) => setLocationId(event.target.value)}
-          sx={{ minWidth: rem(200) }}
-        >
-          <MenuItem value="">
-            {intl.formatMessage({
-              id: 'inventory.everywhere',
-              defaultMessage: 'Everywhere',
+        {canSeeLocations && (
+          <TextField
+            select
+            label={intl.formatMessage({
+              id: 'inventory.location',
+              defaultMessage: 'Location',
             })}
-          </MenuItem>
-          {leaves.map((location) => (
-            <MenuItem key={location.id} value={location.id}>
-              {location.name}
+            value={locationId}
+            onChange={(event) => setLocationId(event.target.value)}
+            sx={{ minWidth: rem(200) }}
+          >
+            <MenuItem value="">
+              {intl.formatMessage({
+                id: 'inventory.everywhere',
+                defaultMessage: 'Everywhere',
+              })}
             </MenuItem>
-          ))}
-        </TextField>
+            {leaves.map((location) => (
+              <MenuItem key={location.id} value={location.id}>
+                {location.name}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
 
         {/* Matches on either end of a transfer, since a movement between two
             shelves is as much a fact about the source as the destination. */}

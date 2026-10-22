@@ -48,6 +48,8 @@ function samplesOf(spec: FieldSpec): unknown[] {
       return ['America/Vancouver'];
     case 'action':
       return [AUDIT_ACTIONS.ORDER_CREATED];
+    case 'permission':
+      return [['orders.view', 'orders.view_prices']];
     case 'text':
       return ['Spring catalogue', '12.5000', ID];
   }
@@ -192,6 +194,20 @@ describe('wordEntry, a person', () => {
       details.find((detail) => detail.field === 'Filters')?.value?.text;
     expect(filters(mine)).toBe('Person you');
     expect(filters(theirs)).toBe('Person one person');
+  });
+});
+
+/** A list reads as British English writes one, as the copy does. */
+describe('wordEntry, a list', () => {
+  it('joins three with no comma before the and', () => {
+    const [detail] = wordEntry(
+      entry({ requiredNameLanguages: ['en', 'fr-CA', 'zh-Hans'] }),
+      IN_ENGLISH,
+    ).details;
+
+    expect(detail.value?.text).toBe(
+      'English, Canadian French and Simplified Chinese',
+    );
   });
 });
 

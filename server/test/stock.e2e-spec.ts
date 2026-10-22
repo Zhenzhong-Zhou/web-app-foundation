@@ -139,9 +139,9 @@ describe('Stock (e2e)', () => {
 
   /**
    * A role with stock.move but not stock.adjust, which no seeded role has.
-   * Inserted directly because roles are read-only over HTTP — the API has no
-   * way to make one, and this is testing the guard rather than role
-   * management.
+   * Inserted directly, holding these two alone: POST /v1/roles would add
+   * the three every role holds and refuse stock.move without what it needs
+   * (ADR-080), and this is testing the guard rather than role management.
    */
   async function moverRole(organizationId: string) {
     const [role] = await db
@@ -568,7 +568,7 @@ describe('Stock (e2e)', () => {
        * splitting /adjustments out to get one would put a second write path
        * into the ledger (ADR-023).
        */
-      await mover
+      const refused = await mover
         .post('/v1/stock/movements')
         .send({
           variantId: ctx.variant.id,
@@ -579,6 +579,10 @@ describe('Stock (e2e)', () => {
           note: 'Three missing from the shelf',
         })
         .expect(403);
+      // In their words, as the route's own guard refuses (#148).
+      expect(body<{ message: string }>(refused).message).toBe(
+        'Your role, Mover, doesn’t include “Correct a count when the system is wrong”. Owner can change your roles.',
+      );
 
       // And nothing was written by the attempt.
       expect(await db.select().from(stockMovements)).toHaveLength(1);

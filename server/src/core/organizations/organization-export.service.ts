@@ -3,6 +3,7 @@ import { finished, pipeline } from 'node:stream/promises';
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, eq, isNull, type SQL, sql } from 'drizzle-orm';
+import { getTableConfig } from 'drizzle-orm/pg-core';
 import type { Response } from 'express';
 import { ZipFile } from 'yazl';
 
@@ -15,6 +16,7 @@ import {
   files,
   type FileSize,
   organizations,
+  roles,
 } from '../../database/schema';
 import { runInTenantContext } from '../../database/tenant-context';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -27,6 +29,7 @@ import {
 import { AuditService } from '../audit/audit.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
 import type { RequestContext } from '../auth/request-context';
+import { SYSTEM_ROLE_DESCRIPTIONS } from '../authorization/permissions';
 import { FILE_STORAGE, type FileStorage, keyOf } from '../files/file-storage';
 import { ExportContributions } from './export-contributions';
 import { exportedTables } from './organization-tables';
@@ -146,14 +149,19 @@ export class OrganizationExportService {
             'organization',
             sql`select * from organizations where id = ${organizationId}`,
           );
+          // Each member's role by name, from membership_roles (ADR-080),
+          // which is exported here rather than as a file of its own.
           csv(
             'members',
-            sql`select u.id as user_id, u.name, u.email, r.name as role,
+            sql`select u.id as user_id, u.name, u.email,
+                   (select string_agg(r.name, ', ' order by r.id)
+                    from membership_roles mr
+                    join roles r on r.id = mr.role_id
+                    where mr.membership_id = m.id) as role,
                    m.job_title, m.department, m.location, m.work_phone,
                    m.extension, m.created_at as joined_at
             from memberships m
             join users u on u.id = m.user_id
-            join roles r on r.id = m.role_id
             where m.organization_id = ${organizationId}
             order by m.created_at, m.id`,
           );
@@ -171,7 +179,9 @@ export class OrganizationExportService {
           for (const table of exportedTables()) {
             csv(
               table,
-              sql`select * from ${sql.identifier(table)}
+              table === 'roles'
+                ? rolesOf(organizationId, locale)
+                : sql`select * from ${sql.identifier(table)}
               where organization_id = ${organizationId}
               order by 1`,
             );
@@ -284,6 +294,25 @@ export class OrganizationExportService {
     const stream = await this.storage.get(key);
     for await (const chunk of stream) yield chunk as Buffer;
   }
+}
+
+/**
+ * roles.csv: every column as stored but a built-in role's line, which the
+ * table does not hold (ADR-080): the catalogue's, in the export's language.
+ */
+function rolesOf(organizationId: string, locale: Locale): SQL {
+  const lines = Object.entries(SYSTEM_ROLE_DESCRIPTIONS).map(
+    ([name, line]) =>
+      sql`when is_system and name = ${name} then ${translate(line, locale)}`,
+  );
+  const columns = getTableConfig(roles).columns.map((column) =>
+    column.name === 'description'
+      ? sql`case ${sql.join(lines, sql` `)} else description end as description`
+      : sql.identifier(column.name),
+  );
+  return sql`select ${sql.join(columns, sql`, `)} from roles
+    where organization_id = ${organizationId}
+    order by 1`;
 }
 
 /** The largest size a file is kept in. */
@@ -539,7 +568,12 @@ const GLOSSARY = [
   t({
     id: 'organization.export.glossary.invitations',
     defaultMessage:
-      'In invitations.csv, each invitation: email, the address invited; role_id, the role it grants; locale, the language it is written in; note, the inviter’s message; invited_by, who sent it, a user_id; link, how its latest link went: emailed, copied, or not_sent when the email did not go; expires_at, when that link ends, in UTC; accepted_at, when it was accepted, and membership_id, the membership it made; revoked_at, when it was revoked.',
+      'In invitations.csv, each invitation: email, the address invited; locale, the language it is written in; note, the inviter’s message; invited_by, who sent it, a user_id; link, how its latest link went: emailed, copied, or not_sent when the email did not go; expires_at, when that link ends, in UTC; accepted_at, when it was accepted, and membership_id, the membership it made; revoked_at, when it was revoked. The roles each grants are in invitation_roles.csv, by invitation_id and role_id.',
+  }),
+  t({
+    id: 'organization.export.glossary.roles',
+    defaultMessage:
+      'In roles.csv, each role: name, as the organization named it, the three built in under their English names, Owner, Admin and Viewer; description, what it is for, a built-in role’s in the language of this README; updated_by, who saved a role the organization made last, a user_id. What each role may do is in role_permissions.csv.',
   }),
   t({
     id: 'organization.export.glossary.flags',

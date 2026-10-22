@@ -86,6 +86,8 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(
       /^Good (morning|afternoon|evening), Owner$/,
     );
+    // The day, then the organization, a space either side of the dot.
+    expect(screen.getByText(/ · Alpha Co$/)).toBeVisible();
 
     const ship = screen.getByRole('region', { name: 'To ship' });
     expect(

@@ -5,7 +5,11 @@ import { addDays, dayIn, todayIn } from '../../common/today';
 import { AUDIT_ACTIONS } from '../../core/audit/audit-actions';
 import type { RequestContext } from '../../core/auth/request-context';
 import type { MemberRole } from '../../core/authorization/dto/member-access-response.dto';
-import { MemberAccessService } from '../../core/authorization/member-access.service';
+import {
+  MemberAccessService,
+  memberRole,
+} from '../../core/authorization/member-access.service';
+import { rolesOfMember } from '../../core/authorization/member-roles';
 import type { Permission } from '../../core/authorization/permissions';
 import { inviterStillHere } from '../../core/invitations/inviter';
 import type { Transaction } from '../../database/database.module';
@@ -15,7 +19,6 @@ import {
   organizations,
   productVariants,
   type RecentKind,
-  roles,
   stockMovements,
   users,
 } from '../../database/schema';
@@ -66,7 +69,12 @@ const WORK: {
     key: 'lookUp',
     may: (held) => held.has('products.view') || held.has('stock.view'),
   },
-  { key: 'receiveStock', may: (held) => held.has('stock.move') },
+  // Against an order too (ADR-080): its button then opens the confirmed
+  // purchases, for someone who may not move stock otherwise.
+  {
+    key: 'receiveStock',
+    may: (held) => held.has('stock.move') || held.has('orders.receive'),
+  },
   { key: 'raiseOrder', may: (held) => held.has('orders.create') },
   { key: 'shipOrder', may: (held) => held.has('orders.ship') },
   { key: 'planRun', may: (held) => held.has('production.create') },
@@ -119,7 +127,7 @@ interface Membership {
   photoFileId: string | null;
   emailVerifiedAt: Date | null;
   founder: boolean;
-  role: MemberRole;
+  roles: MemberRole[];
 }
 
 /**
@@ -165,7 +173,7 @@ export class WelcomeService {
         held,
       ),
       this.inviter(membership.id),
-      this.access.given(context.userId, membership.role, held),
+      this.access.given(context, membership.roles, held),
     ]);
     if (items.every((item) => item.done)) return null;
 
@@ -208,11 +216,9 @@ export class WelcomeService {
           photoFileId: users.photoFileId,
           emailVerifiedAt: users.emailVerifiedAt,
           founder: sql<boolean>`${memberships.createdAt} = ${organizations.createdAt}`,
-          role: { name: roles.name, description: roles.description },
         })
         .from(memberships)
         .innerJoin(users, eq(users.id, memberships.userId))
-        .innerJoin(roles, eq(roles.id, memberships.roleId))
         .innerJoin(
           organizations,
           eq(organizations.id, memberships.organizationId),
@@ -223,7 +229,10 @@ export class WelcomeService {
             eq(memberships.userId, userId),
           ),
         );
-      return row;
+      if (!row) return undefined;
+
+      const held = await rolesOfMember(tx, row.id);
+      return { ...row, roles: held.map(memberRole) };
     });
   }
 

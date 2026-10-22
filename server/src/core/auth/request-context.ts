@@ -14,8 +14,12 @@ export interface RequestContext {
   name: string;
   /** Null when the user belongs to no organization — see SessionGuard. */
   organizationId: string | null;
-  /** Null whenever organizationId is. Step 4's permission guard reads this. */
-  roleId: string | null;
+  /**
+   * Their membership there, null whenever organizationId is: what they
+   * may do is asked of it, through all its roles, on every request
+   * (ADR-080). Never a role, which a member may hold several of.
+   */
+  membershipId: string | null;
   /**
    * The organization's time zone (ADR-072), read with the membership, so
    * deciding a day costs a request nothing more. Null whenever

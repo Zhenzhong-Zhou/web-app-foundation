@@ -72,7 +72,7 @@ describe('AccountPage', () => {
 
   it('shows your access here: the role, its line, what you can do and whom to ask (ADR-079)', async () => {
     const access: MemberAccess = {
-      role: { name: 'Viewer', description: null },
+      roles: [{ name: 'Viewer', description: null }],
       holdsEverything: false,
       whomToAsk: [{ id: 'user-mei', name: 'Mei Lin' }],
     };
@@ -114,7 +114,7 @@ describe('AccountPage', () => {
 
   it('names whom to ask without a link for a role that may not open People', async () => {
     const access: MemberAccess = {
-      role: { name: 'Packer', description: 'Packs orders' },
+      roles: [{ name: 'Packer', description: 'Packs orders' }],
       holdsEverything: false,
       whomToAsk: [{ id: 'user-mei', name: 'Mei Lin' }],
     };

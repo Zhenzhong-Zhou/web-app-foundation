@@ -26,6 +26,11 @@ export const PERMISSIONS = {
   ROLES_VIEW: 'roles.view',
   // A permission of its own: role assignment is privilege escalation.
   ROLES_ASSIGN: 'roles.assign',
+  // Making, changing and deleting roles stay the Owners' (ADR-080): never
+  // offered in the editor, so editing a role cannot be used to climb.
+  ROLES_CREATE: 'roles.create',
+  ROLES_UPDATE: 'roles.update',
+  ROLES_DELETE: 'roles.delete',
 
   ORGANIZATIONS_VIEW: 'organizations.view',
   ORGANIZATIONS_UPDATE: 'organizations.update',
@@ -93,6 +98,9 @@ export const PERMISSIONS = {
   PARTNERS_UPDATE: 'partners.update',
 
   ORDERS_VIEW: 'orders.view',
+  // An order's line prices, totals and tax, split from orders.view (ADR-080):
+  // the dock needs no more than a temp does to see what suppliers are paid.
+  ORDERS_VIEW_PRICES: 'orders.view_prices',
   ORDERS_CREATE: 'orders.create',
   ORDERS_UPDATE: 'orders.update',
   ORDERS_RECEIVE: 'orders.receive',
@@ -117,76 +125,406 @@ export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 export const ALL_PERMISSIONS = Object.values(PERMISSIONS) as Permission[];
 
-/** Shown in the role editor; seeded into permissions.description. */
-export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
-  'users.view': 'See the list of members',
-  'users.create': 'Add a user to the organization',
-  'users.delete': 'Remove or suspend a member',
-  'roles.view': 'See roles and the permissions they grant',
-  'roles.assign': 'Change which role a member holds',
-  'organizations.view': 'See organization settings',
-  'organizations.update': 'Change organization settings',
-  'organizations.export': 'Download everything the organization holds',
-  'organizations.delete': 'Delete the organization, or cancel its deletion',
-  'audit.view': 'Read the audit log',
-  'products.view': 'See the product catalogue',
-  'products.create': 'Add a product to the catalogue',
-  'products.update': 'Edit or discontinue a product',
-  'product_licences.view': 'See product licences and registrations',
-  'product_licences.create': 'Record a licence number',
-  'product_licences.update': 'Correct a licence, or mark it withdrawn',
-  'tax_codes.view': 'See tax codes and their rates',
-  'tax_codes.create': 'Add a tax code',
-  'tax_codes.update': 'Change a tax code’s rates, or retire it',
-  'invoices.view': 'See invoices',
-  'invoices.create': 'Draft an invoice for a shipment',
-  'invoices.update': 'Edit a draft invoice’s prices, tax and dates',
-  'invoices.delete': 'Delete a draft invoice',
-  'invoices.issue': 'Issue an invoice, or void one',
-  'return_authorizations.view': 'See return authorizations',
-  'return_authorizations.create': 'Authorize a customer to send goods back',
-  'return_authorizations.update': 'Cancel or close a return authorization',
-  'locations.view': 'See warehouses, zones, and bins',
-  'locations.create': 'Add a location',
-  'locations.update': 'Edit, move, or retire a location',
-  'stock.view': 'See what is on hand and where',
+/**
+ * Each permission's line, in the reader's language (ADR-080): in the
+ * editor's catalogue, the audit log, the export and the refusal, so the
+ * four say the same thing. Seeded in English into permissions.description.
+ * What a holder can do, put together, is the client's (ADR-079).
+ */
+export const PERMISSION_DESCRIPTIONS: Record<Permission, Translatable> = {
+  'users.view': t({
+    id: 'permissions.users.view',
+    defaultMessage: 'See who works here',
+  }),
+  'users.create': t({
+    id: 'permissions.users.create',
+    defaultMessage: 'Invite people',
+  }),
+  'users.delete': t({
+    id: 'permissions.users.delete',
+    defaultMessage: 'Remove a member',
+  }),
+  'roles.view': t({
+    id: 'permissions.roles.view',
+    defaultMessage: 'See the roles and what they grant',
+  }),
+  'roles.assign': t({
+    id: 'permissions.roles.assign',
+    defaultMessage: 'Change members’ roles',
+  }),
+  'roles.create': t({
+    id: 'permissions.roles.create',
+    defaultMessage: 'Make a role',
+  }),
+  'roles.update': t({
+    id: 'permissions.roles.update',
+    defaultMessage: 'Change a role',
+  }),
+  'roles.delete': t({
+    id: 'permissions.roles.delete',
+    defaultMessage: 'Delete a role',
+  }),
+  'organizations.view': t({
+    id: 'permissions.organizations.view',
+    defaultMessage: 'See the organization’s settings',
+  }),
+  'organizations.update': t({
+    id: 'permissions.organizations.update',
+    defaultMessage: 'Change the organization’s settings',
+  }),
+  'organizations.export': t({
+    id: 'permissions.organizations.export',
+    defaultMessage: 'Download everything the organization holds',
+  }),
+  'organizations.delete': t({
+    id: 'permissions.organizations.delete',
+    defaultMessage: 'Close the organization, or cancel its deletion',
+  }),
+  'audit.view': t({
+    id: 'permissions.audit.view',
+    defaultMessage: 'Read the audit log',
+  }),
+  'products.view': t({
+    id: 'permissions.products.view',
+    defaultMessage: 'See the product catalogue',
+  }),
+  'products.create': t({
+    id: 'permissions.products.create',
+    defaultMessage: 'Add a product',
+  }),
+  'products.update': t({
+    id: 'permissions.products.update',
+    defaultMessage: 'Edit or discontinue a product',
+  }),
+  'product_licences.view': t({
+    id: 'permissions.productLicences.view',
+    defaultMessage: 'See product licences and registrations',
+  }),
+  'product_licences.create': t({
+    id: 'permissions.productLicences.create',
+    defaultMessage: 'Record a licence number',
+  }),
+  'product_licences.update': t({
+    id: 'permissions.productLicences.update',
+    defaultMessage: 'Correct a licence, or mark it withdrawn',
+  }),
+  'tax_codes.view': t({
+    id: 'permissions.taxCodes.view',
+    defaultMessage: 'See tax codes and their rates',
+  }),
+  'tax_codes.create': t({
+    id: 'permissions.taxCodes.create',
+    defaultMessage: 'Add a tax code',
+  }),
+  'tax_codes.update': t({
+    id: 'permissions.taxCodes.update',
+    defaultMessage: 'Change a tax code’s rates, or retire it',
+  }),
+  'invoices.view': t({
+    id: 'permissions.invoices.view',
+    defaultMessage: 'See invoices and credit notes',
+  }),
+  'invoices.create': t({
+    id: 'permissions.invoices.create',
+    defaultMessage: 'Draft an invoice for a shipment',
+  }),
+  'invoices.update': t({
+    id: 'permissions.invoices.update',
+    defaultMessage: 'Edit a draft invoice’s prices, tax and dates',
+  }),
+  'invoices.delete': t({
+    id: 'permissions.invoices.delete',
+    defaultMessage: 'Delete a draft invoice',
+  }),
+  'invoices.issue': t({
+    id: 'permissions.invoices.issue',
+    defaultMessage: 'Issue, void or credit an invoice',
+  }),
+  'return_authorizations.view': t({
+    id: 'permissions.returnAuthorizations.view',
+    defaultMessage: 'See return authorizations',
+  }),
+  'return_authorizations.create': t({
+    id: 'permissions.returnAuthorizations.create',
+    defaultMessage: 'Authorize a customer to send goods back',
+  }),
+  'return_authorizations.update': t({
+    id: 'permissions.returnAuthorizations.update',
+    defaultMessage: 'Cancel or close a return authorization',
+  }),
+  'locations.view': t({
+    id: 'permissions.locations.view',
+    defaultMessage: 'See warehouses, zones and bins',
+  }),
+  'locations.create': t({
+    id: 'permissions.locations.create',
+    defaultMessage: 'Add a location',
+  }),
+  'locations.update': t({
+    id: 'permissions.locations.update',
+    defaultMessage: 'Edit, move or retire a location',
+  }),
+  'stock.view': t({
+    id: 'permissions.stock.view',
+    defaultMessage: 'See what is on hand and where',
+  }),
   // One permission for receiving, shipping, and transferring: each records
   // something that happened in the world, and splitting them would suggest
   // one is riskier than another. Adjustment is separate for the opposite
   // reason — it overrides the record itself.
-  'stock.move': 'Receive, ship, or transfer stock',
+  'stock.move': t({
+    id: 'permissions.stock.move',
+    defaultMessage: 'Receive, ship or transfer stock',
+  }),
   // Separate from stock.move: an adjustment overrides the record itself, and
   // is the one movement with no external event behind it.
-  'stock.adjust': 'Correct a count when the system is wrong',
-  'costs.view': 'See what stock, lots and batches cost, and exchange rates',
-  'costs.update': 'Set and correct costs and exchange rates',
-  'price_lists.view': 'See price lists and the prices on them',
-  'price_lists.create': 'Add a price list',
-  'price_lists.update': 'Change prices on a list, rename it, or retire it',
-  'partners.view': 'See customers and suppliers',
-  'partners.create': 'Add a customer or supplier',
+  'stock.adjust': t({
+    id: 'permissions.stock.adjust',
+    defaultMessage: 'Correct a count when the system is wrong',
+  }),
+  'costs.view': t({
+    id: 'permissions.costs.view',
+    defaultMessage: 'See what stock, lots and batches cost, and exchange rates',
+  }),
+  'costs.update': t({
+    id: 'permissions.costs.update',
+    defaultMessage: 'Set and correct costs and exchange rates',
+  }),
+  'price_lists.view': t({
+    id: 'permissions.priceLists.view',
+    defaultMessage: 'See price lists and the prices on them',
+  }),
+  'price_lists.create': t({
+    id: 'permissions.priceLists.create',
+    defaultMessage: 'Add a price list',
+  }),
+  'price_lists.update': t({
+    id: 'permissions.priceLists.update',
+    defaultMessage: 'Change prices on a list, rename it or retire it',
+  }),
+  'partners.view': t({
+    id: 'permissions.partners.view',
+    defaultMessage: 'See customers and suppliers',
+  }),
+  'partners.create': t({
+    id: 'permissions.partners.create',
+    defaultMessage: 'Add a customer or supplier',
+  }),
   // No delete: a partner referenced by an order cannot be removed without
   // inventing gaps in the history the order exists to record.
-  'partners.update': 'Edit or retire a customer or supplier',
-  'orders.view': 'See purchase and sales orders',
-  'orders.create': 'Raise an order',
-  'orders.update': 'Edit, confirm, or cancel an order',
+  'partners.update': t({
+    id: 'permissions.partners.update',
+    defaultMessage: 'Edit or retire a customer or supplier',
+  }),
+  'orders.view': t({
+    id: 'permissions.orders.view',
+    defaultMessage: 'See purchase and sales orders',
+  }),
+  'orders.view_prices': t({
+    id: 'permissions.orders.viewPrices',
+    defaultMessage: 'See prices on orders',
+  }),
+  'orders.create': t({
+    id: 'permissions.orders.create',
+    defaultMessage: 'Raise an order',
+  }),
+  'orders.update': t({
+    id: 'permissions.orders.update',
+    defaultMessage: 'Edit, confirm or cancel an order',
+  }),
   // Separate from update: receiving writes to the ledger, and the person on
   // the dock is not usually the person who raises orders.
-  'orders.receive': 'Receive stock against an order',
+  'orders.receive': t({
+    id: 'permissions.orders.receive',
+    defaultMessage: 'Receive stock against an order',
+  }),
   // Separate from receive and update, for the reason receive is: the person
   // packing boxes is not usually the person raising orders.
-  'orders.ship': 'Ship stock against a sales order',
-  'boms.view': 'See recipes and what they consume',
-  'boms.create': 'Add a recipe or draft a new version of one',
-  'boms.update': 'Edit a draft, promote it, or archive it',
-  'production.view': 'See production runs and what they consumed',
-  'production.create': 'Plan a run',
-  'production.release': 'Issue components to a run, or cancel one',
-  'production.complete': 'Record output and consume components',
-  'production.override_licence':
-    'Release a run under an expired or not-yet-in-force licence, with a reason',
+  'orders.ship': t({
+    id: 'permissions.orders.ship',
+    defaultMessage: 'Ship stock against a sales order',
+  }),
+  'boms.view': t({
+    id: 'permissions.boms.view',
+    defaultMessage: 'See recipes and what they consume',
+  }),
+  'boms.create': t({
+    id: 'permissions.boms.create',
+    defaultMessage: 'Add a recipe or draft a new version of one',
+  }),
+  'boms.update': t({
+    id: 'permissions.boms.update',
+    defaultMessage: 'Edit a draft recipe, promote it or archive it',
+  }),
+  'production.view': t({
+    id: 'permissions.production.view',
+    defaultMessage: 'See production runs and what they consumed',
+  }),
+  'production.create': t({
+    id: 'permissions.production.create',
+    defaultMessage: 'Plan a run',
+  }),
+  'production.release': t({
+    id: 'permissions.production.release',
+    defaultMessage: 'Release a run, or cancel one',
+  }),
+  'production.complete': t({
+    id: 'permissions.production.complete',
+    defaultMessage: 'Record output and consume components',
+  }),
+  'production.override_licence': t({
+    id: 'permissions.production.overrideLicence',
+    defaultMessage:
+      'Release a run under an expired or not-yet-in-force licence, with a reason',
+  }),
 };
+
+/**
+ * A permission's line, quoted as each language quotes, where a sentence
+ * names it: the refusal, the editor's own refusals and the audit log.
+ */
+export function quotedLine(key: Permission): Translatable {
+  return t(
+    { id: 'permissions.quoted', defaultMessage: '“{line}”' },
+    { line: PERMISSION_DESCRIPTIONS[key] },
+  );
+}
+
+/**
+ * What each permission needs held with it (ADR-080). The editor ticks a
+ * permission's needs with it and unticks whatever needs one cleared, and
+ * the server refuses a role that lacks one. Each change needs its view,
+ * each act what it acts on, an act that goes further the act it extends
+ * (correcting a count, moving stock), and what sets an order's prices the
+ * prices. So does whatever a route must be told and only another area
+ * shows: the location received into or shipped from, the partner and
+ * items of an order, the shipment an invoice is drafted for. Only what a
+ * permission needs itself: a need's own needs follow from it.
+ * A test holds these to no cycle, and every built-in role and template to
+ * them.
+ */
+export const PERMISSION_NEEDS: Partial<
+  Record<Permission, readonly Permission[]>
+> = {
+  'users.create': ['users.view'],
+  'users.delete': ['users.view'],
+  'roles.assign': ['roles.view'],
+  'roles.create': ['roles.view'],
+  'roles.update': ['roles.view'],
+  'roles.delete': ['roles.view'],
+  'organizations.update': ['organizations.view'],
+  'organizations.export': ['organizations.view'],
+  'organizations.delete': ['organizations.view'],
+  // The log keeps what an order's lines were priced at, and a pro forma's
+  // total, which only whoever sees prices on orders may read (ADR-080).
+  'audit.view': ['orders.view_prices'],
+  'products.create': ['products.view'],
+  'products.update': ['products.view'],
+  'product_licences.create': ['product_licences.view'],
+  'product_licences.update': ['product_licences.view'],
+  'tax_codes.create': ['tax_codes.view'],
+  'tax_codes.update': ['tax_codes.view'],
+  // A shipment of an order, and a tax code for a line.
+  'invoices.create': ['invoices.view', 'orders.view'],
+  'invoices.update': ['invoices.view', 'tax_codes.view'],
+  'invoices.delete': ['invoices.view'],
+  'invoices.issue': ['invoices.view'],
+  // The order it is raised against, and the return linked to it. Raising a
+  // replacement makes a sale, so that route also requires orders.create;
+  // not a need here, since cancelling and closing make none.
+  'return_authorizations.create': ['return_authorizations.view', 'orders.view'],
+  'return_authorizations.update': ['return_authorizations.view', 'orders.view'],
+  'locations.create': ['locations.view'],
+  'locations.update': ['locations.view'],
+  // Receiving names the item and where it goes.
+  'stock.move': ['stock.view', 'products.view', 'locations.view'],
+  'stock.adjust': ['stock.move'],
+  'costs.update': ['costs.view'],
+  'price_lists.create': ['price_lists.view'],
+  'price_lists.update': ['price_lists.view', 'products.view'],
+  'partners.create': ['partners.view'],
+  'partners.update': ['partners.view'],
+  'orders.view_prices': ['orders.view'],
+  'orders.create': ['orders.view_prices', 'partners.view', 'products.view'],
+  // Adding a line names its item.
+  'orders.update': ['orders.view_prices', 'products.view'],
+  'orders.receive': ['orders.view', 'locations.view'],
+  'orders.ship': ['orders.view', 'locations.view'],
+  'boms.create': ['boms.view', 'products.view'],
+  'boms.update': ['boms.view', 'products.view'],
+  // What a run makes and where; where release takes its components from.
+  'production.create': ['production.view', 'products.view', 'locations.view'],
+  'production.release': ['production.view', 'locations.view'],
+  'production.complete': ['production.view'],
+  'production.override_licence': ['production.release'],
+};
+
+/**
+ * Every role's (ADR-080), shown ticked and locked in the editor: seeing who
+ * works here, the roles and the organization's settings. Every built-in
+ * role holds them, People and Members are for everyone (ADR-063), and the
+ * screens built so far read the organization's settings without asking.
+ */
+export const LOCKED_PERMISSIONS: readonly Permission[] = [
+  PERMISSIONS.USERS_VIEW,
+  PERMISSIONS.ROLES_VIEW,
+  PERMISSIONS.ORGANIZATIONS_VIEW,
+];
+
+/**
+ * What stays the Owners' (ADR-080), never offered in the editor: making,
+ * changing and deleting roles, and closing the organization (ADR-070).
+ * Only Owners edit roles and an Owner holds everything, so editing a role
+ * cannot be used to climb.
+ */
+export const NEVER_OFFERED: readonly Permission[] = [
+  PERMISSIONS.ROLES_CREATE,
+  PERMISSIONS.ROLES_UPDATE,
+  PERMISSIONS.ROLES_DELETE,
+  PERMISSIONS.ORGANIZATIONS_DELETE,
+];
+
+/**
+ * Who is told (ADR-080). Three notifications go to whoever holds a
+ * permission, so a made role changes who that is: named here once, for
+ * the services that send them (licence-reminders.service.ts,
+ * order-lines.service.ts, production-close.service.ts) and for the
+ * line each of those permissions has in the editor (PERMISSION_NOTES).
+ */
+export const TOLD = {
+  licenceExpiring: [
+    PERMISSIONS.PRODUCT_LICENCES_UPDATE,
+    PERMISSIONS.PRODUCTION_RELEASE,
+  ],
+  closedShort: [PERMISSIONS.ORDERS_UPDATE],
+  variance: [PERMISSIONS.PRODUCTION_COMPLETE],
+} as const satisfies Record<string, readonly Permission[]>;
+
+const TOLD_NOTES: Record<keyof typeof TOLD, Translatable> = {
+  licenceExpiring: t({
+    id: 'permissions.note.licenceExpiring',
+    defaultMessage:
+      'Also told when a licence is about to expire, and when it does.',
+  }),
+  closedShort: t({
+    id: 'permissions.note.closedShort',
+    defaultMessage: 'Also told when an order line closes short.',
+  }),
+  variance: t({
+    id: 'permissions.note.variance',
+    defaultMessage: 'Also told when a run closes off its plan.',
+  }),
+};
+
+/** A told permission's line in the editor: "Also told when …". */
+export const PERMISSION_NOTES: Partial<Record<Permission, Translatable>> =
+  Object.fromEntries(
+    (
+      Object.entries(TOLD) as [keyof typeof TOLD, readonly Permission[]][]
+    ).flatMap(([told, keys]) =>
+      keys.map((key): [Permission, Translatable] => [key, TOLD_NOTES[told]]),
+    ),
+  );
 
 export const SYSTEM_ROLES = {
   OWNER: 'Owner',
@@ -249,6 +587,8 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.PARTNERS_CREATE,
     PERMISSIONS.PARTNERS_UPDATE,
     PERMISSIONS.ORDERS_VIEW,
+    // Split from orders.view, which Admin held, so it keeps it (ADR-080).
+    PERMISSIONS.ORDERS_VIEW_PRICES,
     PERMISSIONS.ORDERS_CREATE,
     PERMISSIONS.ORDERS_UPDATE,
     PERMISSIONS.ORDERS_RECEIVE,
@@ -275,6 +615,8 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<
     PERMISSIONS.PRODUCTION_VIEW,
     PERMISSIONS.PARTNERS_VIEW,
     PERMISSIONS.ORDERS_VIEW,
+    // As Admin's: split from orders.view, which Viewer held (ADR-080).
+    PERMISSIONS.ORDERS_VIEW_PRICES,
   ],
 };
 
@@ -294,8 +636,9 @@ for (const [role, keys] of Object.entries(SYSTEM_ROLE_PERMISSIONS)) {
  * Each system role by what it lets a person do, in a line a newcomer
  * understands (ADR-077): on the Invite dialog, the invitation page and the
  * email, translated by key as the role names are (ADR-054). When the roles
- * change, these change with them. Provisioning stores the English in
- * roles.description, which the export writes.
+ * change, these change with them. Never stored: roles.description holds a
+ * made role's line alone (ADR-080), and the export writes these in its
+ * language.
  */
 export const SYSTEM_ROLE_DESCRIPTIONS: Record<SystemRole, Translatable> = {
   [SYSTEM_ROLES.OWNER]: t({
@@ -314,9 +657,115 @@ export const SYSTEM_ROLE_DESCRIPTIONS: Record<SystemRole, Translatable> = {
   }),
 };
 
+interface RoleTemplate {
+  name: Translatable;
+  permissions: readonly Permission[];
+}
+
 /**
- * Known gap (ADR-004), closed elsewhere: nothing here prevents an Admin
- * assigning the Owner role. Permission strings cannot express "not above your
- * own level", so that rule lives in UsersService.updateRole() rather than in
- * the guard.
+ * Where making a role starts (ADR-080): a name in the reader's language
+ * and boxes ticked, a start only, which an Owner changes as they like.
+ * Each holds the three every role holds and what each of its permissions
+ * needs, and nothing never offered; a test holds each to that. Warehouse,
+ * Production and Stock look-up leave prices on orders out.
+ */
+export const ROLE_TEMPLATES = {
+  warehouse: {
+    name: t({ id: 'roles.template.warehouse', defaultMessage: 'Warehouse' }),
+    permissions: [
+      ...LOCKED_PERMISSIONS,
+      PERMISSIONS.STOCK_VIEW,
+      PERMISSIONS.LOCATIONS_VIEW,
+      PERMISSIONS.STOCK_MOVE,
+      PERMISSIONS.PRODUCTS_VIEW,
+      PERMISSIONS.PRODUCT_LICENCES_VIEW,
+      PERMISSIONS.ORDERS_VIEW,
+      PERMISSIONS.ORDERS_RECEIVE,
+      PERMISSIONS.ORDERS_SHIP,
+    ],
+  },
+  sales: {
+    name: t({ id: 'roles.template.sales', defaultMessage: 'Sales' }),
+    permissions: [
+      ...LOCKED_PERMISSIONS,
+      PERMISSIONS.PARTNERS_VIEW,
+      PERMISSIONS.PARTNERS_CREATE,
+      PERMISSIONS.PARTNERS_UPDATE,
+      PERMISSIONS.ORDERS_VIEW,
+      PERMISSIONS.ORDERS_VIEW_PRICES,
+      PERMISSIONS.ORDERS_CREATE,
+      PERMISSIONS.ORDERS_UPDATE,
+      PERMISSIONS.INVOICES_VIEW,
+      PERMISSIONS.INVOICES_CREATE,
+      PERMISSIONS.RETURN_AUTHORIZATIONS_VIEW,
+      PERMISSIONS.RETURN_AUTHORIZATIONS_CREATE,
+      PERMISSIONS.PRICE_LISTS_VIEW,
+      PERMISSIONS.PRODUCTS_VIEW,
+      PERMISSIONS.STOCK_VIEW,
+    ],
+  },
+  finance: {
+    name: t({ id: 'roles.template.finance', defaultMessage: 'Finance' }),
+    permissions: [
+      ...LOCKED_PERMISSIONS,
+      PERMISSIONS.INVOICES_VIEW,
+      PERMISSIONS.INVOICES_CREATE,
+      PERMISSIONS.INVOICES_UPDATE,
+      PERMISSIONS.INVOICES_DELETE,
+      PERMISSIONS.INVOICES_ISSUE,
+      PERMISSIONS.COSTS_VIEW,
+      PERMISSIONS.COSTS_UPDATE,
+      PERMISSIONS.PRICE_LISTS_VIEW,
+      PERMISSIONS.PRICE_LISTS_CREATE,
+      PERMISSIONS.PRICE_LISTS_UPDATE,
+      PERMISSIONS.TAX_CODES_VIEW,
+      PERMISSIONS.TAX_CODES_CREATE,
+      PERMISSIONS.TAX_CODES_UPDATE,
+      PERMISSIONS.PARTNERS_VIEW,
+      PERMISSIONS.ORDERS_VIEW,
+      PERMISSIONS.ORDERS_VIEW_PRICES,
+      PERMISSIONS.RETURN_AUTHORIZATIONS_VIEW,
+      PERMISSIONS.RETURN_AUTHORIZATIONS_UPDATE,
+      PERMISSIONS.AUDIT_VIEW,
+      PERMISSIONS.PRODUCTS_VIEW,
+    ],
+  },
+  production: {
+    name: t({ id: 'roles.template.production', defaultMessage: 'Production' }),
+    permissions: [
+      ...LOCKED_PERMISSIONS,
+      PERMISSIONS.BOMS_VIEW,
+      PERMISSIONS.BOMS_CREATE,
+      PERMISSIONS.BOMS_UPDATE,
+      PERMISSIONS.PRODUCTION_VIEW,
+      PERMISSIONS.PRODUCTION_CREATE,
+      PERMISSIONS.PRODUCTION_RELEASE,
+      PERMISSIONS.PRODUCTION_COMPLETE,
+      PERMISSIONS.PRODUCTS_VIEW,
+      PERMISSIONS.PRODUCT_LICENCES_VIEW,
+      PERMISSIONS.STOCK_VIEW,
+      PERMISSIONS.LOCATIONS_VIEW,
+    ],
+  },
+  stock_lookup: {
+    name: t({
+      id: 'roles.template.stockLookup',
+      defaultMessage: 'Stock look-up',
+    }),
+    permissions: [
+      ...LOCKED_PERMISSIONS,
+      PERMISSIONS.STOCK_VIEW,
+      PERMISSIONS.LOCATIONS_VIEW,
+      PERMISSIONS.PRODUCTS_VIEW,
+    ],
+  },
+} satisfies Record<string, RoleTemplate>;
+
+export type RoleTemplateKey = keyof typeof ROLE_TEMPLATES;
+
+/**
+ * Known gap (ADR-004), closed elsewhere: nothing here prevents giving a role
+ * that grants more than the giver holds. Permission strings cannot express
+ * "not above your own level", so that rule, giving only what you hold
+ * (ADR-080), lives in giving.ts rather than in the guard.
  */

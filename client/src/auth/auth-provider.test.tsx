@@ -23,7 +23,6 @@ function session(
     organization: organization && {
       id: `org-${organization.name}`,
       name: organization.name,
-      roleId: 'role-viewer',
       branding: {
         logoFileId: null,
         accentColor: null,

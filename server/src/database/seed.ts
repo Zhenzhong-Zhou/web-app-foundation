@@ -64,7 +64,8 @@ async function seed(): Promise<void> {
       .values(
         ALL_PERMISSIONS.map((key) => ({
           key,
-          description: PERMISSION_DESCRIPTIONS[key],
+          // In English: whatever shows a line takes it from the catalogues.
+          description: PERMISSION_DESCRIPTIONS[key].message,
         })),
       )
       .onConflictDoNothing({ target: permissions.key });

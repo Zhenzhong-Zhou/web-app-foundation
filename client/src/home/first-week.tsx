@@ -71,6 +71,12 @@ const HINTS = defineMessages({
     defaultMessage:
       'Record goods as they arrive, against their order or on their own.',
   },
+  // For whoever receives against orders only, without moving stock.
+  receiveOrders: {
+    id: 'home.welcome.receiveStock.hintOrders',
+    defaultMessage:
+      'Record goods as they arrive, against the purchase order they came on.',
+  },
   raiseOrder: {
     id: 'home.welcome.raiseOrder.hint',
     defaultMessage: 'A purchase from a supplier, or a sale to a customer.',
@@ -126,10 +132,15 @@ const DID: Partial<Record<Key, MessageDescriptor>> = defineMessages({
   },
 });
 
-/** Where each open item's button goes, and what it says. */
+/**
+ * Where each open item's button goes, and what it says. Receiving goes to
+ * Inventory for whoever may move stock, and otherwise to the confirmed
+ * purchases, the orders received against (ADR-080).
+ */
 function actionOf(
   key: Exclude<Key, 'confirmEmail'>,
   canSeeProducts: boolean,
+  canMoveStock: boolean,
 ): { to: string; label: MessageDescriptor } {
   switch (key) {
     case 'sayWhoYouAre':
@@ -141,7 +152,12 @@ function actionOf(
     case 'openOrder':
       return { to: '/orders', label: NAV_LABELS.orders };
     case 'receiveStock':
-      return { to: '/inventory', label: TITLES.receiveStock };
+      return canMoveStock
+        ? { to: '/inventory', label: TITLES.receiveStock }
+        : {
+            to: '/orders?direction=purchase&status=confirmed',
+            label: NAV_LABELS.orders,
+          };
     case 'raiseOrder':
       return { to: '/orders/new', label: TITLES.raiseOrder };
     case 'shipOrder':
@@ -161,16 +177,19 @@ function actionOf(
  * server by what the person has done here since joining, never by hand.
  * An open item's button goes where it is done; a done one says what was
  * done and opens it. `canInvite`, for the line that says inviting waits
- * for a confirmed address (`email_unverified`).
+ * for a confirmed address (`email_unverified`); `canMoveStock`, for where
+ * Receive stock goes.
  */
 export function FirstWeek({
   items,
   canSeeProducts,
   canInvite,
+  canMoveStock,
 }: {
   items: WelcomeItem[];
   canSeeProducts: boolean;
   canInvite: boolean;
+  canMoveStock: boolean;
 }) {
   const intl = useIntl();
   const done = items.filter((item) => item.done).length;
@@ -217,6 +236,7 @@ export function FirstWeek({
             item={item}
             canSeeProducts={canSeeProducts}
             canInvite={canInvite}
+            canMoveStock={canMoveStock}
           />
         ))}
       </Box>
@@ -228,10 +248,12 @@ function Item({
   item,
   canSeeProducts,
   canInvite,
+  canMoveStock,
 }: {
   item: WelcomeItem;
   canSeeProducts: boolean;
   canInvite: boolean;
+  canMoveStock: boolean;
 }) {
   const intl = useIntl();
   const { session } = useAuth();
@@ -288,9 +310,12 @@ function Item({
       </Box>
     );
   } else {
-    const hint: MessageDescriptor = HINTS[item.key];
+    const hint: MessageDescriptor =
+      item.key === 'receiveStock' && !canMoveStock
+        ? HINTS.receiveOrders
+        : HINTS[item.key];
     detail = intl.formatMessage(hint, { products: String(canSeeProducts) });
-    const { to, label } = actionOf(item.key, canSeeProducts);
+    const { to, label } = actionOf(item.key, canSeeProducts, canMoveStock);
     action = (
       <Button component={RouterLink} to={to} variant="outlined">
         {intl.formatMessage(label)}
@@ -323,13 +348,20 @@ function Item({
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={{ fontWeight: 600 }}>
             {intl.formatMessage(TITLES[item.key])}
+            {/* The space outside the message, which extraction trims. */}
             {item.done && (
-              <Box component="span" sx={{ position: 'absolute', left: -9999 }}>
-                {intl.formatMessage({
-                  id: 'home.start.done',
-                  defaultMessage: ' (done)',
-                })}
-              </Box>
+              <>
+                {' '}
+                <Box
+                  component="span"
+                  sx={{ position: 'absolute', left: -9999 }}
+                >
+                  {intl.formatMessage({
+                    id: 'home.start.done',
+                    defaultMessage: '(done)',
+                  })}
+                </Box>
+              </>
             )}
           </Typography>
           {detail && (

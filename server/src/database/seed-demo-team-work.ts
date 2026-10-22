@@ -811,7 +811,9 @@ export async function addTeamWork(
    * Daniel's purchases. PO-DEMO-7 is in euros, valued at the day's rate on
    * receipt (ADR-048). PO-DEMO-9 is due three days ago and not here yet,
    * so Home's To receive card has a late one, and its lines carry no price:
-   * they take Lakeshore's list.
+   * they take Lakeshore's list. PO-DEMO-11 is melatonin, confirmed and
+   * left for Tom to receive: a lot-tracked line nobody has received
+   * against, in the base currency so its receipt finds its cost.
    */
   const purchases = await actingAs(team.daniel.id, async (actor) => {
     await audited(
@@ -893,6 +895,21 @@ export async function addTeamWork(
       ],
     });
     await setStatus(actor, machine.id, 'confirmed');
+
+    const melatonin = await order(actor, {
+      partnerId: anchors.supplierId,
+      direction: 'purchase',
+      reference: 'PO-DEMO-11',
+      lines: [
+        {
+          variantId: catalogue.melatonin,
+          quantityOrdered: '5',
+          unitPrice: '290.0000',
+          currency: 'CAD',
+        },
+      ],
+    });
+    await setStatus(actor, melatonin.id, 'confirmed');
 
     return { herbs, bought, machine };
   });
@@ -1420,6 +1437,7 @@ export async function addTeamWork(
     'Team work added: Richmond warehouse with zones, shelves and a quarantine',
     'MAGCAP in three sizes',
     'PO-DEMO-7 in euros, PO-DEMO-9 late, a capsule filler in the cage',
+    'PO-DEMO-11 waiting to be received',
     'VC-0301 expired and quarantined',
     'SLEEP-BLEND-01 from hand-picked CHA-0522',
     'SLEEP-60-01 made 450 + 520 of 1000',

@@ -27,21 +27,9 @@ import { api } from '../lib/api';
 import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { useSubmit } from '../lib/use-submit';
 import { STATUS_TONES } from '../theme/status';
+import { HIDDEN } from './hidden';
 import { invitedByLabel, linkStatusLabel } from './invitation-words';
-import { roleLabel } from './role-names';
-
-/** Read by a screen reader, not drawn: the actions column's header. */
-const HIDDEN = {
-  position: 'absolute',
-  width: '1px',
-  height: '1px',
-  margin: '-1px',
-  padding: 0,
-  border: 0,
-  overflow: 'hidden',
-  whiteSpace: 'nowrap',
-  clip: 'rect(0 0 0 0)',
-} as const;
+import { mayGiveAll, roleList } from './role-names';
 
 /** What a row's buttons do; the page holds the dialog they open. */
 export interface InvitedActions {
@@ -50,24 +38,23 @@ export interface InvitedActions {
 }
 
 /**
- * Members' Invited (ADR-077): each pending invitation, its role, who sent
+ * Members' Invited (ADR-077): each pending invitation, its roles, who sent
  * it and when, and where its link stands, with Resend, Copy link and
- * Revoke. Nobody here is a member until they accept. An Admin sees no
- * buttons on an Owner's invitation, as on no Owner. On a phone each row
- * is a card.
+ * Revoke. Nobody here is a member until they accept. Only someone who may
+ * give every role an invitation names sees its buttons (ADR-080), so an
+ * Admin sees none on an Owner's. On a phone each row is a card.
  */
 export function InvitedSection({
   invitations,
   roles,
-  isOwner,
   selfId,
   busy,
   actions,
   onRevoked,
 }: {
   invitations: Invitation[];
-  roles: Role[];
-  isOwner: boolean;
+  /** The organization's roles, each saying whether the reader may give it. */
+  roles: readonly Role[];
   selfId: string | undefined;
   /** The invitation a row action is working on, its buttons held. */
   busy: string | null;
@@ -80,14 +67,9 @@ export function InvitedSection({
   const headingId = useId();
   const [revoking, setRevoking] = useState<Invitation | null>(null);
 
-  const roleName = (invitation: Invitation) =>
-    roleLabel(roles.find((role) => role.id === invitation.roleId)?.name ?? '');
-  const ownersOnly = (invitation: Invitation) =>
-    !isOwner &&
-    roles.find((role) => role.id === invitation.roleId)?.name === 'Owner';
-
+  const roleName = (invitation: Invitation) => roleList(invitation.roles);
   const buttons = (invitation: Invitation) =>
-    ownersOnly(invitation) ? null : (
+    !mayGiveAll(roles, invitation.roles) ? null : (
       <RowButtons
         invitation={invitation}
         disabled={busy !== null}
@@ -197,8 +179,8 @@ export function InvitedSection({
                   </TableCell>
                   <TableCell>
                     {intl.formatMessage({
-                      id: 'members.role',
-                      defaultMessage: 'Role',
+                      id: 'members.roles',
+                      defaultMessage: 'Roles',
                     })}
                   </TableCell>
                   <TableCell>

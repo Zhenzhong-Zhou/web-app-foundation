@@ -32,6 +32,7 @@ import { ColorModeSelect } from '../components/color-mode-select';
 import { ErrorBoundary } from '../components/error-boundary';
 import { LanguageSelect } from '../components/language-select';
 import { PersonAvatar } from '../components/person-avatar';
+import type { PreferenceControl } from '../components/preference-control';
 import { TextSizeSelect } from '../components/text-size-select';
 import { NameAndEmail } from '../components/who-and-when';
 import { HelpButton } from '../help/help-button';
@@ -76,16 +77,39 @@ const FOLDED_KEY = 'nav.folded';
  * MUI reports as a browser without it. The row's own focus and blur, its
  * focus ring among them, are its own and unchanged; the select has its own
  * ring.
+ *
+ * Enter or Space on the row opens its select (#151), which the row holds
+ * open or closed: the select gives focus back to where it was opened from,
+ * so Escape, or a choice, returns to the row and the menu's arrow keys,
+ * and the row is read again with its choice. Only a press on the row
+ * itself: a click inside the select, or on one of its options, which
+ * reaches the row through the portal, is the select's own.
  */
-function PreferenceItem({ children }: { children: ReactNode }) {
+function PreferenceItem({
+  children,
+}: {
+  children: (control: PreferenceControl) => ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <MenuItem disableRipple sx={{ '&:hover': { bgcolor: 'transparent' } }}>
+    <MenuItem
+      disableRipple
+      onClick={(event) => {
+        if (event.target === event.currentTarget) setOpen(true);
+      }}
+      sx={{ '&:hover': { bgcolor: 'transparent' } }}
+    >
       <Box
         sx={{ display: 'contents' }}
         onFocus={(event) => event.stopPropagation()}
         onBlur={(event) => event.stopPropagation()}
       >
-        {children}
+        {children({
+          open,
+          onOpen: () => setOpen(true),
+          onClose: () => setOpen(false),
+        })}
       </Box>
     </MenuItem>
   );
@@ -431,13 +455,13 @@ function Frame() {
               {/* A preference, not a destination — and not a reason to close
                   the menu, unlike everything above it. */}
               <PreferenceItem>
-                <ColorModeSelect />
+                {(control) => <ColorModeSelect control={control} />}
               </PreferenceItem>
               <PreferenceItem>
-                <LanguageSelect />
+                {(control) => <LanguageSelect control={control} />}
               </PreferenceItem>
               <PreferenceItem>
-                <TextSizeSelect />
+                {(control) => <TextSizeSelect control={control} />}
               </PreferenceItem>
 
               <Divider />
@@ -470,6 +494,11 @@ function Frame() {
           onClose={() => setDrawer(false)}
           slotProps={{
             paper: {
+              // The dialog's name, as its buttons name what they do to it.
+              'aria-label': intl.formatMessage({
+                id: 'layout.navigation',
+                defaultMessage: 'Navigation',
+              }),
               sx: {
                 width: `calc(${RAIL_WIDTH} + 48px)`,
                 bgcolor: 'rail.bg',

@@ -28,6 +28,7 @@ export type Reader =
   | 'country'
   | 'timeZone'
   | 'action'
+  | 'permission'
   | 'reference'
   | { set: Record<string, Translatable> }
   | { file: Translatable | null };
@@ -276,6 +277,31 @@ export const AUDIT_FIELDS = {
   name: {
     name: t({ id: 'audit.field.name', defaultMessage: 'Name' }),
     read: 'text',
+  },
+  // A made role's line (ADR-080): set by an Owner for every holder to
+  // read, not a note.
+  description: {
+    name: t({ id: 'audit.field.description', defaultMessage: 'What it’s for' }),
+    read: 'text',
+  },
+  // What a role grants, each permission in its own words (ADR-080).
+  permissions: {
+    name: t({ id: 'audit.field.permissions', defaultMessage: 'Permissions' }),
+    read: 'permission',
+  },
+  permissionsAdded: {
+    name: t({
+      id: 'audit.field.permissionsAdded',
+      defaultMessage: 'Permissions added',
+    }),
+    read: 'permission',
+  },
+  permissionsRemoved: {
+    name: t({
+      id: 'audit.field.permissionsRemoved',
+      defaultMessage: 'Permissions removed',
+    }),
+    read: 'permission',
   },
   // The address an invitation went to (ADR-077).
   email: {
@@ -716,6 +742,11 @@ export const AUDIT_FIELDS = {
   },
   roleId: {
     name: t({ id: 'audit.field.roleId', defaultMessage: 'Role' }),
+    read: 'reference',
+  },
+  // A member's roles, or an invitation's (ADR-080).
+  roleIds: {
+    name: t({ id: 'audit.field.roleIds', defaultMessage: 'Roles' }),
     read: 'reference',
   },
   deliverToId: {

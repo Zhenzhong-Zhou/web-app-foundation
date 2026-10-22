@@ -52,11 +52,10 @@ export class OrganizationBranding {
 /** Where an organization's pending deletion stands (ADR-070, amended). */
 export type DeletionStage = 'scheduled' | 'lastWeek' | 'underWay';
 
-/** The organization the session is working in, and the role it holds. */
+/** The organization the session is working in. */
 export class SessionOrganization {
   id!: string;
   name!: string;
-  roleId!: string;
   branding!: OrganizationBranding;
   /**
    * The deletion day, YYYY-MM-DD, while one is pending (ADR-070): every

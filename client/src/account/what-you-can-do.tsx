@@ -14,7 +14,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import type { MemberAccess } from '../api/types.gen';
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
-import { rem } from '../theme/rem';
+import { AccessList } from './access-list';
 import { accessAreas } from './access-phrases';
 
 /**
@@ -52,7 +52,7 @@ export function WhatYouCanDo({
     );
   }
 
-  const areas = accessAreas(intl, session?.permissions ?? []);
+  const permissions = session?.permissions ?? [];
   const title = intl.formatMessage({
     id: 'account.access.title',
     defaultMessage: 'What you can do here',
@@ -60,32 +60,7 @@ export function WhatYouCanDo({
 
   const body = (
     <Stack spacing={0.75}>
-      <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-        {areas.map(({ area, label, sentence }) => (
-          <Box
-            component="li"
-            key={area}
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'minmax(0, 1fr)',
-                sm: `${rem(176)} minmax(0, 1fr)`,
-              },
-              gap: { xs: 0.25, sm: 1.5 },
-              py: 1,
-              borderTop: 1,
-              borderColor: 'divider',
-            }}
-          >
-            <Typography component="span" sx={{ fontWeight: 600 }}>
-              {label}
-            </Typography>
-            <Typography component="span" color="text.secondary">
-              {sentence}
-            </Typography>
-          </Box>
-        ))}
-      </Box>
+      <AccessList permissions={permissions} />
       {access.whomToAsk.length > 0 && (
         <Typography>
           {intl.formatMessage(
@@ -157,7 +132,7 @@ export function WhatYouCanDo({
                   defaultMessage:
                     '{count, plural, one {# area} other {# areas}}, tap to open',
                 },
-                { count: areas.length },
+                { count: accessAreas(intl, permissions).length },
               )}
             </Typography>
           </Stack>

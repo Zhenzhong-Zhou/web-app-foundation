@@ -106,4 +106,50 @@ describe('SiteSelect (ADR-071)', () => {
     ).toHaveTextContent('Annex');
     expect(screen.queryByText(/No address yet/)).not.toBeInTheDocument();
   });
+
+  // A reader who may not see locations (ADR-080) is never sent to ask:
+  // the field keeps the site chosen, and says why it cannot change.
+  it('keeps the chosen site for a reader who may not see locations, and says why', () => {
+    const { rerender } = render(
+      <SiteSelect
+        id="send-back-to"
+        label="Send back to"
+        value="annex"
+        onChange={() => undefined}
+        locations={[]}
+        current={{ id: 'annex', name: 'Annex' }}
+        emptyLabel="Not chosen"
+        emptyHelp="The RMA prints the registered address."
+        unreadable
+      />,
+    );
+
+    const field = screen.getByRole('combobox', { name: 'Send back to' });
+    expect(field).toHaveTextContent('Annex');
+    expect(field).toHaveAttribute('aria-disabled', 'true');
+    expect(
+      screen.getByText(
+        'You can’t see the organization’s locations, so you can’t choose one here.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('The RMA prints the registered address.'),
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <SiteSelect
+        id="send-back-to"
+        label="Send back to"
+        value=""
+        onChange={() => undefined}
+        locations={[]}
+        emptyLabel="Not chosen"
+        emptyHelp="The RMA prints the registered address."
+        unreadable
+      />,
+    );
+    expect(
+      screen.getByText('The RMA prints the registered address.'),
+    ).toBeInTheDocument();
+  });
 });

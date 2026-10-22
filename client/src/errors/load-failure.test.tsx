@@ -38,15 +38,20 @@ describe('LoadFailure', () => {
     ).toBeTruthy();
   });
 
-  it('says a refused record is not the role’s, and who can change that', () => {
-    renderFailure(new ApiError('Missing permission', 403));
+  // The server's refusal names what the reader's roles lack and who could
+  // give it (ADR-080, #148), so the page says it as sent.
+  it('says a refused record is not the reader’s, in the server’s words', () => {
+    const words =
+      'Your role, Warehouse, doesn’t include “See what stock, lots and batches cost, and exchange rates”. Mei Lin can change your roles.';
+    renderFailure(new ApiError(words, 403));
     expect(
       screen.getByRole('heading', {
         level: 1,
         name: "You don't have access to this",
       }),
     ).toBeTruthy();
-    expect(screen.getByText(/ask an owner of Alpha Co/)).toBeTruthy();
+    expect(screen.getByText(words)).toBeTruthy();
+    expect(screen.queryByText(/ask an owner/)).toBeNull();
     expect(screen.getByRole('link', { name: 'Go home' })).toBeTruthy();
   });
 

@@ -35,8 +35,8 @@ const PAGES: Record<AuditLinkKind, Page | null> = {
   product: { path: RECENT_PATHS.product, may: 'products.view' },
   lot: { path: RECENT_PATHS.lot, may: 'stock.view' },
   price_list: { path: RECENT_PATHS.priceList, may: 'price_lists.view' },
-  // Members, where each person's role is shown and changed.
-  role: { path: () => '/members', may: 'users.view' },
+  // Its page (ADR-080), which every member may read.
+  role: { path: (id) => `/settings/roles/${id}`, may: 'roles.view' },
   location: null,
   tax_code: null,
   variant: null,

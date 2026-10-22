@@ -41,10 +41,16 @@ test.describe('invitations', () => {
 
     await page.getByRole('button', { name: 'Invite', exact: true }).click();
     const dialog = inviteDialog(page, org.organizationName);
-    // The least access to start with, raised on purpose.
-    await expect(dialog.getByRole('radio', { name: /^Viewer/ })).toBeChecked();
+    // The least access to start with, raised on purpose, while the
+    // organization has made no role of its own.
+    const viewer = dialog.getByRole('checkbox', {
+      name: 'Viewer',
+      exact: true,
+    });
+    await expect(viewer).toBeChecked();
     await dialog.getByLabel('Email').fill(email);
-    await dialog.getByRole('radio', { name: /^Admin/ }).check();
+    await viewer.uncheck();
+    await dialog.getByRole('checkbox', { name: 'Admin', exact: true }).check();
     await dialog.getByLabel('A note from you (optional)').fill('Bring boots');
     await expect(dialog.getByText('11 / 500')).toBeVisible();
     await dialog.getByRole('button', { name: 'Send invitation' }).click();
@@ -134,7 +140,7 @@ test.describe('invitations', () => {
     const email = uniqueEmail('row');
     await created(
       await org.api.post('/v1/invitations', {
-        data: { email, roleId: await roleIdNamed(org.api, 'Viewer') },
+        data: { email, roleIds: [await roleIdNamed(org.api, 'Viewer')] },
       }),
     );
     await signInAs(page, org.api);
@@ -177,7 +183,10 @@ test.describe('invitations', () => {
     const invited = uniqueEmail('again');
     await created(
       await org.api.post('/v1/invitations', {
-        data: { email: invited, roleId: await roleIdNamed(org.api, 'Viewer') },
+        data: {
+          email: invited,
+          roleIds: [await roleIdNamed(org.api, 'Viewer')],
+        },
       }),
     );
     await signInAs(page, org.api);
@@ -253,12 +262,138 @@ test.describe('invitations', () => {
 
     await page.getByRole('button', { name: 'Invite', exact: true }).click();
     const ownerCard = inviteDialog(page, org.organizationName).getByRole(
-      'radio',
-      { name: /^Owner/ },
+      'checkbox',
+      { name: 'Owner', exact: true },
     );
     await expect(ownerCard).toBeDisabled();
     await expect(ownerCard).toHaveAccessibleDescription(
-      'Only an Owner can invite an Owner.',
+      /Only an Owner can invite an Owner\.$/,
     );
+  });
+});
+
+/**
+ * Members with several roles (ADR-080): Change roles and Remove from the
+ * organization, from each row's menu. The server's rules are proved in
+ * users.e2e-spec.ts and roles.e2e-spec.ts; what only a browser shows is
+ * the menu, the dialogs, and where focus goes after each.
+ */
+test.describe('members’ roles', () => {
+  /** A role made from a template, as the editor would make it. */
+  async function madeRole(
+    api: SeededOrganization['api'],
+    name: string,
+    template: string,
+  ) {
+    const catalogue = (await (await api.get('/v1/roles/catalogue')).json()) as {
+      templates: { key: string; permissions: string[] }[];
+    };
+    const { permissions } = catalogue.templates.find(
+      (each) => each.key === template,
+    )!;
+    await created(await api.post('/v1/roles', { data: { name, permissions } }));
+  }
+
+  test('gives a member a second role, which shows beside the first', async ({
+    page,
+    freshOrg,
+  }) => {
+    await verifyEmail(freshOrg.api, freshOrg.email);
+    await madeRole(freshOrg.api, 'Warehouse lead', 'warehouse');
+    await joinByLink(
+      (await inviteByLink(freshOrg.api, uniqueEmail('dock'))).token,
+      'Wang Fang',
+    );
+    await signInAs(page, freshOrg.api);
+    await page.goto('/members');
+
+    const more = page.getByRole('button', {
+      name: 'More for Wang Fang',
+      exact: true,
+    });
+    await more.click();
+    await page
+      .getByRole('menuitem', { name: 'Change roles', exact: true })
+      .click();
+    const dialog = page.getByRole('dialog', {
+      name: 'Change Wang Fang’s roles',
+    });
+    await expect(
+      dialog.getByRole('checkbox', { name: 'Viewer', exact: true }),
+    ).toBeChecked();
+    await dialog
+      .getByRole('checkbox', { name: 'Warehouse lead', exact: true })
+      .check();
+    // What they could do, with both: Warehouse adds receiving to Viewer's.
+    await expect(
+      dialog.getByRole('region', { name: 'With these roles, Wang Fang can' }),
+    ).toContainText('receive what was ordered');
+    await dialog
+      .getByRole('button', { name: 'Save roles', exact: true })
+      .click();
+
+    await expect(page.getByText('Wang Fang’s roles changed')).toBeVisible();
+    const row = page
+      .getByRole('table', { name: 'Members' })
+      .getByRole('row', { name: /Wang Fang/ });
+    await expect(row).toContainText('Viewer');
+    await expect(row).toContainText('Warehouse lead');
+    // Back where the menu was opened from.
+    await expect(more).toBeFocused();
+  });
+
+  test('removes a member after asking, and the page begins again at its heading', async ({
+    page,
+    freshOrg,
+  }) => {
+    await verifyEmail(freshOrg.api, freshOrg.email);
+    await joinByLink(
+      (await inviteByLink(freshOrg.api, uniqueEmail('leaving'))).token,
+      'Sam Lee',
+    );
+    await signInAs(page, freshOrg.api);
+    await page.goto('/members');
+
+    // Not on your own row: leaving is Account's.
+    await expect(
+      page.getByRole('button', { name: 'More for E2E Owner', exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole('button', { name: 'More for E2E Owner', exact: true })
+      .click();
+    await expect(
+      page.getByRole('menuitem', {
+        name: 'Remove from the organization',
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    await page.keyboard.press('Escape');
+
+    await page
+      .getByRole('button', { name: 'More for Sam Lee', exact: true })
+      .click();
+    await page
+      .getByRole('menuitem', {
+        name: 'Remove from the organization',
+        exact: true,
+      })
+      .click();
+    const dialog = page.getByRole('dialog', {
+      name: `Remove Sam Lee from ${freshOrg.organizationName}?`,
+    });
+    await expect(dialog).toContainText(
+      'Sam Lee’s account stays theirs, and their work here keeps their name.',
+    );
+    await dialog.getByRole('button', { name: 'Remove', exact: true }).click();
+
+    await expect(
+      page.getByText(`Sam Lee removed from ${freshOrg.organizationName}`),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('table', { name: 'Members' }).getByRole('row', {
+        name: /Sam Lee/,
+      }),
+    ).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
   });
 });

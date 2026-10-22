@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, between, eq, isNotNull, sql } from 'drizzle-orm';
 
 import { todayIn } from '../../common/today';
-import { PERMISSIONS } from '../../core/authorization/permissions';
+import { TOLD } from '../../core/authorization/permissions';
 import { NOTIFICATION_TYPES } from '../../core/notifications/notification-types';
 import { NotificationsService } from '../../core/notifications/notifications.service';
 import type { Database } from '../../database/database.module';
@@ -138,16 +138,10 @@ export class LicenceRemindersService {
     expiresAt: string,
     daysLeft: number,
   ): Promise<void> {
-    const recipients = new Set([
-      ...(await this.notifications.recipientsWith(
-        licence.organizationId,
-        PERMISSIONS.PRODUCT_LICENCES_UPDATE,
-      )),
-      ...(await this.notifications.recipientsWith(
-        licence.organizationId,
-        PERMISSIONS.PRODUCTION_RELEASE,
-      )),
-    ]);
+    const recipients = await this.notifications.recipientsWith(
+      licence.organizationId,
+      TOLD.licenceExpiring,
+    );
 
     const values = {
       number: licence.number,
@@ -196,7 +190,7 @@ export class LicenceRemindersService {
           });
 
     await this.notifications.emit(
-      [...recipients].map((userId) => ({
+      recipients.map((userId) => ({
         userId,
         organizationId: licence.organizationId,
         type: NOTIFICATION_TYPES.LICENCE_EXPIRING,

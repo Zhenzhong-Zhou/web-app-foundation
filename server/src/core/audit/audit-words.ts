@@ -1,6 +1,16 @@
 import type { Locale } from '../../common/locales';
 import { canonicalTimeZone, dayIn } from '../../common/today';
-import { t, type Translatable, translate } from '../../i18n/translate';
+import {
+  joinList,
+  t,
+  type Translatable,
+  translate,
+} from '../../i18n/translate';
+import {
+  type Permission,
+  PERMISSION_DESCRIPTIONS,
+  quotedLine,
+} from '../authorization/permissions';
 import { fieldOf, KIND_WORDS, ROLE_NAMES, WORDS } from './audit-fields';
 import { ACTION_NAMES, RESOURCE_TYPE_NAMES } from './audit-names';
 import {
@@ -136,16 +146,19 @@ function valueOf(
   }
   if (value === null || value === undefined || value === '') return null;
 
-  if (read === 'reference' || isNamed(value)) {
-    return referenceOf(key, value, reading);
+  // Before references: a member's roles are a list of them, and one
+  // alone reads, and links, as itself.
+  if (Array.isArray(value) && value.length === 1) {
+    return valueOf(key, value[0], reading);
   }
   if (Array.isArray(value)) {
     const parts = value
       .map((item) => valueOf(key, item, reading)?.text)
       .filter((text): text is string => Boolean(text));
-    return parts.length > 0
-      ? { text: new Intl.ListFormat(locale).format(parts) }
-      : null;
+    return parts.length > 0 ? { text: joinList(parts, locale) } : null;
+  }
+  if (read === 'reference' || isNamed(value)) {
+    return referenceOf(key, value, reading);
   }
   if (typeof value === 'object') {
     return {
@@ -181,6 +194,14 @@ function valueOf(
       const name = ACTION_NAMES[raw as keyof typeof ACTION_NAMES];
       return { text: name ? say(name) : raw };
     }
+    case 'permission':
+      // Its line, quoted, so lines with commas of their own read apart.
+      return {
+        text:
+          raw in PERMISSION_DESCRIPTIONS
+            ? say(quotedLine(raw as Permission))
+            : raw,
+      };
   }
   if (UUID.test(raw)) return { text: say(KIND_WORDS.record) };
   if (MOMENT.test(raw) && read !== 'day' && read !== 'dayAfter') {

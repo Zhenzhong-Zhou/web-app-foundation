@@ -618,7 +618,16 @@
     "/v1/roles": {
       "get": {
         "operationId": "RolesController_list_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -636,6 +645,622 @@
         },
         "tags": [
           "Roles"
+        ]
+      },
+      "post": {
+        "operationId": "RolesController_create_v1",
+        "parameters": [
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleDetail"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/v1/roles/catalogue": {
+      "get": {
+        "operationId": "RolesController_catalogue_v1",
+        "parameters": [
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleCatalogue"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/v1/roles/{id}": {
+      "get": {
+        "operationId": "RolesController_find_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleDetail"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Roles"
+        ]
+      },
+      "patch": {
+        "operationId": "RolesController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleDetail"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Roles"
+        ]
+      },
+      "delete": {
+        "operationId": "RolesController_remove_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/v1/roles/{id}/move": {
+      "post": {
+        "operationId": "RolesController_move_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleDetail"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/v1/audit": {
+      "get": {
+        "operationId": "AuditController_list_v1",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "user.created",
+                "user.role_changed",
+                "member.roles_changed",
+                "member.removed",
+                "member.left",
+                "user.account_deleted",
+                "invitation.sent",
+                "invitation.resent",
+                "invitation.link_copied",
+                "invitation.revoked",
+                "invitation.accepted",
+                "role.created",
+                "role.updated",
+                "role.deleted",
+                "product.created",
+                "product.updated",
+                "product.variant_added",
+                "product.variant_updated",
+                "location.created",
+                "location.updated",
+                "stock.movement_recorded",
+                "partner.created",
+                "partner.updated",
+                "order.created",
+                "order.updated",
+                "order.line_received",
+                "order.shipped",
+                "order.shipment_voided",
+                "order.return_received",
+                "order.line_added",
+                "order.line_updated",
+                "order.line_removed",
+                "order.line_closed_short",
+                "order.line_reopened",
+                "order.line_list_priced",
+                "partner.address.created",
+                "partner.address.updated",
+                "partner.address.retired",
+                "partner.contact.created",
+                "partner.contact.updated",
+                "partner.contact.retired",
+                "stock.lot_updated",
+                "stock_valuation.cost_set",
+                "exchange_rate.set",
+                "product_licence.created",
+                "product_licence.updated",
+                "bom.created",
+                "bom.updated",
+                "bom.line_added",
+                "bom.line_updated",
+                "bom.line_removed",
+                "bom.promoted",
+                "bom.archived",
+                "production_order.created",
+                "production_order.updated",
+                "production_order.released",
+                "production_order.output_recorded",
+                "production_order.closed",
+                "production_order.cancelled",
+                "organization.updated",
+                "organization.address_updated",
+                "organization.numbering_updated",
+                "organization.exported",
+                "organization.deletion_scheduled",
+                "organization.deletion_cancelled",
+                "tax_code.created",
+                "tax_code.updated",
+                "invoice.created",
+                "invoice.updated",
+                "invoice.line_updated",
+                "invoice.deleted",
+                "invoice.issued",
+                "invoice.voided",
+                "credit_note.issued",
+                "order.pro_forma_made",
+                "return_authorization.created",
+                "return_authorization.cancelled",
+                "return_authorization.closed",
+                "return_authorization.updated",
+                "return_authorization.return_linked",
+                "return_authorization.replacement_raised",
+                "price_list.created",
+                "price_list.updated",
+                "price_list.item_set",
+                "price_list.item_removed",
+                "list.exported"
+              ]
+            }
+          },
+          {
+            "name": "resourceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "until",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPage"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Audit"
+        ]
+      }
+    },
+    "/v1/audit/export": {
+      "get": {
+        "operationId": "AuditController_exportAudit_v1",
+        "parameters": [
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "user.created",
+                "user.role_changed",
+                "member.roles_changed",
+                "member.removed",
+                "member.left",
+                "user.account_deleted",
+                "invitation.sent",
+                "invitation.resent",
+                "invitation.link_copied",
+                "invitation.revoked",
+                "invitation.accepted",
+                "role.created",
+                "role.updated",
+                "role.deleted",
+                "product.created",
+                "product.updated",
+                "product.variant_added",
+                "product.variant_updated",
+                "location.created",
+                "location.updated",
+                "stock.movement_recorded",
+                "partner.created",
+                "partner.updated",
+                "order.created",
+                "order.updated",
+                "order.line_received",
+                "order.shipped",
+                "order.shipment_voided",
+                "order.return_received",
+                "order.line_added",
+                "order.line_updated",
+                "order.line_removed",
+                "order.line_closed_short",
+                "order.line_reopened",
+                "order.line_list_priced",
+                "partner.address.created",
+                "partner.address.updated",
+                "partner.address.retired",
+                "partner.contact.created",
+                "partner.contact.updated",
+                "partner.contact.retired",
+                "stock.lot_updated",
+                "stock_valuation.cost_set",
+                "exchange_rate.set",
+                "product_licence.created",
+                "product_licence.updated",
+                "bom.created",
+                "bom.updated",
+                "bom.line_added",
+                "bom.line_updated",
+                "bom.line_removed",
+                "bom.promoted",
+                "bom.archived",
+                "production_order.created",
+                "production_order.updated",
+                "production_order.released",
+                "production_order.output_recorded",
+                "production_order.closed",
+                "production_order.cancelled",
+                "organization.updated",
+                "organization.address_updated",
+                "organization.numbering_updated",
+                "organization.exported",
+                "organization.deletion_scheduled",
+                "organization.deletion_cancelled",
+                "tax_code.created",
+                "tax_code.updated",
+                "invoice.created",
+                "invoice.updated",
+                "invoice.line_updated",
+                "invoice.deleted",
+                "invoice.issued",
+                "invoice.voided",
+                "credit_note.issued",
+                "order.pro_forma_made",
+                "return_authorization.created",
+                "return_authorization.cancelled",
+                "return_authorization.closed",
+                "return_authorization.updated",
+                "return_authorization.return_linked",
+                "return_authorization.replacement_raised",
+                "price_list.created",
+                "price_list.updated",
+                "price_list.item_set",
+                "price_list.item_removed",
+                "list.exported"
+              ]
+            }
+          },
+          {
+            "name": "resourceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "until",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "number"
+            }
+          },
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Audit"
+        ]
+      }
+    },
+    "/v1/audit/actions": {
+      "get": {
+        "operationId": "AuditController_listActions_v1",
+        "parameters": [
+          {
+            "name": "accept-language",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditActionName"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Audit"
         ]
       }
     },
@@ -824,393 +1449,6 @@
         ]
       }
     },
-    "/v1/audit": {
-      "get": {
-        "operationId": "AuditController_list_v1",
-        "parameters": [
-          {
-            "name": "actorId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "action",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "user.created",
-                "user.role_changed",
-                "member.removed",
-                "member.left",
-                "user.account_deleted",
-                "invitation.sent",
-                "invitation.resent",
-                "invitation.link_copied",
-                "invitation.revoked",
-                "invitation.accepted",
-                "product.created",
-                "product.updated",
-                "product.variant_added",
-                "product.variant_updated",
-                "location.created",
-                "location.updated",
-                "stock.movement_recorded",
-                "partner.created",
-                "partner.updated",
-                "order.created",
-                "order.updated",
-                "order.line_received",
-                "order.shipped",
-                "order.shipment_voided",
-                "order.return_received",
-                "order.line_added",
-                "order.line_updated",
-                "order.line_removed",
-                "order.line_closed_short",
-                "order.line_reopened",
-                "order.line_list_priced",
-                "partner.address.created",
-                "partner.address.updated",
-                "partner.address.retired",
-                "partner.contact.created",
-                "partner.contact.updated",
-                "partner.contact.retired",
-                "stock.lot_updated",
-                "stock_valuation.cost_set",
-                "exchange_rate.set",
-                "product_licence.created",
-                "product_licence.updated",
-                "bom.created",
-                "bom.updated",
-                "bom.line_added",
-                "bom.line_updated",
-                "bom.line_removed",
-                "bom.promoted",
-                "bom.archived",
-                "production_order.created",
-                "production_order.updated",
-                "production_order.released",
-                "production_order.output_recorded",
-                "production_order.closed",
-                "production_order.cancelled",
-                "organization.updated",
-                "organization.address_updated",
-                "organization.numbering_updated",
-                "organization.exported",
-                "organization.deletion_scheduled",
-                "organization.deletion_cancelled",
-                "tax_code.created",
-                "tax_code.updated",
-                "invoice.created",
-                "invoice.updated",
-                "invoice.line_updated",
-                "invoice.deleted",
-                "invoice.issued",
-                "invoice.voided",
-                "credit_note.issued",
-                "order.pro_forma_made",
-                "return_authorization.created",
-                "return_authorization.cancelled",
-                "return_authorization.closed",
-                "return_authorization.updated",
-                "return_authorization.return_linked",
-                "return_authorization.replacement_raised",
-                "price_list.created",
-                "price_list.updated",
-                "price_list.item_set",
-                "price_list.item_removed",
-                "list.exported"
-              ]
-            }
-          },
-          {
-            "name": "resourceId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "from",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "date-time",
-              "type": "string"
-            }
-          },
-          {
-            "name": "until",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "date-time",
-              "type": "string"
-            }
-          },
-          {
-            "name": "before",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
-            }
-          },
-          {
-            "name": "accept-language",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuditPage"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Audit"
-        ]
-      }
-    },
-    "/v1/audit/export": {
-      "get": {
-        "operationId": "AuditController_exportAudit_v1",
-        "parameters": [
-          {
-            "name": "actorId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "action",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "user.created",
-                "user.role_changed",
-                "member.removed",
-                "member.left",
-                "user.account_deleted",
-                "invitation.sent",
-                "invitation.resent",
-                "invitation.link_copied",
-                "invitation.revoked",
-                "invitation.accepted",
-                "product.created",
-                "product.updated",
-                "product.variant_added",
-                "product.variant_updated",
-                "location.created",
-                "location.updated",
-                "stock.movement_recorded",
-                "partner.created",
-                "partner.updated",
-                "order.created",
-                "order.updated",
-                "order.line_received",
-                "order.shipped",
-                "order.shipment_voided",
-                "order.return_received",
-                "order.line_added",
-                "order.line_updated",
-                "order.line_removed",
-                "order.line_closed_short",
-                "order.line_reopened",
-                "order.line_list_priced",
-                "partner.address.created",
-                "partner.address.updated",
-                "partner.address.retired",
-                "partner.contact.created",
-                "partner.contact.updated",
-                "partner.contact.retired",
-                "stock.lot_updated",
-                "stock_valuation.cost_set",
-                "exchange_rate.set",
-                "product_licence.created",
-                "product_licence.updated",
-                "bom.created",
-                "bom.updated",
-                "bom.line_added",
-                "bom.line_updated",
-                "bom.line_removed",
-                "bom.promoted",
-                "bom.archived",
-                "production_order.created",
-                "production_order.updated",
-                "production_order.released",
-                "production_order.output_recorded",
-                "production_order.closed",
-                "production_order.cancelled",
-                "organization.updated",
-                "organization.address_updated",
-                "organization.numbering_updated",
-                "organization.exported",
-                "organization.deletion_scheduled",
-                "organization.deletion_cancelled",
-                "tax_code.created",
-                "tax_code.updated",
-                "invoice.created",
-                "invoice.updated",
-                "invoice.line_updated",
-                "invoice.deleted",
-                "invoice.issued",
-                "invoice.voided",
-                "credit_note.issued",
-                "order.pro_forma_made",
-                "return_authorization.created",
-                "return_authorization.cancelled",
-                "return_authorization.closed",
-                "return_authorization.updated",
-                "return_authorization.return_linked",
-                "return_authorization.replacement_raised",
-                "price_list.created",
-                "price_list.updated",
-                "price_list.item_set",
-                "price_list.item_removed",
-                "list.exported"
-              ]
-            }
-          },
-          {
-            "name": "resourceId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "from",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "date-time",
-              "type": "string"
-            }
-          },
-          {
-            "name": "until",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "date-time",
-              "type": "string"
-            }
-          },
-          {
-            "name": "before",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 100,
-              "type": "number"
-            }
-          },
-          {
-            "name": "accept-language",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Audit"
-        ]
-      }
-    },
-    "/v1/audit/actions": {
-      "get": {
-        "operationId": "AuditController_listActions_v1",
-        "parameters": [
-          {
-            "name": "accept-language",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/AuditActionName"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Audit"
-        ]
-      }
-    },
     "/v1/people": {
       "get": {
         "operationId": "PeopleController_list_v1",
@@ -1382,6 +1620,7 @@
               "enum": [
                 "user.created",
                 "user.role_changed",
+                "member.roles_changed",
                 "member.removed",
                 "member.left",
                 "user.account_deleted",
@@ -1390,6 +1629,9 @@
                 "invitation.link_copied",
                 "invitation.revoked",
                 "invitation.accepted",
+                "role.created",
+                "role.updated",
+                "role.deleted",
                 "product.created",
                 "product.updated",
                 "product.variant_added",
@@ -1559,6 +1801,7 @@
               "enum": [
                 "user.created",
                 "user.role_changed",
+                "member.roles_changed",
                 "member.removed",
                 "member.left",
                 "user.account_deleted",
@@ -1567,6 +1810,9 @@
                 "invitation.link_copied",
                 "invitation.revoked",
                 "invitation.accepted",
+                "role.created",
+                "role.updated",
+                "role.deleted",
                 "product.created",
                 "product.updated",
                 "product.variant_added",
@@ -7942,9 +8188,6 @@
           "name": {
             "type": "string"
           },
-          "roleId": {
-            "type": "string"
-          },
           "branding": {
             "$ref": "#/components/schemas/OrganizationBranding"
           },
@@ -7973,7 +8216,6 @@
         "required": [
           "id",
           "name",
-          "roleId",
           "branding",
           "deletionScheduledAt",
           "deletionStage",
@@ -8006,6 +8248,9 @@
                 "users.delete",
                 "roles.view",
                 "roles.assign",
+                "roles.create",
+                "roles.update",
+                "roles.delete",
                 "organizations.view",
                 "organizations.update",
                 "organizations.export",
@@ -8043,6 +8288,7 @@
                 "partners.create",
                 "partners.update",
                 "orders.view",
+                "orders.view_prices",
                 "orders.create",
                 "orders.update",
                 "orders.receive",
@@ -8456,8 +8702,11 @@
       "MemberAccess": {
         "type": "object",
         "properties": {
-          "role": {
-            "$ref": "#/components/schemas/MemberRole"
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberRole"
+            }
           },
           "holdsEverything": {
             "type": "boolean"
@@ -8470,7 +8719,7 @@
           }
         },
         "required": [
-          "role",
+          "roles",
           "holdsEverything",
           "whomToAsk"
         ]
@@ -8559,8 +8808,11 @@
           "organizationName": {
             "type": "string"
           },
-          "roleName": {
-            "type": "string"
+          "roleNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "jobTitle": {
             "type": [
@@ -8600,7 +8852,7 @@
         "required": [
           "organizationId",
           "organizationName",
-          "roleName",
+          "roleNames",
           "jobTitle",
           "department",
           "location",
@@ -8788,173 +9040,722 @@
           },
           "name": {
             "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name"
-        ]
-      },
-      "StoredFileSize": {
-        "type": "object",
-        "properties": {
-          "width": {
-            "type": "number"
           },
-          "height": {
-            "type": "number"
-          },
-          "bytes": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "width",
-          "height",
-          "bytes"
-        ]
-      },
-      "FileSizes": {
-        "type": "object",
-        "properties": {
-          "thumb": {
-            "$ref": "#/components/schemas/StoredFileSize"
-          },
-          "display": {
-            "$ref": "#/components/schemas/StoredFileSize"
-          },
-          "full": {
-            "$ref": "#/components/schemas/StoredFileSize"
-          }
-        }
-      },
-      "StoredFile": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "logo",
-              "product_image",
-              "avatar"
-            ]
-          },
-          "contentType": {
-            "type": "string"
-          },
-          "sizes": {
-            "$ref": "#/components/schemas/FileSizes"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "kind",
-          "contentType",
-          "sizes",
-          "createdAt"
-        ]
-      },
-      "UploadedFileEnvelope": {
-        "type": "object",
-        "properties": {
-          "file": {
-            "$ref": "#/components/schemas/StoredFile"
-          }
-        },
-        "required": [
-          "file"
-        ]
-      },
-      "UnreadCount": {
-        "type": "object",
-        "properties": {
-          "count": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "count"
-        ]
-      },
-      "Notification": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "body": {
+          "description": {
             "type": [
               "string",
               "null"
             ]
           },
-          "resourceType": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "builtIn": {
+            "type": "boolean"
           },
-          "resourceId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "readAt": {
-            "format": "date-time",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "title",
-          "body",
-          "resourceType",
-          "resourceId",
-          "readAt",
-          "createdAt"
-        ]
-      },
-      "NotificationPage": {
-        "type": "object",
-        "properties": {
-          "entries": {
+          "permissions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Notification"
+              "type": "string",
+              "enum": [
+                "users.view",
+                "users.create",
+                "users.delete",
+                "roles.view",
+                "roles.assign",
+                "roles.create",
+                "roles.update",
+                "roles.delete",
+                "organizations.view",
+                "organizations.update",
+                "organizations.export",
+                "organizations.delete",
+                "audit.view",
+                "products.view",
+                "products.create",
+                "products.update",
+                "product_licences.view",
+                "product_licences.create",
+                "product_licences.update",
+                "tax_codes.view",
+                "tax_codes.create",
+                "tax_codes.update",
+                "invoices.view",
+                "invoices.create",
+                "invoices.update",
+                "invoices.delete",
+                "invoices.issue",
+                "return_authorizations.view",
+                "return_authorizations.create",
+                "return_authorizations.update",
+                "locations.view",
+                "locations.create",
+                "locations.update",
+                "stock.view",
+                "stock.move",
+                "stock.adjust",
+                "costs.view",
+                "costs.update",
+                "price_lists.view",
+                "price_lists.create",
+                "price_lists.update",
+                "partners.view",
+                "partners.create",
+                "partners.update",
+                "orders.view",
+                "orders.view_prices",
+                "orders.create",
+                "orders.update",
+                "orders.receive",
+                "orders.ship",
+                "boms.view",
+                "boms.create",
+                "boms.update",
+                "production.view",
+                "production.create",
+                "production.release",
+                "production.complete",
+                "production.override_licence"
+              ]
             }
           },
-          "nextCursor": {
+          "holderCount": {
+            "type": "number"
+          },
+          "mayGive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "builtIn",
+          "permissions",
+          "holderCount",
+          "mayGive"
+        ]
+      },
+      "CataloguePermission": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "users.view",
+              "users.create",
+              "users.delete",
+              "roles.view",
+              "roles.assign",
+              "roles.create",
+              "roles.update",
+              "roles.delete",
+              "organizations.view",
+              "organizations.update",
+              "organizations.export",
+              "organizations.delete",
+              "audit.view",
+              "products.view",
+              "products.create",
+              "products.update",
+              "product_licences.view",
+              "product_licences.create",
+              "product_licences.update",
+              "tax_codes.view",
+              "tax_codes.create",
+              "tax_codes.update",
+              "invoices.view",
+              "invoices.create",
+              "invoices.update",
+              "invoices.delete",
+              "invoices.issue",
+              "return_authorizations.view",
+              "return_authorizations.create",
+              "return_authorizations.update",
+              "locations.view",
+              "locations.create",
+              "locations.update",
+              "stock.view",
+              "stock.move",
+              "stock.adjust",
+              "costs.view",
+              "costs.update",
+              "price_lists.view",
+              "price_lists.create",
+              "price_lists.update",
+              "partners.view",
+              "partners.create",
+              "partners.update",
+              "orders.view",
+              "orders.view_prices",
+              "orders.create",
+              "orders.update",
+              "orders.receive",
+              "orders.ship",
+              "boms.view",
+              "boms.create",
+              "boms.update",
+              "production.view",
+              "production.create",
+              "production.release",
+              "production.complete",
+              "production.override_licence"
+            ]
+          },
+          "line": {
+            "type": "string"
+          },
+          "note": {
             "type": [
               "string",
               "null"
             ]
+          },
+          "needs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "users.view",
+                "users.create",
+                "users.delete",
+                "roles.view",
+                "roles.assign",
+                "roles.create",
+                "roles.update",
+                "roles.delete",
+                "organizations.view",
+                "organizations.update",
+                "organizations.export",
+                "organizations.delete",
+                "audit.view",
+                "products.view",
+                "products.create",
+                "products.update",
+                "product_licences.view",
+                "product_licences.create",
+                "product_licences.update",
+                "tax_codes.view",
+                "tax_codes.create",
+                "tax_codes.update",
+                "invoices.view",
+                "invoices.create",
+                "invoices.update",
+                "invoices.delete",
+                "invoices.issue",
+                "return_authorizations.view",
+                "return_authorizations.create",
+                "return_authorizations.update",
+                "locations.view",
+                "locations.create",
+                "locations.update",
+                "stock.view",
+                "stock.move",
+                "stock.adjust",
+                "costs.view",
+                "costs.update",
+                "price_lists.view",
+                "price_lists.create",
+                "price_lists.update",
+                "partners.view",
+                "partners.create",
+                "partners.update",
+                "orders.view",
+                "orders.view_prices",
+                "orders.create",
+                "orders.update",
+                "orders.receive",
+                "orders.ship",
+                "boms.view",
+                "boms.create",
+                "boms.update",
+                "production.view",
+                "production.create",
+                "production.release",
+                "production.complete",
+                "production.override_licence"
+              ]
+            }
+          },
+          "offered": {
+            "type": "boolean"
+          },
+          "locked": {
+            "type": "boolean"
           }
         },
         "required": [
-          "entries",
-          "nextCursor"
+          "key",
+          "line",
+          "note",
+          "needs",
+          "offered",
+          "locked"
+        ]
+      },
+      "RoleTemplate": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "production",
+              "warehouse",
+              "sales",
+              "finance",
+              "stock_lookup"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "users.view",
+                "users.create",
+                "users.delete",
+                "roles.view",
+                "roles.assign",
+                "roles.create",
+                "roles.update",
+                "roles.delete",
+                "organizations.view",
+                "organizations.update",
+                "organizations.export",
+                "organizations.delete",
+                "audit.view",
+                "products.view",
+                "products.create",
+                "products.update",
+                "product_licences.view",
+                "product_licences.create",
+                "product_licences.update",
+                "tax_codes.view",
+                "tax_codes.create",
+                "tax_codes.update",
+                "invoices.view",
+                "invoices.create",
+                "invoices.update",
+                "invoices.delete",
+                "invoices.issue",
+                "return_authorizations.view",
+                "return_authorizations.create",
+                "return_authorizations.update",
+                "locations.view",
+                "locations.create",
+                "locations.update",
+                "stock.view",
+                "stock.move",
+                "stock.adjust",
+                "costs.view",
+                "costs.update",
+                "price_lists.view",
+                "price_lists.create",
+                "price_lists.update",
+                "partners.view",
+                "partners.create",
+                "partners.update",
+                "orders.view",
+                "orders.view_prices",
+                "orders.create",
+                "orders.update",
+                "orders.receive",
+                "orders.ship",
+                "boms.view",
+                "boms.create",
+                "boms.update",
+                "production.view",
+                "production.create",
+                "production.release",
+                "production.complete",
+                "production.override_licence"
+              ]
+            }
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "permissions"
+        ]
+      },
+      "RoleCatalogue": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CataloguePermission"
+            }
+          },
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleTemplate"
+            }
+          }
+        },
+        "required": [
+          "permissions",
+          "templates"
+        ]
+      },
+      "RoleRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "builtIn": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "builtIn"
+        ]
+      },
+      "RoleHolder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "photoFileId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleRef"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "photoFileId",
+          "roles"
+        ]
+      },
+      "RoleDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "builtIn": {
+            "type": "boolean"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "users.view",
+                "users.create",
+                "users.delete",
+                "roles.view",
+                "roles.assign",
+                "roles.create",
+                "roles.update",
+                "roles.delete",
+                "organizations.view",
+                "organizations.update",
+                "organizations.export",
+                "organizations.delete",
+                "audit.view",
+                "products.view",
+                "products.create",
+                "products.update",
+                "product_licences.view",
+                "product_licences.create",
+                "product_licences.update",
+                "tax_codes.view",
+                "tax_codes.create",
+                "tax_codes.update",
+                "invoices.view",
+                "invoices.create",
+                "invoices.update",
+                "invoices.delete",
+                "invoices.issue",
+                "return_authorizations.view",
+                "return_authorizations.create",
+                "return_authorizations.update",
+                "locations.view",
+                "locations.create",
+                "locations.update",
+                "stock.view",
+                "stock.move",
+                "stock.adjust",
+                "costs.view",
+                "costs.update",
+                "price_lists.view",
+                "price_lists.create",
+                "price_lists.update",
+                "partners.view",
+                "partners.create",
+                "partners.update",
+                "orders.view",
+                "orders.view_prices",
+                "orders.create",
+                "orders.update",
+                "orders.receive",
+                "orders.ship",
+                "boms.view",
+                "boms.create",
+                "boms.update",
+                "production.view",
+                "production.create",
+                "production.release",
+                "production.complete",
+                "production.override_licence"
+              ]
+            }
+          },
+          "holderCount": {
+            "type": "number"
+          },
+          "mayGive": {
+            "type": "boolean"
+          },
+          "holders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleHolder"
+            }
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "builtIn",
+          "permissions",
+          "holderCount",
+          "mayGive",
+          "holders",
+          "updatedAt"
+        ]
+      },
+      "CreateRoleDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "permissions": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "users.view",
+                "users.create",
+                "users.delete",
+                "roles.view",
+                "roles.assign",
+                "roles.create",
+                "roles.update",
+                "roles.delete",
+                "organizations.view",
+                "organizations.update",
+                "organizations.export",
+                "organizations.delete",
+                "audit.view",
+                "products.view",
+                "products.create",
+                "products.update",
+                "product_licences.view",
+                "product_licences.create",
+                "product_licences.update",
+                "tax_codes.view",
+                "tax_codes.create",
+                "tax_codes.update",
+                "invoices.view",
+                "invoices.create",
+                "invoices.update",
+                "invoices.delete",
+                "invoices.issue",
+                "return_authorizations.view",
+                "return_authorizations.create",
+                "return_authorizations.update",
+                "locations.view",
+                "locations.create",
+                "locations.update",
+                "stock.view",
+                "stock.move",
+                "stock.adjust",
+                "costs.view",
+                "costs.update",
+                "price_lists.view",
+                "price_lists.create",
+                "price_lists.update",
+                "partners.view",
+                "partners.create",
+                "partners.update",
+                "orders.view",
+                "orders.view_prices",
+                "orders.create",
+                "orders.update",
+                "orders.receive",
+                "orders.ship",
+                "boms.view",
+                "boms.create",
+                "boms.update",
+                "production.view",
+                "production.create",
+                "production.release",
+                "production.complete",
+                "production.override_licence"
+              ]
+            }
+          }
+        },
+        "required": [
+          "name",
+          "permissions"
+        ]
+      },
+      "UpdateRoleDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "permissions": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "users.view",
+                "users.create",
+                "users.delete",
+                "roles.view",
+                "roles.assign",
+                "roles.create",
+                "roles.update",
+                "roles.delete",
+                "organizations.view",
+                "organizations.update",
+                "organizations.export",
+                "organizations.delete",
+                "audit.view",
+                "products.view",
+                "products.create",
+                "products.update",
+                "product_licences.view",
+                "product_licences.create",
+                "product_licences.update",
+                "tax_codes.view",
+                "tax_codes.create",
+                "tax_codes.update",
+                "invoices.view",
+                "invoices.create",
+                "invoices.update",
+                "invoices.delete",
+                "invoices.issue",
+                "return_authorizations.view",
+                "return_authorizations.create",
+                "return_authorizations.update",
+                "locations.view",
+                "locations.create",
+                "locations.update",
+                "stock.view",
+                "stock.move",
+                "stock.adjust",
+                "costs.view",
+                "costs.update",
+                "price_lists.view",
+                "price_lists.create",
+                "price_lists.update",
+                "partners.view",
+                "partners.create",
+                "partners.update",
+                "orders.view",
+                "orders.view_prices",
+                "orders.create",
+                "orders.update",
+                "orders.receive",
+                "orders.ship",
+                "boms.view",
+                "boms.create",
+                "boms.update",
+                "production.view",
+                "production.create",
+                "production.release",
+                "production.complete",
+                "production.override_licence"
+              ]
+            }
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "permissions",
+          "updatedAt"
+        ]
+      },
+      "MoveRoleDto": {
+        "type": "object",
+        "properties": {
+          "toRoleId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "toRoleId"
         ]
       },
       "AuditLink": {
@@ -9201,6 +10002,168 @@
           "name"
         ]
       },
+      "StoredFileSize": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "bytes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "width",
+          "height",
+          "bytes"
+        ]
+      },
+      "FileSizes": {
+        "type": "object",
+        "properties": {
+          "thumb": {
+            "$ref": "#/components/schemas/StoredFileSize"
+          },
+          "display": {
+            "$ref": "#/components/schemas/StoredFileSize"
+          },
+          "full": {
+            "$ref": "#/components/schemas/StoredFileSize"
+          }
+        }
+      },
+      "StoredFile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "logo",
+              "product_image",
+              "avatar"
+            ]
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "sizes": {
+            "$ref": "#/components/schemas/FileSizes"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "contentType",
+          "sizes",
+          "createdAt"
+        ]
+      },
+      "UploadedFileEnvelope": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "$ref": "#/components/schemas/StoredFile"
+          }
+        },
+        "required": [
+          "file"
+        ]
+      },
+      "UnreadCount": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "count"
+        ]
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resourceType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resourceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "readAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "body",
+          "resourceType",
+          "resourceId",
+          "readAt",
+          "createdAt"
+        ]
+      },
+      "NotificationPage": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ]
+      },
       "Person": {
         "type": "object",
         "properties": {
@@ -9219,11 +10182,11 @@
               "null"
             ]
           },
-          "roleId": {
-            "type": "string"
-          },
-          "roleName": {
-            "type": "string"
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleRef"
+            }
           },
           "jobTitle": {
             "type": [
@@ -9282,8 +10245,7 @@
           "name",
           "email",
           "photoFileId",
-          "roleId",
-          "roleName",
+          "roles",
           "jobTitle",
           "department",
           "location",
@@ -9311,11 +10273,11 @@
               "null"
             ]
           },
-          "roleId": {
-            "type": "string"
-          },
-          "roleName": {
-            "type": "string"
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleRef"
+            }
           },
           "jobTitle": {
             "type": [
@@ -9380,8 +10342,7 @@
           "name",
           "email",
           "photoFileId",
-          "roleId",
-          "roleName",
+          "roles",
           "jobTitle",
           "department",
           "location",
@@ -9487,8 +10448,11 @@
           "name": {
             "type": "string"
           },
-          "roleId": {
-            "type": "string"
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleRef"
+            }
           },
           "photoFileId": {
             "type": [
@@ -9518,20 +10482,25 @@
           "id",
           "email",
           "name",
-          "roleId",
+          "roles",
           "active"
         ]
       },
       "UpdateUserDto": {
         "type": "object",
         "properties": {
-          "roleId": {
-            "type": "string",
-            "format": "uuid"
+          "roleIds": {
+            "uniqueItems": true,
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
         "required": [
-          "roleId"
+          "roleIds"
         ]
       },
       "InvitationSender": {
@@ -9582,8 +10551,11 @@
           "email": {
             "type": "string"
           },
-          "roleId": {
-            "type": "string"
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleRef"
+            }
           },
           "invitedBy": {
             "$ref": "#/components/schemas/InvitationSender"
@@ -9599,7 +10571,7 @@
         "required": [
           "id",
           "email",
-          "roleId",
+          "roles",
           "invitedBy",
           "invitedAt",
           "link"
@@ -9613,9 +10585,14 @@
             "maxLength": 254,
             "format": "email"
           },
-          "roleId": {
-            "type": "string",
-            "format": "uuid"
+          "roleIds": {
+            "uniqueItems": true,
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           },
           "locale": {
             "type": "string",
@@ -9642,7 +10619,7 @@
         },
         "required": [
           "email",
-          "roleId"
+          "roleIds"
         ]
       },
       "CreatedInvitation": {
@@ -9742,9 +10719,21 @@
           "email"
         ]
       },
-      "InvitationRole": {
+      "InvitedRole": {
         "type": "object",
         "properties": {
+          "system": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "Admin",
+              "Owner",
+              "Viewer",
+              null
+            ]
+          },
           "name": {
             "type": "string"
           },
@@ -9756,6 +10745,7 @@
           }
         },
         "required": [
+          "system",
           "name",
           "description"
         ]
@@ -9779,8 +10769,11 @@
               }
             ]
           },
-          "role": {
-            "$ref": "#/components/schemas/InvitationRole"
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvitedRole"
+            }
           },
           "note": {
             "type": [
@@ -9807,11 +10800,29 @@
           "email",
           "organization",
           "inviter",
-          "role",
+          "roles",
           "note",
           "lastDay",
           "hasAccount",
           "locale"
+        ]
+      },
+      "InvitationRole": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "description"
         ]
       },
       "OrganizationInvitationPreview": {
@@ -13748,8 +14759,7 @@
           "currency",
           "invoiced",
           "credited",
-          "netInvoiced",
-          "notInvoiced"
+          "netInvoiced"
         ]
       },
       "OrderCounts": {
@@ -13771,8 +14781,7 @@
         "required": [
           "shipments",
           "voidedShipments",
-          "returns",
-          "documents"
+          "returns"
         ]
       },
       "OrderQuantities": {
@@ -13938,6 +14947,12 @@
           "description": {
             "type": "string"
           },
+          "tracksLots": {
+            "type": "boolean"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
           "quantityOrdered": {
             "type": "string"
           },
@@ -14015,18 +15030,14 @@
           "variantId",
           "sku",
           "description",
+          "tracksLots",
+          "unitOfMeasure",
           "quantityOrdered",
           "quantityFulfilled",
           "quantityReturned",
           "quantityCredited",
           "quantityUnsettled",
           "quantityOutstanding",
-          "unitPrice",
-          "currency",
-          "priceSource",
-          "priceListId",
-          "priceListName",
-          "lineTotal",
           "isComplete",
           "isClosedShort",
           "closedReason"
@@ -14169,13 +15180,9 @@
           "expectedAt",
           "note",
           "deliverTo",
-          "totals",
-          "totalsComplete",
-          "money",
           "unsettledReturns",
           "counts",
           "quantities",
-          "documents",
           "lines"
         ]
       },
@@ -14342,6 +15349,12 @@
           "description": {
             "type": "string"
           },
+          "tracksLots": {
+            "type": "boolean"
+          },
+          "unitOfMeasure": {
+            "type": "string"
+          },
           "quantityOrdered": {
             "type": "string"
           },
@@ -14422,18 +15435,14 @@
           "variantId",
           "sku",
           "description",
+          "tracksLots",
+          "unitOfMeasure",
           "quantityOrdered",
           "quantityFulfilled",
           "quantityReturned",
           "quantityCredited",
           "quantityUnsettled",
           "quantityOutstanding",
-          "unitPrice",
-          "currency",
-          "priceSource",
-          "priceListId",
-          "priceListName",
-          "lineTotal",
           "isComplete",
           "isClosedShort",
           "closedReason"
@@ -18722,6 +19731,9 @@
           "users.delete",
           "roles.view",
           "roles.assign",
+          "roles.create",
+          "roles.update",
+          "roles.delete",
           "organizations.view",
           "organizations.update",
           "organizations.export",
@@ -18759,6 +19771,7 @@
           "partners.create",
           "partners.update",
           "orders.view",
+          "orders.view_prices",
           "orders.create",
           "orders.update",
           "orders.receive",
@@ -18786,6 +19799,7 @@
         "enum": [
           "user.created",
           "user.role_changed",
+          "member.roles_changed",
           "member.removed",
           "member.left",
           "user.account_deleted",
@@ -18794,6 +19808,9 @@
           "invitation.link_copied",
           "invitation.revoked",
           "invitation.accepted",
+          "role.created",
+          "role.updated",
+          "role.deleted",
           "product.created",
           "product.updated",
           "product.variant_added",
@@ -18888,7 +19905,11 @@
           "invitations_daily_limit",
           "account_deletion_scheduled",
           "invitation_ended",
-          "registration_closed"
+          "registration_closed",
+          "role_changed",
+          "role_held",
+          "permission_requires",
+          "role_name_unavailable"
         ]
       },
       "ApiVocabulary": {

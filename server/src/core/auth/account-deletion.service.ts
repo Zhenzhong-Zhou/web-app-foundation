@@ -35,14 +35,15 @@ import {
   organizationInvitations,
   organizations,
   recentRecords,
-  roles,
   sessions,
   users,
 } from '../../database/schema';
 import { recipientLocale, t, type Translatable } from '../../i18n/translate';
 import { type Mail, MailService } from '../../shared/mail/mail.service';
 import { AUDIT_ACTIONS } from '../audit/audit-actions';
-import { SYSTEM_ROLES } from '../authorization/permissions';
+import { lockOwners } from '../authorization/giving';
+import { rolesOfMembers } from '../authorization/member-roles';
+import { holdsOwner } from '../authorization/owner';
 import { AccountService } from './account.service';
 import { AccountEventService, type EventMeta } from './account-event.service';
 import { AccountPhotoService } from './account-photo.service';
@@ -388,9 +389,9 @@ export class AccountDeletionService {
       await Promise.all([
         this.db
           .select({
+            membershipId: memberships.id,
             organizationId: memberships.organizationId,
             organizationName: organizations.name,
-            roleName: roles.name,
             jobTitle: memberships.jobTitle,
             department: memberships.department,
             location: memberships.location,
@@ -403,7 +404,6 @@ export class AccountDeletionService {
             organizations,
             eq(organizations.id, memberships.organizationId),
           )
-          .innerJoin(roles, eq(roles.id, memberships.roleId))
           .where(eq(memberships.userId, userId))
           .orderBy(memberships.createdAt),
         this.account.listSessions(context),
@@ -433,10 +433,22 @@ export class AccountDeletionService {
           .orderBy(desc(recentRecords.openedAt)),
       ]);
 
+    const held = await rolesOfMembers(
+      this.db,
+      membershipRows.map((row) => row.membershipId),
+    );
+
     return {
       exportedAt: new Date(),
       profile,
-      memberships: membershipRows,
+      memberships: membershipRows.map(
+        ({ membershipId, organizationId, organizationName, ...work }) => ({
+          organizationId,
+          organizationName,
+          roleNames: (held.get(membershipId) ?? []).map((role) => role.name),
+          ...work,
+        }),
+      ),
       devices,
       accountHistory: history,
       notifications: notificationRows,
@@ -598,7 +610,7 @@ export class AccountDeletionService {
         organizationId: memberships.organizationId,
         organizationName: organizations.name,
         goingToo: sql<boolean>`${organizations.deletionScheduledAt} is not null`,
-        isOwner: sql<boolean>`${roles.name} = ${SYSTEM_ROLES.OWNER}`,
+        isOwner: holdsOwner(memberships.id),
         others: sql<number>`(
           select count(*) from ${memberships} as other
           where other.organization_id = ${memberships.organizationId}
@@ -606,10 +618,9 @@ export class AccountDeletionService {
         )::int`,
         otherOwners: sql<number>`(
           select count(*) from ${memberships} as other
-          join ${roles} as other_role on other_role.id = other.role_id
           where other.organization_id = ${memberships.organizationId}
             and other.user_id <> ${userId}
-            and other_role.name = ${SYSTEM_ROLES.OWNER}
+            and ${holdsOwner(sql`other.id`)}
         )::int`,
       })
       .from(memberships)
@@ -617,7 +628,6 @@ export class AccountDeletionService {
         organizations,
         eq(organizations.id, memberships.organizationId),
       )
-      .innerJoin(roles, eq(roles.id, memberships.roleId))
       .where(eq(memberships.userId, userId));
 
     return rows.flatMap((row): Block[] => {
@@ -710,18 +720,24 @@ export class AccountDeletionService {
  * only for another such lock, not for writes that merely refer to the
  * organization; in id order, so two holders of the same set cannot
  * deadlock.
+ *
+ * Then each one's lock on who is Owner, in the same order, so the Owners
+ * are counted under the last-Owner rule's own lock (ADR-080): an Owner
+ * leaving as another steps down or is removed would otherwise each see
+ * the other still Owner, and leave none.
  */
 async function lockOrganizations(
   tx: Transaction,
   organizationIds: string[],
 ): Promise<void> {
   if (organizationIds.length === 0) return;
-  await tx
+  const locked = await tx
     .select({ id: organizations.id })
     .from(organizations)
     .where(inArray(organizations.id, organizationIds))
     .orderBy(asc(organizations.id))
     .for('no key update');
+  for (const { id } of locked) await lockOwners(tx, id);
 }
 
 /** The refusal for a block: why, and what to do next (ADR-069). */

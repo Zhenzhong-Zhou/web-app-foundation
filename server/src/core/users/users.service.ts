@@ -6,8 +6,9 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
+import type { Transaction } from '../../database/database.module';
 import { isUniqueViolation } from '../../database/errors';
 import { memberships, roles, users } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
@@ -15,14 +16,34 @@ import { t, type Translatable } from '../../i18n/translate';
 import { recordPrevious } from '../audit/audit-context';
 import { PasswordService } from '../auth/password.service';
 import { RequestContext } from '../auth/request-context';
-import { SYSTEM_ROLES } from '../authorization/permissions';
+import type { RoleRef } from '../authorization/dto/role-response.dto';
+import {
+  beyond,
+  countOwners,
+  giverHolds,
+  type GrantingRole,
+  grantingRolesOfMembers,
+  includesOwner,
+  LAST_OWNER_CHANGE,
+  lockOwners,
+  ONLY_AN_OWNER_CHANGES_AN_OWNER,
+  refuseBeyond,
+  rolesToGive,
+} from '../authorization/giving';
+import {
+  giveRoles,
+  roleRef,
+  setRoles,
+  withRoleRefs,
+} from '../authorization/member-roles';
+import type { Permission } from '../authorization/permissions';
 import type { CreateUserDto } from './dto/create-user.dto';
 
 export interface OrganizationMember {
   id: string;
   email: string;
   name: string;
-  roleId: string;
+  roles: RoleRef[];
   /** Their photo (ADR-063); null shows their initials. */
   photoFileId?: string | null;
   lastActiveAt?: Date | null;
@@ -46,22 +67,23 @@ export class UsersService {
    * The join is driven from the scoped side, which is what keeps the filter
    * inside TenantDb rather than in this method.
    */
-  listMembers(): Promise<OrganizationMember[]> {
-    return this.tenantDb.selectJoined(
+  async listMembers(): Promise<OrganizationMember[]> {
+    const rows = await this.tenantDb.selectJoined(
       memberships,
       users,
       eq(users.id, memberships.userId),
       {
+        membershipId: memberships.id,
         id: users.id,
         email: users.email,
         name: users.name,
-        roleId: memberships.roleId,
         // Their face beside their name (ADR-063).
         photoFileId: users.photoFileId,
         // Shown coarse, or exact with audit.view (ADR-063), by the route.
         lastActiveAt: memberships.lastActiveAt,
       },
     );
+    return this.tenantDb.transaction((tx) => withRoleRefs(tx, rows));
   }
 
   /**
@@ -114,13 +136,13 @@ export class UsersService {
             name: users.name,
           });
 
-        await tx.insert(memberships).values({
-          userId: created.id,
-          organizationId,
-          roleId: role.id,
-        });
+        const [membership] = await tx
+          .insert(memberships)
+          .values({ userId: created.id, organizationId })
+          .returning({ id: memberships.id });
+        await giveRoles(tx, { id: membership.id, organizationId }, [role.id]);
 
-        return { ...created, roleId: role.id };
+        return { ...created, roles: [roleRef(role)] };
       });
     } catch (error) {
       if (isUniqueViolation(error)) {
@@ -136,69 +158,76 @@ export class UsersService {
   }
 
   /**
-   * Changes a member's role within the caller's organization.
+   * Makes a member's roles exactly these (ADR-080), within the caller's
+   * organization: one or more, Owner alone, and only what the caller may
+   * give, to a member the caller may change.
    *
-   * Both checks below live here rather than in a guard because permission
-   * strings say what a caller may *do*, not what they may do *to whom*
-   * (ADR-016's known gap). No permission string can express "not above your
-   * own level".
+   * Every check is made under the organization's lock on its Owners and
+   * on the same transaction as the change, so two Owners demoting each
+   * other at once cannot leave none, and a caller demoted a moment before
+   * is read as demoted. Permission strings say what a caller may *do*,
+   * not what they may do *to whom* (ADR-016's gap), so this lives here
+   * rather than in the guard.
    */
-  async updateRole(
+  async updateRoles(
     context: RequestContext,
     userId: string,
-    roleId: string,
+    roleIds: readonly string[],
   ): Promise<void> {
-    // Scoped, so a role belonging to another organization simply is not found
-    // — the same property create() relies on.
-    const [role] = await this.tenantDb.select(roles, eq(roles.id, roleId));
-    if (!role)
-      throw new NotFoundException(
-        t({ id: 'users.unknownRole', defaultMessage: 'Unknown role' }),
+    const name = await this.tenantDb.transaction(async (tx, organizationId) => {
+      await lockOwners(tx, organizationId);
+
+      const target = await rolesToGive(tx, organizationId, roleIds);
+
+      const { membership, current, held } = await this.loadMember(
+        tx,
+        organizationId,
+        context,
+        userId,
       );
 
-    const { membership, callerRole, targetRole } = await this.loadMember(
-      context,
-      userId,
-    );
-
-    // ADR-016's gap, closed here. An Admin promoting someone to Owner would
-    // be granting authority the Admin does not hold.
-    if (
-      role.name === SYSTEM_ROLES.OWNER &&
-      callerRole?.name !== SYSTEM_ROLES.OWNER
-    ) {
-      throw new ForbiddenException(
-        t({
-          id: 'users.ownerAssign',
-          defaultMessage: 'Only an Owner can assign the Owner role',
-        }),
+      // Giving, then changing, as ADR-016's two Owner rules always ran.
+      const added = target.filter(
+        (role) => !current.some((kept) => kept.id === role.id),
       );
-    }
-
-    // Owner to Owner takes nothing away; an Admin trying it was refused
-    // just above.
-    if (role.name !== SYSTEM_ROLES.OWNER) {
-      await this.assertMayTakeOwner(callerRole, targetRole, membership, {
-        notOwner: t({
-          id: 'users.ownerChange',
-          defaultMessage: "Only an Owner can change an Owner's role",
-        }),
-        lastOwner: t({
-          id: 'users.lastOwnerChange',
-          defaultMessage: 'Transfer ownership before changing this role',
-        }),
+      refuseBeyond(held, added);
+      this.assertMayChange(held, current, membership.name, {
+        owner: ONLY_AN_OWNER_CHANGES_AN_OWNER,
+        beyond: (member) =>
+          t(
+            {
+              id: 'users.cannotChange',
+              defaultMessage:
+                'Your roles don’t include everything {name}’s roles can do, so you can’t change their roles.',
+            },
+            { name: member },
+          ),
       });
-    }
 
-    await this.tenantDb.update(
-      memberships,
-      { roleId },
-      eq(memberships.id, membership.id),
-    );
+      // Never from the last Owner, which binds an Owner too (ADR-012): an
+      // organization with no Owner has nobody who can appoint one.
+      if (
+        includesOwner(current) &&
+        !includesOwner(target) &&
+        (await countOwners(tx, organizationId)) <= 1
+      ) {
+        throw new ConflictException(LAST_OWNER_CHANGE);
+      }
 
-    recordPrevious({ roleId: membership.roleId });
+      await setRoles(tx, { id: membership.id, organizationId }, roleIds);
 
-    this.logger.log(`Role of ${userId} changed to ${role.name}`);
+      // As the body has them when nothing changed, so the save writes no
+      // entry; otherwise as they were.
+      const same =
+        current.length === target.length &&
+        target.every((role) => current.some((kept) => kept.id === role.id));
+      recordPrevious({
+        roleIds: same ? [...roleIds] : current.map((role) => role.id),
+      });
+      return membership.name;
+    });
+
+    this.logger.log(`Roles of ${userId} (${name}) changed`);
   }
 
   /**
@@ -224,83 +253,108 @@ export class UsersService {
       );
     }
 
-    const { membership, callerRole, targetRole } = await this.loadMember(
-      context,
-      userId,
-    );
+    await this.tenantDb.transaction(async (tx, organizationId) => {
+      await lockOwners(tx, organizationId);
+      const { membership, current, held } = await this.loadMember(
+        tx,
+        organizationId,
+        context,
+        userId,
+      );
 
-    await this.assertMayTakeOwner(callerRole, targetRole, membership, {
-      notOwner: t({
-        id: 'users.ownerRemove',
-        defaultMessage: 'Only an Owner can remove an Owner',
-      }),
-      lastOwner: t({
-        id: 'users.lastOwnerRemove',
-        defaultMessage: 'Transfer ownership before removing this member',
-      }),
+      this.assertMayChange(held, current, membership.name, {
+        owner: t({
+          id: 'users.ownerRemove',
+          defaultMessage: 'Only an Owner can remove an Owner',
+        }),
+        beyond: (member) =>
+          t(
+            {
+              id: 'users.cannotRemove',
+              defaultMessage:
+                'Your roles don’t include everything {name}’s roles can do, so you can’t remove them.',
+            },
+            { name: member },
+          ),
+      });
+      if (
+        includesOwner(current) &&
+        (await countOwners(tx, organizationId)) <= 1
+      ) {
+        throw new ConflictException(
+          t({
+            id: 'users.lastOwnerRemove',
+            defaultMessage: 'Transfer ownership before removing this member',
+          }),
+        );
+      }
+
+      await tx
+        .delete(memberships)
+        .where(
+          and(
+            eq(memberships.id, membership.id),
+            eq(memberships.organizationId, organizationId),
+          ),
+        );
     });
-
-    await this.tenantDb.delete(memberships, eq(memberships.id, membership.id));
 
     this.logger.log(`Membership of ${userId} removed`);
   }
 
   /**
-   * A member of the caller's organization, with their role and the caller's.
-   * Scoped, so a member of another organization is simply not found.
+   * A member of the caller's organization, by name, with the roles they
+   * hold and what each grants, and what the caller holds, read on the
+   * transaction the change is made in. A member of another organization
+   * is simply not found.
    */
-  private async loadMember(context: RequestContext, userId: string) {
-    const [membership] = await this.tenantDb.select(
-      memberships,
-      eq(memberships.userId, userId),
-    );
-
-    if (!membership)
+  private async loadMember(
+    tx: Transaction,
+    organizationId: string,
+    context: RequestContext,
+    userId: string,
+  ) {
+    const [membership] = await tx
+      .select({ id: memberships.id, name: users.name })
+      .from(memberships)
+      .innerJoin(users, eq(users.id, memberships.userId))
+      .where(
+        and(
+          eq(memberships.organizationId, organizationId),
+          eq(memberships.userId, userId),
+        ),
+      );
+    if (!membership) {
       throw new NotFoundException(
         t({ id: 'users.notFound', defaultMessage: 'No such member' }),
       );
+    }
 
-    const [callerRole] = await this.tenantDb.select(
-      roles,
-      eq(roles.id, context.roleId!),
-    );
-
-    const [targetRole] = await this.tenantDb.select(
-      roles,
-      eq(roles.id, membership.roleId),
-    );
-
-    return { membership, callerRole, targetRole };
+    return {
+      membership,
+      current:
+        (await grantingRolesOfMembers(tx, [membership.id])).get(
+          membership.id,
+        ) ?? [],
+      held: await giverHolds(tx, context.membershipId!),
+    };
   }
 
   /**
-   * Taking Owner away from a member, by changing their role or by removing
-   * them. Two rules, in this order:
-   *
-   * - Only an Owner may. Taking Owner away is as much a privilege change as
-   *   granting it (ADR-016's gap). Without this an Admin could strip an
-   *   Owner whenever a second one exists — a gap a single-Owner
-   *   organization never shows, because the rule below refuses there.
-   * - Never from the last Owner, and that binds an Owner too (ADR-012): an
-   *   organization with no Owner has nobody who can appoint one.
+   * Changing or removing a member needs the caller's roles to hold
+   * everything the member's roles grant (ADR-080). An Owner holds
+   * everything, so only an Owner acts on an Owner, refused in ADR-016's
+   * own words.
    */
-  private async assertMayTakeOwner(
-    callerRole: { name: string } | undefined,
-    targetRole: { name: string } | undefined,
-    membership: { roleId: string },
-    refusals: { notOwner: Translatable; lastOwner: Translatable },
-  ): Promise<void> {
-    if (targetRole?.name !== SYSTEM_ROLES.OWNER) return;
-
-    if (callerRole?.name !== SYSTEM_ROLES.OWNER) {
-      throw new ForbiddenException(refusals.notOwner);
-    }
-
-    const owners = await this.tenantDb.select(
-      memberships,
-      eq(memberships.roleId, membership.roleId),
+  private assertMayChange(
+    held: ReadonlySet<Permission>,
+    current: GrantingRole[],
+    name: string,
+    refusals: { owner: Translatable; beyond: (name: string) => Translatable },
+  ): void {
+    if (beyond(held, current).length === 0) return;
+    throw new ForbiddenException(
+      includesOwner(current) ? refusals.owner : refusals.beyond(name),
     );
-
-    if (owners.length <= 1) throw new ConflictException(refusals.lastOwner);
   }
 }

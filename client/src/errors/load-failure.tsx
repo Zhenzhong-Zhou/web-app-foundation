@@ -2,7 +2,6 @@ import { Alert, Button } from '@mui/material';
 import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { useAuth } from '../auth/use-auth';
 import { ApiError } from '../lib/api';
 import { GoHome, SearchEverything } from './status-actions';
 import { StatusPage } from './status-page';
@@ -10,7 +9,8 @@ import { StatusPage } from './status-page';
 /**
  * A record page whose record did not load (conventions.md, "Status
  * pages"): a 404 says the record does not exist, with its list and the
- * lookup; a 403 says the role does not reach it, and who can change that;
+ * lookup; a 403 says the reader may not see it, in the server's words,
+ * which name what their roles lack and who could give it (ADR-080, #148);
  * no answer at all says the server is out of reach, with Try again. Any
  * other failure keeps the server's own words, as before.
  */
@@ -29,7 +29,6 @@ export function LoadFailure({
   onRetry?: () => void;
 }) {
   const intl = useIntl();
-  const { session } = useAuth();
 
   if (failure instanceof ApiError && failure.status === 404) {
     return (
@@ -63,14 +62,7 @@ export function LoadFailure({
           id: 'status.forbidden.title',
           defaultMessage: "You don't have access to this",
         })}
-        message={intl.formatMessage(
-          {
-            id: 'status.forbidden.message',
-            defaultMessage:
-              'Your role does not include this. If you need it, ask an owner of {organization} to change your role.',
-          },
-          { organization: session?.organization?.name ?? '' },
-        )}
+        message={failure.message}
         actions={<GoHome primary />}
       />
     );

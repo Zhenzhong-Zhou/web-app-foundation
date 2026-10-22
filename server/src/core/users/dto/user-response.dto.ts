@@ -1,3 +1,4 @@
+import type { RoleRef } from '../../authorization/dto/role-response.dto';
 import type { ActiveSince } from '../../people/people.service';
 
 /**
@@ -10,7 +11,8 @@ export class Member {
   id!: string;
   email!: string;
   name!: string;
-  roleId!: string;
+  /** Every role they hold, the built-in one first (ADR-080). */
+  roles!: RoleRef[];
   /** Their photo; null shows their initials. */
   photoFileId?: string | null;
   /** How recently they were here, as everyone may see it. */

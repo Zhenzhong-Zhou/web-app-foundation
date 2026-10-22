@@ -13,6 +13,7 @@ import {
   customRole,
   registerOrganization,
   roleIdNamed,
+  roleIdsOf,
 } from './utils/fixtures';
 import { RecordingMailService } from './utils/recording-mail';
 import { authedAgent } from './utils/request';
@@ -22,7 +23,7 @@ interface MemberResponse {
   id: string;
   email: string;
   name: string;
-  roleId: string;
+  roles: { id: string; name: string; builtIn: boolean }[];
 }
 
 /**
@@ -350,15 +351,12 @@ describe('Users (e2e)', () => {
 
       await alpha.agent
         .patch(`/v1/users/${member.id}`)
-        .send({ roleId: adminRoleId })
+        .send({ roleIds: [adminRoleId] })
         .expect(204);
 
-      const [row] = await db
-        .select()
-        .from(memberships)
-        .where(eq(memberships.userId, member.id));
+      const [held] = await roleIdsOf(app, member.id);
 
-      expect(row.roleId).toBe(adminRoleId);
+      expect(held).toBe(adminRoleId);
     });
 
     it('refuses an Admin assigning the Owner role', async () => {
@@ -376,15 +374,12 @@ describe('Users (e2e)', () => {
       // own level", which is why this check cannot live there.
       await admin.agent
         .patch(`/v1/users/${member.id}`)
-        .send({ roleId: ownerRoleId })
+        .send({ roleIds: [ownerRoleId] })
         .expect(403);
 
-      const [row] = await db
-        .select()
-        .from(memberships)
-        .where(eq(memberships.userId, member.id));
+      const [held] = await roleIdsOf(app, member.id);
 
-      expect(row.roleId).toBe(alpha.viewerRoleId);
+      expect(held).toBe(alpha.viewerRoleId);
     });
 
     it('refuses an Admin demoting an Owner', async () => {
@@ -396,7 +391,7 @@ describe('Users (e2e)', () => {
       // exactly what made this gap invisible until an Admin tried it.
       await admin.agent
         .patch(`/v1/users/${alpha.ownerId}`)
-        .send({ roleId: alpha.viewerRoleId })
+        .send({ roleIds: [alpha.viewerRoleId] })
         .expect(403);
     });
 
@@ -412,7 +407,7 @@ describe('Users (e2e)', () => {
 
       await viewer
         .patch(`/v1/users/${member.id}`)
-        .send({ roleId: adminRoleId })
+        .send({ roleIds: [adminRoleId] })
         .expect(403);
     });
 
@@ -436,15 +431,12 @@ describe('Users (e2e)', () => {
 
       await clerk.agent
         .patch(`/v1/users/${member.id}`)
-        .send({ roleId: adminRoleId })
+        .send({ roleIds: [adminRoleId] })
         .expect(403);
 
-      const [row] = await db
-        .select()
-        .from(memberships)
-        .where(eq(memberships.userId, member.id));
+      const [held] = await roleIdsOf(app, member.id);
 
-      expect(row.roleId).toBe(alpha.viewerRoleId);
+      expect(held).toBe(alpha.viewerRoleId);
     });
 
     it('refuses to demote the only Owner', async () => {
@@ -455,15 +447,12 @@ describe('Users (e2e)', () => {
       // who can appoint one.
       await alpha.agent
         .patch(`/v1/users/${alpha.ownerId}`)
-        .send({ roleId: alpha.viewerRoleId })
+        .send({ roleIds: [alpha.viewerRoleId] })
         .expect(409);
 
-      const [row] = await db
-        .select()
-        .from(memberships)
-        .where(eq(memberships.userId, alpha.ownerId));
+      const [held] = await roleIdsOf(app, alpha.ownerId);
 
-      expect(row.roleId).not.toBe(alpha.viewerRoleId);
+      expect(held).not.toBe(alpha.viewerRoleId);
     });
 
     it('allows demoting an Owner when another remains', async () => {
@@ -472,15 +461,12 @@ describe('Users (e2e)', () => {
 
       await alpha.agent
         .patch(`/v1/users/${alpha.ownerId}`)
-        .send({ roleId: alpha.viewerRoleId })
+        .send({ roleIds: [alpha.viewerRoleId] })
         .expect(204);
 
-      const [row] = await db
-        .select()
-        .from(memberships)
-        .where(eq(memberships.userId, alpha.ownerId));
+      const [held] = await roleIdsOf(app, alpha.ownerId);
 
-      expect(row.roleId).toBe(alpha.viewerRoleId);
+      expect(held).toBe(alpha.viewerRoleId);
     });
 
     it('refuses a role from another organization', async () => {
@@ -492,12 +478,13 @@ describe('Users (e2e)', () => {
         'Viewer',
       );
 
-      // A well-formed uuid for a role that exists — just not here. TenantDb
-      // scopes the lookup, so the row is not visible rather than off-limits.
+      // A well-formed uuid for a role that exists — just not here. The
+      // lookup is scoped, so the row is not visible rather than off-limits,
+      // and an id in a body from another organization is malformed (400).
       await alpha.agent
         .patch(`/v1/users/${member.id}`)
-        .send({ roleId: beta.viewerRoleId })
-        .expect(404);
+        .send({ roleIds: [beta.viewerRoleId] })
+        .expect(400);
     });
 
     it('refuses a member of another organization', async () => {
@@ -507,7 +494,7 @@ describe('Users (e2e)', () => {
 
       await alpha.agent
         .patch(`/v1/users/${beta.ownerId}`)
-        .send({ roleId: adminRoleId })
+        .send({ roleIds: [adminRoleId] })
         .expect(404);
     });
 
@@ -522,12 +509,12 @@ describe('Users (e2e)', () => {
 
       await alpha.agent
         .patch(`/v1/users/${member.id}`)
-        .send({ roleId: adminRoleId })
+        .send({ roleIds: [adminRoleId] })
         .expect(204);
 
       const rows = await db.select().from(auditLog);
       const [changed] = rows.filter(
-        (row) => row.action === 'user.role_changed',
+        (row) => row.action === 'member.roles_changed',
       );
 
       // 204, so resourceId comes off the path rather than a response body —

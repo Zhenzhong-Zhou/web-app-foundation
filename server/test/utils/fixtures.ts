@@ -2,11 +2,14 @@ import type { INestApplication } from '@nestjs/common';
 import { ThrottlerStorage } from '@nestjs/throttler';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 
+import { giveRoles } from '../../src/core/authorization/member-roles';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../../src/database/database.module';
 import {
+  membershipRoles,
+  memberships,
   permissions,
   rolePermissions,
   roles,
@@ -178,6 +181,41 @@ export async function customRole(
   return role.id;
 }
 
+/**
+ * A membership with one role, inserted directly: a member no invitation
+ * made, as the demo seed adds them, or one in a second organization.
+ */
+export async function insertMember(
+  app: INestApplication,
+  member: { userId: string; organizationId: string; roleId: string },
+): Promise<string> {
+  const db = app.get<Database>(UNSAFE_GLOBAL_DB);
+  const [membership] = await db
+    .insert(memberships)
+    .values({ userId: member.userId, organizationId: member.organizationId })
+    .returning({ id: memberships.id });
+  await giveRoles(
+    db,
+    { id: membership.id, organizationId: member.organizationId },
+    [member.roleId],
+  );
+  return membership.id;
+}
+
+/** The ids of the roles a person holds, in every organization they are in. */
+export async function roleIdsOf(
+  app: INestApplication,
+  userId: string,
+): Promise<string[]> {
+  const rows = await app
+    .get<Database>(UNSAFE_GLOBAL_DB)
+    .select({ id: membershipRoles.roleId })
+    .from(membershipRoles)
+    .innerJoin(memberships, eq(memberships.id, membershipRoles.membershipId))
+    .where(eq(memberships.userId, userId));
+  return rows.map((row) => row.id);
+}
+
 /** Who invites, signed in on the agent, and where to. */
 interface Inviter {
   agent: Agent;
@@ -210,7 +248,7 @@ export async function addMember(
     .post('/v1/invitations')
     .send({
       email,
-      roleId: await roleIdNamed(app, owner.organizationId, roleName),
+      roleIds: [await roleIdNamed(app, owner.organizationId, roleName)],
     })
     .expect(201);
 

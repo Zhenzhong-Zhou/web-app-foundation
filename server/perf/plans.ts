@@ -22,7 +22,7 @@ import { runInTenantContext } from '../src/database/tenant-context';
 import { CostsService } from '../src/modules/costs/costs.service';
 import { HomeService } from '../src/modules/home/home.service';
 import { InvoicesService } from '../src/modules/invoices/invoices.service';
-import { OrdersService } from '../src/modules/orders/orders.service';
+import { OrdersService, sightOf } from '../src/modules/orders/orders.service';
 import { ShippingService } from '../src/modules/orders/shipping.service';
 import {
   kindsVisibleWith,
@@ -69,6 +69,7 @@ const MONTH_INSTANTS = {
 
 /** The lookup as an owner sees it: every kind queried. */
 const EVERY_PERMISSION = new Set(ALL_PERMISSIONS);
+const EVERYTHING = sightOf(EVERY_PERMISSION);
 
 /**
  * Sequential scans that are the decision, not an accident. Each says why,
@@ -229,7 +230,8 @@ async function buildProbes(
     },
     {
       name: 'order detail',
-      run: () => orders.findById(firstOrders.entries[0].id),
+      // As the Owner reads it, every figure on it.
+      run: () => orders.findById(firstOrders.entries[0].id, EVERYTHING),
     },
     { name: 'inventory', run: () => stock.list({}) },
     {
@@ -426,7 +428,7 @@ async function firstSale(orders: OrdersService, stock: StockReadsService) {
     for (const candidate of entries) {
       if (candidate.direction !== 'sale') continue;
 
-      const order = await orders.findById(candidate.id);
+      const order = await orders.findById(candidate.id, EVERYTHING);
       const line = order.lines.find(
         (entry) => entry.quantityFulfilled !== entry.quantityOrdered,
       );

@@ -3,11 +3,14 @@ import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
+import { giveRoles, nameRoles } from '../src/core/authorization/member-roles';
 import {
   type Database,
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
+import { isForeignKeyViolation } from '../src/database/errors';
 import {
+  invitations,
   memberships,
   organizations,
   roles,
@@ -16,6 +19,7 @@ import {
 import { runInTenantContext } from '../src/database/tenant-context';
 import { TenantDb } from '../src/database/tenant-db.service';
 import { createTestApp } from './utils/create-test-app';
+import { insertMember, roleIdsOf } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
 
 /**
@@ -85,10 +89,16 @@ describe('Tenant isolation (e2e)', () => {
       .values({ email: 'b@example.com', name: 'B' })
       .returning();
 
-    await db.insert(memberships).values([
-      { userId: userA.id, organizationId: orgA.id, roleId: roleA.id },
-      { userId: userB.id, organizationId: orgB.id, roleId: roleB.id },
-    ]);
+    await insertMember(app, {
+      userId: userA.id,
+      organizationId: orgA.id,
+      roleId: roleA.id,
+    });
+    await insertMember(app, {
+      userId: userB.id,
+      organizationId: orgB.id,
+      roleId: roleB.id,
+    });
 
     return { orgA, orgB, userA, userB };
   }
@@ -174,6 +184,57 @@ describe('Tenant isolation (e2e)', () => {
       .from(roles)
       .where(eq(roles.id, roleB.id));
     expect(survivors).toHaveLength(1);
+  });
+
+  /**
+   * ADR-080: a member's roles and an invitation's are each held to their
+   * row's organization by composite foreign keys, so the database itself
+   * refuses another organization's role, whatever the code above it does
+   * and whichever organization the row claims.
+   */
+  it('refuses another organization role on a member or an invitation, in the database', async () => {
+    const { orgA, orgB, userA } = await seedTwoMembers();
+    const [roleA] = await roleIdsOf(app, userA.id);
+    const [roleB] = await db
+      .select({ id: roles.id })
+      .from(roles)
+      .where(eq(roles.organizationId, orgB.id));
+    const [membership] = await db
+      .select({ id: memberships.id })
+      .from(memberships)
+      .where(eq(memberships.userId, userA.id));
+    const [invitation] = await db
+      .insert(invitations)
+      .values({
+        organizationId: orgA.id,
+        email: 'c@example.com',
+        locale: 'en',
+        invitedBy: userA.id,
+        link: 'emailed',
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      })
+      .returning({ id: invitations.id });
+    const refusedBy = (constraint: string) => (error: unknown) =>
+      isForeignKeyViolation(error, constraint);
+
+    // The row's own organization, with the other's role.
+    await expect(
+      giveRoles(db, { id: membership.id, organizationId: orgA.id }, [roleB.id]),
+    ).rejects.toSatisfy(refusedBy('membership_roles_role_fk'));
+    await expect(
+      nameRoles(db, { id: invitation.id, organizationId: orgA.id }, [roleB.id]),
+    ).rejects.toSatisfy(refusedBy('invitation_roles_role_fk'));
+
+    // The other organization claimed, so the role fits and the member or
+    // the invitation does not.
+    await expect(
+      giveRoles(db, { id: membership.id, organizationId: orgB.id }, [roleB.id]),
+    ).rejects.toSatisfy(refusedBy('membership_roles_membership_fk'));
+    await expect(
+      nameRoles(db, { id: invitation.id, organizationId: orgB.id }, [roleB.id]),
+    ).rejects.toSatisfy(refusedBy('invitation_roles_invitation_fk'));
+
+    expect(await roleIdsOf(app, userA.id)).toEqual([roleA]);
   });
 
   it('rejects tables without organization_id at compile time', () => {

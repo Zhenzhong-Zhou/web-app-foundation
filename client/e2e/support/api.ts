@@ -280,7 +280,7 @@ export async function inviteByLink(
   const response = await api.post('/v1/invitations', {
     data: {
       email,
-      roleId: await roleIdNamed(api, role),
+      roleIds: [await roleIdNamed(api, role)],
       delivery: 'link',
       ...extra,
     },

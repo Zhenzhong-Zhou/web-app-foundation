@@ -255,6 +255,7 @@ export function ProductionOrdersPage() {
 
       <CreateRunDialog
         open={creating}
+        canSeePartners={can('partners.view')}
         onClose={() => setCreating(false)}
         onCreated={() => {
           // Back to All so the new run, which is a draft, is certainly in

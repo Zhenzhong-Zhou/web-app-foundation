@@ -64,7 +64,7 @@ test('a new person joins from the emailed link, in the language it was written i
     await org.api.post('/v1/invitations', {
       data: {
         email,
-        roleId: await roleIdNamed(org.api, 'Admin'),
+        roleIds: [await roleIdNamed(org.api, 'Admin')],
         locale: 'zh-Hans',
         note: '周一早上 8 点到北区仓库收货。',
       },

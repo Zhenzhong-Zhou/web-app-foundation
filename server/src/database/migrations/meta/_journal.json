@@ -512,6 +512,20 @@
       "when": 1792552992605,
       "tag": "0072_admin_role_line",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1792607123042,
+      "tag": "0073_job_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1792612201257,
+      "tag": "0074_role_updated_by",
+      "breakpoints": true
     }
   ]
 }

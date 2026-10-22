@@ -18,11 +18,23 @@ function reportIntlError(error: { code?: string; message: string }): void {
 /** Shared by every intl object made here, as react-intl recommends. */
 const cache = createIntlCache();
 
+/**
+ * English lists are British, as the copy is and the server's are
+ * (`joinList`): "Owner, Olu Ade and Ada Byrne", with no comma before the
+ * "and", in Toronto and Texas alike. Dates and numbers keep the browser's
+ * region (formattingLocale).
+ */
 export function makeIntl(tag: string, messages: Messages): IntlShape {
-  return createIntl(
-    { locale: tag, defaultLocale: 'en', messages, onError: reportIntlError },
-    cache,
-  );
+  const config = { defaultLocale: 'en', messages, onError: reportIntlError };
+  const made = createIntl({ ...config, locale: tag }, cache);
+  if (new Intl.Locale(tag).language !== 'en' || tag === 'en-GB') return made;
+
+  const british = createIntl({ ...config, locale: 'en-GB' }, cache);
+  return {
+    ...made,
+    formatList: british.formatList,
+    formatListToParts: british.formatListToParts,
+  };
 }
 
 /**

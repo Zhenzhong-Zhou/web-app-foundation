@@ -4,7 +4,7 @@ Your account holds what is yours rather than the organization’s: your name, ph
 
 ## Your access {#your-access}
 
-Your access at the organization shows your role, a line saying what the role is for, and what you can do here, area by area. It ends with whom to ask for more: up to three people who may change roles, each name opening their page on [People](/people). Someone who may do everything reads that in one line.
+Your access at the organization shows your roles, each with a line saying what it is for, and what you can do here with them together, area by area. It ends with whom to ask for more: up to three people who may change roles, each name opening their page on [People](/people). Someone who may do everything reads that in one line.
 
 ## Say who you are {#profile}
 

@@ -192,7 +192,7 @@ export function OrderDocuments({ order }: { order: OrderDetail }) {
             id: 'orders.documents.notYet',
             defaultMessage: 'Not yet invoiced, before tax: {amount}',
           },
-          { amount: formatMoney(money.notInvoiced, money.currency) },
+          { amount: formatMoney(money.notInvoiced ?? null, money.currency) },
         )}
       </Typography>
 

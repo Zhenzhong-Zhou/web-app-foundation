@@ -89,7 +89,9 @@ test('tells a Viewer they cannot read it, without pretending otherwise', async (
    * screen, which is why the 403 gets its own state rather than an alert under
    * the usual description.
    */
-  await expect(page.getByText(/role does not include access/i)).toBeVisible();
+  await expect(
+    page.getByText('Your roles don’t include the audit log.'),
+  ).toBeVisible();
 
   await expect(page.getByRole('table')).toHaveCount(0);
   await expect(

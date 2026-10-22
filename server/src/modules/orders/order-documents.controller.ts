@@ -20,12 +20,13 @@ export class OrderDocumentsController {
   ) {}
 
   /**
-   * The purchase order as a PDF, under the permission that reads the
-   * order: inline for Print, an attachment with ?download=1. A sale's
-   * document is its pro forma, at /orders/:id/pro-forma.
+   * The purchase order as a PDF, with its prices, so under the permission
+   * that reads them too (ADR-080): inline for Print, an attachment with
+   * ?download=1. A sale's document is its pro forma, at
+   * /orders/:id/pro-forma.
    */
   @Get()
-  @RequirePermissions(PERMISSIONS.ORDERS_VIEW)
+  @RequirePermissions(PERMISSIONS.ORDERS_VIEW, PERMISSIONS.ORDERS_VIEW_PRICES)
   @PdfResponse()
   async pdf(
     @Param('id', ParseUUIDPipe) id: string,

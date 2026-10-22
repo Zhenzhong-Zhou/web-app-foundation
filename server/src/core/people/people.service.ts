@@ -4,10 +4,13 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 
 import type { Locale } from '../../common/locales';
-import { files, memberships, roles, users } from '../../database/schema';
+import type { Transaction } from '../../database/database.module';
+import { files, memberships, users } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import { type AuditRecord, AuditService } from '../audit/audit.service';
+import type { RoleRef } from '../authorization/dto/role-response.dto';
+import { withRoleRefs } from '../authorization/member-roles';
 import type { Permission } from '../authorization/permissions';
 import { FILE_STORAGE, type FileStorage, keyOf } from '../files/file-storage';
 
@@ -23,8 +26,7 @@ export interface Person {
   name: string;
   email: string;
   photoFileId: string | null;
-  roleId: string;
-  roleName: string;
+  roles: RoleRef[];
   jobTitle: string | null;
   department: string | null;
   location: string | null;
@@ -72,7 +74,6 @@ export class PeopleService {
         .select(PERSON_COLUMNS)
         .from(memberships)
         .innerJoin(users, eq(users.id, memberships.userId))
-        .innerJoin(roles, eq(roles.id, memberships.roleId))
         .where(
           and(
             eq(memberships.organizationId, organizationId),
@@ -80,7 +81,7 @@ export class PeopleService {
           ),
         )
         .orderBy(asc(users.name));
-      return rows.map((row) => shown(row, held));
+      return (await withRoles(tx, rows)).map((row) => shown(row, held));
     });
   }
 
@@ -91,11 +92,10 @@ export class PeopleService {
     locale: Locale,
   ): Promise<PersonDetail> {
     const row = await this.tenantDb.transaction(async (tx, organizationId) => {
-      const [found] = await tx
+      const found = await tx
         .select(PERSON_COLUMNS)
         .from(memberships)
         .innerJoin(users, eq(users.id, memberships.userId))
-        .innerJoin(roles, eq(roles.id, memberships.roleId))
         .where(
           and(
             eq(memberships.organizationId, organizationId),
@@ -103,7 +103,8 @@ export class PeopleService {
             isNull(users.deletedAt),
           ),
         );
-      return found;
+      const [person] = await withRoles(tx, found);
+      return person;
     });
     if (!row) throw notFound();
 
@@ -159,12 +160,11 @@ export class PeopleService {
 }
 
 const PERSON_COLUMNS = {
+  membershipId: memberships.id,
   id: users.id,
   name: users.name,
   email: users.email,
   photoFileId: users.photoFileId,
-  roleId: memberships.roleId,
-  roleName: roles.name,
   jobTitle: memberships.jobTitle,
   department: memberships.department,
   location: memberships.location,
@@ -175,6 +175,14 @@ const PERSON_COLUMNS = {
 };
 
 type PersonRow = Omit<Person, 'active'> & { lastActiveAt: Date | null };
+
+/** Each person's roles beside them, read where the roles are (ADR-080). */
+function withRoles(
+  tx: Transaction,
+  rows: (Omit<PersonRow, 'roles'> & { membershipId: string })[],
+): Promise<PersonRow[]> {
+  return withRoleRefs(tx, rows);
+}
 
 /** As the caller may see it: the exact time only with audit.view. */
 function shown(row: PersonRow, held: ReadonlySet<Permission>): Person {

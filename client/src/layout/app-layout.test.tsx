@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -95,5 +95,72 @@ describe('the rail while Help is open', () => {
     await closeHelp(user);
     expect(rail('Expand navigation')).toBeInTheDocument();
     expect(localStorage.getItem('nav.folded')).toBe('true');
+  });
+});
+
+/**
+ * A preference in the account menu opens from its row (#151): Enter or
+ * Space there opens the select, and Escape comes back to the row, where
+ * the menu's arrow keys go on.
+ */
+/** The menu on a phone, where jsdom leaves the frame (ADR-055). */
+describe('the menu on a phone', () => {
+  beforeEach(() => {
+    server.use(
+      http.get('/api/v1/notifications/unread-count', () =>
+        HttpResponse.json({ count: 0 }),
+      ),
+    );
+  });
+
+  it('opens as a dialog named for what it holds', async () => {
+    const user = userEvent.setup();
+    renderFrame();
+
+    await user.click(screen.getByRole('button', { name: 'Open navigation' }));
+    const menu = await screen.findByRole('dialog', { name: 'Navigation' });
+    expect(
+      within(menu).getByRole('button', { name: 'Close navigation' }),
+    ).toBeVisible();
+  });
+});
+
+describe('the account menu’s preferences', () => {
+  beforeEach(() => {
+    server.use(
+      http.get('/api/v1/notifications/unread-count', () =>
+        HttpResponse.json({ count: 0 }),
+      ),
+    );
+  });
+  afterEach(() => localStorage.clear());
+
+  it('opens a preference from its row, and Escape comes back to the row', async () => {
+    const user = userEvent.setup();
+    renderFrame();
+    await user.click(screen.getByRole('button', { name: /signed in as/ }));
+    const menu = screen.getByRole('menu');
+    const row = within(menu)
+      .getAllByRole('menuitem')
+      .find((item) =>
+        within(item).queryByRole('combobox', { name: 'Text size' }),
+      )!;
+
+    row.focus();
+    await user.keyboard('{Enter}');
+    const listbox = await screen.findByRole('listbox');
+    expect(
+      within(listbox).getByRole('option', { name: 'Large text' }),
+    ).toBeVisible();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() =>
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument(),
+    );
+    expect(row).toHaveFocus();
+    expect(screen.getByRole('menu')).toBeVisible();
+
+    await user.keyboard(' ');
+    expect(await screen.findByRole('listbox')).toBeVisible();
   });
 });

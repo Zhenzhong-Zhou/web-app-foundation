@@ -89,6 +89,9 @@ export function RmaDetailPage() {
 
   const showSkeleton = useDelayedFlag(loading);
   const canUpdate = can('return_authorizations.update');
+  // Raising a replacement raises a sale, so it needs orders.create too,
+  // which a role managing returns may not hold (ADR-080).
+  const canReplace = canUpdate && can('orders.create');
   // Crediting is the finance act, not customer service's (ADR-047).
   const canCredit = can('invoices.issue');
 
@@ -374,39 +377,41 @@ export function RmaDetailPage() {
         </TableContainer>
       </Paper>
 
-      {open && canUpdate && (rma.expectsGoods || hasReplace) && (
-        <Stack direction="row" spacing={2}>
-          {rma.expectsGoods && (
-            <Button
-              variant="outlined"
-              onClick={openDialog(() => setLinking(true))}
-            >
-              {intl.formatMessage({
-                id: 'rmas.link.action',
-                defaultMessage: 'Link a return',
-              })}
-            </Button>
-          )}
+      {open &&
+        canUpdate &&
+        (rma.expectsGoods || (hasReplace && canReplace)) && (
+          <Stack direction="row" spacing={2}>
+            {rma.expectsGoods && (
+              <Button
+                variant="outlined"
+                onClick={openDialog(() => setLinking(true))}
+              >
+                {intl.formatMessage({
+                  id: 'rmas.link.action',
+                  defaultMessage: 'Link a return',
+                })}
+              </Button>
+            )}
 
-          {hasReplace && (
-            <Button
-              variant="outlined"
-              disabled={replacement.submitting}
-              onClick={raiseReplacement}
-            >
-              {replacement.submitting
-                ? intl.formatMessage({
-                    id: 'orders.create.raising',
-                    defaultMessage: 'Raising…',
-                  })
-                : intl.formatMessage({
-                    id: 'rmas.replacement.raise',
-                    defaultMessage: 'Raise replacement',
-                  })}
-            </Button>
-          )}
-        </Stack>
-      )}
+            {hasReplace && canReplace && (
+              <Button
+                variant="outlined"
+                disabled={replacement.submitting}
+                onClick={raiseReplacement}
+              >
+                {replacement.submitting
+                  ? intl.formatMessage({
+                      id: 'orders.create.raising',
+                      defaultMessage: 'Raising…',
+                    })
+                  : intl.formatMessage({
+                      id: 'rmas.replacement.raise',
+                      defaultMessage: 'Raise replacement',
+                    })}
+              </Button>
+            )}
+          </Stack>
+        )}
 
       {/* Its own row and its own permission: whoever issues credits may
           not be whoever manages RMAs. */}
@@ -447,6 +452,7 @@ export function RmaDetailPage() {
         key={`send-back-${choosingSite ? 'choosing' : 'closed'}-${rma.sendBackTo?.id ?? ''}`}
         open={choosingSite}
         rma={rma}
+        canSeeLocations={can('locations.view')}
         onClose={() => setChoosingSite(false)}
         onSaved={reload}
       />

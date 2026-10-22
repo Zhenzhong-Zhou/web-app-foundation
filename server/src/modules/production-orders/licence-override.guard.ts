@@ -38,24 +38,16 @@ export class LicenceOverrideGuard implements CanActivate {
     if (body?.licenceOverride == null) return true;
 
     const ctx = getRequestContext(request);
-    if (!ctx?.roleId)
+    if (!ctx?.membershipId)
       throw new ForbiddenException(
         t({ id: 'production.role', defaultMessage: 'No role' }),
       );
 
-    // Resolved per request, never cached (ADR-016).
-    const held = await this.permissions.listForRole(ctx.roleId);
-
-    if (!held.includes(PERMISSIONS.PRODUCTION_OVERRIDE_LICENCE)) {
-      throw new ForbiddenException(
-        t({
-          id: 'production.releasingUnderLicencePolicy',
-          defaultMessage:
-            'Releasing under a licence the policy refuses needs production.override_licence',
-        }),
-      );
-    }
-
+    // Resolved per request, never cached (ADR-016), and refused in the
+    // reader's words, as the route's own guard refuses (#148).
+    await this.permissions.demand(ctx, [
+      PERMISSIONS.PRODUCTION_OVERRIDE_LICENCE,
+    ]);
     return true;
   }
 }

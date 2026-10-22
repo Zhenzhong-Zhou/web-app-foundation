@@ -44,6 +44,26 @@ export const MembersPage = lazyNamed(
   'MembersPage',
 );
 
+export const RolesPage = lazyNamed(
+  () => import('./roles/roles-page'),
+  'RolesPage',
+);
+
+export const RolePage = lazyNamed(
+  () => import('./roles/role-page'),
+  'RolePage',
+);
+
+export const NewRolePage = lazyNamed(
+  () => import('./roles/role-editor-page'),
+  'NewRolePage',
+);
+
+export const EditRolePage = lazyNamed(
+  () => import('./roles/role-editor-page'),
+  'EditRolePage',
+);
+
 export const ProductsPage = lazyNamed(
   () => import('./products/products-page'),
   'ProductsPage',

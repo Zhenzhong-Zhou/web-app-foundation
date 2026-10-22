@@ -74,7 +74,7 @@ const M = defineMessages({
   teamTitle: { id: 'home.start.team', defaultMessage: 'Invite your team' },
   teamHint: {
     id: 'home.start.team.hint',
-    defaultMessage: 'People who work here, each with their role. Optional.',
+    defaultMessage: 'People who work here, each with their roles. Optional.',
   },
   teamAction: {
     id: 'home.start.team.action',
@@ -262,16 +262,20 @@ export function GettingStarted({
               <Box>
                 <Typography sx={{ fontWeight: 600 }}>
                   {intl.formatMessage(meta.title)}
+                  {/* The space outside the message, which extraction trims. */}
                   {finished && (
-                    <Box
-                      component="span"
-                      sx={{ position: 'absolute', left: -9999 }}
-                    >
-                      {intl.formatMessage({
-                        id: 'home.start.done',
-                        defaultMessage: ' (done)',
-                      })}
-                    </Box>
+                    <>
+                      {' '}
+                      <Box
+                        component="span"
+                        sx={{ position: 'absolute', left: -9999 }}
+                      >
+                        {intl.formatMessage({
+                          id: 'home.start.done',
+                          defaultMessage: '(done)',
+                        })}
+                      </Box>
+                    </>
                   )}
                 </Typography>
                 <Typography color="text.secondary">

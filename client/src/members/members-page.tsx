@@ -1,24 +1,14 @@
 import PersonAddAlt from '@mui/icons-material/PersonAddAlt';
+import { Alert, Button, Link, Stack, Typography } from '@mui/material';
 import {
-  Alert,
-  Box,
-  Button,
-  MenuItem,
-  Paper,
-  Select,
-  Skeleton,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
-import { useSearchParams } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 
 import type {
   CopiedInvitationLink,
@@ -30,19 +20,15 @@ import type {
 import { useCan } from '../auth/permissions';
 import { useAuth } from '../auth/use-auth';
 import { PageHeader } from '../components/page-header';
-import { PersonAvatar } from '../components/person-avatar';
 import { useToast } from '../components/use-toast';
 import { api, ApiError, messageFor } from '../lib/api';
-import { formatMoment } from '../lib/format';
 import { openDialog } from '../lib/open-dialog';
-import { EMAIL_MAX_WIDTH } from '../lib/text-limits';
 import { useDelayedFlag } from '../lib/use-delayed-flag';
-import { activeLabel } from '../people/people-types';
 import { refusalLabel } from './invitation-words';
 import { InviteDialog } from './invite-dialog';
 import { copyToClipboard, type InviteView } from './invite-view';
 import { InvitedSection } from './invited-section';
-import { roleLabel } from './role-names';
+import { MembersSection } from './members-section';
 
 const FORM: InviteView = { kind: 'form' };
 
@@ -59,7 +45,6 @@ export function MembersPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState<string | null>(null);
   // The Invite dialog, where it opens, and a count that mounts it afresh
   // for each opening.
   const [invite, setInvite] = useState<{ start: InviteView; key: number }>({
@@ -72,13 +57,24 @@ export function MembersPage() {
   const [params, setParams] = useSearchParams();
   const asked = inviting && params.has('invite');
   const [rowBusy, setRowBusy] = useState<string | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  // A member removed takes their row and its menu with them: once the
+  // list without them is on screen, and the dialog has let focus go, the
+  // page begins again at its heading, as Home's does when a card is
+  // dismissed.
+  const refocus = useRef(false);
+  useEffect(() => {
+    if (!refocus.current) return;
+    refocus.current = false;
+    heading.current?.focus();
+  }, [members]);
 
   const loading = members === null && error === null;
   const showSkeleton = useDelayedFlag(loading);
 
-  // Both in one round trip. The members list carries roleId rather than a
-  // name — the id is what PATCH takes and what survives a rename — and the
-  // roles list is needed for the dropdown regardless.
+  // Together: each member's roles by id, and the roles list, which says
+  // which of them the reader may give (ADR-080), for every row's menu,
+  // Invite and Invited.
   const read = useCallback(
     () =>
       Promise.all([
@@ -120,10 +116,6 @@ export function MembersPage() {
       ignore = true;
     };
   }, [read]);
-
-  const isOwner =
-    roles.find((role) => role.id === session?.organization?.roleId)?.name ===
-    'Owner';
 
   function openInvite(start: InviteView) {
     setInvite((current) => ({ start, key: current.key + 1 }));
@@ -202,44 +194,11 @@ export function MembersPage() {
     }
   }
 
-  async function changeRole(memberId: string, roleId: string) {
-    setSaving(memberId);
-    setError(null);
-
-    try {
-      await api(`/users/${memberId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ roleId }),
-      });
-
-      // Re-read rather than patching the row locally: the server is the only
-      // thing that knows whether the change was allowed and what the row now
-      // holds.
-      await load();
-    } catch (caught) {
-      // The server's message, not a guess. A 403 means the caller may not
-      // grant that role; a 409 means this is the last Owner. The client
-      // cannot reliably tell which applies before asking, which is why the
-      // options are not hidden.
-      setError(messageFor(caught));
-    } finally {
-      setSaving(null);
-    }
-  }
-
-  const roleName = (roleId: string) =>
-    roleLabel(
-      roles.find((role) => role.id === roleId)?.name ??
-        intl.formatMessage({
-          id: 'members.role.unknown',
-          defaultMessage: 'Unknown',
-        }),
-    );
-
   return (
     // Heading draws immediately; only the table holds space and fills in.
     <Stack spacing={3}>
       <PageHeader
+        headingRef={heading}
         crumbs={[]}
         title={intl.formatMessage({
           id: 'layout.menu.members',
@@ -286,7 +245,6 @@ export function MembersPage() {
           roles={roles}
           members={members ?? []}
           invitations={invitations}
-          isOwner={isOwner}
           onClose={() => {
             setInviteOpen(false);
             if (asked) {
@@ -305,27 +263,30 @@ export function MembersPage() {
       )}
 
       <Typography color="text.secondary">
-        {inviting
-          ? intl.formatMessage({
-              id: 'members.lead',
-              defaultMessage:
-                'Everyone here signs in with their own email and password. To add someone, invite them: they choose their password when they accept.',
-            })
-          : intl.formatMessage({
-              id: 'members.lead.noInvite',
-              defaultMessage:
-                'Everyone here signs in with their own email and password. An Owner or an Admin invites new members.',
-            })}
+        <FormattedMessage
+          id="members.intro"
+          defaultMessage="Everyone here signs in with their own email and password. A member can hold several roles, and may do whatever any of them allows: <link>Roles</link> says what each one can do."
+          values={{
+            link: (chunks: ReactNode[]) => (
+              <Link
+                component={RouterLink}
+                to="/settings/roles"
+                underline="always"
+              >
+                {chunks}
+              </Link>
+            ),
+          }}
+        />
       </Typography>
 
       {error && <Alert severity="error">{error}</Alert>}
 
-      {/* None pending, no heading: the line above says how to add someone. */}
+      {/* None pending, no heading: Invite is how to add someone. */}
       {invitations.length > 0 && (
         <InvitedSection
           invitations={invitations}
           roles={roles}
-          isOwner={isOwner}
           selfId={session?.user.id}
           busy={rowBusy}
           actions={{
@@ -336,188 +297,19 @@ export function MembersPage() {
         />
       )}
 
-      <Paper
-        variant="outlined"
-        component="section"
-        aria-labelledby="members-heading"
-      >
-        <Typography
-          variant="h6"
-          component="h2"
-          id="members-heading"
-          sx={{ px: 2.5, pt: 2, pb: 1.5 }}
-        >
-          {members ? (
-            <FormattedMessage
-              id="members.heading"
-              defaultMessage="Members <muted>{count}</muted>"
-              values={{
-                count: members.length,
-                muted: (chunks: ReactNode[]) => (
-                  <Box
-                    component="span"
-                    sx={{ color: 'text.secondary', fontWeight: 400 }}
-                  >
-                    {chunks}
-                  </Box>
-                ),
-              }}
-            />
-          ) : (
-            intl.formatMessage({
-              id: 'layout.menu.members',
-              defaultMessage: 'Members',
-            })
-          )}
-        </Typography>
-        {loading ? (
-          <Stack sx={{ p: 2 }} spacing={1}>
-            {showSkeleton ? (
-              <>
-                <Skeleton height={48} />
-                <Skeleton height={48} />
-              </>
-            ) : null}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table
-              aria-label={intl.formatMessage({
-                id: 'layout.menu.members',
-                defaultMessage: 'Members',
-              })}
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'common.name',
-                      defaultMessage: 'Name',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'auth.field.email',
-                      defaultMessage: 'Email',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'members.role',
-                      defaultMessage: 'Role',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {intl.formatMessage({
-                      id: 'people.lastActive',
-                      defaultMessage: 'Last active',
-                    })}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {members?.map((member) => {
-                  const isSelf = member.id === session?.user.id;
-
-                  return (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        {/* Their face beside their name (ADR-063). */}
-                        <Stack
-                          direction="row"
-                          spacing={1.5}
-                          sx={{ alignItems: 'center' }}
-                        >
-                          <PersonAvatar
-                            userId={member.id}
-                            name={member.name}
-                            email={member.email}
-                            photoFileId={member.photoFileId}
-                          />
-                          <span>{member.name}</span>
-                        </Stack>
-                      </TableCell>
-                      <TableCell
-                        title={member.email}
-                        sx={{
-                          maxWidth: EMAIL_MAX_WIDTH,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {member.email}
-                      </TableCell>
-                      <TableCell>
-                        {/* Rendered as plain text when the caller lacks
-                          roles.assign, the permission the server checks.
-                          That is display only — the 403 from the server is
-                          the actual control (ADR-016). */}
-                        {can('roles.assign') ? (
-                          // Its own name, as no visible label sits on it:
-                          // the column says Role, the row says whose.
-                          <Select
-                            size="small"
-                            inputProps={{
-                              'aria-label': intl.formatMessage(
-                                {
-                                  id: 'members.roleOf',
-                                  defaultMessage: 'Role of {name}',
-                                },
-                                { name: member.name || member.email },
-                              ),
-                            }}
-                            value={member.roleId}
-                            disabled={saving !== null}
-                            onChange={(event) =>
-                              void changeRole(member.id, event.target.value)
-                            }
-                          >
-                            {roles.map((role) => (
-                              <MenuItem key={role.id} value={role.id}>
-                                {roleLabel(role.name)}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        ) : (
-                          roleName(member.roleId)
-                        )}
-
-                        {/* Not disabled: an Owner may legitimately demote
-                          themselves once a second Owner exists, and the
-                          server answers 409 when they cannot. */}
-                        {isSelf && (
-                          <Typography
-                            variant="caption"
-                            sx={{ ml: 1 }}
-                            color="text.secondary"
-                          >
-                            {intl.formatMessage({
-                              id: 'members.you',
-                              defaultMessage: 'you',
-                            })}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell
-                        sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}
-                        title={
-                          member.lastActiveAt
-                            ? formatMoment(member.lastActiveAt)
-                            : undefined
-                        }
-                      >
-                        {activeLabel(member, intl)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+      <MembersSection
+        members={members}
+        roles={roles}
+        selfId={session?.user.id}
+        organizationName={session?.organization?.name ?? ''}
+        loading={loading}
+        showSkeleton={showSkeleton}
+        onChanged={load}
+        onRemoved={() => {
+          refocus.current = true;
+          return load();
+        }}
+      />
     </Stack>
   );
 }

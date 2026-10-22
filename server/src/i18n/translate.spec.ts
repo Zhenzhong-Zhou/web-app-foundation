@@ -92,6 +92,47 @@ describe('values', () => {
     expect(translate(mixed, 'zh-Hans')).toContain('CAD和USD');
   });
 
+  it('joins three in British English, with no comma before the and', () => {
+    const mixed = t(
+      {
+        id: 'orders.saleInvoicedOneCurrency',
+        defaultMessage:
+          'A sale is invoiced in one currency, and this one has {currencies}. Price every item in one of them',
+      },
+      { currencies: ['CAD', 'EUR', 'USD'] },
+    );
+
+    expect(mixed.message).toContain('this one has CAD, EUR and USD.');
+    expect(translate(mixed, 'en')).toContain('CAD, EUR and USD.');
+    expect(translate(mixed, 'fr-CA')).toContain('CAD, EUR et USD');
+  });
+
+  // ADR-080: a member's roles, a built-in one translated, a made one as
+  // named, in one list.
+  it('joins a list whose items are messages of their own', () => {
+    const viewer = t({
+      id: 'audit.value.role.viewer',
+      defaultMessage: 'Viewer',
+    });
+    const refused = t(
+      {
+        id: 'roles.cannotGive',
+        defaultMessage:
+          'Your roles don’t include everything {roles} can do, so you can’t give {count, plural, one {it} other {them}}.',
+      },
+      { roles: [viewer, 'Warehouse lead'], count: 2 },
+    );
+
+    expect(refused.message).toBe(
+      'Your roles don’t include everything Viewer and Warehouse lead can do, so you can’t give them.',
+    );
+    // A role is attribué in French, as on the screens and in the guides.
+    expect(translate(refused, 'fr-CA')).toContain(
+      'les permissions de Lecteur et Warehouse lead; vous ne pouvez donc pas les attribuer.',
+    );
+    expect(translate(refused, 'zh-Hans')).toContain('查看者和Warehouse lead');
+  });
+
   it('words a verb with spaces in every language, the English unchanged', () => {
     const refused = t(
       {

@@ -13,6 +13,7 @@ import {
   SEPARATOR,
 } from '../lib/format';
 import { displayWithUnit } from '../products/units';
+import { showsPrices } from './prices';
 import { doneLabel } from './status';
 
 /** A label and its figure on one line, the figure right-aligned. */
@@ -104,6 +105,9 @@ function Heading({ children }: { children: ReactNode }) {
  * Items tab.
  *
  * Every amount comes from the server (step 4): nothing is added up here.
+ * What it does not send is not shown (ADR-080): without the order's prices
+ * its value and what is not yet invoiced are left out, and without the
+ * invoices the money is.
  */
 export function OrderSummary({
   order,
@@ -126,7 +130,8 @@ export function OrderSummary({
 
   const done = order.lines.filter((line) => line.isComplete).length;
   const money = order.money;
-  const total = order.totals[0];
+  const priced = showsPrices(order);
+  const total = order.totals?.[0];
 
   const quantities = order.quantities;
   const sale = order.direction === 'sale';
@@ -294,14 +299,16 @@ export function OrderSummary({
               { currency: money.currency ?? '' },
             )}
           </Heading>
-          <Fact
-            label={intl.formatMessage({
-              id: 'orders.summary.orderValue',
-              defaultMessage: 'Order value, before tax',
-            })}
-          >
-            {total ? formatMoney(total.amount, total.currency) : NO_VALUE}
-          </Fact>
+          {priced && (
+            <Fact
+              label={intl.formatMessage({
+                id: 'orders.summary.orderValue',
+                defaultMessage: 'Order value, before tax',
+              })}
+            >
+              {total ? formatMoney(total.amount, total.currency) : NO_VALUE}
+            </Fact>
+          )}
           <Fact
             label={intl.formatMessage({
               id: 'orders.summary.invoiced',
@@ -339,14 +346,16 @@ export function OrderSummary({
           >
             <strong>{formatMoney(money.netInvoiced, money.currency)}</strong>
           </Fact>
-          <Fact
-            label={intl.formatMessage({
-              id: 'orders.summary.notInvoiced',
-              defaultMessage: 'Not yet invoiced, before tax',
-            })}
-          >
-            {formatMoney(money.notInvoiced, money.currency)}
-          </Fact>
+          {money.notInvoiced !== undefined && (
+            <Fact
+              label={intl.formatMessage({
+                id: 'orders.summary.notInvoiced',
+                defaultMessage: 'Not yet invoiced, before tax',
+              })}
+            >
+              {formatMoney(money.notInvoiced, money.currency)}
+            </Fact>
+          )}
           {onShowDocuments && (
             <Link
               component="button"
@@ -361,7 +370,7 @@ export function OrderSummary({
               })}
             </Link>
           )}
-          {!order.totalsComplete && (
+          {priced && !order.totalsComplete && (
             <Typography variant="caption" color="text.secondary" component="p">
               {intl.formatMessage({
                 id: 'orders.summary.unpriced',

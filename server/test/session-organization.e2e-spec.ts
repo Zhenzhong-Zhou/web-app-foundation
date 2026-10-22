@@ -142,7 +142,7 @@ describe('A session finds its organization again (e2e)', () => {
       .post('/v1/invitations')
       .send({
         email: SAM,
-        roleId: await roleIdNamed(app, beta.organizationId, 'Viewer'),
+        roleIds: [await roleIdNamed(app, beta.organizationId, 'Viewer')],
       })
       .expect(201);
 

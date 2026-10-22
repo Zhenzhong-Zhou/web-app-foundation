@@ -17,15 +17,22 @@ import { SiteSelect } from '../locations/site-select';
  *
  * Keyed by the caller on the RMA's current site, so the choice seeds from
  * props when it opens and never needs an effect to resync.
+ *
+ * A reader who may change the RMA but not see locations (ADR-080), as
+ * Finance, is not sent to ask for them: the field says why it cannot be
+ * changed, and there is nothing to save.
  */
 export function SendBackToDialog({
   open,
   rma,
+  canSeeLocations,
   onClose,
   onSaved,
 }: {
   open: boolean;
   rma: ReturnAuthorizationDetail;
+  /** locations.view, from the page. */
+  canSeeLocations: boolean;
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
@@ -36,7 +43,7 @@ export function SendBackToDialog({
 
   // The RMA's page has no locations of its own; read when first opened.
   useEffect(() => {
-    if (!open) return;
+    if (!open || !canSeeLocations) return;
 
     let ignore = false;
 
@@ -51,7 +58,7 @@ export function SendBackToDialog({
     return () => {
       ignore = true;
     };
-  }, [open]);
+  }, [open, canSeeLocations]);
 
   const { submitting, error, reset, submit } = useSubmit(
     async () => {
@@ -117,6 +124,7 @@ export function SendBackToDialog({
               onChange={setSiteId}
               locations={locations}
               current={rma.sendBackTo}
+              unreadable={!canSeeLocations}
               emptyLabel={intl.formatMessage({
                 id: 'rmas.sendBackTo.none',
                 defaultMessage: 'Not chosen',
@@ -132,6 +140,11 @@ export function SendBackToDialog({
         <DialogFooter
           submitting={submitting}
           onCancel={close}
+          disabled={!canSeeLocations}
+          // The field's own words say why (SiteSelect).
+          describedBy={
+            canSeeLocations ? undefined : 'rma-send-back-to-helper-text'
+          }
           label={intl.formatMessage({
             id: 'common.save',
             defaultMessage: 'Save',

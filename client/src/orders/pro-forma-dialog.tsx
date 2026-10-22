@@ -35,10 +35,16 @@ import { api, messageFor, withQuery } from '../lib/api';
 export function ProFormaDialog({
   open,
   order,
+  canSeeTaxCodes,
   onClose,
 }: {
   open: boolean;
   order: OrderDetail;
+  /**
+   * tax_codes.view, from the page (ADR-080): without it the codes are not
+   * asked for, and the pro forma is made without tax, as the field says.
+   */
+  canSeeTaxCodes: boolean;
   onClose: () => void;
 }) {
   const intl = useIntl();
@@ -47,7 +53,7 @@ export function ProFormaDialog({
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !canSeeTaxCodes) return;
 
     let ignore = false;
 
@@ -66,7 +72,7 @@ export function ProFormaDialog({
     return () => {
       ignore = true;
     };
-  }, [open]);
+  }, [open, canSeeTaxCodes]);
 
   const path = withQuery(`/orders/${order.id}/pro-forma`, {
     taxCodeId: taxCodeId || undefined,
@@ -147,11 +153,20 @@ export function ProFormaDialog({
               fullWidth
               value={taxCodeId}
               onChange={(event) => setTaxCodeId(event.target.value)}
-              helperText={intl.formatMessage({
-                id: 'orders.proForma.taxCode.help',
-                defaultMessage:
-                  'The one its invoice would use, for every line. Leave it out for no tax.',
-              })}
+              disabled={!canSeeTaxCodes}
+              helperText={
+                canSeeTaxCodes
+                  ? intl.formatMessage({
+                      id: 'orders.proForma.taxCode.help',
+                      defaultMessage:
+                        'The one its invoice would use, for every line. Leave it out for no tax.',
+                    })
+                  : intl.formatMessage({
+                      id: 'orders.proForma.taxCode.unreadable',
+                      defaultMessage:
+                        'You can’t see tax codes, so this pro forma can only be made without tax.',
+                    })
+              }
               slotProps={{
                 select: { displayEmpty: true },
                 inputLabel: { shrink: true },

@@ -41,6 +41,7 @@ export function EditOrderDialog({
   open,
   order,
   locations,
+  canSeeLocations,
   onClose,
   onSaved,
 }: {
@@ -48,6 +49,8 @@ export function EditOrderDialog({
   order: OrderDetail;
   /** The organization's locations, for Deliver to; only sites are offered. */
   locations: Location[];
+  /** locations.view, from the page: without it Deliver to says why. */
+  canSeeLocations: boolean;
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
@@ -165,6 +168,7 @@ export function EditOrderDialog({
                 onChange={setDeliverTo}
                 locations={locations}
                 current={order.deliverTo}
+                unreadable={!canSeeLocations}
                 emptyLabel={intl.formatMessage({
                   id: 'orders.deliverTo.none',
                   defaultMessage: 'Not chosen',

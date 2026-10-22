@@ -90,6 +90,10 @@ const THINGS = defineMessages({
     id: 'account.access.thing.orders',
     defaultMessage: 'purchase and sales orders',
   },
+  orderPrices: {
+    id: 'account.access.thing.orderPrices',
+    defaultMessage: 'their prices',
+  },
   runs: {
     id: 'account.access.thing.runs',
     defaultMessage: 'production runs and what they used',
@@ -232,6 +236,10 @@ const ACTED_ON = defineMessages({
     id: 'account.access.actedOn.members',
     defaultMessage: '{verbs} members',
   },
+  roles: {
+    id: 'account.access.actedOn.roles',
+    defaultMessage: '{verbs} roles',
+  },
 });
 
 type ActedOn = keyof typeof ACTED_ON;
@@ -255,6 +263,7 @@ const DOING = defineMessages({
   close: { id: 'account.access.doing.close', defaultMessage: 'close' },
   invite: { id: 'account.access.doing.invite', defaultMessage: 'invite' },
   remove: { id: 'account.access.doing.remove', defaultMessage: 'remove' },
+  make: { id: 'account.access.doing.make', defaultMessage: 'make' },
 });
 
 type Grant =
@@ -307,6 +316,8 @@ const GRANTS: Record<Permission, Grant> = {
   'product_licences.update': change('products', 'licences'),
 
   'orders.view': see('orders', 'orders'),
+  // Needs orders.view (permissions.ts), so always said after the orders.
+  'orders.view_prices': see('orders', 'orderPrices'),
   'orders.create': doing('orders', 'orders', DOING.raise),
   'orders.update': doing(
     'orders',
@@ -361,10 +372,24 @@ const GRANTS: Record<Permission, Grant> = {
   'users.create': doing('people', 'members', DOING.invite),
   'users.delete': doing('people', 'members', DOING.remove),
   'roles.assign': act('people', ACTS.rolesAssign),
+  'roles.create': doing('people', 'roles', DOING.make),
+  'roles.update': doing('people', 'roles', DOING.change),
+  'roles.delete': doing('people', 'roles', DOING.delete),
   'organizations.update': change('people', 'settings'),
   'organizations.export': act('people', ACTS.organizationsExport),
   'organizations.delete': act('people', ACTS.organizationsDelete),
 };
+
+/**
+ * An area's permissions in the order its sentence says them, what is seen
+ * first: the role editor's sections (ADR-080), so each box sits in the
+ * area whose sentence it changes.
+ */
+export function permissionsIn(area: Area): Permission[] {
+  return (Object.keys(GRANTS) as Permission[]).filter(
+    (permission) => GRANTS[permission].area === area,
+  );
+}
 
 const ORDER = Object.keys(THINGS) as Thing[];
 

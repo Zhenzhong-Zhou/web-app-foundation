@@ -7,6 +7,8 @@ import {
   UNSAFE_GLOBAL_DB,
 } from '../src/database/database.module';
 import { auditLog, stockMovements } from '../src/database/schema';
+import french from '../src/i18n/fr-CA.json';
+import chinese from '../src/i18n/zh-Hans.json';
 import {
   addMember,
   body,
@@ -345,8 +347,27 @@ describe('Licence at release (e2e)', () => {
       const s = await scenario(org, { expiresAt: day(-1) });
 
       const res = await release(org.agent, s).expect(409);
-      expect(message(res)).toContain(`expired on ${day(-1)}`);
-      expect(message(res)).toContain('production.override_licence');
+      // The permission in its own line, never its key (#148).
+      expect(message(res)).toBe(
+        `80012345 (Health Canada) expired on ${day(-1)}, so this run cannot be released under it without an override — someone whose roles include “Release a run under an expired or not-yet-in-force licence, with a reason” can release it`,
+      );
+      const inFrench = message(
+        await release(org.agent, s).set('Accept-Language', 'fr-CA').expect(409),
+      );
+      expect(inFrench).toContain(
+        `sans dérogation — une personne dont les rôles comprennent «\u00a0${french['permissions.production.overrideLicence']}\u00a0» peut le lancer`,
+      );
+      const inChinese = message(
+        await release(org.agent, s)
+          .set('Accept-Language', 'zh-Hans')
+          .expect(409),
+      );
+      expect(inChinese).toContain(
+        `且没有例外批准——角色包含“${chinese['permissions.production.overrideLicence']}”的人可以下达`,
+      );
+      for (const each of [inFrench, inChinese]) {
+        expect(each).not.toContain('override_licence');
+      }
       await expectNothingReleased(org.agent, s.runId);
     });
 
@@ -370,7 +391,7 @@ describe('Licence at release (e2e)', () => {
       await setPolicy(org, { licenceExpiredPolicy: 'block' });
 
       const res = await release(org.agent, s, OVERRIDE).expect(409);
-      expect(message(res)).not.toContain('production.override_licence');
+      expect(message(res)).not.toContain('without an override');
       await expectNothingReleased(org.agent, s.runId);
     });
 
@@ -421,7 +442,12 @@ describe('Licence at release (e2e)', () => {
         'Admin',
       );
 
-      await release(admin, s, OVERRIDE).expect(403);
+      const refused = await release(admin, s, OVERRIDE).expect(403);
+      // In their words (#148); an Admin may change roles, but not give
+      // what their role lacks, so is told of the Owner, who can.
+      expect(message(refused)).toBe(
+        'Your role, Admin, doesn’t include “Release a run under an expired or not-yet-in-force licence, with a reason”. Owner can change your roles.',
+      );
       await release(admin, s).expect(409);
       await expectNothingReleased(org.agent, s.runId);
     });

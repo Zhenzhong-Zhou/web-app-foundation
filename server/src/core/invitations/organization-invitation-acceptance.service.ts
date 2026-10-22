@@ -20,6 +20,7 @@ import { PasswordService } from '../auth/password.service';
 import type { RequestContext } from '../auth/request-context';
 import { type NewSession, SessionService } from '../auth/session.service';
 import { SYSTEM_ROLES } from '../authorization/permissions';
+import { roleWords } from '../authorization/role-words';
 import {
   holdAccount,
   startOrganization,
@@ -37,7 +38,6 @@ import {
   lockAddress,
   organizationLinkLastDay,
 } from './organization-invitations';
-import { roleWords } from './role-words';
 
 /** An organization invitation whose link is live. */
 interface Live {

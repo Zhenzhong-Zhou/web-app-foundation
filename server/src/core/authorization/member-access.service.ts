@@ -1,13 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { and, asc, eq, isNull, ne } from 'drizzle-orm';
 
-import {
-  memberships,
-  permissions,
-  rolePermissions,
-  roles,
-  users,
-} from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
 import { t } from '../../i18n/translate';
 import type { RequestContext } from '../auth/request-context';
@@ -15,10 +7,9 @@ import type {
   MemberAccess,
   MemberRole,
 } from './dto/member-access-response.dto';
-import { ALL_PERMISSIONS, type Permission, PERMISSIONS } from './permissions';
-
-/** The most names "To do more, ask …" gives (ADR-079). */
-const WHOM_TO_ASK = 3;
+import { type HeldRole, rolesOfMember } from './member-roles';
+import { ALL_PERMISSIONS, type Permission } from './permissions';
+import { PermissionsService } from './permissions.service';
 
 /**
  * What a member may do here, and whom to ask for more (ADR-079): one
@@ -30,67 +21,49 @@ const WHOM_TO_ASK = 3;
  */
 @Injectable()
 export class MemberAccessService {
-  constructor(private readonly tenantDb: TenantDb) {}
+  constructor(
+    private readonly tenantDb: TenantDb,
+    private readonly permissions: PermissionsService,
+  ) {}
 
   async of(
-    context: Pick<RequestContext, 'userId' | 'organizationId'>,
+    context: Pick<RequestContext, 'userId' | 'organizationId' | 'membershipId'>,
     held: ReadonlySet<Permission>,
   ): Promise<MemberAccess> {
-    if (!context.organizationId) throw notWorkingHere();
+    const membershipId = context.membershipId;
+    if (!membershipId) throw notWorkingHere();
 
-    const [role] = await this.tenantDb.selectJoined(
-      memberships,
-      roles,
-      eq(roles.id, memberships.roleId),
-      { name: roles.name, description: roles.description },
-      eq(memberships.userId, context.userId),
+    const roles = await this.tenantDb.transaction((tx) =>
+      rolesOfMember(tx, membershipId),
     );
-    if (!role) throw notWorkingHere();
+    if (roles.length === 0) throw notWorkingHere();
 
-    return this.given(context.userId, role, held);
+    return this.given(context, roles.map(memberRole), held);
   }
 
-  /** The same, for a caller that has read the member's role already. */
+  /** The same, for a caller that has read the member's roles already. */
   async given(
-    userId: string,
-    role: MemberRole,
+    context: Pick<RequestContext, 'userId' | 'organizationId'>,
+    roles: MemberRole[],
     held: ReadonlySet<Permission>,
   ): Promise<MemberAccess> {
-    // Whoever may change roles, those who joined first first: nobody to
-    // ask for someone who may change roles themself.
-    const whomToAsk = held.has(PERMISSIONS.ROLES_ASSIGN)
-      ? []
-      : await this.tenantDb.transaction((tx, organizationId) =>
-          tx
-            .select({ id: users.id, name: users.name })
-            .from(memberships)
-            .innerJoin(users, eq(users.id, memberships.userId))
-            .innerJoin(
-              rolePermissions,
-              eq(rolePermissions.roleId, memberships.roleId),
-            )
-            .innerJoin(
-              permissions,
-              eq(permissions.id, rolePermissions.permissionId),
-            )
-            .where(
-              and(
-                eq(memberships.organizationId, organizationId),
-                eq(permissions.key, PERMISSIONS.ROLES_ASSIGN),
-                ne(memberships.userId, userId),
-                isNull(users.deletedAt),
-              ),
-            )
-            .orderBy(asc(memberships.createdAt), asc(memberships.id))
-            .limit(WHOM_TO_ASK),
-        );
+    const organizationId = context.organizationId;
+    if (!organizationId) throw notWorkingHere();
 
     return {
-      role,
+      roles,
       holdsEverything: ALL_PERMISSIONS.every((key) => held.has(key)),
-      whomToAsk,
+      whomToAsk: await this.permissions.whomToAsk(
+        { userId: context.userId, organizationId },
+        held,
+      ),
     };
   }
+}
+
+/** A role as the welcome and Your access say it. */
+export function memberRole(role: HeldRole): MemberRole {
+  return { name: role.name, description: role.description };
 }
 
 function notWorkingHere(): NotFoundException {

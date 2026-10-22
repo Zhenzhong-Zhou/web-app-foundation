@@ -116,12 +116,17 @@ describe('Recently opened (e2e)', () => {
     const viewer = await addMember(app, alpha, 'viewer@example.com', 'Viewer');
     expect(await recent(viewer)).toEqual([]);
 
-    // A kind the role may not view is refused, not remembered.
+    // A kind the role may not view is refused, not remembered, in the
+    // reader's words (#148): Viewer sees no price lists.
     const list = await priceList(alpha.agent, 'Wholesale');
-    const canSeeLists = (
-      await viewer.post('/v1/recent').send({ kind: 'priceList', id: list })
-    ).status;
-    expect([204, 403]).toContain(canSeeLists);
+    const refused = await viewer
+      .post('/v1/recent')
+      .send({ kind: 'priceList', id: list })
+      .expect(403);
+    expect((refused.body as { message: string }).message).toBe(
+      'Your role, Viewer, doesn’t include “See price lists and the prices on them”. Owner can change your roles.',
+    );
+    expect(await recent(viewer)).toEqual([]);
   });
 
   it('clears a person’s history, and keeps only the last 30', async () => {

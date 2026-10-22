@@ -8,7 +8,6 @@ import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import type { Locale } from '../../common/locales';
 import { organizations, type PaperSize } from '../../database/schema';
 import { TenantDb } from '../../database/tenant-db.service';
-import type { Permission } from '../authorization/permissions';
 import { dispositionOf } from '../files/content-disposition';
 import { FilesService } from '../files/files.service';
 import { registeredAddress } from '../organizations/registered-address';
@@ -175,11 +174,7 @@ export class DocumentsService {
 
     if (!logoFileId) return { ...rest, logo: null };
     // A logo is shown to anyone in the organization: it asks no permission.
-    const file = await this.files.find(
-      logoFileId,
-      'full',
-      new Set<Permission>(),
-    );
+    const file = await this.files.find(logoFileId, 'full');
     const bytes = await buffer(await this.files.stream(file));
     return {
       ...rest,

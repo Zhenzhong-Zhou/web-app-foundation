@@ -115,6 +115,50 @@ export default tseslint.config(
   },
 
   {
+    // What a member may do is decided in one place (ADR-080): the tables
+    // that say it are refused anywhere else, by name in code and in raw
+    // SQL, so a second answer cannot grow beside it. Each exception says
+    // why; a new one adds its line here, and nothing else lists them.
+    // no-restricted-syntax rather than no-restricted-imports, which the
+    // rule above already sets for most of these files, and a second
+    // setting would replace it.
+    files: ['src/**/*.ts'],
+    ignores: [
+      // The one place: core/authorization reads and writes them, and
+      // offers the rest of the app its answers and helpers.
+      'src/core/authorization/**',
+      // The tables' own definitions.
+      'src/database/schema/**',
+      // The seed, adding any grant missing from a built-in role on every
+      // deploy, which is how a new permission reaches every Owner.
+      'src/database/seed.ts',
+      // Provisioning, a new organization's built-in roles and their grants.
+      'src/core/organizations/provision-organization.ts',
+      // The export, writing what each role may do and each member's role.
+      'src/core/organizations/organization-export.service.ts',
+      'src/core/organizations/organization-tables.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...[
+          'ImportSpecifier[imported.name=/^(membershipRoles|invitationRoles|rolePermissions)$/]',
+          'MemberExpression[property.name=/^(membershipRoles|invitationRoles|rolePermissions)$/]',
+          'Literal[value=/\\b(membership_roles|invitation_roles|role_permissions)\\b/]',
+          'TemplateElement[value.raw=/\\b(membership_roles|invitation_roles|role_permissions)\\b/]',
+        ].map((selector) => ({
+          selector,
+          message:
+            'Who holds which roles, and what they grant, is read only in ' +
+            'core/authorization (ADR-080): ask PermissionsService, or use ' +
+            'member-roles.ts and owner.ts. The files with a reason to ' +
+            'touch these tables are exempted in eslint.config.mjs.',
+        })),
+      ],
+    },
+  },
+
+  {
     files: ['**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',

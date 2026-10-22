@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuthorizationModule } from '../../core/authorization/authorization.module';
 import { DocumentsModule } from '../../core/documents/documents.module';
 import { NotificationsModule } from '../../core/notifications/notifications.module';
 import { PartnersModule } from '../partners/partners.module';
@@ -31,6 +32,8 @@ import { ShippingService } from './shipping.service';
  */
 @Module({
   imports: [
+    // PermissionsService: what of an order's money its reader may see.
+    AuthorizationModule,
     StockModule,
     PartnersModule,
     NotificationsModule,

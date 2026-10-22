@@ -23,6 +23,7 @@ import {
   createPartner,
   createVariant,
   customRole,
+  insertMember,
   invitationToken,
   PASSWORD,
   registerOrganization,
@@ -105,7 +106,7 @@ describe('The welcome (e2e)', () => {
       .post('/v1/invitations')
       .send({
         email,
-        roleId: await roleIdNamed(app, inviter.organizationId, role),
+        roleIds: [await roleIdNamed(app, inviter.organizationId, role)],
         ...(options.note ? { note: options.note } : {}),
         ...(options.copied ? { delivery: 'link' } : {}),
       })
@@ -602,7 +603,7 @@ describe('The welcome (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'pat@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(201);
       await pat.agent
@@ -625,7 +626,7 @@ describe('The welcome (e2e)', () => {
         note: null,
         access: { holdsEverything: true, whomToAsk: [] },
       });
-      expect(card?.access.role.name).toBe('Owner');
+      expect(card?.access.roles.map((role) => role.name)).toEqual(['Owner']);
       // Registered unconfirmed (ADR-078).
       expect(keys(card)).toEqual(['confirmEmail', 'sayWhoYouAre']);
 
@@ -649,7 +650,7 @@ describe('The welcome (e2e)', () => {
           emailVerifiedAt: new Date(),
         })
         .returning({ id: users.id });
-      await db.insert(memberships).values({
+      await insertMember(app, {
         userId: colleague.id,
         organizationId: alpha.organizationId,
         roleId: await roleIdNamed(app, alpha.organizationId, 'Admin'),
@@ -728,7 +729,7 @@ describe('The welcome (e2e)', () => {
         'Ben Ode',
       ]);
       expect(access).toMatchObject({
-        role: { name: 'Viewer' },
+        roles: [{ name: 'Viewer' }],
         holdsEverything: false,
       });
 
@@ -751,6 +752,29 @@ describe('The welcome (e2e)', () => {
       ).toMatchObject({ holdsEverything: true, whomToAsk: [] });
     });
 
+    // ADR-080: changing someone's roles takes all those roles grant, so an
+    // Admin, who sees no price lists, cannot help someone who does.
+    it('names only whoever could change the reader’s roles, as a refusal does', async () => {
+      const alpha = await organization('alpha');
+      await join(alpha, 'ana@example.com', 'Admin', { name: 'Ana Ruiz' });
+      await customRole(app, alpha.organizationId, 'Pricing', [
+        'users.view',
+        'roles.view',
+        'organizations.view',
+        'price_lists.view',
+      ]);
+      const sam = await join(alpha, 'sam@example.com', 'Pricing');
+
+      expect(
+        (await welcome(sam.agent))?.access.whomToAsk.map((each) => each.name),
+      ).toEqual(['Owner']);
+
+      const refused = await sam.agent.get('/v1/stock').expect(403);
+      expect(body<{ message: string }>(refused).message).toMatch(
+        /\. Owner can change your roles\.$/,
+      );
+    });
+
     it('says whoever holds every permission may do everything, whatever the role is called', async () => {
       const alpha = await organization('alpha');
       await customRole(app, alpha.organizationId, 'Partner', ALL_PERMISSIONS);
@@ -763,7 +787,7 @@ describe('The welcome (e2e)', () => {
           await partner.agent.get('/v1/account/membership').expect(200),
         ),
       ).toMatchObject({
-        role: { name: 'Partner' },
+        roles: [{ name: 'Partner' }],
         holdsEverything: true,
         whomToAsk: [],
       });
@@ -859,6 +883,40 @@ describe('The welcome (e2e)', () => {
       ]);
     });
 
+    // Worded again on each read (ADR-036): a row stored before ADR-080,
+    // one role under `role`, still reads in every language.
+    it('reads one stored before several roles, in each language', async () => {
+      const alpha = await organization('alpha');
+      await db.insert(notifications).values({
+        userId: alpha.userId,
+        organizationId: alpha.organizationId,
+        type: 'invitation.accepted',
+        title: 'Sam Lee joined',
+        body: 'Sam Lee accepted your invitation and joined alpha Co as a Viewer.',
+        bodyMessage: {
+          messageId: 'notifications.joined.body',
+          message:
+            'Sam Lee accepted your invitation and joined alpha Co as a Viewer.',
+          values: {
+            name: 'Sam Lee',
+            organization: 'alpha Co',
+            role: {
+              message: 'Viewer',
+              messageId: 'audit.value.role.viewer',
+            },
+            system: 'Viewer',
+          },
+        },
+      });
+
+      expect((await listIn(alpha.agent, 'fr-CA'))[0]?.body).toBe(
+        'Sam Lee a accepté votre invitation et fait maintenant partie de alpha Co en tant que Lecteur.',
+      );
+      expect((await listIn(alpha.agent, 'zh-Hans'))[0]?.body).toBe(
+        'Sam Lee接受了您的邀请，以查看者身份加入 alpha Co。',
+      );
+    });
+
     it('tells nobody once the inviter has left', async () => {
       const alpha = await organization('alpha');
       const mei = await join(alpha, 'mei@example.com', 'Admin', {
@@ -868,7 +926,7 @@ describe('The welcome (e2e)', () => {
         .post('/v1/invitations')
         .send({
           email: 'pat@example.com',
-          roleId: await roleIdNamed(app, alpha.organizationId, 'Viewer'),
+          roleIds: [await roleIdNamed(app, alpha.organizationId, 'Viewer')],
         })
         .expect(201);
       await mei.agent.delete('/v1/account/membership').expect(204);

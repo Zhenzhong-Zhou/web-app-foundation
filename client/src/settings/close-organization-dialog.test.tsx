@@ -50,7 +50,7 @@ describe('CloseOrganizationDialog', () => {
     expect(close).toBeDisabled();
     expect(
       screen.getByText(
-        'Still needed: the download (or “I don’t need a copy”), the name, and your password.',
+        'Still needed: the download (or “I don’t need a copy”), the name and your password.',
       ),
     ).toBeInTheDocument();
 

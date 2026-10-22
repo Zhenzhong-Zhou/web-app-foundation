@@ -61,6 +61,10 @@ as the catalogues word it.
 | Viewer | Lecteur | 查看者 | A role: reads, and changes nothing. |
 | Member | Membre | 成员 | Someone who belongs to an organization. The page is Members / Membres / 成员. |
 | Role | Rôle | 角色 | What a member may do there. |
+| Permission | Permission | 权限 | One thing a role allows, such as See prices on orders: a checkbox in the role editor (ADR-080). Not *autorisation* in French, which is a return authorization. |
+| Made role | Rôle créé ici | 本组织创建的角色 | A role the organization made, from a template (modèle, 模板) or a copy, shown as named in every language (ADR-080). Roles marks it Made here / Créé ici / 本组织创建, beside Built in / Intégré / 内置. |
+| Move everyone to… | Déplacer tout le monde vers… | 全部移至… | On a role's page: everyone holding it moves to another role (ADR-080). |
+| Remove from the organization | Retirer de l’organisation | 从组织中移除 | Ends a member's access; their account and their work's name stay (ADR-080). Leave / Quitter / 离开 is the member's own. |
 | Invitation link | Lien d’invitation | 邀请链接 | |
 | Revoke (an invitation) | Révoquer | 收回 | |
 

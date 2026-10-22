@@ -21,10 +21,6 @@ export function YourAccess() {
 
   if (!session?.organization) return null;
 
-  const description = access
-    ? (roleDescription(access.role.name) ?? access.role.description)
-    : null;
-
   return (
     <Stack spacing={2}>
       <Typography variant="h6" component="h2">
@@ -43,14 +39,19 @@ export function YourAccess() {
         !error && <Skeleton variant="rounded" height={96} />
       ) : (
         <>
-          <Box>
-            <Typography sx={{ fontWeight: 600 }}>
-              {roleLabel(access.role.name)}
-            </Typography>
-            {description && (
-              <Typography color="text.secondary">{description}</Typography>
-            )}
-          </Box>
+          {access.roles.map((role) => {
+            const description = roleDescription(role.name) ?? role.description;
+            return (
+              <Box key={role.name}>
+                <Typography sx={{ fontWeight: 600 }}>
+                  {roleLabel(role.name)}
+                </Typography>
+                {description && (
+                  <Typography color="text.secondary">{description}</Typography>
+                )}
+              </Box>
+            );
+          })}
           <WhatYouCanDo access={access} />
         </>
       )}

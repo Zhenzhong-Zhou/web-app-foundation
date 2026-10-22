@@ -93,8 +93,13 @@ export function InvoiceDetailPage() {
   const can = useCan();
 
   const showSkeleton = useDelayedFlag(loading);
+  // Editing a draft needs them, so whoever may edit may read them; Sales,
+  // who drafts but does not edit, is not sent to ask (ADR-080).
+  const canSeeTaxCodes = can('tax_codes.view');
 
   useEffect(() => {
+    if (!canSeeTaxCodes) return;
+
     let ignore = false;
 
     // The codes a draft line can be given. Retired ones are left out of the
@@ -112,7 +117,7 @@ export function InvoiceDetailPage() {
     return () => {
       ignore = true;
     };
-  }, [id]);
+  }, [id, canSeeTaxCodes]);
 
   const creditFrom = searchParams.get('credit');
 

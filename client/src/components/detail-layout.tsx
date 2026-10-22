@@ -1,4 +1,13 @@
-import { Box, Chip, Paper, Stack, Tab, Tabs } from '@mui/material';
+import {
+  Box,
+  Chip,
+  Paper,
+  Stack,
+  Tab,
+  Tabs,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import type { ReactNode } from 'react';
 
 import { rem } from '../theme/rem';
@@ -15,7 +24,10 @@ export interface DetailTab<T extends string> {
  * A record's page body (ADR-055): its sections in tabs, and a summary
  * beside them that stays in view as the page scrolls — the actions the
  * record allows, then its figures. Below `md` the summary moves above the
- * tabs, so the main action is the first thing under a thumb.
+ * tabs, so the main action is the first thing under a thumb: first in the
+ * page, not only on screen, so Tab reaches it first too (WCAG 1.3.2, #155).
+ * Its key moves it rather than making it again, so turning a tablet loses
+ * nothing it holds.
  *
  * For a record with three or more sections of different kinds; one with
  * fewer stays a single page. Pair it with useTab, which keeps the open tab
@@ -38,7 +50,26 @@ export function DetailLayout<T extends string>({
   onChange: (tab: T) => void;
   summary: ReactNode;
 }) {
+  const theme = useTheme();
+  const narrow = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true });
   const open = tabs.find((tab) => tab.id === current) ?? tabs[0];
+
+  const aside = (
+    <Paper
+      key="summary"
+      component="aside"
+      variant="outlined"
+      aria-label={summaryLabel}
+      sx={{
+        p: 2,
+        position: { md: 'sticky' },
+        // Below the 56px top bar, with room to breathe.
+        top: { md: 72 },
+      }}
+    >
+      {summary}
+    </Paper>
+  );
 
   return (
     <Box
@@ -52,6 +83,8 @@ export function DetailLayout<T extends string>({
         },
       }}
     >
+      {narrow && aside}
+
       <Paper variant="outlined" sx={{ minWidth: 0 }}>
         {/* One section needs no tab bar: a single tab is a heading that
             looks clickable. */}
@@ -100,20 +133,7 @@ export function DetailLayout<T extends string>({
         </Box>
       </Paper>
 
-      <Paper
-        component="aside"
-        variant="outlined"
-        aria-label={summaryLabel}
-        sx={{
-          p: 2,
-          order: { xs: -1, md: 0 },
-          position: { md: 'sticky' },
-          // Below the 56px top bar, with room to breathe.
-          top: { md: 72 },
-        }}
-      >
-        {summary}
-      </Paper>
+      {!narrow && aside}
     </Box>
   );
 }

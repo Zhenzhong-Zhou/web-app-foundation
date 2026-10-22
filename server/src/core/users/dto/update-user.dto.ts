@@ -1,11 +1,15 @@
-import { IsUUID } from 'class-validator';
+import { ArrayMinSize, ArrayUnique, IsArray, IsUUID } from 'class-validator';
 
 export class UpdateUserDto {
   /**
-   * Role only. Name and email are the user's own to change (see
-   * AccountController) — an admin editing someone's personal details is a
-   * different feature with different consent implications.
+   * Roles only, every one the member is to hold, at least one (ADR-080).
+   * Name and email are the user's own to change (see AccountController) —
+   * an admin editing someone's personal details is a different feature
+   * with different consent implications.
    */
-  @IsUUID()
-  roleId!: string;
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayUnique()
+  @IsUUID('all', { each: true })
+  roleIds!: string[];
 }

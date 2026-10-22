@@ -21,7 +21,8 @@ describe('invitationMail', () => {
     to: 'wang.fang@example.com',
     inviter: { name: 'Mei Lin', email: 'mei.lin@example.com' },
     organizationName: 'Northside Naturals',
-    role: { name: 'Admin', description: 'Day-to-day work.' },
+    roles: [{ name: 'Admin', description: 'Day-to-day work.' }],
+    system: 'Admin' as const,
     note: null,
     timeZone: 'America/Vancouver',
     lastDay: '2026-10-26',
@@ -44,6 +45,34 @@ describe('invitationMail', () => {
     );
     expect(text).toContain(
       'until the end of October 26, 2026, Pacific Time (Vancouver).',
+    );
+  });
+
+  // ADR-080: a made role, or several, take no article, and several read
+  // as a list, each line beside its role's name.
+  it('names a made role bare, and several as a list in each language', () => {
+    const warehouse = {
+      name: 'Warehouse lead',
+      description: 'Receives and ships.',
+    };
+    const sales = { name: 'Sales', description: null };
+    const made = { ...context, system: 'other' as const };
+
+    expect(
+      invitationMail({ ...made, roles: [warehouse], appName: null }).text,
+    ).toContain(
+      'invited you to join as Warehouse lead.\n\nReceives and ships.',
+    );
+
+    const both = { ...made, roles: [warehouse, sales], appName: null };
+    const { text } = invitationMail(both);
+    expect(text).toContain('invited you to join as Warehouse lead and Sales.');
+    expect(text).toContain('Warehouse lead: Receives and ships.');
+    expect(invitationMail({ ...both, locale: 'fr-CA' }).text).toContain(
+      'Warehouse lead et Sales',
+    );
+    expect(invitationMail({ ...both, locale: 'zh-Hans' }).text).toContain(
+      'Warehouse lead和Sales',
     );
   });
 

@@ -189,7 +189,7 @@ describe('the welcome card', () => {
         inviter: null,
         note: null,
         access: {
-          role: { name: 'Admin', description: null },
+          roles: [{ name: 'Admin', description: null }],
           holdsEverything: false,
           whomToAsk: [],
         },
@@ -229,6 +229,14 @@ describe('the welcome card', () => {
     expect(within(region).queryByText(/To do more/)).toBeNull();
 
     expect(within(region).getByText('2 of 5 done')).toBeVisible();
+    // A ticked step reads as done, after a space, to a screen reader.
+    expect(
+      within(region).getByText(
+        (_, element) =>
+          element?.tagName === 'P' &&
+          element.textContent === 'Say who you are (done)',
+      ),
+    ).toBeInTheDocument();
     expect(
       within(region).getByText(
         'We sent a link to wang.fang@alpha.example. Inviting colleagues waits until you confirm.',
@@ -294,6 +302,33 @@ describe('the welcome card', () => {
     ).toBeEnabled();
   });
 
+  /**
+   * The first week's Receive shows for whoever may receive against an
+   * order (ADR-080). The dock that may not move stock otherwise receives
+   * on the order, so its button opens the confirmed purchases.
+   */
+  it('sends someone who receives only against orders to the confirmed purchases', async () => {
+    serve(
+      welcome({
+        items: [{ key: 'receiveStock', done: false, what: null }],
+      }),
+    );
+    renderHome(['orders.view', 'orders.receive', 'locations.view']);
+
+    const region = await card();
+    expect(
+      within(region).getByText(
+        'Record goods as they arrive, against the purchase order they came on.',
+      ),
+    ).toBeVisible();
+    expect(
+      within(region).getByRole('link', { name: 'Orders' }),
+    ).toHaveAttribute('href', '/orders?direction=purchase&status=confirmed');
+    expect(
+      within(region).queryByRole('link', { name: 'Receive stock' }),
+    ).toBeNull();
+  });
+
   it('gives the founder one line, and only their own two items while Getting started shows', async () => {
     serve(
       welcome({
@@ -301,7 +336,7 @@ describe('the welcome card', () => {
         inviter: null,
         note: null,
         access: {
-          role: { name: 'Owner', description: null },
+          roles: [{ name: 'Owner', description: null }],
           holdsEverything: true,
           whomToAsk: [],
         },
@@ -407,7 +442,7 @@ describe('the welcome card', () => {
     serve(
       welcome({
         access: {
-          role: { name: 'Accountant', description: 'Keeps the books' },
+          roles: [{ name: 'Accountant', description: 'Keeps the books' }],
           holdsEverything: false,
           whomToAsk: [],
         },
@@ -426,7 +461,7 @@ describe('the welcome card', () => {
     serve(
       welcome({
         access: {
-          role: { name: 'Owner', description: null },
+          roles: [{ name: 'Owner', description: null }],
           holdsEverything: true,
           whomToAsk: [],
         },

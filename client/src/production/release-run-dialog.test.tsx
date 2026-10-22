@@ -76,6 +76,7 @@ async function openWithSource(canOverrideLicence: boolean) {
       open
       run={RUN}
       canOverrideLicence={canOverrideLicence}
+      canAttachRecipe
       onClose={() => undefined}
       onReleased={() => undefined}
     />,
@@ -170,5 +171,41 @@ describe('ReleaseRunDialog licence', () => {
     await expect.poll(() => plans.length).toBe(1);
     expect(screen.queryByText(/licence/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Release' })).toBeEnabled();
+  });
+});
+
+/**
+ * A run planned without a recipe has one attached at release, which is a
+ * change to the plan (production.create). Someone who may release but not
+ * plan is told so, never offered recipes the server would refuse to attach.
+ */
+describe('ReleaseRunDialog without a recipe', () => {
+  it('tells someone who may not plan runs who attaches one, and asks for no recipes', async () => {
+    const recipes: string[] = [];
+    server.use(
+      http.get('/api/v1/locations', () => HttpResponse.json([])),
+      http.get('/api/v1/boms', ({ request }) => {
+        recipes.push(request.url);
+        return HttpResponse.json([]);
+      }),
+    );
+
+    renderWithAuth(
+      <ReleaseRunDialog
+        open
+        run={{ ...RUN, bomId: null }}
+        canOverrideLicence={false}
+        canAttachRecipe={false}
+        onClose={() => undefined}
+        onReleased={() => undefined}
+      />,
+    );
+
+    expect(
+      await screen.findByText(/attaching one is for whoever may plan runs/),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Recipe/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Release' })).toBeDisabled();
+    expect(recipes).toEqual([]);
   });
 });
