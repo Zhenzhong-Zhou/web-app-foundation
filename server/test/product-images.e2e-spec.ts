@@ -8,9 +8,11 @@ import {
 } from '../src/database/database.module';
 import { files } from '../src/database/schema';
 import {
+  addMember,
   addViewer,
   body,
   createE2eApp,
+  customRole,
   registerOrganization,
 } from './utils/fixtures';
 import { resetDatabase } from './utils/reset-db';
@@ -211,5 +213,32 @@ describe('Product images (e2e)', () => {
     await viewer
       .delete(`/v1/products/${productId}/images/${fileId}`)
       .expect(403);
+  });
+
+  // ADR-080: a made role may leave out the catalogue, and its image with
+  // it, refused in the reader's words (#148).
+  it('refuses an image to whoever may not see the catalogue, in their words', async () => {
+    const alpha = await registerOrganization(app, 'alpha');
+    const productId = await product(alpha.agent);
+    const fileId = await upload(alpha.agent, await photo(10));
+    await add(alpha.agent, productId, fileId);
+    await customRole(app, alpha.organizationId, 'Office', [
+      'users.view',
+      'roles.view',
+      'organizations.view',
+    ]);
+    const office = await addMember(
+      app,
+      alpha,
+      'office@alpha.example.com',
+      'Office',
+    );
+
+    const refused = await office
+      .get(`/v1/files/${fileId}?size=thumb`)
+      .expect(403);
+    expect((refused.body as { message: string }).message).toBe(
+      'Your role, Office, doesn’t include “See the product catalogue”. Owner can change your roles.',
+    );
   });
 });
