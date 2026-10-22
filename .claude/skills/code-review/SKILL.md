@@ -61,6 +61,20 @@ amends in `docs/decisions.md`.
 - Hand-written parts of a migration (triggers, backfills) come after a
   `--> statement-breakpoint`, and the generated SQL keeps
   `NULLS NOT DISTINCT`.
+- A migration replaces or drops no key or unique index that a released
+  query's `ON CONFLICT` names, nor takes away anything else the running
+  release reads: it adds in one deploy, and takes away in a later one
+  once no released code reads the old shape (expand, then contract;
+  ADR-081). CI's squawk check (`server/.squawk.toml`) cannot know which
+  key a query names, as 0067 replaced `document_sequences`' primary key
+  under one; read for it, and check each `squawk-ignore`'s reason holds.
+- A breaking API change raises `API_REVISION` in
+  `server/src/common/api-revision.ts` in the same commit, or keeps the old
+  shape working, logged until nothing sends it (ADR-081): a field removed
+  or renamed, one newly required in a request, a type or a format
+  changed, a route removed, a value removed from a list a request takes.
+  CI's oasdiff check sees the document; read for what it cannot, such as
+  a string whose format changed.
 - A column holding a known list is typed by it (`$type<...>()`), the
   list matching its check constraint.
 - Writes `@Audited`, or listed in `NOT_AUDITED` with a reason, with no

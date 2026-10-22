@@ -16,6 +16,11 @@
 # server/openapi.json and client/src/api/, and stops if either changed,
 # leaving the fresh files in place to commit.
 #
+# So do the two checks CI makes of a pull request against main (ADR-081),
+# here against origin/main as last fetched: a breaking API change raises
+# the revision (oasdiff, in Docker), and each new migration leaves the
+# running release working (squawk). Each says why when it cannot run.
+#
 # Not run here, though CI runs it: npm run seed:demo, which would add a demo
 # organization to the dev database on every run. Run it after changing a
 # service the demo calls (handoff, Moving code).
@@ -53,6 +58,28 @@ contract() {
   fi
 }
 
+against_main() {
+  local main=origin/main have_main=true
+  git rev-parse --verify --quiet "$main^{commit}" > /dev/null || have_main=false
+
+  step 'Against origin/main: a breaking API change raises the revision'
+  if ! $have_main; then
+    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
+  elif ! docker info > /dev/null 2>&1; then
+    echo 'Skipped: Docker is not running, and oasdiff runs in a container.'
+    echo 'CI runs it on the pull request.'
+  else
+    scripts/check-api-breaking.sh "$main"
+  fi
+
+  step 'Against origin/main: new migrations leave the running release working'
+  if ! $have_main; then
+    echo "Skipped: no $main to compare with. git fetch origin main, then run again."
+  else
+    scripts/check-migrations.sh "$main"
+  fi
+}
+
 markdown
 
 if $quick; then
@@ -61,6 +88,7 @@ if $quick; then
     && npm run checks && npm run build && npm test)
 
   contract
+  against_main
 
   step 'Client: format, lint, catalogues, build, unit tests'
   (cd client && npm run verify)
@@ -69,6 +97,7 @@ else
   (cd server && npm run verify)
 
   contract
+  against_main
 
   step 'Client: format, lint, catalogues, build, unit tests, Playwright'
   (cd client && npm run verify:all)

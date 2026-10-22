@@ -184,6 +184,7 @@ jobs:
       # The API's contract and the client's types generated from it
       # (ADR-068): an API change committed without `npm run api` fails here,
       # where the client's copies of the shared lists used to be checked.
+      # Whether a change breaks an open tab is the against-main job's.
       - name: Check the API contract
         run: |
           npm run api:spec
@@ -218,6 +219,37 @@ jobs:
 
       - run: npm run test:e2e
         working-directory: server
+
+  # Two checks of a pull request against main (ADR-081), in scripts that
+  # scripts/verify.sh runs too: a breaking API change must raise
+  # API_REVISION, and each new migration must leave working what the
+  # release still serving reads. A job of its own, so neither waits behind
+  # the server's suites.
+  against-main:
+    name: Against main — API revision, migrations
+    if: github.event_name == 'pull_request' && (github.event.action != 'labeled' || github.event.label.name == 'full-e2e')
+    runs-on: ubuntu-24.04
+    steps:
+      # A pull request checks out its merge into main. The merge's first
+      # parent, HEAD^1, is main as the change merges into it, which both
+      # scripts compare with.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      # Node reads the documents' versions, and npx runs squawk.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          check-latest: true
+
+      # oasdiff, from a pinned container image.
+      - name: A breaking API change raises the revision
+        run: scripts/check-api-breaking.sh HEAD^1
+
+      # squawk, at a pinned version, with server/.squawk.toml's rules.
+      - name: New migrations leave the running release working
+        run: scripts/check-migrations.sh HEAD^1
 
   # Three machines, each a third of the suite (--shard). No `needs`: it
   # starts beside the other two instead of after them, which took the
