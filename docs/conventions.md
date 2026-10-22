@@ -127,6 +127,11 @@ Every document is a PDF the server draws (ADR-071), in the same few pieces.
   `TenantDb`, which applies `organization_id`. `UNSAFE_GLOBAL_DB` is refused by a
   lint rule except in the files `server/eslint.config.mjs` lists, each with its
   reason — direct use elsewhere is a review-blocking defect.
+- **The role tables stay in `core/authorization`** (ADR-080).
+  `membership_roles`, `invitation_roles` and `role_permissions` are refused
+  by a lint rule outside it, except the files `server/eslint.config.mjs`
+  lists, each with its reason. What a member may do, and who may do
+  something, is asked of `PermissionsService`.
 
 ### What a complete module looks like
 
@@ -288,6 +293,9 @@ committed, and neither is edited by hand.
     `UPDATE`: one shape per resource, whichever call the client made.
     Where the resource has no read of its own, such as a return, it comes
     back as its list shows it.
+    A write the screen follows with a fresh read anyway, such as a delete,
+    a state change or a settings section, returns 204 instead (CLAUDE.md
+    says the same).
   - A list read with `select()` sends every column; select the declared
     fields instead.
   - A raw query's rows get a type of their own (`interface PoolRow`), as

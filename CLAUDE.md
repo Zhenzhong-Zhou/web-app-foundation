@@ -43,12 +43,17 @@ Karpathy's observations on LLM coding pitfalls
   Code may carry its `Co-Authored-By` trailer. One pull request per
   feature: the ADR or amendment first, then server, client and docs
   commits. PR descriptions are plain Markdown.
+- **Dependencies.** On every branch, `npm outdated` in `server/` and
+  `client/`; the in-range updates are a commit of their own, at the
+  branch's start and again before the reviews.
 - **Before pushing.** `scripts/verify.sh`, or `--quick` without the
   end-to-end suites. It runs what CI runs, markdown included.
 - **The API contract (ADR-068).** A response is a declared class in the
   module's `dto/*-response.dto.ts`, projected to exactly its fields:
   never a spread table row, never `select()` of every column, and a raw
-  query's rows typed. A write returns the detail its read returns. After
+  query's rows typed. A write returns the detail its read returns, or 204
+  when the screen reads again anyway (a delete, a state change, a settings
+  section). After
   any API change, `npm run api` in `server/`, and commit
   `server/openapi.json` with `client/src/api/`. Never edit those two by
   hand. The e2e suite checks every response against the document.
@@ -89,7 +94,8 @@ Karpathy's observations on LLM coding pitfalls
 - `/usability-walkthrough`: walks a task through the running app as a
   persona and reports what gets in the way.
 
-Every feature branch runs `/simplify`, then `/code-review`, then, for any
-PR that changes what a person sees, `/usability-walkthrough` as one of
-its personas (`.claude/skills/usability-walkthrough/personas.md`), before
-the PR is opened. Each fix they lead to is its own commit.
+Every feature branch runs, for any PR that changes what a person sees,
+`/usability-walkthrough` as one of its personas
+(`.claude/skills/usability-walkthrough/personas.md`), then `/simplify`,
+then `/code-review` last, so it sees every fix; all three before the PR
+is opened. Each fix they lead to is its own commit.

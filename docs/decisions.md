@@ -103,6 +103,12 @@ Accepted as deliberate over-engineering if this only ever serves one organizatio
 membership table then costs one unused join. The reverse mistake — `users.role` needing to
 become multi-org later — rewrites every permission check against live data.
 
+**Amendment (October 2026) — several roles to a member (ADR-080).** A
+membership holds one or more roles, each a row of `membership_roles`, and
+may do whatever any of them allows; `memberships.role_id` is gone (migration
+0073). Owner stands alone. Organizations make roles of their own; Owner,
+Admin and Viewer stay fixed.
+
 ---
 
 ## ADR-005 — No background jobs in V1; email sends synchronously
@@ -699,6 +705,14 @@ list is read with `roles.view`. `users.update`, which then gated nothing,
 was dropped by migration 0071: a seeded permission that gates nothing
 goes, rather than waiting for a feature to need it.
 
+**Amendment (October 2026) — the role hierarchy (ADR-080).** Permissions are
+still read on every request, through one service in `core/authorization`,
+from a membership's roles added together. The hierarchy this ADR left open
+is a comparison of permissions: a role is given, and a member changed or
+removed, only by someone whose roles hold everything it grants, and its
+three Owner rules keep their words. Every change that can take away an Owner
+counts the Owners under one lock.
+
 ---
 
 ## ADR-017 — Email verification and password reset
@@ -858,7 +872,7 @@ behaviour the change leaves intact.
 | Upgrade             | Blocked by                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Unblocks when                                                                                                                                                     |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `@nestjs/*` 11 → 12 | `@nestjs/throttler@6.5.0` peers at `^11.0.0`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Cleared by ADR-067: throttler 6.7.1 accepts `^12.0.0`, and the server runs Nest 12                                                                                |
-| `typescript` 6 → 7  | As of 20 October 2026: `typescript-eslint@8.72.0` peers at `<6.1.0` ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)); `@nestjs/cli@12.0.10` depends on `~6.0.2` ([nest-cli#3479](https://github.com/nestjs/nest-cli/issues/3479)); `@nestjs/swagger@12.0.2` peers at `^5.5.0 \|\| ^6.0.0` ([swagger#4002](https://github.com/nestjs/swagger/pull/4002)), and its plugin is a transformer inside `nest build`; the Go port's support for `emitDecoratorMetadata`, which Nest requires | Realistically TypeScript 7.1 stable, whose API those tools need, plus new releases of all three — then verify the decorator support explicitly, not by assumption |
+| `typescript` 6 → 7  | As of 21 October 2026: `typescript-eslint@8.72.0` peers at `<6.1.0` ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)); `@nestjs/cli@12.0.10` depends on `~6.0.2` ([nest-cli#3479](https://github.com/nestjs/nest-cli/issues/3479)); `@nestjs/swagger@12.0.2` peers at `^5.5.0 \|\| ^6.0.0` ([swagger#4002](https://github.com/nestjs/swagger/pull/4002)), and its plugin is a transformer inside `nest build`; the Go port's support for `emitDecoratorMetadata`, which Nest requires | Realistically TypeScript 7.1 stable, whose API those tools need, plus new releases of all three — then verify the decorator support explicitly, not by assumption |
 
 Being on a supported release line is the goal; being on the newest major is
 not. `11.2.3` is current for the 11 line, and a non-empty `npm outdated` is not
@@ -2331,6 +2345,11 @@ are policy that feeds an order rather than part of one. Exchange rates are a
 third thing again: a rate is meaningless without the pair it converts, so
 storing a bare number the way the previous system did breaks the moment a base
 currency changes.
+
+**Amendment (October 2026) — prices on orders (ADR-080).** A line's price,
+an order's totals and its tax reach only whoever holds `orders.view_prices`;
+the server sends them to nobody else. An order's invoice money follows
+`invoices.view`.
 
 ---
 
@@ -7913,6 +7932,10 @@ rather than holding it.
 The mark is never cleared: a run that fails after it leaves it, and the
 next run finishes the deletion.
 
+**Amendment (October 2026) — closing stays the Owners' (ADR-080).** With
+roles an organization makes, `organizations.delete` is never offered in the
+role editor, so closing the organization stays the Owners' alone.
+
 ---
 
 ## ADR-071 — Documents as PDF, drawn on the server (amends ADR-046, ADR-054, ADR-055 and ADR-070)
@@ -8134,6 +8157,10 @@ issued; a size the organization chose still wins for every document.
 Sale and purchase orders follow their series' settings, their period the
 day each is made in the organization's zone. A `/` in a number is written
 `_` in a document's file name, and in the export's `documents/`.
+
+**Amendment (October 2026) — prices on orders (ADR-080).** The purchase
+order's and the pro forma invoice's PDFs need `orders.view_prices` beside
+`orders.view`. The packing slip, which shows no prices, does not.
 
 ---
 
@@ -9289,6 +9316,13 @@ bell, in their own language, and the notification opens the newcomer's
 page on People. The audit log records it as before. The note stays with
 the membership, and the newcomer's welcome shows it again.
 
+**Amendment (October 2026) — invitations with several roles (ADR-080).** An
+invitation names one or more roles (`invitation_roles`), and Invite starts
+with no role chosen once the organization has made one. Inviting to a role,
+resending and revoking follow the rule that only what you hold can be given;
+"Only an Owner can invite an Owner" keeps its words. The messages choose an
+article only for a built-in role, and a made role goes without one.
+
 ---
 
 ## ADR-078 — Registration: open, or by invitation (amends ADR-006, ADR-070 and ADR-077)
@@ -10122,6 +10156,13 @@ review on the canvas, its reviews and its two walkthroughs settled:
   on a phone, from an organization invitation to the welcome with Getting
   started below it.
 
+**Amendment (October 2026) — any role's first week, and whom to ask
+(ADR-080).** The first week's Receive shows for whoever may receive against
+an order, opening the confirmed purchases for someone who may not move
+stock. Whom to ask, on Home and Your access, names up to three members who
+could give what is missing, as every refusal now does (ADR-080, as built).
+Permission lines are translated on the server.
+
 ---
 
 ## ADR-080 — Job roles: roles an organization makes, several to a member (amends ADR-004, ADR-016, ADR-035, ADR-070, ADR-071, ADR-077 and ADR-079)
@@ -10512,6 +10553,71 @@ to a role reaches its holders on their next click.
   client after the design; the guides; the docs last, after the reviews.
   Built by Claude Code, a prompt per commit (handoff, *How code is
   delivered*).
+
+**Amendment (October 2026) — as built (#176).** What building settled:
+
+- **58 permissions, not 61.** There were 54 before it, not 57, so the four
+  new ones make 58; the "Sixty-one" above reads 58.
+- **One place.** `PermissionsService` answers what a member may do
+  (`memberPermissions`) and who holds a permission (`holdersOf`); the route
+  guard, the adjustment and licence-override guards, member access and the
+  notifications' recipients all ask it. `isOwnerRole` and `holdsOwner` find
+  the Owner by built-in flag and name together, and `giving.ts` holds the
+  one rule for giving. A lint rule refuses `membership_roles`,
+  `invitation_roles` and `role_permissions` outside `core/authorization`,
+  except the schema, the seed, provisioning and the export, each named with
+  its reason. The request context carries the membership, and `/auth/me` no
+  longer sends roles nobody read.
+- **Migrations.** 0073 as above. 0074 adds `roles.updated_by`, so a stale
+  save (`role_changed`) names who saved last; the editor sends back the
+  `updatedAt` it read.
+- **Refusals.** Codes `role_changed`, `role_held`, `permission_requires` and
+  `role_name_unavailable`. 400 for a permission never offered, a missing
+  need, an Owner not alone, no roles, or another organization's role (a body
+  id, as the handoff's rule says, where it had been 404); 404 for no such
+  role; 409 for a name taken or reading as built in, a built-in role changed
+  or deleted, a stale save, a held role, a role a live invitation names, and
+  the last Owner; 403 for giving. The three locked permissions are added
+  when a request leaves them out.
+- **Needs.** `PERMISSION_NEEDS` lists only direct needs: every create,
+  update, delete and act needs its view, and a route's reads across areas
+  add the rest (moving stock needs products and locations; raising an order,
+  partners and products; drafting an invoice, orders; the others in
+  `permissions.ts`). Raising a replacement for a return needs
+  `orders.create` at its route rather than as a need, so a role that closes
+  returns does not gain raising orders.
+- **Prices.** Withheld field by field from an order, the orders list and the
+  export's columns, and a test pins the exact fields a reader without
+  `orders.view_prices` receives, so a new field fails it until it is
+  classified (#177 asks for one optional object). An order's invoice money
+  follows `invoices.view`, and its amount not yet invoiced needs prices.
+  Reading the audit log needs `orders.view_prices`, since the log keeps
+  orders' prices: the one view with a need.
+- **Whom to ask.** Every refusal, Home and Your access name up to three
+  members who hold `roles.assign`, the missing permission and everything the
+  reader's roles grant, Owners first, never the reader. A refusal quotes the
+  permission's line, never its key (#148, in part).
+- **The Owners' lock.** Demoting, removing, Move everyone, leaving and
+  completing an account's deletion take one advisory lock on the
+  organization's Owners, after the organization row's lock where both are
+  taken.
+- **Receiving.** An order line carries whether its item tracks lots and its
+  unit, so receiving needs `orders.receive` alone; lot trace and an order's
+  partner show as text where the reader may not open them.
+- **Audit.** `role.created`, `role.updated` (its line from and to, the
+  Owner's configuration rather than a note), `role.deleted` and
+  `member.roles_changed`; `user.role_changed` has no writer and still reads.
+- **Words and marks.** English lists in British style, without the Oxford
+  comma; French gives a role with « attribuer ». A made role's chip has
+  square corners and a built-in one's round, so the two differ by more than
+  colour (WCAG 1.4.1). Roles lists the built-in three first.
+- **Left for issues.** #177 (prices in one object), #178 (one link that
+  leads only where the reader may go, and lookups that check their own
+  permission), #179 (what Move everyone gains and loses; a role deleted
+  while being given), #180 (`membership_roles.csv`), #181 (the audit log
+  shows costs to readers without them), #182 (permissions read twice on some
+  requests), #183 (a flaky phone sign-in), #184 (straight apostrophes).
+  #148, #155 and #169 have parts left, each said in #176.
 
 ---
 
