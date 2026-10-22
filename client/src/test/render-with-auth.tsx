@@ -99,7 +99,6 @@ function sessionFor({
     organization: {
       id: 'org-1',
       name: 'Alpha Co',
-      roles: [{ id: 'role-owner', name: 'Owner', builtIn: true }],
       branding: {
         logoFileId: null,
         accentColor: null,

@@ -20,12 +20,6 @@ export type SessionUser = {
   deletionWithOrganization?: DeletionOrganization | null;
 };
 
-export type RoleRef = {
-  id: string;
-  name: string;
-  builtIn: boolean;
-};
-
 export type OrganizationBranding = {
   logoFileId: string | null;
   accentColor: string | null;
@@ -38,7 +32,6 @@ export type OrganizationBranding = {
 export type SessionOrganization = {
   id: string;
   name: string;
-  roles: Array<RoleRef>;
   branding: OrganizationBranding;
   deletionScheduledAt: string | null;
   deletionStage: 'scheduled' | 'lastWeek' | 'underWay' | null;
@@ -553,6 +546,12 @@ export type RoleTemplate = {
 export type RoleCatalogue = {
   permissions: Array<CataloguePermission>;
   templates: Array<RoleTemplate>;
+};
+
+export type RoleRef = {
+  id: string;
+  name: string;
+  builtIn: boolean;
 };
 
 export type RoleHolder = {

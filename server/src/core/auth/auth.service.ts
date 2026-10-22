@@ -25,8 +25,6 @@ import {
 } from '../../i18n/translate';
 import { escapeHtml } from '../../shared/mail/escape-html';
 import { MailService } from '../../shared/mail/mail.service';
-import type { RoleRef } from '../authorization/dto/role-response.dto';
-import { roleRef, rolesOfMembers } from '../authorization/member-roles';
 import type { Permission } from '../authorization/permissions';
 import { PermissionsService } from '../authorization/permissions.service';
 import { startOrganization } from '../organizations/start-organization';
@@ -73,8 +71,6 @@ export interface CurrentSession {
   organization: {
     id: string;
     name: string;
-    /** Every role the member holds there (ADR-080). */
-    roles: RoleRef[];
     /** How the app looks, and what counts as expiring (ADR-060). */
     branding: {
       logoFileId: string | null;
@@ -356,7 +352,7 @@ export class AuthService implements OnModuleInit {
     // rather than two.
     const organizationId = context.organizationId;
     const membershipId = context.membershipId;
-    const [[user], organizationRows, permissions, roles] = await Promise.all([
+    const [[user], organizationRows, permissions] = await Promise.all([
       this.db
         .select({
           id: users.id,
@@ -394,11 +390,6 @@ export class AuthService implements OnModuleInit {
             .where(eq(organizations.id, organizationId))
         : Promise.resolve([]),
       this.permissions.listForMember(membershipId),
-      membershipId
-        ? rolesOfMembers(this.db, [membershipId]).then(
-            (held) => held.get(membershipId) ?? [],
-          )
-        : Promise.resolve([]),
     ]);
 
     // A valid session pointing at no user should be impossible — sessions
@@ -430,7 +421,7 @@ export class AuthService implements OnModuleInit {
     // Null together: membershipId comes from the membership that produced
     // organizationId, so there is no state where one exists without the other.
     const [organization] = organizationRows;
-    if (!organizationId || roles.length === 0 || !organization) {
+    if (!organizationId || !membershipId || !organization) {
       return { ...base, organization: null, permissions: [] };
     }
 
@@ -439,7 +430,6 @@ export class AuthService implements OnModuleInit {
       organization: {
         id: organization.id,
         name: organization.name,
-        roles: roles.map(roleRef),
         branding: {
           logoFileId: organization.logoFileId,
           accentColor: organization.accentColor,

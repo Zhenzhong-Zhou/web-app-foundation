@@ -290,7 +290,6 @@ describe('InviteDialog (ADR-077)', () => {
         roles={ADMINS_ROLES}
         invitations={[invitation({ id: 'inv-9', roles: [roleRef('Owner')] })]}
       />,
-      { organization: { roles: [roleRef('Admin')] } },
     );
 
     // None chosen to start with, since the organization has made a role.

@@ -8138,25 +8138,6 @@
           "locale"
         ]
       },
-      "RoleRef": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "builtIn": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "builtIn"
-        ]
-      },
       "OrganizationBranding": {
         "type": "object",
         "properties": {
@@ -8207,12 +8188,6 @@
           "name": {
             "type": "string"
           },
-          "roles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RoleRef"
-            }
-          },
           "branding": {
             "$ref": "#/components/schemas/OrganizationBranding"
           },
@@ -8241,7 +8216,6 @@
         "required": [
           "id",
           "name",
-          "roles",
           "branding",
           "deletionScheduledAt",
           "deletionStage",
@@ -9424,6 +9398,25 @@
         "required": [
           "permissions",
           "templates"
+        ]
+      },
+      "RoleRef": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "builtIn": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "builtIn"
         ]
       },
       "RoleHolder": {
