@@ -414,7 +414,7 @@
   "home.organization": "· {name}",
   "home.seeAll": "Tout voir ({count})",
   "home.start.dismiss": "Masquer",
-  "home.start.done": " (fait)",
+  "home.start.done": "(fait)",
   "home.start.invoice": "Expédier et facturer une commande",
   "home.start.invoice.hint": "Créer une commande, l’expédier et émettre sa facture : le parcours complet une fois",
   "home.start.location": "Ajouter un emplacement",

@@ -229,6 +229,14 @@ describe('the welcome card', () => {
     expect(within(region).queryByText(/To do more/)).toBeNull();
 
     expect(within(region).getByText('2 of 5 done')).toBeVisible();
+    // A ticked step reads as done, after a space, to a screen reader.
+    expect(
+      within(region).getByText(
+        (_, element) =>
+          element?.tagName === 'P' &&
+          element.textContent === 'Say who you are (done)',
+      ),
+    ).toBeInTheDocument();
     expect(
       within(region).getByText(
         'We sent a link to wang.fang@alpha.example. Inviting colleagues waits until you confirm.',

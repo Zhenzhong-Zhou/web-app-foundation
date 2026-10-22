@@ -348,13 +348,20 @@ function Item({
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={{ fontWeight: 600 }}>
             {intl.formatMessage(TITLES[item.key])}
+            {/* The space outside the message, which extraction trims. */}
             {item.done && (
-              <Box component="span" sx={{ position: 'absolute', left: -9999 }}>
-                {intl.formatMessage({
-                  id: 'home.start.done',
-                  defaultMessage: ' (done)',
-                })}
-              </Box>
+              <>
+                {' '}
+                <Box
+                  component="span"
+                  sx={{ position: 'absolute', left: -9999 }}
+                >
+                  {intl.formatMessage({
+                    id: 'home.start.done',
+                    defaultMessage: '(done)',
+                  })}
+                </Box>
+              </>
             )}
           </Typography>
           {detail && (

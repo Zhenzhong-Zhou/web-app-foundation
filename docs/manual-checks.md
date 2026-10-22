@@ -1991,6 +1991,10 @@ The pages, in a private window unless a check says otherwise.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R33** *(a step done, to a screen reader)* With VoiceOver, on Home,
+  a ticked step in Getting started or Your first week reads its title,
+  then done, as two words: Say who you are (done), never you are(done); in
+  Français … (fait).
 - **MC-R32** *(Home's date line)* In English, Home's line under the
   greeting reads Thursday, October 22 · Demo …, a space either side of the
   dot, as it does in Français and 中文.
@@ -2537,3 +2541,4 @@ first.
 - 2026-10-21: Members marks your row 您 in Chinese: MC-R31 extended.
 - 2026-10-21: Home's date line keeps its space before the organization in
   English: MC-R32.
+- 2026-10-21: a step done reads after a space, in English too: MC-R33.

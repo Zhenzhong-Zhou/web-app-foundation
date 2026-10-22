@@ -262,16 +262,20 @@ export function GettingStarted({
               <Box>
                 <Typography sx={{ fontWeight: 600 }}>
                   {intl.formatMessage(meta.title)}
+                  {/* The space outside the message, which extraction trims. */}
                   {finished && (
-                    <Box
-                      component="span"
-                      sx={{ position: 'absolute', left: -9999 }}
-                    >
-                      {intl.formatMessage({
-                        id: 'home.start.done',
-                        defaultMessage: ' (done)',
-                      })}
-                    </Box>
+                    <>
+                      {' '}
+                      <Box
+                        component="span"
+                        sx={{ position: 'absolute', left: -9999 }}
+                      >
+                        {intl.formatMessage({
+                          id: 'home.start.done',
+                          defaultMessage: '(done)',
+                        })}
+                      </Box>
+                    </>
                   )}
                 </Typography>
                 <Typography color="text.secondary">
