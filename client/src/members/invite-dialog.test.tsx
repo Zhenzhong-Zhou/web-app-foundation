@@ -425,7 +425,7 @@ describe('InviteDialog (ADR-077)', () => {
     const finance = screen.getByRole('checkbox', { name: 'Finance' });
     expect(finance).toBeDisabled();
     expect(finance).toHaveAccessibleDescription(
-      'Invoices from draft to issued. Your roles don’t include everything Finance can do, so you can’t give it.',
+      'Invoices from draft to issued. Your roles don’t include everything Finance can do, so you can’t give it. An Owner can.',
     );
   });
 

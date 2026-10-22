@@ -966,7 +966,7 @@
   "members.role.viewer": "Viewer",
   "members.role.viewer.description": "Looks at orders, stock and invoices, and changes nothing.",
   "members.roles": "Roles",
-  "members.roles.cannotGive": "Your roles don’t include everything {role} can do, so you can’t give it.",
+  "members.roles.cannotGive": "Your roles don’t include everything {role} can do, so you can’t give it. An Owner can.",
   "members.roles.chooseOne": "Choose at least one role.",
   "members.roles.ownerAlone": "An Owner holds no other role.",
   "members.you": "you",

@@ -966,7 +966,7 @@
   "members.role.viewer": "Lecteur",
   "members.role.viewer.description": "Consulte les commandes, le stock et les factures, sans rien modifier.",
   "members.roles": "Rôles",
-  "members.roles.cannotGive": "Vos rôles n’incluent pas tout ce que {role} permet, donc vous ne pouvez pas l’attribuer.",
+  "members.roles.cannotGive": "Vos rôles n’incluent pas tout ce que {role} permet, donc vous ne pouvez pas l’attribuer. Un propriétaire le peut.",
   "members.roles.chooseOne": "Choisissez au moins un rôle.",
   "members.roles.ownerAlone": "Un propriétaire n’a aucun autre rôle.",
   "members.you": "vous",

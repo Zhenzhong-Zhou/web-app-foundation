@@ -966,7 +966,7 @@
   "members.role.viewer": "查看者",
   "members.role.viewer.description": "查看订单、库存和发票，不做任何修改。",
   "members.roles": "角色",
-  "members.roles.cannotGive": "您的角色不包含{role}的全部权限，所以您不能授予这个角色。",
+  "members.roles.cannotGive": "您的角色不包含{role}的全部权限，所以您不能授予这个角色。所有者可以。",
   "members.roles.chooseOne": "请至少选择一个角色。",
   "members.roles.ownerAlone": "所有者不同时持有其他角色。",
   "members.you": "你",

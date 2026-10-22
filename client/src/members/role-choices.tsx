@@ -81,7 +81,7 @@ export function RoleChoices({
                     {
                       id: 'members.roles.cannotGive',
                       defaultMessage:
-                        'Your roles don’t include everything {role} can do, so you can’t give it.',
+                        'Your roles don’t include everything {role} can do, so you can’t give it. An Owner can.',
                     },
                     { role: roleLabel(role.name) },
                   ),

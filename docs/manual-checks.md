@@ -1846,7 +1846,8 @@ The pages, in a private window unless a check says otherwise.
   Chloé Tremblay, then Change roles: the dialog lists every role with its
   line; Owner is off with Only an Owner can make someone an Owner., and
   Sales off with Your roles don’t include everything Sales can do, so you
-  can’t give it. Tick Warehouse: With these roles, Chloé Tremblay can
+  can’t give it. An Owner can.; in Français … Un propriétaire le peut.,
+  in 中文 …所有者可以。 Tick Warehouse: With these roles, Chloé Tremblay can
   gains, under Orders, … receive what was ordered; ship what was sold, and
   untick Viewer: it loses what Viewer alone gave. Untick everything: Choose
   at least one role., and Save roles is off. Tick Viewer and Warehouse and
@@ -1882,7 +1883,7 @@ The pages, in a private window unless a check says otherwise.
   others clear. On a fresh organization with no role of its own, Invite
   starts on Viewer as before. As Daniel Okafor, Owner's card is off with
   Only an Owner can invite an Owner., and Sales's with Your roles don’t
-  include everything Sales can do, so you can’t give it.
+  include everything Sales can do, so you can’t give it. An Owner can.
 - **MC-3317** *(ADR-080)* An invitation's buttons follow the rule too. As
   the demo Owner, invite an address as Sales; as Daniel Okafor, its row on
   Invited has no Resend, Copy link or Revoke, and inviting the same address
@@ -2507,3 +2508,5 @@ first.
   MC-3318 extended.
 - 2026-10-21: whom to ask, on Home and Your access, names only who could
   change the reader's roles, as a refusal does: MC-3325.
+- 2026-10-21: a role you cannot give says an Owner can: MC-3313 and
+  MC-3316 changed.

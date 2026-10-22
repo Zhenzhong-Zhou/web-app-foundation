@@ -147,7 +147,7 @@ describe('MembersPage', () => {
     const finance = within(dialog).getByRole('checkbox', { name: 'Finance' });
     expect(finance).toBeDisabled();
     expect(finance).toHaveAccessibleDescription(
-      'Costs and invoices. Your roles don’t include everything Finance can do, so you can’t give it.',
+      'Costs and invoices. Your roles don’t include everything Finance can do, so you can’t give it. An Owner can.',
     );
     expect(
       within(dialog).getByRole('checkbox', { name: 'Owner' }),
