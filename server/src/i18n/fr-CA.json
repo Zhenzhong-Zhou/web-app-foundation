@@ -637,7 +637,7 @@
   "notifications.account.signIn": "Une nouvelle connexion à votre compte",
   "notifications.closedShort.body": "{fulfilled} sur {ordered} reçus. {reason}",
   "notifications.closedShort.title": "{sku} ne sera pas livré en entier",
-  "notifications.joined.body": "{system, select, other {{name} a accepté votre invitation et fait maintenant partie de {organization} en tant que {roles}.}}",
+  "notifications.joined.body": "{system, select, other {{name} a accepté votre invitation et fait maintenant partie de {organization} en tant que {role}.}}",
   "notifications.joined.title": "Nouvelle arrivée : {name}",
   "notifications.licence.expired": "La licence {number} ({authority}) a expiré le {date}",
   "notifications.licence.expiring": "La licence {number} ({authority}) expire dans {days, plural, one {# jour} other {# jours}}, le {date}",

@@ -637,7 +637,7 @@
   "notifications.account.signIn": "A new sign-in to your account",
   "notifications.closedShort.body": "{fulfilled} of {ordered} received. {reason}",
   "notifications.closedShort.title": "{sku} will not be delivered in full",
-  "notifications.joined.body": "{name} accepted your invitation and joined {organization} as {system, select, Owner {an {roles}} Admin {an {roles}} Viewer {a {roles}} other {{roles}}}.",
+  "notifications.joined.body": "{name} accepted your invitation and joined {organization} as {system, select, Owner {an {role}} Admin {an {role}} Viewer {a {role}} other {{role}}}.",
   "notifications.joined.title": "{name} joined",
   "notifications.licence.expired": "Licence {number} ({authority}) expired on {date}",
   "notifications.licence.expiring": "Licence {number} ({authority}) expires in {days, plural, one {# day} other {# days}}, on {date}",

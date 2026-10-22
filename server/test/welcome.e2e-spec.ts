@@ -883,6 +883,40 @@ describe('The welcome (e2e)', () => {
       ]);
     });
 
+    // Worded again on each read (ADR-036): a row stored before ADR-080,
+    // one role under `role`, still reads in every language.
+    it('reads one stored before several roles, in each language', async () => {
+      const alpha = await organization('alpha');
+      await db.insert(notifications).values({
+        userId: alpha.userId,
+        organizationId: alpha.organizationId,
+        type: 'invitation.accepted',
+        title: 'Sam Lee joined',
+        body: 'Sam Lee accepted your invitation and joined alpha Co as a Viewer.',
+        bodyMessage: {
+          messageId: 'notifications.joined.body',
+          message:
+            'Sam Lee accepted your invitation and joined alpha Co as a Viewer.',
+          values: {
+            name: 'Sam Lee',
+            organization: 'alpha Co',
+            role: {
+              message: 'Viewer',
+              messageId: 'audit.value.role.viewer',
+            },
+            system: 'Viewer',
+          },
+        },
+      });
+
+      expect((await listIn(alpha.agent, 'fr-CA'))[0]?.body).toBe(
+        'Sam Lee a accepté votre invitation et fait maintenant partie de alpha Co en tant que Lecteur.',
+      );
+      expect((await listIn(alpha.agent, 'zh-Hans'))[0]?.body).toBe(
+        'Sam Lee接受了您的邀请，以查看者身份加入 alpha Co。',
+      );
+    });
+
     it('tells nobody once the inviter has left', async () => {
       const alpha = await organization('alpha');
       const mei = await join(alpha, 'mei@example.com', 'Admin', {

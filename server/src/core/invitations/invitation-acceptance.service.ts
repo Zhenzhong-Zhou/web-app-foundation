@@ -572,12 +572,16 @@ export class InvitationAcceptanceService {
             {
               id: 'notifications.joined.body',
               defaultMessage:
-                '{name} accepted your invitation and joined {organization} as {system, select, Owner {an {roles}} Admin {an {roles}} Viewer {a {roles}} other {{roles}}}.',
+                '{name} accepted your invitation and joined {organization} as {system, select, Owner {an {role}} Admin {an {role}} Viewer {a {role}} other {{role}}}.',
             },
             {
               name,
               organization: facts.organizationName,
-              roles: named.map(roleName),
+              // Stored and worded again on each read (ADR-036), so the
+              // placeholder keeps its name from before ADR-080, when it
+              // held one role, and now holds the list: a row stored then
+              // still reads.
+              role: named.map(roleName),
               system: systemOf(named),
             },
           ),

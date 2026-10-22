@@ -1772,7 +1772,9 @@ The pages, in a private window unless a check says otherwise.
   Warehouse's line beneath, and the invitation's page … invited you as
   Warehouse.; in Français … en tant que Warehouse. Join, and the Owner's
   bell reads … joined … as Warehouse. An Admin or a Viewer invitation still
-  reads as an Admin, as a Viewer.
+  reads as an Admin, as a Viewer. On a database where someone joined before
+  this branch, that Owner's bell entry still opens in Français and 中文, the
+  bell's list loading rather than failing.
 - **MC-3307** *(ADR-080, #169)* Settings → Roles. On a freshly seeded
   demo, as the demo Owner, the menu's Settings has Roles beside Members.
   Roles lists Built in first, Owner, Admin and Viewer, each with its line
@@ -2556,3 +2558,5 @@ first.
   extended.
 - 2026-10-21: the menu on a phone is a dialog with a name: MC-R34.
 - 2026-10-21: People's roles drawn as Members' are: MC-3327.
+- 2026-10-21: a joined notification stored before several roles still
+  reads in every language: MC-3306 extended.
