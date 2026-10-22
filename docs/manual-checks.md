@@ -2040,9 +2040,10 @@ first.
   1280 px and at 390 px: on Products, Add product, then Escape; on
   SO-DEMO-2, Ship, then Cancel; on PO-DEMO-9, a line's Receive, then
   Escape; on Account, Delete my account, then Cancel; on a product, History,
-  then Escape. Each time focus is back on the button that opened it, with
-  its ring, and Enter opens it again; a screen reader names that button,
-  not the page from the top.
+  then Escape; on a role made here, Delete, then Cancel, and Move everyone
+  to…, then Escape. Each time focus is back on the button that opened it,
+  with its ring, and Enter opens it again; a screen reader names that
+  button, not the page from the top.
 - **MC-R26** *(French guillemets)* In Français on a phone (390 px), read
   the note under Numbering, « Imprimé ainsi », and Security's « Rester
   connecté »: a « never ends a line with its words on the next. Profile's
@@ -2564,3 +2565,5 @@ first.
 - 2026-10-21: a joined notification stored before several roles still
   reads in every language: MC-3306 extended.
 - 2026-10-21: the audit log needs prices on orders: MC-3309 extended.
+- 2026-10-21: focus comes back from a dialog keyed by whether it is open,
+  as Ship's and Receive's are: MC-R27 extended.

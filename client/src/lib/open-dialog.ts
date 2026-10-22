@@ -24,8 +24,11 @@ export function openDialog(open: () => void) {
 /** The button whose dialog has not opened yet. */
 let waiting: HTMLElement | null = null;
 
-/** Each open dialog's button, by the dialog's own element. */
-const openers = new WeakMap<HTMLElement, HTMLElement>();
+/** Each open dialog's button, and what watches it leave, by its element. */
+const openers = new WeakMap<
+  HTMLElement,
+  { opener: HTMLElement; watch: MutationObserver }
+>();
 
 /**
  * The theme puts these on every dialog's and drawer's transition. A dialog
@@ -34,19 +37,33 @@ const openers = new WeakMap<HTMLElement, HTMLElement>();
  * MUI has taken aria-hidden off the page again, so the close-time warning
  * cannot arise either, the button has focus back: unless something has put
  * focus elsewhere meanwhile, or the button has gone from the page.
+ *
+ * A dialog keyed by whether it is open, as many are so that each opening
+ * starts afresh, is unmounted the moment it closes, with no transition out
+ * to say so; it is watched for leaving the page instead.
  */
 export const returnFocus = {
   onEnter(node: HTMLElement) {
     if (!waiting) return;
-    openers.set(node, waiting);
+    const watch = new MutationObserver(() => {
+      if (!node.isConnected) giveBack(node);
+    });
+    watch.observe(node.ownerDocument.body, { childList: true });
+    openers.set(node, { opener: waiting, watch });
     waiting = null;
   },
   onExited(node: HTMLElement) {
-    const opener = openers.get(node);
-    openers.delete(node);
-    const { activeElement, body } = node.ownerDocument;
-    const lost =
-      !activeElement || activeElement === body || node.contains(activeElement);
-    if (opener?.isConnected && lost) opener.focus();
+    giveBack(node);
   },
 };
+
+function giveBack(node: HTMLElement) {
+  const open = openers.get(node);
+  if (!open) return;
+  openers.delete(node);
+  open.watch.disconnect();
+  const { activeElement, body } = node.ownerDocument;
+  const lost =
+    !activeElement || activeElement === body || node.contains(activeElement);
+  if (open.opener.isConnected && lost) open.opener.focus();
+}

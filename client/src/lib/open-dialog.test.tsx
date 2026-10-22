@@ -3,6 +3,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import {
   render,
   screen,
+  waitFor,
   waitForElementToBeRemoved,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -81,6 +82,32 @@ function Deleting() {
   );
 }
 
+/**
+ * A dialog keyed by whether it is open, so each opening starts afresh:
+ * closing unmounts it at once, with no transition out (#155).
+ */
+function Keyed() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button type="button" onClick={openDialog(() => setOpen(true))}>
+        Ship
+      </button>
+      <Dialog
+        key={open ? 'ship' : 'ship-closed'}
+        open={open}
+        onClose={() => setOpen(false)}
+      >
+        <DialogTitle>Ship</DialogTitle>
+        <button type="button" onClick={() => setOpen(false)}>
+          Cancel
+        </button>
+      </Dialog>
+    </>
+  );
+}
+
 async function closed(name: string) {
   await waitForElementToBeRemoved(() => screen.queryByRole('dialog', { name }));
 }
@@ -121,6 +148,19 @@ describe('openDialog', () => {
     await userEvent.keyboard('{Escape}');
     await closed('Edit');
     expect(screen.getByRole('button', { name: 'Edit' })).toHaveFocus();
+  });
+
+  it('gives focus back from a dialog keyed by whether it is open', async () => {
+    render(<Keyed />, { wrapper: Themed });
+    const ship = screen.getByRole('button', { name: 'Ship' });
+
+    await userEvent.click(ship);
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(ship).toHaveFocus());
+
+    await userEvent.click(ship);
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(ship).toHaveFocus());
   });
 
   it('leaves focus where the page put it once the dialog had closed', async () => {
