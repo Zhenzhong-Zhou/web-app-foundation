@@ -88,6 +88,18 @@ const template = (key: keyof typeof ROLE_TEMPLATES) =>
  * someone whose roles hold all they grant; prices on orders a permission of
  * their own; and the refusal in the reader's words.
  */
+/** Every field a response carries, by its path: lines[].sku. */
+function fieldsOf(value: unknown, path = ''): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => fieldsOf(item, `${path}[]`));
+  }
+  if (value === null || typeof value !== 'object') return [];
+  return Object.entries(value).flatMap(([key, child]) => {
+    const at = path ? `${path}.${key}` : key;
+    return [at, ...fieldsOf(child, at)];
+  });
+}
+
 describe('Roles (e2e)', () => {
   let app: INestApplication;
   let db: Database;
@@ -1043,6 +1055,122 @@ describe('Roles (e2e)', () => {
       );
       expect(read.totals).toHaveLength(1);
       expect(read.money.notInvoiced).toBeDefined();
+    });
+
+    /**
+     * Without orders.view_prices an order is sent with what is pinned
+     * here and nothing else, field by field, since the prices are taken
+     * out of it one at a time: a field added to an order fails this until
+     * someone decides whether it is a price, and takes it out if so.
+     */
+    it('sends whoever may not see prices exactly these fields, and no more', async () => {
+      const alpha = await organization('alpha');
+      const sale = await shippedSale(alpha.agent);
+      const supplier = await createPartner(alpha.agent, { name: 'Supplier' });
+      const variant = await createVariant(alpha.agent, {
+        type: 'good',
+        name: 'Bottles',
+        variant: { sku: 'BOTTLE' },
+      });
+      const purchase = body<{ order: { id: string } }>(
+        await alpha.agent
+          .post('/v1/orders')
+          .send({
+            partnerId: supplier,
+            direction: 'purchase',
+            lines: [
+              {
+                variantId: variant,
+                quantityOrdered: '5',
+                unitPrice: '2',
+                currency: 'CAD',
+              },
+            ],
+          })
+          .expect(201),
+      ).order;
+      const warehouse = await make(alpha, 'Warehouse', template('warehouse'));
+      const dock = await join(alpha, 'sam@example.com', [warehouse.id], 'Sam');
+
+      const detail = [
+        ...fieldsOf(
+          body(await dock.agent.get(`/v1/orders/${sale.orderId}`).expect(200)),
+        ),
+        ...fieldsOf(
+          body(await dock.agent.get(`/v1/orders/${purchase.id}`).expect(200)),
+        ),
+      ];
+      const list = fieldsOf(
+        body(await dock.agent.get('/v1/orders').expect(200)),
+      );
+      const exported = (
+        await dock.agent.get('/v1/orders/export').expect(200)
+      ).text.split(/\r?\n/)[0];
+
+      expect([...new Set(detail)].sort()).toEqual([
+        'counts',
+        'counts.returns',
+        'counts.shipments',
+        'counts.voidedShipments',
+        'deliverTo',
+        'deliverTo.id',
+        'deliverTo.name',
+        'direction',
+        'duplicatedFromId',
+        'expectedAt',
+        'fullyFulfilled',
+        'id',
+        'isSample',
+        'lines',
+        'lines[].closedReason',
+        'lines[].description',
+        'lines[].id',
+        'lines[].isClosedShort',
+        'lines[].isComplete',
+        'lines[].quantityCredited',
+        'lines[].quantityFulfilled',
+        'lines[].quantityOrdered',
+        'lines[].quantityOutstanding',
+        'lines[].quantityReturned',
+        'lines[].quantityUnsettled',
+        'lines[].sku',
+        'lines[].tracksLots',
+        'lines[].unitOfMeasure',
+        'lines[].variantId',
+        'note',
+        'number',
+        'partnerId',
+        'partnerName',
+        'quantities',
+        'quantities.fulfilled',
+        'quantities.ordered',
+        'quantities.outstanding',
+        'quantities.returned',
+        'quantities.unit',
+        'reference',
+        'status',
+        'unsettledReturns',
+      ]);
+      expect([...new Set(list)].sort()).toEqual([
+        'entries',
+        'entries[].createdAt',
+        'entries[].direction',
+        'entries[].expectedAt',
+        'entries[].id',
+        'entries[].isSample',
+        'entries[].lineCount',
+        'entries[].number',
+        'entries[].partnerId',
+        'entries[].partnerName',
+        'entries[].quantityFulfilled',
+        'entries[].quantityOrdered',
+        'entries[].reference',
+        'entries[].status',
+        'nextCursor',
+      ]);
+      expect(exported.replace(/^\uFEFF/, '')).toBe(
+        'Number,Reference,Direction,Status,Partner,Expected date,Lines,Quantity ordered,Quantity received or shipped,Created',
+      );
     });
   });
 
