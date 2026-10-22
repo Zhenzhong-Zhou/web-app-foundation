@@ -494,6 +494,11 @@ function Frame() {
           onClose={() => setDrawer(false)}
           slotProps={{
             paper: {
+              // The dialog's name, as its buttons name what they do to it.
+              'aria-label': intl.formatMessage({
+                id: 'layout.navigation',
+                defaultMessage: 'Navigation',
+              }),
               sx: {
                 width: `calc(${RAIL_WIDTH} + 48px)`,
                 bgcolor: 'rail.bg',

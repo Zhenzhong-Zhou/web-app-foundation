@@ -103,6 +103,28 @@ describe('the rail while Help is open', () => {
  * Space there opens the select, and Escape comes back to the row, where
  * the menu's arrow keys go on.
  */
+/** The menu on a phone, where jsdom leaves the frame (ADR-055). */
+describe('the menu on a phone', () => {
+  beforeEach(() => {
+    server.use(
+      http.get('/api/v1/notifications/unread-count', () =>
+        HttpResponse.json({ count: 0 }),
+      ),
+    );
+  });
+
+  it('opens as a dialog named for what it holds', async () => {
+    const user = userEvent.setup();
+    renderFrame();
+
+    await user.click(screen.getByRole('button', { name: 'Open navigation' }));
+    const menu = await screen.findByRole('dialog', { name: 'Navigation' });
+    expect(
+      within(menu).getByRole('button', { name: 'Close navigation' }),
+    ).toBeVisible();
+  });
+});
+
 describe('the account menu’s preferences', () => {
   beforeEach(() => {
     server.use(

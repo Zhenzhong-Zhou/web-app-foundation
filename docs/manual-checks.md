@@ -1991,6 +1991,9 @@ The pages, in a private window unless a check says otherwise.
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
 
+- **MC-R34** *(the menu on a phone)* At 390 px with VoiceOver, Open
+  navigation: the menu is read as a dialog named Navigation (导航 in
+  中文), and Close navigation closes it.
 - **MC-R33** *(a step done, to a screen reader)* With VoiceOver, on Home,
   a ticked step in Getting started or Your first week reads its title,
   then done, as two words: Say who you are (done), never you are(done); in
@@ -2545,3 +2548,4 @@ first.
 - 2026-10-21: a step done reads after a space, in English too: MC-R33.
 - 2026-10-21: the time zone's French colon held to its words: MC-R26
   extended.
+- 2026-10-21: the menu on a phone is a dialog with a name: MC-R34.
