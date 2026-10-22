@@ -551,9 +551,16 @@ function CardPanel({ card, today }: { card: HomeCard; today: string }) {
         )}
       </Stack>
       {card.rows.length === 0 ? (
+        // The positive tone's text, which reads on a card in both modes
+        // (ADR-081). In sx: Typography's color prop takes a palette name,
+        // not a path such as this.
         <Typography
-          sx={{ py: 1, borderTop: 1, borderColor: 'divider' }}
-          color="success.dark"
+          sx={{
+            py: 1,
+            borderTop: 1,
+            borderColor: 'divider',
+            color: 'tone.positive.fg',
+          }}
         >
           {intl.formatMessage(meta.empty, { days: expiringWithin })}
         </Typography>

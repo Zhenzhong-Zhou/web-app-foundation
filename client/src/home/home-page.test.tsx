@@ -1,3 +1,4 @@
+import { ThemeProvider } from '@mui/material/styles';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -8,9 +9,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { HomeResponse } from '../api/types.gen';
 import { browserTimeZone, setOrganizationTimeZone } from '../lib/time-zone';
 import { zoneLabel } from '../lib/time-zone-label';
+import { drawnIn } from '../test/drawn-colour';
 import { GETTING_STARTED_DONE, welcome } from '../test/factories';
 import { renderWithAuth } from '../test/render-with-auth';
 import { server } from '../test/setup';
+import { themeFor } from '../theme';
+import { contrast } from '../theme/accent';
 import { HomePage } from './home-page';
 
 const COMPLETE: HomeResponse['gettingStarted'] = {
@@ -105,6 +109,38 @@ describe('HomePage', () => {
     expect(
       within(costs).getByText('Nothing waiting. Every receipt has a cost.'),
     ).toBeTruthy();
+  });
+
+  // The positive tone's text (ADR-081). It asked for MUI's success.dark,
+  // 4.33 : 1 on a dark card, through Typography's color prop, which takes
+  // a palette name rather than a path and so drew the plain text instead.
+  it('draws an empty card’s line in the positive tone, at 4.5 : 1 in both modes', async () => {
+    serve({
+      gettingStarted: COMPLETE,
+      cards: [{ kind: 'production', count: 0, late: 0, rows: [] }],
+    });
+    renderWithAuth(
+      routed(
+        <ThemeProvider theme={themeFor('en')}>
+          <HomePage />
+        </ThemeProvider>,
+      ),
+      { permissions: ['production.view'] },
+    );
+
+    const card = await screen.findByRole('region', { name: 'In production' });
+    const { color } = getComputedStyle(
+      within(card).getByText('No runs in progress.'),
+    );
+    expect(color).toBe('var(--mui-palette-tone-positive-fg)');
+    for (const mode of ['light', 'dark'] as const) {
+      expect(
+        contrast(
+          drawnIn(mode, color),
+          drawnIn(mode, getComputedStyle(card).backgroundColor),
+        ),
+      ).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it('offers only the quick actions the role may take', async () => {

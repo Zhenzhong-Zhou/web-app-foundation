@@ -2185,10 +2185,30 @@ guides alone. Each try waits a second and tries once more first.
   since nothing was saved. Choose 简体中文 again within a minute, still
   blocked: MC-3418's message, and nothing loads by itself.
 
+The status tones are looked at in both colour modes, chosen in the account
+menu's Colour mode.
+
+- **MC-3421** *(ADR-081)* The status pages' discs and Home's empty line.
+  An unknown address (`/no-such-page`): the search icon dark blue on a
+  pale blue disc. MC-3409's Something went wrong: the warning sign dark
+  red on a pale red disc. MC-3407's Can't reach the server: the cloud dark
+  grey on a pale grey disc. In dark mode each the other way round, a light
+  icon on a dark tint, and each icon stands clear of its disc. Then, in an
+  organization of your own (registered locally, `REGISTRATION=open`) with
+  Getting started dismissed, Home shows every card with nothing in it:
+  each says so in green, such as No runs in progress., dark green on the
+  light card and light green on the dark one, as easy to read as the
+  words around it.
+
 ## Regressions
 
 Bugs a person could have noticed, checked again on every walkthrough. Newest
 first.
+
+- **MC-R37** *(the status tones, #172's review)* In dark mode and in
+  light, Something went wrong's warning sign stands out from its disc,
+  never a faint red on red, and Home's line for a card with nothing in it
+  is green and easy to read on the dark card, never plain white (MC-3421).
 
 - **MC-R36** *(a language that won't load)* In 中文, block
   `*compiled/zh-Hans*` (DevTools → Network request blocking) and reload:
@@ -2784,3 +2804,5 @@ first.
   extended.
 - 2026-10-22: ADR-081, a language that won't load says so: MC-3418 to
   MC-3420, and MC-R36.
+- 2026-10-22: ADR-081, the status tones' contrast: MC-3421, and MC-R37
+  for #172's review.

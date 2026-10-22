@@ -42,6 +42,12 @@ interface Screen {
   open?: (page: Page) => Promise<void>;
   /** A new version out before the screen loads (ADR-081). */
   version?: 'newer' | 'urgent';
+  /**
+   * A page's chunk that will not load while version.json still names this
+   * build: a real failure, so the crash page (ADR-081). Both are the static
+   * host's files, never the API's.
+   */
+  broken?: string;
 }
 
 interface Seed {
@@ -93,6 +99,13 @@ const SCREENS: Screen[] = [
     path: () => '/orders',
     ready: (page) =>
       page.getByRole('status').filter({ hasText: 'can no longer save' }),
+  },
+  {
+    name: 'the crash page',
+    broken: '**/src/inventory/inventory-page.tsx*',
+    path: () => '/inventory',
+    ready: (page) =>
+      page.getByRole('heading', { level: 1, name: 'Something went wrong' }),
   },
   {
     name: 'an order',
@@ -268,6 +281,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
         if (screen.version) {
           await deploy(page, { urgent: screen.version === 'urgent' });
         }
+        if (screen.broken) {
+          await page.route(screen.broken, (route) => route.abort('failed'));
+        }
         await page.goto(screen.path(data));
         if (screen.open) {
           await expect(heading(page)).toBeVisible();
@@ -280,6 +296,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
         const list = await violations(page);
         if (list.length > 0) found[screen.name] = list;
         if (screen.version) await page.unroute('**/version.json?*');
+        if (screen.broken) await page.unroute(screen.broken);
       }
 
       // All screens at once, so one run reports everything to fix.
