@@ -42,6 +42,33 @@ goes for `BACKUP_S3_ENDPOINT` in GitHub's secrets, which nothing checks.
 
 For development and testing, all of that is acceptable.
 
+## Old files after a deploy (ADR-081)
+
+**Render keeps the previous build's files.** Checked on 21 October 2026,
+after #176 deployed: the live `index.html` loaded `index-UEWwBcVJ.js`, the
+entry chunk a local build of `main` at 983c1d8 makes, and
+`/assets/index-CScCP7eR.js`, the entry chunk of the build before it
+(3f54efe), still came back as JavaScript. So a tab left open across a
+deploy keeps loading its own pages; what changes under it is the API,
+which ADR-081's revision handles.
+
+Render's static-site docs do not say how long it keeps them, and its
+"Clear build cache & deploy" is described as refreshing stale static
+assets: use it only when a build needs it. Check again after a change of
+plan or host:
+
+1. Build the commit before the last deploy in a git worktree, and the
+   current one, each with `npm ci && npm run build` in `client/`; each
+   `dist/index.html` names its entry chunk.
+2. **The control:** the live page's source must name the entry chunk your
+   build of the current commit made. If it does not, your build differs
+   from Render's, and the test says nothing: check at the next deploy
+   instead.
+3. **The test:** open the old entry chunk at `/assets/<name>`. JavaScript
+   means kept. The app's page means gone: the `/*` rewrite answers a
+   missing file with `index.html` and a 200, so look at what comes back,
+   not the status.
+
 ## Registration and organization invitations (ADR-078)
 
 Production takes new organizations by invitation. Two settings on the web

@@ -10621,6 +10621,313 @@ to a role reaches its holders on their next click.
 
 ---
 
+## ADR-081 — Old tabs after a deploy: a newer build noticed, an outdated client told (amends ADR-013, ADR-051, ADR-052, ADR-054, ADR-055 and ADR-068)
+
+**Context.** A tab stays open for days, and the app deploys underneath it.
+Issue #175, found on 21 October 2026, lists what then goes wrong. The pages
+behind the layout load as chunks of their own (`client/src/pages.ts`),
+and a tab asks for its own build's chunks. When one fails to load, the
+error boundary calls it "A new version is available" from its message
+alone, a dropped connection included, and nothing listens for
+`vite:preloadError`. The API cannot tell one client build from another,
+so a changed shape fails a write or is misread on a read: ADR-080 swapped
+`roleId` for `roleIds`, and a tab open across that deploy was refused
+with "property roleId should not exist" and showed Members' unknown-role
+fallback. And switching to a language whose catalogue fails to load does
+nothing and says nothing.
+
+Checked before drafting, as the working agreements ask:
+
+- **Fired, and taken here.** #175's five points. ADR-052 accepted, for
+  one change, that an old bundle's writes are refused until the page
+  reloads; this ADR makes that the general case, with ADR-052's lenient
+  mode one of two ways through it. ADR-080's consequence "the access query
+  timed on `seed:volume`", which its as-built amendment does not record
+  and nothing in `perf/` measures. ADR-051's two follow-ups left over in
+  the handoff, `perf/` never type-checked in CI and one manifest for both
+  scales, since this ADR's volume step edits `perf/`. #175's "later, an
+  Open decision": feature flags and staged rollouts, now an entry. The
+  handoff's "before real users": the `/production-readiness` skill, added
+  here and run first on its deploys section. From #172's reviews, the
+  status tones MUI derives below contrast. The browser-compatibility lint
+  rule the handoff left as a chore, since this ADR gives the browser floor
+  a section of the skill.
+- **Not fired, and kept in step.** ADR-013's `/v1` stays: the revision
+  below lives inside it, for the app's own client, and a request without
+  one is never refused. `error-codes.ts`'s rule that a code is never
+  renamed holds, for the same reason. Playwright against `vite build`
+  (the handoff's watch list) is not taken; see Tests. Monitoring (Open
+  decisions, "The operator": an error tracker and an uptime check) and "A
+  security review before real customers" are reported on by the skill and
+  decided in the whole-app review that follows this ADR. #142, the
+  client's Content-Security-Policy, keeps its own PR; it is set in the
+  same Render panel as the cache headers below. ADR-070's unindexed
+  foreign keys and `pg_stat_statements` go to the skill's performance
+  section.
+- **Found while checking.**
+  - Three kinds of chunk, not one: 39 pages, 2 catalogues and 66 Help
+    guides, and only Help says when one fails. With a stored language
+    other than English, `LanguageProvider` renders nothing until its
+    catalogue loads, so a catalogue that fails at start is a blank app.
+  - The static site and the API deploy separately from every push, and
+    the static site usually finishes first: for those minutes a new
+    visitor runs the new client against the old API, the other way round
+    from #175.
+  - The API's build command runs `npm run migrate` while the previous
+    release still serves, so for a minute or two old code runs on the new
+    schema. Migration 0073 dropped `memberships.role_id`, which the
+    previous release's access check read on every request.
+  - PDF and export links are plain links (`apiUrl`), outside `api()`.
+  - `/health` says which commit answers (`RENDER_GIT_COMMIT`); the static
+    site says nothing.
+- **Answered by hand.** Render keeps the previous build's files: on 21
+  October 2026, the entry chunk of the build before #176 still came back
+  as JavaScript (`docs/runbooks/render.md`). A tab open across a deploy
+  keeps loading its own pages; what changes under it is the API.
+
+**Decision — a version file.** The client's build writes `version.json`
+beside `index.html`: the build (the commit Render builds,
+`RENDER_GIT_COMMIT`, else git's, else the time), when it was built, and
+the API revision below. The build compiles its own id in. A tab reads the
+file, past every cache, when it comes back to the front, every ten minutes
+while it is in front, and after any load that fails or request refused as
+outdated. On the dev server the file names `dev`, which never differs, so
+nothing fires.
+
+**Decision — "Updated", and a reload at the next page.** Once the file
+names a newer build, every page shows a banner at its top, signed in and
+on the signed-out pages: "The app was updated. Reload when you're ready,
+or it reloads by itself when you open another page", with Reload. It is
+announced once to screen readers and has no close button, since it ends
+at the next page.
+
+- **Amber when saves would be refused.** When the newer build's API
+  revision is above the tab's, its saves will be refused (below), so the
+  banner says so before anything more is typed: "The app was updated, and
+  this tab can no longer save changes. Copy anything you've typed, then
+  reload."
+- **The next page.** Opening another page means its path changing; a tab
+  or a filter kept in the address does not count. That page then loads in
+  full from the new build. The unsaved-changes prompt runs first, so
+  nothing typed is lost to the reload.
+
+**Decision — a load that fails says why.** Any chunk that fails to load,
+a page, a catalogue or a guide, and any `vite:preloadError`, is tried once
+more after a second. Then the version file decides:
+
+- **It cannot be read:** the offline status page, as it is; its Try again
+  reloads the page.
+- **It names a newer build:** the page being opened loads in full from the
+  new build, once. If it fails again within a minute, "A new version is
+  available" shows with Reload, so it can never loop.
+- **It names this build:** the crash page with its reference, as now.
+
+Help, which loads its guides beside the page, says "This guide was
+updated. Reload to read it" rather than reloading under someone reading.
+
+**Decision — the API revision.** One number in
+`server/src/common/api-revision.ts`, starting at 1, is the API's revision
+within `/v1` (amends ADR-013). The API document carries it as its
+`info.version`, `1.<revision>`, and `npm run api` writes it into
+`client/src/api/` with the types, so the contract check fails a client and
+a server that disagree (amends ADR-068). `api()` sends it as
+`X-Api-Revision`, and the server compares it first, before the session is
+read or the body validated:
+
+- **Lower than the server's:** 409 `client_outdated`, "This tab is running
+  an older version of the app, so nothing was saved. Copy anything you
+  typed, then reload." A page whose read is refused shows the new version
+  status page; a dialog keeps what was typed and offers Reload beside the
+  refusal. A refused `/auth/me` is never read as signed out.
+- **Higher than the server's,** the API not yet deployed or rolled back:
+  503 `api_updating` with `Retry-After: 60`, "The app is being updated.
+  Try again in a minute; nothing was saved."
+- **No header,** from a test, a script, a PDF or export link, or one day an
+  integration: served as today.
+
+Each refusal is logged once, at info, with its route and both revisions,
+so after a deploy the log says how many open tabs it met. `/health` adds
+the revision beside the commit.
+
+**Decision — when the revision rises.** An additive change keeps it: a
+new route, a new optional field in a request, a new field in a response. A
+breaking change raises it by one, in the commit that makes it: a field
+removed or renamed, one newly required in a request, a type or a format
+changed, a route removed, a value removed from a list a request takes.
+Where old tabs matter more than the effort, the old shape is kept working
+for a while instead, logged until nothing sends it, as ADR-052's lenient
+mode did (amends ADR-052: one of two ways now, not the way). CI holds the
+rule: the contract job compares `server/openapi.json` with `main`'s using
+oasdiff, a pinned container image rather than a dependency, and fails a
+breaking change that left `info.version` where it was. `/code-review`
+checks it by reading too.
+
+**Decision — the API first, then the client.** The static site no longer
+deploys itself. A workflow on each push to `main` waits until the API's
+`/health` names the pushed commit, then calls the static site's deploy
+hook, kept as a secret. If the API's deploy fails, the client stays where
+it was, matching it. That ends the minutes in which a new client meets an
+old API. The 503 above stays for a rollback, which takes both services
+back together (`render.md`). Any host has a health URL and a deploy hook,
+so nothing here ties the deploy to Render.
+
+**Decision — migrations that work with the release still running.** A
+migration runs while the previous release still serves, so it leaves
+working the schema that release reads: in one deploy, add, never take
+away. Dropping or renaming a column or a table, changing a type, or making
+a column required without a default waits for a later migration, once no
+released code reads the old shape: expand, then contract, which ADR-052
+already asked of large tables. CI runs squawk, a Postgres migration
+linter, on each new migration, pinned and run through `npx` as the
+Markdown check is, and fails those statements unless an ignore comment
+beside one says why the running release does not read what it changes.
+`/code-review` checks it too. ADR-080's 0073 would have been two
+migrations, a deploy apart.
+
+**Decision — a language that fails to load says so.** Switching tries
+once more, then stays in the current language and says "Couldn't load
+简体中文. Check your connection and try again." At start, a stored
+language whose catalogue fails falls back to English, with a banner naming
+the language and Try again, rather than a blank page. If the version file
+names a newer build, the page reloads instead (amends ADR-054).
+
+**Decision — Render's settings, by hand, in `docs/runbooks/render.md`.**
+The old-files answer (above). Cache headers, checked with `curl -I` first
+and set only where Render's own differ: `/assets/*` for a year and
+immutable; `index.html` and `version.json` never cached. The web
+service's health check path, `/health/ready`, so traffic moves to a new
+release only once it answers with its database up. The static site's
+auto-deploy off, with its deploy hook in GitHub's secrets. A rollback
+always takes both services back together.
+
+**Decision — `/production-readiness`, a review before real users.** A
+Claude Code project skill in `/code-review`'s shape: report only, on the
+whole app or one section. Eight sections: deploys and old tabs; backups
+and a restore tried; monitoring; security; performance; email; support;
+browsers and China. Each finding carries its evidence (a `path:line`, a
+workflow run from `gh run list`, a runbook line) and is grouped Before
+real users, Before the first paying customer, or Worth considering, with
+the ADR or trigger it ties to. What only Bob can see (the Render
+dashboard, DNS records, a restore) is a By hand list with exact steps. It
+runs first in this ADR's branch, on its deploys section, so what falls
+inside #175 is built here; its whole-app run follows this ADR.
+
+**Decision — the browser floor, held by ESLint.** `eslint-plugin-compat`,
+set to the build's own target (conventions.md, "Supported browsers"),
+fails code that uses an API newer than the floor without a guard, as
+`Intl.Segmenter` once was. The skill's browsers and China section checks
+the rest: nothing loaded from another site, `index.html`'s engine tags,
+reaching the app from mainland China, and the devices only a person can
+try (Android WeChat, 360 and QQ on Windows in 极速模式).
+
+**Decision — the volume seed catches up with ADR-080.** Each organization
+gets a team: 15 members at small scale and 150 at large, with 4 and 12
+made roles from the templates and copies, each member holding one to
+three, and a few invitations pending that name roles. `npm run perf:plans`
+gains the access query, what one member of three made roles may do
+(`memberPermissions`), and who holds a permission (`holdersOf`), both
+timed at large; the numbers go in this ADR's as-built amendment. `perf/`
+is type-checked in CI's server job, and `seed:volume` writes one manifest
+per scale, `volume-<scale>.json`, which `npm run perf` reads by its
+`--scale` (amends ADR-051).
+
+**Decision — the seeds grow with every feature.** From this ADR on, each
+feature adds what it needs to both: to `seed:demo`, so its screens, manual
+checks and walkthroughs start without setup; to `seed:volume`, realistic
+rows for any new table or hot query, timed against ADR-051's budgets. A
+feature with nothing to add says so. CLAUDE.md and conventions.md say it,
+and every build brief has a step for it. This ADR adds nothing to the
+demo: what it shows follows a deploy, not data.
+
+**Decision — what rides along.**
+
+- **The status tones' contrast.** MUI derives `light` and `dark` from each
+  status colour, and two fall short. The crash page's icon disc reaches
+  2.2:1 in both modes, against 3:1 for an icon; a Home card's empty line,
+  `success.dark` on the dark surface, reaches 4.33:1, against 4.5:1 for
+  text. Both take ADR-055's tones instead, whose background and text pairs
+  pass, and the status page's other discs move to them too (amends
+  ADR-055).
+- **References kept whole.** A document's number (`SO-DEMO-1`,
+  `PO-000009`) never breaks at its hyphen; a line breaks between a
+  reference and its words instead.
+- **Home's tiles in even rows.** With eight tiles, Home showed seven and
+  one alone. The tiles share their rows evenly: as many rows as the width
+  needs, the tiles spread across them, so eight read as two rows of four,
+  and a phone shows two to a row.
+
+**Tests.** The server's e2e suite: each refusal, a request without the
+header served, and the refusal made before the body is read. Component
+tests: the version check and the banner's two tones, a reload at the next
+page and not before, each way a load fails, a refusal in a dialog and on a
+page, a catalogue that fails. Playwright replaces `version.json`, the
+static host's file and never the API's, to stand for a deploy, and aborts
+a page's chunk to stand for a dropped connection: the banner appears, a
+move between pages reloads, a dropped connection says so. Its rule that
+nothing is mocked is about the API, and stays; conventions.md says so.
+
+**Considered and not done.**
+
+- **Reloading the moment a newer build appears.** It takes whatever
+  someone is typing.
+- **Refusing every client built before the server.** Every deploy would
+  refuse every open tab, the additive ones included.
+- **Sending old tabs to the old release,** as Vercel's skew protection
+  does. Render keeps the files, which covers the pages; the API would need
+  old releases kept running.
+- **A service worker.** It would cache the old build itself, the problem
+  this ADR solves.
+- **Telling tabs over a socket.** A small file read at the right moments is
+  enough.
+
+**Deferred — each with what brings it in.**
+
+- **Keeping the last build's files ourselves.** Trigger: a host that drops
+  them, Render included if a check (`render.md`) ever finds them gone.
+- **Reporting failed loads and refusals to an error tracker.** Trigger:
+  the monitoring decision (Open decisions, "The operator").
+- **Playwright against the built files** (`vite build`, `vite preview`).
+  Trigger: a fault the dev server hides.
+- **Feature flags and staged rollouts** (Open decisions). Trigger: the
+  first paying customers.
+
+**Consequences.**
+
+- No migration.
+- Server: `common/api-revision.ts`; a middleware first in the chain,
+  refusing with `client_outdated` and `api_updating` (in
+  `error-codes.ts`) and logging each; `/health` with the revision; the
+  document's `info.version`; `npm run api` writing the revision into
+  `client/src/api/`. E2e tests as above.
+- CI: oasdiff in the contract job, squawk on new migrations, `perf/`
+  type-checked; `scripts/verify.sh` runs the first two where Docker is up.
+  A workflow that deploys the static site once the API names the commit.
+- Client: the version file and the build id from a Vite plugin; the
+  version check and the banner, in the app's layout and on the signed-out
+  pages; one way every chunk loads and fails (pages, catalogues, guides),
+  and the `vite:preloadError` listener; `api()` sending the revision, and
+  the two refusals on pages and in dialogs; the language's failure paths;
+  the tones, references kept whole and Home's even rows;
+  `eslint-plugin-compat`. Designed on the canvas first: the banner, blue
+  and amber, on a computer and a phone, in English and 中文, and on
+  sign-in; the offline, new version and crash pages, and Help's guide; a
+  refusal in a dialog and on a page; a language that fails; Home's tiles
+  and references.
+- `.claude/skills/production-readiness/SKILL.md`, and its first run.
+- `seed:volume`, `perf:plans` and a manifest per scale.
+- Docs: `docs/runbooks/render.md` (the settings above); manual checks
+  section 34; conventions.md's status pages, error codes, API contract
+  (the revision), migrations (expand, then contract) and tests
+  (Playwright's rule); this ADR's as-built amendment; the handoff.
+- Build order: this ADR; dependencies; the skill, run on deploys; an
+  inventory of every chunk, every request outside `api()` and every place
+  a failure is shown; the volume seed; the server; CI; the client, after
+  the design; the riders; the deploy workflow and the runbook;
+  dependencies again; the reviews; the docs last. Built by Claude Code, a
+  prompt per commit (handoff, *How code is delivered*).
+
+---
+
 ## Open decisions
 
 Questions land here before they are promoted to an ADR. None of these block V1;
@@ -10761,6 +11068,12 @@ they exist so the reasoning is not rediscovered from scratch.
   trial. Not on the invitation, which only starts the trial; seat limits
   are counted at inviting (ADR-077). ADR-070's "closed by us" waits on
   it. Trigger: the first paying customer.
+- **Feature flags and staged rollouts.** A change that reaches some
+  organizations before all: a flag per feature, turned on per
+  organization by the operator, and a release that turns it on in stages,
+  for a change risky enough to try with one customer first. ADR-081 keeps
+  every open tab working across a deploy, but each deploy still reaches
+  everyone at once. Trigger: the first paying customers.
 - **Job roles** — decided in ADR-080: roles an organization makes, from a
   template or a copy, several to a member and added together; the built-in
   three fixed; a role given only by someone whose roles hold all it grants,
@@ -11195,6 +11508,7 @@ they exist so the reasoning is not rediscovered from scratch.
 | Creating an organization               | A setting: open, or by the operator's invitation      | ADR-078          |
 | Starting one from an existing account  | By an invitation; from Home when open                 | ADR-078          |
 | API versioning                         | URL prefix `/v1/`, global, from first endpoint        | ADR-013          |
+| A tab older than the API               | Its revision refused; a banner, then a reload         | ADR-081          |
 | CSRF defence                           | Custom header, no token                               | ADR-014          |
 | Concurrent sessions per user           | Multiple; login revokes only the presented session    | ADR-015          |
 | Permission resolution                  | Per request, never cached                             | ADR-016          |

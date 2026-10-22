@@ -415,6 +415,26 @@ already covers; the simple create dialogs, which fill fields and POST; and
 
 ---
 
+## Seeds
+
+Two seeds grow with the app, and every feature adds what it needs to both
+(ADR-081). Its build brief has a step for them; a feature with nothing to
+add says so in its PR.
+
+- **`npm run seed:demo`** fills a dev database with a demo organization
+  whose screens, manual checks and walkthroughs work without setup: a
+  feature's new screens open on real-looking records, in every state its
+  checks name. CI runs it on an empty database, so a service it calls that
+  changes shape fails there; run it locally after changing one (handoff,
+  *Moving code*).
+- **`npm run seed:volume`** fills a database of its own with a year at
+  realistic scale (`server/perf/README.md`). A new table gets rows in the
+  proportions a customer would have, and a new hot query, one run on every
+  request or every list, is added to `npm run perf:plans` and timed
+  against ADR-051's budgets at both scales.
+
+---
+
 ## Keys that rebuild a component
 
 A component keyed by a value, so it starts again when the value changes,

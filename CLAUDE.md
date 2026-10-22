@@ -64,6 +64,12 @@ Karpathy's observations on LLM coding pitfalls
   then `npm run migrate:all`, which applies it to the dev, test and e2e
   databases. The steps between, and what to check in the generated SQL,
   are under Process in the handoff's working agreements.
+- **Seeds grow with every feature** (ADR-081). `npm run seed:demo` gains
+  what the feature's screens need, so its manual checks and walkthroughs
+  start without setup. `npm run seed:volume` gains realistic rows for any
+  new table or hot query, timed against ADR-051's budgets (`npm run
+  perf:plans`, `npm run perf`). A feature with nothing to add says so in
+  its PR.
 - **Money and quantities** are decimal strings, never JavaScript numbers
   (ADR-025), and totals come from the server (ADR-055). Calendar days
   are `YYYY-MM-DD` strings (ADR-052).
