@@ -1842,7 +1842,11 @@ The pages, in a private window unless a check says otherwise.
   Move everyone has gone with its dialog. Delete, then Delete role: Roles
   again, Dock crew gone, and focus on its heading. As Daniel Okafor
   (Admin), Move everyone on Viewer offers no Owner and no Sales, saying
-  roles that can do more than yours aren’t offered.
+  roles that can do more than yours aren’t offered; Sales's own page has no
+  Move everyone to…, since Admin cannot give Sales. As the demo Owner, open
+  a made role nobody holds, give it to someone in another tab, then press
+  Delete and Delete role: the dialog names who holds it, with Move
+  everyone to…, and the page behind lists them.
 - **MC-3312** *(ADR-080)* Members with several roles. As the demo Owner,
   Settings → Members: its line says a member can hold several roles, and
   Roles opens Settings → Roles. Each member's roles stand side by side,
@@ -2571,3 +2575,5 @@ first.
   as Ship's and Receive's are: MC-R27 extended.
 - 2026-10-21: a role named like an object's own key reads as named:
   MC-3309 extended.
+- 2026-10-21: Move everyone only on a role the reader may give, and Delete
+  reading the role again once someone holds it: MC-3311 extended.

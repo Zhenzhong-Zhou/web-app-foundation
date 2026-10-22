@@ -14,7 +14,7 @@ import { useIntl } from 'react-intl';
 import type { RoleDetail } from '../api/types.gen';
 import { DialogFooter } from '../components/dialog-footer';
 import { FormError } from '../components/form-error';
-import { api, hasCode } from '../lib/api';
+import { api, ApiError, hasCode } from '../lib/api';
 import { useSubmit } from '../lib/use-submit';
 
 /**
@@ -22,18 +22,22 @@ import { useSubmit } from '../lib/use-submit';
  * someone does, the dialog says who and offers Move everyone to… instead
  * of Delete. A live invitation naming it is the server's to find, and its
  * refusal says what to do; one held since the page was read comes back as
- * `role_held`, with Move everyone offered the same way.
+ * `role_held`, and the page reads the role again (`onHeld`), so its
+ * holders show and Move everyone is offered the same way.
  */
 export function DeleteRoleDialog({
   open,
   role,
   onClose,
+  onHeld,
   onMoveEveryone,
   onDeleted,
 }: {
   open: boolean;
   role: RoleDetail;
   onClose: () => void;
+  /** Someone holds it since the page read it. */
+  onHeld: () => void;
   /** Absent for a reader who may not change members' roles. */
   onMoveEveryone?: () => void;
   onDeleted: () => void;
@@ -142,7 +146,16 @@ export function DeleteRoleDialog({
             defaultMessage: 'Deleting…',
           })}
           onConfirm={() =>
-            void submit(() => api(`/roles/${role.id}`, { method: 'DELETE' }))
+            void submit(async () => {
+              try {
+                await api(`/roles/${role.id}`, { method: 'DELETE' });
+              } catch (caught) {
+                if (caught instanceof ApiError && caught.code === 'role_held') {
+                  onHeld();
+                }
+                throw caught;
+              }
+            })
           }
         />
       )}

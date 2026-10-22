@@ -101,8 +101,10 @@ export function RolePage() {
         .map((each) => each.note as string),
     ),
   ];
-  const mayMove = can('roles.assign') && role.holderCount > 0;
+  // Moving its holders changes their roles, which needs all this one
+  // grants: a role the reader may not give, they may not empty either.
   const mayGive = can('roles.assign') && role.mayGive;
+  const mayMove = mayGive && role.holderCount > 0;
 
   return (
     <Stack spacing={3}>
@@ -260,6 +262,7 @@ export function RolePage() {
           open={deleting}
           role={role}
           onClose={() => setDeleting(false)}
+          onHeld={() => void reload()}
           onMoveEveryone={
             mayMove
               ? () => {
