@@ -1901,8 +1901,8 @@ The pages, in a private window unless a check says otherwise.
   the demo Owner, invite an address as Sales; as Daniel Okafor, its row on
   Invited has no Resend, Copy link or Revoke, and inviting the same address
   again says Your roles don’t include everything Sales can do, so you
-  can’t resend this invitation., with no Resend instead. An Owner's
-  invitation still says only an Owner can resend it.
+  can’t resend this invitation. An Owner can., with no Resend instead. An
+  Owner's invitation still says only an Owner can resend it.
 - **MC-3318** *(ADR-080)* Orders show no prices to whoever may not see
   them. Signed in as Tom Becker (Warehouse), open PO-DEMO-1: its Items
   have no Unit price or Total column and no totals beneath them, nothing
@@ -2577,3 +2577,5 @@ first.
 - 2026-10-21: Move everyone only on a role the reader may give, and Delete
   reading the role again once someone holds it: MC-3311 extended.
 - 2026-10-21: MC-3309's Raise an order ticks what the editor says it does.
+- 2026-10-21: an invitation you cannot resend, and a role with nowhere to
+  move its holders, say an Owner can: MC-3317 changed.

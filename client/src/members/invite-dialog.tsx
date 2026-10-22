@@ -480,7 +480,7 @@ function InviteForm({
                       {
                         id: 'members.invite.beyondInvitation',
                         defaultMessage:
-                          'Your roles don’t include everything {roles} can do, so you can’t resend this invitation.',
+                          'Your roles don’t include everything {roles} can do, so you can’t resend this invitation. An Owner can.',
                       },
                       { roles: roleList(invited.roles) },
                     )}

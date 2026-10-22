@@ -123,7 +123,7 @@ export function MoveEveryoneDialog({
               {intl.formatMessage({
                 id: 'roles.move.noChoice',
                 defaultMessage:
-                  'Your roles don’t include everything any other role can do, so there’s no role you can move them to.',
+                  'Your roles don’t include everything any other role can do, so there’s no role you can move them to. An Owner can.',
               })}
             </DialogContentText>
           ) : (

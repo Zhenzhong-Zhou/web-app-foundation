@@ -455,7 +455,7 @@ describe('InviteDialog (ADR-077)', () => {
     await send(user, 'Send invitation');
     expect(
       await screen.findByText(
-        'Your roles don’t include everything Finance can do, so you can’t resend this invitation.',
+        'Your roles don’t include everything Finance can do, so you can’t resend this invitation. An Owner can.',
       ),
     ).toBeVisible();
     expect(
