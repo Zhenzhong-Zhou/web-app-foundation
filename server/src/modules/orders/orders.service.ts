@@ -529,64 +529,64 @@ export class OrdersService {
        * A sale's invoices and credit notes (ADR-055), for its "Invoices and
        * credits" tab: what was billed and given back, as documents, each
        * with what it covered. Drafts included, marked as such; a credit
-       * note is always issued.
+       * note is always issued. Read only for whoever is sent them.
        */
-      const invoiceRows =
-        order.direction === 'sale' && !order.isSample
-          ? await tx
-              .select({
-                id: invoices.id,
-                number: invoices.number,
-                status: invoices.status,
-                date: invoices.invoiceDate,
-                total: invoices.total,
-                currency: invoices.currency,
-                shippedAt: shipments.createdAt,
-                quantity: sql<string>`coalesce((
+      const documented =
+        sight.invoices && order.direction === 'sale' && !order.isSample;
+      const invoiceRows = documented
+        ? await tx
+            .select({
+              id: invoices.id,
+              number: invoices.number,
+              status: invoices.status,
+              date: invoices.invoiceDate,
+              total: invoices.total,
+              currency: invoices.currency,
+              shippedAt: shipments.createdAt,
+              quantity: sql<string>`coalesce((
                   select sum(${invoiceLines.quantity})
                   from ${invoiceLines}
                   where ${invoiceLines.invoiceId} = ${invoices.id}
                 ), 0)::numeric(18,4)::text`,
-              })
-              .from(invoices)
-              .innerJoin(shipments, eq(shipments.id, invoices.shipmentId))
-              .where(
-                and(
-                  eq(invoices.orderId, orderId),
-                  eq(invoices.organizationId, organizationId),
-                ),
-              )
-              .orderBy(invoices.createdAt)
-          : [];
+            })
+            .from(invoices)
+            .innerJoin(shipments, eq(shipments.id, invoices.shipmentId))
+            .where(
+              and(
+                eq(invoices.orderId, orderId),
+                eq(invoices.organizationId, organizationId),
+              ),
+            )
+            .orderBy(invoices.createdAt)
+        : [];
 
-      const creditRows =
-        order.direction === 'sale' && !order.isSample
-          ? await tx
-              .select({
-                id: creditNotes.id,
-                number: creditNotes.number,
-                date: creditNotes.creditDate,
-                total: creditNotes.total,
-                currency: creditNotes.currency,
-                reason: creditNotes.reason,
-                isVoid: creditNotes.isVoid,
-                invoiceNumber: invoices.number,
-                quantity: sql<string>`coalesce((
+      const creditRows = documented
+        ? await tx
+            .select({
+              id: creditNotes.id,
+              number: creditNotes.number,
+              date: creditNotes.creditDate,
+              total: creditNotes.total,
+              currency: creditNotes.currency,
+              reason: creditNotes.reason,
+              isVoid: creditNotes.isVoid,
+              invoiceNumber: invoices.number,
+              quantity: sql<string>`coalesce((
                   select sum(${creditNoteLines.quantity})
                   from ${creditNoteLines}
                   where ${creditNoteLines.creditNoteId} = ${creditNotes.id}
                 ), 0)::numeric(18,4)::text`,
-              })
-              .from(creditNotes)
-              .innerJoin(invoices, eq(invoices.id, creditNotes.invoiceId))
-              .where(
-                and(
-                  eq(invoices.orderId, orderId),
-                  eq(creditNotes.organizationId, organizationId),
-                ),
-              )
-              .orderBy(creditNotes.createdAt)
-          : [];
+            })
+            .from(creditNotes)
+            .innerJoin(invoices, eq(invoices.id, creditNotes.invoiceId))
+            .where(
+              and(
+                eq(invoices.orderId, orderId),
+                eq(creditNotes.organizationId, organizationId),
+              ),
+            )
+            .orderBy(creditNotes.createdAt)
+        : [];
 
       /**
        * Money and settling are a sale's (ADR-055). A purchase records no
